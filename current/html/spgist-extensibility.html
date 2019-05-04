@@ -1,0 +1,917 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>65.3. 拡張性</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="spgist-builtin-opclasses.html" title="65.2. 組み込み演算子クラス" /><link rel="next" href="spgist-implementation.html" title="65.4. 実装" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="spgist.html" title="第65章 SP-GiSTインデックス">第65章 SP-GiSTインデックス</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      spgist-extensibility.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="spgist-builtin-opclasses.html" title="65.2. 組み込み演算子クラス">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="spgist.html" title="第65章 SP-GiSTインデックス">上へ</a></td><td width="60%" align="center">65.3. 拡張性</td><td width="20%" align="right"> <a accesskey="n" href="spgist-implementation.html" title="65.4. 実装">次へ</a></td></tr></table><hr /></div><div class="sect1" id="SPGIST-EXTENSIBILITY"><div class="titlepage"><div><div><h2 class="title" style="clear: both">65.3. 拡張性</h2></div></div></div><span class="original">
+ &lt;title&gt;Extensibility&lt;/title&gt;
+</span><p>
+<span class="original">
+  &lt;acronym&gt;SP-GiST&lt;/acronym&gt; offers an interface with a high level of
+  abstraction, requiring the access method developer to implement only
+  methods specific to a given data type. The &lt;acronym&gt;SP-GiST&lt;/acronym&gt; core
+  is responsible for efficient disk mapping and searching the tree structure.
+  It also takes care of concurrency and logging considerations.
+</span>
+<acronym class="acronym">SP-GiST</acronym>は高度に抽象化されたインタフェースを提供します。アクセスメソッドの開発者は特定のデータ型専用のメソッドだけを開発する必要があります。
+<acronym class="acronym">SP-GiST</acronym>のコアは効率的なディスクマッピングと木構造の探索を担当します。
+また、同時実行制御とログ出力も担当します。
+ </p><p>
+<span class="original">
+  Leaf tuples of an &lt;acronym&gt;SP-GiST&lt;/acronym&gt; tree contain values of the
+  same data type as the indexed column.  Leaf tuples at the root level will
+  always contain the original indexed data value, but leaf tuples at lower
+  levels might contain only a compressed representation, such as a suffix.
+  In that case the operator class support functions must be able to
+  reconstruct the original value using information accumulated from the
+  inner tuples that are passed through to reach the leaf level.
+</span>
+<acronym class="acronym">SP-GiST</acronym>のツリーのリーフタプルは、インデックスの付けられた列と同じデータ型の値を含んでいます。
+ルートレベルにあるリーフタプルは、必ずインデックスが付けられた元のデータの値を含んでいますが、より下のレベルのリーフタプルは、接尾辞など、圧縮された表現しか含んでいないかも知れません。
+この場合、演算子クラスのサポート関数が、内部タプルをリーフレベルまでたどりながら集める情報を使って元の値を再構築できる必要があります。
+ </p><p>
+<span class="original">
+  Inner tuples are more complex, since they are branching points in the
+  search tree.  Each inner tuple contains a set of one or more
+  &lt;firstterm&gt;nodes&lt;/firstterm&gt;, which represent groups of similar leaf values.
+  A node contains a downlink that leads either to another, lower-level inner
+  tuple, or to a short list of leaf tuples that all lie on the same index page.
+  Each node normally has a &lt;firstterm&gt;label&lt;/firstterm&gt; that describes it; for example,
+  in a radix tree the node label could be the next character of the string
+  value.  (Alternatively, an operator class can omit the node labels, if it
+  works with a fixed set of nodes for all inner tuples;
+  see &lt;xref linkend="spgist-null-labels"/&gt;.)
+  Optionally, an inner tuple can have a &lt;firstterm&gt;prefix&lt;/firstterm&gt; value
+  that describes all its members.  In a radix tree this could be the common
+  prefix of the represented strings.  The prefix value is not necessarily
+  really a prefix, but can be any data needed by the operator class;
+  for example, in a quad-tree it can store the central point that the four
+  quadrants are measured with respect to.  A quad-tree inner tuple would
+  then also contain four nodes corresponding to the quadrants around this
+  central point.
+</span>
+内部タプルは、探索木の分岐点となるため、もっと複雑です。
+それぞれの内部タプルは1つ以上の<em class="firstterm">ノード</em>の集合を含んでおり、ノードは類似のリーフ値のグループを表現します。
+ノードは下向きのリンクを含んでおり、これは下のレベルの別の内部タプルを指すか、あるいはすべて同じインデックスページ上に載っているリーフタプルの短いリストを指しています。
+それぞれのノードは、通常、それを記述する<em class="firstterm">ラベル</em>を持っています。
+例えば、基数木では、ノードのラベルは文字列の値の次の文字にすることができます。
+（あるいは、すべての内部タプルについて、決まったノードの集合しか扱わないのであれば、演算子クラスはノードのラベルを省略することができます。
+<a class="xref" href="spgist-implementation.html#SPGIST-NULL-LABELS" title="65.4.2. ノードラベルのないSP-GiST">65.4.2</a>を参照してください。）
+省略可能ですが、内部タプルはそのすべてのメンバーを記述する<em class="firstterm">接頭辞</em>の値を持つことができます。
+基数木では、これは表現される文字列に共通の接頭辞とすることができます。
+接頭辞の値は、必ずしも本当の接頭辞である必要はなく、演算子クラスが必要とする任意の値で良いです。
+例えば四分木では、その中心点を保持し、4つの象限をそこから相対的に測るようにできます。
+そうすると、四分木の内部タプルはこの中心点の周りの象限に対応する4つのノードも含むことになるでしょう。
+ </p><p>
+<span class="original">
+  Some tree algorithms require knowledge of level (or depth) of the current
+  tuple, so the &lt;acronym&gt;SP-GiST&lt;/acronym&gt; core provides the possibility for
+  operator classes to manage level counting while descending the tree.
+  There is also support for incrementally reconstructing the represented
+  value when that is needed, and for passing down additional data (called
+  &lt;firstterm&gt;traverse values&lt;/firstterm&gt;) during a tree descent.
+</span>
+木構造のアルゴリズムには、現在のタプルのレベル(深さ)を知っていることが必要なものがあります。そこで、<acronym class="acronym">SP-GiST</acronym>のコアは、演算子クラスが木構造をたどって下がるときにレベル数の管理を可能にしています。
+また、必要であれば、表現される値を加算的に再構築すること、また木構造を下る間に追加データ（<em class="firstterm">探索値</em>と呼ばれます）を渡すこともサポートしています。
+ </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+   The &lt;acronym&gt;SP-GiST&lt;/acronym&gt; core code takes care of null entries.
+   Although &lt;acronym&gt;SP-GiST&lt;/acronym&gt; indexes do store entries for nulls
+   in indexed columns, this is hidden from the index operator class code:
+   no null index entries or search conditions will ever be passed to the
+   operator class methods.  (It is assumed that &lt;acronym&gt;SP-GiST&lt;/acronym&gt;
+   operators are strict and so cannot succeed for null values.)  Null values
+   are therefore not discussed further here.
+</span>
+<acronym class="acronym">SP-GiST</acronym>のコアのコードはnullエントリについても対応しています。
+<acronym class="acronym">SP-GiST</acronym>のインデックスはインデックス列がnullのエントリについても格納しますが、これはインデックスの演算子クラスのコードからは隠されているので、nullのインデックスエントリや検索条件が演算子クラスのメソッドに渡されることはありません。
+(<acronym class="acronym">SP-GiST</acronym>の演算子は厳格なのでNULL値について成功を返すことはできないと想定されています。)
+従って、ここではこれ以上、NULLについて議論しません。
+  </p></div><p>
+<span class="original">
+  There are five user-defined methods that an index operator class for
+  &lt;acronym&gt;SP-GiST&lt;/acronym&gt; must provide, and one is optional.  All five
+  mandatory methods follow the convention of accepting two &lt;type&gt;internal&lt;/type&gt;
+  arguments, the first of which is a pointer to a C struct containing input
+  values for the support method, while the second argument is a pointer to a
+  C struct where output values must be placed.  Four of the mandatory methods just
+  return &lt;type&gt;void&lt;/type&gt;, since all their results appear in the output struct; but
+  &lt;function&gt;leaf_consistent&lt;/function&gt; additionally returns a &lt;type&gt;boolean&lt;/type&gt; result.
+  The methods must not modify any fields of their input structs.  In all
+  cases, the output struct is initialized to zeroes before calling the
+  user-defined method.  Optional sixth method &lt;function&gt;compress&lt;/function&gt;
+  accepts datum to be indexed as the only argument and returns value suitable
+  for physical storage in leaf tuple.
+</span>
+<acronym class="acronym">SP-GiST</acronym>のインデックス演算子クラスが提供しなければならないユーザ定義メソッドは5つあり、加えて、オプションのメソッドが1つあります。
+5つの必須メソッド全ては2つの<code class="type">internal</code>引数を受け付けるというしきたりに従い、1つ目はサポートメソッドへの入力値を含むC構造体へのポインタで、一方2つ目は出力値が配置されるであろうC構造体へのポインタです。
+4つの必須メソッドでは、その結果がすべて出力構造体の中にあるので、単に<code class="type">void</code>を返します。<code class="function">leaf_consistent</code>は、さらに<code class="type">boolean</code>の結果を返します。
+メソッドは、その入力構造体のどのフィールドも変更してはいけません。
+どんな場合でも、出力構造体はユーザ定義メソッドを呼び出す前にゼロに初期化されます。
+オプションの6番目のメソッド<code class="function">compress</code>は、唯一の引数および戻り値として、リーフタプルの物理格納に適したインデックス付けされるデータを受け付けます。
+ </p><p>
+<span class="original">
+  The five mandatory user-defined methods are:
+</span>
+5つの必須ユーザ定義メソッドは以下のとおりです。
+ </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="function">config</code></span></dt><dd><p>
+<span class="original">
+       Returns static information about the index implementation, including
+       the data type OIDs of the prefix and node label data types.
+</span>
+接頭辞とノードラベルのデータ型のデータ型OIDを含め、インデックスの実装に関する静的情報を返します。
+      </p><p>
+<span class="original">
+      The &lt;acronym&gt;SQL&lt;/acronym&gt; declaration of the function must look like this:
+</span>
+関数の<acronym class="acronym">SQL</acronym>宣言は以下のようになります。
+</p><pre class="programlisting">
+CREATE FUNCTION my_config(internal, internal) RETURNS void ...
+</pre><p>
+<span class="original">
+      The first argument is a pointer to a &lt;structname&gt;spgConfigIn&lt;/structname&gt;
+      C struct, containing input data for the function.
+      The second argument is a pointer to a &lt;structname&gt;spgConfigOut&lt;/structname&gt;
+      C struct, which the function must fill with result data.
+</span>
+1番目の引数はCの<code class="structname">spgConfigIn</code>構造体へのポインタで、関数の入力データを含みます。
+2番目の引数はCの<code class="structname">spgConfigOut</code>構造体へのポインタで、関数が結果のデータを入れます。
+</p><pre class="programlisting">
+typedef struct spgConfigIn
+{
+<span class="original">
+    Oid         attType;        /* Data type to be indexed */
+</span>
+    Oid         attType;        /* インデックス付けされるデータ型 */
+} spgConfigIn;
+
+typedef struct spgConfigOut
+{
+<span class="original">
+    Oid         prefixType;     /* Data type of inner-tuple prefixes */
+    Oid         labelType;      /* Data type of inner-tuple node labels */
+    Oid         leafType;       /* Data type of leaf-tuple values */
+    bool        canReturnData;  /* Opclass can reconstruct original data */
+    bool        longValuesOK;   /* Opclass can cope with values &amp;gt; 1 page */
+</span>
+    Oid         prefixType;     /* 内部タプルの接頭辞のデータ型 */
+    Oid         labelType;      /* 内部タプルのノードのラベルのデータ型 */
+    Oid         leafType;       /* リーフタプル値のデータ型 */
+    bool        canReturnData;  /* 演算子クラスは元のデータを再構築できる */
+    bool        longValuesOK;   /* 演算子クラスは1ページより大きな値を扱える */
+} spgConfigOut;
+</pre><p>
+
+<span class="original">
+      &lt;structfield&gt;attType&lt;/structfield&gt; is passed in order to support polymorphic
+      index operator classes; for ordinary fixed-data-type operator classes, it
+      will always have the same value and so can be ignored.
+</span>
+<code class="structfield">attType</code>は多様のインデックス演算子クラスをサポートするために渡されます。
+通常の固定データ型の演算子クラスでは、それは常に同じ値を持っているので無視できます。
+     </p><p>
+<span class="original">
+      For operator classes that do not use prefixes,
+      &lt;structfield&gt;prefixType&lt;/structfield&gt; can be set to &lt;literal&gt;VOIDOID&lt;/literal&gt;.
+      Likewise, for operator classes that do not use node labels,
+      &lt;structfield&gt;labelType&lt;/structfield&gt; can be set to &lt;literal&gt;VOIDOID&lt;/literal&gt;.
+      &lt;structfield&gt;canReturnData&lt;/structfield&gt; should be set true if the operator class
+      is capable of reconstructing the originally-supplied index value.
+      &lt;structfield&gt;longValuesOK&lt;/structfield&gt; should be set true only when the
+      &lt;structfield&gt;attType&lt;/structfield&gt; is of variable length and the operator
+      class is capable of segmenting long values by repeated suffixing
+      (see &lt;xref linkend="spgist-limits"/&gt;).
+</span>
+接頭辞を使わない演算子クラスでは、<code class="structfield">prefixType</code>を<code class="literal">VOIDOID</code>に設定することができます。
+同様に、ノードラベルを使わない演算子クラスでは、<code class="structfield">labelType</code>を<code class="literal">VOIDOID</code>に設定することができます。
+演算子クラスが、元々提供されていたインデックスの値を再構築できるときは、<code class="structfield">canReturnData</code>をtrueにします。
+<code class="structfield">attType</code>が可変長で、演算子クラスが接尾辞付けの繰り返しによって長い値を分割できるときにのみ、<code class="structfield">longValuesOK</code>をtrueにします(<a class="xref" href="spgist-implementation.html#SPGIST-LIMITS" title="65.4.1. SP-GiSTの制限">65.4.1</a>参照)。
+     </p><p>
+<span class="original">
+      &lt;structfield&gt;leafType&lt;/structfield&gt; is typically the same as
+      &lt;structfield&gt;attType&lt;/structfield&gt;.  For the reasons of backward
+      compatibility, method &lt;function&gt;config&lt;/function&gt; can
+      leave &lt;structfield&gt;leafType&lt;/structfield&gt; uninitialized; that would
+      give the same effect as setting &lt;structfield&gt;leafType&lt;/structfield&gt; equal
+      to &lt;structfield&gt;attType&lt;/structfield&gt;.  When &lt;structfield&gt;attType&lt;/structfield&gt;
+      and &lt;structfield&gt;leafType&lt;/structfield&gt; are different, then optional
+      method &lt;function&gt;compress&lt;/function&gt; must be provided.
+      Method &lt;function&gt;compress&lt;/function&gt; is responsible
+      for transformation of datums to be indexed from &lt;structfield&gt;attType&lt;/structfield&gt;
+      to &lt;structfield&gt;leafType&lt;/structfield&gt;.
+      Note: both consistent functions will get &lt;structfield&gt;scankeys&lt;/structfield&gt;
+      unchanged, without transformation using &lt;function&gt;compress&lt;/function&gt;.
+</span>
+<code class="structfield">leafType</code>は一般的には<code class="structfield">attType</code>と同じです。
+後方互換性のため、<code class="function">config</code>メソッドは<code class="structfield">leafType</code>を初期化しないままにすることができます。
+このことは<code class="structfield">leafType</code>を<code class="structfield">attType</code>と同一に設定するのと同じ効果をもたらすでしょう。
+<code class="structfield">attType</code>と<code class="structfield">leafType</code>が異なるときには、オプションメソッド<code class="function">compress</code>が提供されなければなりません。
+メソッド<code class="function">compress</code>は<code class="structfield">attType</code>から<code class="structfield">leafType</code>へのインデックス付けされたデータの変換に責任を持ちます。
+注意: 両consistent関数は、<code class="function">compress</code>を使った変換を伴わない、変更されていない<code class="structfield">scankeys</code>を取得します。
+     </p></dd><dt><span class="term"><code class="function">choose</code></span></dt><dd><p>
+<span class="original">
+        Chooses a method for inserting a new value into an inner tuple.
+</span>
+内部タプルに新しい値を挿入するときのメソッドを選択します。
+      </p><p>
+<span class="original">
+      The &lt;acronym&gt;SQL&lt;/acronym&gt; declaration of the function must look like this:
+</span>
+関数の<acronym class="acronym">SQL</acronym>宣言は以下のようになります。
+</p><pre class="programlisting">
+CREATE FUNCTION my_choose(internal, internal) RETURNS void ...
+</pre><p>
+<span class="original">
+      The first argument is a pointer to a &lt;structname&gt;spgChooseIn&lt;/structname&gt;
+      C struct, containing input data for the function.
+      The second argument is a pointer to a &lt;structname&gt;spgChooseOut&lt;/structname&gt;
+      C struct, which the function must fill with result data.
+</span>
+1番目の引数はCの<code class="structname">spgChooseIn</code>構造体へのポインタで、関数の入力データを含みます。
+2番目の引数はCの<code class="structname">spgChooseOut</code>構造体へのポインタで、関数が結果のデータを入れます。
+</p><pre class="programlisting">
+typedef struct spgChooseIn
+{
+<span class="original">
+    Datum       datum;          /* original datum to be indexed */
+    Datum       leafDatum;      /* current datum to be stored at leaf */
+    int         level;          /* current level (counting from zero) */
+</span>
+    Datum       datum;          /* インデックス付けされる元のデータ */
+    Datum       leafDatum;      /* リーフに保存されている現在のデータ */
+    int         level;          /* (0から数えた)現在のレベル */
+
+<span class="original">
+    /* Data from current inner tuple */
+    bool        allTheSame;     /* tuple is marked all-the-same? */
+    bool        hasPrefix;      /* tuple has a prefix? */
+    Datum       prefixDatum;    /* if so, the prefix value */
+    int         nNodes;         /* number of nodes in the inner tuple */
+    Datum      *nodeLabels;     /* node label values (NULL if none) */
+</span>
+    /* 現在の内部タプルからのデータ */
+    bool        allTheSame;     /* タプルはall-the-sameの印を付けられているか */
+    bool        hasPrefix;      /* タプルは接頭辞を持っているか */
+    Datum       prefixDatum;    /* そうであれば、接頭辞の値 */
+    int         nNodes;         /* 内部タプル内のノード数 */
+    Datum      *nodeLabels;     /* ノードのラベルの値(なければNULL) */
+} spgChooseIn;
+
+typedef enum spgChooseResultType
+{
+<span class="original">
+    spgMatchNode = 1,           /* descend into existing node */
+    spgAddNode,                 /* add a node to the inner tuple */
+    spgSplitTuple               /* split inner tuple (change its prefix) */
+</span>
+    spgMatchNode = 1,           /* 既存のノードに下がる */
+    spgAddNode,                 /* ノードに内部タプルを追加する */
+    spgSplitTuple               /* 内部タプルを分割する(その接頭辞を変更する) */
+} spgChooseResultType;
+
+typedef struct spgChooseOut
+{
+<span class="original">
+    spgChooseResultType resultType;     /* action code, see above */
+</span>
+    spgChooseResultType resultType;     /* アクションコード、上記参照 */
+    union
+    {
+<span class="original">
+        struct                  /* results for spgMatchNode */
+</span>
+        struct                  /* spgMatchNodeの結果 */
+        {
+<span class="original">
+            int         nodeN;      /* descend to this node (index from 0) */
+            int         levelAdd;   /* increment level by this much */
+            Datum       restDatum;  /* new leaf datum */
+</span>
+            int         nodeN;      /* このノードに下がる(0からのインデックス) */
+            int         levelAdd;   /* この分だけレベルを増やす */
+            Datum       restDatum;  /* 新しいリーフデータ */
+        }           matchNode;
+<span class="original">
+        struct                  /* results for spgAddNode */
+</span>
+        struct                  /* spgAddNodeの結果 */
+        {
+<span class="original">
+            Datum       nodeLabel;  /* new node's label */
+            int         nodeN;      /* where to insert it (index from 0) */
+</span>
+            Datum       nodeLabel;  /* 新しいノードのラベル */
+            int         nodeN;      /* 挿入する場所(0からのインデックス) */
+        }           addNode;
+<span class="original">
+        struct                  /* results for spgSplitTuple */
+</span>
+        struct                  /* spgSplitTupleの結果 */
+        {
+<span class="original">
+            /* Info to form new upper-level inner tuple with one child tuple */
+            bool        prefixHasPrefix;    /* tuple should have a prefix? */
+            Datum       prefixPrefixDatum;  /* if so, its value */
+            int         prefixNNodes;       /* number of nodes */
+            Datum      *prefixNodeLabels;   /* their labels (or NULL for
+                                             * no labels) */
+            int         childNodeN;         /* which node gets child tuple */
+</span>
+            /* 子タプルを1つ持つ新しい上位のレベルの内部タプルを生成するための情報 */
+            bool        prefixHasPrefix;    /* タプルは接頭辞を持つか */
+            Datum       prefixPrefixDatum;  /* そうならば、その値 */
+            int         prefixNNodes;       /* ノード数 */
+            Datum      *prefixNodeLabels;   /* そのラベル(ラベルがなければNULL) */
+            int         childNodeN;         /* どのタプルが子タプルを得るか */
+
+<span class="original">
+            /* Info to form new lower-level inner tuple with all old nodes */
+            bool        postfixHasPrefix;   /* tuple should have a prefix? */
+            Datum       postfixPrefixDatum; /* if so, its value */
+</span>
+            /* 古いノードをすべて持つ新しい低位の内部タプルを生成するための情報 */
+            bool        postfixHasPrefix;   /* タプルは接頭辞を持つか */
+            Datum       postfixPrefixDatum; /* そうならば、その値 */
+        }           splitTuple;
+    }           result;
+} spgChooseOut;
+</pre><p>
+
+<span class="original">
+       &lt;structfield&gt;datum&lt;/structfield&gt; is the original datum of
+       &lt;structname&gt;spgConfigIn&lt;/structname&gt;.&lt;structfield&gt;attType&lt;/structfield&gt;
+       type that was to be inserted into the index.
+       &lt;structfield&gt;leafDatum&lt;/structfield&gt; is a value of
+       &lt;structname&gt;spgConfigOut&lt;/structname&gt;.&lt;structfield&gt;leafType&lt;/structfield&gt;
+       type which is initially an result of method
+       &lt;function&gt;compress&lt;/function&gt; applied to &lt;structfield&gt;datum&lt;/structfield&gt;
+       when method &lt;function&gt;compress&lt;/function&gt; is provided, or same value as
+       &lt;structfield&gt;datum&lt;/structfield&gt; otherwise.
+       &lt;structfield&gt;leafDatum&lt;/structfield&gt; can change at lower levels of the tree
+       if the &lt;function&gt;choose&lt;/function&gt; or &lt;function&gt;picksplit&lt;/function&gt;
+       methods change it.  When the insertion search reaches a leaf page,
+       the current value of &lt;structfield&gt;leafDatum&lt;/structfield&gt; is what will be stored
+       in the newly created leaf tuple.
+       &lt;structfield&gt;level&lt;/structfield&gt; is the current inner tuple's level, starting at
+       zero for the root level.
+       &lt;structfield&gt;allTheSame&lt;/structfield&gt; is true if the current inner tuple is
+       marked as containing multiple equivalent nodes
+       (see &lt;xref linkend="spgist-all-the-same"/&gt;).
+       &lt;structfield&gt;hasPrefix&lt;/structfield&gt; is true if the current inner tuple contains
+       a prefix; if so,
+       &lt;structfield&gt;prefixDatum&lt;/structfield&gt; is its value.
+       &lt;structfield&gt;nNodes&lt;/structfield&gt; is the number of child nodes contained in the
+       inner tuple, and
+       &lt;structfield&gt;nodeLabels&lt;/structfield&gt; is an array of their label values, or
+       NULL if there are no labels.
+</span>
+<code class="structfield">datum</code>はインデックスに挿入できた<code class="structname">spgConfigIn</code>.<code class="structfield">attType</code>型の元データです。
+<code class="structfield">leafDatum</code>は<code class="structname">spgConfigOut</code>.<code class="structfield">leafType</code>型の値です。これは最初は、メソッド<code class="function">compress</code>が提供されているなら<code class="structfield">datum</code>に適用されたメソッド<code class="function">compress</code>の結果で、さもなくば<code class="structfield">datum</code>と同じ値です。
+<code class="structfield">leafDatum</code>は、<code class="function">choose</code>や<code class="function">picksplit</code>メソッドがこれを変更すると、ツリーのより低いレベルで変化することがあります。
+挿入の探索がリーフページに到達するとき、<code class="structfield">leafDatum</code>の現在値は、新しく作成されるリーフタプルに格納される値です。
+<code class="structfield">level</code>は、ルートレベルを0として、現在の内部タプルのレベルを示します。
+現在の内部タプルが複数の同等なノードを含むとして印を付けられているとき、<code class="structfield">allTheSame</code>をtrueにします(<a class="xref" href="spgist-implementation.html#SPGIST-ALL-THE-SAME" title="65.4.3. 「All-the-same」内部タプル">65.4.3</a>参照)。
+現在の内部タプルが接頭辞を含むとき、<code class="structfield">hasPrefix</code>をtrueにします。
+このとき、<code class="structfield">prefixDatum</code>がその値になります。
+<code class="structfield">nNodes</code>は内部タプルが含む子ノードの数で、<code class="structfield">nodeLabels</code>はそれらのラベル値の配列、あるいはラベルがなければNULLになります。
+      </p><p>
+<span class="original">
+       The &lt;function&gt;choose&lt;/function&gt; function can determine either that
+       the new value matches one of the existing child nodes, or that a new
+       child node must be added, or that the new value is inconsistent with
+       the tuple prefix and so the inner tuple must be split to create a
+       less restrictive prefix.
+</span>
+<code class="function">choose</code>関数は、新しい値が既存の子ノードの1つとマッチするか、新しい子ノードを追加する必要があるか、あるいは新しい値がタプルの接頭辞と適合しないので内部タプルを分割してより制限のない接頭辞を作成する必要があるか、を決定することができます。
+      </p><p>
+<span class="original">
+       If the new value matches one of the existing child nodes,
+       set &lt;structfield&gt;resultType&lt;/structfield&gt; to &lt;literal&gt;spgMatchNode&lt;/literal&gt;.
+       Set &lt;structfield&gt;nodeN&lt;/structfield&gt; to the index (from zero) of that node in
+       the node array.
+       Set &lt;structfield&gt;levelAdd&lt;/structfield&gt; to the increment in
+       &lt;structfield&gt;level&lt;/structfield&gt; caused by descending through that node,
+       or leave it as zero if the operator class does not use levels.
+       Set &lt;structfield&gt;restDatum&lt;/structfield&gt; to equal &lt;structfield&gt;leafDatum&lt;/structfield&gt;
+       if the operator class does not modify datums from one level to the
+       next, or otherwise set it to the modified value to be used as
+       &lt;structfield&gt;leafDatum&lt;/structfield&gt; at the next level.
+</span>
+新しい値が既存の子ノードの1つにマッチしたときは、<code class="structfield">resultType</code>を<code class="literal">spgMatchNode</code>にセットします。
+<code class="structfield">nodeN</code>はノードの配列中のそのノードの(0からの)番号にセットします。
+<code class="structfield">levelAdd</code>は、そのノードをたどって下がるときに生じた<code class="structfield">level</code>の増分にセットします。あるいは演算子クラスがレベルを使っていなければ0のままにします。
+<code class="structfield">restDatum</code>は、演算子クラスがデータをあるレベルから次のレベルに変更しないのであれば、<code class="structfield">datum</code>に等しくセットします。そうでなければ、次のレベルで<code class="structfield">leafDatum</code>として使われる修正された値にセットします。
+      </p><p>
+<span class="original">
+       If a new child node must be added,
+       set &lt;structfield&gt;resultType&lt;/structfield&gt; to &lt;literal&gt;spgAddNode&lt;/literal&gt;.
+       Set &lt;structfield&gt;nodeLabel&lt;/structfield&gt; to the label to be used for the new
+       node, and set &lt;structfield&gt;nodeN&lt;/structfield&gt; to the index (from zero) at which
+       to insert the node in the node array.
+       After the node has been added, the &lt;function&gt;choose&lt;/function&gt;
+       function will be called again with the modified inner tuple;
+       that call should result in an &lt;literal&gt;spgMatchNode&lt;/literal&gt; result.
+</span>
+新しい子ノードを追加しなければならないときは、<code class="structfield">resultType</code>を<code class="literal">spgAddNode</code>にセットします。
+<code class="structfield">nodeLabel</code>は、新しいノードで使われるラベルにセットし、<code class="structfield">nodeN</code>はノードの配列中の挿入される場所のノードの(0からの)番号にセットします。
+ノードを追加した後で、<code class="function">choose</code>関数を修正された内部タプルを使って再び呼び出しますが、このときは、<code class="literal">spgMatchNode</code>という結果になるはずです。
+      </p><p>
+<span class="original">
+       If the new value is inconsistent with the tuple prefix,
+       set &lt;structfield&gt;resultType&lt;/structfield&gt; to &lt;literal&gt;spgSplitTuple&lt;/literal&gt;.
+       This action moves all the existing nodes into a new lower-level
+       inner tuple, and replaces the existing inner tuple with a tuple
+       having a single downlink pointing to the new lower-level inner tuple.
+       Set &lt;structfield&gt;prefixHasPrefix&lt;/structfield&gt; to indicate whether the new
+       upper tuple should have a prefix, and if so set
+       &lt;structfield&gt;prefixPrefixDatum&lt;/structfield&gt; to the prefix value.  This new
+       prefix value must be sufficiently less restrictive than the original
+       to accept the new value to be indexed.
+       Set &lt;structfield&gt;prefixNNodes&lt;/structfield&gt; to the number of nodes needed in the
+       new tuple, and set &lt;structfield&gt;prefixNodeLabels&lt;/structfield&gt; to a palloc'd array
+       holding their labels, or to NULL if node labels are not required.
+       Note that the total size of the new upper tuple must be no more
+       than the total size of the tuple it is replacing; this constrains
+       the lengths of the new prefix and new labels.
+       Set &lt;structfield&gt;childNodeN&lt;/structfield&gt; to the index (from zero) of the node
+       that will downlink to the new lower-level inner tuple.
+       Set &lt;structfield&gt;postfixHasPrefix&lt;/structfield&gt; to indicate whether the new
+       lower-level inner tuple should have a prefix, and if so set
+       &lt;structfield&gt;postfixPrefixDatum&lt;/structfield&gt; to the prefix value.  The
+       combination of these two prefixes and the downlink node's label
+       (if any) must have the same meaning as the original prefix, because
+       there is no opportunity to alter the node labels that are moved to
+       the new lower-level tuple, nor to change any child index entries.
+       After the node has been split, the &lt;function&gt;choose&lt;/function&gt;
+       function will be called again with the replacement inner tuple.
+       That call may return an &lt;literal&gt;spgAddNode&lt;/literal&gt; result, if no suitable
+       node was created by the &lt;literal&gt;spgSplitTuple&lt;/literal&gt; action.  Eventually
+       &lt;function&gt;choose&lt;/function&gt; must return &lt;literal&gt;spgMatchNode&lt;/literal&gt; to
+       allow the insertion to descend to the next level.
+</span>
+新しい値がタプルの接頭辞と適合しないときは、<code class="structfield">resultType</code>を<code class="literal">spgSplitTuple</code>にセットします。
+このアクションは、すべての既存のノードを新しい低位の内部タプルに移動し、新しい低位の内部タプルを指す単一の下向きのリンクを持つ新しいタプルで既存のタプルを置換します。
+<code class="structfield">prefixHasPrefix</code>は新しい上位のタプルが接頭辞を持つかどうかを示し、持つ場合には<code class="structfield">prefixPrefixDatum</code>をその接頭辞の値にセットします。
+インデックスに追加される新しい値を受け入れるため、新しい接頭辞の値は元のものよりも十分に制限の緩いものになっていなければなりません。
+<code class="structfield">prefixNNodes</code>は新しいタプルで必要なノード数にセットし、<code class="structfield">prefixNodeLabels</code>はラベルを保持するためにpallocされた配列に、ノードのラベルが必要でないときはNULLにセットします。
+新しい上位のタプルの全サイズは置き換えるタプルの全サイズよりも大きくはないことに注意してください。これは新しい接頭辞と新しいラベルの長さを制約します。
+<code class="structfield">childNodeN</code>は、新しい低位の内部タプルへ下向きにリンクするノードの(0からの)番号にセットします。
+<code class="structfield">postfixHasPrefix</code>は、新しい低位のタプルが接頭辞を持つかどうかを示し、持つときには<code class="structfield">postfixPrefixDatum</code>を接頭辞の値にセットします。
+新しい低位に移動したタプルのノードのラベルを変更する機会も、子のインデックスのエントリを変更する機会もありませんから、これら2つの接頭辞と(もしあれば)下向きのリンクのノードのラベルの組み合わせは、元の接頭辞と同じ意味を持つ必要があります。
+ノードが分割された後で、置換した内部タプルを使って<code class="function">choose</code>関数を再び呼び出します。
+この呼び出しは、<code class="literal">spgSplitTuple</code>アクションにより適切なノードが作られなければ、<code class="literal">spgAddNode</code>という結果になります。
+そのうち、<code class="function">choose</code>が<code class="literal">spgMatchNode</code>を返し、次のレベルに下がる挿入が可能となります。
+      </p></dd><dt><span class="term"><code class="function">picksplit</code></span></dt><dd><p>
+<span class="original">
+       Decides how to create a new inner tuple over a set of leaf tuples.
+</span>
+リーフタプルの集合に対し、新しい内部タプルをどうやって作るかを決定します。
+      </p><p>
+<span class="original">
+        The &lt;acronym&gt;SQL&lt;/acronym&gt; declaration of the function must look like this:
+</span>
+関数の<acronym class="acronym">SQL</acronym>宣言は以下のようになります。
+</p><pre class="programlisting">
+CREATE FUNCTION my_picksplit(internal, internal) RETURNS void ...
+</pre><p>
+<span class="original">
+      The first argument is a pointer to a &lt;structname&gt;spgPickSplitIn&lt;/structname&gt;
+      C struct, containing input data for the function.
+      The second argument is a pointer to a &lt;structname&gt;spgPickSplitOut&lt;/structname&gt;
+      C struct, which the function must fill with result data.
+</span>
+1番目の引数はCの<code class="structname">spgPickSplitIn</code>構造体へのポインタで、関数の入力データを含みます。
+2番目の引数はCの<code class="structname">spgPickSplitOut</code>構造体へのポインタで、関数が結果のデータを入れます。
+</p><pre class="programlisting">
+typedef struct spgPickSplitIn
+{
+<span class="original">
+    int         nTuples;        /* number of leaf tuples */
+    Datum      *datums;         /* their datums (array of length nTuples) */
+    int         level;          /* current level (counting from zero) */
+</span>
+    int         nTuples;        /* リーフタプルの数 */
+    Datum      *datums;         /* そのデータ(長さnTuplesの配列) */
+    int         level;          /* (0から数えた)現在のレベル */
+} spgPickSplitIn;
+
+typedef struct spgPickSplitOut
+{
+<span class="original">
+    bool        hasPrefix;      /* new inner tuple should have a prefix? */
+    Datum       prefixDatum;    /* if so, its value */
+</span>
+    bool        hasPrefix;      /* 新しい内部タプルは接頭辞を持つか */
+    Datum       prefixDatum;    /* もしそうなら、その値 */
+
+<span class="original">
+    int         nNodes;         /* number of nodes for new inner tuple */
+    Datum      *nodeLabels;     /* their labels (or NULL for no labels) */
+</span>
+    int         nNodes;         /* 新しい内部タプルのノード数 */
+    Datum      *nodeLabels;     /* そのラベル(ラベルがなければNULL) */
+
+<span class="original">
+    int        *mapTuplesToNodes;   /* node index for each leaf tuple */
+    Datum      *leafTupleDatums;    /* datum to store in each new leaf tuple */
+</span>
+    int        *mapTuplesToNodes;   /* 各リーフタプルへのノードのインデックス */
+    Datum      *leafTupleDatums;    /* 新しい各リーフタプルに保存されているデータ */
+} spgPickSplitOut;
+</pre><p>
+
+<span class="original">
+       &lt;structfield&gt;nTuples&lt;/structfield&gt; is the number of leaf tuples provided.
+       &lt;structfield&gt;datums&lt;/structfield&gt; is an array of their datum values of
+       &lt;structname&gt;spgConfigOut&lt;/structname&gt;.&lt;structfield&gt;leafType&lt;/structfield&gt;
+       type.
+       &lt;structfield&gt;level&lt;/structfield&gt; is the current level that all the leaf tuples
+       share, which will become the level of the new inner tuple.
+</span>
+<code class="structfield">nTuples</code>は与えられるリーフタプルの個数です。
+<code class="structfield">datums</code>は<code class="structname">spgConfigOut</code>.<code class="structfield">leafType</code>型のそれらのデータ値の配列です。
+<code class="structfield">level</code>はすべてのリーフタプルが共有する現在のレベルで、これが新しい内部タプルのレベルになります。
+      </p><p>
+<span class="original">
+       Set &lt;structfield&gt;hasPrefix&lt;/structfield&gt; to indicate whether the new inner
+       tuple should have a prefix, and if so set
+       &lt;structfield&gt;prefixDatum&lt;/structfield&gt; to the prefix value.
+       Set &lt;structfield&gt;nNodes&lt;/structfield&gt; to indicate the number of nodes that
+       the new inner tuple will contain, and
+       set &lt;structfield&gt;nodeLabels&lt;/structfield&gt; to an array of their label values,
+       or to NULL if node labels are not required.
+       Set &lt;structfield&gt;mapTuplesToNodes&lt;/structfield&gt; to an array that gives the index
+       (from zero) of the node that each leaf tuple should be assigned to.
+       Set &lt;structfield&gt;leafTupleDatums&lt;/structfield&gt; to an array of the values to
+       be stored in the new leaf tuples (these will be the same as the
+       input &lt;structfield&gt;datums&lt;/structfield&gt; if the operator class does not modify
+       datums from one level to the next).
+       Note that the &lt;function&gt;picksplit&lt;/function&gt; function is
+       responsible for palloc'ing the
+       &lt;structfield&gt;nodeLabels&lt;/structfield&gt;, &lt;structfield&gt;mapTuplesToNodes&lt;/structfield&gt; and
+       &lt;structfield&gt;leafTupleDatums&lt;/structfield&gt; arrays.
+</span>
+<code class="structfield">hasPrefix</code>は新しい内部タプルが接頭辞を持つかどうかを示し、持つ場合は<code class="structfield">prefixDatum</code>を接頭辞の値にセットします。
+<code class="structfield">nNodes</code>は新しい内部タプルが含むノードの数を示し、<code class="structfield">nodeLabels</code>はそのラベル値の配列に、ノードのラベルが必要でないときはNULLにセットします。
+<code class="structfield">mapTuplesToNodes</code>は、それぞれのリーフタプルが割り当てられるノードの(0からの)番号の配列にセットします。
+<code class="structfield">leafTupleDatums</code>は新しいリーフタプルに格納される値の配列にセットします(演算子クラスがデータをあるレベルから次のレベルに変更しなければこれらは入力の<code class="structfield">datums</code>と同じになります)。
+<code class="function">picksplit</code>関数は、<code class="structfield">nodeLabels</code>、<code class="structfield">mapTuplesToNodes</code>、<code class="structfield">leafTupleDatums</code>の配列についてpallocしなければならないことに注意してください。
+      </p><p>
+<span class="original">
+       If more than one leaf tuple is supplied, it is expected that the
+       &lt;function&gt;picksplit&lt;/function&gt; function will classify them into more than
+       one node; otherwise it is not possible to split the leaf tuples
+       across multiple pages, which is the ultimate purpose of this
+       operation.  Therefore, if the &lt;function&gt;picksplit&lt;/function&gt; function
+       ends up placing all the leaf tuples in the same node, the core
+       SP-GiST code will override that decision and generate an inner
+       tuple in which the leaf tuples are assigned at random to several
+       identically-labeled nodes.  Such a tuple is marked
+       &lt;literal&gt;allTheSame&lt;/literal&gt; to signify that this has happened.  The
+       &lt;function&gt;choose&lt;/function&gt; and &lt;function&gt;inner_consistent&lt;/function&gt; functions
+       must take suitable care with such inner tuples.
+       See &lt;xref linkend="spgist-all-the-same"/&gt; for more information.
+</span>
+2つ以上のリーフタプルを与えた場合、<code class="function">picksplit</code>関数はそれらを2つ以上のノードに分類すると予想されます。そうでなければ、リーフタプルを複数のページにまたがって分割するという、この操作の究極の目的を実現できないからです。
+従って、<code class="function">picksplit</code>がすべてのリーフタプルを同じノードに置くことになった場合には、SP-GiSTのコアのコードがその決定を覆して内部タプルを生成し、その中の複数の同一のラベルが付けられたノードに、リーフタプルが無作為に割り当てられます。
+そのようなタプルは、このことが発生したことを明示するため、<code class="literal">allTheSame</code>と印がつけられます。
+<code class="function">choose</code>関数と<code class="function">inner_consistent</code>関数は、これらの内部タプルについて、適切な注意をして取り扱わなければなりません。
+詳細な情報は<a class="xref" href="spgist-implementation.html#SPGIST-ALL-THE-SAME" title="65.4.3. 「All-the-same」内部タプル">65.4.3</a>を参照してください。
+      </p><p>
+<span class="original">
+       &lt;function&gt;picksplit&lt;/function&gt; can be applied to a single leaf tuple only
+       in the case that the &lt;function&gt;config&lt;/function&gt; function set
+       &lt;structfield&gt;longValuesOK&lt;/structfield&gt; to true and a larger-than-a-page input
+       value has been supplied.  In this case the point of the operation is
+       to strip off a prefix and produce a new, shorter leaf datum value.
+       The call will be repeated until a leaf datum short enough to fit on
+       a page has been produced.  See &lt;xref linkend="spgist-limits"/&gt; for
+       more information.
+</span>
+<code class="function">config</code>関数が<code class="structfield">longValuesOK</code>をtrueにセットし、1ページよりも大きな入力値を与える場合にのみ、<code class="function">picksplit</code>を1つだけのリーフタプルに適用できます。
+この場合の操作の重要な点は、接頭辞をはがして、新しい、より短いリーフデータの値を生成することです。
+この呼出は、1ページに収まる短さのリーフデータが生成されるまで繰り返されます。
+詳細な情報は<a class="xref" href="spgist-implementation.html#SPGIST-LIMITS" title="65.4.1. SP-GiSTの制限">65.4.1</a>を参照してください。
+      </p></dd><dt><span class="term"><code class="function">inner_consistent</code></span></dt><dd><p>
+<span class="original">
+       Returns set of nodes (branches) to follow during tree search.
+</span>
+ツリーの探索でたどるべきノード(枝)の集合を返します。
+      </p><p>
+<span class="original">
+       The &lt;acronym&gt;SQL&lt;/acronym&gt; declaration of the function must look like this:
+</span>
+関数の<acronym class="acronym">SQL</acronym>宣言は以下のようになります。
+</p><pre class="programlisting">
+CREATE FUNCTION my_inner_consistent(internal, internal) RETURNS void ...
+</pre><p>
+<span class="original">
+      The first argument is a pointer to a &lt;structname&gt;spgInnerConsistentIn&lt;/structname&gt;
+      C struct, containing input data for the function.
+      The second argument is a pointer to a &lt;structname&gt;spgInnerConsistentOut&lt;/structname&gt;
+      C struct, which the function must fill with result data.
+</span>
+1番目の引数はCの<code class="structname">spgInnerConsistentIn</code>構造体へのポインタで、関数の入力データを含みます。
+2番目の引数はCの<code class="structname">spgInnerConsistentOut</code>構造体へのポインタで、関数が結果のデータを入れます。
+
+</p><pre class="programlisting">
+typedef struct spgInnerConsistentIn
+{
+<span class="original">
+    ScanKey     scankeys;       /* array of operators and comparison values */
+    int         nkeys;          /* length of array */
+</span>
+    ScanKey     scankeys;       /* 演算子と比較する値の配列 */
+    int         nkeys;          /* 配列の長さ */
+
+<span class="original">
+    Datum       reconstructedValue;     /* value reconstructed at parent */
+    void       *traversalValue; /* opclass-specific traverse value */
+    MemoryContext traversalMemoryContext;   /* put new traverse values here */
+    int         level;          /* current level (counting from zero) */
+    bool        returnData;     /* original data must be returned? */
+</span>
+    Datum       reconstructedValue;     /* 親で再構築された値 */
+    void       *traversalValue; /* 演算子クラスに固有の探索値 */
+    MemoryContext traversalMemoryContext;   /* 新しい探索値をここに入れる */
+    int         level;          /* (0から数えた)現在のレベル */
+    bool        returnData;     /* 元のデータを返さなければならないか */
+
+<span class="original">
+    /* Data from current inner tuple */
+    bool        allTheSame;     /* tuple is marked all-the-same? */
+    bool        hasPrefix;      /* tuple has a prefix? */
+    Datum       prefixDatum;    /* if so, the prefix value */
+    int         nNodes;         /* number of nodes in the inner tuple */
+    Datum      *nodeLabels;     /* node label values (NULL if none) */
+</span>
+    /* 現在の内部タプルからのデータ */
+    bool        allTheSame;     /* タプルはall-the-sameと印が付けられているか */
+    bool        hasPrefix;      /* タプルは接頭辞を持つか */
+    Datum       prefixDatum;    /* もしそうなら、接頭辞の値 */
+    int         nNodes;         /* 内部タプルの中のノード数 */
+    Datum      *nodeLabels;     /* ノードのラベルの値(なければNULL) */
+} spgInnerConsistentIn;
+
+typedef struct spgInnerConsistentOut
+{
+<span class="original">
+    int         nNodes;         /* number of child nodes to be visited */
+    int        *nodeNumbers;    /* their indexes in the node array */
+    int        *levelAdds;      /* increment level by this much for each */
+    Datum      *reconstructedValues;    /* associated reconstructed values */
+    void      **traversalValues;        /* opclass-specific traverse values */
+</span>
+    int         nNodes;         /* 訪れるべき子ノードの数 */
+    int        *nodeNumbers;    /* ノードの配列でのそのインデックス */
+    int        *levelAdds;      /* この分だけそれぞれレベルを挙げる */
+    Datum      *reconstructedValues;    /* 関連する再構築された値 */
+    void      **traversalValues;        /* 演算子クラスに固有の探索値 */
+} spgInnerConsistentOut;
+</pre><p>
+
+<span class="original">
+       The array &lt;structfield&gt;scankeys&lt;/structfield&gt;, of length &lt;structfield&gt;nkeys&lt;/structfield&gt;,
+       describes the index search condition(s).  These conditions are
+       combined with AND &amp;mdash; only index entries that satisfy all of
+       them are interesting.  (Note that &lt;structfield&gt;nkeys&lt;/structfield&gt; = 0 implies
+       that all index entries satisfy the query.)  Usually the consistent
+       function only cares about the &lt;structfield&gt;sk_strategy&lt;/structfield&gt; and
+       &lt;structfield&gt;sk_argument&lt;/structfield&gt; fields of each array entry, which
+       respectively give the indexable operator and comparison value.
+       In particular it is not necessary to check &lt;structfield&gt;sk_flags&lt;/structfield&gt; to
+       see if the comparison value is NULL, because the SP-GiST core code
+       will filter out such conditions.
+       &lt;structfield&gt;reconstructedValue&lt;/structfield&gt; is the value reconstructed for the
+       parent tuple; it is &lt;literal&gt;(Datum) 0&lt;/literal&gt; at the root level or if the
+       &lt;function&gt;inner_consistent&lt;/function&gt; function did not provide a value at the
+       parent level. &lt;structfield&gt;reconstructedValue&lt;/structfield&gt; is always of
+       &lt;structname&gt;spgConfigOut&lt;/structname&gt;.&lt;structfield&gt;leafType&lt;/structfield&gt; type.
+       &lt;structfield&gt;traversalValue&lt;/structfield&gt; is a pointer to any traverse data
+       passed down from the previous call of &lt;function&gt;inner_consistent&lt;/function&gt;
+       on the parent index tuple, or NULL at the root level.
+       &lt;structfield&gt;traversalMemoryContext&lt;/structfield&gt; is the memory context in which
+       to store output traverse values (see below).
+       &lt;structfield&gt;level&lt;/structfield&gt; is the current inner tuple's level, starting at
+       zero for the root level.
+       &lt;structfield&gt;returnData&lt;/structfield&gt; is &lt;literal&gt;true&lt;/literal&gt; if reconstructed data is
+       required for this query; this will only be so if the
+       &lt;function&gt;config&lt;/function&gt; function asserted &lt;structfield&gt;canReturnData&lt;/structfield&gt;.
+       &lt;structfield&gt;allTheSame&lt;/structfield&gt; is true if the current inner tuple is
+       marked &lt;quote&gt;all-the-same&lt;/quote&gt;; in this case all the nodes have the
+       same label (if any) and so either all or none of them match the query
+       (see &lt;xref linkend="spgist-all-the-same"/&gt;).
+       &lt;structfield&gt;hasPrefix&lt;/structfield&gt; is true if the current inner tuple contains
+       a prefix; if so,
+       &lt;structfield&gt;prefixDatum&lt;/structfield&gt; is its value.
+       &lt;structfield&gt;nNodes&lt;/structfield&gt; is the number of child nodes contained in the
+       inner tuple, and
+       &lt;structfield&gt;nodeLabels&lt;/structfield&gt; is an array of their label values, or
+       NULL if the nodes do not have labels.
+</span>
+配列<code class="structfield">scankeys</code>は長さが<code class="structfield">nkeys</code>で、インデックス検索の条件を記述します。
+複数の条件はANDで結合されます。つまり、条件のすべてを満たすインデックスエントリのみが対象となります。
+(<code class="structfield">nkeys</code> = 0 は全インデックスエントリが問い合わせを満たす意味になる、ということに注意してください。)
+通常、consistent関数では、配列のそれぞれのエントリの<code class="structfield">sk_strategy</code>および<code class="structfield">sk_argument</code>フィールドのみが問題となります。これらのフィールドにはそれぞれインデックス付け可能な演算子と比較値が入ります。
+とりわけ、比較値がNULLかどうかを確認するために<code class="structfield">sk_flags</code>を検査する必要はありません。なぜならSP-GiSTのコアのコードがそのような条件を除外するからです。
+<code class="structfield">reconstructedValue</code>は親タプルのために再構築された値で、ルートレベルの場合、あるいは親レベルの<code class="function">inner_consistent</code>関数が値を返さなかった場合は<code class="literal">(Datum) 0</code>となります。
+<code class="structfield">reconstructedValue</code>は常に<code class="structname">spgConfigOut</code>.<code class="structfield">leafType</code>型です。
+<code class="structfield">traversalValue</code>は親インデックスのタプルの<code class="function">inner_consistent</code>の前の呼び出しから渡された探索データへのポインタで、ルートレベルならNULLです。
+<code class="structfield">traversalMemoryContext</code>は出力探索値が格納されるメモリコンテキストです（以下を参照）。
+<code class="structfield">level</code>は現在の内部タプルのレベルを、ルートレベルを0として数えたものです。
+<code class="structfield">returnData</code>は、この問い合わせで再構築されたデータが必要な場合に<code class="literal">true</code>となりますが、これは<code class="function">config</code>関数が<code class="structfield">canReturnData</code>であると主張した場合にのみ、そうなります。
+現在の内部タプルが<span class="quote">「<span class="quote">all-the-same</span>」</span>と印付けされているなら、<code class="structfield">allTheSame</code>は真になります。この場合、（もしあるなら）全てのノードが同じラベルを持ち、問い合わせに全てが一致するか、全く一致しないかのいずれかになります（<a class="xref" href="spgist-implementation.html#SPGIST-ALL-THE-SAME" title="65.4.3. 「All-the-same」内部タプル">65.4.3</a>を参照）。
+現在の内部タプルがプレフィックスを含んでいるなら<code class="structfield">hasPrefix</code>は真になります。その場合、<code class="structfield">prefixDatum</code>がその値です。
+<code class="structfield">nNodes</code>は内部タプルに含まれる子ノードの数で、<code class="structfield">nodeLabels</code>はそれらのラベル値の配列、あるいは、ノードがラベルを持たないならNULLです。
+      </p><p>
+<span class="original">
+       &lt;structfield&gt;nNodes&lt;/structfield&gt; must be set to the number of child nodes that
+       need to be visited by the search, and
+       &lt;structfield&gt;nodeNumbers&lt;/structfield&gt; must be set to an array of their indexes.
+       If the operator class keeps track of levels, set
+       &lt;structfield&gt;levelAdds&lt;/structfield&gt; to an array of the level increments
+       required when descending to each node to be visited.  (Often these
+       increments will be the same for all the nodes, but that's not
+       necessarily so, so an array is used.)
+       If value reconstruction is needed, set
+       &lt;structfield&gt;reconstructedValues&lt;/structfield&gt; to an array of the values
+       of &lt;structname&gt;spgConfigOut&lt;/structname&gt;.&lt;structfield&gt;leafType&lt;/structfield&gt; type
+       reconstructed for each child node to be visited; otherwise, leave
+       &lt;structfield&gt;reconstructedValues&lt;/structfield&gt; as NULL.
+       If it is desired to pass down additional out-of-band information
+       (&lt;quote&gt;traverse values&lt;/quote&gt;) to lower levels of the tree search,
+       set &lt;structfield&gt;traversalValues&lt;/structfield&gt; to an array of the appropriate
+       traverse values, one for each child node to be visited; otherwise,
+       leave &lt;structfield&gt;traversalValues&lt;/structfield&gt; as NULL.
+       Note that the &lt;function&gt;inner_consistent&lt;/function&gt; function is
+       responsible for palloc'ing the
+       &lt;structfield&gt;nodeNumbers&lt;/structfield&gt;, &lt;structfield&gt;levelAdds&lt;/structfield&gt;,
+       &lt;structfield&gt;reconstructedValues&lt;/structfield&gt;, and
+       &lt;structfield&gt;traversalValues&lt;/structfield&gt; arrays in the current memory context.
+       However, any output traverse values pointed to by
+       the &lt;structfield&gt;traversalValues&lt;/structfield&gt; array should be allocated
+       in &lt;structfield&gt;traversalMemoryContext&lt;/structfield&gt;.
+       Each traverse value must be a single palloc'd chunk.
+</span>
+<code class="structfield">nNodes</code>は探索で訪れる必要のある子ノードの数にセットされなければなりません。また、<code class="structfield">nodeNumbers</code>はそれらの番号の配列にセットされなければなりません。
+演算子クラスがレベルを監視しているときは、それぞれのノードへと下って訪れるときに必要なレベルの増分の配列を<code class="structfield">levelAdds</code>にセットします。
+(この増分はすべてのノードについて同じになることも多いですが、必ずしもそうなるとは限らないので配列が使われます。)
+値の再構築が必要なときには、訪れるそれぞれの子ノードについて再構築された値の配列を<code class="structfield">reconstructedValues</code>にセットします。再構築が必要でなければ、<code class="structfield">reconstructedValues</code>をNULLのままにします。
+追加の外部情報（<span class="quote">「<span class="quote">探索値</span>」</span>）をツリー探索の下位レベルに渡したい場合は、<code class="structfield">traversalValues</code>を適切な探索値、訪れるそれぞれの子ノードについて1つの配列にセットします。
+それ以外の場合は<code class="structfield">traversalValues</code>をNULLのままにします。
+<code class="function">inner_consistent</code>関数は、現在のメモリコンテキスト内の<code class="structfield">nodeNumbers</code>、<code class="structfield">levelAdds</code>、<code class="structfield">reconstructedValues</code>、<code class="structfield">traversalValues</code>の配列についてpallocしなければならないことに注意してください。
+ただし、<code class="structfield">traversalValues</code>配列が指すすべての出力探索値は<code class="structfield">traversalMemoryContext</code>内に割り当てられます。
+それぞれの探索値は1つのpallocされた塊でなければなりません。
+      </p></dd><dt><span class="term"><code class="function">leaf_consistent</code></span></dt><dd><p>
+<span class="original">
+       Returns true if a leaf tuple satisfies a query.
+</span>
+リーフタプルが問い合わせを満たす場合、trueを返します。
+      </p><p>
+<span class="original">
+       The &lt;acronym&gt;SQL&lt;/acronym&gt; declaration of the function must look like this:
+&lt;programlisting&gt;
+CREATE FUNCTION my_leaf_consistent(internal, internal) RETURNS bool ...
+&lt;/programlisting&gt;
+</span>
+関数の<acronym class="acronym">SQL</acronym>宣言は以下のようになります。
+</p><pre class="programlisting">
+CREATE FUNCTION my_leaf_consistent(internal, internal) RETURNS bool ...
+</pre><p>
+<span class="original">
+      The first argument is a pointer to a &lt;structname&gt;spgLeafConsistentIn&lt;/structname&gt;
+      C struct, containing input data for the function.
+      The second argument is a pointer to a &lt;structname&gt;spgLeafConsistentOut&lt;/structname&gt;
+      C struct, which the function must fill with result data.
+</span>
+1番目の引数はCの<code class="structname">spgLeafConsistentIn</code>構造体へのポインタで、関数の入力データを含みます。
+2番目の引数はCの<code class="structname">spgLeafConsistentOut</code>構造体へのポインタで、関数が結果のデータを入れます。
+</p><pre class="programlisting">
+typedef struct spgLeafConsistentIn
+{
+<span class="original">
+    ScanKey     scankeys;       /* array of operators and comparison values */
+    int         nkeys;          /* length of array */
+</span>
+    ScanKey     scankeys;       /* 演算子と比較する値の配列 */
+    int         nkeys;          /* 配列の長さ */
+
+<span class="original">
+    Datum       reconstructedValue;     /* value reconstructed at parent */
+    void       *traversalValue; /* opclass-specific traverse value */
+    int         level;          /* current level (counting from zero) */
+    bool        returnData;     /* original data must be returned? */
+</span>
+    Datum       reconstructedValue;     /* 親で再構築された値 */
+    void       *traversalValue; /* 演算子クラスに固有の探索値 */
+    int         level;          /* (0から数えた)現在のレベル */
+    bool        returnData;     /* 元のデータを返さなければならないか */
+
+<span class="original">
+    Datum       leafDatum;      /* datum in leaf tuple */
+</span>
+    Datum       leafDatum;      /* リーフタプルのデータ */
+} spgLeafConsistentIn;
+
+typedef struct spgLeafConsistentOut
+{
+<span class="original">
+    Datum       leafValue;      /* reconstructed original data, if any */
+    bool        recheck;        /* set true if operator must be rechecked */
+</span>
+    Datum       leafValue;      /* もしあれば、再構築された元のデータ */
+    bool        recheck;        /* 演算子を再チェックする必要があればtrue */
+} spgLeafConsistentOut;
+</pre><p>
+
+<span class="original">
+       The array &lt;structfield&gt;scankeys&lt;/structfield&gt;, of length &lt;structfield&gt;nkeys&lt;/structfield&gt;,
+       describes the index search condition(s).  These conditions are
+       combined with AND &amp;mdash; only index entries that satisfy all of
+       them satisfy the query.  (Note that &lt;structfield&gt;nkeys&lt;/structfield&gt; = 0 implies
+       that all index entries satisfy the query.)  Usually the consistent
+       function only cares about the &lt;structfield&gt;sk_strategy&lt;/structfield&gt; and
+       &lt;structfield&gt;sk_argument&lt;/structfield&gt; fields of each array entry, which
+       respectively give the indexable operator and comparison value.
+       In particular it is not necessary to check &lt;structfield&gt;sk_flags&lt;/structfield&gt; to
+       see if the comparison value is NULL, because the SP-GiST core code
+       will filter out such conditions.
+       &lt;structfield&gt;reconstructedValue&lt;/structfield&gt; is the value reconstructed for the
+       parent tuple; it is &lt;literal&gt;(Datum) 0&lt;/literal&gt; at the root level or if the
+       &lt;function&gt;inner_consistent&lt;/function&gt; function did not provide a value at the
+       parent level. &lt;structfield&gt;reconstructedValue&lt;/structfield&gt; is always of
+       &lt;structname&gt;spgConfigOut&lt;/structname&gt;.&lt;structfield&gt;leafType&lt;/structfield&gt; type.
+       &lt;structfield&gt;traversalValue&lt;/structfield&gt; is a pointer to any traverse data
+       passed down from the previous call of &lt;function&gt;inner_consistent&lt;/function&gt;
+       on the parent index tuple, or NULL at the root level.
+       &lt;structfield&gt;level&lt;/structfield&gt; is the current leaf tuple's level, starting at
+       zero for the root level.
+       &lt;structfield&gt;returnData&lt;/structfield&gt; is &lt;literal&gt;true&lt;/literal&gt; if reconstructed data is
+       required for this query; this will only be so if the
+       &lt;function&gt;config&lt;/function&gt; function asserted &lt;structfield&gt;canReturnData&lt;/structfield&gt;.
+       &lt;structfield&gt;leafDatum&lt;/structfield&gt; is the key value of
+       &lt;structname&gt;spgConfigOut&lt;/structname&gt;.&lt;structfield&gt;leafType&lt;/structfield&gt;
+       stored in the current leaf tuple.
+</span>
+配列<code class="structfield">scankeys</code>は長さが<code class="structfield">nkeys</code>で、インデックス探索の条件を記述します。
+複数の条件はANDで結合されます。つまり、条件のすべてを満たすインデックスエントリのみが対象となります。
+(<code class="structfield">nkeys</code>が0ならば、すべてのエントリが検索条件を満たすことになる、ということに注意してください。)
+通常、consistent関数では、配列のそれぞれのエントリの<code class="structfield">sk_strategy</code>および<code class="structfield">sk_argument</code>フィールドのみが問題となります。これらのフィールドにはそれぞれインデックス付け可能な演算子と比較値が入ります。
+なお、比較値がNULLかどうかを確認するために<code class="structfield">sk_flags</code>を検査する必要はありません。なぜならSP-GiSTのコアのコードがそのような条件を除外するからです。
+<code class="structfield">reconstructedValue</code>は親タプルのために再構築された値で、ルートレベルの場合、あるいは親レベルの<code class="function">inner_consistent</code>関数が値を返さなかった場合は<code class="literal">(Datum) 0</code>となります。
+<code class="structfield">reconstructedValue</code>は常に<code class="structname">spgConfigOut</code>.<code class="structfield">leafType</code>型です。
+<code class="structfield">traversalValue</code>は親インデックスのタプルの<code class="function">inner_consistent</code>の前の呼び出しから渡された探索データへのポインタで、ルートレベルならNULLです。
+<code class="structfield">level</code>は現在のリーフタプルのレベルを、ルートレベルを0として数えたものです。
+<code class="structfield">returnData</code>は、この問い合わせで再構築されたデータが必要な場合に<code class="literal">true</code>となりますが、これは<code class="function">config</code>関数が<code class="structfield">canReturnData</code>を確認した場合にのみ、そうなります。
+<code class="structfield">leafDatum</code>は現在のリーフタプルに格納されている鍵の値です。
+      </p><p>
+<span class="original">
+       The function must return &lt;literal&gt;true&lt;/literal&gt; if the leaf tuple matches the
+       query, or &lt;literal&gt;false&lt;/literal&gt; if not.  In the &lt;literal&gt;true&lt;/literal&gt; case,
+       if &lt;structfield&gt;returnData&lt;/structfield&gt; is &lt;literal&gt;true&lt;/literal&gt; then
+       &lt;structfield&gt;leafValue&lt;/structfield&gt; must be set to the value of
+       &lt;structname&gt;spgConfigIn&lt;/structname&gt;.&lt;structfield&gt;attType&lt;/structfield&gt; type
+       originally supplied to be indexed for this leaf tuple.  Also,
+       &lt;structfield&gt;recheck&lt;/structfield&gt; may be set to &lt;literal&gt;true&lt;/literal&gt; if the match
+       is uncertain and so the operator(s) must be re-applied to the actual
+       heap tuple to verify the match.
+</span>
+この関数は、リーフタプルが問い合わせにマッチすれば<code class="literal">true</code>を返し、マッチしなければ<code class="literal">false</code>を返します。
+<code class="literal">true</code>の場合、<code class="structfield">returnData</code>が<code class="literal">true</code>であれば、<code class="structfield">leafValue</code>は、このリーフタプルにインデックス付けするために元々提供された<code class="structname">spgConfigIn</code>.<code class="structfield">attType</code>型の値にセットされなければなりません。
+また、マッチするかどうかが不確実で、マッチするかの確認のために実際のヒープタプルに演算子を再適用しなければならないときは、<code class="structfield">recheck</code>が<code class="literal">true</code>にセットされることがあります。
+      </p></dd></dl></div><p>
+<span class="original">
+  The optional user-defined method is:
+</span>
+オプションのユーザ定義メソッドは以下です。
+ </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="function">Datum compress(Datum in)</code></span></dt><dd><p>
+<span class="original">
+       Converts the data item into a format suitable for physical storage in
+       a leaf tuple of index page.  It accepts
+       &lt;structname&gt;spgConfigIn&lt;/structname&gt;.&lt;structfield&gt;attType&lt;/structfield&gt;
+       value and return
+       &lt;structname&gt;spgConfigOut&lt;/structname&gt;.&lt;structfield&gt;leafType&lt;/structfield&gt;
+       value.  Output value should not be toasted.
+</span>
+インデックページのリーフタプルでデータ項目を物理ストレージに適した形式に変換します。
+<code class="structname">spgConfigIn</code>.<code class="structfield">attType</code>の値を受け付け、<code class="structname">spgConfigOut</code>.<code class="structfield">leafType</code>の値を返します。
+出力値はTOASTされていないべきです。
+      </p></dd></dl></div><p>
+<span class="original">
+   All the SP-GiST support methods are normally called in a short-lived
+   memory context; that is, &lt;varname&gt;CurrentMemoryContext&lt;/varname&gt; will be reset
+   after processing of each tuple.  It is therefore not very important to
+   worry about pfree'ing everything you palloc.  (The &lt;function&gt;config&lt;/function&gt;
+   method is an exception: it should try to avoid leaking memory.  But
+   usually the &lt;function&gt;config&lt;/function&gt; method need do nothing but assign
+   constants into the passed parameter struct.)
+</span>
+SP-GiSTのすべてのサポートメソッドは、通常は短期間有効なメモリコンテキスト内で呼び出されます。つまり、それぞれのタプルについて処理した後で<code class="varname">CurrentMemoryContext</code>はリセットされます。
+したがって、pallocしたものすべてについてpfreeすることを気にかけることはあまり重要ではありません。
+(<code class="function">config</code>メソッドは例外で、メモリリークを避けるようにする必要があります。
+しかし、通常は<code class="function">config</code>メソッドは、パラメータとして渡された構造体に定数を代入する以外、何もする必要がありません。)
+  </p><p>
+<span class="original">
+   If the indexed column is of a collatable data type, the index collation
+   will be passed to all the support methods, using the standard
+   &lt;function&gt;PG_GET_COLLATION()&lt;/function&gt; mechanism.
+</span>
+インデックス付けされた列が照合可能なデータ型の場合、インデックスの照合は、標準的な<code class="function">PG_GET_COLLATION()</code>の仕組みを使ってすべてのサポートメソッドに渡されます。
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="spgist-builtin-opclasses.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="spgist.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="spgist-implementation.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">65.2. 組み込み演算子クラス </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 65.4. 実装</td></tr></table></div></body></html>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>44.10. トランザクション制御</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="pltcl-subtransactions.html" title="44.9. PL/Tclにおける明示的サブトランザクション" /><link rel="next" href="pltcl-config.html" title="44.11. PL/Tclの設定" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="pltcl.html" title="第44章 PL/Tcl - Tcl手続き言語">第44章 PL/Tcl - Tcl手続き言語</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      pltcl-transactions.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="pltcl-subtransactions.html" title="44.9. PL/Tclにおける明示的サブトランザクション">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="pltcl.html" title="第44章 PL/Tcl - Tcl手続き言語">上へ</a></td><td width="60%" align="center">44.10. トランザクション制御</td><td width="20%" align="right"> <a accesskey="n" href="pltcl-config.html" title="44.11. PL/Tclの設定">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PLTCL-TRANSACTIONS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">44.10. トランザクション制御</h2></div></div></div><span class="original">
+    &lt;title&gt;Transaction Management&lt;/title&gt;
+</span><p>
+<span class="original">
+     In a procedure called from the top level or an anonymous code block
+     (&lt;command&gt;DO&lt;/command&gt; command) called from the top level it is possible
+     to control transactions.  To commit the current transaction, call the
+     &lt;literal&gt;commit&lt;/literal&gt; command.  To roll back the current transaction,
+     call the &lt;literal&gt;rollback&lt;/literal&gt; command.  (Note that it is not
+     possible to run the SQL commands &lt;command&gt;COMMIT&lt;/command&gt; or
+     &lt;command&gt;ROLLBACK&lt;/command&gt; via &lt;function&gt;spi_exec&lt;/function&gt; or similar.
+     It has to be done using these functions.)  After a transaction is ended,
+     a new transaction is automatically started, so there is no separate
+     command for that.
+</span>
+トップレベル、あるいは、トップレベルから呼ばれた無名コードブロック（<code class="command">DO</code>コマンド）から呼ばれたプロシージャでは、トランザクション制御が可能です。
+現在のトランザクションをコミットするには、<code class="literal">commit</code>コマンドを呼びます。
+現在のトランザクションをロールバックするには、<code class="literal">rollback</code>コマンドを呼びます。
+（SQLコマンドの<code class="command">COMMIT</code>や<code class="command">ROLLBACK</code>を<code class="function">spi_exec</code>などを通して実行することはできない点に注意してください。前述の関数を使って行う必要があります。）
+トランザクションが終了した後、新たなトランザクションが自動的に開始されますので、開始するための別途のコマンドはありません。
+    </p><p>
+<span class="original">
+     Here is an example:
+</span>
+以下に例を示します。
+</p><pre class="programlisting">
+CREATE PROCEDURE transaction_test1()
+LANGUAGE pltcl
+AS $$
+for {set i 0} {$i &lt; 10} {incr i} {
+    spi_exec "INSERT INTO test1 (a) VALUES ($i)"
+    if {$i % 2 == 0} {
+        commit
+    } else {
+        rollback
+    }
+}
+$$;
+
+CALL transaction_test1();
+</pre><p>
+    </p><p>
+<span class="original">
+     Transactions cannot be ended when an explicit subtransaction is active.
+</span>
+明示的なサブトランザクションの中ではトランザクションを終了することはできません。
+    </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="pltcl-subtransactions.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="pltcl.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="pltcl-config.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">44.9. PL/Tclにおける明示的サブトランザクション </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 44.11. PL/Tclの設定</td></tr></table></div></body></html>

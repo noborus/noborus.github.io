@@ -1,0 +1,1463 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>36.6. pgtypes ライブラリ</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="ecpg-dynamic.html" title="36.5. 動的SQL" /><link rel="next" href="ecpg-descriptors.html" title="36.7. 記述子領域の使用" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="ecpg.html" title="第36章 ECPG - C言語による埋め込みSQL">第36章 <span class="application">ECPG</span> - C言語による埋め込み<acronym class="acronym">SQL</acronym></a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      ecpg-pgtypes.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="ecpg-dynamic.html" title="36.5. 動的SQL">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="ecpg.html" title="第36章 ECPG - C言語による埋め込みSQL">上へ</a></td><td width="60%" align="center">36.6. pgtypes ライブラリ</td><td width="20%" align="right"> <a accesskey="n" href="ecpg-descriptors.html" title="36.7. 記述子領域の使用">次へ</a></td></tr></table><hr /></div><div class="sect1" id="ECPG-PGTYPES"><div class="titlepage"><div><div><h2 class="title" style="clear: both">36.6. pgtypes ライブラリ</h2></div></div></div><span class="original">
+  &lt;title&gt;pgtypes Library&lt;/title&gt;
+</span><p>
+<span class="original">
+   The pgtypes library maps &lt;productname&gt;PostgreSQL&lt;/productname&gt; database
+   types to C equivalents that can be used in C programs. It also offers
+   functions to do basic calculations with those types within C, i.e., without
+   the help of the &lt;productname&gt;PostgreSQL&lt;/productname&gt; server. See the
+   following example:
+</span>
+pgtypesライブラリは<span class="productname">PostgreSQL</span>データベースの型をCプログラムで使用できるようにC言語に対応させます。
+また、これらの型を使用したCの基本的な計算を行う関数も提供します。
+この計算には、<span class="productname">PostgreSQL</span>サーバを使用しません。
+以下の例を参照してください。
+</p><pre class="programlisting">
+EXEC SQL BEGIN DECLARE SECTION;
+   date date1;
+   timestamp ts1, tsout;
+   interval iv1;
+   char *out;
+EXEC SQL END DECLARE SECTION;
+
+PGTYPESdate_today(&amp;date1);
+EXEC SQL SELECT started, duration INTO :ts1, :iv1 FROM datetbl WHERE d=:date1;
+PGTYPEStimestamp_add_interval(&amp;ts1, &amp;iv1, &amp;tsout);
+out = PGTYPEStimestamp_to_asc(&amp;tsout);
+printf("Started + duration: %s\n", out);
+PGTYPESchar_free(out);
+
+</pre><p>
+  </p><div class="sect2" id="ECPG-PGTYPES-CSTRINGS"><div class="titlepage"><div><div><h3 class="title">36.6.1. 文字列</h3></div></div></div><span class="original">
+   &lt;title&gt;Character Strings&lt;/title&gt;
+</span><p>
+<span class="original">
+   Some functions such as &lt;function&gt;PGTYPESnumeric_to_asc&lt;/function&gt; return
+   a pointer to a freshly allocated character string. These results should be
+   freed with &lt;function&gt;PGTYPESchar_free&lt;/function&gt; instead of
+   &lt;function&gt;free&lt;/function&gt;. (This is important only on Windows, where
+   memory allocation and release sometimes need to be done by the same
+   library.)
+</span>
+<code class="function">PGTYPESnumeric_to_asc</code>のような一部の関数は新たに割り当てられた文字列へのポインタを返します。
+この結果は<code class="function">free</code>の代わりに<code class="function">PGTYPESchar_free</code>で解放することが必要です。
+(これはWindows上でのみ重要です。Windowsではメモリの割り当てと解放は同じライブラリで実施されることが必要な場合があります。)
+   </p></div><div class="sect2" id="ECPG-PGTYPES-NUMERIC"><div class="titlepage"><div><div><h3 class="title">36.6.2. numeric 型</h3></div></div></div><span class="original">
+   &lt;title&gt;The numeric Type&lt;/title&gt;
+</span><p>
+<span class="original">
+    The numeric type offers to do calculations with arbitrary precision. See
+    &lt;xref linkend="datatype-numeric"/&gt; for the equivalent type in the
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; server. Because of the arbitrary precision this
+    variable needs to be able to expand and shrink dynamically. That's why you
+    can only create numeric variables on the heap, by means of the
+    &lt;function&gt;PGTYPESnumeric_new&lt;/function&gt; and &lt;function&gt;PGTYPESnumeric_free&lt;/function&gt;
+    functions. The decimal type, which is similar but limited in precision,
+    can be created on the stack as well as on the heap.
+</span>
+numeric 型では任意の精度での計算機能を提供します。
+<span class="productname">PostgreSQL</span>サーバにおける対応する型については<a class="xref" href="datatype-numeric.html" title="8.1. 数値データ型">8.1</a>を参照してください。
+任意の精度を持つために、この変数は動的に拡張、縮小できなければなりません。
+これが、<code class="function">PGTYPESnumeric_new</code>や<code class="function">PGTYPESnumeric_free</code>関数では、ヒープ領域上にのみしか numeric 変数を作成できない理由です。
+decimal 型も似ていますが精度が限定されていますので、ヒープ領域以外にスタック領域上でも作成可能です。
+   </p><p>
+<span class="original">
+   The following functions can be used to work with the numeric type:
+</span>
+以下の関数は numeric 型で使用することができます:
+   </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="function">PGTYPESnumeric_new</code></span></dt><dd><p>
+<span class="original">
+      Request a pointer to a newly allocated numeric variable.
+</span>
+新規割当ての numeric 型へのポインタを要求します。
+</p><pre class="synopsis">
+numeric *PGTYPESnumeric_new(void);
+</pre><p>
+      </p></dd><dt><span class="term"><code class="function">PGTYPESnumeric_free</code></span></dt><dd><p>
+<span class="original">
+      Free a numeric type, release all of its memory.
+</span>
+numeric 型を解放し、そのメモリをすべて解放します。
+</p><pre class="synopsis">
+void PGTYPESnumeric_free(numeric *var);
+</pre><p>
+      </p></dd><dt><span class="term"><code class="function">PGTYPESnumeric_from_asc</code></span></dt><dd><p>
+<span class="original">
+       Parse a numeric type from its string notation.
+</span>
+文字列表記から numeric 型に変換します。
+</p><pre class="synopsis">
+numeric *PGTYPESnumeric_from_asc(char *str, char **endptr);
+</pre><p>
+<span class="original">
+       Valid formats are for example:
+        &lt;literal&gt;-2&lt;/literal&gt;,
+        &lt;literal&gt;.794&lt;/literal&gt;,
+        &lt;literal&gt;+3.44&lt;/literal&gt;,
+        &lt;literal&gt;592.49E07&lt;/literal&gt; or
+        &lt;literal&gt;-32.84e-4&lt;/literal&gt;.
+       If the value could be parsed successfully, a valid pointer is returned,
+       else the NULL pointer. At the moment ECPG always parses the complete
+       string and so it currently does not support to store the address of the
+       first invalid character in &lt;literal&gt;*endptr&lt;/literal&gt;. You can safely
+       set &lt;literal&gt;endptr&lt;/literal&gt; to NULL.
+</span>
+有効な書式の例を示します。
+<code class="literal">-2</code>、<code class="literal">.794</code>、<code class="literal">+3.44</code>、<code class="literal">592.49E07</code>、<code class="literal">-32.84e-4</code>。
+値への変換に成功した場合、有効なポインタが返されます。
+失敗した場合は NULL ポインタが返されます。
+現在ECPGは文字列全体を解析しますので、現時点では<code class="literal">*endptr</code>内に最初の無効な文字のアドレスを格納することをサポートしません。
+このため<code class="literal">endptr</code>を安全に NULL にすることができます。
+      </p></dd><dt><span class="term"><code class="function">PGTYPESnumeric_to_asc</code></span></dt><dd><p>
+<span class="original">
+       Returns a pointer to a string allocated by &lt;function&gt;malloc&lt;/function&gt; that contains the string
+       representation of the numeric type &lt;literal&gt;num&lt;/literal&gt;.
+</span>
+numeric 型<code class="literal">num</code>の文字列表現を持つ、<code class="function">malloc</code>で割り当てられた文字列へのポインタを返します。
+</p><pre class="synopsis">
+char *PGTYPESnumeric_to_asc(numeric *num, int dscale);
+</pre><p>
+<span class="original">
+       The numeric value will be printed with &lt;literal&gt;dscale&lt;/literal&gt; decimal
+       digits, with rounding applied if necessary.
+       The result must be freed with &lt;function&gt;PGTYPESchar_free()&lt;/function&gt;.
+</span>
+numeric の値は、必要に応じて四捨五入され、<code class="literal">dscale</code> 桁の十進数で出力されます。
+結果は<code class="function">PGTYPESchar_free()</code>で解放しなければなりません。
+      </p></dd><dt><span class="term"><code class="function">PGTYPESnumeric_add</code></span></dt><dd><p>
+<span class="original">
+       Add two numeric variables into a third one.
+</span>
+2つの numeric 変数を加算し、3番目の numeric 変数に格納します。
+</p><pre class="synopsis">
+int PGTYPESnumeric_add(numeric *var1, numeric *var2, numeric *result);
+</pre><p>
+<span class="original">
+       The function adds the variables &lt;literal&gt;var1&lt;/literal&gt; and
+       &lt;literal&gt;var2&lt;/literal&gt; into the result variable
+       &lt;literal&gt;result&lt;/literal&gt;.
+       The function returns 0 on success and -1 in case of error.
+</span>
+この関数は変数<code class="literal">var1</code>と変数<code class="literal">var2</code>を加算し、その結果を<code class="literal">result</code>に格納します。
+成功時0を、エラー時-1を返します。
+      </p></dd><dt><span class="term"><code class="function">PGTYPESnumeric_sub</code></span></dt><dd><p>
+<span class="original">
+       Subtract two numeric variables and return the result in a third one.
+</span>
+2つの numeric 型変数を減算し、3番目の numeric 型変数に結果を格納します。
+</p><pre class="synopsis">
+int PGTYPESnumeric_sub(numeric *var1, numeric *var2, numeric *result);
+</pre><p>
+<span class="original">
+       The function subtracts the variable &lt;literal&gt;var2&lt;/literal&gt; from
+       the variable &lt;literal&gt;var1&lt;/literal&gt;. The result of the operation is
+       stored in the variable &lt;literal&gt;result&lt;/literal&gt;.
+       The function returns 0 on success and -1 in case of error.
+</span>
+この関数は変数<code class="literal">var1</code>から変数<code class="literal">var2</code>を差し引きます。
+演算結果を変数<code class="literal">result</code>に格納します。
+成功時0を、エラー時-1を返します。
+      </p></dd><dt><span class="term"><code class="function">PGTYPESnumeric_mul</code></span></dt><dd><p>
+<span class="original">
+       Multiply two numeric variables and return the result in a third one.
+</span>
+2つの numeric 型変数を乗算し、3番目の numeric 型変数に結果を格納します。
+</p><pre class="synopsis">
+int PGTYPESnumeric_mul(numeric *var1, numeric *var2, numeric *result);
+</pre><p>
+<span class="original">
+       The function multiplies the variables &lt;literal&gt;var1&lt;/literal&gt; and
+       &lt;literal&gt;var2&lt;/literal&gt;. The result of the operation is stored in the
+       variable &lt;literal&gt;result&lt;/literal&gt;.
+       The function returns 0 on success and -1 in case of error.
+</span>
+この関数は変数<code class="literal">var1</code>と変数<code class="literal">var2</code>を掛け合わせます。
+演算結果を変数<code class="literal">result</code>に格納します。
+成功時0を、エラー時-1を返します。
+      </p></dd><dt><span class="term"><code class="function">PGTYPESnumeric_div</code></span></dt><dd><p>
+<span class="original">
+       Divide two numeric variables and return the result in a third one.
+</span>
+2つの numeric 型変数で除算し、3番目の numeric 型変数に結果を格納します。
+</p><pre class="synopsis">
+int PGTYPESnumeric_div(numeric *var1, numeric *var2, numeric *result);
+</pre><p>
+<span class="original">
+       The function divides the variables &lt;literal&gt;var1&lt;/literal&gt; by
+       &lt;literal&gt;var2&lt;/literal&gt;. The result of the operation is stored in the
+       variable &lt;literal&gt;result&lt;/literal&gt;.
+       The function returns 0 on success and -1 in case of error.
+</span>
+この関数は変数<code class="literal">var1</code>を変数<code class="literal">var2</code>で割ります。
+演算結果を変数<code class="literal">result</code>に格納します。
+成功時0を、エラー時-1を返します。
+      </p></dd><dt><span class="term"><code class="function">PGTYPESnumeric_cmp</code></span></dt><dd><p>
+<span class="original">
+       Compare two numeric variables.
+</span>
+2つのnumeric型変数を比較します。
+</p><pre class="synopsis">
+int PGTYPESnumeric_cmp(numeric *var1, numeric *var2)
+</pre><p>
+<span class="original">
+       This function compares two numeric variables. In case of error,
+       &lt;literal&gt;INT_MAX&lt;/literal&gt; is returned. On success, the function
+       returns one of three possible results:
+</span>
+この関数は2つのnumeric型変数を比較します。
+エラーの場合<code class="literal">INT_MAX</code>が返ります。
+成功時、この関数は以下のいずれかを返します:
+       </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+          1, if &lt;literal&gt;var1&lt;/literal&gt; is bigger than &lt;literal&gt;var2&lt;/literal&gt;
+</span>
+          <code class="literal">var1</code>が<code class="literal">var2</code>より大きければ1。
+         </p></li><li class="listitem"><p>
+<span class="original">
+          -1, if &lt;literal&gt;var1&lt;/literal&gt; is smaller than &lt;literal&gt;var2&lt;/literal&gt;
+</span>
+          <code class="literal">var1</code>が<code class="literal">var2</code>より小さければ-1。
+         </p></li><li class="listitem"><p>
+<span class="original">
+          0, if &lt;literal&gt;var1&lt;/literal&gt; and &lt;literal&gt;var2&lt;/literal&gt; are equal
+</span>
+          <code class="literal">var1</code>が<code class="literal">var2</code>と等しければ0。
+         </p></li></ul></div><p>
+      </p></dd><dt><span class="term"><code class="function">PGTYPESnumeric_from_int</code></span></dt><dd><p>
+<span class="original">
+       Convert an int variable to a numeric variable.
+</span>
+int型変数をnumeric型変数に変換します。
+</p><pre class="synopsis">
+int PGTYPESnumeric_from_int(signed int int_val, numeric *var);
+</pre><p>
+<span class="original">
+       This function accepts a variable of type signed int and stores it
+       in the numeric variable &lt;literal&gt;var&lt;/literal&gt;. Upon success, 0 is returned and
+       -1 in case of a failure.
+</span>
+この関数はsigned int型の変数を受付け、numeric型変数<code class="literal">var</code>内に格納します。
+成功時0、失敗時-1が返ります。
+      </p></dd><dt><span class="term"><code class="function">PGTYPESnumeric_from_long</code></span></dt><dd><p>
+<span class="original">
+       Convert a long int variable to a numeric variable.
+</span>
+long int型変数をnumeric型変数に変換します。
+</p><pre class="synopsis">
+int PGTYPESnumeric_from_long(signed long int long_val, numeric *var);
+</pre><p>
+<span class="original">
+       This function accepts a variable of type signed long int and stores it
+       in the numeric variable &lt;literal&gt;var&lt;/literal&gt;. Upon success, 0 is returned and
+       -1 in case of a failure.
+</span>
+この関数は符号付long int型の変数を受付け、numeric 型変数<code class="literal">var</code>内に格納します。
+成功時0、失敗時-1が返ります。
+      </p></dd><dt><span class="term"><code class="function">PGTYPESnumeric_copy</code></span></dt><dd><p>
+<span class="original">
+       Copy over one numeric variable into another one.
+</span>
+numeric 型変数を他の numeric 型変数にコピーします。
+</p><pre class="synopsis">
+int PGTYPESnumeric_copy(numeric *src, numeric *dst);
+</pre><p>
+<span class="original">
+       This function copies over the value of the variable that
+       &lt;literal&gt;src&lt;/literal&gt; points to into the variable that &lt;literal&gt;dst&lt;/literal&gt;
+       points to. It returns 0 on success and -1 if an error occurs.
+</span>
+この関数は、<code class="literal">src</code>が指し示す変数の値を<code class="literal">dst</code>が指し示す変数にコピーします。
+成功時0、失敗時-1が返ります。
+      </p></dd><dt><span class="term"><code class="function">PGTYPESnumeric_from_double</code></span></dt><dd><p>
+<span class="original">
+       Convert a variable of type double to a numeric.
+</span>
+double型の変数を numeric 型変数に変換します。
+</p><pre class="synopsis">
+int  PGTYPESnumeric_from_double(double d, numeric *dst);
+</pre><p>
+<span class="original">
+       This function accepts a variable of type double and stores the result
+       in the variable that &lt;literal&gt;dst&lt;/literal&gt; points to. It returns 0 on success
+       and -1 if an error occurs.
+</span>
+この関数はdouble型の変数を受付け、変換結果を<code class="literal">dst</code>が指し示す変数内に格納します。
+成功時0、失敗時-1が返ります。
+      </p></dd><dt><span class="term"><code class="function">PGTYPESnumeric_to_double</code></span></dt><dd><p>
+<span class="original">
+       Convert a variable of type numeric to double.
+</span>
+numeric 型変数をdouble型に変換します。
+</p><pre class="synopsis">
+int PGTYPESnumeric_to_double(numeric *nv, double *dp)
+</pre><p>
+<span class="original">
+       The function converts the numeric value from the variable that
+       &lt;literal&gt;nv&lt;/literal&gt; points to into the double variable that &lt;literal&gt;dp&lt;/literal&gt; points
+       to. It returns 0 on success and -1 if an error occurs, including
+       overflow. On overflow, the global variable &lt;literal&gt;errno&lt;/literal&gt; will be set
+       to &lt;literal&gt;PGTYPES_NUM_OVERFLOW&lt;/literal&gt; additionally.
+</span>
+この関数は<code class="literal">nv</code>が指し示す numeric 型変数の値を<code class="literal">dp</code>が指し示すdouble型変数に変換します。
+成功時0、オーバーフローを含むエラーが発生した時-1が返ります。
+オーバーフローが発生した場合はさらに、グローバル変数<code class="literal">errno</code>は<code class="literal">PGTYPES_NUM_OVERFLOW</code>に設定されます。
+      </p></dd><dt><span class="term"><code class="function">PGTYPESnumeric_to_int</code></span></dt><dd><p>
+<span class="original">
+       Convert a variable of type numeric to int.
+</span>
+numeric 型変数をint型に変換します。
+</p><pre class="synopsis">
+int PGTYPESnumeric_to_int(numeric *nv, int *ip);
+</pre><p>
+<span class="original">
+       The function converts the numeric value from the variable that
+       &lt;literal&gt;nv&lt;/literal&gt; points to into the integer variable that &lt;literal&gt;ip&lt;/literal&gt;
+       points to. It returns 0 on success and -1 if an error occurs, including
+       overflow. On overflow, the global variable &lt;literal&gt;errno&lt;/literal&gt; will be set
+       to &lt;literal&gt;PGTYPES_NUM_OVERFLOW&lt;/literal&gt; additionally.
+</span>
+この関数は<code class="literal">nv</code>が指し示す numeric 型変数の値を<code class="literal">ip</code>が指し示す整数型変数に変換します。
+成功時0、オーバーフローを含むエラーが発生した時-1が返ります。
+オーバーフローが発生した場合はさらに、グローバル変数<code class="literal">errno</code>は<code class="literal">PGTYPES_NUM_OVERFLOW</code>に設定されます。
+      </p></dd><dt><span class="term"><code class="function">PGTYPESnumeric_to_long</code></span></dt><dd><p>
+<span class="original">
+       Convert a variable of type numeric to long.
+</span>
+numeric 型変数をlong型に変換します。
+</p><pre class="synopsis">
+int PGTYPESnumeric_to_long(numeric *nv, long *lp);
+</pre><p>
+<span class="original">
+       The function converts the numeric value from the variable that
+       &lt;literal&gt;nv&lt;/literal&gt; points to into the long integer variable that
+       &lt;literal&gt;lp&lt;/literal&gt; points to. It returns 0 on success and -1 if an error
+       occurs, including overflow. On overflow, the global variable
+       &lt;literal&gt;errno&lt;/literal&gt; will be set to &lt;literal&gt;PGTYPES_NUM_OVERFLOW&lt;/literal&gt;
+       additionally.
+</span>
+この関数は<code class="literal">nv</code>が指し示す numeric 型変数の値を<code class="literal">lp</code>が指し示すlong変数に変換します。
+成功時0、オーバーフローを含むエラーが発生した時-1が返ります。
+オーバーフローが発生した場合はさらに、グローバル変数<code class="literal">errno</code>は<code class="literal">PGTYPES_NUM_OVERFLOW</code>に設定されます。
+      </p></dd><dt><span class="term"><code class="function">PGTYPESnumeric_to_decimal</code></span></dt><dd><p>
+<span class="original">
+       Convert a variable of type numeric to decimal.
+</span>
+numeric 型変数を decimal 型に変換します。
+</p><pre class="synopsis">
+int PGTYPESnumeric_to_decimal(numeric *src, decimal *dst);
+</pre><p>
+<span class="original">
+       The function converts the numeric value from the variable that
+       &lt;literal&gt;src&lt;/literal&gt; points to into the decimal variable that
+       &lt;literal&gt;dst&lt;/literal&gt; points to. It returns 0 on success and -1 if an error
+       occurs, including overflow. On overflow, the global variable
+       &lt;literal&gt;errno&lt;/literal&gt; will be set to &lt;literal&gt;PGTYPES_NUM_OVERFLOW&lt;/literal&gt;
+       additionally.
+</span>
+この関数は<code class="literal">src</code>が指し示す numeric 型変数の値を<code class="literal">dst</code>が指し示す decimal 型変数に変換します。
+成功時0、オーバーフローを含むエラーが発生した時-1が返ります。
+オーバーフローが発生した場合はさらに、グローバル変数<code class="literal">errno</code>は<code class="literal">PGTYPES_NUM_OVERFLOW</code>に設定されます。
+      </p></dd><dt><span class="term"><code class="function">PGTYPESnumeric_from_decimal</code></span></dt><dd><p>
+<span class="original">
+       Convert a variable of type decimal to numeric.
+</span>
+decimal 型変数を numeric 型に変換します。
+</p><pre class="synopsis">
+int PGTYPESnumeric_from_decimal(decimal *src, numeric *dst);
+</pre><p>
+<span class="original">
+       The function converts the decimal value from the variable that
+       &lt;literal&gt;src&lt;/literal&gt; points to into the numeric variable that
+       &lt;literal&gt;dst&lt;/literal&gt; points to. It returns 0 on success and -1 if an error
+       occurs. Since the decimal type is implemented as a limited version of
+       the numeric type, overflow cannot occur with this conversion.
+</span>
+この関数は<code class="literal">src</code>が指し示す decimal 型変数の値を<code class="literal">dst</code>が指し示す numeric 型変数に変換します。
+成功時0、エラーが発生した時-1が返ります。
+decimal 型は制限付の numeric 型として実装されていますので、この変換ではオーバーフローは起きません。
+      </p></dd></dl></div><p>
+   </p></div><div class="sect2" id="ECPG-PGTYPES-DATE"><div class="titlepage"><div><div><h3 class="title">36.6.3. 日付型</h3></div></div></div><span class="original">
+   &lt;title&gt;The date Type&lt;/title&gt;
+</span><p>
+<span class="original">
+    The date type in C enables your programs to deal with data of the SQL type
+    date. See &lt;xref linkend="datatype-datetime"/&gt; for the equivalent type in the
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; server.
+</span>
+Cの日付型を使用して、プログラムからSQLの日付型を取り扱うことができます。
+<span class="productname">PostgreSQL</span>サーバにおける対応する型については<a class="xref" href="datatype-datetime.html" title="8.5. 日付/時刻データ型">8.5</a>を参照してください。
+   </p><p>
+<span class="original">
+    The following functions can be used to work with the date type:
+</span>
+日付型を操作するために以下の関数を使用することができます:
+    </p><div class="variablelist"><dl class="variablelist"><dt id="PGTYPESDATEFROMTIMESTAMP"><span class="term"><code class="function">PGTYPESdate_from_timestamp</code></span></dt><dd><p>
+<span class="original">
+        Extract the date part from a timestamp.
+</span>
+タイムスタンプから日付部分を取り出します。
+</p><pre class="synopsis">
+date PGTYPESdate_from_timestamp(timestamp dt);
+</pre><p>
+<span class="original">
+        The function receives a timestamp as its only argument and returns the
+        extracted date part from this timestamp.
+</span>
+この関数は唯一の引数としてタイムスタンプを受付け、そこから日付部分を取り出します。
+       </p></dd><dt id="PGTYPESDATEFROMASC"><span class="term"><code class="function">PGTYPESdate_from_asc</code></span></dt><dd><p>
+<span class="original">
+       Parse a date from its textual representation.
+</span>
+テキスト表現から日付型に変換します。
+</p><pre class="synopsis">
+date PGTYPESdate_from_asc(char *str, char **endptr);
+</pre><p>
+<span class="original">
+        The function receives a C char* string &lt;literal&gt;str&lt;/literal&gt; and a pointer to
+        a C char* string &lt;literal&gt;endptr&lt;/literal&gt;. At the moment ECPG always parses
+        the complete string and so it currently does not support to store the
+        address of the first invalid character in &lt;literal&gt;*endptr&lt;/literal&gt;.
+        You can safely set &lt;literal&gt;endptr&lt;/literal&gt; to NULL.
+</span>
+この関数はCのchar*型文字列<code class="literal">str</code>とCのchar*型文字列<code class="literal">endptr</code>へのポインタを受付けます。
+現在ECPGは文字列全体を解析しますので、現時点では<code class="literal">*endptr</code>に最初の無効な文字のアドレスを格納することをサポートしません。
+このため<code class="literal">endptr</code>を安全にNULLにすることができます。
+       </p><p>
+<span class="original">
+        Note that the function always assumes MDY-formatted dates and there is
+        currently no variable to change that within ECPG.
+</span>
+この関数が常にMDY書式の日付を前提としている点に注意してください。
+現在ECPGにはこれを変更するための変数がありません。
+       </p><p>
+<span class="original">
+        &lt;xref linkend="ecpg-pgtypesdate-from-asc-table"/&gt; shows the allowed input formats.
+</span>
+        <a class="xref" href="ecpg-pgtypes.html#ECPG-PGTYPESDATE-FROM-ASC-TABLE" title="表36.2 有効なPGTYPESdate_from_ascの入力書式">表 36.2</a>に許される入力書式を示します。
+       </p><div class="table" id="ECPG-PGTYPESDATE-FROM-ASC-TABLE"><p class="title"><strong>表36.2 有効な<code class="function">PGTYPESdate_from_asc</code>の入力書式</strong></p><div class="table-contents"><span class="original">
+         &lt;title&gt;Valid Input Formats for &lt;function&gt;PGTYPESdate_from_asc&lt;/function&gt;&lt;/title&gt;
+</span><table class="table" summary="有効なPGTYPESdate_from_ascの入力書式" border="1"><colgroup><col /><col /></colgroup><thead><tr><th>入力</th><th>結果</th></tr></thead><tbody><tr><td><code class="literal">January 8, 1999</code></td><td><code class="literal">January 8, 1999</code></td></tr><tr><td><code class="literal">1999-01-08</code></td><td><code class="literal">January 8, 1999</code></td></tr><tr><td><code class="literal">1/8/1999</code></td><td><code class="literal">January 8, 1999</code></td></tr><tr><td><code class="literal">1/18/1999</code></td><td><code class="literal">January 18, 1999</code></td></tr><tr><td><code class="literal">01/02/03</code></td><td><code class="literal">February 1, 2003</code></td></tr><tr><td><code class="literal">1999-Jan-08</code></td><td><code class="literal">January 8, 1999</code></td></tr><tr><td><code class="literal">Jan-08-1999</code></td><td><code class="literal">January 8, 1999</code></td></tr><tr><td><code class="literal">08-Jan-1999</code></td><td><code class="literal">January 8, 1999</code></td></tr><tr><td><code class="literal">99-Jan-08</code></td><td><code class="literal">January 8, 1999</code></td></tr><tr><td><code class="literal">08-Jan-99</code></td><td><code class="literal">January 8, 1999</code></td></tr><tr><td><code class="literal">08-Jan-06</code></td><td><code class="literal">January 8, 2006</code></td></tr><tr><td><code class="literal">Jan-08-99</code></td><td><code class="literal">January 8, 1999</code></td></tr><tr><td><code class="literal">19990108</code></td><td><code class="literal">ISO 8601; January 8, 1999</code></td></tr><tr><td><code class="literal">990108</code></td><td><code class="literal">ISO 8601; January 8, 1999</code></td></tr><tr><td><code class="literal">1999.008</code></td><td><code class="literal">年と年内日数</code></td></tr><tr><td><code class="literal">J2451187</code></td><td><code class="literal">Jユリウス日</code></td></tr><tr><td><code class="literal">January 8, 99 BC</code></td><td><code class="literal">紀元前99年</code></td></tr></tbody></table></div></div><br class="table-break" /></dd><dt id="PGTYPESDATETOASC"><span class="term"><code class="function">PGTYPESdate_to_asc</code></span></dt><dd><p>
+<span class="original">
+        Return the textual representation of a date variable.
+</span>
+        日付型変数のテキスト表現を返します。
+</p><pre class="synopsis">
+char *PGTYPESdate_to_asc(date dDate);
+</pre><p>
+<span class="original">
+        The function receives the date &lt;literal&gt;dDate&lt;/literal&gt; as its only parameter.
+        It will output the date in the form &lt;literal&gt;1999-01-18&lt;/literal&gt;, i.e., in the
+        &lt;literal&gt;YYYY-MM-DD&lt;/literal&gt; format.
+        The result must be freed with &lt;function&gt;PGTYPESchar_free()&lt;/function&gt;.
+</span>
+この関数は唯一の引数として日付型<code class="literal">dDate</code>を受付けます。
+この関数は<code class="literal">1999-01-18</code>、つまり<code class="literal">YYYY-MM-DD</code>書式で日付を出力します。
+結果は<code class="function">PGTYPESchar_free()</code>で解放しなければなりません。
+       </p></dd><dt id="PGTYPESDATEJULMDY"><span class="term"><code class="function">PGTYPESdate_julmdy</code></span></dt><dd><p>
+<span class="original">
+        Extract the values for the day, the month and the year from a variable
+        of type date.
+</span>
+        日付型の変数から、日、月、年の値を取り出します。
+</p><pre class="synopsis">
+void PGTYPESdate_julmdy(date d, int *mdy);
+</pre><p>
+       <span class="original"> almost same description as for rjulmdy() </span>
+<span class="original">
+        The function receives the date &lt;literal&gt;d&lt;/literal&gt; and a pointer to an array
+        of 3 integer values &lt;literal&gt;mdy&lt;/literal&gt;. The variable name indicates
+        the sequential order: &lt;literal&gt;mdy[0]&lt;/literal&gt; will be set to contain the
+        number of the month, &lt;literal&gt;mdy[1]&lt;/literal&gt; will be set to the value of the
+        day and &lt;literal&gt;mdy[2]&lt;/literal&gt; will contain the year.
+</span>
+この関数は日付型の<code class="literal">d</code>と、3つの整数値を持つ配列<code class="literal">mdy</code>へのポインタを受付けます。
+この変数名はその並びを表し、<code class="literal">mdy[0]</code>には月数、<code class="literal">mdy[1]</code>には日数が、<code class="literal">mdy[2]</code>には年が入ります。
+       </p></dd><dt id="PGTYPESDATEMDYJUL"><span class="term"><code class="function">PGTYPESdate_mdyjul</code></span></dt><dd><p>
+<span class="original">
+        Create a date value from an array of 3 integers that specify the
+        day, the month and the year of the date.
+</span>
+日付の日、月、年を指定した3つの整数からなる配列から日付値を作成します。
+</p><pre class="synopsis">
+void PGTYPESdate_mdyjul(int *mdy, date *jdate);
+</pre><p>
+<span class="original">
+        The function receives the array of the 3 integers (&lt;literal&gt;mdy&lt;/literal&gt;) as
+        its first argument and as its second argument a pointer to a variable
+        of type date that should hold the result of the operation.
+</span>
+この関数は、1番目の引数として3つの整数からなる配列(<code class="literal">mdy</code>)、2番目の引数として処理結果を格納する日付型の変数へのポインタを受付けます。
+       </p></dd><dt id="PGTYPESDATEDAYOFWEEK"><span class="term"><code class="function">PGTYPESdate_dayofweek</code></span></dt><dd><p>
+<span class="original">
+        Return a number representing the day of the week for a date value.
+</span>
+日付値から週内日数を表す数を返します。
+</p><pre class="synopsis">
+int PGTYPESdate_dayofweek(date d);
+</pre><p>
+<span class="original">
+        The function receives the date variable &lt;literal&gt;d&lt;/literal&gt; as its only
+        argument and returns an integer that indicates the day of the week for
+        this date.
+</span>
+この関数は唯一の引数としてdate型変数<code class="literal">d</code>を受付け、その日付の週内日数を表す整数を返します。
+        </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+           0 - Sunday
+</span>
+           0 - 日曜
+          </p></li><li class="listitem"><p>
+<span class="original">
+           1 - Monday
+</span>
+           1 - 月曜
+          </p></li><li class="listitem"><p>
+<span class="original">
+           2 - Tuesday
+</span>
+           2 - 火曜
+          </p></li><li class="listitem"><p>
+<span class="original">
+           3 - Wednesday
+</span>
+           3 - 水曜
+          </p></li><li class="listitem"><p>
+<span class="original">
+           4 - Thursday
+</span>
+           4 - 木曜
+          </p></li><li class="listitem"><p>
+<span class="original">
+           5 - Friday
+</span>
+           5 - 金曜
+          </p></li><li class="listitem"><p>
+<span class="original">
+           6 - Saturday
+</span>
+           6 - 土曜
+          </p></li></ul></div><p>
+       </p></dd><dt id="PGTYPESDATETODAY"><span class="term"><code class="function">PGTYPESdate_today</code></span></dt><dd><p>
+<span class="original">
+        Get the current date.
+</span>
+現在の日付を取得します。
+</p><pre class="synopsis">
+void PGTYPESdate_today(date *d);
+</pre><p>
+<span class="original">
+        The function receives a pointer to a date variable (&lt;literal&gt;d&lt;/literal&gt;)
+        that it sets to the current date.
+</span>
+この関数は現在の日付に設定されるdate型変数(<code class="literal">d</code>)を指し示すポインタを受付けます。
+       </p></dd><dt id="PGTYPESDATEFMTASC"><span class="term"><code class="function">PGTYPESdate_fmt_asc</code></span></dt><dd><p>
+<span class="original">
+        Convert a variable of type date to its textual representation using a
+        format mask.
+</span>
+date型変数を書式マスクを使用したテキスト表現に変換します。
+</p><pre class="synopsis">
+int PGTYPESdate_fmt_asc(date dDate, char *fmtstring, char *outbuf);
+</pre><p>
+<span class="original">
+        The function receives the date to convert (&lt;literal&gt;dDate&lt;/literal&gt;), the
+        format mask (&lt;literal&gt;fmtstring&lt;/literal&gt;) and the string that will hold the
+        textual representation of the date (&lt;literal&gt;outbuf&lt;/literal&gt;).
+</span>
+この関数は変換対象のdate型(<code class="literal">dDate</code>)、書式マスク(<code class="literal">fmtstring</code>)、日付のテキスト表現を格納するための文字列(<code class="literal">outbuf</code>)を受付けます。
+       </p><p>
+<span class="original">
+        On success, 0 is returned and a negative value if an error occurred.
+</span>
+成功時に0、エラーが発生した場合は負の値が返ります。
+       </p><p>
+<span class="original">
+        The following literals are the field specifiers you can use:
+</span>
+以下のリテラルを使用して、フィールドを指定することができます。
+        </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;dd&lt;/literal&gt; - The number of the day of the month.
+</span>
+           <code class="literal">dd</code> - 月内の日数。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;mm&lt;/literal&gt; - The number of the month of the year.
+</span>
+           <code class="literal">mm</code> - 年内の月数。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;yy&lt;/literal&gt; - The number of the year as a two digit number.
+</span>
+           <code class="literal">yy</code> - 二桁表記の年数
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;yyyy&lt;/literal&gt; - The number of the year as a four digit number.
+</span>
+           <code class="literal">yyyy</code> - 四桁表記の年数
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;ddd&lt;/literal&gt; - The name of the day (abbreviated).
+</span>
+           <code class="literal">ddd</code> - 曜日の名前（省略形）
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;mmm&lt;/literal&gt; - The name of the month (abbreviated).
+</span>
+           <code class="literal">mmm</code> - 月の名前（省略形）
+          </p></li></ul></div><p>
+<span class="original">
+        All other characters are copied 1:1 to the output string.
+</span>
+他の文字はすべて出力文字列にそのままコピーされます。
+       </p><p>
+<span class="original">
+        &lt;xref linkend="ecpg-pgtypesdate-fmt-asc-example-table"/&gt; indicates a few possible formats. This will give
+        you an idea of how to use this function. All output lines are based on
+        the same date: November 23, 1959.
+</span>
+<a class="xref" href="ecpg-pgtypes.html#ECPG-PGTYPESDATE-FMT-ASC-EXAMPLE-TABLE" title="表36.3 有効なPGTYPESdate_fmt_ascの入力書式">表 36.3</a>にいくつかの可能性のある書式を示します。
+この関数の使用方法に関するアイディアを提供しています。
+出力行はすべて同じ日付、1959年11月23日に基づいています。
+       </p><div class="table" id="ECPG-PGTYPESDATE-FMT-ASC-EXAMPLE-TABLE"><p class="title"><strong>表36.3 有効な<code class="function">PGTYPESdate_fmt_asc</code>の入力書式</strong></p><div class="table-contents"><span class="original">
+         &lt;title&gt;Valid Input Formats for &lt;function&gt;PGTYPESdate_fmt_asc&lt;/function&gt;&lt;/title&gt;
+</span><table class="table" summary="有効なPGTYPESdate_fmt_ascの入力書式" border="1"><colgroup><col /><col /></colgroup><thead><tr><th>書式</th><th>結果</th></tr></thead><tbody><tr><td><code class="literal">mmddyy</code></td><td><code class="literal">112359</code></td></tr><tr><td><code class="literal">ddmmyy</code></td><td><code class="literal">231159</code></td></tr><tr><td><code class="literal">yymmdd</code></td><td><code class="literal">591123</code></td></tr><tr><td><code class="literal">yy/mm/dd</code></td><td><code class="literal">59/11/23</code></td></tr><tr><td><code class="literal">yy mm dd</code></td><td><code class="literal">59 11 23</code></td></tr><tr><td><code class="literal">yy.mm.dd</code></td><td><code class="literal">59.11.23</code></td></tr><tr><td><code class="literal">.mm.yyyy.dd.</code></td><td><code class="literal">.11.1959.23.</code></td></tr><tr><td><code class="literal">mmm. dd, yyyy</code></td><td><code class="literal">Nov. 23, 1959</code></td></tr><tr><td><code class="literal">mmm dd yyyy</code></td><td><code class="literal">Nov 23 1959</code></td></tr><tr><td><code class="literal">yyyy dd mm</code></td><td><code class="literal">1959 23 11</code></td></tr><tr><td><code class="literal">ddd, mmm. dd, yyyy</code></td><td><code class="literal">Mon, Nov. 23, 1959</code></td></tr><tr><td><code class="literal">(ddd) mmm. dd, yyyy</code></td><td><code class="literal">(Mon) Nov. 23, 1959</code></td></tr></tbody></table></div></div><br class="table-break" /></dd><dt id="PGTYPESDATEDEFMTASC"><span class="term"><code class="function">PGTYPESdate_defmt_asc</code></span></dt><dd><p>
+<span class="original">
+        Use a format mask to convert a C &lt;type&gt;char*&lt;/type&gt; string to a value of type
+        date.
+</span>
+書式マスクを使用してCの<code class="type">char*</code>文字列からdate型の値に変換します。
+</p><pre class="synopsis">
+int PGTYPESdate_defmt_asc(date *d, char *fmt, char *str);
+</pre><p>
+        <span class="original"> same description as rdefmtdate </span>
+<span class="original">
+        The function receives a pointer to the date value that should hold the
+        result of the operation (&lt;literal&gt;d&lt;/literal&gt;), the format mask to use for
+        parsing the date (&lt;literal&gt;fmt&lt;/literal&gt;) and the C char* string containing
+        the textual representation of the date (&lt;literal&gt;str&lt;/literal&gt;). The textual
+        representation is expected to match the format mask. However you do not
+        need to have a 1:1 mapping of the string to the format mask. The
+        function only analyzes the sequential order and looks for the literals
+        &lt;literal&gt;yy&lt;/literal&gt; or &lt;literal&gt;yyyy&lt;/literal&gt; that indicate the
+        position of the year, &lt;literal&gt;mm&lt;/literal&gt; to indicate the position of
+        the month and &lt;literal&gt;dd&lt;/literal&gt; to indicate the position of the
+        day.
+</span>
+この関数は、処理結果を格納するための日付型へのポインタ(<code class="literal">d</code>)、日付を解析するための書式マスク(<code class="literal">fmt</code>)、日付のテキスト表現を含むCのchar*文字列(<code class="literal">str</code>)を受付けます。
+テキスト表現は書式マスクに合った表現であることが仮定されています。
+しかし、文字列と書式マスクを1:1に対応付けする必要はありません。
+この関数は並んだ順番に解析し、年の位置を表す<code class="literal">yy</code>または<code class="literal">yyyy</code>を、月の位置を表す<code class="literal">mm</code>を、日の位置を表す<code class="literal">dd</code>を検索します。
+       </p><p>
+<span class="original">
+        &lt;xref linkend="ecpg-rdefmtdate-example-table"/&gt; indicates a few possible formats. This will give
+        you an idea of how to use this function.
+</span>
+<a class="xref" href="ecpg-pgtypes.html#ECPG-RDEFMTDATE-EXAMPLE-TABLE" title="表36.4 有効なrdefmtdateの入力書式">表 36.4</a>はいくつかの可能性のある書式を示します。
+これはこの関数の使用方法に関するアイディアを提供します。
+       </p><div class="table" id="ECPG-RDEFMTDATE-EXAMPLE-TABLE"><p class="title"><strong>表36.4 有効な<code class="function">rdefmtdate</code>の入力書式</strong></p><div class="table-contents"><span class="original">
+         &lt;title&gt;Valid Input Formats for &lt;function&gt;rdefmtdate&lt;/function&gt;&lt;/title&gt;
+</span><table class="table" summary="有効なrdefmtdateの入力書式" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>書式</th><th>文字列</th><th>結果</th></tr></thead><tbody><tr><td><code class="literal">ddmmyy</code></td><td><code class="literal">21-2-54</code></td><td><code class="literal">1954-02-21</code></td></tr><tr><td><code class="literal">ddmmyy</code></td><td><code class="literal">2-12-54</code></td><td><code class="literal">1954-12-02</code></td></tr><tr><td><code class="literal">ddmmyy</code></td><td><code class="literal">20111954</code></td><td><code class="literal">1954-11-20</code></td></tr><tr><td><code class="literal">ddmmyy</code></td><td><code class="literal">130464</code></td><td><code class="literal">1964-04-13</code></td></tr><tr><td><code class="literal">mmm.dd.yyyy</code></td><td><code class="literal">MAR-12-1967</code></td><td><code class="literal">1967-03-12</code></td></tr><tr><td><code class="literal">yy/mm/dd</code></td><td><code class="literal">1954, February 3rd</code></td><td><code class="literal">1954-02-03</code></td></tr><tr><td><code class="literal">mmm.dd.yyyy</code></td><td><code class="literal">041269</code></td><td><code class="literal">1969-04-12</code></td></tr><tr><td><code class="literal">yy/mm/dd</code></td><td><code class="literal">In the year 2525, in the month of July, mankind will be alive on the 28th day</code></td><td><code class="literal">2525-07-28</code></td></tr><tr><td><code class="literal">dd-mm-yy</code></td><td><code class="literal">I said on the 28th of July in the year 2525</code></td><td><code class="literal">2525-07-28</code></td></tr><tr><td><code class="literal">mmm.dd.yyyy</code></td><td><code class="literal">9/14/58</code></td><td><code class="literal">1958-09-14</code></td></tr><tr><td><code class="literal">yy/mm/dd</code></td><td><code class="literal">47/03/29</code></td><td><code class="literal">1947-03-29</code></td></tr><tr><td><code class="literal">mmm.dd.yyyy</code></td><td><code class="literal">oct 28 1975</code></td><td><code class="literal">1975-10-28</code></td></tr><tr><td><code class="literal">mmddyy</code></td><td><code class="literal">Nov 14th, 1985</code></td><td><code class="literal">1985-11-14</code></td></tr></tbody></table></div></div><br class="table-break" /></dd></dl></div><p>
+   </p></div><div class="sect2" id="ECPG-PGTYPES-TIMESTAMP"><div class="titlepage"><div><div><h3 class="title">36.6.4. timestamp型</h3></div></div></div><span class="original">
+   &lt;title&gt;The timestamp Type&lt;/title&gt;
+</span><p>
+<span class="original">
+    The timestamp type in C enables your programs to deal with data of the SQL
+    type timestamp. See &lt;xref linkend="datatype-datetime"/&gt; for the equivalent
+    type in the &lt;productname&gt;PostgreSQL&lt;/productname&gt; server.
+</span>
+Cのタイムスタンプ型を使用してプログラムからSQLのタイムスタンプ型データを扱うことができます。
+<span class="productname">PostgreSQL</span>における対応する型については<a class="xref" href="datatype-datetime.html" title="8.5. 日付/時刻データ型">8.5</a>を参照してください。
+   </p><p>
+<span class="original">
+    The following functions can be used to work with the timestamp type:
+</span>
+以下の関数を使用してタイムスタンプ型を扱うことができます:
+    </p><div class="variablelist"><dl class="variablelist"><dt id="PGTYPESTIMESTAMPFROMASC"><span class="term"><code class="function">PGTYPEStimestamp_from_asc</code></span></dt><dd><p>
+<span class="original">
+        Parse a timestamp from its textual representation into a timestamp
+        variable.
+</span>
+テキスト表現のタイムスタンプをタイムスタンプ型変数に変換します。
+</p><pre class="synopsis">
+timestamp PGTYPEStimestamp_from_asc(char *str, char **endptr);
+</pre><p>
+<span class="original">
+        The function receives the string to parse (&lt;literal&gt;str&lt;/literal&gt;) and a
+        pointer to a C char* (&lt;literal&gt;endptr&lt;/literal&gt;).
+        At the moment ECPG always parses
+        the complete string and so it currently does not support to store the
+        address of the first invalid character in &lt;literal&gt;*endptr&lt;/literal&gt;.
+        You can safely set &lt;literal&gt;endptr&lt;/literal&gt; to NULL.
+</span>
+この関数は変換対象の文字列(<code class="literal">str</code>)とC char*へのポインタ(<code class="literal">endptr</code>)を受付けます。
+現在ECPGは文字列全体を解析しますので、現時点では<code class="literal">*endptr</code>に最初の無効な文字の場所を格納をすることサポートしません。
+このため<code class="literal">endptr</code>を安全に NULL にすることができます。
+       </p><p>
+<span class="original">
+        The function returns the parsed timestamp on success. On error,
+        &lt;literal&gt;PGTYPESInvalidTimestamp&lt;/literal&gt; is returned and &lt;varname&gt;errno&lt;/varname&gt; is
+        set to &lt;literal&gt;PGTYPES_TS_BAD_TIMESTAMP&lt;/literal&gt;. See &lt;xref linkend="pgtypesinvalidtimestamp"/&gt; for important notes on this value.
+</span>
+この関数は成功時変換後のタイムスタンプを返します。
+エラー時、<code class="literal">PGTYPESInvalidTimestamp</code>が返され、<code class="varname">errno</code>が<code class="literal">PGTYPES_TS_BAD_TIMESTAMP</code>に設定されます。
+この値についての重要な注意書きについて<a class="xref" href="ecpg-pgtypes.html#PGTYPESINVALIDTIMESTAMP"><code class="literal">PGTYPESInvalidTimestamp</code></a>を参照してください。
+       </p><p>
+<span class="original">
+        In general, the input string can contain any combination of an allowed
+        date specification, a whitespace character and an allowed time
+        specification. Note that time zones are not supported by ECPG. It can
+        parse them but does not apply any calculation as the
+        &lt;productname&gt;PostgreSQL&lt;/productname&gt; server does for example. Timezone
+        specifiers are silently discarded.
+</span>
+通常、入力文字列には許される日付指定の任意の組み合わせ、空白文字、許される時間指定を含むことができます。
+時間帯はECPGでサポートされていない点に注意してください。
+変換することはできますが、例えば<span class="productname">PostgreSQL</span>サーバが行うような計算を行うことはできません。
+時間帯指定は警告無しに無視されます。
+       </p><p>
+<span class="original">
+        &lt;xref linkend="ecpg-pgtypestimestamp-from-asc-example-table"/&gt; contains a few examples for input strings.
+</span>
+<a class="xref" href="ecpg-pgtypes.html#ECPG-PGTYPESTIMESTAMP-FROM-ASC-EXAMPLE-TABLE" title="表36.5 有効なPGTYPEStimestamp_from_ascの入力書式">表 36.5</a>に入力文字列の例をいくつか示します。
+       </p><div class="table" id="ECPG-PGTYPESTIMESTAMP-FROM-ASC-EXAMPLE-TABLE"><p class="title"><strong>表36.5 有効な<code class="function">PGTYPEStimestamp_from_asc</code>の入力書式</strong></p><div class="table-contents"><span class="original">
+         &lt;title&gt;Valid Input Formats for &lt;function&gt;PGTYPEStimestamp_from_asc&lt;/function&gt;&lt;/title&gt;
+</span><table class="table" summary="有効なPGTYPEStimestamp_from_ascの入力書式" border="1"><colgroup><col /><col /></colgroup><thead><tr><th>入力</th><th>結果</th></tr></thead><tbody><tr><td><code class="literal">1999-01-08 04:05:06</code></td><td><code class="literal">1999-01-08 04:05:06</code></td></tr><tr><td><code class="literal">January 8 04:05:06 1999 PST</code></td><td><code class="literal">1999-01-08 04:05:06</code></td></tr><tr><td><code class="literal">1999-Jan-08 04:05:06.789-8</code></td><td><code class="literal">1999-01-08 04:05:06.789 (時間帯指定は無視されます。)</code></td></tr><tr><td><code class="literal">J2451187 04:05-08:00</code></td><td><code class="literal">1999-01-08 04:05:00 (時間帯指定は無視されます。)</code></td></tr></tbody></table></div></div><br class="table-break" /></dd><dt id="PGTYPESTIMESTAMPTOASC"><span class="term"><code class="function">PGTYPEStimestamp_to_asc</code></span></dt><dd><p>
+<span class="original">
+        Converts a date to a C char* string.
+</span>
+date型をC char*文字列に変換します。
+</p><pre class="synopsis">
+char *PGTYPEStimestamp_to_asc(timestamp tstamp);
+</pre><p>
+<span class="original">
+        The function receives the timestamp &lt;literal&gt;tstamp&lt;/literal&gt; as
+        its only argument and returns an allocated string that contains the
+        textual representation of the timestamp.
+        The result must be freed with &lt;function&gt;PGTYPESchar_free()&lt;/function&gt;.
+</span>
+この関数はtimestamp型の<code class="literal">tstamp</code>を唯一の引数として受付け、timestamp型のテキスト表現を含む割り当てられた文字列を返します。
+結果は<code class="function">PGTYPESchar_free()</code>で解放しなければなりません。
+       </p></dd><dt id="PGTYPESTIMESTAMPCURRENT"><span class="term"><code class="function">PGTYPEStimestamp_current</code></span></dt><dd><p>
+<span class="original">
+        Retrieve the current timestamp.
+</span>
+現在のタイムスタンプを取り出します。
+</p><pre class="synopsis">
+void PGTYPEStimestamp_current(timestamp *ts);
+</pre><p>
+<span class="original">
+        The function retrieves the current timestamp and saves it into the
+        timestamp variable that &lt;literal&gt;ts&lt;/literal&gt; points to.
+</span>
+この関数は現在のタイムスタンプを取り出し、<code class="literal">ts</code>が指し示すtimestamp型変数に格納します。
+       </p></dd><dt id="PGTYPESTIMESTAMPFMTASC"><span class="term"><code class="function">PGTYPEStimestamp_fmt_asc</code></span></dt><dd><p>
+<span class="original">
+        Convert a timestamp variable to a C char* using a format mask.
+</span>
+書式マスクを使用してtimestamp型変数をC char*に変換します。
+</p><pre class="synopsis">
+int PGTYPEStimestamp_fmt_asc(timestamp *ts, char *output, int str_len, char *fmtstr);
+</pre><p>
+<span class="original">
+        The function receives a pointer to the timestamp to convert as its
+        first argument (&lt;literal&gt;ts&lt;/literal&gt;), a pointer to the output buffer
+        (&lt;literal&gt;output&lt;/literal&gt;), the maximal length that has been allocated for
+        the output buffer (&lt;literal&gt;str_len&lt;/literal&gt;) and the format mask to
+        use for the conversion (&lt;literal&gt;fmtstr&lt;/literal&gt;).
+</span>
+この関数は、最初の引数として変換対象のtimestamp型 (<code class="literal">ts</code>)を、出力バッファのポインタ(<code class="literal">output</code>)、出力バッファで割当て可能な最大長 (<code class="literal">str_len</code>)、変換に使用する書式マスク(<code class="literal">fmtstr</code>)を受付けます。
+       </p><p>
+<span class="original">
+        Upon success, the function returns 0 and a negative value if an
+        error occurred.
+</span>
+成功するとこの関数は0を返します。
+エラーが発生した場合は負の値が返ります。
+       </p><p>
+<span class="original">
+        You can use the following format specifiers for the format mask. The
+        format specifiers are the same ones that are used in the
+        &lt;function&gt;strftime&lt;/function&gt; function in &lt;productname&gt;libc&lt;/productname&gt;. Any
+        non-format specifier will be copied into the output buffer.
+</span>
+書式マスクには以下の書式指定を使用することができます。
+書式指定は<span class="productname">libc</span>の<code class="function">strftime</code>関数で使用されるものと同じです。
+書式指定以外は出力バッファにコピーされます。
+        <span class="original"> This is from the FreeBSD man page:
+             http://www.freebsd.org/cgi/man.cgi?query=strftime&amp;apropos=0&amp;sektion=3&amp;manpath=FreeBSD+7.0-current&amp;format=html
+        </span>
+        </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%A&lt;/literal&gt; - is replaced by national representation of
+           the full weekday name.
+</span>
+<code class="literal">%A</code> - 各言語の曜日名称に置換されます。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%a&lt;/literal&gt; - is replaced by national representation of
+           the abbreviated weekday name.
+</span>
+<code class="literal">%a</code> - 各言語の曜日略称に置換されます。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%B&lt;/literal&gt; - is replaced by national representation of
+           the full month name.
+</span>
+<code class="literal">%B</code> - 各言語の月名称に置換されます。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%b&lt;/literal&gt; - is replaced by national representation of
+           the abbreviated month name.
+</span>
+<code class="literal">%b</code> - 各言語の月略称に置換されます。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%C&lt;/literal&gt; - is replaced by (year / 100) as decimal
+           number; single digits are preceded by a zero.
+</span>
+<code class="literal">%C</code> - 年を100で割った10進数に置換されます。1桁の場合は先頭に0が付与されます。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%c&lt;/literal&gt; - is replaced by national representation of
+           time and date.
+</span>
+<code class="literal">%c</code> - 各言語の日付時刻表現に置換されます。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%D&lt;/literal&gt; - is equivalent to
+           &lt;literal&gt;%m/%d/%y&lt;/literal&gt;.
+</span>
+<code class="literal">%D</code> - <code class="literal">%m/%d/%y</code>と同じです。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%d&lt;/literal&gt; - is replaced by the day of the month as a
+           decimal number (01-31).
+</span>
+<code class="literal">%d</code> - 月内の10進日数(01-31)に置換されます。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%E*&lt;/literal&gt; &lt;literal&gt;%O*&lt;/literal&gt; -  POSIX locale
+           extensions. The sequences
+           &lt;literal&gt;%Ec&lt;/literal&gt;
+           &lt;literal&gt;%EC&lt;/literal&gt;
+           &lt;literal&gt;%Ex&lt;/literal&gt;
+           &lt;literal&gt;%EX&lt;/literal&gt;
+           &lt;literal&gt;%Ey&lt;/literal&gt;
+           &lt;literal&gt;%EY&lt;/literal&gt;
+           &lt;literal&gt;%Od&lt;/literal&gt;
+           &lt;literal&gt;%Oe&lt;/literal&gt;
+           &lt;literal&gt;%OH&lt;/literal&gt;
+           &lt;literal&gt;%OI&lt;/literal&gt;
+           &lt;literal&gt;%Om&lt;/literal&gt;
+           &lt;literal&gt;%OM&lt;/literal&gt;
+           &lt;literal&gt;%OS&lt;/literal&gt;
+           &lt;literal&gt;%Ou&lt;/literal&gt;
+           &lt;literal&gt;%OU&lt;/literal&gt;
+           &lt;literal&gt;%OV&lt;/literal&gt;
+           &lt;literal&gt;%Ow&lt;/literal&gt;
+           &lt;literal&gt;%OW&lt;/literal&gt;
+           &lt;literal&gt;%Oy&lt;/literal&gt;
+           are supposed to provide alternative representations.
+</span>
+<code class="literal">%E*</code> <code class="literal">%O*</code> - POSIXロケール拡張です。
+           <code class="literal">%Ec</code>
+           <code class="literal">%EC</code>
+           <code class="literal">%Ex</code>
+           <code class="literal">%EX</code>
+           <code class="literal">%Ey</code>
+           <code class="literal">%EY</code>
+           <code class="literal">%Od</code>
+           <code class="literal">%Oe</code>
+           <code class="literal">%OH</code>
+           <code class="literal">%OI</code>
+           <code class="literal">%Om</code>
+           <code class="literal">%OM</code>
+           <code class="literal">%OS</code>
+           <code class="literal">%Ou</code>
+           <code class="literal">%OU</code>
+           <code class="literal">%OV</code>
+           <code class="literal">%Ow</code>
+           <code class="literal">%OW</code>
+           <code class="literal">%Oy</code>
+という並びは別の表現を提供するものと仮定されています。
+          </p><p>
+<span class="original">
+           Additionally &lt;literal&gt;%OB&lt;/literal&gt; implemented to represent
+           alternative months names (used standalone, without day mentioned).
+</span>
+さらに、<code class="literal">%OB</code>は、（日に関する仕様がない単体で使用される）別の月名を表すものとして実装されています。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%e&lt;/literal&gt; - is replaced by the day of month as a decimal
+           number (1-31); single digits are preceded by a blank.
+</span>
+<code class="literal">%e</code> - 月内10進日数(1-31)に置換されます。1桁の場合は前に空白が付けられます。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%F&lt;/literal&gt; - is equivalent to &lt;literal&gt;%Y-%m-%d&lt;/literal&gt;.
+</span>
+<code class="literal">%F</code> - <code class="literal">%Y-%m-%d</code>と同じです。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%G&lt;/literal&gt; - is replaced by a year as a decimal number
+           with century. This year is the one that contains the greater part of
+           the week (Monday as the first day of the week).
+</span>
+<code class="literal">%G</code> - 世紀付の10進数として年に置換されます。
+この年は週の部分がより多く含まれます。（月曜が週の最初の日です。）
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%g&lt;/literal&gt; - is replaced by the same year as in
+           &lt;literal&gt;%G&lt;/literal&gt;, but as a decimal number without century
+           (00-99).
+</span>
+<code class="literal">%g</code> -<code class="literal">%G</code>同様に年に置換されますが、世紀の部分を除く10進数(00-99)になります。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%H&lt;/literal&gt; - is replaced by the hour (24-hour clock) as a
+           decimal number (00-23).
+</span>
+<code class="literal">%H</code> - 10進の時間(24時間単位)に置換されます(00-23)。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%h&lt;/literal&gt; - the same as &lt;literal&gt;%b&lt;/literal&gt;.
+</span>
+           <code class="literal">%h</code> - <code class="literal">%b</code>と同じです。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%I&lt;/literal&gt; - is replaced by the hour (12-hour clock) as a
+           decimal number (01-12).
+</span>
+<code class="literal">%I</code> - 10進の時間（12時間単位）に置換されます(01-12)。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%j&lt;/literal&gt; - is replaced by the day of the year as a
+           decimal number (001-366).
+</span>
+<code class="literal">%j</code> - 10進の年内日数に置換されます(001-366)。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%k&lt;/literal&gt; - is replaced by the hour (24-hour clock) as a
+           decimal number (0-23); single digits are preceded by a blank.
+</span>
+<code class="literal">%k</code> - 10進の時間(24時間単位)に置換されます(0-23)。1桁の場合は先頭に空白が付けられます。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%l&lt;/literal&gt; - is replaced by the hour (12-hour clock) as a
+           decimal number (1-12); single digits are preceded by a blank.
+</span>
+<code class="literal">%l</code> - 10進の時間（12時間単位）に置換されます(1-12)。1桁の場合は先頭に空白が付けられます。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%M&lt;/literal&gt; - is replaced by the minute as a decimal
+           number (00-59).
+</span>
+<code class="literal">%M</code> - 10進の分数に置換されます(00-59)。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%m&lt;/literal&gt; - is replaced by the month as a decimal number
+           (01-12).
+</span>
+<code class="literal">%m</code> -10進の月数に置換されます(01-12)。
+          </p></li><li class="listitem"><p>
+<span class="original">
+          &lt;literal&gt;%n&lt;/literal&gt; - is replaced by a newline.
+</span>
+<code class="literal">%n</code> - 改行に置換されます。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%O*&lt;/literal&gt; - the same as &lt;literal&gt;%E*&lt;/literal&gt;.
+</span>
+<code class="literal">%O*</code> - <code class="literal">%E*</code>と同じです。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%p&lt;/literal&gt; - is replaced by national representation of
+           either &lt;quote&gt;ante meridiem&lt;/quote&gt; or &lt;quote&gt;post meridiem&lt;/quote&gt; as appropriate.
+</span>
+<code class="literal">%p</code> - 各言語の"午前"または"午後"に適切に置換されます。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%R&lt;/literal&gt; - is equivalent to &lt;literal&gt;%H:%M&lt;/literal&gt;.
+</span>
+<code class="literal">%R</code> - <code class="literal">%H:%M</code>と同じです。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%r&lt;/literal&gt; - is equivalent to &lt;literal&gt;%I:%M:%S
+           %p&lt;/literal&gt;.
+</span>
+           <code class="literal">%r</code> - <code class="literal">%I:%M:%S %p</code>と同じです。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%S&lt;/literal&gt; - is replaced by the second as a decimal
+           number (00-60).
+</span>
+<code class="literal">%S</code> - 10進の秒数に置換されます(00-60)。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%s&lt;/literal&gt; - is replaced by the number of seconds since
+           the Epoch, UTC.
+</span>
+<code class="literal">%s</code> - エポック、UTCからの秒数に置換されます。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%T&lt;/literal&gt; - is equivalent to &lt;literal&gt;%H:%M:%S&lt;/literal&gt;
+</span>
+           <code class="literal">%T</code> - <code class="literal">%H:%M:%S</code>と同じです。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%t&lt;/literal&gt; - is replaced by a tab.
+</span>
+<code class="literal">%t</code> - タブに置換されます。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%U&lt;/literal&gt; - is replaced by the week number of the year
+           (Sunday as the first day of the week) as a decimal number (00-53).
+</span>
+           <code class="literal">%U</code> - 10進の週番号（日曜が週の先頭です）に置換されます。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%u&lt;/literal&gt; - is replaced by the weekday (Monday as the
+           first day of the week) as a decimal number (1-7).
+</span>
+           <code class="literal">%u</code> - 10進の週番号（月曜が週の先頭です）に置換されます。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%V&lt;/literal&gt; - is replaced by the week number of the year
+           (Monday as the first day of the week) as a decimal number (01-53).
+           If the week containing January 1 has four or more days in the new
+           year, then it is week 1; otherwise it is the last week of the
+           previous year, and the next week is week 1.
+</span>
+<code class="literal">%V</code> - 10進の年内の週番号（月曜が週の先頭です）に置換されます(01-53)。
+新しい年で、1月1日を含む週が4日以上存在する場合、その週が1となります。
+さもなくば、この週は前年の週となり、次の週が1となります。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%v&lt;/literal&gt; - is equivalent to
+           &lt;literal&gt;%e-%b-%Y&lt;/literal&gt;.
+</span>
+           <code class="literal">%v</code> - <code class="literal">%e-%b-%Y</code>と同じです。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%W&lt;/literal&gt; - is replaced by the week number of the year
+           (Monday as the first day of the week) as a decimal number (00-53).
+</span>
+<code class="literal">%W</code> - 10進の年内の週番号（月曜が週の先頭です）に置換されます(00-53)。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%w&lt;/literal&gt; - is replaced by the weekday (Sunday as the
+           first day of the week) as a decimal number (0-6).
+</span>
+<code class="literal">%w</code> - 10進の週内日数（日曜が週の先頭です）に置換されます(0-6)。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%X&lt;/literal&gt; - is replaced by national representation of
+           the time.
+</span>
+<code class="literal">%X</code> - 各言語の時間表現に置換されます。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%x&lt;/literal&gt; - is replaced by national representation of
+           the date.
+</span>
+<code class="literal">%x</code> - 各言語の日付表現に置換されます。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%Y&lt;/literal&gt; - is replaced by the year with century as a
+           decimal number.
+</span>
+<code class="literal">%Y</code> - 10進の世紀付年に置換されます。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%y&lt;/literal&gt; - is replaced by the year without century as a
+           decimal number (00-99).
+</span>
+<code class="literal">%y</code> - 10進の世紀なし年に置換されます(00-99)。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%Z&lt;/literal&gt; - is replaced by the time zone name.
+</span>
+<code class="literal">%Z</code> - 時間帯名称に置換されます。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%z&lt;/literal&gt; - is replaced by the time zone offset from
+           UTC; a leading plus sign stands for east of UTC, a minus sign for
+           west of UTC, hours and minutes follow with two digits each and no
+           delimiter between them (common form for RFC 822 date headers).
+</span>
+<code class="literal">%z</code> - UTCからの時間帯オフセットに置換されます。
+UTCより東では正符号が先頭に付き、西では負符号が付きます。
+それぞれ2桁の時間と分がその後に続きますが、その区切りはありません。（この形式はRFC 822の日付ヘッダでよく使用されます。）
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%+&lt;/literal&gt; - is replaced by national representation of
+           the date and time.
+</span>
+<code class="literal">%+</code> - 各言語の日付時刻表現に置換されます。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%-*&lt;/literal&gt; - GNU libc extension. Do not do any padding
+           when performing numerical outputs.
+</span>
+<code class="literal">%-*</code> - GNU libc拡張です。数値出力を行う際に何も文字を詰めません。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           $_* - GNU libc extension.    Explicitly specify space for padding.
+</span>
+$_* - GNU libcの拡張です。明示的に空白文字を使用して文字を詰めます。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%0*&lt;/literal&gt; - GNU libc extension. Explicitly specify zero
+           for padding.
+</span>
+<code class="literal">%0*</code> - GNU libcの拡張です。明示的に0を使用して文字を詰めます。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           &lt;literal&gt;%%&lt;/literal&gt; - is replaced by &lt;literal&gt;%&lt;/literal&gt;.
+</span>
+           <code class="literal">%%</code> - <code class="literal">%</code>に置換されます。
+          </p></li></ul></div><p>
+       </p></dd><dt id="PGTYPESTIMESTAMPSUB"><span class="term"><code class="function">PGTYPEStimestamp_sub</code></span></dt><dd><p>
+<span class="original">
+        Subtract one timestamp from another one and save the result in a
+        variable of type interval.
+</span>
+タイムスタンプの減算を行い、その結果をinterval型の変数に格納します。
+</p><pre class="synopsis">
+int PGTYPEStimestamp_sub(timestamp *ts1, timestamp *ts2, interval *iv);
+</pre><p>
+<span class="original">
+        The function will subtract the timestamp variable that &lt;literal&gt;ts2&lt;/literal&gt;
+        points to from the timestamp variable that &lt;literal&gt;ts1&lt;/literal&gt; points to
+        and will store the result in the interval variable that &lt;literal&gt;iv&lt;/literal&gt;
+        points to.
+</span>
+この関数は<code class="literal">ts1</code>が指し示すタイムスタンプ型変数から<code class="literal">ts2</code>が指し示すタイムスタンプ型変数を差し引き、<code class="literal">iv</code>が指し示すinterval型変数に結果を格納します。
+       </p><p>
+<span class="original">
+        Upon success, the function returns 0 and a negative value if an
+        error occurred.
+</span>
+成功すると、この関数は0を返し、エラーが発生した場合は負の値を返します。
+       </p></dd><dt id="PGTYPESTIMESTAMPDEFMTASC"><span class="term"><code class="function">PGTYPEStimestamp_defmt_asc</code></span></dt><dd><p>
+<span class="original">
+        Parse a timestamp value from its textual representation using a
+        formatting mask.
+</span>
+書式マスクを使用して、テキスト表現からtimestamp値へ変換します。
+</p><pre class="synopsis">
+int PGTYPEStimestamp_defmt_asc(char *str, char *fmt, timestamp *d);
+</pre><p>
+<span class="original">
+        The function receives the textual representation of a timestamp in the
+        variable &lt;literal&gt;str&lt;/literal&gt; as well as the formatting mask to use in the
+        variable &lt;literal&gt;fmt&lt;/literal&gt;. The result will be stored in the variable
+        that &lt;literal&gt;d&lt;/literal&gt; points to.
+</span>
+この関数は<code class="literal">str</code>変数内に格納されたタイムスタンプのテキスト表現、<code class="literal">fmt</code>変数内に格納された使用される書式マスクを受付けます。
+結果は<code class="literal">d</code>が指し示す変数内に格納されます。
+       </p><p>
+<span class="original">
+        If the formatting mask &lt;literal&gt;fmt&lt;/literal&gt; is NULL, the function will fall
+        back to the default formatting mask which is &lt;literal&gt;%Y-%m-%d
+        %H:%M:%S&lt;/literal&gt;.
+</span>
+書式マスク<code class="literal">fmt</code>が NULL ならば、この関数はデフォルトの書式マスク<code class="literal">%Y-%m-%d %H:%M:%S</code>を使用するようになります。
+       </p><p>
+<span class="original">
+        This is the reverse function to &lt;xref
+        linkend="pgtypestimestampfmtasc"/&gt;.  See the documentation there in
+        order to find out about the possible formatting mask entries.
+</span>
+これは<a class="xref" href="ecpg-pgtypes.html#PGTYPESTIMESTAMPFMTASC"><code class="function">PGTYPEStimestamp_fmt_asc</code></a>関数の逆です。
+使用できる書式マスク項目についてはその文書を参照してください。
+       </p></dd><dt id="PGTYPESTIMESTAMPADDINTERVAL"><span class="term"><code class="function">PGTYPEStimestamp_add_interval</code></span></dt><dd><p>
+<span class="original">
+        Add an interval variable to a timestamp variable.
+</span>
+timestamp型変数にinterval型変数を加算します。
+</p><pre class="synopsis">
+int PGTYPEStimestamp_add_interval(timestamp *tin, interval *span, timestamp *tout);
+</pre><p>
+<span class="original">
+        The function receives a pointer to a timestamp variable &lt;literal&gt;tin&lt;/literal&gt;
+        and a pointer to an interval variable &lt;literal&gt;span&lt;/literal&gt;. It adds the
+        interval to the timestamp and saves the resulting timestamp in the
+        variable that &lt;literal&gt;tout&lt;/literal&gt; points to.
+</span>
+この関数はtimestamp型変数<code class="literal">tin</code>へのポインタとinterval型変数<code class="literal">span</code>へのポインタを受付けます。
+これは、interval値をtimestamp値に加算し、その結果のtimestamp値を<code class="literal">tout</code>が指し示す変数に格納します。
+       </p><p>
+<span class="original">
+        Upon success, the function returns 0 and a negative value if an
+        error occurred.
+</span>
+成功するとこの関数は0を返します。
+エラーが発生した場合は負の値を返します。
+       </p></dd><dt id="PGTYPESTIMESTAMPSUBINTERVAL"><span class="term"><code class="function">PGTYPEStimestamp_sub_interval</code></span></dt><dd><p>
+<span class="original">
+        Subtract an interval variable from a timestamp variable.
+</span>
+timestamp型変数からinterval型変数の値を引きます。
+</p><pre class="synopsis">
+int PGTYPEStimestamp_sub_interval(timestamp *tin, interval *span, timestamp *tout);
+</pre><p>
+<span class="original">
+        The function subtracts the interval variable that &lt;literal&gt;span&lt;/literal&gt;
+        points to from the timestamp variable that &lt;literal&gt;tin&lt;/literal&gt; points to
+        and saves the result into the variable that &lt;literal&gt;tout&lt;/literal&gt; points
+        to.
+</span>
+この関数は<code class="literal">tin</code>が指し示すtimestamp型変数から<code class="literal">span</code>が指し示すinterval型変数を引きます。
+結果は<code class="literal">tout</code>が指し示す変数に保存されます。
+       </p><p>
+<span class="original">
+        Upon success, the function returns 0 and a negative value if an
+        error occurred.
+</span>
+成功するとこの関数は0を、エラーが発生した場合は負の値を返します。
+       </p></dd></dl></div><p>
+   </p></div><div class="sect2" id="ECPG-PGTYPES-INTERVAL"><div class="titlepage"><div><div><h3 class="title">36.6.5. interval型</h3></div></div></div><span class="original">
+   &lt;title&gt;The interval Type&lt;/title&gt;
+</span><p>
+<span class="original">
+    The interval type in C enables your programs to deal with data of the SQL
+    type interval. See &lt;xref linkend="datatype-datetime"/&gt; for the equivalent
+    type in the &lt;productname&gt;PostgreSQL&lt;/productname&gt; server.
+</span>
+Cにおけるinterval型を用いることにより、プログラムからSQLのinterval型のデータを扱うことができます。
+<span class="productname">PostgreSQL</span>サーバにおける対応する型については<a class="xref" href="datatype-datetime.html" title="8.5. 日付/時刻データ型">8.5</a>を参照してください。
+   </p><p>
+<span class="original">
+    The following functions can be used to work with the interval type:
+</span>
+以下の関数を使用して、interval型を扱うことができます。
+    </p><div class="variablelist"><dl class="variablelist"><dt id="PGTYPESINTERVALNEW"><span class="term"><code class="function">PGTYPESinterval_new</code></span></dt><dd><p>
+<span class="original">
+        Return a pointer to a newly allocated interval variable.
+</span>
+新しく割り当てたinterval型変数へのポインタを返します。
+</p><pre class="synopsis">
+interval *PGTYPESinterval_new(void);
+</pre><p>
+       </p></dd><dt id="PGTYPESINTERVALFREE"><span class="term"><code class="function">PGTYPESinterval_free</code></span></dt><dd><p>
+<span class="original">
+        Release the memory of a previously allocated interval variable.
+</span>
+以前に割り当てられたinterval型変数のメモリを解放します。
+</p><pre class="synopsis">
+void PGTYPESinterval_new(interval *intvl);
+</pre><p>
+       </p></dd><dt id="PGTYPESINTERVALFROMASC"><span class="term"><code class="function">PGTYPESinterval_from_asc</code></span></dt><dd><p>
+<span class="original">
+        Parse an interval from its textual representation.
+</span>
+テキスト表現からinterval型に変換します。
+</p><pre class="synopsis">
+interval *PGTYPESinterval_from_asc(char *str, char **endptr);
+</pre><p>
+<span class="original">
+        The function parses the input string &lt;literal&gt;str&lt;/literal&gt; and returns a
+        pointer to an allocated interval variable.
+        At the moment ECPG always parses
+        the complete string and so it currently does not support to store the
+        address of the first invalid character in &lt;literal&gt;*endptr&lt;/literal&gt;.
+        You can safely set &lt;literal&gt;endptr&lt;/literal&gt; to NULL.
+</span>
+この関数は入力文字列<code class="literal">str</code>を変換し、割当てられたinterval型へのポインタを返します。
+現在ECPGは文字列全体を解析しますので、現時点では<code class="literal">*endptr</code>に最初の無効な文字のアドレスを格納することをサポートしません。
+このため<code class="literal">endptr</code>を安全に NULL にすることができます。
+       </p></dd><dt id="PGTYPESINTERVALTOASC"><span class="term"><code class="function">PGTYPESinterval_to_asc</code></span></dt><dd><p>
+<span class="original">
+        Convert a variable of type interval to its textual representation.
+</span>
+interval型変数をテキスト表現に変換します。
+</p><pre class="synopsis">
+char *PGTYPESinterval_to_asc(interval *span);
+</pre><p>
+<span class="original">
+        The function converts the interval variable that &lt;literal&gt;span&lt;/literal&gt;
+        points to into a C char*. The output looks like this example:
+        &lt;literal&gt;@ 1 day 12 hours 59 mins 10 secs&lt;/literal&gt;.
+        The result must be freed with &lt;function&gt;PGTYPESchar_free()&lt;/function&gt;.
+</span>
+この関数は<code class="literal">span</code>が指し示すinterval型変数をC char*に変換します。
+出力は<code class="literal">@ 1 day 12 hours 59 mins 10 secs</code>のようになります。
+結果は<code class="function">PGTYPESchar_free()</code>で解放しなければなりません。
+       </p></dd><dt id="PGTYPESINTERVALCOPY"><span class="term"><code class="function">PGTYPESinterval_copy</code></span></dt><dd><p>
+<span class="original">
+        Copy a variable of type interval.
+</span>
+interval型変数をコピーします。
+</p><pre class="synopsis">
+int PGTYPESinterval_copy(interval *intvlsrc, interval *intvldest);
+</pre><p>
+<span class="original">
+        The function copies the interval variable that &lt;literal&gt;intvlsrc&lt;/literal&gt;
+        points to into the variable that &lt;literal&gt;intvldest&lt;/literal&gt; points to. Note
+        that you need to allocate the memory for the destination variable
+        before.
+</span>
+この関数は、<code class="literal">intvlsrc</code>が指し示すinterval型変数を <code class="literal">intvldest</code>が指し示す変数にコピーします。
+事前に格納先の変数用のメモリを割り当てる必要があることに注意してください。
+       </p></dd></dl></div><p>
+   </p></div><div class="sect2" id="ECPG-PGTYPES-DECIMAL"><div class="titlepage"><div><div><h3 class="title">36.6.6. decimal型</h3></div></div></div><span class="original">
+   &lt;title&gt;The decimal Type&lt;/title&gt;
+</span><p>
+<span class="original">
+     The decimal type is similar to the numeric type. However it is limited to
+     a maximum precision of 30 significant digits. In contrast to the numeric
+     type which can be created on the heap only, the decimal type can be
+     created either on the stack or on the heap (by means of the functions
+     &lt;function&gt;PGTYPESdecimal_new&lt;/function&gt; and
+     &lt;function&gt;PGTYPESdecimal_free&lt;/function&gt;).
+     There are a lot of other functions that deal with the decimal type in the
+     &lt;productname&gt;Informix&lt;/productname&gt; compatibility mode described in &lt;xref
+     linkend="ecpg-informix-compat"/&gt;.
+</span>
+decimal型はnumeric型に似ています。
+しかし、その最大精度は30有効桁に制限されています。
+ヒープ上にしか作成できないnumeric型と比べ、decimal型はスタックまたはヒープ上に作成することができます。
+（このためには<code class="function">PGTYPESdecimal_new</code>および<code class="function">PGTYPESdecimal_free</code>関数を使用します。）
+<a class="xref" href="ecpg-informix-compat.html" title="36.15. Informix互換モード">36.15</a>で説明する<span class="productname">Informix</span>互換モードではdecimal型を扱う関数がより多く存在します。
+   </p><p>
+<span class="original">
+    The following functions can be used to work with the decimal type and are
+    not only contained in the &lt;literal&gt;libcompat&lt;/literal&gt; library.
+</span>
+以下の関数を使用してdecimal型を扱うことができます。
+これらは<code class="literal">libcompat</code>ライブラリに含まれるものだけではありません。
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="function">PGTYPESdecimal_new</code></span></dt><dd><p>
+<span class="original">
+       Request a pointer to a newly allocated decimal variable.
+</span>
+新しく割り当てられたdecimal型変数へのポインタを要求します。
+</p><pre class="synopsis">
+decimal *PGTYPESdecimal_new(void);
+</pre><p>
+       </p></dd><dt><span class="term"><code class="function">PGTYPESdecimal_free</code></span></dt><dd><p>
+<span class="original">
+       Free a decimal type, release all of its memory.
+</span>
+decimal型を解放し、そのメモリをすべて解放します。
+</p><pre class="synopsis">
+void PGTYPESdecimal_free(decimal *var);
+</pre><p>
+       </p></dd></dl></div><p>
+   </p></div><div class="sect2" id="ECPG-PGTYPES-ERRNO"><div class="titlepage"><div><div><h3 class="title">36.6.7. pgtypeslibのerrno値</h3></div></div></div><span class="original">
+    &lt;title&gt;errno Values of pgtypeslib&lt;/title&gt;
+</span><p>
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">PGTYPES_NUM_BAD_NUMERIC</code></span></dt><dd><p>
+<span class="original">
+        An argument should contain a numeric variable (or point to a numeric
+        variable) but in fact its in-memory representation was invalid.
+</span>
+引数はnumeric型変数（またはnumeric型変数へのポインタ）を含んでいるはずですが、実際のメモリ上の表現は無効でした。
+       </p></dd><dt><span class="term"><code class="literal">PGTYPES_NUM_OVERFLOW</code></span></dt><dd><p>
+<span class="original">
+        An overflow occurred. Since the numeric type can deal with almost
+        arbitrary precision, converting a numeric variable into other types
+        might cause overflow.
+</span>
+オーバーフローが発生しました。
+numeric型はほぼ任意の精度を扱うことができますので、numeric型変数から他の型への変換ではオーバーフローが発生する可能性があります。
+       </p></dd><dt><span class="term"><code class="literal">PGTYPES_NUM_UNDERFLOW</code></span></dt><dd><p>
+<span class="original">
+        An underflow occurred. Since the numeric type can deal with almost
+        arbitrary precision, converting a numeric variable into other types
+        might cause underflow.
+</span>
+アンダーフローが発生しました。
+numeric型はほぼ任意の精度を扱うことができますので、numeric型変数から他の型への変換ではアンダーフローが発生する可能性があります。
+       </p></dd><dt><span class="term"><code class="literal">PGTYPES_NUM_DIVIDE_ZERO</code></span></dt><dd><p>
+<span class="original">
+        A division by zero has been attempted.
+</span>
+ゼロ除算をしようとしました。
+       </p></dd><dt><span class="term"><code class="literal">PGTYPES_DATE_BAD_DATE</code></span></dt><dd><p>
+<span class="original">
+        An invalid date string was passed to
+        the &lt;function&gt;PGTYPESdate_from_asc&lt;/function&gt; function.
+</span>
+<code class="function">PGTYPESdate_from_asc</code>関数に無効な日付文字列が渡されました。
+       </p></dd><dt><span class="term"><code class="literal">PGTYPES_DATE_ERR_EARGS</code></span></dt><dd><p>
+<span class="original">
+        Invalid arguments were passed to the
+        &lt;function&gt;PGTYPESdate_defmt_asc&lt;/function&gt; function.
+</span>
+<code class="function">PGTYPESdate_defmt_asc</code>関数に無効な引数が渡されました。
+       </p></dd><dt><span class="term"><code class="literal">PGTYPES_DATE_ERR_ENOSHORTDATE</code></span></dt><dd><p>
+<span class="original">
+        An invalid token in the input string was found by the
+        &lt;function&gt;PGTYPESdate_defmt_asc&lt;/function&gt; function.
+</span>
+<code class="function">PGTYPESdate_defmt_asc</code>関数により入力文字列内に無効なトークンが見つかりました。
+       </p></dd><dt><span class="term"><code class="literal">PGTYPES_INTVL_BAD_INTERVAL</code></span></dt><dd><p>
+<span class="original">
+        An invalid interval string was passed to the
+        &lt;function&gt;PGTYPESinterval_from_asc&lt;/function&gt; function, or an
+        invalid interval value was passed to the
+        &lt;function&gt;PGTYPESinterval_to_asc&lt;/function&gt; function.
+</span>
+<code class="function">PGTYPESinterval_from_asc</code>関数に無効な内部文字列が渡されました。
+もしくは<code class="function">PGTYPESinterval_to_asc</code>関数に無効な内部値が渡されました。
+       </p></dd><dt><span class="term"><code class="literal">PGTYPES_DATE_ERR_ENOTDMY</code></span></dt><dd><p>
+<span class="original">
+        There was a mismatch in the day/month/year assignment in the
+        &lt;function&gt;PGTYPESdate_defmt_asc&lt;/function&gt; function.
+</span>
+<code class="function">PGTYPESdate_defmt_asc</code>関数内の日/月/年の代入において不整合がありました。
+       </p></dd><dt><span class="term"><code class="literal">PGTYPES_DATE_BAD_DAY</code></span></dt><dd><p>
+<span class="original">
+        An invalid day of the month value was found by
+        the &lt;function&gt;PGTYPESdate_defmt_asc&lt;/function&gt; function.
+</span>
+<code class="function">PGTYPESdate_defmt_asc</code>関数により無効な月内日数が見つかりました。
+       </p></dd><dt><span class="term"><code class="literal">PGTYPES_DATE_BAD_MONTH</code></span></dt><dd><p>
+<span class="original">
+        An invalid month value was found by
+        the &lt;function&gt;PGTYPESdate_defmt_asc&lt;/function&gt; function.
+</span>
+<code class="function">PGTYPESdate_defmt_asc</code>関数によって無効な月値が見つかりました。
+       </p></dd><dt><span class="term"><code class="literal">PGTYPES_TS_BAD_TIMESTAMP</code></span></dt><dd><p>
+<span class="original">
+        An invalid timestamp string pass passed to
+        the &lt;function&gt;PGTYPEStimestamp_from_asc&lt;/function&gt; function,
+        or an invalid timestamp value was passed to
+        the &lt;function&gt;PGTYPEStimestamp_to_asc&lt;/function&gt; function.
+</span>
+<code class="function">PGTYPEStimestamp_from_asc</code>関数に無効なタイムスタンプ文字列が渡されました。
+もしくは<code class="function">PGTYPEStimestamp_to_asc</code>関数に無効なtimestamp値が渡されました。
+       </p></dd><dt><span class="term"><code class="literal">PGTYPES_TS_ERR_EINFTIME</code></span></dt><dd><p>
+<span class="original">
+        An infinite timestamp value was encountered in a context that
+        cannot handle it.
+</span>
+コンテキスト内で扱うことができない、無限なタイムスタンプ値がありました。
+       </p></dd></dl></div><p>
+   </p></div><div class="sect2" id="ECPG-PGTYPES-CONSTANTS"><div class="titlepage"><div><div><h3 class="title">36.6.8. pgtypeslibの特殊な定数</h3></div></div></div><span class="original">
+    &lt;title&gt;Special Constants of pgtypeslib&lt;/title&gt;
+</span><p>
+    </p><div class="variablelist"><dl class="variablelist"><dt id="PGTYPESINVALIDTIMESTAMP"><span class="term"><code class="literal">PGTYPESInvalidTimestamp</code></span></dt><dd><p>
+<span class="original">
+        A value of type timestamp representing an invalid time stamp. This is
+        returned by the function &lt;function&gt;PGTYPEStimestamp_from_asc&lt;/function&gt; on
+        parse error.
+        Note that due to the internal representation of the &lt;type&gt;timestamp&lt;/type&gt; data type,
+        &lt;literal&gt;PGTYPESInvalidTimestamp&lt;/literal&gt; is also a valid timestamp at
+        the same time. It is set to &lt;literal&gt;1899-12-31 23:59:59&lt;/literal&gt;. In order
+        to detect errors, make sure that your application does not only test
+        for &lt;literal&gt;PGTYPESInvalidTimestamp&lt;/literal&gt; but also for
+        &lt;literal&gt;errno != 0&lt;/literal&gt; after each call to
+        &lt;function&gt;PGTYPEStimestamp_from_asc&lt;/function&gt;.
+</span>
+無効なタイムスタンプを表すtimestamp型の値です。
+これは解析エラーの場合に<code class="function">PGTYPEStimestamp_from_asc</code>関数によって返されます。
+<code class="type">timestamp</code>データ型の内部表現のため、<code class="literal">PGTYPESInvalidTimestamp</code>はまた同時に有効なタイムスタンプでもあります。
+これは<code class="literal">1899-12-31 23:59:59</code>に設定されます。
+エラーを検知するためには、<code class="function">PGTYPEStimestamp_from_asc</code>を呼び出す度にその後、<code class="literal">PGTYPESInvalidTimestamp</code>を試験するだけではなく、<code class="literal">errno != 0</code>も試験してください。
+       </p></dd></dl></div><p>
+   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ecpg-dynamic.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="ecpg.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="ecpg-descriptors.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">36.5. 動的SQL </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 36.7. 記述子領域の使用</td></tr></table></div></body></html>

@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>7.5. 行の並べ替え</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="queries-union.html" title="7.4. 問い合わせの結合" /><link rel="next" href="queries-limit.html" title="7.6. LIMITとOFFSET" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="queries.html" title="第7章 問い合わせ">第7章 問い合わせ</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      queries-order.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="queries-union.html" title="7.4. 問い合わせの結合">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="queries.html" title="第7章 問い合わせ">上へ</a></td><td width="60%" align="center">7.5. 行の並べ替え</td><td width="20%" align="right"> <a accesskey="n" href="queries-limit.html" title="7.6. LIMITとOFFSET">次へ</a></td></tr></table><hr /></div><div class="sect1" id="QUERIES-ORDER"><div class="titlepage"><div><div><h2 class="title" style="clear: both">7.5. 行の並べ替え</h2></div></div></div><span class="original">
+  &lt;title&gt;Sorting Rows&lt;/title&gt;
+</span><a id="id-1.5.6.9.2" class="indexterm"></a><a id="id-1.5.6.9.3" class="indexterm"></a><p>
+<span class="original">
+   After a query has produced an output table (after the select list
+   has been processed) it can optionally be sorted.  If sorting is not
+   chosen, the rows will be returned in an unspecified order.  The actual
+   order in that case will depend on the scan and join plan types and
+   the order on disk, but it must not be relied on.  A particular
+   output ordering can only be guaranteed if the sort step is explicitly
+   chosen.
+</span>
+ある問い合わせが1つの出力テーブルを生成した後（選択リストの処理が完了した後）、並べ替えることができます。
+並べ替えが選ばれなかった場合、行は無規則な順序で返されます。
+そのような場合、実際の順序は、スキャンや結合計画の種類や、ディスク上に格納されている順序に依存します。
+しかし、当てにしてはいけません。
+明示的に並べ替え手続きを選択した場合にのみ、特定の出力順序は保証されます。
+  </p><p>
+<span class="original">
+   The &lt;literal&gt;ORDER BY&lt;/literal&gt; clause specifies the sort order:
+</span>
+<code class="literal">ORDER BY</code>句は並べ替えの順番を指定します。
+</p><pre class="synopsis">
+SELECT <em class="replaceable"><code>select_list</code></em>
+    FROM <em class="replaceable"><code>table_expression</code></em>
+    ORDER BY <em class="replaceable"><code>sort_expression1</code></em> [<span class="optional">ASC | DESC</span>] [<span class="optional">NULLS { FIRST | LAST }</span>]
+             [<span class="optional">, <em class="replaceable"><code>sort_expression2</code></em> [<span class="optional">ASC | DESC</span>] [<span class="optional">NULLS { FIRST | LAST }</span>] ...</span>]
+</pre><p>
+<span class="original">
+   The sort expression(s) can be any expression that would be valid in the
+   query's select list.  An example is:
+</span>
+並べ替え式(複数可)は問い合わせの選択リスト内で使用可能な任意の式を取ることができます。
+以下に例を示します。
+</p><pre class="programlisting">
+SELECT a, b FROM table1 ORDER BY a + b, c;
+</pre><p>
+<span class="original">
+   When more than one expression is specified,
+   the later values are used to sort rows that are equal according to the
+   earlier values.  Each expression can be followed by an optional
+   &lt;literal&gt;ASC&lt;/literal&gt; or &lt;literal&gt;DESC&lt;/literal&gt; keyword to set the sort direction to
+   ascending or descending.  &lt;literal&gt;ASC&lt;/literal&gt; order is the default.
+   Ascending order puts smaller values first, where
+   &lt;quote&gt;smaller&lt;/quote&gt; is defined in terms of the
+   &lt;literal&gt;&amp;lt;&lt;/literal&gt; operator.  Similarly, descending order is
+   determined with the &lt;literal&gt;&amp;gt;&lt;/literal&gt; operator.
+</span>
+複数の式が指定された場合、前の式の値が等しい行を並べ替える際に後の式の値が使用されます。
+列指定の後にオプションで<code class="literal">ASC</code>もしくは<code class="literal">DESC</code>を付与することで、並べ替えの方向を昇順、降順にするかを設定することができます。
+<code class="literal">ASC</code>順がデフォルトです。
+昇順では、小さな値を先に出力します。
+ここでの<span class="quote">「<span class="quote">小さい</span>」</span>とは、<code class="literal">&lt;</code>演算子によって決定されます。
+同様に降順では<code class="literal">&gt;</code>演算子で決定されます。
+    <a href="#ftn.id-1.5.6.9.5.10" class="footnote"><sup class="footnote" id="id-1.5.6.9.5.10">[5]</sup></a>
+  </p><p>
+<span class="original">
+   The &lt;literal&gt;NULLS FIRST&lt;/literal&gt; and &lt;literal&gt;NULLS LAST&lt;/literal&gt; options can be
+   used to determine whether nulls appear before or after non-null values
+   in the sort ordering.  By default, null values sort as if larger than any
+   non-null value; that is, &lt;literal&gt;NULLS FIRST&lt;/literal&gt; is the default for
+   &lt;literal&gt;DESC&lt;/literal&gt; order, and &lt;literal&gt;NULLS LAST&lt;/literal&gt; otherwise.
+</span>
+<code class="literal">NULLS FIRST</code>および<code class="literal">NULLS LAST</code>オプションを使用して、その並べ替え順においてNULL値を非NULL値の前にするか後にするかを決定することができます。
+デフォルトでは、NULL値はあたかもすべての非NULL値よりも大きいとみなして並べ替えます。
+と言うことは、<code class="literal">NULLS FIRST</code>は<code class="literal">DESC</code>順序付けのデフォルトで、そうでなければ<code class="literal">NULLS LAST</code>です。
+  </p><p>
+<span class="original">
+   Note that the ordering options are considered independently for each
+   sort column.  For example &lt;literal&gt;ORDER BY x, y DESC&lt;/literal&gt; means
+   &lt;literal&gt;ORDER BY x ASC, y DESC&lt;/literal&gt;, which is not the same as
+   &lt;literal&gt;ORDER BY x DESC, y DESC&lt;/literal&gt;.
+</span>
+この順序づけオプションは、並べ替えで使用される各列に個別に適用されることに注意してください。
+例えば、<code class="literal">ORDER BY x, y DESC</code>は、<code class="literal">ORDER BY x DESC, y DESC</code>と同じではなく、<code class="literal">ORDER BY x ASC, y DESC</code>を意味します。
+  </p><p>
+<span class="original">
+   A &lt;replaceable&gt;sort_expression&lt;/replaceable&gt; can also be the column label or number
+   of an output column, as in:
+</span>
+<em class="replaceable"><code>sort_expression</code></em>は以下のように列ラベルもしくは出力列の番号で指定することができます。
+</p><pre class="programlisting">
+SELECT a + b AS sum, c FROM table1 ORDER BY sum;
+SELECT a, max(b) FROM table1 GROUP BY a ORDER BY 1;
+</pre><p>
+<span class="original">
+   both of which sort by the first output column.  Note that an output
+   column name has to stand alone, that is, it cannot be used in an expression
+   &amp;mdash; for example, this is &lt;emphasis&gt;not&lt;/emphasis&gt; correct:
+</span>
+両方とも最初の出力列で並べ替えられます。
+出力列名は単体でなければなりません。つまり式としては使用できないことに注意してください。
+例えば以下は<span class="emphasis"><em>間違い</em></span>です。
+</p><pre class="programlisting">
+<span class="original">
+SELECT a + b AS sum, c FROM table1 ORDER BY sum + c;          &amp;#045;&amp;#045; wrong
+</span>
+SELECT a + b AS sum, c FROM table1 ORDER BY sum + c;          -- 間違い
+</pre><p>
+<span class="original">
+   This restriction is made to reduce ambiguity.  There is still
+   ambiguity if an &lt;literal&gt;ORDER BY&lt;/literal&gt; item is a simple name that
+   could match either an output column name or a column from the table
+   expression.  The output column is used in such cases.  This would
+   only cause confusion if you use &lt;literal&gt;AS&lt;/literal&gt; to rename an output
+   column to match some other table column's name.
+</span>
+これは曖昧さを減らすための制限です。
+<code class="literal">ORDER BY</code>項目が単純な名前であっても、出力列名とテーブル式による列と同じ名前となる場合、曖昧さはまだ存在します。
+この場合、出力列名が使用されます。
+<code class="literal">AS</code>を使用して他のテーブル列の名前と同じ名前に出力列を変名した場合にのみ混乱が発生します。
+  </p><p>
+<span class="original">
+   &lt;literal&gt;ORDER BY&lt;/literal&gt; can be applied to the result of a
+   &lt;literal&gt;UNION&lt;/literal&gt;, &lt;literal&gt;INTERSECT&lt;/literal&gt;, or &lt;literal&gt;EXCEPT&lt;/literal&gt;
+   combination, but in this case it is only permitted to sort by
+   output column names or numbers, not by expressions.
+</span>
+<code class="literal">ORDER BY</code>を、<code class="literal">UNION</code>、<code class="literal">INTERSECT</code>、<code class="literal">EXCEPT</code>組み合わせの結果に適用することができます。
+しかしこの場合、出力列の名前または番号でのみ並べ替えることができ、式では並べ替えることができません。
+  </p><div class="footnotes"><br /><hr style="width:100; text-align:left;margin-left: 0" /><div id="ftn.id-1.5.6.9.5.10" class="footnote"><p><a href="#id-1.5.6.9.5.10" class="para"><sup class="para">[5] </sup></a>
+<span class="original">
+      Actually, &lt;productname&gt;PostgreSQL&lt;/productname&gt; uses the &lt;firstterm&gt;default B-tree
+      operator class&lt;/firstterm&gt; for the expression's data type to determine the sort
+      ordering for &lt;literal&gt;ASC&lt;/literal&gt; and &lt;literal&gt;DESC&lt;/literal&gt;.  Conventionally,
+      data types will be set up so that the &lt;literal&gt;&amp;lt;&lt;/literal&gt; and
+      &lt;literal&gt;&amp;gt;&lt;/literal&gt; operators correspond to this sort ordering,
+      but a user-defined data type's designer could choose to do something
+      different.
+</span>
+実際、<span class="productname">PostgreSQL</span>は、<code class="literal">ASC</code>と<code class="literal">DESC</code>の並べ替え順を決定するために、式のデータ型用の<em class="firstterm">デフォルトのB-tree演算子クラス</em>を使用します。
+慣習的に、データ型は<code class="literal">&lt;</code>と<code class="literal">&gt;</code>演算子をこの並べ替え順になるように設定されます。
+しかし、ユーザ定義データ型の設計者は異なるものを選択することができます。
+     </p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="queries-union.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="queries.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="queries-limit.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">7.4. 問い合わせの結合 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 7.6. <code class="literal">LIMIT</code>と<code class="literal">OFFSET</code></td></tr></table></div></body></html>

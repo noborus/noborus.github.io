@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>34.7. 近道インタフェース</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="libpq-cancel.html" title="34.6. 処理中の問い合わせのキャンセル" /><link rel="next" href="libpq-notify.html" title="34.8. 非同期通知" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="libpq.html" title="第34章 libpq - C ライブラリ">第34章 <span class="application">libpq</span> - C ライブラリ</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      libpq-fastpath.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="libpq-cancel.html" title="34.6. 処理中の問い合わせのキャンセル">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="libpq.html" title="第34章 libpq - C ライブラリ">上へ</a></td><td width="60%" align="center">34.7. 近道インタフェース</td><td width="20%" align="right"> <a accesskey="n" href="libpq-notify.html" title="34.8. 非同期通知">次へ</a></td></tr></table><hr /></div><div class="sect1" id="LIBPQ-FASTPATH"><div class="titlepage"><div><div><h2 class="title" style="clear: both">34.7. 近道インタフェース</h2></div></div></div><span class="original">
+  &lt;title&gt;The Fast-Path Interface&lt;/title&gt;
+</span><a id="id-1.7.3.14.2" class="indexterm"></a><p>
+<span class="original">
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; provides a fast-path interface
+   to send simple function calls to the server.
+</span>
+<span class="productname">PostgreSQL</span>は、サーバへの簡単な関数呼び出しを送信する近道 (fast-path) インタフェースを用意しています。
+  </p><div class="tip"><h3 class="title">ヒント</h3><p>
+<span class="original">
+    This interface is somewhat obsolete, as one can achieve similar
+    performance and greater functionality by setting up a prepared
+    statement to define the function call.  Then, executing the statement
+    with binary transmission of parameters and results substitutes for a
+    fast-path function call.
+</span>
+この関数はどちらかというと廃れたものです。
+同様の性能やそれ以上の機能を、関数呼び出しを定義したプリペアド文を設定することで達成できるからです。
+そして、その文をパラメータと結果をバイナリ転送するように実行すれば、近道関数呼び出しを置き換えることになります。
+   </p></div><p>
+<span class="original">
+   The function &lt;function&gt;PQfn&lt;/function&gt;&lt;indexterm&gt;&lt;primary&gt;PQfn&lt;/primary&gt;&lt;/indexterm&gt;
+   requests execution of a server function via the fast-path interface:
+</span>
+<code class="function">PQfn</code>関数は近道インタフェースを使ってサーバ関数の実行を要求します。
+</p><pre class="synopsis">
+PGresult *PQfn(PGconn *conn,
+               int fnid,
+               int *result_buf,
+               int *result_len,
+               int result_is_int,
+               const PQArgBlock *args,
+               int nargs);
+
+typedef struct
+{
+    int len;
+    int isint;
+    union
+    {
+        int *ptr;
+        int integer;
+    } u;
+} PQArgBlock;
+</pre><p>
+  </p><p>
+<span class="original">
+   The &lt;parameter&gt;fnid&lt;/parameter&gt; argument is the OID of the function to be
+   executed.  &lt;parameter&gt;args&lt;/parameter&gt; and &lt;parameter&gt;nargs&lt;/parameter&gt; define the
+   parameters to be passed to the function; they must match the declared
+   function argument list.  When the &lt;parameter&gt;isint&lt;/parameter&gt; field of a
+   parameter structure is true, the &lt;parameter&gt;u.integer&lt;/parameter&gt; value is sent
+   to the server as an integer of the indicated length (this must be
+   2 or 4 bytes); proper byte-swapping occurs.  When &lt;parameter&gt;isint&lt;/parameter&gt;
+   is false, the indicated number of bytes at &lt;parameter&gt;*u.ptr&lt;/parameter&gt; are
+   sent with no processing; the data must be in the format expected by
+   the server for binary transmission of the function's argument data
+   type.  (The declaration of &lt;parameter&gt;u.ptr&lt;/parameter&gt; as being of
+   type &lt;type&gt;int *&lt;/type&gt; is historical; it would be better to consider
+   it &lt;type&gt;void *&lt;/type&gt;.)
+   &lt;parameter&gt;result_buf&lt;/parameter&gt; points to the buffer in which to place
+   the function's return value.  The caller must have allocated sufficient
+   space to store the return value.  (There is no check!) The actual result
+   length in bytes will be returned in the integer pointed to by
+   &lt;parameter&gt;result_len&lt;/parameter&gt;.  If a 2- or 4-byte integer result
+   is expected, set &lt;parameter&gt;result_is_int&lt;/parameter&gt; to 1, otherwise
+   set it to 0.  Setting &lt;parameter&gt;result_is_int&lt;/parameter&gt; to 1 causes
+   &lt;application&gt;libpq&lt;/application&gt; to byte-swap the value if necessary, so that it
+   is delivered as a proper &lt;type&gt;int&lt;/type&gt; value for the client machine;
+   note that a 4-byte integer is delivered into &lt;parameter&gt;*result_buf&lt;/parameter&gt;
+   for either allowed result size.
+   When &lt;parameter&gt;result_is_int&lt;/parameter&gt; is 0, the binary-format byte string
+   sent by the server is returned unmodified. (In this case it's better
+   to consider &lt;parameter&gt;result_buf&lt;/parameter&gt; as being of
+   type &lt;type&gt;void *&lt;/type&gt;.)
+</span>
+<em class="parameter"><code>fnid</code></em>引数は実行する関数のOIDです。
+<em class="parameter"><code>args</code></em>と<em class="parameter"><code>nargs</code></em>は関数に渡すパラメータを定義します。
+これらは関数宣言における引数リストに一致しなければなりません。
+パラメータ構造体の<em class="parameter"><code>isint</code></em>が真の場合、<em class="parameter"><code>u.integer</code></em>の値はサーバに指定長の整数として送信されます。
+(これは2もしくは4バイトでなければなりません。)
+この時、適切なバイト順の交換が行なわれます。
+<em class="parameter"><code>isint</code></em>が偽の場合は、<em class="parameter"><code>*u.ptr</code></em>で指定されたバイト数が無処理で送信されます。
+関数のパラメータデータ型をバイナリ転送で行うために、このデータはサーバで想定する書式である必要があります。
+(<em class="parameter"><code>u.ptr</code></em>を<code class="type">int *</code>型と宣言するのは歴史的なものです。<code class="type">void *</code>と考えた方が良いでしょう。)
+<em class="parameter"><code>result_buf</code></em>は関数の戻り値を格納するバッファを指しています。
+呼び出し側は戻り値を格納するのに十分な領域を確保しておかなければいけません。
+（ライブラリ側ではこの検査はしていません！）
+バイト単位での結果の実データ長は<em class="parameter"><code>result_len</code></em>が指す整数で返されます。
+結果が2、4バイト整数だと想定できるなら<em class="parameter"><code>result_is_int</code></em>を1に、そうでなければ0を設定します。
+<em class="parameter"><code>result_is_int</code></em>を1にすれば、必要に応じて値のバイト順を入れ換えるよう<span class="application">libpq</span>に指示することになります。
+そしてクライアントマシン上で正しい<code class="type">int</code>値となるように転送します。
+4バイト整数は認められた結果の大きさで<em class="parameter"><code>*result_buf</code></em>に転送されることに注意してください。
+<em class="parameter"><code>result_is_int</code></em>が0の場合は、バックエンドが送ったバイナリ書式のバイト列を何も修正せずに返します。
+(この場合、<em class="parameter"><code>result_buf</code></em>は<code class="type">void *</code>型と考えた方が良いでしょう。)
+  </p><p>
+<span class="original">
+   &lt;function&gt;PQfn&lt;/function&gt; always returns a valid
+   &lt;structname&gt;PGresult&lt;/structname&gt; pointer. The result status should be
+   checked before the result is used.   The caller is responsible for
+   freeing  the  &lt;structname&gt;PGresult&lt;/structname&gt;  with
+   &lt;function&gt;PQclear&lt;/function&gt; when it is no longer needed.
+</span>
+<code class="function">PQfn</code>は常に有効な<code class="structname">PGresult*</code>を返します。
+結果を使う前にはまず、結果ステータスを調べておくべきでしょう。
+結果が必要なくなった時点で、<code class="function">PQclear</code>によって、<code class="structname">PGresult</code>を解放するのは、呼び出し側の責任です。
+  </p><p>
+<span class="original">
+   Note that it is not possible to handle null arguments, null results,
+   nor set-valued results when using this interface.
+</span>
+このインタフェースを使用した場合、NULL引数やNULL結果、セット値の結果を扱うことができないことに注意してください。
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="libpq-cancel.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="libpq.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="libpq-notify.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">34.6. 処理中の問い合わせのキャンセル </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 34.8. 非同期通知</td></tr></table></div></body></html>

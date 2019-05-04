@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>5.13. 依存関係の追跡</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="ddl-others.html" title="5.12. その他のデータベースオブジェクト" /><link rel="next" href="dml.html" title="第6章 データ操作" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="ddl.html" title="第5章 データ定義">第5章 データ定義</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      ddl-depend.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="ddl-others.html" title="5.12. その他のデータベースオブジェクト">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="ddl.html" title="第5章 データ定義">上へ</a></td><td width="60%" align="center">5.13. 依存関係の追跡</td><td width="20%" align="right"> <a accesskey="n" href="dml.html" title="第6章 データ操作">次へ</a></td></tr></table><hr /></div><div class="sect1" id="DDL-DEPEND"><div class="titlepage"><div><div><h2 class="title" style="clear: both">5.13. 依存関係の追跡</h2></div></div></div><span class="original">
+  &lt;title&gt;Dependency Tracking&lt;/title&gt;
+</span><a id="id-1.5.4.15.2" class="indexterm"></a><a id="id-1.5.4.15.3" class="indexterm"></a><p>
+<span class="original">
+   When you create complex database structures involving many tables
+   with foreign key constraints, views, triggers, functions, etc. you
+   implicitly create a net of dependencies between the objects.
+   For instance, a table with a foreign key constraint depends on the
+   table it references.
+</span>
+外部キー制約や、ビュー、トリガ、関数などを使ったテーブルが多数含まれるような複雑なデータベース構造を作成すると、ユーザはそれらのオブジェクト間の暗黙的な依存関係のネットワークも作成していることになります。
+例えば、外部キー制約を持つテーブルは、参照するテーブルに依存しています。
+  </p><p>
+<span class="original">
+   To ensure the integrity of the entire database structure,
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; makes sure that you cannot
+   drop objects that other objects still depend on.  For example,
+   attempting to drop the products table we considered in &lt;xref
+   linkend="ddl-constraints-fk"/&gt;, with the orders table depending on
+   it, would result in an error message like this:
+</span>
+データベース構造全体の整合性を保つため、<span class="productname">PostgreSQL</span>は、他のオブジェクトと依存関係にあるオブジェクトの削除を許可しません。
+例えば、<a class="xref" href="ddl-constraints.html#DDL-CONSTRAINTS-FK" title="5.3.5. 外部キー">5.3.5</a>で検討したproductsテーブルを削除しようとしても、ordersテーブルがこのテーブルに依存しているので、以下のようなエラーメッセージが現れます。
+</p><pre class="screen">
+DROP TABLE products;
+
+ERROR:  cannot drop table products because other objects depend on it
+DETAIL:  constraint orders_product_no_fkey on table orders depends on table products
+HINT:  Use DROP ... CASCADE to drop the dependent objects too.
+</pre><p>
+<span class="original">
+   The error message contains a useful hint: if you do not want to
+   bother deleting all the dependent objects individually, you can run:
+</span>
+エラーメッセージには役に立つヒントが含まれています。
+以下のようにすると、依存する全てのオブジェクトを1つずつ削除する手間を省けます。
+</p><pre class="screen">
+DROP TABLE products CASCADE;
+</pre><p>
+<span class="original">
+   and all the dependent objects will be removed, as will any objects
+   that depend on them, recursively.  In this case, it doesn't remove
+   the orders table, it only removes the foreign key constraint.
+   It stops there because nothing depends on the foreign key constraint.
+   (If you want to check what &lt;command&gt;DROP ... CASCADE&lt;/command&gt; will do,
+   run &lt;command&gt;DROP&lt;/command&gt; without &lt;literal&gt;CASCADE&lt;/literal&gt; and read the
+   &lt;literal&gt;DETAIL&lt;/literal&gt; output.)
+</span>
+これで、全ての依存オブジェクトが削除され、それらに依存するいかなるオブジェクトも削除されます。
+この場合、ordersテーブルは削除されずに外部キー制約のみが削除されます。
+外部キー制約に依存するものが何もないので、処理がそこで停止します。
+（<code class="command">DROP ... CASCADE</code>が何を行うかを知りたい場合は、<code class="literal">CASCADE</code>を指定せずに<code class="command">DROP</code>を実行して<code class="literal">DETAIL</code>出力を読んでください）。
+  </p><p>
+<span class="original">
+   Almost all &lt;command&gt;DROP&lt;/command&gt; commands in &lt;productname&gt;PostgreSQL&lt;/productname&gt; support
+   specifying &lt;literal&gt;CASCADE&lt;/literal&gt;.  Of course, the nature of
+   the possible dependencies varies with the type of the object.  You
+   can also write &lt;literal&gt;RESTRICT&lt;/literal&gt; instead of
+   &lt;literal&gt;CASCADE&lt;/literal&gt; to get the default behavior, which is to
+   prevent dropping objects that any other objects depend on.
+</span>
+<span class="productname">PostgreSQL</span>では、ほぼ全ての<code class="command">DROP</code>コマンドに<code class="literal">CASCADE</code>を指定することができます。
+もちろん、どのような依存関係が存在するかは、オブジェクトの種類によって異なります。
+また、<code class="literal">CASCADE</code>ではなく<code class="literal">RESTRICT</code>と記述することもできます。
+これは、他のオブジェクトが依存しているオブジェクトの削除を禁止するというデフォルトの振舞いになります。
+  </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+    According to the SQL standard, specifying either
+    &lt;literal&gt;RESTRICT&lt;/literal&gt; or &lt;literal&gt;CASCADE&lt;/literal&gt; is
+    required in a &lt;command&gt;DROP&lt;/command&gt; command.  No database system actually
+    enforces that rule, but whether the default behavior
+    is &lt;literal&gt;RESTRICT&lt;/literal&gt; or &lt;literal&gt;CASCADE&lt;/literal&gt; varies
+    across systems.
+</span>
+標準SQLでは、<code class="command">DROP</code>コマンドで<code class="literal">RESTRICT</code>または<code class="literal">CASCADE</code>のいずれかを指定する必要があります。
+実際にこの決まり通りのデータベースシステムはありませんが、デフォルトが<code class="literal">RESTRICT</code>であるか、<code class="literal">CASCADE</code>であるかは、システムによって異なります。
+   </p></div><p>
+<span class="original">
+   If a &lt;command&gt;DROP&lt;/command&gt; command lists multiple
+   objects, &lt;literal&gt;CASCADE&lt;/literal&gt; is only required when there are
+   dependencies outside the specified group.  For example, when saying
+   &lt;literal&gt;DROP TABLE tab1, tab2&lt;/literal&gt; the existence of a foreign
+   key referencing &lt;literal&gt;tab1&lt;/literal&gt; from &lt;literal&gt;tab2&lt;/literal&gt; would not mean
+   that &lt;literal&gt;CASCADE&lt;/literal&gt; is needed to succeed.
+</span>
+<code class="command">DROP</code>コマンドで複数のオブジェクトを羅列した場合、<code class="literal">CASCADE</code>は、指定されたグループの外部に依存関係が存在する時のみ要求されます。
+例えば、<code class="literal">DROP TABLE tab1, tab2</code>と記述したとき、<code class="literal">tab2</code>から<code class="literal">tab1</code>への外部キー参照の存在は、<code class="literal">CASCADE</code>の指定がコマンド成功に必要とされるということを意味しません。
+  </p><p>
+<span class="original">
+   For user-defined functions, &lt;productname&gt;PostgreSQL&lt;/productname&gt; tracks
+   dependencies associated with a function's externally-visible properties,
+   such as its argument and result types, but &lt;emphasis&gt;not&lt;/emphasis&gt; dependencies
+   that could only be known by examining the function body.  As an example,
+   consider this situation:
+</span>
+ユーザ定義関数について、<span class="productname">PostgreSQL</span>は引数や結果の型など、関数の外部に可視な属性に関連した依存性については追跡しますが、関数の実体を検査することによってしかわからない依存性は追跡<span class="emphasis"><em>しません</em></span>。
+例えば以下の状況を考えてみます。
+
+</p><pre class="programlisting">
+CREATE TYPE rainbow AS ENUM ('red', 'orange', 'yellow',
+                             'green', 'blue', 'purple');
+
+CREATE TABLE my_colors (color rainbow, note text);
+
+CREATE FUNCTION get_color_note (rainbow) RETURNS text AS
+  'SELECT note FROM my_colors WHERE color = $1'
+  LANGUAGE SQL;
+</pre><p>
+
+<span class="original">
+   (See &lt;xref linkend="xfunc-sql"/&gt; for an explanation of SQL-language
+   functions.)  &lt;productname&gt;PostgreSQL&lt;/productname&gt; will be aware that
+   the &lt;function&gt;get_color_note&lt;/function&gt; function depends on the &lt;type&gt;rainbow&lt;/type&gt;
+   type: dropping the type would force dropping the function, because its
+   argument type would no longer be defined.  But &lt;productname&gt;PostgreSQL&lt;/productname&gt;
+   will not consider &lt;function&gt;get_color_note&lt;/function&gt; to depend on
+   the &lt;structname&gt;my_colors&lt;/structname&gt; table, and so will not drop the function if
+   the table is dropped.  While there are disadvantages to this approach,
+   there are also benefits.  The function is still valid in some sense if the
+   table is missing, though executing it would cause an error; creating a new
+   table of the same name would allow the function to work again.
+</span>
+（SQL言語による関数についての説明は<a class="xref" href="xfunc-sql.html" title="38.5. 問い合わせ言語（SQL）関数">38.5</a>を参照してください。）
+<span class="productname">PostgreSQL</span>は関数<code class="function">get_color_note</code>が型<code class="type">rainbow</code>に依存することは認識します。
+例えば、その型を削除すると、関数の引数の型が定義されなくなるため、関数の削除も強制されます。
+しかし、<span class="productname">PostgreSQL</span>は<code class="function">get_color_note</code>がテーブル<code class="structname">my_colors</code>に依存するとは考えません。
+従って、そのテーブルが削除されても関数は削除されません。
+この方法には不利な点もありますが、同時に利益もあります。
+テーブルがない状態で関数を実行すればエラーを引き起こしますが、それでも関数はある意味で、有効な状態になっています。
+そのため、同じ名前の新しいテーブルを作成することで、関数を再び動作させることができます。
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ddl-others.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="ddl.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="dml.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">5.12. その他のデータベースオブジェクト </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 第6章 データ操作</td></tr></table></div></body></html>

@@ -1,0 +1,1162 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>4.1. 字句の構造</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-syntax.html" title="第4章 SQLの構文" /><link rel="next" href="sql-expressions.html" title="4.2. 評価式" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-syntax.html" title="第4章 SQLの構文">第4章 SQLの構文</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      sql-syntax-lexical.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-syntax.html" title="第4章 SQLの構文">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-syntax.html" title="第4章 SQLの構文">上へ</a></td><td width="60%" align="center">4.1. 字句の構造</td><td width="20%" align="right"> <a accesskey="n" href="sql-expressions.html" title="4.2. 評価式">次へ</a></td></tr></table><hr /></div><div class="sect1" id="SQL-SYNTAX-LEXICAL"><div class="titlepage"><div><div><h2 class="title" style="clear: both">4.1. 字句の構造</h2></div></div></div><span class="original">
+  &lt;title&gt;Lexical Structure&lt;/title&gt;
+</span><a id="id-1.5.3.5.2" class="indexterm"></a><p>
+<span class="original">
+   SQL input consists of a sequence of
+   &lt;firstterm&gt;commands&lt;/firstterm&gt;.  A command is composed of a
+   sequence of &lt;firstterm&gt;tokens&lt;/firstterm&gt;, terminated by a
+   semicolon (&lt;quote&gt;;&lt;/quote&gt;).  The end of the input stream also
+   terminates a command.  Which tokens are valid depends on the syntax
+   of the particular command.
+</span>
+SQLの入力は、ひと続きの<em class="firstterm">コマンド</em>からなります。
+コマンドは<em class="firstterm">トークン</em>が繋がったもので構成され、最後はセミコロン（<span class="quote">「<span class="quote">;</span>」</span>）で終わります。
+入力ストリームの終了もやはりコマンドを終わらせます。
+どのトークンが有効かは特定のコマンドの構文によります。
+  </p><p>
+<span class="original">
+   A token can be a &lt;firstterm&gt;key word&lt;/firstterm&gt;, an
+   &lt;firstterm&gt;identifier&lt;/firstterm&gt;, a &lt;firstterm&gt;quoted
+   identifier&lt;/firstterm&gt;, a &lt;firstterm&gt;literal&lt;/firstterm&gt; (or
+   constant), or a special character symbol.  Tokens are normally
+   separated by whitespace (space, tab, newline), but need not be if
+   there is no ambiguity (which is generally only the case if a
+   special character is adjacent to some other token type).
+</span>
+トークンは<em class="firstterm">キーワード</em>、<em class="firstterm">識別子</em>、<em class="firstterm">引用符で囲まれた識別子</em>、<em class="firstterm">リテラル</em>（もしくは定数）、特別な文字シンボルです。
+トークンは通常空白（スペース、タブ、改行）で区切られますが、曖昧さがなければ（一般的には特別な文字が他のトークン型と隣接している場合のみ）必要ありません。
+  </p><p>
+<span class="original">
+    For example, the following is (syntactically) valid SQL input:
+</span>
+例えば、以下のものは（構文的に）正しいSQLの入力です。
+</p><pre class="programlisting">
+SELECT * FROM MY_TABLE;
+UPDATE MY_TABLE SET A = 5;
+INSERT INTO MY_TABLE VALUES (3, 'hi there');
+</pre><p>
+<span class="original">
+    This is a sequence of three commands, one per line (although this
+    is not required; more than one command can be on a line, and
+    commands can usefully be split across lines).
+</span>
+この例は1行に1つのコマンドを記述した、3つのコマンドが連続しています（必ずしも1つのコマンドを1行で書く必要はありません。 1行に複数のコマンドを入力することも可能ですし、1つのコマンドを複数行に分けて記述することも可能です）。
+   </p><p>
+<span class="original">
+   Additionally, &lt;firstterm&gt;comments&lt;/firstterm&gt; can occur in SQL
+   input.  They are not tokens, they are effectively equivalent to
+   whitespace.
+</span>
+さらに、入力されたSQLに<em class="firstterm">コメント</em>が付いていても構いません。
+コメントはトークンではなく、その効果は空白と同じです。
+  </p><p>
+<span class="original">
+   The SQL syntax is not very consistent regarding what tokens
+   identify commands and which are operands or parameters.  The first
+   few tokens are generally the command name, so in the above example
+   we would usually speak of a &lt;quote&gt;SELECT&lt;/quote&gt;, an
+   &lt;quote&gt;UPDATE&lt;/quote&gt;, and an &lt;quote&gt;INSERT&lt;/quote&gt; command.  But
+   for instance the &lt;command&gt;UPDATE&lt;/command&gt; command always requires
+   a &lt;token&gt;SET&lt;/token&gt; token to appear in a certain position, and
+   this particular variation of &lt;command&gt;INSERT&lt;/command&gt; also
+   requires a &lt;token&gt;VALUES&lt;/token&gt; in order to be complete.  The
+   precise syntax rules for each command are described in &lt;xref linkend="reference"/&gt;.
+</span>
+SQL構文は、どのトークンがコマンドを識別し、どれがオペランドでどれがパラメータかに関してはさほど首尾一貫していません。
+最初のいくつかのトークンは一般にコマンド名です。
+したがって、上記の例において<span class="quote">「<span class="quote">SELECT</span>」</span>、<span class="quote">「<span class="quote">UPDATE</span>」</span>、<span class="quote">「<span class="quote">INSERT</span>」</span>コマンドについて通常説明することになります。
+しかし、例えば<code class="command">UPDATE</code>コマンドでは、<code class="token">SET</code>トークンが特定の位置に常に記述されなければなりませんし、この例で使われている<code class="command">INSERT</code>コマンドを完結するためには<code class="token">VALUES</code>トークンが必要です。
+それぞれのコマンドの正確な構文規則は<a class="xref" href="reference.html" title="パート VI. リファレンス">パート VI</a>で説明されています。
+  </p><div class="sect2" id="SQL-SYNTAX-IDENTIFIERS"><div class="titlepage"><div><div><h3 class="title">4.1.1. 識別子とキーワード</h3></div></div></div><span class="original">
+   &lt;title&gt;Identifiers and Key Words&lt;/title&gt;
+</span><a id="id-1.5.3.5.8.2" class="indexterm"></a><a id="id-1.5.3.5.8.3" class="indexterm"></a><a id="id-1.5.3.5.8.4" class="indexterm"></a><p>
+<span class="original">
+    Tokens such as &lt;token&gt;SELECT&lt;/token&gt;, &lt;token&gt;UPDATE&lt;/token&gt;, or
+    &lt;token&gt;VALUES&lt;/token&gt; in the example above are examples of
+    &lt;firstterm&gt;key words&lt;/firstterm&gt;, that is, words that have a fixed
+    meaning in the SQL language.  The tokens &lt;token&gt;MY_TABLE&lt;/token&gt;
+    and &lt;token&gt;A&lt;/token&gt; are examples of
+    &lt;firstterm&gt;identifiers&lt;/firstterm&gt;.  They identify names of
+    tables, columns, or other database objects, depending on the
+    command they are used in.  Therefore they are sometimes simply
+    called &lt;quote&gt;names&lt;/quote&gt;.  Key words and identifiers have the
+    same lexical structure, meaning that one cannot know whether a
+    token is an identifier or a key word without knowing the language.
+    A complete list of key words can be found in &lt;xref
+    linkend="sql-keywords-appendix"/&gt;.
+</span>
+上記の例に出てくる<code class="token">SELECT</code>、<code class="token">UPDATE</code>、もしくは<code class="token">VALUES</code>のようなトークンは、<em class="firstterm">キーワード</em>の一例です。
+キーワードとは、SQL言語で決まった意味を持っている単語です。
+<code class="token">MY_TABLE</code>トークンや<code class="token">A</code>トークンは<em class="firstterm">識別子</em>の一例です。
+これらは、使われるコマンドによって、テーブル、列、他のデータベースオブジェクトの名前を識別します。
+したがって、単に<span class="quote">「<span class="quote">名前</span>」</span>と呼ばれることもあります。
+キーワードと識別子は同じ字句の構造を持つため、言語を知らなくてはトークンが識別子なのかキーワードなのかわからないということになります。
+全てのキーワードのリストは<a class="xref" href="sql-keywords-appendix.html" title="付録C SQLキーワード">付録C</a>にあります。
+   </p><p>
+<span class="original">
+    SQL identifiers and key words must begin with a letter
+    (&lt;literal&gt;a&lt;/literal&gt;-&lt;literal&gt;z&lt;/literal&gt;, but also letters with
+    diacritical marks and non-Latin letters) or an underscore
+    (&lt;literal&gt;_&lt;/literal&gt;).  Subsequent characters in an identifier or
+    key word can be letters, underscores, digits
+    (&lt;literal&gt;0&lt;/literal&gt;-&lt;literal&gt;9&lt;/literal&gt;), or dollar signs
+    (&lt;literal&gt;$&lt;/literal&gt;).  Note that dollar signs are not allowed in identifiers
+    according to the letter of the SQL standard, so their use might render
+    applications less portable.
+    The SQL standard will not define a key word that contains
+    digits or starts or ends with an underscore, so identifiers of this
+    form are safe against possible conflict with future extensions of the
+    standard.
+</span>
+SQL識別子とキーワードは、文字（<code class="literal">a</code>〜<code class="literal">z</code>および発音区別符号付き文字と非Latin文字)、アンダースコア（<code class="literal">_</code>）で始まらなければいけません。
+識別子またはキーワードの中で続く文字は、文字、アンダースコア、数字（<code class="literal">0</code>〜<code class="literal">9</code>）あるいはドル記号(<code class="literal">$</code>)を使用することができます。
+標準SQLの記述に従うと、ドル記号は識別子内では使用できないことに注意してください。
+ですから、これを使用するとアプリケーションの移植性は低くなる可能性があります。
+標準SQLでは、数字を含む、あるいはアンダースコアで始まったり終わったりするキーワードは定義されていません。
+したがって、この形式の識別子は標準の今後の拡張と競合する可能性がないという意味で安全と言えます。
+   </p><p>
+<span class="original">
+    &lt;indexterm&gt;&lt;primary&gt;identifier&lt;/primary&gt;&lt;secondary&gt;length&lt;/secondary&gt;&lt;/indexterm&gt;
+</span>
+    <a id="id-1.5.3.5.8.7.1" class="indexterm"></a>
+<span class="original">
+    The system uses no more than &lt;symbol&gt;NAMEDATALEN&lt;/symbol&gt;-1
+    bytes of an identifier; longer names can be written in
+    commands, but they will be truncated.  By default,
+    &lt;symbol&gt;NAMEDATALEN&lt;/symbol&gt; is 64 so the maximum identifier
+    length is 63 bytes. If this limit is problematic, it can be raised by
+    changing the &lt;symbol&gt;NAMEDATALEN&lt;/symbol&gt; constant in
+    &lt;filename&gt;src/include/pg_config_manual.h&lt;/filename&gt;.
+</span>
+システムは<code class="symbol">NAMEDATALEN</code>-1バイトより長い識別子を使いません。
+より長い名前をコマンドで書くことはできますが、短く切られてしまいます。
+デフォルトでは<code class="symbol">NAMEDATALEN</code>は64なので、識別子は最長で63バイトです。
+この制限が問題になる場合は、<code class="filename">src/include/pg_config_manual.h</code>内の<code class="symbol">NAMEDATALEN</code>定数の値を変更して増やすことができます。
+   </p><p>
+    <a id="id-1.5.3.5.8.8.1" class="indexterm"></a>
+<span class="original">
+    Key words and unquoted identifiers are case insensitive.  Therefore:
+</span>
+キーワードと引用符付きでない識別子は大文字と小文字を区別しません。
+したがって、
+</p><pre class="programlisting">
+UPDATE MY_TABLE SET A = 5;
+</pre><p>
+<span class="original">
+    can equivalently be written as:
+</span>
+は、以下の文と同じ意味になります。
+</p><pre class="programlisting">
+uPDaTE my_TabLE SeT a = 5;
+</pre><p>
+<span class="original">
+    A convention often used is to write key words in upper
+    case and names in lower case, e.g.:
+</span>
+慣習的によく使われる方法では、キーワードを大文字で、名前を小文字で書きます。
+例えば下記のようになります。
+</p><pre class="programlisting">
+UPDATE my_table SET a = 5;
+</pre><p>
+   </p><p>
+    <a id="id-1.5.3.5.8.9.1" class="indexterm"></a>
+<span class="original">
+    There is a second kind of identifier:  the &lt;firstterm&gt;delimited
+    identifier&lt;/firstterm&gt; or &lt;firstterm&gt;quoted
+    identifier&lt;/firstterm&gt;.  It is formed by enclosing an arbitrary
+    sequence of characters in double-quotes
+    (&lt;literal&gt;"&lt;/literal&gt;). &lt;!&amp;#045;&amp;#045; " font-lock mania &amp;#045;&amp;#045;&gt; A delimited
+    identifier is always an identifier, never a key word.  So
+    &lt;literal&gt;"select"&lt;/literal&gt; could be used to refer to a column or
+    table named &lt;quote&gt;select&lt;/quote&gt;, whereas an unquoted
+    &lt;literal&gt;select&lt;/literal&gt; would be taken as a key word and
+    would therefore provoke a parse error when used where a table or
+    column name is expected.  The example can be written with quoted
+    identifiers like this:
+</span>
+識別子には副次的な種類もあります。
+<em class="firstterm">区切り識別子</em>あるいは<em class="firstterm">引用符付き識別子</em>です。
+任意の文字の連なりを二重引用符（<code class="literal">"</code>）で囲んだものです。<span class="original"> " フォントロック狂 </span>
+区切り識別子は常に識別子であって、キーワードではありません。
+ですから、<code class="literal">"select"</code>は<span class="quote">「<span class="quote">select</span>」</span>という名前の列あるいはテーブルを問い合わせるために使えますが、引用符の付かない<code class="literal">select</code>はキーワードとして理解されるので、テーブルもしくは列名が期待される部分では解析エラーを起こします。
+引用符付き識別子は下記の例のように書くことができます。
+</p><pre class="programlisting">
+UPDATE "my_table" SET "a" = 5;
+</pre><p>
+   </p><p>
+<span class="original">
+    Quoted identifiers can contain any character, except the character
+    with code zero.  (To include a double quote, write two double quotes.)
+    This allows constructing table or column names that would
+    otherwise not be possible, such as ones containing spaces or
+    ampersands.  The length limitation still applies.
+</span>
+引用符付き識別子は、コード0の文字以外であればどのような文字でも使えます
+（二重引用符を含めたい場合は、二重引用符を2つ入力します）。
+これにより、空白やアンパサンド（&amp;）を含むテーブル名や列名など、この方法がなければ作れないような名前のものを作ることが可能になります。
+この場合においても長さの制限は適用されます。
+   </p><a id="id-1.5.3.5.8.11" class="indexterm"></a><p>
+<span class="original">
+    A variant of quoted
+    identifiers allows including escaped Unicode characters identified
+    by their code points.  This variant starts
+    with &lt;literal&gt;U&amp;amp;&lt;/literal&gt; (upper or lower case U followed by
+    ampersand) immediately before the opening double quote, without
+    any spaces in between, for example &lt;literal&gt;U&amp;amp;"foo"&lt;/literal&gt;.
+    (Note that this creates an ambiguity with the
+    operator &lt;literal&gt;&amp;amp;&lt;/literal&gt;.  Use spaces around the operator to
+    avoid this problem.)  Inside the quotes, Unicode characters can be
+    specified in escaped form by writing a backslash followed by the
+    four-digit hexadecimal code point number or alternatively a
+    backslash followed by a plus sign followed by a six-digit
+    hexadecimal code point number.  For example, the
+    identifier &lt;literal&gt;"data"&lt;/literal&gt; could be written as
+</span>
+引用符付き識別子には異形があり、コード番号で識別されるエスケープされたUnicode文字を含むことができます。
+この異形は、<code class="literal">U&amp;</code>（大文字または小文字のUの後にアンパサンド）で始まり、その直後に空白を間に入れずに二重引用符を続けます。
+例えば、<code class="literal">U&amp;"foo"</code>となります。
+（これにより演算子<code class="literal">&amp;</code>との不明確性が生じることに注意してください。
+この問題を回避するには空白を演算子の前後に入れます。）
+引用符の中で、Unicode文字はバックスラッシュとそれに続く４桁１６進数の文字コード番号で、またはもう１つの方法として、バックスラッシュに続いてプラス符号、そして続いた６桁１６進数の文字コード番号によりエスケープ形式で指定されます。
+例えば、識別子<code class="literal">"data"</code>は次のように書くことができます。
+</p><pre class="programlisting">
+U&amp;"d\0061t\+000061"
+</pre><p>
+<span class="original">
+    The following less trivial example writes the Russian
+    word &lt;quote&gt;slon&lt;/quote&gt; (elephant) in Cyrillic letters:
+</span>
+次の少し意味のある例はロシア語の<span class="quote">「<span class="quote">slon</span>」</span>（象）をキリル文字で書いたものです。
+</p><pre class="programlisting">
+U&amp;"\0441\043B\043E\043D"
+</pre><p>
+   </p><p>
+<span class="original">
+    If a different escape character than backslash is desired, it can
+    be specified using
+    the &lt;literal&gt;UESCAPE&lt;/literal&gt;&lt;indexterm&gt;&lt;primary&gt;UESCAPE&lt;/primary&gt;&lt;/indexterm&gt;
+    clause after the string, for example:
+</span>
+バックスラッシュ以外のエスケープ文字を使用したい場合、文字列の後に<code class="literal">UESCAPE</code><a id="id-1.5.3.5.8.13.2" class="indexterm"></a>句を使用して指定することが可能です。例をあげます。
+</p><pre class="programlisting">
+U&amp;"d!0061t!+000061" UESCAPE '!'
+</pre><p>
+<span class="original">
+    The escape character can be any single character other than a
+    hexadecimal digit, the plus sign, a single quote, a double quote,
+    or a whitespace character.  Note that the escape character is
+    written in single quotes, not double quotes.
+</span>
+エスケープ文字には、16進表記用の文字、プラス記号、単一引用符、二重引用符、空白文字以外の任意の単一文字を使用することができます。
+エスケープ文字には二重引用符ではなく単一引用符で記述していることに注意してください。
+   </p><p>
+<span class="original">
+    To include the escape character in the identifier literally, write
+    it twice.
+</span>
+識別子内にエスケープ文字をそのまま含めるためには、それを２つ記述してください。
+   </p><p>
+<span class="original">
+    The Unicode escape syntax works only when the server encoding is
+    &lt;literal&gt;UTF8&lt;/literal&gt;.  When other server encodings are used, only code
+    points in the ASCII range (up to &lt;literal&gt;\007F&lt;/literal&gt;) can be
+    specified.  Both the 4-digit and the 6-digit form can be used to
+    specify UTF-16 surrogate pairs to compose characters with code
+    points larger than U+FFFF, although the availability of the
+    6-digit form technically makes this unnecessary.  (Surrogate
+    pairs are not stored directly, but combined into a single
+    code point that is then encoded in UTF-8.)
+</span>
+Unicodeエスケープ構文はサーバの符号化方式が<code class="literal">UTF8</code>の場合のみ有効です。
+他のサーバ符号化方式が用いられている場合、ASCII範囲（<code class="literal">\007F</code>まで）のコードポイントのみ指定できます。
+U+FFFFより大きなコードポイントを持つ文字を構成するUTF-16サロゲートペアを指定するために、4桁と6桁の形式の両方を使用することができますが、技術的には6桁形式の機能によりこれは不要になります。
+（サロゲートペアは直接格納されるわけではなく、一つのコードポイントに結合されてから、UTF-8に符号化されます。）
+   </p><p>
+<span class="original">
+    Quoting an identifier also makes it case-sensitive, whereas
+    unquoted names are always folded to lower case.  For example, the
+    identifiers &lt;literal&gt;FOO&lt;/literal&gt;, &lt;literal&gt;foo&lt;/literal&gt;, and
+    &lt;literal&gt;"foo"&lt;/literal&gt; are considered the same by
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt;, but
+    &lt;literal&gt;"Foo"&lt;/literal&gt; and &lt;literal&gt;"FOO"&lt;/literal&gt; are
+    different from these three and each other.  (The folding of
+    unquoted names to lower case in &lt;productname&gt;PostgreSQL&lt;/productname&gt; is
+    incompatible with the SQL standard, which says that unquoted names
+    should be folded to upper case.  Thus, &lt;literal&gt;foo&lt;/literal&gt;
+    should be equivalent to &lt;literal&gt;"FOO"&lt;/literal&gt; not
+    &lt;literal&gt;"foo"&lt;/literal&gt; according to the standard.  If you want
+    to write portable applications you are advised to always quote a
+    particular name or never quote it.)
+</span>
+引用符が付かない名前は常に小文字に解釈されますが、識別子を引用符で囲むことによって大文字と小文字が区別されるようになります。
+例えば、識別子<code class="literal">FOO</code>、<code class="literal">foo</code>、<code class="literal">"foo"</code>は<span class="productname">PostgreSQL</span>によれば同じものとして解釈されますが、<code class="literal">"Foo"</code>と<code class="literal">"FOO"</code>は、これら3つとも、またお互いに違ったものとして解釈されます
+（<span class="productname">PostgreSQL</span>が引用符の付かない名前を小文字として解釈することは標準SQLと互換性がありません。標準SQLでは引用符の付かない名前は大文字に解釈されるべきだとされています。
+したがって標準SQLによれば、<code class="literal">foo</code>は<code class="literal">"FOO"</code>と同じであるべきで、<code class="literal">"foo"</code>とは異なるはずなのです。
+もし移植可能なアプリケーションを書きたいならば、特定の名前は常に引用符で囲むか、あるいはまったく囲まないかのいずれかに統一することをお勧めします）。
+   </p></div><div class="sect2" id="SQL-SYNTAX-CONSTANTS"><div class="titlepage"><div><div><h3 class="title">4.1.2. 定数</h3></div></div></div><span class="original">
+   &lt;title&gt;Constants&lt;/title&gt;
+</span><a id="id-1.5.3.5.9.2" class="indexterm"></a><p>
+<span class="original">
+    There are three kinds of &lt;firstterm&gt;implicitly-typed
+    constants&lt;/firstterm&gt; in &lt;productname&gt;PostgreSQL&lt;/productname&gt;:
+    strings, bit strings, and numbers.
+    Constants can also be specified with explicit types, which can
+    enable more accurate representation and more efficient handling by
+    the system. These alternatives are discussed in the following
+    subsections.
+</span>
+<span class="productname">PostgreSQL</span>には、3つの<em class="firstterm">暗黙に型付けされる定数</em>があります。
+文字列、ビット文字列、そして数字です。
+定数は明示的な型で指定することもでき、その場合はシステムによる、より正確な表現と効率の良い操作が可能になります。
+こうした他の方法については後ほど説明します。
+   </p><div class="sect3" id="SQL-SYNTAX-STRINGS"><div class="titlepage"><div><div><h4 class="title">4.1.2.1. 文字列定数</h4></div></div></div><span class="original">
+    &lt;title&gt;String Constants&lt;/title&gt;
+</span><a id="id-1.5.3.5.9.4.2" class="indexterm"></a><p>
+     <a id="id-1.5.3.5.9.4.3.1" class="indexterm"></a>
+<span class="original">
+     A string constant in SQL is an arbitrary sequence of characters
+     bounded by single quotes (&lt;literal&gt;'&lt;/literal&gt;), for example
+     &lt;literal&gt;'This is a string'&lt;/literal&gt;.  To include
+     a single-quote character within a string constant,
+     write two adjacent single quotes, e.g.,
+     &lt;literal&gt;'Dianne''s horse'&lt;/literal&gt;.
+     Note that this is &lt;emphasis&gt;not&lt;/emphasis&gt; the same as a double-quote
+     character (&lt;literal&gt;"&lt;/literal&gt;).
+</span>
+     <span class="original"> 原文中のコメント font-lock sanity: " </span>
+SQLにおける文字列定数は、単一引用符（<code class="literal">'</code>）で括られた任意の文字の並びです。
+例えば、<code class="literal">'This is a string'</code>です。
+文字列定数内に単一引用符を含めるには、2つ続けて単一引用符を記述します。
+例えば、<code class="literal">'Dianne''s horse'</code>です。
+二重引用符(<code class="literal">"</code>)とは同一では<span class="emphasis"><em>ない</em></span>点に注意してください。<span class="original"> font-lock sanity: " </span>
+    </p><p>
+<span class="original">
+     Two string constants that are only separated by whitespace
+     &lt;emphasis&gt;with at least one newline&lt;/emphasis&gt; are concatenated
+     and effectively treated as if the string had been written as one
+     constant.  For example:
+</span>
+2つの文字列定数が、<span class="emphasis"><em>少なくとも1つの改行</em></span>を含んだ空白のみで区切られている場合は、2つの定数は連結され、実質的に1つの定数として書かれたように処理されます。
+例を示します。
+</p><pre class="programlisting">
+SELECT 'foo'
+'bar';
+</pre><p>
+<span class="original">
+     is equivalent to:
+</span>
+は、
+</p><pre class="programlisting">
+SELECT 'foobar';
+</pre><p>
+<span class="original">
+     but:
+</span>
+と同じです。しかし、
+</p><pre class="programlisting">
+SELECT 'foo'      'bar';
+</pre><p>
+<span class="original">
+     is not valid syntax.  (This slightly bizarre behavior is specified
+     by &lt;acronym&gt;SQL&lt;/acronym&gt;; &lt;productname&gt;PostgreSQL&lt;/productname&gt; is
+     following the standard.)
+</span>
+は有効な構文ではありません
+（このちょっとした奇妙な振舞いは<acronym class="acronym">SQL</acronym>で決められているもので、<span class="productname">PostgreSQL</span>ではこの標準に従っています）。
+    </p></div><div class="sect3" id="SQL-SYNTAX-STRINGS-ESCAPE"><div class="titlepage"><div><div><h4 class="title">4.1.2.2. C形式エスケープでの文字列定数</h4></div></div></div><span class="original">
+    &lt;title&gt;String Constants with C-style Escapes&lt;/title&gt;
+</span><a id="id-1.5.3.5.9.5.2" class="indexterm"></a><a id="id-1.5.3.5.9.5.3" class="indexterm"></a><p>
+<span class="original">
+     &lt;productname&gt;PostgreSQL&lt;/productname&gt; also accepts &lt;quote&gt;escape&lt;/quote&gt;
+     string constants, which are an extension to the SQL standard.
+     An escape string constant is specified by writing the letter
+     &lt;literal&gt;E&lt;/literal&gt; (upper or lower case) just before the opening single
+     quote, e.g., &lt;literal&gt;E'foo'&lt;/literal&gt;.  (When continuing an escape string
+     constant across lines, write &lt;literal&gt;E&lt;/literal&gt; only before the first opening
+     quote.)
+     Within an escape string, a backslash character (&lt;literal&gt;\&lt;/literal&gt;) begins a
+     C-like &lt;firstterm&gt;backslash escape&lt;/firstterm&gt; sequence, in which the combination
+     of backslash and following character(s) represent a special byte
+     value, as shown in &lt;xref linkend="sql-backslash-table"/&gt;.
+</span>
+<span class="productname">PostgreSQL</span>では、また、<span class="quote">「<span class="quote">エスケープ</span>」</span>文字列定数を受け付けます。
+これは標準SQLの拡張です。
+エスケープ文字列定数は、<code class="literal">E</code>(大文字でも小文字でもかまいません)を開始単一引用符の直前に記述することで指定されます。
+例えば<code class="literal">E'foo'</code>です。
+（複数行に渡るエスケープ文字列定数では、最初の開始引用符の前にのみ<code class="literal">E</code>を記述してください。）
+エスケープ文字列の中では、バックスラッシュ文字（<code class="literal">\</code>）によりC言語のような<em class="firstterm">バックスラッシュ</em>シーケンスが開始し、その中でバックスラッシュとそれに続く文字の組み合わせが（<a class="xref" href="sql-syntax-lexical.html#SQL-BACKSLASH-TABLE" title="表4.1 バックスラッシュエスケープシーケンス">表 4.1</a>で示したように）特別なバイト値を表現します。
+    </p><div class="table" id="SQL-BACKSLASH-TABLE"><p class="title"><strong>表4.1 バックスラッシュエスケープシーケンス</strong></p><div class="table-contents"><span class="original">
+      &lt;title&gt;Backslash Escape Sequences&lt;/title&gt;
+</span><table class="table" summary="バックスラッシュエスケープシーケンス" border="1"><colgroup><col /><col /></colgroup><thead><tr><th>バックスラッシュエスケープシーケンス</th><th>解釈</th></tr></thead><tbody><tr><td><code class="literal">\b</code></td><td>後退</td></tr><tr><td><code class="literal">\f</code></td><td>改ページ</td></tr><tr><td><code class="literal">\n</code></td><td>改行</td></tr><tr><td><code class="literal">\r</code></td><td>復帰</td></tr><tr><td><code class="literal">\t</code></td><td>タブ</td></tr><tr><td>
+         <code class="literal">\<em class="replaceable"><code>o</code></em></code>,
+         <code class="literal">\<em class="replaceable"><code>oo</code></em></code>,
+         <code class="literal">\<em class="replaceable"><code>ooo</code></em></code>
+         (<em class="replaceable"><code>o</code></em> = 0 - 7)
+        </td><td>８進数バイト値</td></tr><tr><td>
+         <code class="literal">\x<em class="replaceable"><code>h</code></em></code>,
+         <code class="literal">\x<em class="replaceable"><code>hh</code></em></code>
+         (<em class="replaceable"><code>h</code></em> = 0 - 9, A - F)
+        </td><td>１６進数バイト値</td></tr><tr><td>
+         <code class="literal">\u<em class="replaceable"><code>xxxx</code></em></code>,
+         <code class="literal">\U<em class="replaceable"><code>xxxxxxxx</code></em></code>
+         (<em class="replaceable"><code>x</code></em> = 0 - 9, A - F)
+        </td><td>16もしくは32ビットの16進数 Unicode 文字値</td></tr></tbody></table></div></div><br class="table-break" /><p>
+<span class="original">
+     Any other
+     character following a backslash is taken literally. Thus, to
+     include a backslash character, write two backslashes (&lt;literal&gt;\\&lt;/literal&gt;).
+     Also, a single quote can be included in an escape string by writing
+     &lt;literal&gt;\'&lt;/literal&gt;, in addition to the normal way of &lt;literal&gt;''&lt;/literal&gt;.
+</span>
+バックスラッシュの後のそのほかの全ての文字はそのまま扱われます。
+従って、バックスラッシュ文字を含ませるときは２つのバックスラッシュ（<code class="literal">\\</code>）を記載します。
+同時に、エスケープ文字列の中では、単一引用符を、通常の方法の<code class="literal">''</code>に加え、<code class="literal">\'</code>としても含めることができます。
+    </p><p>
+<span class="original">
+     It is your responsibility that the byte sequences you create,
+     especially when using the octal or hexadecimal escapes, compose
+     valid characters in the server character set encoding.  When the
+     server encoding is UTF-8, then the Unicode escapes or the
+     alternative Unicode escape syntax, explained
+     in &lt;xref linkend="sql-syntax-strings-uescape"/&gt;, should be used
+     instead.  (The alternative would be doing the UTF-8 encoding by
+     hand and writing out the bytes, which would be very cumbersome.)
+</span>
+特に8進数や16進数エスケープを用いて作成されるバイトシーケンスが、サーバ文字セット符号化方式において有効な文字で構成されていることはコードを書く人の責任です。
+サーバ符号化方式がUTF-8の場合、Unicodeエスケープか、<a class="xref" href="sql-syntax-lexical.html#SQL-SYNTAX-STRINGS-UESCAPE" title="4.1.2.3. Unicodeエスケープがある文字列定数">4.1.2.3</a>で説明するもう一つのUnicodeエスケープ構文を代わりとして使用すべきです。
+（後者は手作業でUTF-8符号化を行い、書き出さなくてはならないのでとても厄介です。）
+    </p><p>
+<span class="original">
+     The Unicode escape syntax works fully only when the server
+     encoding is &lt;literal&gt;UTF8&lt;/literal&gt;.  When other server encodings are
+     used, only code points in the ASCII range (up
+     to &lt;literal&gt;\u007F&lt;/literal&gt;) can be specified.  Both the 4-digit and
+     the 8-digit form can be used to specify UTF-16 surrogate pairs to
+     compose characters with code points larger than U+FFFF, although
+     the availability of the 8-digit form technically makes this
+     unnecessary.  (When surrogate pairs are used when the server
+     encoding is &lt;literal&gt;UTF8&lt;/literal&gt;, they are first combined into a
+     single code point that is then encoded in UTF-8.)
+</span>
+Unicodeエスケープ構文は、サーバの符号化方式が<code class="literal">UTF8</code>である場合のみ、完全に動作します。
+他のサーバ符号化方式が使用されている場合、ASCII範囲（<code class="literal">\u007F</code>まで）のコードポイントのみを指定することができます。
+U+FFFFより大きなコードポイントを持つ文字を構成するUTF-16サロゲートペアを指定するために、4桁と8桁の両方の形式を使用することができますが、技術的には8桁形式の機能によりこれは不要になります。
+（サーバの符号化方式が<code class="literal">UTF8</code>の場合にサロゲートペアが使用される時、まず単一のコードポイントに組み合わされ、その後にUTF-8に符号化されます。）
+    </p><div class="caution"><h3 class="title">注意</h3><p>
+<span class="original">
+     If the configuration parameter
+     &lt;xref linkend="guc-standard-conforming-strings"/&gt; is &lt;literal&gt;off&lt;/literal&gt;,
+     then &lt;productname&gt;PostgreSQL&lt;/productname&gt; recognizes backslash escapes
+     in both regular and escape string constants.  However, as of
+     &lt;productname&gt;PostgreSQL&lt;/productname&gt; 9.1, the default is &lt;literal&gt;on&lt;/literal&gt;, meaning
+     that backslash escapes are recognized only in escape string constants.
+     This behavior is more standards-compliant, but might break applications
+     which rely on the historical behavior, where backslash escapes
+     were always recognized.  As a workaround, you can set this parameter
+     to &lt;literal&gt;off&lt;/literal&gt;, but it is better to migrate away from using backslash
+     escapes.  If you need to use a backslash escape to represent a special
+     character, write the string constant with an &lt;literal&gt;E&lt;/literal&gt;.
+</span>
+設定パラメータ<a class="xref" href="runtime-config-compatible.html#GUC-STANDARD-CONFORMING-STRINGS">standard_conforming_strings</a>が <code class="literal">off</code>の場合、<span class="productname">PostgreSQL</span>はバックスラッシュエスケープを通常の文字列定数とエスケープ文字列定数の両方で認識します。
+しかし、<span class="productname">PostgreSQL</span>9.1からデフォルトは<code class="literal">on</code>になりました。これはバックスラッシュエスケープはエスケープ文字列でのみ認識されるということになります。
+この振る舞いはSQL標準仕様に即していますが、バックスラッシュエスケープを常に認識するという歴史的な動作に依存しているアプリケーションは動作しなくなるでしょう。
+回避策として、このパラメータを<code class="literal">off</code>にすることはできますが、バックスラッシュエスケープの使用を避けるよう移植するのが良いでしょう。
+特殊文字を表現するためにバックスラッシュを使用する必要がある場合、<code class="literal">E</code>をつけて文字列定数を記述してください。
+    </p><p>
+<span class="original">
+     In addition to &lt;varname&gt;standard_conforming_strings&lt;/varname&gt;, the configuration
+     parameters &lt;xref linkend="guc-escape-string-warning"/&gt; and
+     &lt;xref linkend="guc-backslash-quote"/&gt; govern treatment of backslashes
+     in string constants.
+</span>
+<code class="varname">standard_conforming_strings</code>の他に、設定パラメータ<a class="xref" href="runtime-config-compatible.html#GUC-ESCAPE-STRING-WARNING">escape_string_warning</a>および<a class="xref" href="runtime-config-compatible.html#GUC-BACKSLASH-QUOTE">backslash_quote</a>が文字定数内のバックスラッシュの動作を決定します。
+    </p></div><p>
+<span class="original">
+     The character with the code zero cannot be in a string constant.
+</span>
+コードゼロの文字は文字列定数の中に入れられません。
+    </p></div><div class="sect3" id="SQL-SYNTAX-STRINGS-UESCAPE"><div class="titlepage"><div><div><h4 class="title">4.1.2.3. Unicodeエスケープがある文字列定数</h4></div></div></div><span class="original">
+    &lt;title&gt;String Constants with Unicode Escapes&lt;/title&gt;
+</span><a id="id-1.5.3.5.9.6.2" class="indexterm"></a><p>
+<span class="original">
+     &lt;productname&gt;PostgreSQL&lt;/productname&gt; also supports another type
+     of escape syntax for strings that allows specifying arbitrary
+     Unicode characters by code point.  A Unicode escape string
+     constant starts with &lt;literal&gt;U&amp;amp;&lt;/literal&gt; (upper or lower case
+     letter U followed by ampersand) immediately before the opening
+     quote, without any spaces in between, for
+     example &lt;literal&gt;U&amp;amp;'foo'&lt;/literal&gt;.  (Note that this creates an
+     ambiguity with the operator &lt;literal&gt;&amp;amp;&lt;/literal&gt;.  Use spaces
+     around the operator to avoid this problem.)  Inside the quotes,
+     Unicode characters can be specified in escaped form by writing a
+     backslash followed by the four-digit hexadecimal code point
+     number or alternatively a backslash followed by a plus sign
+     followed by a six-digit hexadecimal code point number.  For
+     example, the string &lt;literal&gt;'data'&lt;/literal&gt; could be written as
+</span>
+<span class="productname">PostgreSQL</span>は同時に、文字コード番号で任意のUnicode文字を指定可能な文字列に対するもう一つのエスケープ構文を提供します。
+Unicodeエスケープ文字列定数は、<code class="literal">U&amp;</code>（大文字・小文字のUの後にアンパサンド）で始まり、その直後に、空白を間にはさまず、開始引用符が続きます。
+例えば、<code class="literal">U&amp;'foo'</code>となります。
+（これにより演算子<code class="literal">&amp;</code>との曖昧性が生じることに注意してください。
+この問題を回避するには空白を演算子の前後に入れます。）
+引用符の中で、Unicode文字はバックスラッシュとそれに続く４桁１６進数の文字コード番号で、またはもう１つの方法として、バックスラッシュに続いてプラス符号、そして続いた６桁１６進数の文字コード番号によりエスケープ形式で指定されます。
+例えば、文字列<code class="literal">'data'</code>は次のように書かれます。
+</p><pre class="programlisting">
+U&amp;'d\0061t\+000061'
+</pre><p>
+<span class="original">
+     The following less trivial example writes the Russian
+     word &lt;quote&gt;slon&lt;/quote&gt; (elephant) in Cyrillic letters:
+</span>
+次の少し意味のある例はロシア語の<span class="quote">「<span class="quote">slon</span>」</span>（象）をキリル文字で書いたものです。
+</p><pre class="programlisting">
+U&amp;'\0441\043B\043E\043D'
+</pre><p>
+    </p><p>
+<span class="original">
+     If a different escape character than backslash is desired, it can
+     be specified using
+     the &lt;literal&gt;UESCAPE&lt;/literal&gt;&lt;indexterm&gt;&lt;primary&gt;UESCAPE&lt;/primary&gt;&lt;/indexterm&gt;
+     clause after the string, for example:
+</span>
+バックスラッシュ以外のエスケープ文字を使用したい場合、文字列の後に<code class="literal">UESCAPE</code><a id="id-1.5.3.5.9.6.4.2" class="indexterm"></a>句を使用して指定することが可能です。例をあげます。
+</p><pre class="programlisting">
+U&amp;'d!0061t!+000061' UESCAPE '!'
+</pre><p>
+<span class="original">
+     The escape character can be any single character other than a
+     hexadecimal digit, the plus sign, a single quote, a double quote,
+     or a whitespace character.
+</span>
+エスケープ文字には、16進表記用の文字、プラス記号、単一引用符、二重引用符、空白文字以外の任意の単一文字を使用することができます。
+    </p><p>
+<span class="original">
+     The Unicode escape syntax works only when the server encoding is
+     &lt;literal&gt;UTF8&lt;/literal&gt;.  When other server encodings are used, only
+     code points in the ASCII range (up to &lt;literal&gt;\007F&lt;/literal&gt;)
+     can be specified.  Both the 4-digit and the 6-digit form can be
+     used to specify UTF-16 surrogate pairs to compose characters with
+     code points larger than U+FFFF, although the availability of the
+     6-digit form technically makes this unnecessary.  (When surrogate
+     pairs are used when the server encoding is &lt;literal&gt;UTF8&lt;/literal&gt;, they
+     are first combined into a single code point that is then encoded
+     in UTF-8.)
+</span>
+Unicodeエスケープ構文はサーバの符号化方式が<code class="literal">UTF8</code>の場合のみ有効です。
+他のサーバ符号化方式が用いられている場合、ASCII範囲（<code class="literal">\007F</code>まで）のコードポイントのみ指定できます。
+U+FFFFより大きなコードポイントを持つ文字を構成するUTF-16サロゲートペアを指定するために、4桁と6桁の両方の形式を使用することができますが、技術的には6桁形式の機能によりこれは不要になります。
+（サーバの符号化方式が<code class="literal">UTF8</code>の場合にサロゲートペアが使用される時、まず単一のコードポイントに組み合わされ、その後にUTF-8に符号化されます。）
+    </p><p>
+<span class="original">
+     Also, the Unicode escape syntax for string constants only works
+     when the configuration
+     parameter &lt;xref linkend="guc-standard-conforming-strings"/&gt; is
+     turned on.  This is because otherwise this syntax could confuse
+     clients that parse the SQL statements to the point that it could
+     lead to SQL injections and similar security issues.  If the
+     parameter is set to off, this syntax will be rejected with an
+     error message.
+</span>
+また、文字列定数に対するユニコードエスケープ構文は設定パラメータ<a class="xref" href="runtime-config-compatible.html#GUC-STANDARD-CONFORMING-STRINGS">standard_conforming_strings</a>が有効なときのみ動作します。
+そうでないとこの構文は、SQL文を構文解釈するクライアントを混乱させ、SQLインジェクションや、それに類似したセキュリティ問題に繋がることさえあるからです。
+パラメータがoffに設定されていれば、この構文はエラーメッセージを出して拒絶されます。
+    </p><p>
+<span class="original">
+     To include the escape character in the string literally, write it
+     twice.
+</span>
+文字列の中に、エスケープ文字をそのまま含めるにはエスケープ文字を２回書きます。
+    </p></div><div class="sect3" id="SQL-SYNTAX-DOLLAR-QUOTING"><div class="titlepage"><div><div><h4 class="title">4.1.2.4. ドル記号で引用符付けされた文字列定数</h4></div></div></div><span class="original">
+    &lt;title&gt;Dollar-quoted String Constants&lt;/title&gt;
+</span><a id="id-1.5.3.5.9.7.2" class="indexterm"></a><p>
+<span class="original">
+     While the standard syntax for specifying string constants is usually
+     convenient, it can be difficult to understand when the desired string
+     contains many single quotes or backslashes, since each of those must
+     be doubled. To allow more readable queries in such situations,
+     &lt;productname&gt;PostgreSQL&lt;/productname&gt; provides another way, called
+     &lt;quote&gt;dollar quoting&lt;/quote&gt;, to write string constants.
+     A dollar-quoted string constant
+     consists of a dollar sign (&lt;literal&gt;$&lt;/literal&gt;), an optional
+     &lt;quote&gt;tag&lt;/quote&gt; of zero or more characters, another dollar
+     sign, an arbitrary sequence of characters that makes up the
+     string content, a dollar sign, the same tag that began this
+     dollar quote, and a dollar sign. For example, here are two
+     different ways to specify the string &lt;quote&gt;Dianne's horse&lt;/quote&gt;
+     using dollar quoting:
+</span>
+文字列定数の標準の構文はたいていの場合便利ですが、対象とする文字列内に多くの単一引用符やバックスラッシュがあると、それらを全て二重にしなければなりませんので理解しづらくなります。
+こうした状況においても問い合わせの可読性をより高めるために<span class="productname">PostgreSQL</span>は、<span class="quote">「<span class="quote">ドル引用符付け</span>」</span>という他の文字列定数の指定方法を提供します。
+ドル引用符付けされた文字列定数は、ドル記号（<code class="literal">$</code>）、省略可能な0個以上の文字からなる<span class="quote">「<span class="quote">タグ</span>」</span>、ドル記号、文字列定数を構成する任意の文字の並び、ドル記号、この引用符付けの始めに指定したものと同じタグ、ドル記号から構成されます。
+例えば、<span class="quote">「<span class="quote">Dianne's horse</span>」</span>という文字列をドル引用符付けを使用して指定する方法を、以下に2つ示します。
+</p><pre class="programlisting">
+$$Dianne's horse$$
+$SomeTag$Dianne's horse$SomeTag$
+</pre><p>
+<span class="original">
+     Notice that inside the dollar-quoted string, single quotes can be
+     used without needing to be escaped.  Indeed, no characters inside
+     a dollar-quoted string are ever escaped: the string content is always
+     written literally.  Backslashes are not special, and neither are
+     dollar signs, unless they are part of a sequence matching the opening
+     tag.
+</span>
+ドル引用符付けされた文字列の内側では、単一引用符をエスケープすることなく使用できることを理解して下さい。
+実際には、ドル引用符付けされた文字列の内側の文字はまったくエスケープが必要なく、文字列定数はすべてそのまま記述することができます。
+その並びが開始タグに一致しない限り、バックスラッシュもドル記号も特別なものではありません。
+    </p><p>
+<span class="original">
+     It is possible to nest dollar-quoted string constants by choosing
+     different tags at each nesting level.  This is most commonly used in
+     writing function definitions.  For example:
+</span>
+各入れ子レベルに異なるタグを付けることで、ドル引用符付けされた文字列を入れ子にすることができます。
+これは、関数定義を作成する時に非常によく使用されます。
+以下に例を示します。
+</p><pre class="programlisting">
+$function$
+BEGIN
+    RETURN ($1 ~ $q$[\t\r\n\v\\]$q$);
+END;
+$function$
+</pre><p>
+<span class="original">
+     Here, the sequence &lt;literal&gt;$q$[\t\r\n\v\\]$q$&lt;/literal&gt; represents a
+     dollar-quoted literal string &lt;literal&gt;[\t\r\n\v\\]&lt;/literal&gt;, which will
+     be recognized when the function body is executed by
+     &lt;productname&gt;PostgreSQL&lt;/productname&gt;.  But since the sequence does not match
+     the outer dollar quoting delimiter &lt;literal&gt;$function$&lt;/literal&gt;, it is
+     just some more characters within the constant so far as the outer
+     string is concerned.
+</span>
+ここで、<code class="literal">$q$[\t\r\n\v\\]$q$</code>は、ドル引用符付けされた<code class="literal">[\t\r\n\v\\]</code>リテラル文字列を表し、<span class="productname">PostgreSQL</span>がこの関数本体を実行する時に認識されます。
+しかし、この並びは、外側のドル引用符用の区切り文字<code class="literal">$function$</code>に一致しませんので、外側の文字列を対象としている場合は単なる文字の並びとなります。
+    </p><p>
+<span class="original">
+     The tag, if any, of a dollar-quoted string follows the same rules
+     as an unquoted identifier, except that it cannot contain a dollar sign.
+     Tags are case sensitive, so &lt;literal&gt;$tag$String content$tag$&lt;/literal&gt;
+     is correct, but &lt;literal&gt;$TAG$String content$tag$&lt;/literal&gt; is not.
+</span>
+もしあれば、ドル引用符付けされた文字列のタグは、引用符付けされていない識別子と同じ規則に従います。
+ただし、タグにはドル記号を含めることはできません。
+タグは大文字小文字を区別します。
+したがって、<code class="literal">$tag$String content$tag$</code>は正しいのですが、<code class="literal">$TAG$String content$tag$</code>は間違いです。
+    </p><p>
+<span class="original">
+     A dollar-quoted string that follows a keyword or identifier must
+     be separated from it by whitespace; otherwise the dollar quoting
+     delimiter would be taken as part of the preceding identifier.
+</span>
+キーワードや識別子の後にドル引用符付けされた文字列を続ける場合は、空白でそれを区切らなければなりません。
+さもないと、ドル引用符の区切り文字は、直前の識別子の一部として解釈されます。
+    </p><p>
+<span class="original">
+     Dollar quoting is not part of the SQL standard, but it is often a more
+     convenient way to write complicated string literals than the
+     standard-compliant single quote syntax.  It is particularly useful when
+     representing string constants inside other constants, as is often needed
+     in procedural function definitions.  With single-quote syntax, each
+     backslash in the above example would have to be written as four
+     backslashes, which would be reduced to two backslashes in parsing the
+     original string constant, and then to one when the inner string constant
+     is re-parsed during function execution.
+</span>
+ドル引用符付けは、標準SQLで定義されていません。
+しかし、複雑な文字列リテラルを記述する場合は標準準拠の単一引用符構文よりも便利なことがよくあります。
+特に、他の定数の内部に文字列定数を記述するような場合は役に立ちます。
+こうした状況は手続き関数の定義でよく必要とされます。
+単一引用符構文では、上の例のバックスラッシュはそれぞれ、4個のバックスラッシュで記述しなければなりません。
+この4つのバックスラッシュは、元の文字列定数を解析する際に2つに減少され、そして、関数を実行する際に内部の文字列定数が再解析され1つに減少します。
+    </p></div><div class="sect3" id="SQL-SYNTAX-BIT-STRINGS"><div class="titlepage"><div><div><h4 class="title">4.1.2.5. ビット文字列定数</h4></div></div></div><span class="original">
+    &lt;title&gt;Bit-string Constants&lt;/title&gt;
+</span><a id="id-1.5.3.5.9.8.2" class="indexterm"></a><p>
+<span class="original">
+     Bit-string constants look like regular string constants with a
+     &lt;literal&gt;B&lt;/literal&gt; (upper or lower case) immediately before the
+     opening quote (no intervening whitespace), e.g.,
+     &lt;literal&gt;B'1001'&lt;/literal&gt;.  The only characters allowed within
+     bit-string constants are &lt;literal&gt;0&lt;/literal&gt; and
+     &lt;literal&gt;1&lt;/literal&gt;.
+</span>
+ビット文字列定数は<code class="literal">B</code>（大文字もしくは小文字）が始まりの引用符の前に付いている（間に空白はありません）通常の文字列定数のように見えます。
+例えば<code class="literal">B'1001'</code>のようになります。
+ビット文字列定数の中で許可される文字は<code class="literal">0</code>と<code class="literal">1</code>のみです。
+    </p><p>
+<span class="original">
+     Alternatively, bit-string constants can be specified in hexadecimal
+     notation, using a leading &lt;literal&gt;X&lt;/literal&gt; (upper or lower case),
+     e.g., &lt;literal&gt;X'1FF'&lt;/literal&gt;.  This notation is equivalent to
+     a bit-string constant with four binary digits for each hexadecimal digit.
+</span>
+その他にも、ビット文字列定数は<code class="literal">X'1FF'</code>といった具合に、先頭に<code class="literal">X</code>（大文字または小文字）を使用して16進表記で指定することもできます。
+この表記は、各16進数値をそれぞれ4つの2進数値に置き換えたビット文字列定数と同等です。
+    </p><p>
+<span class="original">
+     Both forms of bit-string constant can be continued
+     across lines in the same way as regular string constants.
+     Dollar quoting cannot be used in a bit-string constant.
+</span>
+どちらの形式のビット文字列定数でも、通常の文字列定数と同じように複数行にわたって続けて書くことができます。
+ドル引用符付けはビット文字列定数では使用できません。
+    </p></div><div class="sect3" id="SQL-SYNTAX-CONSTANTS-NUMERIC"><div class="titlepage"><div><div><h4 class="title">4.1.2.6. 数値定数</h4></div></div></div><span class="original">
+    &lt;title&gt;Numeric Constants&lt;/title&gt;
+</span><a id="id-1.5.3.5.9.9.2" class="indexterm"></a><p>
+<span class="original">
+     Numeric constants are accepted in these general forms:
+</span>
+数値定数は下記の一般的な形で受け付けられます。
+</p><pre class="synopsis">
+<em class="replaceable"><code>digits</code></em>
+<em class="replaceable"><code>digits</code></em>.[<span class="optional"><em class="replaceable"><code>digits</code></em></span>][<span class="optional">e[<span class="optional">+-</span>]<em class="replaceable"><code>digits</code></em></span>]
+[<span class="optional"><em class="replaceable"><code>digits</code></em></span>].<em class="replaceable"><code>digits</code></em>[<span class="optional">e[<span class="optional">+-</span>]<em class="replaceable"><code>digits</code></em></span>]
+<em class="replaceable"><code>digits</code></em>e[<span class="optional">+-</span>]<em class="replaceable"><code>digits</code></em>
+</pre><p>
+<span class="original">
+     where &lt;replaceable&gt;digits&lt;/replaceable&gt; is one or more decimal
+     digits (0 through 9).  At least one digit must be before or after the
+     decimal point, if one is used.  At least one digit must follow the
+     exponent marker (&lt;literal&gt;e&lt;/literal&gt;), if one is present.
+     There cannot be any spaces or other characters embedded in the
+     constant.  Note that any leading plus or minus sign is not actually
+     considered part of the constant; it is an operator applied to the
+     constant.
+</span>
+ここで<em class="replaceable"><code>digits</code></em>は1つ以上の10進数字（0〜9）です。
+小数点を使用する場合は、少なくとも1つの数字が小数点の前か後になくてはなりません。
+指数記号<code class="literal">e</code>の付く形式を使う場合には<code class="literal">e</code>の後に少なくとも1つの数字がなければいけません。
+空白や他の文字は、定数の中に埋め込むことはできません。
+プラスまたはマイナスの符号を先頭につけても、定数の一部とはみなされないことに注意してください。
+これらの符号は定数に適用される演算子とみなされます。
+    </p><p>
+<span class="original">
+     These are some examples of valid numeric constants:
+</span>
+下記は有効な数値定数のいくつかの例です。
+</p><div class="literallayout"><p><br />
+42<br />
+3.5<br />
+4.<br />
+.001<br />
+5e2<br />
+1.925e-3<br />
+</p></div><p>
+    </p><p>
+     <a id="id-1.5.3.5.9.9.5.1" class="indexterm"></a>
+     <a id="id-1.5.3.5.9.9.5.2" class="indexterm"></a>
+     <a id="id-1.5.3.5.9.9.5.3" class="indexterm"></a>
+<span class="original">
+     A numeric constant that contains neither a decimal point nor an
+     exponent is initially presumed to be type &lt;type&gt;integer&lt;/type&gt; if its
+     value fits in type &lt;type&gt;integer&lt;/type&gt; (32 bits); otherwise it is
+     presumed to be type &lt;type&gt;bigint&lt;/type&gt; if its
+     value fits in type &lt;type&gt;bigint&lt;/type&gt; (64 bits); otherwise it is
+     taken to be type &lt;type&gt;numeric&lt;/type&gt;.  Constants that contain decimal
+     points and/or exponents are always initially presumed to be type
+     &lt;type&gt;numeric&lt;/type&gt;.
+</span>
+小数点も指数も含まない数値定数の場合、まずその値が<code class="type">integer</code>型（32ビット）に収まれば<code class="type">integer</code>型であるとみなされます。
+そうでない場合、<code class="type">bigint</code>型（64ビット）で収まれば<code class="type">bigint</code>型とみなされます。
+どちらでもない場合は、<code class="type">numeric</code>型とみなされます。
+定数が小数点または指数あるいはその両方を含む場合は、常に最初に<code class="type">numeric</code>型であるとみなされます。
+    </p><p>
+<span class="original">
+     The initially assigned data type of a numeric constant is just a
+     starting point for the type resolution algorithms.  In most cases
+     the constant will be automatically coerced to the most
+     appropriate type depending on context.  When necessary, you can
+     force a numeric value to be interpreted as a specific data type
+     by casting it.&lt;indexterm&gt;&lt;primary&gt;type cast&lt;/primary&gt;&lt;/indexterm&gt;
+     For example, you can force a numeric value to be treated as type
+     &lt;type&gt;real&lt;/type&gt; (&lt;type&gt;float4&lt;/type&gt;) by writing:
+</span>
+数値定数に最初に割り振られるデータ型は、型解決アルゴリズムの開始点に過ぎません。
+ほとんどの場合、定数は文脈に基づいて自動的に最も適切な型に変換されます。
+必要であれば、特定のデータ型にキャストして、数値がそのデータ型として解釈されるように強制することができます。
+<a id="id-1.5.3.5.9.9.6.1" class="indexterm"></a>
+例えば、以下のようにして数値を<code class="type">real</code>型（<code class="type">float4</code>）として処理することができます。
+
+</p><pre class="programlisting">
+<span class="original">
+REAL '1.23'  &amp;#045;&amp;#045; string style
+1.23::REAL   &amp;#045;&amp;#045; PostgreSQL (historical) style
+</span>
+REAL '1.23'  -- 文字列書式
+1.23::REAL   -- （歴史的な）PostgreSQL書式
+</pre><p>
+
+<span class="original">
+     These are actually just special cases of the general casting
+     notations discussed next.
+</span>
+実のところ、これらは以下で説明する一般的なキャスト記法の特別な場合です。
+    </p></div><div class="sect3" id="SQL-SYNTAX-CONSTANTS-GENERIC"><div class="titlepage"><div><div><h4 class="title">4.1.2.7. 他の型の定数</h4></div></div></div><span class="original">
+    &lt;title&gt;Constants of Other Types&lt;/title&gt;
+</span><a id="id-1.5.3.5.9.10.2" class="indexterm"></a><p>
+<span class="original">
+     A constant of an &lt;emphasis&gt;arbitrary&lt;/emphasis&gt; type can be
+     entered using any one of the following notations:
+</span>
+<span class="emphasis"><em>任意の</em></span>型の定数は下記の表記のいずれかを使って入力することができます。
+</p><pre class="synopsis">
+<em class="replaceable"><code>type</code></em> '<em class="replaceable"><code>string</code></em>'
+'<em class="replaceable"><code>string</code></em>'::<em class="replaceable"><code>type</code></em>
+CAST ( '<em class="replaceable"><code>string</code></em>' AS <em class="replaceable"><code>type</code></em> )
+</pre><p>
+<span class="original">
+     The string constant's text is passed to the input conversion
+     routine for the type called &lt;replaceable&gt;type&lt;/replaceable&gt;. The
+     result is a constant of the indicated type.  The explicit type
+     cast can be omitted if there is no ambiguity as to the type the
+     constant must be (for example, when it is assigned directly to a
+     table column), in which case it is automatically coerced.
+</span>
+文字列定数のテキストは<em class="replaceable"><code>type</code></em>と呼ばれる型の入力変換ルーチンへと渡されます。
+結果は指示された型の定数です。
+明示的な型キャストは、定数がどの型でなければならないかについて曖昧な点がなければ（例えば定数が直接テーブル列に代入されている場合）省略しても構いません。
+その場合自動的に型強制されます。
+    </p><p>
+<span class="original">
+     The string constant can be written using either regular SQL
+     notation or dollar-quoting.
+</span>
+文字列定数は通常のSQL記法でもドル引用符付けでも記述することができます。
+    </p><p>
+<span class="original">
+     It is also possible to specify a type coercion using a function-like
+     syntax:
+</span>
+     関数のような構文を使って型強制を指定することも可能です。
+</p><pre class="synopsis">
+<em class="replaceable"><code>typename</code></em> ( '<em class="replaceable"><code>string</code></em>' )
+</pre><p>
+<span class="original">
+     but not all type names can be used in this way; see &lt;xref
+     linkend="sql-syntax-type-casts"/&gt; for details.
+</span>
+しかし、全ての型の名前でこの方法は使用できるというわけではありません。
+詳細は<a class="xref" href="sql-expressions.html#SQL-SYNTAX-TYPE-CASTS" title="4.2.9. 型キャスト">4.2.9</a>を参照してください。
+    </p><p>
+<span class="original">
+     The &lt;literal&gt;::&lt;/literal&gt;, &lt;literal&gt;CAST()&lt;/literal&gt;, and
+     function-call syntaxes can also be used to specify run-time type
+     conversions of arbitrary expressions, as discussed in &lt;xref
+     linkend="sql-syntax-type-casts"/&gt;.  To avoid syntactic ambiguity, the
+     &lt;literal&gt;&lt;replaceable&gt;type&lt;/replaceable&gt; '&lt;replaceable&gt;string&lt;/replaceable&gt;'&lt;/literal&gt;
+     syntax can only be used to specify the type of a simple literal constant.
+     Another restriction on the
+     &lt;literal&gt;&lt;replaceable&gt;type&lt;/replaceable&gt; '&lt;replaceable&gt;string&lt;/replaceable&gt;'&lt;/literal&gt;
+     syntax is that it does not work for array types; use &lt;literal&gt;::&lt;/literal&gt;
+     or &lt;literal&gt;CAST()&lt;/literal&gt; to specify the type of an array constant.
+</span>
+<code class="literal">::</code>、<code class="literal">CAST()</code>や関数呼び出し構文は、<a class="xref" href="sql-expressions.html#SQL-SYNTAX-TYPE-CASTS" title="4.2.9. 型キャスト">4.2.9</a>で説明する通り、任意の式の実行時の型変換を指定するために使うこともできます。
+構文的なあいまいさをなくすために、<code class="literal"><em class="replaceable"><code>type</code></em> '<em class="replaceable"><code>string</code></em>'</code>という形式は単なるリテラル定数を指定する場合にのみ使うことができます。
+この他<code class="literal"><em class="replaceable"><code>type</code></em> '<em class="replaceable"><code>string</code></em>'</code>構文には、配列型では動作しないという制限があります。
+配列型の定数の型を指定する場合は<code class="literal">::</code>か<code class="literal">CAST()</code>を使用してください。
+    </p><p>
+<span class="original">
+     The &lt;literal&gt;CAST()&lt;/literal&gt; syntax conforms to SQL.  The
+     &lt;literal&gt;&lt;replaceable&gt;type&lt;/replaceable&gt; '&lt;replaceable&gt;string&lt;/replaceable&gt;'&lt;/literal&gt;
+     syntax is a generalization of the standard: SQL specifies this syntax only
+     for a few data types, but &lt;productname&gt;PostgreSQL&lt;/productname&gt; allows it
+     for all types.  The syntax with
+     &lt;literal&gt;::&lt;/literal&gt; is historical &lt;productname&gt;PostgreSQL&lt;/productname&gt;
+     usage, as is the function-call syntax.
+</span>
+<code class="literal">CAST()</code>構文はSQLに従っています。
+<code class="literal"><em class="replaceable"><code>type</code></em> '<em class="replaceable"><code>string</code></em>'</code>構文は、標準を一般化したものです。
+SQLでは、この構文を数個のデータ型でのみ規定しています。
+しかし、<span class="productname">PostgreSQL</span>ではすべての型で使用することができます。
+<code class="literal">::</code>付きの構文は、歴史的に<span class="productname">PostgreSQL</span>で使用されてきました。
+関数呼び出し構文も同じく歴史的に使用されているものです。
+    </p></div></div><div class="sect2" id="SQL-SYNTAX-OPERATORS"><div class="titlepage"><div><div><h3 class="title">4.1.3. 演算子</h3></div></div></div><span class="original">
+   &lt;title&gt;Operators&lt;/title&gt;
+</span><a id="id-1.5.3.5.10.2" class="indexterm"></a><p>
+<span class="original">
+    An operator name is a sequence of up to &lt;symbol&gt;NAMEDATALEN&lt;/symbol&gt;-1
+    (63 by default) characters from the following list:
+</span>
+演算子は<code class="symbol">NAMEDATALEN</code>-1（デフォルトは63）までの長さの、以下に示すリストに含まれる文字の並びです。
+</p><div class="literallayout"><p><br />
++ - * / &lt; &gt; = ~ ! @ # % ^ &amp; | ` ?<br />
+</p></div><p>
+
+<span class="original">
+    There are a few restrictions on operator names, however:
+</span>
+しかし、演算子の名前にはいくつかの制約があります。
+    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+       &lt;literal&gt;&amp;#045;-&lt;/literal&gt; and &lt;literal&gt;/*&lt;/literal&gt; cannot appear
+       anywhere in an operator name, since they will be taken as the
+       start of a comment.
+</span>
+<code class="literal">--</code>と<code class="literal">/*</code>は演算子名の中に使うことができません。
+なぜならこれらはコメントの始まりと解釈されるからです。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       A multiple-character operator name cannot end in &lt;literal&gt;+&lt;/literal&gt; or &lt;literal&gt;-&lt;/literal&gt;,
+       unless the name also contains at least one of these characters:
+</span>
+複数文字の演算子名は、その名前が少なくとも下記の文字の1つ以上を含まない限り、<code class="literal">+</code>や<code class="literal">-</code>で終わることができません。
+</p><div class="literallayout"><p><br />
+~ ! @ # % ^ &amp; | ` ?<br />
+</p></div><p>
+<span class="original">
+       For example, &lt;literal&gt;@-&lt;/literal&gt; is an allowed operator name,
+       but &lt;literal&gt;*-&lt;/literal&gt; is not.  This restriction allows
+       &lt;productname&gt;PostgreSQL&lt;/productname&gt; to parse SQL-compliant
+       queries without requiring spaces between tokens.
+</span>
+例えば、<code class="literal">@-</code>は演算子名として認められていますが、<code class="literal">*-</code>は認められていません。
+この制限により<span class="productname">PostgreSQL</span>は、SQLに準拠する問い合わせをトークン同士の間に空白を要求せず、解析することができます。
+      </p></li></ul></div><p>
+   </p><p>
+<span class="original">
+    When working with non-SQL-standard operator names, you will usually
+    need to separate adjacent operators with spaces to avoid ambiguity.
+    For example, if you have defined a left unary operator named &lt;literal&gt;@&lt;/literal&gt;,
+    you cannot write &lt;literal&gt;X*@Y&lt;/literal&gt;; you must write
+    &lt;literal&gt;X* @Y&lt;/literal&gt; to ensure that
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; reads it as two operator names
+    not one.
+</span>
+非SQL標準の演算子名を使う場合、通常は曖昧さを回避するために、隣り合った演算子を空白で区切る必要があります。
+例えば<code class="literal">@</code>という左単項演算子を定義した場合、<code class="literal">X*@Y</code>とは書けません。
+<span class="productname">PostgreSQL</span>がこれを確実に1つではなく2つの演算子名として解釈できるように、<code class="literal">X* @Y</code>と書く必要があります。
+   </p></div><div class="sect2" id="SQL-SYNTAX-SPECIAL-CHARS"><div class="titlepage"><div><div><h3 class="title">4.1.4. 特殊文字</h3></div></div></div><span class="original">
+   &lt;title&gt;Special Characters&lt;/title&gt;
+</span><p>
+<span class="original">
+   Some characters that are not alphanumeric have a special meaning
+   that is different from being an operator.  Details on the usage can
+   be found at the location where the respective syntax element is
+   described.  This section only exists to advise the existence and
+   summarize the purposes of these characters.
+</span>
+英数字ではないいくつかの文字は、演算子であることとは異なる特殊な意味を持っています。
+使用方法の詳細はそれぞれの構文要素についてのところで説明します。
+本節では、単にその存在を知らせ、これらの文字の目的をまとめるに留めます。
+
+   </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+      A dollar sign (&lt;literal&gt;$&lt;/literal&gt;) followed by digits is used
+      to represent a positional parameter in the body of a function
+      definition or a prepared statement.  In other contexts the
+      dollar sign can be part of an identifier or a dollar-quoted string
+      constant.
+</span>
+直後に数字が続くドル記号（<code class="literal">$</code>）は、関数定義の本体またはプリペアド文中の位置パラメータを表すために使われます。
+他の文脈ではドル記号は識別子名の一部であるかもしれませんし、ドル引用符付けされた文字列定数の一部であるかもしれません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Parentheses (&lt;literal&gt;()&lt;/literal&gt;) have their usual meaning to
+      group expressions and enforce precedence.  In some cases
+      parentheses are required as part of the fixed syntax of a
+      particular SQL command.
+</span>
+括弧（<code class="literal">()</code>）は、通常通り式をまとめ優先するという意味を持ちます。
+場合によっては括弧は、特定のSQLコマンドの固定構文の一部として要求されることがあります。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Brackets (&lt;literal&gt;[]&lt;/literal&gt;) are used to select the elements
+      of an array.  See &lt;xref linkend="arrays"/&gt; for more information
+      on arrays.
+</span>
+大括弧（<code class="literal">[]</code>）は、配列要素を選択するために使われます。
+配列に関する詳しい情報は<a class="xref" href="arrays.html" title="8.15. 配列">8.15</a>を参照してください。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Commas (&lt;literal&gt;,&lt;/literal&gt;) are used in some syntactical
+      constructs to separate the elements of a list.
+</span>
+カンマ（<code class="literal">,</code>）は、リストの要素を区切るために構文的構成体で使われることがあります。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      The semicolon (&lt;literal&gt;;&lt;/literal&gt;) terminates an SQL command.
+      It cannot appear anywhere within a command, except within a
+      string constant or quoted identifier.
+</span>
+セミコロン（<code class="literal">;</code>）は、SQLコマンドの終わりを意味します。
+文字列定数または引用符付き識別子以外では、コマンドの途中では使うことができません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      The colon (&lt;literal&gt;:&lt;/literal&gt;) is used to select
+      &lt;quote&gt;slices&lt;/quote&gt; from arrays. (See &lt;xref
+      linkend="arrays"/&gt;.)  In certain SQL dialects (such as Embedded
+      SQL), the colon is used to prefix variable names.
+</span>
+コロン（<code class="literal">:</code>）は、配列から<span class="quote">「<span class="quote">一部分</span>」</span>を取り出すために使われます
+(<a class="xref" href="arrays.html" title="8.15. 配列">8.15</a>を参照してください）。
+いくつかのSQL方言（埋め込みSQLなど）では、コロンは変数名の接頭辞として使われます。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      The asterisk (&lt;literal&gt;*&lt;/literal&gt;) is used in some contexts to denote
+      all the fields of a table row or composite value.  It also
+      has a special meaning when used as the argument of an
+      aggregate function, namely that the aggregate does not require
+      any explicit parameter.
+</span>
+アスタリスク（<code class="literal">*</code>）は、いくつかの文脈において、テーブル行や複合型の全てのフィールドを表現するために使用されます。
+また、集約関数の引数として使われる場合も特殊な、つまり、その集約が明示的なパラメータをまったく必要としないという意味を持ちます。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      The period (&lt;literal&gt;.&lt;/literal&gt;) is used in numeric
+      constants, and to separate schema, table, and column names.
+</span>
+ピリオド（<code class="literal">.</code>）は数値定数の中で使われます。
+また、スキーマ名、テーブル名、列名を区切るためにも使われます。
+     </p></li></ul></div><p>
+
+   </p></div><div class="sect2" id="SQL-SYNTAX-COMMENTS"><div class="titlepage"><div><div><h3 class="title">4.1.5. コメント</h3></div></div></div><span class="original">
+   &lt;title&gt;Comments&lt;/title&gt;
+</span><a id="id-1.5.3.5.12.2" class="indexterm"></a><p>
+<span class="original">
+    A comment is a sequence of characters beginning with
+    double dashes and extending to the end of the line, e.g.:
+</span>
+コメントは二重ハイフンで始まる文字の並びで、行の終わりまで続きます。
+例えば以下のようになります。
+</p><pre class="programlisting">
+<span class="original">
+&amp;#045;&amp;#045; This is a standard SQL comment
+</span>
+-- これは標準SQLのコメントです
+</pre><p>
+   </p><p>
+<span class="original">
+    Alternatively, C-style block comments can be used:
+</span>
+他にも、C言語様式のブロックコメントも使用できます。
+</p><pre class="programlisting">
+<span class="original">
+/* multiline comment
+ * with nesting: /* nested block comment */
+</span>
+/* ネストされた複数行にわたる
+ * コメント /* ネストされたブロックコメント */
+ */
+</pre><p>
+<span class="original">
+    where the comment begins with &lt;literal&gt;/*&lt;/literal&gt; and extends to
+    the matching occurrence of &lt;literal&gt;*/&lt;/literal&gt;. These block
+    comments nest, as specified in the SQL standard but unlike C, so that one can
+    comment out larger blocks of code that might contain existing block
+    comments.
+</span>
+コメントは<code class="literal">/*</code>で始まり、対応する<code class="literal">*/</code>で終わります。
+これらのブロックコメントはC言語とは異なり、標準SQLで規定されているように入れ子にすることができます。
+したがって、既存のブロックコメントを含む可能性のある大きなコードのブロックをコメントアウトすることができます。
+   </p><p>
+<span class="original">
+    A comment is removed from the input stream before further syntax
+    analysis and is effectively replaced by whitespace.
+</span>
+コメントは、その後の構文解析が行われる前に入力ストリームから取り去られ、事実上、空白で置き換えられます。
+   </p></div><div class="sect2" id="SQL-PRECEDENCE"><div class="titlepage"><div><div><h3 class="title">4.1.6. 演算子の優先順位</h3></div></div></div><span class="original">
+   &lt;title&gt;Operator Precedence&lt;/title&gt;
+</span><a id="id-1.5.3.5.13.2" class="indexterm"></a><p>
+<span class="original">
+    &lt;xref linkend="sql-precedence-table"/&gt; shows the precedence and
+    associativity of the operators in &lt;productname&gt;PostgreSQL&lt;/productname&gt;.
+    Most operators have the same precedence and are left-associative.
+    The precedence and associativity of the operators is hard-wired
+    into the parser.
+</span>
+<a class="xref" href="sql-syntax-lexical.html#SQL-PRECEDENCE-TABLE" title="表4.2 演算子の優先順位（高いものから低いものへ）">表 4.2</a>は、<span class="productname">PostgreSQL</span>の演算子の優先順位と結合性を示しています。
+ほとんどの演算子は同じ優先順位を持ち、左結合します。
+演算子の優先順位と結合性はパーサに組み込まれています。
+   </p><p>
+<span class="original">
+    You will
+    sometimes need to add parentheses when using combinations of
+    binary and unary operators.  For instance:
+</span>
+二項演算子と単項演算子を組み合わせて使う場合は括弧を加える必要がある場合があります。
+例えば下記のような場合です。
+</p><pre class="programlisting">
+SELECT 5 ! - 6;
+</pre><p>
+<span class="original">
+   will be parsed as:
+</span>
+は、
+</p><pre class="programlisting">
+SELECT 5 ! (- 6);
+</pre><p>
+<span class="original">
+    because the parser has no idea &amp;mdash; until it is too late
+    &amp;mdash; that &lt;token&gt;!&lt;/token&gt; is defined as a postfix operator,
+    not an infix one.  To get the desired behavior in this case, you
+    must write:
+</span>
+と解析されます。
+なぜならば、パーサは<code class="token">!</code>が中置ではなく接尾演算子として定義されていることに最後まで気が付かないためです。
+この場合、求める結果を得るためには下記のように書く必要があります。
+</p><pre class="programlisting">
+SELECT (5 !) - 6;
+</pre><p>
+<span class="original">
+    This is the price one pays for extensibility.
+</span>
+これが拡張性を求める故の代償です。
+   </p><div class="table" id="SQL-PRECEDENCE-TABLE"><p class="title"><strong>表4.2 演算子の優先順位（高いものから低いものへ）</strong></p><div class="table-contents"><span class="original">
+    &lt;title&gt;Operator Precedence (highest to lowest)&lt;/title&gt;
+</span><table class="table" summary="演算子の優先順位（高いものから低いものへ）" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>演算子/要素</th><th>結合性</th><th>説明</th></tr></thead><tbody><tr><td><code class="token">.</code></td><td>左</td><td>テーブル/列名の区切り文字</td></tr><tr><td><code class="token">::</code></td><td>左</td><td><span class="productname">PostgreSQL</span>方式の型キャスト</td></tr><tr><td><code class="token">[</code> <code class="token">]</code></td><td>左</td><td>配列要素選択</td></tr><tr><td><code class="token">+</code> <code class="token">-</code></td><td>右</td><td>単項加算、単項減算</td></tr><tr><td><code class="token">^</code></td><td>左</td><td>累乗</td></tr><tr><td><code class="token">*</code> <code class="token">/</code> <code class="token">%</code></td><td>左</td><td>掛け算、割り算、剰余</td></tr><tr><td><code class="token">+</code> <code class="token">-</code></td><td>左</td><td>加算、減算</td></tr><tr><td>(その他の演算子)</td><td>左</td><td>その他全ての組み込み、あるいはユーザ定義の演算子</td></tr><tr><td><code class="token">BETWEEN</code> <code class="token">IN</code> <code class="token">LIKE</code> <code class="token">ILIKE</code> <code class="token">SIMILAR</code></td><td> </td><td>範囲内に包含、集合の要素、文字列の一致</td></tr><tr><td><code class="token">&lt;</code> <code class="token">&gt;</code> <code class="token">=</code> <code class="token">&lt;=</code> <code class="token">&gt;=</code> <code class="token">&lt;&gt;</code>
+</td><td> </td><td>比較演算子</td></tr><tr><td><code class="token">IS</code> <code class="token">ISNULL</code> <code class="token">NOTNULL</code></td><td> </td><td><code class="literal">IS TRUE</code>、<code class="literal">IS FALSE</code>、<code class="literal">IS NULL</code>、<code class="literal">IS DISTINCT FROM</code>、その他</td></tr><tr><td><code class="token">NOT</code></td><td>右</td><td>論理否定</td></tr><tr><td><code class="token">AND</code></td><td>左</td><td>論理積</td></tr><tr><td><code class="token">OR</code></td><td>左</td><td>論理和</td></tr></tbody></table></div></div><br class="table-break" /><p>
+<span class="original">
+    Note that the operator precedence rules also apply to user-defined
+    operators that have the same names as the built-in operators
+    mentioned above.  For example, if you define a
+    &lt;quote&gt;+&lt;/quote&gt; operator for some custom data type it will have
+    the same precedence as the built-in &lt;quote&gt;+&lt;/quote&gt; operator, no
+    matter what yours does.
+</span>
+演算子優先順位の規則は、上記で触れた組み込み演算子と同じ名前を持つユーザ定義演算子にも当てはまります。
+例えばもし<span class="quote">「<span class="quote">+</span>」</span>演算子をある独自のデータ型に定義すると、新しい演算子が何をするかにかかわらず、<span class="quote">「<span class="quote">+</span>」</span>組み込み演算子と同じ優先順位を持つようになります。
+   </p><p>
+<span class="original">
+    When a schema-qualified operator name is used in the
+    &lt;literal&gt;OPERATOR&lt;/literal&gt; syntax, as for example in:
+</span>
+次の例のように、<code class="literal">OPERATOR</code>構文でスキーマで修飾された演算子名を使用する場合、
+</p><pre class="programlisting">
+SELECT 3 OPERATOR(pg_catalog.+) 4;
+</pre><p>
+<span class="original">
+    the &lt;literal&gt;OPERATOR&lt;/literal&gt; construct is taken to have the default precedence
+    shown in &lt;xref linkend="sql-precedence-table"/&gt; for
+    &lt;quote&gt;any other operator&lt;/quote&gt;.  This is true no matter
+    which specific operator appears inside &lt;literal&gt;OPERATOR()&lt;/literal&gt;.
+</span>
+<code class="literal">OPERATOR</code>構文は、<a class="xref" href="sql-syntax-lexical.html#SQL-PRECEDENCE-TABLE" title="表4.2 演算子の優先順位（高いものから低いものへ）">表 4.2</a>の<span class="quote">「<span class="quote">その他の演算子</span>」</span>で示されているデフォルトの優先順位を持つとみなされます。
+これは、<code class="literal">OPERATOR()</code>にどの特定の演算子が入る場合でも変わりません。
+   </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+     &lt;productname&gt;PostgreSQL&lt;/productname&gt; versions before 9.5 used slightly different
+     operator precedence rules.  In particular, &lt;token&gt;&amp;lt;=&lt;/token&gt;
+     &lt;token&gt;&amp;gt;=&lt;/token&gt; and &lt;token&gt;&amp;lt;&amp;gt;&lt;/token&gt; used to be treated as
+     generic operators; &lt;literal&gt;IS&lt;/literal&gt; tests used to have higher priority;
+     and &lt;literal&gt;NOT BETWEEN&lt;/literal&gt; and related constructs acted inconsistently,
+     being taken in some cases as having the precedence of &lt;literal&gt;NOT&lt;/literal&gt;
+     rather than &lt;literal&gt;BETWEEN&lt;/literal&gt;.  These rules were changed for better
+     compliance with the SQL standard and to reduce confusion from
+     inconsistent treatment of logically equivalent constructs.  In most
+     cases, these changes will result in no behavioral change, or perhaps
+     in &lt;quote&gt;no such operator&lt;/quote&gt; failures which can be resolved by adding
+     parentheses.  However there are corner cases in which a query might
+     change behavior without any parsing error being reported.  If you are
+     concerned about whether these changes have silently broken something,
+     you can test your application with the configuration
+     parameter &lt;xref linkend="guc-operator-precedence-warning"/&gt; turned on
+     to see if any warnings are logged.
+</span>
+9.5より前の<span class="productname">PostgreSQL</span>のバージョンでは少し異なる演算子優先順位規則を使っていました。
+特に<code class="token">&lt;=</code>、<code class="token">&gt;=</code>、<code class="token">&lt;&gt;</code>は一般的な演算子として扱われていました。<code class="literal">IS</code>テストは高い優先順位を持つとして使われていました。<code class="literal">NOT BETWEEN</code>とそれに関係する構文は振る舞いが一貫しておらず、<code class="literal">BETWEEN</code>ではなく<code class="literal">NOT</code>の優先順位を持つと見なされる場合がありました。
+標準SQLにより準拠し、論理的に等しい構文の一貫しない扱いから来る混乱を減らすように、これらの規則は変更されました。
+ほとんどの場合、これらの変更により振る舞いが変わることはないでしょうし、もし変わっても恐らく<span class="quote">「<span class="quote">no such operator</span>」</span>で失敗になるくらいでしょう。後者は括弧を追加することで解決できるでしょう。
+しかしながら、稀に問い合わせがパースエラーを返すことなく振る舞いを変える場合があります。
+これらの変更が黙って何かを壊してしまったかどうかが心配であれば、設定パラメータ<a class="xref" href="runtime-config-compatible.html#GUC-OPERATOR-PRECEDENCE-WARNING">operator_precedence_warning</a>をオンにして、何か警告がログに書き込まれるかを見てください。
+    </p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-syntax.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-syntax.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-expressions.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第4章 SQLの構文 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 4.2. 評価式</td></tr></table></div></body></html>

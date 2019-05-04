@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>57.1. 外部データラッパ関数</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="fdwhandler.html" title="第57章 外部データラッパの作成" /><link rel="next" href="fdw-callbacks.html" title="57.2. 外部データラッパのコールバックルーチン" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="fdwhandler.html" title="第57章 外部データラッパの作成">第57章 外部データラッパの作成</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      fdw-functions.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="fdwhandler.html" title="第57章 外部データラッパの作成">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="fdwhandler.html" title="第57章 外部データラッパの作成">上へ</a></td><td width="60%" align="center">57.1. 外部データラッパ関数</td><td width="20%" align="right"> <a accesskey="n" href="fdw-callbacks.html" title="57.2. 外部データラッパのコールバックルーチン">次へ</a></td></tr></table><hr /></div><div class="sect1" id="FDW-FUNCTIONS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">57.1. 外部データラッパ関数</h2></div></div></div><span class="original">
+    &lt;title&gt;Foreign Data Wrapper Functions&lt;/title&gt;
+</span><p>
+<span class="original">
+     The FDW author needs to implement a handler function, and optionally
+     a validator function. Both functions must be written in a compiled
+     language such as C, using the version-1 interface.
+     For details on C language calling conventions and dynamic loading,
+     see &lt;xref linkend="xfunc-c"/&gt;.
+</span>
+FDWの作者は、ハンドラ関数と、オプションで検証関数を実装する必要があります。
+両関数とも、version-1インタフェースを使用して、Cなどのコンパイル言語で作成しなければなりません。
+C言語の呼び出し規約と動的ロードについては<a class="xref" href="xfunc-c.html" title="38.10. C言語関数">38.10</a>を参照してください。
+    </p><p>
+<span class="original">
+     The handler function simply returns a struct of function pointers to
+     callback functions that will be called by the planner, executor, and
+     various maintenance commands.
+     Most of the effort in writing an FDW is in implementing these callback
+     functions.
+     The handler function must be registered with
+     &lt;productname&gt;PostgreSQL&lt;/productname&gt; as taking no arguments and
+     returning the special pseudo-type &lt;type&gt;fdw_handler&lt;/type&gt;.  The
+     callback functions are plain C functions and are not visible or
+     callable at the SQL level.  The callback functions are described in
+     &lt;xref linkend="fdw-callbacks"/&gt;.
+</span>
+ハンドラ関数は単に、プランナやエグゼキュータ、様々なメンテナンスコマンドから呼び出されるコールバックの関数ポインタを含む構造体を返します。
+FDWを作成するための労力のほとんどは、これらのコールバック関数を実装することに費やされます。
+ハンドラ関数は、引数を取らず特殊な仮想型である<code class="type">fdw_handler</code>を返す関数として<span class="productname">PostgreSQL</span>に登録しなければなりません。
+コールバック関数は通常のC言語関数で、SQLレベルでは参照も呼び出しもできません。コールバック関数の説明は<a class="xref" href="fdw-callbacks.html" title="57.2. 外部データラッパのコールバックルーチン">57.2</a>にあります。
+    </p><p>
+<span class="original">
+     The validator function is responsible for validating options given in
+     &lt;command&gt;CREATE&lt;/command&gt; and &lt;command&gt;ALTER&lt;/command&gt; commands for its
+     foreign data wrapper, as well as foreign servers, user mappings, and
+     foreign tables using the wrapper.
+     The validator function must be registered as taking two arguments, a
+     text array containing the options to be validated, and an OID
+     representing the type of object the options are associated with (in
+     the form of the OID of the system catalog the object would be stored
+     in, either
+     &lt;literal&gt;ForeignDataWrapperRelationId&lt;/literal&gt;,
+     &lt;literal&gt;ForeignServerRelationId&lt;/literal&gt;,
+     &lt;literal&gt;UserMappingRelationId&lt;/literal&gt;,
+     or &lt;literal&gt;ForeignTableRelationId&lt;/literal&gt;).
+     If no validator function is supplied, options are not checked at object
+     creation time or object alteration time.
+</span>
+検証関数は、そのラッパを使用する外部サーバ、ユーザマッピング、外部テーブルだけでなく、外部データラッパ自身の<code class="command">CREATE</code>や<code class="command">ALTER</code>といったコマンドで指定されたオプションの妥当性の検証を担当します。
+検証関数は、検証するオプションを含むtext配列と、オプションを関連付けるオブジェクトの種類を表すOID（そのオブジェクトが格納されるシステムカタログのOIDで次のいずれか、<code class="literal">ForeignDataWrapperRelationId</code>、<code class="literal">ForeignServerRelationId</code>、<code class="literal">UserMappingRelationId</code>、<code class="literal">ForeignTableRelationId</code>）という二つの引数を取るものとして登録しなければなりません。
+検証関数が指定されなかった場合、オブジェクト作成時やオブジェクト変更時にオプションはチェックされません。
+    </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="fdwhandler.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="fdwhandler.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="fdw-callbacks.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第57章 外部データラッパの作成 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 57.2. 外部データラッパのコールバックルーチン</td></tr></table></div></body></html>

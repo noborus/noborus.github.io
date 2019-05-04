@@ -1,0 +1,411 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>10.2. 演算子</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="typeconv-overview.html" title="10.1. 概要" /><link rel="next" href="typeconv-func.html" title="10.3. 関数" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="typeconv.html" title="第10章 型変換">第10章 型変換</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      typeconv-oper.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="typeconv-overview.html" title="10.1. 概要">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="typeconv.html" title="第10章 型変換">上へ</a></td><td width="60%" align="center">10.2. 演算子</td><td width="20%" align="right"> <a accesskey="n" href="typeconv-func.html" title="10.3. 関数">次へ</a></td></tr></table><hr /></div><div class="sect1" id="TYPECONV-OPER"><div class="titlepage"><div><div><h2 class="title" style="clear: both">10.2. 演算子</h2></div></div></div><span class="original">
+&lt;title&gt;Operators&lt;/title&gt;
+</span><a id="id-1.5.9.7.2" class="indexterm"></a><p>
+<span class="original">
+   The specific operator that is referenced by an operator expression
+   is determined using the following procedure.
+   Note that this procedure is indirectly affected
+   by the precedence of the operators involved, since that will determine
+   which sub-expressions are taken to be the inputs of which operators.
+   See &lt;xref linkend="sql-precedence"/&gt; for more information.
+</span>
+演算式に参照される特定の演算子は、以下の手順を用いて決定されます。
+関連する演算子の優先順位によりどの下位式をどの演算子の入力と見なすかが決定されますので、この手順はこの優先順位により間接的な影響を受けることに注意して下さい。
+詳細は<a class="xref" href="sql-syntax-lexical.html#SQL-PRECEDENCE" title="4.1.6. 演算子の優先順位">4.1.6</a>を参照してください。
+  </p><div class="procedure" id="id-1.5.9.7.4"><p class="title"><strong>演算子における型の解決</strong></p><span class="original">
+&lt;title&gt;Operator Type Resolution&lt;/title&gt;
+</span><ol class="procedure" type="1"><li class="step" id="OP-RESOL-SELECT"><p>
+<span class="original">
+Select the operators to be considered from the
+&lt;classname&gt;pg_operator&lt;/classname&gt; system catalog.  If a non-schema-qualified
+operator name was used (the usual case), the operators
+considered are those with the matching name and argument count that are
+visible in the current search path (see &lt;xref linkend="ddl-schemas-path"/&gt;).
+If a qualified operator name was given, only operators in the specified
+schema are considered.
+</span>
+<code class="classname">pg_operator</code>システムカタログから、調査の対象とする演算子を選択します。
+スキーマ修飾がされていない演算子名が使用される場合（通常の場合）、現行の検索パスで可視になっていて、同一の名前と引数の数を持つ演算子が調査対象であるとみなされます
+（<a class="xref" href="ddl-schemas.html#DDL-SCHEMAS-PATH" title="5.8.3. スキーマ検索パス">5.8.3</a>を参照してください）。
+修飾された演算子名が与えられている場合、指定されたスキーマの演算子のみが調査対象とみなされます。
+</p><ol type="a" class="substeps"><li class="step"><p>
+<span class="original">
+If the search path finds multiple operators with identical argument types,
+only the one appearing earliest in the path is considered.  Operators with
+different argument types are considered on an equal footing regardless of
+search path position.
+</span>
+検索パスで引数のデータ型が同じである複数の演算子を検出した場合、そのパスで最初に検出された演算子のみを調査対象とみなします。
+引数のデータ型が異なる演算子は、検索パス内の位置に関係なく、同じように調べられます。
+</p></li></ol></li><li class="step" id="OP-RESOL-EXACT-MATCH"><p>
+<span class="original">
+Check for an operator accepting exactly the input argument types.
+If one exists (there can be only one exact match in the set of
+operators considered), use it.  Lack of an exact match creates a security
+hazard when calling, via qualified name
+</span>
+正確に入力引数型を受け付ける演算子があるかどうか検査します。
+該当する演算子があれば（調査される演算子の集合内で正確に一致するものは1つしかあり得ません）、それを使用します。
+正確に一致するものがない場合、信用できないユーザにオブジェクトの作成を許可しているスキーマで見つかる演算子を、(典型的なものではないですが)修飾された名前で
+  <a href="#ftn.OP-QUALIFIED-SECURITY" class="footnote"><sup class="footnote" id="OP-QUALIFIED-SECURITY">[8]</sup></a>
+<span class="original">
+(not typical), any operator found in a schema that permits untrusted users to
+create objects.  In such situations, cast arguments to force an exact match.
+</span>
+呼び出す時にセキュリティの危険が発生します。
+そのような状況では、強制的に正確に一致するように引数をキャストしてください。
+</p><ol type="a" class="substeps"><li class="step" id="OP-RESOL-EXACT-UNKNOWN"><p>
+<span class="original">
+If one argument of a binary operator invocation is of the &lt;type&gt;unknown&lt;/type&gt; type,
+then assume it is the same type as the other argument for this check.
+Invocations involving two &lt;type&gt;unknown&lt;/type&gt; inputs, or a unary operator
+with an &lt;type&gt;unknown&lt;/type&gt; input, will never find a match at this step.
+</span>
+二項演算子の1つの引数が<code class="type">unknown</code>型であった場合、この検査のもう片方の引数と同一の型であると仮定します。
+2つの<code class="type">unknown</code>入力、もしくは<code class="type">unknown</code>入力を伴う単項演算子が呼び出された場合、この段階では対を見つけることはありません。
+</p></li><li class="step" id="OP-RESOL-EXACT-DOMAIN"><p>
+<span class="original">
+If one argument of a binary operator invocation is of the &lt;type&gt;unknown&lt;/type&gt;
+type and the other is of a domain type, next check to see if there is an
+operator accepting exactly the domain's base type on both sides; if so, use it.
+</span>
+二項演算子の1つの引数が<code class="type">unknown</code>型であり、もう1つがドメイン型の場合、次に両側でドメインの基本型を厳密に受け付ける演算子があるかを確認します。
+</p></li></ol></li><li class="step" id="OP-RESOL-BEST-MATCH"><p>
+<span class="original">
+Look for the best match.
+</span>
+最もよく合うものを検索します。
+</p><ol type="a" class="substeps"><li class="step"><p>
+<span class="original">
+Discard candidate operators for which the input types do not match
+and cannot be converted (using an implicit conversion) to match.
+&lt;type&gt;unknown&lt;/type&gt; literals are
+assumed to be convertible to anything for this purpose.  If only one
+candidate remains, use it; else continue to the next step.
+</span>
+演算子の候補のうち、入力値のデータ型が一致せず、また、（暗黙的な変換を使用して）一致するように変換できないものを破棄します。
+<code class="type">unknown</code>リテラルは、上記の目的で何にでも変換可能とみなされます。
+1つの候補しか残らない場合、それを使います。
+それ以外の場合は次の段階に進みます。
+</p></li><li class="step"><p>
+<span class="original">
+If any input argument is of a domain type, treat it as being of the
+domain's base type for all subsequent steps.  This ensures that domains
+act like their base types for purposes of ambiguous-operator resolution.
+</span>
+入力引数のいずれかがドメイン型であれば、以降の段階すべてでドメインの基本型であるかのように扱います。
+これにより、曖昧な演算子を解決するのを目的としてその基本型であるかのようにドメインが振る舞うことが確実になります。
+</p></li><li class="step"><p>
+<span class="original">
+Run through all candidates and keep those with the most exact matches
+on input types.  Keep all candidates if none have exact matches.
+If only one candidate remains, use it; else continue to the next step.
+</span>
+全ての候補を検索し、入力型に最も正確に合うものを残します。
+正確に合うものが何もなければ全ての候補を残します。
+1つの候補しか残らない場合、それを使います。
+それ以外の場合は次の段階に進みます。
+</p></li><li class="step"><p>
+<span class="original">
+Run through all candidates and keep those that accept preferred types (of the
+input data type's type category) at the most positions where type conversion
+will be required.
+Keep all candidates if none accept preferred types.
+If only one candidate remains, use it; else continue to the next step.
+</span>
+全ての候補を検索し、型変換が必要とされる所で（入力データ型カテゴリの）優先される型を受け付けるものを残します。
+優先される型を受け付けるものが何もなければ全ての候補を残します。
+1つの候補しか残らない場合、それを使います。
+それ以外の場合は次の段階に進みます。
+</p></li><li class="step"><p>
+<span class="original">
+If any input arguments are &lt;type&gt;unknown&lt;/type&gt;, check the type
+categories accepted at those argument positions by the remaining
+candidates.  At each position, select the &lt;type&gt;string&lt;/type&gt; category
+if any
+candidate accepts that category.  (This bias towards string is appropriate
+since an unknown-type literal looks like a string.) Otherwise, if
+all the remaining candidates accept the same type category, select that
+category; otherwise fail because the correct choice cannot be deduced
+without more clues.  Now discard
+candidates that do not accept the selected type category.  Furthermore,
+if any candidate accepts a preferred type in that category,
+discard candidates that accept non-preferred types for that argument.
+Keep all candidates if none survive these tests.
+If only one candidate remains, use it; else continue to the next step.
+</span>
+入力引数で<code class="type">unknown</code>のものがあった場合、それらの残った候補に引数位置で受け入れられる型カテゴリを検査します。
+各位置において、候補が<code class="type">string</code>カテゴリを受け付ける場合は、そのカテゴリを選択します
+（unknown 型のリテラルは文字列のようなものですので、この文字列への重み付けは適切です）。
+そうでなければ、もし残った全ての候補が同じ型カテゴリを受け入れる場合はそのカテゴリを選択します。
+そうでもなければ、さらに手掛かりがなければ正しい選択が演繹されることができませんので、失敗となります。
+ここで、選択された型カテゴリを受け付けない演算子候補は破棄されます。
+さらに、それらカテゴリ内の優先される型を受け付ける候補が1つでもある場合、その引数の優先されない型を受け付ける候補は破棄されます。
+これらの検査をどれも通らなかったら全ての候補を残します。
+1つの候補しか残らない場合、それを使います。
+それ以外の場合は次の段階に進みます。
+</p></li><li class="step" id="OP-RESOL-LAST-UNKNOWN"><p>
+<span class="original">
+If there are both &lt;type&gt;unknown&lt;/type&gt; and known-type arguments, and all
+the known-type arguments have the same type, assume that the
+&lt;type&gt;unknown&lt;/type&gt; arguments are also of that type, and check which
+candidates can accept that type at the &lt;type&gt;unknown&lt;/type&gt;-argument
+positions.  If exactly one candidate passes this test, use it.
+Otherwise, fail.
+</span>
+もし<code class="type">unknown</code>と既知の型の引数の両方があり、そして全ての既知の型の引数が同じ型を持っていた場合、<code class="type">unknown</code>引数も同じ型であると仮定し、
+どの候補が<code class="type">unknown</code>引数の位置にある型を受け付けることができるかを検査します。
+正確に1つの候補がこの検査を通過した場合、それを使います。それ以外は失敗します。
+</p></li></ol></li></ol></div><p>
+<span class="original">
+Some examples follow.
+</span>
+以下に例を示します。
+</p><div class="example" id="id-1.5.9.7.6"><p class="title"><strong>例10.1 階乗演算子の型解決</strong></p><div class="example-contents"><span class="original">
+&lt;title&gt;Factorial Operator Type Resolution&lt;/title&gt;
+</span><p>
+<span class="original">
+There is only one factorial operator (postfix &lt;literal&gt;!&lt;/literal&gt;)
+defined in the standard catalog, and it takes an argument of type
+&lt;type&gt;bigint&lt;/type&gt;.
+The scanner assigns an initial type of &lt;type&gt;integer&lt;/type&gt; to the argument
+in this query expression:
+</span>
+階乗演算子として、<code class="type">bigint</code>を引数とするものが標準カタログ内に1つのみ定義されています（<code class="literal">!</code>を後に付けます）。
+スキャナは、以下の問い合わせ式の引数にまず<code class="type">integer</code>型を割り当てます。
+</p><pre class="screen">
+SELECT 40 ! AS "40 factorial";
+
+                   40 factorial
+--------------------------------------------------
+ 815915283247897734345611269596115894272000000000
+(1 row)
+</pre><p>
+
+<span class="original">
+So the parser does a type conversion on the operand and the query
+is equivalent to:
+</span>
+パーサはオペランドを型変換し、問い合わせは以下と等価になります。
+
+</p><pre class="screen">
+SELECT CAST(40 AS bigint) ! AS "40 factorial";
+</pre><p>
+</p></div></div><br class="example-break" /><div class="example" id="id-1.5.9.7.7"><p class="title"><strong>例10.2 文字列連結演算子の型解決</strong></p><div class="example-contents"><span class="original">
+&lt;title&gt;String Concatenation Operator Type Resolution&lt;/title&gt;
+</span><p>
+<span class="original">
+A string-like syntax is used for working with string types and for
+working with complex extension types.
+Strings with unspecified type are matched with likely operator candidates.
+</span>
+文字列類似構文は、文字列の作業の他、複雑な拡張型の作業にも使用されます。
+型の指定がない文字列は、類似演算子候補に一致します。
+</p><p>
+<span class="original">
+An example with one unspecified argument:
+</span>
+例えば、以下は指定がない引数が1つあります。
+</p><pre class="screen">
+SELECT text 'abc' || 'def' AS "text and unknown";
+
+ text and unknown
+------------------
+ abcdef
+(1 row)
+</pre><p>
+</p><p>
+<span class="original">
+In this case the parser looks to see if there is an operator taking &lt;type&gt;text&lt;/type&gt;
+for both arguments. Since there is, it assumes that the second argument should
+be interpreted as type &lt;type&gt;text&lt;/type&gt;.
+</span>
+この場合、パーサは両引数で<code class="type">text</code>を取る演算子があるかどうかを検索します。
+この演算子は存在しますので、第二引数は<code class="type">text</code>型として解釈されるものと仮定されます。
+</p><p>
+<span class="original">
+Here is a concatenation of two values of unspecified types:
+</span>
+以下は型の指定がない2つの値の連結です。
+</p><pre class="screen">
+SELECT 'abc' || 'def' AS "unspecified";
+
+ unspecified
+-------------
+ abcdef
+(1 row)
+</pre><p>
+</p><p>
+<span class="original">
+In this case there is no initial hint for which type to use, since no types
+are specified in the query. So, the parser looks for all candidate operators
+and finds that there are candidates accepting both string-category and
+bit-string-category inputs.  Since string category is preferred when available,
+that category is selected, and then the
+preferred type for strings, &lt;type&gt;text&lt;/type&gt;, is used as the specific
+type to resolve the unknown-type literals as.
+</span>
+この場合、問い合わせ内に型が指定されていませんので、どの型を使用すべきかについての初期の指針がありません。
+ですから、パーサは全ての演算子候補を検索し、文字列カテゴリとビット列カテゴリ入力を受け付ける候補を見つけます。
+使用できる場合は文字列カテゴリが優先されますので、文字列カテゴリが選択され、それから文字列に対して優先される型である<code class="type">text</code>が、不明のリテラルを解決する型として使用されます。
+</p></div></div><br class="example-break" /><div class="example" id="id-1.5.9.7.8"><p class="title"><strong>例10.3 絶対値と否定演算子の型解決</strong></p><div class="example-contents"><span class="original">
+&lt;title&gt;Absolute-Value and Negation Operator Type Resolution&lt;/title&gt;
+</span><p>
+<span class="original">
+The &lt;productname&gt;PostgreSQL&lt;/productname&gt; operator catalog has several
+entries for the prefix operator &lt;literal&gt;@&lt;/literal&gt;, all of which implement
+absolute-value operations for various numeric data types.  One of these
+entries is for type &lt;type&gt;float8&lt;/type&gt;, which is the preferred type in
+the numeric category.  Therefore, &lt;productname&gt;PostgreSQL&lt;/productname&gt;
+will use that entry when faced with an &lt;type&gt;unknown&lt;/type&gt; input:
+</span>
+<span class="productname">PostgreSQL</span>の演算子カタログには、前置演算子<code class="literal">@</code>用に複数の項目があります。
+これは全て各種数値データ型に対する絶対値計算を実装するものです。
+その1つは、数値カテゴリの優先される型である<code class="type">float8</code>型用の項目です。
+したがって、<span class="productname">PostgreSQL</span>は、<code class="type">unknown</code>の入力があった場合にこれを使用します。
+</p><pre class="screen">
+SELECT @ '-4.5' AS "abs";
+ abs
+-----
+ 4.5
+(1 row)
+</pre><p>
+<span class="original">
+Here the system has implicitly resolved the unknown-type literal as type
+&lt;type&gt;float8&lt;/type&gt; before applying the chosen operator.  We can verify that
+&lt;type&gt;float8&lt;/type&gt; and not some other type was used:
+</span>
+ここでシステムは、選択した演算子を適用する前に、unknown型のリテラルを<code class="type">float8</code>へ暗黙的に型変換します。
+以下のように<code class="type">float8</code>が使用され、他の型が使用されていないことを検証することができます。
+</p><pre class="screen">
+SELECT @ '-4.5e500' AS "abs";
+
+ERROR:  "-4.5e500" is out of range for type double precision
+</pre><p>
+</p><p>
+<span class="original">
+On the other hand, the prefix operator &lt;literal&gt;~&lt;/literal&gt; (bitwise negation)
+is defined only for integer data types, not for &lt;type&gt;float8&lt;/type&gt;.  So, if we
+try a similar case with &lt;literal&gt;~&lt;/literal&gt;, we get:
+</span>
+一方、前置演算子<code class="literal">~</code>（ビット否定）は、整数データ型のみで定義され、<code class="type">float8</code>用は定義されていません。
+ですから、<code class="literal">~</code>における上と同様の場合では、以下のような結果になります。
+</p><pre class="screen">
+SELECT ~ '20' AS "negation";
+
+ERROR:  operator is not unique: ~ "unknown"
+HINT:  Could not choose a best candidate operator. You might need to add
+explicit type casts.
+</pre><p>
+<span class="original">
+This happens because the system cannot decide which of the several
+possible &lt;literal&gt;~&lt;/literal&gt; operators should be preferred.  We can help
+it out with an explicit cast:
+</span>
+これは、システムが、複数の<code class="literal">~</code>演算子候補のうちどれが優先されるかを決定することができなかったため発生します。
+明示的なキャストを使用することで補助することができます。
+</p><pre class="screen">
+SELECT ~ CAST('20' AS int8) AS "negation";
+
+ negation
+----------
+      -21
+(1 row)
+</pre><p>
+</p></div></div><br class="example-break" /><div class="example" id="id-1.5.9.7.9"><p class="title"><strong>例10.4 配列包含演算子の型解決</strong></p><div class="example-contents"><span class="original">
+&lt;title&gt;Array Inclusion Operator Type Resolution&lt;/title&gt;
+</span><p>
+<span class="original">
+Here is another example of resolving an operator with one known and one
+unknown input:
+</span>
+一方は既知でありもう一方は未知である入力を伴った演算子の解決のもう一つの例です。
+</p><pre class="screen">
+SELECT array[1,2] &lt;@ '{1,2,3}' as "is subset";
+
+ is subset
+-----------
+ t
+(1 row)
+</pre><p>
+<span class="original">
+The &lt;productname&gt;PostgreSQL&lt;/productname&gt; operator catalog has several
+entries for the infix operator &lt;literal&gt;&amp;lt;@&lt;/literal&gt;, but the only two that
+could possibly accept an integer array on the left-hand side are
+array inclusion (&lt;type&gt;anyarray&lt;/type&gt; &lt;literal&gt;&amp;lt;@&lt;/literal&gt; &lt;type&gt;anyarray&lt;/type&gt;)
+and range inclusion (&lt;type&gt;anyelement&lt;/type&gt; &lt;literal&gt;&amp;lt;@&lt;/literal&gt; &lt;type&gt;anyrange&lt;/type&gt;).
+Since none of these polymorphic pseudo-types (see &lt;xref
+linkend="datatype-pseudo"/&gt;) are considered preferred, the parser cannot
+resolve the ambiguity on that basis.
+However, &lt;xref linkend="op-resol-last-unknown"/&gt; tells
+it to assume that the unknown-type literal is of the same type as the other
+input, that is, integer array.  Now only one of the two operators can match,
+so array inclusion is selected.  (Had range inclusion been selected, we would
+have gotten an error, because the string does not have the right format to be
+a range literal.)
+</span>
+<span class="productname">PostgreSQL</span>の演算子カタログは、<code class="literal">&lt;@</code>中置演算子のためのいくつかのエントリを持っていますが、
+数値型配列を左側に受け付けることができるのは配列包含(<code class="type">anyarray</code> <code class="literal">&lt;@</code> <code class="type">anyarray</code>)と範囲包含(<code class="type">anyelement</code> <code class="literal">&lt;@</code> <code class="type">anyrange</code>)の2つのみです。
+これらの多様な擬似データ型(<a class="xref" href="datatype-pseudo.html" title="8.21. 疑似データ型">8.21</a>を参照)は優先されると見なされないため、このような方法ではパーサは曖昧さを解決することができません。
+しかし、<a class="xref" href="typeconv-oper.html#OP-RESOL-LAST-UNKNOWN" title="ステップ 3.f">ステップ 3.f</a>では、未知の型のリテラルを別の入力と同じ型であると仮定するために数値配列とみなします。
+今のところ2つのうち一つの演算子だけがマッチできるため、配列包含が選択されます。(範囲包含が選択された場合、演算子の右側にある文字列は正しい範囲型のリテラルではないため、エラーとなるでしょう。)
+</p></div></div><br class="example-break" /><div class="example" id="id-1.5.9.7.10"><p class="title"><strong>例10.5 ドメイン型の独自の演算子</strong></p><div class="example-contents"><span class="original">
+&lt;title&gt;Custom Operator on a Domain Type&lt;/title&gt;
+</span><p>
+<span class="original">
+Users sometimes try to declare operators applying just to a domain type.
+This is possible but is not nearly as useful as it might seem, because the
+operator resolution rules are designed to select operators applying to the
+domain's base type.  As an example consider
+</span>
+利用者は時々ドメイン型にのみ適用される演算子を宣言しようとします。
+これは可能ですが、思ったほど便利ではありません。演算子の解決規則がドメイン基本型に適用される演算子を選ぶように設計されているからです。
+例として、以下を考えてください。
+</p><pre class="screen">
+CREATE DOMAIN mytext AS text CHECK(...);
+CREATE FUNCTION mytext_eq_text (mytext, text) RETURNS boolean AS ...;
+CREATE OPERATOR = (procedure=mytext_eq_text, leftarg=mytext, rightarg=text);
+CREATE TABLE mytable (val mytext);
+
+SELECT * FROM mytable WHERE val = 'foo';
+</pre><p>
+<span class="original">
+This query will not use the custom operator.  The parser will first see if
+there is a &lt;type&gt;mytext&lt;/type&gt; &lt;literal&gt;=&lt;/literal&gt; &lt;type&gt;mytext&lt;/type&gt; operator
+(&lt;xref linkend="op-resol-exact-unknown"/&gt;), which there is not;
+then it will consider the domain's base type &lt;type&gt;text&lt;/type&gt;, and see if
+there is a &lt;type&gt;text&lt;/type&gt; &lt;literal&gt;=&lt;/literal&gt; &lt;type&gt;text&lt;/type&gt; operator
+(&lt;xref linkend="op-resol-exact-domain"/&gt;), which there is;
+so it resolves the &lt;type&gt;unknown&lt;/type&gt;-type literal as &lt;type&gt;text&lt;/type&gt; and
+uses the &lt;type&gt;text&lt;/type&gt; &lt;literal&gt;=&lt;/literal&gt; &lt;type&gt;text&lt;/type&gt; operator.
+The only way to get the custom operator to be used is to explicitly cast
+the literal:
+</span>
+この問い合わせは独自の演算子を使いません．
+パーサはまず<code class="type">mytext</code> <code class="literal">=</code> <code class="type">mytext</code>演算子(<a class="xref" href="typeconv-oper.html#OP-RESOL-EXACT-UNKNOWN" title="ステップ 2.a">ステップ 2.a</a>)があるか確認しますが、ありません。次にドメイン基本型<code class="type">text</code>を考慮して<code class="type">text</code> <code class="literal">=</code> <code class="type">text</code>演算子(<a class="xref" href="typeconv-oper.html#OP-RESOL-EXACT-DOMAIN" title="ステップ 2.b">ステップ 2.b</a>)があるか確認すると、あります。そのため<code class="type">unknown</code>型は<code class="type">text</code>として解決され、<code class="type">text</code> <code class="literal">=</code> <code class="type">text</code>演算子が使われます。
+独自の演算子を使う唯一の方法は、「正確な一致」規則に従って<code class="type">mytext</code> <code class="literal">=</code> <code class="type">text</code>演算子がすぐに見つかるように、リテラルを明示的にキャストすることだけです。
+</p><pre class="screen">
+SELECT * FROM mytable WHERE val = text 'foo';
+</pre><p>
+<span class="original">
+so that the &lt;type&gt;mytext&lt;/type&gt; &lt;literal&gt;=&lt;/literal&gt; &lt;type&gt;text&lt;/type&gt; operator is found
+immediately according to the exact-match rule.  If the best-match rules
+are reached, they actively discriminate against operators on domain types.
+If they did not, such an operator would create too many ambiguous-operator
+failures, because the casting rules always consider a domain as castable
+to or from its base type, and so the domain operator would be considered
+usable in all the same cases as a similarly-named operator on the base type.
+</span>
+もし、「最善の一致」規則に達した場合、ドメイン型の演算子を積極的に差別します。
+そうでなければ、そのような演算子は非常に多くの「曖昧な演算子」の失敗を引き起こします。キャストの規則はドメインをその基本型からもしくは基本型へキャスト可能と考え、ドメイン演算子は基本型の似たような名前の演算子とすべて同じ状況で利用できると考えられるからです。
+</p></div></div><br class="example-break" /><div class="footnotes"><br /><hr style="width:100; text-align:left;margin-left: 0" /><div id="ftn.OP-QUALIFIED-SECURITY" class="footnote"><span class="original"> 原文コメント If you edit this, consider editing func-qualified-security. </span><p><a href="#OP-QUALIFIED-SECURITY" class="para"><sup class="para">[8] </sup></a>
+<span class="original">
+    The hazard does not arise with a non-schema-qualified name, because a
+    search path containing schemas that permit untrusted users to create
+    objects is not a &lt;link linkend="ddl-schemas-patterns"&gt;secure schema usage
+    pattern&lt;/link&gt;.
+</span>
+信用できないユーザにオブジェクトの作成を許可するスキーマを含む検索パスは、<a class="link" href="ddl-schemas.html#DDL-SCHEMAS-PATTERNS" title="5.8.6. 使用パターン">安全なスキーマ使用パターン</a>ではありませんので、スキーマで修飾されていない名前では危険は起こりません。
+   </p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="typeconv-overview.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="typeconv.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="typeconv-func.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">10.1. 概要 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 10.3. 関数</td></tr></table></div></body></html>

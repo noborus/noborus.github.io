@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>3.3. 外部キー</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="tutorial-views.html" title="3.2. ビュー" /><link rel="next" href="tutorial-transactions.html" title="3.4. トランザクション" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="tutorial-advanced.html" title="第3章 高度な諸機能">第3章 高度な諸機能</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      tutorial-fk.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="tutorial-views.html" title="3.2. ビュー">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="tutorial-advanced.html" title="第3章 高度な諸機能">上へ</a></td><td width="60%" align="center">3.3. 外部キー</td><td width="20%" align="right"> <a accesskey="n" href="tutorial-transactions.html" title="3.4. トランザクション">次へ</a></td></tr></table><hr /></div><div class="sect1" id="TUTORIAL-FK"><div class="titlepage"><div><div><h2 class="title" style="clear: both">3.3. 外部キー</h2></div></div></div><span class="original">
+   &lt;title&gt;Foreign Keys&lt;/title&gt;
+</span><a id="id-1.4.5.4.2" class="indexterm"></a><a id="id-1.4.5.4.3" class="indexterm"></a><p>
+<span class="original">
+    Recall the &lt;classname&gt;weather&lt;/classname&gt; and
+    &lt;classname&gt;cities&lt;/classname&gt; tables from &lt;xref
+    linkend="tutorial-sql"/&gt;.  Consider the following problem:  You
+    want to make sure that no one can insert rows in the
+    &lt;classname&gt;weather&lt;/classname&gt; table that do not have a matching
+    entry in the &lt;classname&gt;cities&lt;/classname&gt; table.  This is called
+    maintaining the &lt;firstterm&gt;referential integrity&lt;/firstterm&gt; of
+    your data.  In simplistic database systems this would be
+    implemented (if at all) by first looking at the
+    &lt;classname&gt;cities&lt;/classname&gt; table to check if a matching record
+    exists, and then inserting or rejecting the new
+    &lt;classname&gt;weather&lt;/classname&gt; records.  This approach has a
+    number of problems and is very inconvenient, so
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; can do this for you.
+</span>
+<a class="xref" href="tutorial-sql.html" title="第2章 SQL言語">第2章</a>の<code class="classname">weather</code>テーブルと<code class="classname">cities</code>テーブルを思い出してください。
+次のような問題点を考えてみましょう。
+<code class="classname">cities</code>テーブルに一致する項目がない行は絶対に<code class="classname">weather</code>テーブルに挿入できなくしたいとします。
+これをデータの<em class="firstterm">参照整合性</em>の保全と呼びます。
+最も単純なデータベースシステムでこれを実装するとしたら、まず<code class="classname">cities</code>テーブルに一致する行が存在するかどうかを確認し、それから<code class="classname">weather</code>テーブルに新規レコードを追加する、あるいは拒絶する、といったことになるでしょう。
+この手法には多くの問題があること、そしてとても不便であることから、<span class="productname">PostgreSQL</span>に代わって作業させることができます。
+   </p><p>
+<span class="original">
+    The new declaration of the tables would look like this:
+</span>
+これらのテーブルの新しい宣言は以下のようになります。
+
+</p><pre class="programlisting">
+CREATE TABLE cities (
+        city     varchar(80) primary key,
+        location point
+);
+
+CREATE TABLE weather (
+        city      varchar(80) references cities(city),
+        temp_lo   int,
+        temp_hi   int,
+        prcp      real,
+        date      date
+);
+</pre><p>
+
+<span class="original">
+    Now try inserting an invalid record:
+</span>
+では無効なレコードを挿入してみましょう。
+
+</p><pre class="programlisting">
+INSERT INTO weather VALUES ('Berkeley', 45, 53, 0.0, '1994-11-28');
+</pre><p>
+
+</p><pre class="screen">
+ERROR:  insert or update on table "weather" violates foreign key constraint "weather_city_fkey"
+DETAIL:  Key (city)=(Berkeley) is not present in table "cities".
+</pre><p>
+   </p><p>
+<span class="original">
+    The behavior of foreign keys can be finely tuned to your
+    application.  We will not go beyond this simple example in this
+    tutorial, but just refer you to &lt;xref linkend="ddl"/&gt;
+    for more information.  Making correct use of
+    foreign keys will definitely improve the quality of your database
+    applications, so you are strongly encouraged to learn about them.
+</span>
+外部キーの動作はアプリケーションごとに細かく調整できます。
+このチュートリアルではこの簡単な例より先には進みませんが、さらに情報がほしい方は<a class="xref" href="ddl.html" title="第5章 データ定義">第5章</a>をご覧ください。
+外部キーを正しく使用するようにすると、間違いなくデータベースアプリケーションの質を向上させますので身に付くように励んでください。
+   </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="tutorial-views.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="tutorial-advanced.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="tutorial-transactions.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">3.2. ビュー </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 3.4. トランザクション</td></tr></table></div></body></html>

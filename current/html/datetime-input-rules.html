@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>B.1. 日付/時刻入力の解釈</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="datetime-appendix.html" title="付録B 日付/時刻のサポート" /><link rel="next" href="datetime-keywords.html" title="B.2. 日付/時刻キーワード" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="datetime-appendix.html" title="付録B 日付/時刻のサポート">付録B 日付/時刻のサポート</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      datetime-input-rules.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="datetime-appendix.html" title="付録B 日付/時刻のサポート">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="datetime-appendix.html" title="付録B 日付/時刻のサポート">上へ</a></td><td width="60%" align="center">B.1. 日付/時刻入力の解釈</td><td width="20%" align="right"> <a accesskey="n" href="datetime-keywords.html" title="B.2. 日付/時刻キーワード">次へ</a></td></tr></table><hr /></div><div class="sect1" id="DATETIME-INPUT-RULES"><div class="titlepage"><div><div><h2 class="title" style="clear: both">B.1. 日付/時刻入力の解釈</h2></div></div></div><span class="original">
+   &lt;title&gt;Date/Time Input Interpretation&lt;/title&gt;
+</span><p>
+<span class="original">
+    The date/time type inputs are all decoded using the following procedure.
+</span>
+日付/時刻データ型は全て以下の手順で解読されます。
+   </p><div class="procedure"><ol class="procedure" type="1"><li class="step"><p>
+<span class="original">
+      Break the input string into tokens and categorize each token as
+      a string, time, time zone, or number.
+</span>
+入力文字列をトークンに分割し、そしてそれぞれのトークンを文字列、時刻、時間帯、または数値というように分類します。
+     </p><ol type="a" class="substeps"><li class="step"><p>
+<span class="original">
+        If the numeric token contains a colon (&lt;literal&gt;:&lt;/literal&gt;), this is
+        a time string. Include all subsequent digits and colons.
+</span>
+数値トークンにコロン（<code class="literal">:</code>）が含まれている場合は、時刻文字列です。
+そこに続く全ての数字とコロンを含みます。
+       </p></li><li class="step"><p>
+<span class="original">
+        If the numeric token contains a dash (&lt;literal&gt;-&lt;/literal&gt;), slash
+        (&lt;literal&gt;/&lt;/literal&gt;), or two or more dots (&lt;literal&gt;.&lt;/literal&gt;), this is
+        a date string which might have a text month.  If a date token has
+        already been seen, it is instead interpreted as a time zone
+        name (e.g., &lt;literal&gt;America/New_York&lt;/literal&gt;).
+</span>
+数値トークンにハイフン（<code class="literal">-</code>）、スラッシュ（<code class="literal">/</code>）、または2つ以上のドット（<code class="literal">.</code>）が含まれている場合は、テキストの月名がある日付文字列です。
+日付トークンがすでに現れている場合は代わりに、時間帯名として解釈されます（例えば<code class="literal">America/New_York</code>）。
+       </p></li><li class="step"><p>
+<span class="original">
+        If the token is numeric only, then it is either a single field
+        or an ISO 8601 concatenated date (e.g.,
+        &lt;literal&gt;19990113&lt;/literal&gt; for January 13, 1999) or time
+        (e.g., &lt;literal&gt;141516&lt;/literal&gt; for 14:15:16).
+</span>
+トークンが数値だけの場合、それは単項、もしくはISO 8601の連結形式の日付（例：1999年1月13日を示す<code class="literal">19990113</code>）、あるいは時刻（例：14:15:16を示す<code class="literal">141516</code>）のいずれかです。
+       </p></li><li class="step"><p>
+<span class="original">
+        If the token starts with a plus (&lt;literal&gt;+&lt;/literal&gt;) or minus
+        (&lt;literal&gt;-&lt;/literal&gt;), then it is either a numeric time zone or a special
+        field.
+</span>
+トークンがプラス記号（<code class="literal">+</code>）あるいはマイナス記号（<code class="literal">-</code>）で始まっている場合は、数値形式の時間帯フィールドか特殊なフィールドです。
+       </p></li></ol></li><li class="step"><p>
+<span class="original">
+      If the token is a text string, match up with possible strings:
+</span>
+もしトークンがテキスト文字列の場合、以下のように可能性のある文字列と照合されます。
+     </p><ol type="a" class="substeps"><li class="step"><p>
+<span class="original">
+        Do a binary-search table lookup for the token as a time zone
+        abbreviation.
+</span>
+時間帯短縮形としてトークンをテーブルからバイナリ検索します。
+       </p></li><li class="step"><p>
+<span class="original">
+        If not found, do a similar binary-search table lookup to match
+        the token as either a special string (e.g., &lt;literal&gt;today&lt;/literal&gt;),
+        day (e.g., &lt;literal&gt;Thursday&lt;/literal&gt;),
+        month (e.g., &lt;literal&gt;January&lt;/literal&gt;),
+        or noise word (e.g., &lt;literal&gt;at&lt;/literal&gt;, &lt;literal&gt;on&lt;/literal&gt;).
+</span>
+探索できなかった場合は同様にそのトークンに対し特殊文字（たとえば<code class="literal">today</code>）、曜日（たとえば<code class="literal">Thursday</code>）、月（たとえば<code class="literal">January</code>）、ノイズ（たとえば<code class="literal">at</code>、<code class="literal">on</code>）に一致するかどうか、参照テーブルにバイナリ検索をかけます。
+       </p></li><li class="step"><p>
+<span class="original">
+        If still not found, throw an error.
+</span>
+それでも探し出せなかった場合、エラーを返します。
+       </p></li></ol></li><li class="step"><p>
+<span class="original">
+      When the token is a number or number field:
+</span>
+トークンが数値あるいは数値フィールドの場合を以下に示します。
+     </p><ol type="a" class="substeps"><li class="step"><p>
+<span class="original">
+        If there are eight or six digits,
+        and if no other date fields have been previously read, then interpret
+        as a &lt;quote&gt;concatenated date&lt;/quote&gt; (e.g.,
+        &lt;literal&gt;19990118&lt;/literal&gt; or &lt;literal&gt;990118&lt;/literal&gt;).
+        The interpretation is &lt;literal&gt;YYYYMMDD&lt;/literal&gt; or &lt;literal&gt;YYMMDD&lt;/literal&gt;.
+</span>
+トークンが8桁または6桁、かつ、以前に他のどのような日付フィールドも読まれていない場合は、<span class="quote">「<span class="quote">連結された日付</span>」</span>（例えば、<code class="literal">19990118</code>または<code class="literal">990118</code>）として解釈されます。
+その解釈方法は<code class="literal">YYYYMMDD</code>または<code class="literal">YYMMDD</code>です。
+       </p></li><li class="step"><p>
+<span class="original">
+        If the token is three digits
+        and a year has already been read, then interpret as day of year.
+</span>
+もしトークンが3桁で年が既に読み込まれている場合は年内の経過日数と解釈されます。
+       </p></li><li class="step"><p>
+<span class="original">
+        If four or six digits and a year has already been read, then
+        interpret as a time (&lt;literal&gt;HHMM&lt;/literal&gt; or &lt;literal&gt;HHMMSS&lt;/literal&gt;).
+</span>
+4桁または6桁の場合で年が既に読み込まれている時は時刻（<code class="literal">HHMM</code>または<code class="literal">HHMMSS</code>）と解釈されます。
+       </p></li><li class="step"><p>
+<span class="original">
+        If three or more digits and no date fields have yet been found,
+        interpret as a year (this forces yy-mm-dd ordering of the remaining
+        date fields).
+</span>
+3桁以上の場合、かつ、どの日付フィールドもまだ見つかっていない場合は年と解釈されます
+（この場合、残る日付フィールドの順序は強制的にyy-mm-ddと解釈されます）。
+       </p></li><li class="step"><p>
+<span class="original">
+        Otherwise the date field ordering is assumed to follow the
+        &lt;varname&gt;DateStyle&lt;/varname&gt; setting: mm-dd-yy, dd-mm-yy, or yy-mm-dd.
+        Throw an error if a month or day field is found to be out of range.
+</span>
+さもなければ、日付フィールドの順序は、<code class="varname">DateStyle</code>の設定mm-dd-yy、dd-mm-yy、yy-mm-ddに従うものと仮定されます。
+月や月内の日のフィールドが範囲外であれば、エラーになります。
+       </p></li></ol></li><li class="step"><p>
+<span class="original">
+      If BC has been specified, negate the year and add one for
+      internal storage.  (There is no year zero in the Gregorian
+      calendar, so numerically 1 BC becomes year zero.)
+</span>
+もしBCが指定された場合は内部格納用に年を負の数にして1を加えます
+（グレゴリオ暦にはゼロ年がないので、数値的には1BC（紀元前1年）がゼロ年になります）。
+     </p></li><li class="step"><p>
+<span class="original">
+      If BC was not specified, and if the year field was two digits in length,
+      then adjust the year to four digits. If the field is less than 70, then
+      add 2000, otherwise add 1900.
+</span>
+BCが指定されず年フィールドの長さが2桁の場合、年は4桁になるよう調整されます。
+そのフィールドが70未満の場合は2000が加えられますが、その他の場合には1900が加えられます。
+
+      </p><div class="tip"><h3 class="title">ヒント</h3><p>
+<span class="original">
+        Gregorian years AD 1-99 can be entered by using 4 digits with leading
+        zeros (e.g., &lt;literal&gt;0099&lt;/literal&gt; is AD 99).
+</span>
+（例えば、西暦99年を<code class="literal">0099</code>のように）グレゴリオ暦の西暦元年から99年までは、ゼロを前に付加して4桁で入力することができます。
+       </p></div><p>
+     </p></li></ol></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="datetime-appendix.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="datetime-appendix.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="datetime-keywords.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">付録B 日付/時刻のサポート </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> B.2. 日付/時刻キーワード</td></tr></table></div></body></html>

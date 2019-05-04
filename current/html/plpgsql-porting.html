@@ -1,0 +1,775 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>43.13. Oracle PL/SQLからの移植</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="plpgsql-development-tips.html" title="43.12. PL/pgSQLによる開発向けのヒント" /><link rel="next" href="pltcl.html" title="第44章 PL/Tcl - Tcl手続き言語" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="plpgsql.html" title="第43章 PL/pgSQL - SQL手続き言語">第43章 <span class="application">PL/pgSQL</span> - <acronym class="acronym">SQL</acronym>手続き言語</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      plpgsql-porting.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="plpgsql-development-tips.html" title="43.12. PL/pgSQLによる開発向けのヒント">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="plpgsql.html" title="第43章 PL/pgSQL - SQL手続き言語">上へ</a></td><td width="60%" align="center">43.13. <span class="productname">Oracle</span> PL/SQLからの移植</td><td width="20%" align="right"> <a accesskey="n" href="pltcl.html" title="第44章 PL/Tcl - Tcl手続き言語">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PLPGSQL-PORTING"><div class="titlepage"><div><div><h2 class="title" style="clear: both">43.13. <span class="productname">Oracle</span> PL/SQLからの移植</h2></div></div></div><span class="original">
+  &lt;title&gt;Porting from &lt;productname&gt;Oracle&lt;/productname&gt; PL/SQL&lt;/title&gt;
+</span><a id="id-1.8.8.15.2" class="indexterm"></a><a id="id-1.8.8.15.3" class="indexterm"></a><p>
+<span class="original">
+   This section explains differences between
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt;'s &lt;application&gt;PL/pgSQL&lt;/application&gt;
+   language and Oracle's &lt;application&gt;PL/SQL&lt;/application&gt; language,
+   to help developers who port applications from
+   &lt;trademark class="registered"&gt;Oracle&lt;/trademark&gt; to &lt;productname&gt;PostgreSQL&lt;/productname&gt;.
+</span>
+本節では<span class="trademark">Oracle</span>®から<span class="productname">PostgreSQL</span>へアプリケーションを移植する開発者の手助けとなるように、<span class="productname">PostgreSQL</span>の<span class="application">PL/pgSQL</span>言語とOracleの<span class="application">PL/SQL</span>言語の違いについて説明します。
+  </p><p>
+<span class="original">
+   &lt;application&gt;PL/pgSQL&lt;/application&gt; is similar to PL/SQL in many
+   aspects. It is a block-structured, imperative language, and all
+   variables have to be declared.  Assignments, loops, conditionals
+   are similar.  The main differences you should keep in mind when
+   porting from &lt;application&gt;PL/SQL&lt;/application&gt; to
+   &lt;application&gt;PL/pgSQL&lt;/application&gt; are:
+</span>
+<span class="application">PL/pgSQL</span>は多くの点でPL/SQLに似ています。
+それはブロックで構成されていて、厳格な言語であり、全ての変数は宣言されなければならない点です。
+代入やループ、条件分岐も同様です。
+<span class="application">PL/SQL</span>から<span class="application">PL/pgSQL</span>に移植する際に注意しなければならない、主な違いを以下に示します。
+
+    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+       If a name used in a SQL command could be either a column name of a
+       table or a reference to a variable of the function,
+       &lt;application&gt;PL/SQL&lt;/application&gt; treats it as a column name.  This corresponds
+       to &lt;application&gt;PL/pgSQL&lt;/application&gt;'s
+       &lt;literal&gt;plpgsql.variable_conflict&lt;/literal&gt; = &lt;literal&gt;use_column&lt;/literal&gt;
+       behavior, which is not the default,
+       as explained in &lt;xref linkend="plpgsql-var-subst"/&gt;.
+       It's often best to avoid such ambiguities in the first place,
+       but if you have to port a large amount of code that depends on
+       this behavior, setting &lt;literal&gt;variable_conflict&lt;/literal&gt; may be the
+       best solution.
+</span>
+SQLコマンド内に使用された名前が、テーブルの列名または関数の変数への参照のどちらにもなり得る場合、<span class="application">PL/SQL</span>は列名として処理します。
+これは<span class="application">PL/pgSQL</span>における<code class="literal">plpgsql.variable_conflict</code> = <code class="literal">use_column</code>時の動作に対応しますが、<a class="xref" href="plpgsql-implementation.html#PLPGSQL-VAR-SUBST" title="43.11.1. 変数置換">43.11.1</a>の説明通り、これはデフォルトではありません。
+初期段階において、そのようなあいまいさを避けることが最善です。
+しかしこの動作に依存するコードの量が多いものを移植しなければならない場合、<code class="literal">variable_conflict</code>を使用することが最善の解法かもしれません。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       In &lt;productname&gt;PostgreSQL&lt;/productname&gt; the function body must be written as
+       a string literal.  Therefore you need to use dollar quoting or escape
+       single quotes in the function body. (See &lt;xref
+       linkend="plpgsql-quote-tips"/&gt;.)
+</span>
+<span class="productname">PostgreSQL</span>の関数本体は文字列リテラルとして書かなければなりません。
+したがって、関数本体内部でドル引用符を使用するか、単一引用符をエスケープする必要があります。
+（<a class="xref" href="plpgsql-development-tips.html#PLPGSQL-QUOTE-TIPS" title="43.12.1. 引用符の扱い">43.12.1</a>を参照してください）。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       Data type names often need translation.  For example, in Oracle string
+       values are commonly declared as being of type &lt;type&gt;varchar2&lt;/type&gt;, which
+       is a non-SQL-standard type.  In &lt;productname&gt;PostgreSQL&lt;/productname&gt;,
+       use type &lt;type&gt;varchar&lt;/type&gt; or &lt;type&gt;text&lt;/type&gt; instead.  Similarly, replace
+       type &lt;type&gt;number&lt;/type&gt; with &lt;type&gt;numeric&lt;/type&gt;, or use some other numeric
+       data type if there's a more appropriate one.
+</span>
+データ型名はしばしば翻訳が必要です。
+たとえば、Oracleでは文字列の値はよく<code class="type">varchar2</code>型と宣言されますが、それは非標準SQL型です。
+<span class="productname">PostgreSQL</span>では、その代わりに<code class="type">varchar</code>型または<code class="type">text</code>型を使ってください。
+同様に、<code class="type">number</code>型は<code class="type">numeric</code>型で置き換えるか、より適切なものがあるなら他の数値データ型を使ってください。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       Instead of packages, use schemas to organize your functions
+       into groups.
+</span>
+パッケージの代わりに、スキーマを使用して関数群をグループにまとめてください。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       Since there are no packages, there are no package-level variables
+       either. This is somewhat annoying.  You can keep per-session state
+       in temporary tables instead.
+</span>
+パッケージがないため、パッケージレベルの変数もありません。
+これは幾分か厄介なことです。
+代わって、セッションごとの状態を一時テーブル内部に保存できます。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       Integer &lt;command&gt;FOR&lt;/command&gt; loops with &lt;literal&gt;REVERSE&lt;/literal&gt; work
+       differently: &lt;application&gt;PL/SQL&lt;/application&gt; counts down from the second
+       number to the first, while &lt;application&gt;PL/pgSQL&lt;/application&gt; counts down
+       from the first number to the second, requiring the loop bounds
+       to be swapped when porting.  This incompatibility is unfortunate
+       but is unlikely to be changed. (See &lt;xref
+       linkend="plpgsql-integer-for"/&gt;.)
+</span>
+<code class="literal">REVERSE</code>を付けた整数<code class="command">FOR</code>ループの処理は異なります。
+<span class="application">PL/SQL</span>では最後の数から最初の数へ減少しながら処理しますが、<span class="application">PL/pgSQL</span>では最初の数から最後の数へ減少しながら処理します。
+移植において、ループの両端となる最初の数と最後の数を交換する必要があります。
+この非互換性は不幸なことですが、変わりそうもありません。
+（<a class="xref" href="plpgsql-control-structures.html#PLPGSQL-INTEGER-FOR" title="43.6.5.5. 整数FORループ">43.6.5.5</a>を見てください。）
+      </p></li><li class="listitem"><p>
+<span class="original">
+       &lt;command&gt;FOR&lt;/command&gt; loops over queries (other than cursors) also work
+       differently: the target variable(s) must have been declared,
+       whereas &lt;application&gt;PL/SQL&lt;/application&gt; always declares them implicitly.
+       An advantage of this is that the variable values are still accessible
+       after the loop exits.
+</span>
+問い合わせ上の<code class="command">FOR</code>ループも（カーソルを除いて）異なって処理されます。
+対象の変数は宣言されなければなりませんが、<span class="application">PL/SQL</span>は常にそれらを暗黙的に宣言します。
+この優位点は変数値をループを抜けてからでも依然としてアクセスできることです。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       There are various notational differences for the use of cursor
+       variables.
+</span>
+カーソル変数の使用に対する様々な表記上の違いがあります。
+      </p></li></ul></div><p>
+   </p><div class="sect2" id="id-1.8.8.15.6"><div class="titlepage"><div><div><h3 class="title">43.13.1. 移植例</h3></div></div></div><span class="original">
+   &lt;title&gt;Porting Examples&lt;/title&gt;
+</span><p>
+<span class="original">
+    &lt;xref linkend="pgsql-porting-ex1"/&gt; shows how to port a simple
+    function from &lt;application&gt;PL/SQL&lt;/application&gt; to &lt;application&gt;PL/pgSQL&lt;/application&gt;.
+</span>
+<a class="xref" href="plpgsql-porting.html#PGSQL-PORTING-EX1" title="例43.9 簡単な関数のPL/SQLからPL/pgSQLへの移植">例 43.9</a>に簡単な関数の<span class="application">PL/SQL</span>から<span class="application">PL/pgSQL</span>への移植方法を示します。
+   </p><div class="example" id="PGSQL-PORTING-EX1"><p class="title"><strong>例43.9 簡単な関数の<span class="application">PL/SQL</span>から<span class="application">PL/pgSQL</span>への移植</strong></p><div class="example-contents"><span class="original">
+    &lt;title&gt;Porting a Simple Function from &lt;application&gt;PL/SQL&lt;/application&gt; to &lt;application&gt;PL/pgSQL&lt;/application&gt;&lt;/title&gt;
+</span><p>
+<span class="original">
+     Here is an &lt;productname&gt;Oracle&lt;/productname&gt; &lt;application&gt;PL/SQL&lt;/application&gt; function:
+</span>
+以下は<span class="productname">Oracle</span> <span class="application">PL/SQL</span>の関数です。
+</p><pre class="programlisting">
+CREATE OR REPLACE FUNCTION cs_fmt_browser_version(v_name varchar2,
+                                                  v_version varchar2)
+RETURN varchar2 IS
+BEGIN
+    IF v_version IS NULL THEN
+        RETURN v_name;
+    END IF;
+    RETURN v_name || '/' || v_version;
+END;
+/
+show errors;
+</pre><p>
+    </p><p>
+<span class="original">
+     Let's go through this function and see the differences compared to
+     &lt;application&gt;PL/pgSQL&lt;/application&gt;:
+</span>
+この関数を通じて、<span class="application">PL/pgSQL</span>との違いを見てみましょう。
+
+     </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+        The type name &lt;type&gt;varchar2&lt;/type&gt; has to be changed to &lt;type&gt;varchar&lt;/type&gt;
+        or &lt;type&gt;text&lt;/type&gt;.  In the examples in this section, we'll
+        use &lt;type&gt;varchar&lt;/type&gt;, but &lt;type&gt;text&lt;/type&gt; is often a better choice if
+        you do not need specific string length limits.
+</span>
+型名<code class="type">varchar2</code>は、<code class="type">varchar</code>または<code class="type">text</code>に変えなければなりません。
+この節の例では<code class="type">varchar</code>を使いますが、文字列を特定の長さに制限する必要がないのであれば<code class="type">text</code>の方がたいていは良い選択です。
+       </p></li><li class="listitem"><p>
+<span class="original">
+        The &lt;literal&gt;RETURN&lt;/literal&gt; key word in the function
+        prototype (not the function body) becomes
+        &lt;literal&gt;RETURNS&lt;/literal&gt; in
+        &lt;productname&gt;PostgreSQL&lt;/productname&gt;.
+        Also, &lt;literal&gt;IS&lt;/literal&gt; becomes &lt;literal&gt;AS&lt;/literal&gt;, and you need to
+        add a &lt;literal&gt;LANGUAGE&lt;/literal&gt; clause because &lt;application&gt;PL/pgSQL&lt;/application&gt;
+        is not the only possible function language.
+</span>
+関数プロトタイプ内の<code class="literal">RETURN</code>キーワード（関数本体ではありません）は<span class="productname">PostgreSQL</span>では<code class="literal">RETURNS</code>になります。
+同様に<code class="literal">IS</code>は<code class="literal">AS</code>になります。
+<span class="application">PL/pgSQL</span>以外の言語でも関数を記述できるため、<code class="literal">LANGUAGE</code>句が必要となります。
+       </p></li><li class="listitem"><p>
+<span class="original">
+        In &lt;productname&gt;PostgreSQL&lt;/productname&gt;, the function body is considered
+        to be a string literal, so you need to use quote marks or dollar
+        quotes around it.  This substitutes for the terminating &lt;literal&gt;/&lt;/literal&gt;
+        in the Oracle approach.
+</span>
+<span class="productname">PostgreSQL</span>は関数本体を文字列リテラルと考えます。
+したがって、それを囲むドル引用符または他の引用符が必要です。
+これは<code class="literal">/</code>で終了するOracleの方法の代替です。
+       </p></li><li class="listitem"><p>
+<span class="original">
+        The &lt;literal&gt;show errors&lt;/literal&gt; command does not exist in
+        &lt;productname&gt;PostgreSQL&lt;/productname&gt;, and is not needed since errors are
+        reported automatically.
+</span>
+<span class="productname">PostgreSQL</span>には<code class="literal">show errors</code>コマンドはありません。
+また、エラーが自動的に表示されるため、必要ありません。
+       </p></li></ul></div><p>
+    </p><p>
+<span class="original">
+     This is how this function would look when ported to
+     &lt;productname&gt;PostgreSQL&lt;/productname&gt;:
+</span>
+それでは<span class="productname">PostgreSQL</span>に移植されると、この関数がどのようになるか見てみましょう。
+
+</p><pre class="programlisting">
+CREATE OR REPLACE FUNCTION cs_fmt_browser_version(v_name varchar,
+                                                  v_version varchar)
+RETURNS varchar AS $$
+BEGIN
+    IF v_version IS NULL THEN
+        RETURN v_name;
+    END IF;
+    RETURN v_name || '/' || v_version;
+END;
+$$ LANGUAGE plpgsql;
+</pre><p>
+    </p></div></div><br class="example-break" /><p>
+<span class="original">
+    &lt;xref linkend="plpgsql-porting-ex2"/&gt; shows how to port a
+    function that creates another function and how to handle the
+    ensuing quoting problems.
+</span>
+<a class="xref" href="plpgsql-porting.html#PLPGSQL-PORTING-EX2" title="例43.10 他の関数を生成するPL/SQLをPL/pgSQLに移植">例 43.10</a>は、他の関数を生成する関数を移植する方法、ならびに、その結果発生する引用符問題を扱う方法を示します。
+   </p><div class="example" id="PLPGSQL-PORTING-EX2"><p class="title"><strong>例43.10 他の関数を生成する<span class="application">PL/SQL</span>を<span class="application">PL/pgSQL</span>に移植</strong></p><div class="example-contents"><span class="original">
+    &lt;title&gt;Porting a Function that Creates Another Function from &lt;application&gt;PL/SQL&lt;/application&gt; to &lt;application&gt;PL/pgSQL&lt;/application&gt;&lt;/title&gt;
+</span><p>
+<span class="original">
+     The following procedure grabs rows from a
+     &lt;command&gt;SELECT&lt;/command&gt; statement and builds a large function
+     with the results in &lt;literal&gt;IF&lt;/literal&gt; statements, for the
+     sake of efficiency.
+</span>
+以下の手続きは、<code class="command">SELECT</code>文からの行を取って、効率のために<code class="literal">IF</code>文で結果を巨大な関数に埋め込んでいます。
+    </p><p>
+<span class="original">
+     This is the Oracle version:
+</span>
+以下はOracle版です。
+</p><pre class="programlisting">
+CREATE OR REPLACE PROCEDURE cs_update_referrer_type_proc IS
+    CURSOR referrer_keys IS
+        SELECT * FROM cs_referrer_keys
+        ORDER BY try_order;
+    func_cmd VARCHAR(4000);
+BEGIN
+    func_cmd := 'CREATE OR REPLACE FUNCTION cs_find_referrer_type(v_host IN VARCHAR2,
+                 v_domain IN VARCHAR2, v_url IN VARCHAR2) RETURN VARCHAR2 IS BEGIN';
+
+    FOR referrer_key IN referrer_keys LOOP
+        func_cmd := func_cmd ||
+          ' IF v_' || referrer_key.kind
+          || ' LIKE ''' || referrer_key.key_string
+          || ''' THEN RETURN ''' || referrer_key.referrer_type
+          || '''; END IF;';
+    END LOOP;
+
+    func_cmd := func_cmd || ' RETURN NULL; END;';
+
+    EXECUTE IMMEDIATE func_cmd;
+END;
+/
+show errors;
+</pre><p>
+    </p><p>
+<span class="original">
+     Here is how this function would end up in &lt;productname&gt;PostgreSQL&lt;/productname&gt;:
+</span>
+この関数を<span class="productname">PostgreSQL</span>で記述するとこうなるでしょう。
+</p><pre class="programlisting">
+CREATE OR REPLACE PROCEDURE cs_update_referrer_type_proc() AS $func$
+DECLARE
+    referrer_keys CURSOR IS
+        SELECT * FROM cs_referrer_keys
+        ORDER BY try_order;
+    func_body text;
+    func_cmd text;
+BEGIN
+    func_body := 'BEGIN';
+
+    FOR referrer_key IN referrer_keys LOOP
+        func_body := func_body ||
+          ' IF v_' || referrer_key.kind
+          || ' LIKE ' || quote_literal(referrer_key.key_string)
+          || ' THEN RETURN ' || quote_literal(referrer_key.referrer_type)
+          || '; END IF;' ;
+    END LOOP;
+
+    func_body := func_body || ' RETURN NULL; END;';
+
+    func_cmd :=
+      'CREATE OR REPLACE FUNCTION cs_find_referrer_type(v_host varchar,
+                                                        v_domain varchar,
+                                                        v_url varchar)
+        RETURNS varchar AS '
+      || quote_literal(func_body)
+      || ' LANGUAGE plpgsql;' ;
+
+    EXECUTE func_cmd;
+END;
+$func$ LANGUAGE plpgsql;
+</pre><p>
+<span class="original">
+     Notice how the body of the function is built separately and passed
+     through &lt;literal&gt;quote_literal&lt;/literal&gt; to double any quote marks in it.  This
+     technique is needed because we cannot safely use dollar quoting for
+     defining the new function: we do not know for sure what strings will
+     be interpolated from the &lt;structfield&gt;referrer_key.key_string&lt;/structfield&gt; field.
+     (We are assuming here that &lt;structfield&gt;referrer_key.kind&lt;/structfield&gt; can be
+     trusted to always be &lt;literal&gt;host&lt;/literal&gt;, &lt;literal&gt;domain&lt;/literal&gt;, or
+     &lt;literal&gt;url&lt;/literal&gt;, but &lt;structfield&gt;referrer_key.key_string&lt;/structfield&gt; might be
+     anything, in particular it might contain dollar signs.) This function
+     is actually an improvement on the Oracle original, because it will
+     not generate broken code when &lt;structfield&gt;referrer_key.key_string&lt;/structfield&gt; or
+     &lt;structfield&gt;referrer_key.referrer_type&lt;/structfield&gt; contain quote marks.
+</span>
+関数本体を別途作成し、それを<code class="literal">quote_literal</code>に渡して本体内の引用符を二重化する方法に注目してください。
+新規の関数を定義する時ドル引用符の使用が安全とは限らないため、この方法が必要となります。
+それは<code class="structfield">referrer_key.key_string</code>の領域に、どのような文字列が書き込まれているか不明だからです。
+（<code class="structfield">referrer_key.kind</code>は常に信用できる<code class="literal">host</code>か<code class="literal">domain</code>か<code class="literal">url</code>であると仮定しますが、どんなものでも<code class="structfield">referrer_key.key_string</code>になり得るので、ドル記号を含む可能性があります。）
+この関数はOracle版より実際に改善されています。
+それは<code class="structfield">referrer_key.key_string</code>または<code class="structfield">referrer_key.referrer_type</code>が引用符を含む時、おかしなコードを生成しないからです。
+    </p></div></div><br class="example-break" /><p>
+<span class="original">
+    &lt;xref linkend="plpgsql-porting-ex3"/&gt; shows how to port a function
+    with &lt;literal&gt;OUT&lt;/literal&gt; parameters and string manipulation.
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; does not have a built-in
+    &lt;function&gt;instr&lt;/function&gt; function, but you can create one
+    using a combination of other
+    functions. In &lt;xref linkend="plpgsql-porting-appendix"/&gt; there is a
+    &lt;application&gt;PL/pgSQL&lt;/application&gt; implementation of
+    &lt;function&gt;instr&lt;/function&gt; that you can use to make your porting
+    easier.
+</span>
+<a class="xref" href="plpgsql-porting.html#PLPGSQL-PORTING-EX3" title="例43.11 文字列操作を行い、OUTパラメータを持つPL/SQLプロシージャのPL/pgSQLへの移植">例 43.11</a>は、<code class="literal">OUT</code>パラメータを持ち、文字列操作を行う関数の移植方法を示します。
+<span class="productname">PostgreSQL</span>には組み込みの<code class="function">instr</code>関数はありませんが、他の関数を組み合わせることで作成できます。
+<a class="xref" href="plpgsql-porting.html#PLPGSQL-PORTING-APPENDIX" title="43.13.3. 付録">43.13.3</a>に、移植を簡略化できるように<code class="function">instr</code>の<span class="application">PL/pgSQL</span>による実装を示します。
+   </p><div class="example" id="PLPGSQL-PORTING-EX3"><p class="title"><strong>例43.11 文字列操作を行い、<code class="literal">OUT</code>パラメータを持つ<span class="application">PL/SQL</span>プロシージャの<span class="application">PL/pgSQL</span>への移植</strong></p><div class="example-contents"><span class="original">
+    &lt;title&gt;Porting a Procedure With String Manipulation and
+    &lt;literal&gt;OUT&lt;/literal&gt; Parameters from &lt;application&gt;PL/SQL&lt;/application&gt; to
+    &lt;application&gt;PL/pgSQL&lt;/application&gt;&lt;/title&gt;
+</span><p>
+<span class="original">
+     The following &lt;productname&gt;Oracle&lt;/productname&gt; PL/SQL procedure is used
+     to parse a URL and return several elements (host, path, and query).
+</span>
+以下の<span class="productname">Oracle</span> PL/SQLプロシージャは、URLを解析していくつかの要素（ホスト、パス、問い合わせ）を返します。
+    </p><p>
+<span class="original">
+     This is the Oracle version:
+</span>
+以下はOracle版です。
+</p><pre class="programlisting">
+CREATE OR REPLACE PROCEDURE cs_parse_url(
+    v_url IN VARCHAR2,
+<span class="original">
+    v_host OUT VARCHAR2,  &amp;#045;&amp;#045; This will be passed back
+    v_path OUT VARCHAR2,  &amp;#045;&amp;#045; This one too
+    v_query OUT VARCHAR2) &amp;#045;&amp;#045; And this one
+</span>
+    v_host OUT VARCHAR2,  -- この値は戻されます
+    v_path OUT VARCHAR2,  -- この値も戻されます
+    v_query OUT VARCHAR2) -- この値も戻されます
+IS
+    a_pos1 INTEGER;
+    a_pos2 INTEGER;
+BEGIN
+    v_host := NULL;
+    v_path := NULL;
+    v_query := NULL;
+    a_pos1 := instr(v_url, '//');
+
+    IF a_pos1 = 0 THEN
+        RETURN;
+    END IF;
+    a_pos2 := instr(v_url, '/', a_pos1 + 2);
+    IF a_pos2 = 0 THEN
+        v_host := substr(v_url, a_pos1 + 2);
+        v_path := '/';
+        RETURN;
+    END IF;
+
+    v_host := substr(v_url, a_pos1 + 2, a_pos2 - a_pos1 - 2);
+    a_pos1 := instr(v_url, '?', a_pos2 + 1);
+
+    IF a_pos1 = 0 THEN
+        v_path := substr(v_url, a_pos2);
+        RETURN;
+    END IF;
+
+    v_path := substr(v_url, a_pos2, a_pos1 - a_pos2);
+    v_query := substr(v_url, a_pos1 + 1);
+END;
+/
+show errors;
+</pre><p>
+    </p><p>
+<span class="original">
+     Here is a possible translation into &lt;application&gt;PL/pgSQL&lt;/application&gt;:
+</span>
+これを<span class="productname">PostgreSQL</span>で記述すると、以下のようになります。
+</p><pre class="programlisting">
+CREATE OR REPLACE FUNCTION cs_parse_url(
+    v_url IN VARCHAR,
+<span class="original">
+    v_host OUT VARCHAR,  &amp;#045;&amp;#045; This will be passed back
+    v_path OUT VARCHAR,  &amp;#045;&amp;#045; This one too
+    v_query OUT VARCHAR) &amp;#045;&amp;#045; And this one
+</span>
+    v_host OUT VARCHAR,  -- この値は戻されます
+    v_path OUT VARCHAR,  -- この値も戻されます
+    v_query OUT VARCHAR) -- この値も戻されます
+AS $$
+DECLARE
+    a_pos1 INTEGER;
+    a_pos2 INTEGER;
+BEGIN
+    v_host := NULL;
+    v_path := NULL;
+    v_query := NULL;
+    a_pos1 := instr(v_url, '//');
+
+    IF a_pos1 = 0 THEN
+        RETURN;
+    END IF;
+    a_pos2 := instr(v_url, '/', a_pos1 + 2);
+    IF a_pos2 = 0 THEN
+        v_host := substr(v_url, a_pos1 + 2);
+        v_path := '/';
+        RETURN;
+    END IF;
+
+    v_host := substr(v_url, a_pos1 + 2, a_pos2 - a_pos1 - 2);
+    a_pos1 := instr(v_url, '?', a_pos2 + 1);
+
+    IF a_pos1 = 0 THEN
+        v_path := substr(v_url, a_pos2);
+        RETURN;
+    END IF;
+
+    v_path := substr(v_url, a_pos2, a_pos1 - a_pos2);
+    v_query := substr(v_url, a_pos1 + 1);
+END;
+$$ LANGUAGE plpgsql;
+</pre><p>
+
+<span class="original">
+     This function could be used like this:
+</span>
+この関数は以下のように使用できます。
+</p><pre class="programlisting">
+SELECT * FROM cs_parse_url('http://foobar.com/query.cgi?baz');
+</pre><p>
+    </p></div></div><br class="example-break" /><p>
+<span class="original">
+    &lt;xref linkend="plpgsql-porting-ex4"/&gt; shows how to port a procedure
+    that uses numerous features that are specific to Oracle.
+</span>
+<a class="xref" href="plpgsql-porting.html#PLPGSQL-PORTING-EX4" title="例43.12 PL/SQLプロシージャのPL/pgSQLへの移植">例 43.12</a>は、Oracleに特化した多くの機能を使用したプロシージャの移植方法を示します。
+   </p><div class="example" id="PLPGSQL-PORTING-EX4"><p class="title"><strong>例43.12 <span class="application">PL/SQL</span>プロシージャの<span class="application">PL/pgSQL</span>への移植</strong></p><div class="example-contents"><span class="original">
+    &lt;title&gt;Porting a Procedure from &lt;application&gt;PL/SQL&lt;/application&gt; to &lt;application&gt;PL/pgSQL&lt;/application&gt;&lt;/title&gt;
+</span><p>
+<span class="original">
+     The Oracle version:
+</span>
+以下はOracle版です。
+
+</p><pre class="programlisting">
+CREATE OR REPLACE PROCEDURE cs_create_job(v_job_id IN INTEGER) IS
+    a_running_job_count INTEGER;
+BEGIN
+    LOCK TABLE cs_jobs IN EXCLUSIVE MODE;
+
+    SELECT count(*) INTO a_running_job_count FROM cs_jobs WHERE end_stamp IS NULL;
+
+    IF a_running_job_count &gt; 0 THEN
+<span class="original">
+        COMMIT; &amp;#045;&amp;#045; free lock &lt;co id="co.plpgsql-porting-commit"/&gt;
+</span>
+        COMMIT; -- ロックを解放<span id="co.plpgsql-porting-commit"></span>(1)
+        raise_application_error(-20000,
+                 'Unable to create a new job: a job is currently running.');
+    END IF;
+
+    DELETE FROM cs_active_job;
+    INSERT INTO cs_active_job(job_id) VALUES (v_job_id);
+
+    BEGIN
+        INSERT INTO cs_jobs (job_id, start_stamp) VALUES (v_job_id, sysdate);
+    EXCEPTION
+<span class="original">
+        WHEN dup_val_on_index THEN NULL; &amp;#045;&amp;#045; don't worry if it already exists
+</span>
+        WHEN dup_val_on_index THEN NULL; -- 既存であっても問題なし
+    END;
+    COMMIT;
+END;
+/
+show errors
+</pre><p>
+   </p><p>
+<span class="original">
+    This is how we could port this procedure to &lt;application&gt;PL/pgSQL&lt;/application&gt;:
+</span>
+それでは、このプロシージャを<span class="application">PL/pgSQL</span>に移植することができた方法を見てみましょう。
+
+</p><pre class="programlisting">
+CREATE OR REPLACE PROCEDURE cs_create_job(v_job_id integer) AS $$
+DECLARE
+    a_running_job_count integer;
+BEGIN
+    LOCK TABLE cs_jobs IN EXCLUSIVE MODE;
+
+    SELECT count(*) INTO a_running_job_count FROM cs_jobs WHERE end_stamp IS NULL;
+
+    IF a_running_job_count &gt; 0 THEN
+        RAISE EXCEPTION 'Unable to create a new job: a job is currently running'; -- <span id="co.plpgsql-porting-raise"></span>(1)
+    END IF;
+
+    DELETE FROM cs_active_job;
+    INSERT INTO cs_active_job(job_id) VALUES (v_job_id);
+
+    BEGIN
+        INSERT INTO cs_jobs (job_id, start_stamp) VALUES (v_job_id, now());
+    EXCEPTION
+        WHEN unique_violation THEN -- <span id="co.plpgsql-porting-exception"></span>(2)
+<span class="original">
+            &amp;#045;&amp;#045; don't worry if it already exists
+</span>
+            -- 既存であっても問題なし
+    END;
+    COMMIT;
+END;
+$$ LANGUAGE plpgsql;
+</pre><p>
+
+    </p><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#co.plpgsql-porting-raise">(1)</a> </p></td><td valign="top" align="left"><p>
+<span class="original">
+       The syntax of &lt;literal&gt;RAISE&lt;/literal&gt; is considerably different from
+       Oracle's statement, although the basic case &lt;literal&gt;RAISE&lt;/literal&gt;
+       &lt;replaceable class="parameter"&gt;exception_name&lt;/replaceable&gt; works
+       similarly.
+</span>
+基本の<code class="literal">RAISE</code> <em class="replaceable"><code>exception_name</code></em>である場合は同様に操作できますが、<code class="literal">RAISE</code>構文はOracleにおける文とかなり異なります。
+      </p></td></tr><tr><td width="5%" valign="top" align="left"><p><a href="#co.plpgsql-porting-exception">(2)</a> </p></td><td valign="top" align="left"><p>
+<span class="original">
+       The exception names supported by &lt;application&gt;PL/pgSQL&lt;/application&gt; are
+       different from Oracle's.  The set of built-in exception names
+       is much larger (see &lt;xref linkend="errcodes-appendix"/&gt;).  There
+       is not currently a way to declare user-defined exception names,
+       although you can throw user-chosen SQLSTATE values instead.
+</span>
+<span class="application">PL/pgSQL</span>がサポートする例外の名称は、Oracleと異なります。
+提供する例外の名称は、はるかに広範囲です（<a class="xref" href="errcodes-appendix.html" title="付録A PostgreSQLエラーコード">付録A</a>を参照してください）。
+今のところ、ユーザ定義の例外名称を宣言できません。
+しかし代わりにユーザが選択したSQLSTATE値を返すことができます。
+      </p></td></tr></table></div><p>
+   </p></div></div><br class="example-break" /></div><div class="sect2" id="PLPGSQL-PORTING-OTHER"><div class="titlepage"><div><div><h3 class="title">43.13.2. その他の注意事項</h3></div></div></div><span class="original">
+   &lt;title&gt;Other Things to Watch For&lt;/title&gt;
+</span><p>
+<span class="original">
+    This section explains a few other things to watch for when porting
+    Oracle &lt;application&gt;PL/SQL&lt;/application&gt; functions to
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt;.
+</span>
+本節では、Oracle <span class="application">PL/SQL</span>関数の<span class="productname">PostgreSQL</span>への移植における、その他の注意事項を説明します。
+   </p><div class="sect3" id="PLPGSQL-PORTING-EXCEPTIONS"><div class="titlepage"><div><div><h4 class="title">43.13.2.1. 例外後の暗黙的ロールバック</h4></div></div></div><span class="original">
+    &lt;title&gt;Implicit Rollback after Exceptions&lt;/title&gt;
+</span><p>
+<span class="original">
+     In &lt;application&gt;PL/pgSQL&lt;/application&gt;, when an exception is caught by an
+     &lt;literal&gt;EXCEPTION&lt;/literal&gt; clause, all database changes since the block's
+     &lt;literal&gt;BEGIN&lt;/literal&gt; are automatically rolled back.  That is, the behavior
+     is equivalent to what you'd get in Oracle with:
+</span>
+<span class="application">PL/pgSQL</span>において<code class="literal">EXCEPTION</code>句が例外を捕捉すると、<code class="literal">BEGIN</code>以降のそのブロックにおけるデータベースの変更が自動的にロールバックされます。
+すなわち、Oracleの<span class="application">PL/SQL</span>による以下のプログラムと同等の処理が実行されます。
+
+</p><pre class="programlisting">
+BEGIN
+    SAVEPOINT s1;
+    ... code here ...
+EXCEPTION
+    WHEN ... THEN
+        ROLLBACK TO s1;
+        ... code here ...
+    WHEN ... THEN
+        ROLLBACK TO s1;
+        ... code here ...
+END;
+</pre><p>
+
+<span class="original">
+     If you are translating an Oracle procedure that uses
+     &lt;command&gt;SAVEPOINT&lt;/command&gt; and &lt;command&gt;ROLLBACK TO&lt;/command&gt; in this style,
+     your task is easy: just omit the &lt;command&gt;SAVEPOINT&lt;/command&gt; and
+     &lt;command&gt;ROLLBACK TO&lt;/command&gt;.  If you have a procedure that uses
+     &lt;command&gt;SAVEPOINT&lt;/command&gt; and &lt;command&gt;ROLLBACK TO&lt;/command&gt; in a different way
+     then some actual thought will be required.
+</span>
+このような方式で<code class="command">SAVEPOINT</code>と<code class="command">ROLLBACK TO</code>を使用したOracleのプロシージャの書き換えは簡単です。
+単に<code class="command">SAVEPOINT</code>と<code class="command">ROLLBACK TO</code>の処理を削除すればよいだけです。
+これと異なった方式で<code class="command">SAVEPOINT</code>と<code class="command">ROLLBACK TO</code>を使用したプロシージャの時は、それに応じた工夫が必要になると思われます。
+    </p></div><div class="sect3" id="id-1.8.8.15.7.4"><div class="titlepage"><div><div><h4 class="title">43.13.2.2. <code class="command">EXECUTE</code></h4></div></div></div><p>
+<span class="original">
+     The &lt;application&gt;PL/pgSQL&lt;/application&gt; version of
+     &lt;command&gt;EXECUTE&lt;/command&gt; works similarly to the
+     &lt;application&gt;PL/SQL&lt;/application&gt; version, but you have to remember to use
+     &lt;function&gt;quote_literal&lt;/function&gt; and
+     &lt;function&gt;quote_ident&lt;/function&gt; as described in &lt;xref
+     linkend="plpgsql-statements-executing-dyn"/&gt;.  Constructs of the
+     type &lt;literal&gt;EXECUTE 'SELECT * FROM $1';&lt;/literal&gt; will not work
+     reliably unless you use these functions.
+</span>
+<span class="application">PL/pgSQL</span>の<code class="command">EXECUTE</code>は<span class="application">PL/SQL</span>版とよく似ています。
+しかし<a class="xref" href="plpgsql-statements.html#PLPGSQL-STATEMENTS-EXECUTING-DYN" title="43.5.4. 動的コマンドの実行">43.5.4</a>で説明されている<code class="function">quote_literal</code>と<code class="function">quote_ident</code>を使うことを覚えておかなければいけません。
+これらの関数を使用しない限り<code class="literal">EXECUTE ''SELECT * from $1'';</code>という構文の動作には、信頼性がありません。
+    </p></div><div class="sect3" id="PLPGSQL-PORTING-OPTIMIZATION"><div class="titlepage"><div><div><h4 class="title">43.13.2.3. <span class="application">PL/pgSQL</span>関数の最適化</h4></div></div></div><span class="original">
+    &lt;title&gt;Optimizing &lt;application&gt;PL/pgSQL&lt;/application&gt; Functions&lt;/title&gt;
+</span><p>
+<span class="original">
+     &lt;productname&gt;PostgreSQL&lt;/productname&gt; gives you two function creation
+     modifiers to optimize execution: &lt;quote&gt;volatility&lt;/quote&gt; (whether
+     the function always returns the same result when given the same
+     arguments) and &lt;quote&gt;strictness&lt;/quote&gt; (whether the function
+     returns null if any argument is null).  Consult the &lt;xref
+     linkend="sql-createfunction"/&gt;
+     reference page for details.
+</span>
+<span class="productname">PostgreSQL</span>には実行を最適化するために2つの関数生成修飾子があります。
+変動性（同じ引数が与えられた場合常に同じ結果を返します）と<span class="quote">「<span class="quote">厳密性</span>」</span>（引数のいずれかにNULLが含まれる場合NULLを返します）です。
+詳細は<a class="xref" href="sql-createfunction.html" title="CREATE FUNCTION"><span class="refentrytitle">CREATE FUNCTION</span></a>を参照してください。
+    </p><p>
+<span class="original">
+     When making use of these optimization attributes, your
+     &lt;command&gt;CREATE FUNCTION&lt;/command&gt; statement might look something
+     like this:
+</span>
+これらの最適化属性を利用するためには、<code class="command">CREATE FUNCTION</code>文を以下のようにします。
+
+</p><pre class="programlisting">
+CREATE FUNCTION foo(...) RETURNS integer AS $$
+...
+$$ LANGUAGE plpgsql STRICT IMMUTABLE;
+</pre><p>
+    </p></div></div><div class="sect2" id="PLPGSQL-PORTING-APPENDIX"><div class="titlepage"><div><div><h3 class="title">43.13.3. 付録</h3></div></div></div><span class="original">
+   &lt;title&gt;Appendix&lt;/title&gt;
+</span><p>
+<span class="original">
+    This section contains the code for a set of Oracle-compatible
+    &lt;function&gt;instr&lt;/function&gt; functions that you can use to simplify
+    your porting efforts.
+</span>
+本節には、移植作業を簡略化するために使用できる、Oracle互換の<code class="function">instr</code>関数のコードがあります。
+   </p><a id="id-1.8.8.15.8.3" class="indexterm"></a><pre class="programlisting">
+--
+&lt;!--
+&amp;#045;&amp;#045; instr functions that mimic Oracle's counterpart
+&amp;#045;&amp;#045; Syntax: instr(string1, string2 [, n [, m]])
+&amp;#045;&amp;#045; where [] denotes optional parameters.
+--&gt;
+-- Oracleのものと同じ動作をするinstr関数
+-- 構文: instr(string1, string2 [, n [, m]]) ただし、[]は省略可能なパラメータ
+--
+&lt;!--
+&amp;#045;&amp;#045; Search string1, beginning at the nth character, for the mth occurrence
+&amp;#045;&amp;#045; of string2.  If n is negative, search backwards, starting at the abs(n)'th
+&amp;#045;&amp;#045; character from the end of string1.
+&amp;#045;&amp;#045; If n is not passed, assume 1 (search starts at first character).
+&amp;#045;&amp;#045; If m is not passed, assume 1 (find first occurrence).
+&amp;#045;&amp;#045; Returns starting index of string2 in string1, or 0 if string2 is not found.
+--&gt;
+-- string1内のn番目の文字から始めて、m番目のstring2を探します。
+-- nが負の場合、string1の終わりからabs(n)番目の文字から始めて、逆方向に検索します。
+-- nが渡されなかった場合は、1とみなします（最初の文字から探し始めます）。
+-- mが渡されなかった場合は、1とみなします（最初に一致するものを見つけます）。
+-- string1内のstring2の開始位置を、string2が見つからなければ0を返します。
+--
+
+CREATE FUNCTION instr(varchar, varchar) RETURNS integer AS $$
+BEGIN
+    RETURN instr($1, $2, 1);
+END;
+$$ LANGUAGE plpgsql STRICT IMMUTABLE;
+
+
+CREATE FUNCTION instr(string varchar, string_to_search_for varchar,
+                      beg_index integer)
+RETURNS integer AS $$
+DECLARE
+    pos integer NOT NULL DEFAULT 0;
+    temp_str varchar;
+    beg integer;
+    length integer;
+    ss_length integer;
+BEGIN
+    IF beg_index &gt; 0 THEN
+        temp_str := substring(string FROM beg_index);
+        pos := position(string_to_search_for IN temp_str);
+
+        IF pos = 0 THEN
+            RETURN 0;
+        ELSE
+            RETURN pos + beg_index - 1;
+        END IF;
+    ELSIF beg_index &lt; 0 THEN
+        ss_length := char_length(string_to_search_for);
+        length := char_length(string);
+        beg := length + 1 + beg_index;
+
+        WHILE beg &gt; 0 LOOP
+            temp_str := substring(string FROM beg FOR ss_length);
+            IF string_to_search_for = temp_str THEN
+                RETURN beg;
+            END IF;
+
+            beg := beg - 1;
+        END LOOP;
+
+        RETURN 0;
+    ELSE
+        RETURN 0;
+    END IF;
+END;
+$$ LANGUAGE plpgsql STRICT IMMUTABLE;
+
+
+CREATE FUNCTION instr(string varchar, string_to_search_for varchar,
+                      beg_index integer, occur_index integer)
+RETURNS integer AS $$
+DECLARE
+    pos integer NOT NULL DEFAULT 0;
+    occur_number integer NOT NULL DEFAULT 0;
+    temp_str varchar;
+    beg integer;
+    i integer;
+    length integer;
+    ss_length integer;
+BEGIN
+    IF occur_index &lt;= 0 THEN
+        RAISE 'argument ''%'' is out of range', occur_index
+          USING ERRCODE = '22003';
+    END IF;
+
+    IF beg_index &gt; 0 THEN
+        beg := beg_index - 1;
+        FOR i IN 1..occur_index LOOP
+            temp_str := substring(string FROM beg + 1);
+            pos := position(string_to_search_for IN temp_str);
+            IF pos = 0 THEN
+                RETURN 0;
+            END IF;
+            beg := beg + pos;
+        END LOOP;
+
+        RETURN beg;
+    ELSIF beg_index &lt; 0 THEN
+        ss_length := char_length(string_to_search_for);
+        length := char_length(string);
+        beg := length + 1 + beg_index;
+
+        WHILE beg &gt; 0 LOOP
+            temp_str := substring(string FROM beg FOR ss_length);
+            IF string_to_search_for = temp_str THEN
+                occur_number := occur_number + 1;
+                IF occur_number = occur_index THEN
+                    RETURN beg;
+                END IF;
+            END IF;
+
+            beg := beg - 1;
+        END LOOP;
+
+        RETURN 0;
+    ELSE
+        RETURN 0;
+    END IF;
+END;
+$$ LANGUAGE plpgsql STRICT IMMUTABLE;
+
+</pre></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="plpgsql-development-tips.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="plpgsql.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="pltcl.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">43.12. <span class="application">PL/pgSQL</span>による開発向けのヒント </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 第44章 PL/Tcl - Tcl手続き言語</td></tr></table></div></body></html>

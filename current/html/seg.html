@@ -1,0 +1,338 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>F.34. seg</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="postgres-fdw.html" title="F.33. postgres_fdw" /><link rel="next" href="sepgsql.html" title="F.35. sepgsql" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="contrib.html" title="付録F 追加で提供されるモジュール">付録F 追加で提供されるモジュール</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      seg.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="postgres-fdw.html" title="F.33. postgres_fdw">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュール">上へ</a></td><td width="60%" align="center">F.34. seg</td><td width="20%" align="right"> <a accesskey="n" href="sepgsql.html" title="F.35. sepgsql">次へ</a></td></tr></table><hr /></div><div class="sect1" id="SEG"><div class="titlepage"><div><div><h2 class="title" style="clear: both">F.34. seg</h2></div></div></div><a id="id-1.11.7.43.2" class="indexterm"></a><p>
+<span class="original">
+  This module implements a data type &lt;type&gt;seg&lt;/type&gt; for
+  representing line segments, or floating point intervals.
+  &lt;type&gt;seg&lt;/type&gt; can represent uncertainty in the interval endpoints,
+  making it especially useful for representing laboratory measurements.
+</span>
+本モジュールは線分、浮動小数点区間を表現する<code class="type">seg</code>データ型を実装します。
+<code class="type">seg</code>は区間の終端内の不確定性を表すことができ、特に実験計測の表現に有用です。
+ </p><div class="sect2" id="id-1.11.7.43.4"><div class="titlepage"><div><div><h3 class="title">F.34.1. 原理</h3></div></div></div><span class="original">
+  &lt;title&gt;Rationale&lt;/title&gt;
+</span><p>
+<span class="original">
+   The geometry of measurements is usually more complex than that of a
+   point in a numeric continuum. A measurement is usually a segment of
+   that continuum with somewhat fuzzy limits. The measurements come out
+   as intervals because of uncertainty and randomness, as well as because
+   the value being measured may naturally be an interval indicating some
+   condition, such as the temperature range of stability of a protein.
+</span>
+計測の幾何は数値の連続における点より通常より複雑です。
+計測は通常、多少あいまいな制限を持つ連続の部分部分となります。
+不確実性と不規則性のため、さらに、タンパク質を安定させる温度範囲など計測される値は本質的に何らかの状態を示す区間となる可能性があるため、計測は区間として現れます。
+  </p><p>
+<span class="original">
+   Using just common sense, it appears more convenient to store such data
+   as intervals, rather than pairs of numbers. In practice, it even turns
+   out more efficient in most applications.
+</span>
+一般的な見方を使うと、こうしたデータは値の組合せではなく区間としてデータを格納する方が便利なようです。
+実際、ほとんどのアプリケーションでより効率的であると判明してさえいます。
+  </p><p>
+<span class="original">
+   Further along the line of common sense, the fuzziness of the limits
+   suggests that the use of traditional numeric data types leads to a
+   certain loss of information. Consider this: your instrument reads
+   6.50, and you input this reading into the database. What do you get
+   when you fetch it? Watch:
+</span>
+一般的な見方をさらに進めると、制限の曖昧さは、伝統的な数値データ型を使用することで情報がある程度損失してしまうことを暗示しています。
+これを考えてみましょう。
+計測機器で6.50と読み取り、読み取ったデータをデータベースに格納します。
+それを取り出す時にどうなるでしょう。
+見てみましょう。
+
+</p><pre class="screen">
+test=&gt; select 6.50 :: float8 as "pH";
+ pH
+---
+6.5
+(1 row)
+</pre><p>
+
+<span class="original">
+   In the world of measurements, 6.50 is not the same as 6.5. It may
+   sometimes be critically different. The experimenters usually write
+   down (and publish) the digits they trust. 6.50 is actually a fuzzy
+   interval contained within a bigger and even fuzzier interval, 6.5,
+   with their center points being (probably) the only common feature they
+   share. We definitely do not want such different data items to appear the
+   same.
+</span>
+計測という世界では6.50は6.5と同じではありません。
+時としてこれが致命的な違いになる場合があります。
+実験者は信頼する桁を書き出し（公開し）ます。
+6.50は実際には、6.5というより大きくよりあいまいな区間に含まれるあいまいな区間です。
+2つに共通するものは（おそらく）その中央の値だけでしょう。
+私達は厳密にこうした異なるデータ項目が同じものとして現れることを好みません。
+  </p><p>
+<span class="original">
+   Conclusion? It is nice to have a special data type that can record the
+   limits of an interval with arbitrarily variable precision. Variable in
+   the sense that each data element records its own precision.
+</span>
+まとめ？
+任意の可変精度を持つ区間の制限を記録できる特別なデータ型を持つことは素晴らしいことでしょう。
+各データ要素が独自の精度を記録するという意味での可変です。
+  </p><p>
+<span class="original">
+   Check this out:
+</span>
+以下を見てください。
+
+</p><pre class="screen">
+test=&gt; select '6.25 .. 6.50'::seg as "pH";
+          pH
+------------
+6.25 .. 6.50
+(1 row)
+</pre><p>
+  </p></div><div class="sect2" id="id-1.11.7.43.5"><div class="titlepage"><div><div><h3 class="title">F.34.2. 構文</h3></div></div></div><span class="original">
+  &lt;title&gt;Syntax&lt;/title&gt;
+</span><p>
+<span class="original">
+   The external representation of an interval is formed using one or two
+   floating-point numbers joined by the range operator (&lt;literal&gt;..&lt;/literal&gt;
+   or &lt;literal&gt;...&lt;/literal&gt;).  Alternatively, it can be specified as a
+   center point plus or minus a deviation.
+   Optional certainty indicators (&lt;literal&gt;&amp;lt;&lt;/literal&gt;,
+   &lt;literal&gt;&amp;gt;&lt;/literal&gt; or &lt;literal&gt;~&lt;/literal&gt;) can be stored as well.
+   (Certainty indicators are ignored by all the built-in operators, however.)
+   &lt;xref linkend="seg-repr-table"/&gt; gives an overview of allowed
+   representations; &lt;xref linkend="seg-input-examples"/&gt; shows some
+   examples.
+</span>
+区間の外部表現は、1つまたは2つの浮動小数点値を範囲演算子（<code class="literal">..</code>または<code class="literal">...</code>）で結び付けた形になります。
+他にも、中央値と正負の偏差として指定することも可能です。
+省略可能な確実性指示子（<code class="literal">&lt;</code>、<code class="literal">&gt;</code>、<code class="literal">~</code>）を格納することもできます。
+（しかし、確実性指示子はすべての組み込みの演算子で無視されます。）
+<a class="xref" href="seg.html#SEG-REPR-TABLE" title="表F.26 seg外部表現">表 F.26</a>に許される表現についての概要を、<a class="xref" href="seg.html#SEG-INPUT-EXAMPLES" title="表F.27 有効なSEG入力の例">表 F.27</a>にいくつか例を示します。
+  </p><p>
+<span class="original">
+   In &lt;xref linkend="seg-repr-table"/&gt;, &lt;replaceable&gt;x&lt;/replaceable&gt;, &lt;replaceable&gt;y&lt;/replaceable&gt;, and
+   &lt;replaceable&gt;delta&lt;/replaceable&gt; denote
+   floating-point numbers.  &lt;replaceable&gt;x&lt;/replaceable&gt; and &lt;replaceable&gt;y&lt;/replaceable&gt;, but
+   not &lt;replaceable&gt;delta&lt;/replaceable&gt;, can be preceded by a certainty indicator.
+</span>
+<a class="xref" href="seg.html#SEG-REPR-TABLE" title="表F.26 seg外部表現">表 F.26</a>では、<em class="replaceable"><code>x</code></em>、<em class="replaceable"><code>y</code></em>、<em class="replaceable"><code>delta</code></em>は浮動小数点数値を表します。
+<em class="replaceable"><code>delta</code></em>以外の<em class="replaceable"><code>x</code></em>と<em class="replaceable"><code>y</code></em>の前に確実性指示子を付与することができます。
+  </p><div class="table" id="SEG-REPR-TABLE"><p class="title"><strong>表F.26 <code class="type">seg</code>外部表現</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;&lt;type&gt;seg&lt;/type&gt; External Representations&lt;/title&gt;
+</span><table class="table" summary="seg外部表現" border="1"><colgroup><col /><col /></colgroup><tbody><tr><td><code class="literal"><em class="replaceable"><code>x</code></em></code></td><td>単一値（幅0の区間）
+      </td></tr><tr><td><code class="literal"><em class="replaceable"><code>x</code></em> .. <em class="replaceable"><code>y</code></em></code></td><td><em class="replaceable"><code>x</code></em>から<em class="replaceable"><code>y</code></em>までの区間
+      </td></tr><tr><td><code class="literal"><em class="replaceable"><code>x</code></em> (+-) <em class="replaceable"><code>delta</code></em></code></td><td><em class="replaceable"><code>x</code></em> - <em class="replaceable"><code>delta</code></em>から<em class="replaceable"><code>x</code></em> + <em class="replaceable"><code>delta</code></em>までの区間
+      </td></tr><tr><td><code class="literal"><em class="replaceable"><code>x</code></em> ..</code></td><td>下限値<em class="replaceable"><code>x</code></em>を持つ閉じていない区間
+      </td></tr><tr><td><code class="literal">.. <em class="replaceable"><code>x</code></em></code></td><td>上限値<em class="replaceable"><code>x</code></em>を持つ閉じていない区間
+      </td></tr></tbody></table></div></div><br class="table-break" /><div class="table" id="SEG-INPUT-EXAMPLES"><p class="title"><strong>表F.27 有効な<code class="type">SEG</code>入力の例</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;Examples of Valid &lt;type&gt;seg&lt;/type&gt; Input&lt;/title&gt;
+</span><table class="table" summary="有効なSEG入力の例" border="1"><colgroup><col /><col /></colgroup><tbody><tr><td><code class="literal">5.0</code></td><td>
+<span class="original">
+       Creates a zero-length segment (a point, if you will)
+</span>
+幅0のセグメントを作成します（こうすると点になります）。
+      </td></tr><tr><td><code class="literal">~5.0</code></td><td>
+<span class="original">
+       Creates a zero-length segment and records
+       &lt;literal&gt;~&lt;/literal&gt; in the data.  &lt;literal&gt;~&lt;/literal&gt; is ignored
+       by &lt;type&gt;seg&lt;/type&gt; operations, but
+       is preserved as a comment.
+</span>
+幅0のセグメントを作成し、データ内に<code class="literal">~</code>を記録します。
+<code class="literal">~</code>は<code class="type">seg</code>型の演算では無視されますが、コメントとして保持されます。
+      </td></tr><tr><td><code class="literal">&lt;5.0</code></td><td>
+<span class="original">
+       Creates a point at 5.0.  &lt;literal&gt;&amp;lt;&lt;/literal&gt; is ignored but
+       is preserved as a comment.
+</span>
+5.0という点を作成します。
+<code class="literal">&lt;</code>は無視されますが、コメントとして保持されます。
+      </td></tr><tr><td><code class="literal">&gt;5.0</code></td><td>
+<span class="original">
+       Creates a point at 5.0.  &lt;literal&gt;&amp;gt;&lt;/literal&gt; is ignored but
+       is preserved as a comment.
+</span>
+5.0という点を作成します。
+<code class="literal">&gt;</code>は無視されますが、コメントとして保持されます。
+      </td></tr><tr><td><code class="literal">5(+-)0.3</code></td><td>
+<span class="original">
+        Creates an interval &lt;literal&gt;4.7 .. 5.3&lt;/literal&gt;.
+        Note that the &lt;literal&gt;(+-)&lt;/literal&gt; notation isn't preserved.
+</span>
+<code class="literal">4.7 .. 5.3</code>という区間を作成します。
+<code class="literal">(+-)</code>という記述は保持されないことに注意してください。
+      </td></tr><tr><td><code class="literal">50 .. </code></td><td> 50以上のすべて</td></tr><tr><td><code class="literal">.. 0</code></td><td>0以下のすべて</td></tr><tr><td><code class="literal">1.5e-2 .. 2E-2 </code></td><td><code class="literal">0.015 .. 0.02</code>という区間を作成します</td></tr><tr><td><code class="literal">1 ... 2</code></td><td>
+<span class="original">
+       The same as &lt;literal&gt;1...2&lt;/literal&gt;, or &lt;literal&gt;1 .. 2&lt;/literal&gt;,
+       or &lt;literal&gt;1..2&lt;/literal&gt;
+       (spaces around the range operator are ignored)
+</span>
+<code class="literal">1...2</code>、<code class="literal">1 .. 2</code>、<code class="literal">1..2</code>と同じです（範囲演算子前後の空白は無視されます）。
+      </td></tr></tbody></table></div></div><br class="table-break" /><p>
+<span class="original">
+   Because &lt;literal&gt;...&lt;/literal&gt; is widely used in data sources, it is allowed
+   as an alternative spelling of &lt;literal&gt;..&lt;/literal&gt;.  Unfortunately, this
+   creates a parsing ambiguity: it is not clear whether the upper bound
+   in &lt;literal&gt;0...23&lt;/literal&gt; is meant to be &lt;literal&gt;23&lt;/literal&gt; or &lt;literal&gt;0.23&lt;/literal&gt;.
+   This is resolved by requiring at least one digit before the decimal
+   point in all numbers in &lt;type&gt;seg&lt;/type&gt; input.
+</span>
+データソースで<code class="literal">...</code>が広く使用されるため、<code class="literal">..</code>の代わりの綴りとして許可されています。
+残念なことにこれにより解析上の曖昧性が生じました。
+<code class="literal">0...23</code>の上限が<code class="literal">23</code>なのか<code class="literal">0.23</code>なのかが明確ではありません。
+これは、<code class="type">seg</code>の入力において、少なくとも1つの桁を数値内の小数点の前に書くことを要求することで解決されます。
+  </p><p>
+<span class="original">
+   As a sanity check, &lt;type&gt;seg&lt;/type&gt; rejects intervals with the lower bound
+   greater than the upper, for example &lt;literal&gt;5 .. 2&lt;/literal&gt;.
+</span>
+健全性検査として<code class="type">seg</code>は、<code class="literal">5 .. 2</code>のような、下限値が上限値より大きな区間を拒絶します。
+  </p></div><div class="sect2" id="id-1.11.7.43.6"><div class="titlepage"><div><div><h3 class="title">F.34.3. 精度</h3></div></div></div><span class="original">
+  &lt;title&gt;Precision&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;type&gt;seg&lt;/type&gt; values are stored internally as pairs of 32-bit floating point
+   numbers. This means that numbers with more than 7 significant digits
+   will be truncated.
+</span>
+内部的に<code class="type">seg</code>値には32ビット浮動小数点数値の組合せが格納されます。
+これは7桁以上の有効桁を持つ数値が切り詰められることを意味します。
+
+  </p><p>
+<span class="original">
+   Numbers with 7 or fewer significant digits retain their
+   original precision. That is, if your query returns 0.00, you will be
+   sure that the trailing zeroes are not the artifacts of formatting: they
+   reflect the precision of the original data. The number of leading
+   zeroes does not affect precision: the value 0.0067 is considered to
+   have just 2 significant digits.
+</span>
+有効桁が正確に7桁、または7桁未満の数値は元の精度が保たれます。
+つまり、問い合わせが0.00を返す場合、後ろに続く0は書式付けのための見かけのものではないことが確実です。
+これは元のデータの精度を反映します。
+前にある0の数は精度には影響しません。
+0.0067は2有効桁のみを持つものと考えられます。
+  </p></div><div class="sect2" id="id-1.11.7.43.7"><div class="titlepage"><div><div><h3 class="title">F.34.4. 使用方法</h3></div></div></div><span class="original">
+  &lt;title&gt;Usage&lt;/title&gt;
+</span><p>
+<span class="original">
+   The &lt;filename&gt;seg&lt;/filename&gt; module includes a GiST index operator class for
+   &lt;type&gt;seg&lt;/type&gt; values.
+   The operators supported by the GiST operator class are shown in &lt;xref linkend="seg-gist-operators"/&gt;.
+</span>
+<code class="filename">seg</code>モジュールには<code class="type">seg</code>値用のGiSTインデックス演算子クラスが含まれます。
+GiST演算子クラスでサポートされる演算子を<a class="xref" href="seg.html#SEG-GIST-OPERATORS" title="表F.28 Seg GiST演算子">表 F.28</a>に示します。
+  </p><div class="table" id="SEG-GIST-OPERATORS"><p class="title"><strong>表F.28 Seg GiST演算子</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;Seg GiST Operators&lt;/title&gt;
+</span><table class="table" summary="Seg GiST演算子" border="1"><colgroup><col /><col /></colgroup><thead><tr><th>演算子</th><th>説明</th></tr></thead><tbody><tr><td><code class="literal">[a, b] &lt;&lt; [c, d]</code></td><td>
+[a, b]が完全に[c, d]の左側に存在します。
+つまり、b &lt;cならば[a, b] &lt;&lt; [c, d]は真です。
+さもなくば偽です。
+      </td></tr><tr><td><code class="literal">[a, b] &gt;&gt; [c, d]</code></td><td>
+[a, b]が完全に [c, d]の右側に存在します。
+つまり、a &gt; dならば[a, b] &gt;&gt; [c, d]は真、さもなくば偽です。
+      </td></tr><tr><td><code class="literal">[a, b] &amp;&lt; [c, d]</code></td><td>
+重なるまたは左側。
+これは<span class="quote">「<span class="quote">右側にはみださない</span>」</span>ととらえた方がいいかもしれません。
+b &lt;= dならば真です。
+      </td></tr><tr><td><code class="literal">[a, b] &amp;&gt; [c, d]</code></td><td>
+重なるか右側。
+これは<span class="quote">「<span class="quote">左側にはみださない</span>」</span>ととらえた方がいいかもしれません。
+a &gt;= cならば真です。
+      </td></tr><tr><td><code class="literal">[a, b] = [c, d]</code></td><td>
+同一。
+セグメント[a, b]と [c, d]が同一、つまり、a == bかつc == dです。
+      </td></tr><tr><td><code class="literal">[a, b] &amp;&amp; [c, d]</code></td><td>
+セグメント[a, b]と[c, d]に重なりがあります。
+      </td></tr><tr><td><code class="literal">[a, b] @&gt; [c, d]</code></td><td>
+セグメント[a, b]はセグメント[c, d]を包含します。つまり、a &lt;= cかつb &gt;= dです。
+      </td></tr><tr><td><code class="literal">[a, b] &lt;@ [c, d]</code></td><td>
+セグメント[a, b]はセグメント[c, d]に包含されます。つまり、a &gt;= cかつb &lt;= dです。
+      </td></tr></tbody></table></div></div><br class="table-break" /><p>
+<span class="original">
+   (Before PostgreSQL 8.2, the containment operators &lt;literal&gt;@&amp;gt;&lt;/literal&gt; and &lt;literal&gt;&amp;lt;@&lt;/literal&gt; were
+   respectively called &lt;literal&gt;@&lt;/literal&gt; and &lt;literal&gt;~&lt;/literal&gt;.  These names are still available, but are
+   deprecated and will eventually be retired.  Notice that the old names
+   are reversed from the convention formerly followed by the core geometric
+   data types!)
+</span>
+（PostgreSQL 8.2以前では、包含演算子<code class="literal">@&gt;</code>および<code class="literal">&lt;@</code>はそれぞれ<code class="literal">@</code>および<code class="literal">~</code>という名前でした。
+以前の名前もまだ利用できますが、廃止予定であり、いずれなくなります。
+以前の名前は、コアの幾何データ型で以前従っていた規約と反対であることに注意してください。）
+  </p><p>
+<span class="original">
+   The standard B-tree operators are also provided, for example
+</span>
+以下の例のように、標準B-tree演算子も提供されます。
+
+  </p><div class="informaltable"><table class="informaltable" border="1"><colgroup><col /><col /></colgroup><thead><tr><th>演算子</th><th>説明</th></tr></thead><tbody><tr><td><code class="literal">[a, b] &lt; [c, d]</code></td><td>より小さい</td></tr><tr><td><code class="literal">[a, b] &gt; [c, d]</code></td><td>より大きい</td></tr></tbody></table></div><p>
+
+<span class="original">
+   These operators do not make a lot of sense for any practical
+   purpose but sorting. These operators first compare (a) to (c),
+   and if these are equal, compare (b) to (d). That results in
+   reasonably good sorting in most cases, which is useful if
+   you want to use ORDER BY with this type.
+</span>
+これらの演算子はソート以外の実用的な目的に対して大きな意味を持ちません。
+これらの演算子はまず(a)と(c)を比べ、等しければ(b)と(d)を比べます。
+論理的にはほとんどの場合優れたソート処理と思えます。
+こうした型をORDER BYで使用したい場合に有用です。
+  </p></div><div class="sect2" id="id-1.11.7.43.8"><div class="titlepage"><div><div><h3 class="title">F.34.5. 注釈</h3></div></div></div><span class="original">
+  &lt;title&gt;Notes&lt;/title&gt;
+</span><p>
+<span class="original">
+   For examples of usage, see the regression test &lt;filename&gt;sql/seg.sql&lt;/filename&gt;.
+</span>
+使用方法の例はリグレッションテストの<code class="filename">sql/seg.sql</code>を参照してください。
+  </p><p>
+<span class="original">
+   The mechanism that converts &lt;literal&gt;(+-)&lt;/literal&gt; to regular ranges
+   isn't completely accurate in determining the number of significant digits
+   for the boundaries.  For example, it adds an extra digit to the lower
+   boundary if the resulting interval includes a power of ten:
+</span>
+<code class="literal">(+-)</code>を通常の範囲に変換する機構は、境界で有効な桁数を決定するという点で完全に正確ではありません。
+例えば以下のように、結果の区間に10の冪乗が含まれる場合、下限値に余計な桁を追加します。
+
+</p><pre class="screen">
+postgres=&gt; select '10(+-)1'::seg as seg;
+      seg
+---------
+9.0 .. 11             -- should be: 9 .. 11
+</pre><p>
+  </p><p>
+<span class="original">
+   The performance of an R-tree index can largely depend on the initial
+   order of input values. It may be very helpful to sort the input table
+   on the &lt;type&gt;seg&lt;/type&gt; column; see the script &lt;filename&gt;sort-segments.pl&lt;/filename&gt;
+   for an example.
+</span>
+R-treeインデックスの性能は入力値の初期の順序に大きく依存する可能性があります。
+<code class="type">seg</code>列で入力テーブルをソートすることは非常に役に立つでしょう。
+例として<code class="filename">sort-segments.pl</code>スクリプトを参照してください。
+  </p></div><div class="sect2" id="id-1.11.7.43.9"><div class="titlepage"><div><div><h3 class="title">F.34.6. クレジット</h3></div></div></div><span class="original">
+  &lt;title&gt;Credits&lt;/title&gt;
+</span><p>
+<span class="original">
+   Original author: Gene Selkov, Jr. &lt;email&gt;selkovjr@mcs.anl.gov&lt;/email&gt;,
+   Mathematics and Computer Science Division, Argonne National Laboratory.
+</span>
+原作者：Gene Selkov, Jr. <code class="email">&lt;<a class="email" href="mailto:selkovjr@mcs.anl.gov">selkovjr@mcs.anl.gov</a>&gt;</code>,
+   Mathematics and Computer Science Division, Argonne National Laboratory.
+  </p><p>
+<span class="original">
+   My thanks are primarily to Prof. Joe Hellerstein
+   (&lt;ulink url="http://db.cs.berkeley.edu/jmh/"&gt;&lt;/ulink&gt;) for elucidating the
+   gist of the GiST (&lt;ulink url="http://gist.cs.berkeley.edu/"&gt;&lt;/ulink&gt;). I am
+   also grateful to all Postgres developers, present and past, for enabling
+   myself to create my own world and live undisturbed in it. And I would like
+   to acknowledge my gratitude to Argonne Lab and to the U.S. Department of
+   Energy for the years of faithful support of my database research.
+</span>
+GiST (<a class="ulink" href="http://gist.cs.berkeley.edu/" target="_top">http://gist.cs.berkeley.edu/</a>)の要旨（gist）を説明していただいたJoe Hellerstein博士（<a class="ulink" href="http://db.cs.berkeley.edu/jmh/" target="_top">http://db.cs.berkeley.edu/jmh/</a>）に感謝します。
+また、自分の世界を作成できるようにし、静かに生活できるようにしてもらった、過去から現在までのすべてのPostgres開発者に感謝します。
+データベース研究を長年誠実にサポートしてくれたArgonne LabとU.S. Department of Energyにも感謝します。
+  </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="postgres-fdw.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="contrib.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sepgsql.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">F.33. postgres_fdw </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> F.35. sepgsql</td></tr></table></div></body></html>

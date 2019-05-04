@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>dblink</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="contrib-dblink-disconnect.html" title="dblink_disconnect" /><link rel="next" href="contrib-dblink-exec.html" title="dblink_exec" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="dblink.html" title="F.10. dblink">F.10. dblink</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      contrib-dblink-function.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="contrib-dblink-disconnect.html" title="dblink_disconnect">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="dblink.html" title="F.10. dblink">上へ</a></td><td width="60%" align="center">dblink</td><td width="20%" align="right"> <a accesskey="n" href="contrib-dblink-exec.html" title="dblink_exec">次へ</a></td></tr></table><hr /></div><div class="refentry" id="CONTRIB-DBLINK-FUNCTION"><div class="titlepage"></div><a id="id-1.11.7.19.8.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">dblink</span></h2><p>dblink<span class="original">
+   &lt;refpurpose&gt;executes a query in a remote database&lt;/refpurpose&gt;
+</span> — リモートデータベースで問い合わせを実行します</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
+dblink(text connname, text sql [, bool fail_on_error]) returns setof record
+dblink(text connstr, text sql [, bool fail_on_error]) returns setof record
+dblink(text sql [, bool fail_on_error]) returns setof record
+</pre></div><div class="refsect1" id="id-1.11.7.19.8.5"><h2>説明</h2><span class="original">
+   &lt;title&gt;Description&lt;/title&gt;
+</span><p>
+<span class="original">
+    &lt;function&gt;dblink&lt;/function&gt; executes a query (usually a &lt;command&gt;SELECT&lt;/command&gt;,
+    but it can be any SQL statement that returns rows) in a remote database.
+</span>
+<code class="function">dblink</code>はリモートデータベースで問い合わせ（通常は<code class="command">SELECT</code>ですが行を返す任意のSQLコマンドを行うことができます）を実行します。
+   </p><p>
+<span class="original">
+    When two &lt;type&gt;text&lt;/type&gt; arguments are given, the first one is first
+    looked up as a persistent connection's name; if found, the command
+    is executed on that connection.  If not found, the first argument
+    is treated as a connection info string as for &lt;function&gt;dblink_connect&lt;/function&gt;,
+    and the indicated connection is made just for the duration of this command.
+</span>
+2つの<code class="type">text</code>型の引数が与えられた場合、一番目の引数はまず永続接続の名前を検索するために使われます。
+もし見つかれば、コマンドがその接続上で実行されます。
+見つからなければ、一番目の引数は<code class="function">dblink_connect</code>用の接続情報文字列として扱われ、このコマンド実行時と同様に指定された接続が開きます。
+   </p></div><div class="refsect1" id="id-1.11.7.19.8.6"><h2>引数</h2><span class="original">
+   &lt;title&gt;Arguments&lt;/title&gt;
+</span><div class="variablelist"><dl class="variablelist"><dt><span class="term"><em class="parameter"><code>connname</code></em></span></dt><dd><p>
+<span class="original">
+       Name of the connection to use; omit this parameter to use the
+       unnamed connection.
+</span>
+使用する接続の名前です。
+無名の接続を使用する場合はこのパラメータを省略します。
+      </p></dd><dt><span class="term"><em class="parameter"><code>connstr</code></em></span></dt><dd><p>
+<span class="original">
+       A connection info string, as previously described for
+       &lt;function&gt;dblink_connect&lt;/function&gt;.
+</span>
+上で<code class="function">dblink_connect</code>で説明した接続情報文字列です。
+      </p></dd><dt><span class="term"><em class="parameter"><code>sql</code></em></span></dt><dd><p>
+<span class="original">
+       The SQL query that you wish to execute in the remote database,
+       for example &lt;literal&gt;select * from foo&lt;/literal&gt;.
+</span>
+例えば<code class="literal">select * from foo</code>といった、リモートデータベースで実行させるSQL問い合わせです。
+      </p></dd><dt><span class="term"><em class="parameter"><code>fail_on_error</code></em></span></dt><dd><p>
+<span class="original">
+       If true (the default when omitted) then an error thrown on the
+       remote side of the connection causes an error to also be thrown
+       locally. If false, the remote error is locally reported as a NOTICE,
+       and the function returns no rows.
+</span>
+真（省略時のデフォルト）の場合、接続のリモート側で発生したエラーによりローカル側でもエラーが発生します。
+偽の場合リモート側のエラーはローカル側にはNOTICEとして報告され、この関数は行を返しません。
+      </p></dd></dl></div></div><div class="refsect1" id="id-1.11.7.19.8.7"><h2>戻り値</h2><span class="original">
+   &lt;title&gt;Return Value&lt;/title&gt;
+</span><p>
+<span class="original">
+    The function returns the row(s) produced by the query.  Since
+    &lt;function&gt;dblink&lt;/function&gt; can be used with any query, it is declared
+    to return &lt;type&gt;record&lt;/type&gt;, rather than specifying any particular
+    set of columns.  This means that you must specify the expected
+    set of columns in the calling query &amp;mdash; otherwise
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; would not know what to expect.
+    Here is an example:
+</span>
+この関数は問い合わせにより生成された行を返します。
+<code class="function">dblink</code>は任意の問い合わせで使用することができますので、これは特定の列集合を指定するのではなく、<code class="type">record</code>型を返すものと宣言されています。
+これは呼び出し元の問い合わせで想定列集合を指定しなければならないことを意味します。
+さもないと<span class="productname">PostgreSQL</span>は何が想定されているかわかりません。
+以下に例を示します。
+
+</p><pre class="programlisting">
+SELECT *
+    FROM dblink('dbname=mydb options=-csearch_path=',
+                'select proname, prosrc from pg_proc')
+      AS t1(proname name, prosrc text)
+    WHERE proname LIKE 'bytea%';
+</pre><p>
+
+<span class="original">
+    The &lt;quote&gt;alias&lt;/quote&gt; part of the &lt;literal&gt;FROM&lt;/literal&gt; clause must
+    specify the column names and types that the function will return.
+    (Specifying column names in an alias is actually standard SQL
+    syntax, but specifying column types is a &lt;productname&gt;PostgreSQL&lt;/productname&gt;
+    extension.)  This allows the system to understand what
+    &lt;literal&gt;*&lt;/literal&gt; should expand to, and what &lt;structname&gt;proname&lt;/structname&gt;
+    in the &lt;literal&gt;WHERE&lt;/literal&gt; clause refers to, in advance of trying
+    to execute the function.  At run time, an error will be thrown
+    if the actual query result from the remote database does not
+    have the same number of columns shown in the &lt;literal&gt;FROM&lt;/literal&gt; clause.
+    The column names need not match, however, and &lt;function&gt;dblink&lt;/function&gt;
+    does not insist on exact type matches either.  It will succeed
+    so long as the returned data strings are valid input for the
+    column type declared in the &lt;literal&gt;FROM&lt;/literal&gt; clause.
+</span>
+<code class="literal">FROM</code>句の<span class="quote">「<span class="quote">別名</span>」</span>部分は関数が返す列名とその型を指定しなければなりません。
+（別名内の列名の指定はSQL標準の構文ですが、列の型の指定は<span class="productname">PostgreSQL</span>の拡張です。）
+これによりシステムは、関数を実行する前に、<code class="literal">*</code>がどのように展開されるか、<code class="literal">WHERE</code>句内の<code class="structname">proname</code>が何を参照するかを理解します。
+実行時、リモートデータベースから返る実際の問い合わせの結果が<code class="literal">FROM</code>句で示された列数と異なる場合エラーが発生します。
+しかし、列名は一致する必要はありません。
+また、<code class="function">dblink</code>は正確な型一致も強制しません。
+返されるデータ文字列が<code class="literal">FROM</code>句で宣言された列型の有効な入力である限り成功します。
+   </p></div><div class="refsect1" id="id-1.11.7.19.8.8"><h2>注釈</h2><span class="original">
+   &lt;title&gt;Notes&lt;/title&gt;
+</span><p>
+<span class="original">
+    A convenient way to use &lt;function&gt;dblink&lt;/function&gt; with predetermined
+    queries is to create a view.
+    This allows the column type information to be buried in the view,
+    instead of having to spell it out in every query.  For example,
+</span>
+前もって判明している問い合わせを<code class="function">dblink</code>で使用する簡便な方法はビューを作成することです。
+これにより問い合わせの度に列型の情報を記載することなく、ビュー内に隠すことができます。
+以下に例を示します。
+
+</p><pre class="programlisting">
+CREATE VIEW myremote_pg_proc AS
+  SELECT *
+    FROM dblink('dbname=postgres options=-csearch_path=',
+                'select proname, prosrc from pg_proc')
+    AS t1(proname name, prosrc text);
+
+SELECT * FROM myremote_pg_proc WHERE proname LIKE 'bytea%';
+</pre></div><div class="refsect1" id="id-1.11.7.19.8.9"><h2>例</h2><span class="original">
+   &lt;title&gt;Examples&lt;/title&gt;
+</span><pre class="screen">
+SELECT * FROM dblink('dbname=postgres options=-csearch_path=',
+                     'select proname, prosrc from pg_proc')
+  AS t1(proname name, prosrc text) WHERE proname LIKE 'bytea%';
+  proname   |   prosrc
+------------+------------
+ byteacat   | byteacat
+ byteaeq    | byteaeq
+ bytealt    | bytealt
+ byteale    | byteale
+ byteagt    | byteagt
+ byteage    | byteage
+ byteane    | byteane
+ byteacmp   | byteacmp
+ bytealike  | bytealike
+ byteanlike | byteanlike
+ byteain    | byteain
+ byteaout   | byteaout
+(12 rows)
+
+SELECT dblink_connect('dbname=postgres options=-csearch_path=');
+ dblink_connect
+----------------
+ OK
+(1 row)
+
+SELECT * FROM dblink('select proname, prosrc from pg_proc')
+  AS t1(proname name, prosrc text) WHERE proname LIKE 'bytea%';
+  proname   |   prosrc
+------------+------------
+ byteacat   | byteacat
+ byteaeq    | byteaeq
+ bytealt    | bytealt
+ byteale    | byteale
+ byteagt    | byteagt
+ byteage    | byteage
+ byteane    | byteane
+ byteacmp   | byteacmp
+ bytealike  | bytealike
+ byteanlike | byteanlike
+ byteain    | byteain
+ byteaout   | byteaout
+(12 rows)
+
+SELECT dblink_connect('myconn', 'dbname=regression options=-csearch_path=');
+ dblink_connect
+----------------
+ OK
+(1 row)
+
+SELECT * FROM dblink('myconn', 'select proname, prosrc from pg_proc')
+  AS t1(proname name, prosrc text) WHERE proname LIKE 'bytea%';
+  proname   |   prosrc
+------------+------------
+ bytearecv  | bytearecv
+ byteasend  | byteasend
+ byteale    | byteale
+ byteagt    | byteagt
+ byteage    | byteage
+ byteane    | byteane
+ byteacmp   | byteacmp
+ bytealike  | bytealike
+ byteanlike | byteanlike
+ byteacat   | byteacat
+ byteaeq    | byteaeq
+ bytealt    | bytealt
+ byteain    | byteain
+ byteaout   | byteaout
+(14 rows)
+</pre></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="contrib-dblink-disconnect.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="dblink.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="contrib-dblink-exec.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">dblink_disconnect </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> dblink_exec</td></tr></table></div></body></html>

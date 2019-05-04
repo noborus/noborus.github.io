@@ -1,0 +1,866 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>CREATE INDEX</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-creategroup.html" title="CREATE GROUP" /><link rel="next" href="sql-createlanguage.html" title="CREATE LANGUAGE" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      sql-createindex.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-creategroup.html" title="CREATE GROUP">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">CREATE INDEX</td><td width="20%" align="right"> <a accesskey="n" href="sql-createlanguage.html" title="CREATE LANGUAGE">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-CREATEINDEX"><div class="titlepage"></div><a id="id-1.9.3.69.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">CREATE INDEX</span></h2><p>CREATE INDEX<span class="original">
+  &lt;refpurpose&gt;define a new index&lt;/refpurpose&gt;
+</span> — 
+新しいインデックスを定義する
+  </p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
+CREATE [ UNIQUE ] INDEX [ CONCURRENTLY ] [ [ IF NOT EXISTS ] <em class="replaceable"><code>name</code></em> ] ON [ ONLY ] <em class="replaceable"><code>table_name</code></em> [ USING <em class="replaceable"><code>method</code></em> ]
+    ( { <em class="replaceable"><code>column_name</code></em> | ( <em class="replaceable"><code>expression</code></em> ) } [ COLLATE <em class="replaceable"><code>collation</code></em> ] [ <em class="replaceable"><code>opclass</code></em> ] [ ASC | DESC ] [ NULLS { FIRST | LAST } ] [, ...] )
+    [ INCLUDE ( <em class="replaceable"><code>column_name</code></em> [, ...] ) ]
+    [ WITH ( <em class="replaceable"><code>storage_parameter</code></em> = <em class="replaceable"><code>value</code></em> [, ... ] ) ]
+    [ TABLESPACE <em class="replaceable"><code>tablespace_name</code></em> ]
+    [ WHERE <em class="replaceable"><code>predicate</code></em> ]
+</pre></div><div class="refsect1" id="id-1.9.3.69.5"><h2>説明</h2><span class="original">
+  &lt;title&gt;Description&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;command&gt;CREATE INDEX&lt;/command&gt; constructs an index on the specified column(s)
+   of the specified relation, which can be a table or a materialized view.
+   Indexes are primarily used to enhance database performance (though
+   inappropriate use can result in slower performance).
+</span>
+<code class="command">CREATE INDEX</code>は、指定したリレーションの指定した列(複数可)に対するインデックスを作ります。
+リレーションとしてテーブルまたはマテリアライズドビューを取ることができます。
+インデックスは主にデータベースの性能を向上するために使われます
+（しかし、インデックスの不適切な使用は性能の低下につながる可能性があります）。
+  </p><p>
+<span class="original">
+   The key field(s) for the index are specified as column names,
+   or alternatively as expressions written in parentheses.
+   Multiple fields can be specified if the index method supports
+   multicolumn indexes.
+</span>
+インデックスのキーフィールドは、列名、または括弧に囲まれた式として指定されます。
+インデックスメソッドが複数列に対するインデックスをサポートする場合は、複数のフィールドを指定できます。
+  </p><p>
+<span class="original">
+   An index field can be an expression computed from the values of
+   one or more columns of the table row.  This feature can be used
+   to obtain fast access to data based on some transformation of
+   the basic data. For example, an index computed on
+   &lt;literal&gt;upper(col)&lt;/literal&gt; would allow the clause
+   &lt;literal&gt;WHERE upper(col) = 'JIM'&lt;/literal&gt; to use an index.
+</span>
+インデックスのフィールドとして、テーブル行の1つ以上の列の値から計算する式を指定できます。
+この機能は、元のデータに何らかの変換を加えた値を基とするデータへの高速なアクセスを行う手段として使用することができます。
+例えば、<code class="literal">upper(col)</code>という計算に基づくインデックスがあれば、<code class="literal">WHERE upper(col) = 'JIM'</code>という句ではインデックスを使用することができます。
+  </p><p>
+<span class="original">
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; provides the index methods
+   B-tree, hash, GiST, SP-GiST, GIN, and BRIN.  Users can also define their own
+   index methods, but that is fairly complicated.
+</span>
+<span class="application">PostgreSQL</span>はB-tree、ハッシュ、GiST、SP-GiST、GIN、BRINのインデックスメソッドを用意しています。
+ユーザが独自にインデックスメソッドを定義することもできますが、これはかなり複雑です。
+  </p><p>
+<span class="original">
+    When the &lt;literal&gt;WHERE&lt;/literal&gt; clause is present, a
+    &lt;firstterm&gt;partial index&lt;/firstterm&gt; is created.
+    A partial index is an index that contains entries for only a portion of
+    a table, usually a portion that is more useful for indexing than the
+    rest of the table. For example, if you have a table that contains both
+    billed and unbilled orders where the unbilled orders take up a small
+    fraction of the total table and yet that is an often used section, you
+    can improve performance by creating an index on just that portion.
+    Another possible application is to use &lt;literal&gt;WHERE&lt;/literal&gt; with
+    &lt;literal&gt;UNIQUE&lt;/literal&gt; to enforce uniqueness over a subset of a
+    table.  See &lt;xref linkend="indexes-partial"/&gt; for more discussion.
+</span>
+<code class="literal">WHERE</code>句が存在する場合、<em class="firstterm">部分インデックス</em>が作成されます。
+部分インデックスは、テーブルの一部、通常は、テーブルの中でよりインデックスが有用な部分のみのエントリを持つインデックスです。
+例えば、請求済みの注文と未請求の注文を情報として持つテーブルがあり、テーブル全体における未請求の注文の割合が小さく、かつ、頻繁に使用される場合、未請求の注文のみにインデックスを作成することで性能を向上できます。
+部分インデックスのその他の利用方法として、<code class="command">UNIQUE</code>付きの<code class="command">WHERE</code>を使用して、テーブルの部分集合に一意性を強制する例が考えられます。
+詳細は<a class="xref" href="indexes-partial.html" title="11.8. 部分インデックス">11.8</a>を参照してください。
+  </p><p>
+<span class="original">
+    The expression used in the &lt;literal&gt;WHERE&lt;/literal&gt; clause can refer
+    only to columns of the underlying table, but it can use all columns,
+    not just the ones being indexed.  Presently, subqueries and
+    aggregate expressions are also forbidden in &lt;literal&gt;WHERE&lt;/literal&gt;.
+    The same restrictions apply to index fields that are expressions.
+</span>
+<code class="literal">WHERE</code>句内の式では、元となるテーブルの列のみを参照できます。
+しかし、インデックスを付加する列だけではなく、全ての列を使用することができます。
+また、現在、副問い合わせと集約式については、<code class="command">WHERE</code>で使用することができません。
+同一の制限は、式で表されたインデックスのフィールドにも適用されます。
+  </p><p>
+<span class="original">
+   All functions and operators used in an index definition must be
+   &lt;quote&gt;immutable&lt;/quote&gt;, that is, their results must depend only on
+   their arguments and never on any outside influence (such as
+   the contents of another table or the current time).  This restriction
+   ensures that the behavior of the index is well-defined.  To use a
+   user-defined function in an index expression or &lt;literal&gt;WHERE&lt;/literal&gt;
+   clause, remember to mark the function immutable when you create it.
+</span>
+インデックスの定義で使用される全ての関数と演算子は、<span class="quote">「<span class="quote">不変</span>」</span>（immutable）でなければなりません。
+つまり、結果は入力引数にのみに依存し、（他のテーブルの内容や現時刻などの）外部からの影響を受けてはなりません。
+この制限によって、インデックスの動作が十分定義されていることが保証されます。
+インデックス式や<code class="literal">WHERE</code>句にユーザ定義の関数を使用する場合、関数を作成する際、IMMUTABLE（不変）オプションを付けることを忘れないでください。
+  </p></div><div class="refsect1" id="id-1.9.3.69.6"><h2>パラメータ</h2><span class="original">
+  &lt;title&gt;Parameters&lt;/title&gt;
+</span><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">UNIQUE</code></span></dt><dd><p>
+<span class="original">
+        Causes the system to check for
+        duplicate values in the table when the index is created (if data
+        already exist) and each time data is added. Attempts to
+        insert or update data which would result in duplicate entries
+        will generate an error.
+</span>
+インデックスを（既にデータがある状態で）作成する時、およびテーブルにデータを追加する時に、テーブル内の値が重複していないかを検査します。
+重複エントリを生じるデータの挿入または更新はエラーとなります。
+       </p><p>
+<span class="original">
+        Additional restrictions apply when unique indexes are applied to
+        partitioned tables; see &lt;xref linkend="sql-createtable" /&gt;.
+</span>
+一意性インデックスがパーティションテーブルに適用されるときには、追加的な制限が適用されます。<a class="xref" href="sql-createtable.html" title="CREATE TABLE"><span class="refentrytitle">CREATE TABLE</span></a>を参照してください。
+       </p></dd><dt><span class="term"><code class="literal">CONCURRENTLY</code></span></dt><dd><p>
+<span class="original">
+        When this option is used, &lt;productname&gt;PostgreSQL&lt;/productname&gt; will build the
+        index without taking any locks that prevent concurrent inserts,
+        updates, or deletes on the table; whereas a standard index build
+        locks out writes (but not reads) on the table until it's done.
+        There are several caveats to be aware of when using this option
+        &amp;mdash; see &lt;xref linkend="sql-createindex-concurrently"
+        endterm="sql-createindex-concurrently-title"/&gt;.
+</span>
+このオプションを使用すると、<span class="productname">PostgreSQL</span>は、対象テーブルに対する同時挿入、更新、削除を防止するようなロックを獲得せずにインデックスを作成します。
+通常のインデックス作成処理では、完了するまで対象テーブルへの書き込みはできません（読み取りは可能です）。
+このオプションを使用する際に注意しなければならない点が複数あります。
+<a class="xref" href="sql-createindex.html#SQL-CREATEINDEX-CONCURRENTLY" title="インデックスの同時作成">インデックスの同時作成</a>を参照してください。
+       </p></dd><dt><span class="term"><code class="literal">IF NOT EXISTS</code></span></dt><dd><p>
+<span class="original">
+        Do not throw an error if a relation with the same name already exists.
+        A notice is issued in this case. Note that there is no guarantee that
+        the existing index is anything like the one that would have been created.
+        Index name is required when &lt;literal&gt;IF NOT EXISTS&lt;/literal&gt; is specified.
+</span>
+同じ名前のリレーションが既に存在している場合にエラーとしません。
+この場合、注意が発行されます。
+既存のインデックスが、作成されようとしていたものと類似のものである保証は全くないことに注意してください。
+<code class="literal">IF NOT EXISTS</code>を指定する場合はインデックス名が必須です。
+       </p></dd><dt><span class="term"><code class="literal">INCLUDE</code></span></dt><dd><p>
+<span class="original">
+        The optional &lt;literal&gt;INCLUDE&lt;/literal&gt; clause specifies a
+        list of columns which will be included in the index
+        as &lt;firstterm&gt;non-key&lt;/firstterm&gt; columns.  A non-key column cannot
+        be used in an index scan search qualification, and it is disregarded
+        for purposes of any uniqueness or exclusion constraint enforced by
+        the index.  However, an index-only scan can return the contents of
+        non-key columns without having to visit the index's table, since
+        they are available directly from the index entry.  Thus, addition of
+        non-key columns allows index-only scans to be used for queries that
+        otherwise could not use them.
+</span>
+オプションの<code class="literal">INCLUDE</code>句は<em class="firstterm">非キー</em>列としてインデックスに含める列のリストを指定します。
+非キー列をインデックススキャンの検索条件に使うことはできません。また、インデックスで何であれ一意性制約や排他制約を強制する目的に対しても無視されます。
+しかしながら、インデックスオンリースキャンは、インデックスエントリから値を直接得ることができるので、インデックスのテーブルを見に行く必要なく、非キー列の内容を返すことができます。
+このように非キー列の追加は、そうでないとできないインデックスオンリースキャンを利用可能にします。
+       </p><p>
+<span class="original">
+        It's wise to be conservative about adding non-key columns to an
+        index, especially wide columns.  If an index tuple exceeds the
+        maximum size allowed for the index type, data insertion will fail.
+        In any case, non-key columns duplicate data from the index's table
+        and bloat the size of the index, thus potentially slowing searches.
+</span>
+インデックスに非キー列を加えることには、特に幅広の列については、保守的であるのが賢明です。
+インデックス列がインデックス型で許される最大サイズを超えた場合、データ挿入は失敗してしまいます。
+いかなる場合でも、非キー列はインデックスのテーブルからデータを複製して、インデックスのサイズを膨張させます。よって、潜在的に検索を遅くします。
+       </p><p>
+<span class="original">
+        Columns listed in the &lt;literal&gt;INCLUDE&lt;/literal&gt; clause don't need
+        appropriate operator classes; the clause can include
+        columns whose data types don't have operator classes defined for
+        a given access method.
+</span>
+<code class="literal">INCLUDE</code>句にある列リストは適合した演算子クラスを必要としません。ここには与えられたアクセスメソッドに対して定義された演算子クラスを持たないデータ型の列を含めることができます。
+       </p><p>
+<span class="original">
+        Expressions are not supported as included columns since they cannot be
+        used in index-only scans.
+</span>
+インデックスオンリースキャンで使うことができないため、INCLUDEする列に式は対応していません。
+       </p><p>
+<span class="original">
+        Currently, only the B-tree index access method supports this feature.
+        In B-tree indexes, the values of columns listed in the
+        &lt;literal&gt;INCLUDE&lt;/literal&gt; clause are included in leaf tuples which
+        correspond to heap tuples, but are not included in upper-level
+        index entries used for tree navigation.
+</span>
+今のところ本機能はB-treeインデックスアクセスメソッドにのみ対応しています。
+B-treeインデックスでは<code class="literal">INCLUDE</code>句にリストされた列の値は、ヒープタプルに対応するリーフタプルに含まれますが、ツリーを辿るのに使われる上位レベルのインデックスエントリには含まれません。
+       </p></dd><dt><span class="term"><em class="replaceable"><code>name</code></em></span></dt><dd><p>
+<span class="original">
+        The name of the index to be created.  No schema name can be included
+        here; the index is always created in the same schema as its parent
+        table.  If the name is omitted, &lt;productname&gt;PostgreSQL&lt;/productname&gt; chooses a
+        suitable name based on the parent table's name and the indexed column
+        name(s).
+</span>
+作成するインデックスの名前です。
+この名前には、スキーマ名を含めることはできません。
+インデックスは、常にその親テーブルと同じスキーマに作成されます。
+この名前を省略すると、<span class="productname">PostgreSQL</span>はその親テーブルの名前とインデックス付けされる列名に基づいた適切な名前を選びます。
+       </p></dd><dt><span class="term"><code class="literal">ONLY</code></span></dt><dd><p>
+<span class="original">
+        Indicates not to recurse creating indexes on partitions, if the
+        table is partitioned.  The default is to recurse.
+</span>
+テーブルがパーティションテーブルであっても、パーティションにインデックス作成を再帰的に実行しないことを示します。
+デフォルトでは再帰実行します。
+       </p></dd><dt><span class="term"><em class="replaceable"><code>table_name</code></em></span></dt><dd><p>
+<span class="original">
+        The name (possibly schema-qualified) of the table to be indexed.
+</span>
+インデックスを作成するテーブルの名前です（スキーマ修飾名の場合もあります）。
+       </p></dd><dt><span class="term"><em class="replaceable"><code>method</code></em></span></dt><dd><p>
+<span class="original">
+        The name of the index method to be used.  Choices are
+        &lt;literal&gt;btree&lt;/literal&gt;, &lt;literal&gt;hash&lt;/literal&gt;,
+        &lt;literal&gt;gist&lt;/literal&gt;, &lt;literal&gt;spgist&lt;/literal&gt;, &lt;literal&gt;gin&lt;/literal&gt;, and
+        &lt;literal&gt;brin&lt;/literal&gt;.
+        The default method is &lt;literal&gt;btree&lt;/literal&gt;.
+</span>
+使用するインデックスメソッドの名前です。
+<code class="literal">btree</code>、<code class="literal">hash</code>、<code class="literal">gist</code>、<code class="literal">spgist</code>、<code class="literal">gin</code>、<code class="literal">brin</code>から選択します。
+デフォルトのメソッドは<code class="literal">btree</code>です。
+       </p></dd><dt><span class="term"><em class="replaceable"><code>column_name</code></em></span></dt><dd><p>
+<span class="original">
+        The name of a column of the table.
+</span>
+テーブルの列の名前です。
+       </p></dd><dt><span class="term"><em class="replaceable"><code>expression</code></em></span></dt><dd><p>
+<span class="original">
+        An expression based on one or more columns of the table.  The
+        expression usually must be written with surrounding parentheses,
+        as shown in the syntax.  However, the parentheses can be omitted
+        if the expression has the form of a function call.
+</span>
+テーブル上の1つ以上の列を使用した式です。
+通常この式は、構文で示した通り括弧で囲む必要があります。
+しかし、式が関数呼び出し形式になっている場合は括弧を省略することができます。
+       </p></dd><dt><span class="term"><em class="replaceable"><code>collation</code></em></span></dt><dd><p>
+<span class="original">
+        The name of the collation to use for the index.  By default,
+        the index uses the collation declared for the column to be
+        indexed or the result collation of the expression to be
+        indexed.  Indexes with non-default collations can be useful for
+        queries that involve expressions using non-default collations.
+</span>
+インデックスで使用する照合順序の名前です。
+デフォルトではインデックスはインデックス付け対象の列で宣言された照合順序またはインデックス付け対象の式の結果の照合順序を使用します。
+デフォルト以外の照合順序を使用する式を含む問い合わせで、デフォルト以外の照合順序を持つインデックスが有用になるかもしれません。
+       </p></dd><dt><span class="term"><em class="replaceable"><code>opclass</code></em></span></dt><dd><p>
+<span class="original">
+        The name of an operator class. See below for details.
+</span>
+演算子クラスの名前です。詳細は下記を参照してください。
+       </p></dd><dt><span class="term"><code class="literal">ASC</code></span></dt><dd><p>
+<span class="original">
+        Specifies ascending sort order (which is the default).
+</span>
+正方向のソート順を指定します(これがデフォルトです)。
+       </p></dd><dt><span class="term"><code class="literal">DESC</code></span></dt><dd><p>
+<span class="original">
+        Specifies descending sort order.
+</span>
+逆方向のソート順を指定します。
+       </p></dd><dt><span class="term"><code class="literal">NULLS FIRST</code></span></dt><dd><p>
+<span class="original">
+        Specifies that nulls sort before non-nulls.  This is the default
+        when &lt;literal&gt;DESC&lt;/literal&gt; is specified.
+</span>
+NULLを非NULLより前にソートすることを指定します。
+これは<code class="literal">DESC</code>が指定された場合のデフォルトです。
+       </p></dd><dt><span class="term"><code class="literal">NULLS LAST</code></span></dt><dd><p>
+<span class="original">
+        Specifies that nulls sort after non-nulls.  This is the default
+        when &lt;literal&gt;DESC&lt;/literal&gt; is not specified.
+</span>
+NULLを非NULLより後にソートすることを指定します。
+これは<code class="literal">DESC</code>が指定されない場合のデフォルトです。
+       </p></dd><dt><span class="term"><em class="replaceable"><code>storage_parameter</code></em></span></dt><dd><p>
+<span class="original">
+        The name of an index-method-specific storage parameter.  See
+        &lt;xref linkend="sql-createindex-storage-parameters" endterm="sql-createindex-storage-parameters-title"/&gt;
+        for details.
+</span>
+インデックスメソッド固有の格納パラメータの名前です。
+<a class="xref" href="sql-createindex.html#SQL-CREATEINDEX-STORAGE-PARAMETERS" title="インデックス格納パラメータ">インデックス格納パラメータ</a>を参照してください。
+       </p></dd><dt><span class="term"><em class="replaceable"><code>tablespace_name</code></em></span></dt><dd><p>
+<span class="original">
+        The tablespace in which to create the index.  If not specified,
+        &lt;xref linkend="guc-default-tablespace"/&gt; is consulted, or
+        &lt;xref linkend="guc-temp-tablespaces"/&gt; for indexes on temporary
+        tables.
+</span>
+インデックスを生成するテーブル空間です。
+指定されなかった場合、<a class="xref" href="runtime-config-client.html#GUC-DEFAULT-TABLESPACE">default_tablespace</a>、もし一時テーブル上のインデックスであれば、<a class="xref" href="runtime-config-client.html#GUC-TEMP-TABLESPACES">temp_tablespaces</a>が考慮されます。
+       </p></dd><dt><span class="term"><em class="replaceable"><code>predicate</code></em></span></dt><dd><p>
+<span class="original">
+        The constraint expression for a partial index.
+</span>
+部分インデックス用の制約式です。
+       </p></dd></dl></div><div class="refsect2" id="SQL-CREATEINDEX-STORAGE-PARAMETERS"><h3>インデックス格納パラメータ</h3><span class="original">
+   &lt;title id="sql-createindex-storage-parameters-title"&gt;Index Storage Parameters&lt;/title&gt;
+</span><p>
+<span class="original">
+    The optional &lt;literal&gt;WITH&lt;/literal&gt; clause specifies &lt;firstterm&gt;storage
+    parameters&lt;/firstterm&gt; for the index.  Each index method has its own set of allowed
+    storage parameters.  The B-tree, hash, GiST and SP-GiST index methods all
+    accept this parameter:
+</span>
+<code class="literal">WITH</code>句を使うと、インデックスの<em class="firstterm">格納パラメータ</em>を指定できます。
+インデックスメソッドはそれぞれ固有の設定可能な格納パラメータを持ちます。
+B-tree、ハッシュ、GiSTおよびSP-GiSTといったインデックスはすべて次のパラメータを受け付けます。
+   </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">fillfactor</code></span></dt><dd><p>
+<span class="original">
+      The fillfactor for an index is a percentage that determines how full
+      the index method will try to pack index pages.  For B-trees, leaf pages
+      are filled to this percentage during initial index build, and also
+      when extending the index at the right (adding new largest key values).
+      If pages
+      subsequently become completely full, they will be split, leading to
+      gradual degradation in the index's efficiency.  B-trees use a default
+      fillfactor of 90, but any integer value from 10 to 100 can be selected.
+      If the table is static then fillfactor 100 is best to minimize the
+      index's physical size, but for heavily updated tables a smaller
+      fillfactor is better to minimize the need for page splits.  The
+      other index methods use fillfactor in different but roughly analogous
+      ways; the default fillfactor varies between methods.
+</span>
+インデックス用のフィルファクタは割合（パーセント）で、インデックスメソッドがインデックスページをまとめ上げる時にどの程度ページを使用するかを決定するものです。
+B-treeでは、リーフページは初期インデックス構築時と右側（新しい最大キー値を追加する方向）にインデックスを拡張する時にこの割合分までページを使用します。
+その後ページすべてが完全に使用されると分割され、インデックスの効果が徐々に劣化します。
+B-treeのデフォルトのフィルファクタは90ですが、10から100までの任意の整数値を設定することができます。
+テーブルが静的な場合、100が最善でインデックスの物理サイズを最小化できます。
+更新が非常に多い場合は、ページ分割の頻度を少なくするために、より小さなフィルファクタを設定する方が良いです。
+この他のインデックスメソッドでは、フィルファクタを異なる意味で使用しますが、おおよそは同じです。
+メソッドによってフィルファクタのデフォルト値は異なります。
+     </p></dd></dl></div><p>
+<span class="original">
+    B-tree indexes additionally accept this parameter:
+</span>
+B-treeインデックスは以下パラメータを追加的に受け付けます。
+   </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">vacuum_cleanup_index_scale_factor</code></span></dt><dd><p>
+<span class="original">
+      Per-index value for &lt;xref linkend="guc-vacuum-cleanup-index-scale-factor"/&gt;.
+</span>
+<a class="xref" href="runtime-config-client.html#GUC-VACUUM-CLEANUP-INDEX-SCALE-FACTOR">vacuum_cleanup_index_scale_factor</a>のインデックス毎の値です。
+    </p></dd></dl></div><p>
+<span class="original">
+    GiST indexes additionally accept this parameter:
+</span>
+GiSTインデックスではさらに以下のパラメータを受け付けます。
+   </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">buffering</code></span></dt><dd><p>
+<span class="original">
+     Determines whether the buffering build technique described in
+     &lt;xref linkend="gist-buffering-build"/&gt; is used to build the index. With
+     &lt;literal&gt;OFF&lt;/literal&gt; it is disabled, with &lt;literal&gt;ON&lt;/literal&gt; it is enabled, and
+     with &lt;literal&gt;AUTO&lt;/literal&gt; it is initially disabled, but turned on
+     on-the-fly once the index size reaches &lt;xref linkend="guc-effective-cache-size"/&gt;. The default is &lt;literal&gt;AUTO&lt;/literal&gt;.
+</span>
+<a class="xref" href="gist-implementation.html#GIST-BUFFERING-BUILD" title="64.4.1. バッファ付きGiST構築">64.4.1</a>で説明するバッファリング構築技術をインデックスを構築する時に使用するかどうかを決定します。
+<code class="literal">OFF</code>で無効に、<code class="literal">ON</code>で有効になります。
+また<code class="literal">AUTO</code>と指定すると、最初は無効ですが、
+インデックスサイズが<a class="xref" href="runtime-config-query.html#GUC-EFFECTIVE-CACHE-SIZE">effective_cache_size</a>に達した後はその場で有効になります。
+デフォルトは<code class="literal">AUTO</code>です。
+    </p></dd></dl></div><p>
+<span class="original">
+    GIN indexes accept different parameters:
+</span>
+GINインデックスでは以下の異なるパラメータを受け付けます。
+   </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">fastupdate</code></span></dt><dd><p>
+<span class="original">
+     This setting controls usage of the fast update technique described in
+     &lt;xref linkend="gin-fast-update"/&gt;.  It is a Boolean parameter:
+     &lt;literal&gt;ON&lt;/literal&gt; enables fast update, &lt;literal&gt;OFF&lt;/literal&gt; disables it.
+     (Alternative spellings of &lt;literal&gt;ON&lt;/literal&gt; and &lt;literal&gt;OFF&lt;/literal&gt; are
+     allowed as described in &lt;xref linkend="config-setting"/&gt;.)  The
+     default is &lt;literal&gt;ON&lt;/literal&gt;.
+</span>
+この設定は<a class="xref" href="gin-implementation.html#GIN-FAST-UPDATE" title="66.4.1. GIN高速更新手法">66.4.1</a>で説明する高速更新技法を使用するかどうかを制御します。
+これは論理値パラメータであり、<code class="literal">ON</code>は高速更新を有効に、<code class="literal">OFF</code>は無効にします。
+（<a class="xref" href="config-setting.html" title="19.1. パラメータの設定">19.1</a>の説明のように、<code class="literal">ON</code>や<code class="literal">OFF</code>と異なる記載も可能です。）
+デフォルトは<code class="literal">ON</code>です。
+    </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+      Turning &lt;literal&gt;fastupdate&lt;/literal&gt; off via &lt;command&gt;ALTER INDEX&lt;/command&gt; prevents
+      future insertions from going into the list of pending index entries,
+      but does not in itself flush previous entries.  You might want to
+      &lt;command&gt;VACUUM&lt;/command&gt; the table or call &lt;function&gt;gin_clean_pending_list&lt;/function&gt;
+      function afterward to ensure the pending list is emptied.
+</span>
+<code class="command">ALTER INDEX</code>を使用して<code class="literal">fastupdate</code>を無効にすることにより、以後の挿入は待機中のインデックス項目リストに入らないようになります。
+しかし、このコマンド自体はこれまでの項目を吐き出しません。
+確実に待機中のリストを空にするためには、続いてテーブルを<code class="command">VACUUM</code>するか、<code class="function">gin_clean_pending_list</code>関数を呼び出すのが良いでしょう。
+     </p></div></dd></dl></div><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">gin_pending_list_limit</code></span></dt><dd><p>
+<span class="original">
+     Custom &lt;xref linkend="guc-gin-pending-list-limit"/&gt; parameter.
+     This value is specified in kilobytes.
+</span>
+<a class="xref" href="runtime-config-client.html#GUC-GIN-PENDING-LIST-LIMIT">gin_pending_list_limit</a>のカスタムパラメータです。
+値はキロバイト単位で指定します。
+    </p></dd></dl></div><p>
+<span class="original">
+    &lt;acronym&gt;BRIN&lt;/acronym&gt; indexes accept different parameters:
+</span>
+<acronym class="acronym">BRIN</acronym>インデックスは別のパラメータを受け入れます。
+   </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">pages_per_range</code></span></dt><dd><p>
+<span class="original">
+     Defines the number of table blocks that make up one block range for
+     each entry of a &lt;acronym&gt;BRIN&lt;/acronym&gt; index (see &lt;xref linkend="brin-intro"/&gt;
+     for more details).  The default is &lt;literal&gt;128&lt;/literal&gt;.
+</span>
+<acronym class="acronym">BRIN</acronym>インデックスの各エントリについて1つのブロックレンジを構成するテーブルブロックの数を定義します（詳しくは<a class="xref" href="brin-intro.html" title="67.1. はじめに">67.1</a>参照）。
+デフォルトは<code class="literal">128</code>です。
+    </p></dd><dt><span class="term"><code class="literal">autosummarize</code></span></dt><dd><p>
+<span class="original">
+     Defines whether a summarization run is invoked for the previous page
+     range whenever an insertion is detected on the next one.
+</span>
+次のページへの挿入が検知された時に、いつでも直前のページに対してサマリー処理を起動するかどうかを定義します。
+    </p></dd></dl></div></div><div class="refsect2" id="SQL-CREATEINDEX-CONCURRENTLY"><h3>インデックスの同時作成</h3><span class="original">
+   &lt;title id="sql-createindex-concurrently-title"&gt;Building Indexes Concurrently&lt;/title&gt;
+</span><a id="id-1.9.3.69.6.4.2" class="indexterm"></a><p>
+<span class="original">
+    Creating an index can interfere with regular operation of a database.
+    Normally &lt;productname&gt;PostgreSQL&lt;/productname&gt; locks the table to be indexed against
+    writes and performs the entire index build with a single scan of the
+    table. Other transactions can still read the table, but if they try to
+    insert, update, or delete rows in the table they will block until the
+    index build is finished. This could have a severe effect if the system is
+    a live production database.  Very large tables can take many hours to be
+    indexed, and even for smaller tables, an index build can lock out writers
+    for periods that are unacceptably long for a production system.
+</span>
+インデックスの作成が、通常のデータベース操作に影響を与えることがあります。
+通常<span class="productname">PostgreSQL</span>は、対象テーブルに対する書き込みをロックしてから、対象テーブル全体のインデックス作成を一度のスキャンで行います。
+他のトランザクションはテーブルを読み取ることはできますが、対象テーブル内の行を挿入、更新、削除しようとすると、インデックス作成が完了するまでブロックされます。
+実行中の運用状態のデータベースシステムの場合、これは重大な影響を与える可能性があります。
+非常に大規模なテーブルに対するインデックス作成は何時間もかかることがあり得ます。
+また小規模なテーブルであっても、インデックス作成により、運用状態のシステムとしては受け入れられないほど長い時間、書き込みロックがかかる可能性があります。
+   </p><p>
+<span class="original">
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; supports building indexes without locking
+    out writes.  This method is invoked by specifying the
+    &lt;literal&gt;CONCURRENTLY&lt;/literal&gt; option of &lt;command&gt;CREATE INDEX&lt;/command&gt;.
+    When this option is used,
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; must perform two scans of the table, and in
+    addition it must wait for all existing transactions that could potentially
+    modify or use the index to terminate.  Thus
+    this method requires more total work than a standard index build and takes
+    significantly longer to complete.  However, since it allows normal
+    operations to continue while the index is built, this method is useful for
+    adding new indexes in a production environment.  Of course, the extra CPU
+    and I/O load imposed by the index creation might slow other operations.
+</span>
+<span class="productname">PostgreSQL</span>は書き込みをロックしないインデックス作成もサポートしています。
+<code class="command">CREATE INDEX</code>に<code class="literal">CONCURRENTLY</code>オプションをつけることでこの方式が行われます。
+このオプションを使うと、<span class="productname">PostgreSQL</span>はテーブルを2回スキャンしなければなりません。
+さらに、潜在的にそのインデックスを更新または使用する可能性がある、実行中のすべてのトランザクションが終わるまで待機しなければなりません。
+したがって、この方式は通常の方式よりも総作業時間がかかり、また、完了するまでの時間が非常に長くなります。
+しかし、インデックス作成中に通常の操作を行い続けることができますので、この方式は運用環境での新規インデックス作成に有用です。
+もちろん、インデックス作成によりCPUや入出力に余分に負荷がかかりますので、他の操作が低速になる可能性があります。
+   </p><p>
+<span class="original">
+    In a concurrent index build, the index is actually entered into
+    the system catalogs in one transaction, then two table scans occur in
+    two more transactions.  Before each table scan, the index build must
+    wait for existing transactions that have modified the table to terminate.
+    After the second scan, the index build must wait for any transactions
+    that have a snapshot (see &lt;xref linkend="mvcc"/&gt;) predating the second
+    scan to terminate.  Then finally the index can be marked ready for use,
+    and the &lt;command&gt;CREATE INDEX&lt;/command&gt; command terminates.
+    Even then, however, the index may not be immediately usable for queries:
+    in the worst case, it cannot be used as long as transactions exist that
+    predate the start of the index build.
+</span>
+同時実行インデックス構築では実際には、1つのトランザクションでシステムカタログに登録され、さらに2つのトランザクションで２つのテーブルスキャンが起こります。
+各テーブルスキャンの前に、インデックス構築はテーブルを修正した実行中のトランザクションが終了するのを待たなければなりません。
+2回目のスキャンの後、インデックス構築は2回目のスキャンより前のスナップショット（<a class="xref" href="mvcc.html" title="第13章 同時実行制御">第13章</a>参照）を持つすべてのトランザクションが終了するのを待たなければなりません。
+その後でようやく、インデックスは利用可能であると印が付けられ、<code class="command">CREATE INDEX</code>コマンドが終了します。
+しかし、それでもインデックスは問い合わせに対して即座に利用可能であるとは限りません。
+最悪の場合、インデックス構築開始前のトランザクションが存在する間は利用できません。
+   </p><p>
+<span class="original">
+    If a problem arises while scanning the table, such as a deadlock or a
+    uniqueness violation in a unique index, the &lt;command&gt;CREATE INDEX&lt;/command&gt;
+    command will fail but leave behind an &lt;quote&gt;invalid&lt;/quote&gt; index. This index
+    will be ignored for querying purposes because it might be incomplete;
+    however it will still consume update overhead. The &lt;application&gt;psql&lt;/application&gt;
+    &lt;command&gt;\d&lt;/command&gt; command will report such an index as &lt;literal&gt;INVALID&lt;/literal&gt;:
+</span>
+たとえばデッドロックや一意性インデックスにおける一意性違反など、テーブルスキャン中に問題が発生すると、<code class="command">CREATE INDEX</code>は失敗しますが、<span class="quote">「<span class="quote">無効な</span>」</span>インデックスが残ってしまいます。
+こうしたインデックスは完全ではない可能性がありますので、問い合わせの際には無視されます。
+しかし、更新時にオーバーヘッドがかかります。
+<span class="application">psql</span>の<code class="command">\d</code>コマンドでは、こうしたインデックスを<code class="literal">INVALID</code>として報告します。
+
+</p><pre class="programlisting">
+postgres=# \d tab
+       Table "public.tab"
+ Column |  Type   | Collation | Nullable | Default 
+--------+---------+-----------+----------+---------
+ col    | integer |           |          | 
+Indexes:
+    "idx" btree (col) INVALID
+</pre><p>
+
+<span class="original">
+    The recommended recovery
+    method in such cases is to drop the index and try again to perform
+    &lt;command&gt;CREATE INDEX CONCURRENTLY&lt;/command&gt;.  (Another possibility is to rebuild
+    the index with &lt;command&gt;REINDEX&lt;/command&gt;.  However, since &lt;command&gt;REINDEX&lt;/command&gt;
+    does not support concurrent builds, this option is unlikely to seem
+    attractive.)
+</span>
+こうした場合の推奨復旧方法は、インデックスを削除し、再度<code class="command">CREATE INDEX CONCURRENTLY</code>を実行することです。
+（他にも<code class="command">REINDEX</code>を使用したインデックスの再作成という方法もあります。
+しかし、<code class="command">REINDEX</code>は同時作成をサポートしていませんので、この方法は魅力がありません。）
+   </p><p>
+<span class="original">
+    Another caveat when building a unique index concurrently is that the
+    uniqueness constraint is already being enforced against other transactions
+    when the second table scan begins.  This means that constraint violations
+    could be reported in other queries prior to the index becoming available
+    for use, or even in cases where the index build eventually fails.  Also,
+    if a failure does occur in the second scan, the &lt;quote&gt;invalid&lt;/quote&gt; index
+    continues to enforce its uniqueness constraint afterwards.
+</span>
+この他に一意性インデックスを同時作成する場合の注意事項があります。
+2回目のテーブルスキャンが始まる時点で、他のトランザクションに対する一意性制約が既に有効になっているという点です。
+これは、インデックスが使用できるようになる前やインデックス作成が最終的に失敗したとしても、制約違反が他のトランザクションで報告されてしまうことを意味します。
+また、2回目のスキャン中に失敗した後も、<span class="quote">「<span class="quote">無効な</span>」</span>インデックスによる一意性制約は強制され続けます。
+   </p><p>
+<span class="original">
+    Concurrent builds of expression indexes and partial indexes are supported.
+    Errors occurring in the evaluation of these expressions could cause
+    behavior similar to that described above for unique constraint violations.
+</span>
+式インデックスや部分インデックスの同時作成もサポートされています。
+式の評価中にエラーが発生した場合も、上で説明した一意性制約違反と同様な状況が発生します。
+   </p><p>
+<span class="original">
+    Regular index builds permit other regular index builds on the
+    same table to occur simultaneously, but only one concurrent index build
+    can occur on a table at a time.  In either case, schema modification of the
+    table is not allowed while the index is being built.  Another difference is
+    that a regular &lt;command&gt;CREATE INDEX&lt;/command&gt; command can be performed
+    within a transaction block, but &lt;command&gt;CREATE INDEX CONCURRENTLY&lt;/command&gt;
+    cannot.
+</span>
+同一テーブルに対する通常のインデックス作成処理は複数並行して行うことができます。
+しかし、あるテーブルに対するインデックスの同時作成は一度に1つしか行うことができません。
+また、どちらの場合でもインデックス作成中のテーブルのスキーマ変更はできません。
+この他に、通常の<code class="command">CREATE INDEX</code>コマンドはトランザクションブロック内で実行させることができますが、<code class="command">CREATE INDEX CONCURRENTLY</code>は実行させることができないという相違点があります。
+   </p></div></div><div class="refsect1" id="id-1.9.3.69.7"><h2>注釈</h2><span class="original">
+  &lt;title&gt;Notes&lt;/title&gt;
+</span><p>
+<span class="original">
+   See &lt;xref linkend="indexes"/&gt; for information about when indexes can
+   be used, when they are not used, and in which particular situations
+   they can be useful.
+</span>
+インデックスが、どのような時に使用され、どのような時に使用されないか、また、どのような場合に有用かといった情報については<a class="xref" href="indexes.html" title="第11章 インデックス">第11章</a>を参照してください。
+  </p><p>
+<span class="original">
+   Currently, only the B-tree, GiST, GIN, and BRIN index methods support
+   multicolumn indexes. Up to 32 fields can be specified by default.
+   (This limit can be altered when building
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt;.)  Only B-tree currently
+   supports unique indexes.
+</span>
+現在は、B-tree、GiST、GIN、BRINインデックスメソッドのみが、複数列に対するインデックスをサポートしています。
+指定できる列は、デフォルトでは32個までです（この制限は<span class="productname">PostgreSQL</span>のコンパイル時に変更できます）。
+現在、B-treeのみが一意性インデックスをサポートしています。
+  </p><p>
+<span class="original">
+   An &lt;firstterm&gt;operator class&lt;/firstterm&gt; can be specified for each
+   column of an index. The operator class identifies the operators to be
+   used by the index for that column. For example, a B-tree index on
+   four-byte integers would use the &lt;literal&gt;int4_ops&lt;/literal&gt; class;
+   this operator class includes comparison functions for four-byte
+   integers. In practice the default operator class for the column's data
+   type is usually sufficient. The main point of having operator classes
+   is that for some data types, there could be more than one meaningful
+   ordering. For example, we might want to sort a complex-number data
+   type either by absolute value or by real part. We could do this by
+   defining two operator classes for the data type and then selecting
+   the proper class when creating an index.  More information about
+   operator classes is in &lt;xref linkend="indexes-opclass"/&gt; and in &lt;xref
+   linkend="xindex"/&gt;.
+</span>
+<em class="firstterm">演算子クラス</em>は、インデックスのそれぞれの列に指定することができます。
+演算子クラスは、その列のインデックスが使う演算子を識別します。
+例えば、4バイト整数に対するB-treeインデックスには、<code class="literal">int4_ops</code>クラスを使います。
+この演算子クラスには、4バイト整数の比較関数が含まれています。
+実際の使用では、通常、列のデータ型のデフォルト演算子クラスで十分です。
+演算子クラスを保持する主な理由は、データ型の中には有意な順序を2つ以上持つものがあるかもしれないからです。
+例えば、複素数のソートで絶対値または実数部のどちらかを使いたい場合がありえます。
+これを実現するには、データ型として2つの演算子クラスを定義し、インデックスを作る時に適切なクラスを選択します。
+演算子クラスについての詳細は、<a class="xref" href="indexes-opclass.html" title="11.9. 演算子クラスと演算子族">11.9</a>と<a class="xref" href="xindex.html" title="38.15. インデックス拡張機能へのインタフェース">38.15</a>を参照してください。
+  </p><p>
+<span class="original">
+   When &lt;literal&gt;CREATE INDEX&lt;/literal&gt; is invoked on a partitioned
+   table, the default behavior is to recurse to all partitions to ensure
+   they all have matching indexes.
+   Each partition is first checked to determine whether an equivalent
+   index already exists, and if so, that index will become attached as a
+   partition index to the index being created, which will become its
+   parent index.
+   If no matching index exists, a new index will be created and
+   automatically attached; the name of the new index in each partition
+   will be determined as if no index name had been specified in the
+   command.
+   If the &lt;literal&gt;ONLY&lt;/literal&gt; option is specified, no recursion
+   is done, and the index is marked invalid.
+   (&lt;command&gt;ALTER INDEX ... ATTACH PARTITION&lt;/command&gt; marks the index
+   valid, once all partitions acquire matching indexes.)  Note, however,
+   that any partition that is created in the future using
+   &lt;command&gt;CREATE TABLE ... PARTITION OF&lt;/command&gt; will automatically
+   have a matching index, regardless of whether &lt;literal&gt;ONLY&lt;/literal&gt; is
+   specified.
+</span>
+<code class="literal">CREATE INDEX</code>がパーティションテーブルに実行されたときのデフォルトの振る舞いは、全パーティションが一致するインデックスを持つようにする全パーティションへの再帰的な実行です。
+各パーティションは最初に同等のインデックスが既に存在するかの判断のために検査され、存在するなら作成するインデックスに対するパーティションインデックスとしてアタッチされます。新たに作成するインデックスが既存インデックスの親インデックスとなります。
+一致するインデックスが存在しない場合、新たなインデックスが作られて、自動的にアタッチされます。各パーティションの新たなインデックス名は、コマンドでインデックスが指定されなかった場合と同様に決定されます。
+<code class="literal">ONLY</code>オプションが指定された場合、再帰処理は行われず、そのインデックスは無効と印付けされます。
+（<code class="command">ALTER INDEX ... ATTACH PARTITION</code>は、ひとたび全パーティションが一致するインデックスを得たなら、インデックスを有効に印付けします）
+しかしながら、<code class="literal">ONLY</code>が指定されたとしても、将来に<code class="command">CREATE TABLE ... PARTITION OF</code>を使って作成されるあらゆるパーティションは自動的に一致するインデックスを持つことに注意してください。
+  </p><p>
+<span class="original">
+   For index methods that support ordered scans (currently, only B-tree),
+   the optional clauses &lt;literal&gt;ASC&lt;/literal&gt;, &lt;literal&gt;DESC&lt;/literal&gt;, &lt;literal&gt;NULLS
+   FIRST&lt;/literal&gt;, and/or &lt;literal&gt;NULLS LAST&lt;/literal&gt; can be specified to modify
+   the sort ordering of the index.  Since an ordered index can be
+   scanned either forward or backward, it is not normally useful to create a
+   single-column &lt;literal&gt;DESC&lt;/literal&gt; index &amp;mdash; that sort ordering is already
+   available with a regular index.  The value of these options is that
+   multicolumn indexes can be created that match the sort ordering requested
+   by a mixed-ordering query, such as &lt;literal&gt;SELECT ... ORDER BY x ASC, y
+   DESC&lt;/literal&gt;.  The &lt;literal&gt;NULLS&lt;/literal&gt; options are useful if you need to support
+   &lt;quote&gt;nulls sort low&lt;/quote&gt; behavior, rather than the default &lt;quote&gt;nulls
+   sort high&lt;/quote&gt;, in queries that depend on indexes to avoid sorting steps.
+</span>
+順序付きスキャンをサポートするインデックスメソッド（現時点ではB-Treeのみ）では、<code class="literal">ASC</code>、<code class="literal">DESC</code>、<code class="literal">NULLS FIRST</code>、<code class="literal">NULLS LAST</code>句(省略可能)をオプションで指定し、インデックスのソート順を変更することができます。
+順序付きインデックスは正方向にも逆方向にもスキャンすることができますので、単一列に対する<code class="literal">DESC</code>インデックスは通常は有用ではありません。
+このソート順序はすでに通常のインデックスを使用して実現できます。
+これらのオプションの価値は、<code class="literal">SELECT ... ORDER BY x ASC, y DESC</code>などの順序指定が混在する問い合わせによって要求されるソート順に一致する、複数列に対するインデックスを作成できる点です。
+<code class="literal">NULLS</code>オプションは、インデックスに基づいた問い合わせにおいてソート処理を省略するために<span class="quote">「<span class="quote">NULLのソート順を低くする</span>」</span>動作をサポートする必要がある場合に有用です。
+デフォルトの動作は<span class="quote">「<span class="quote">NULLのソート順を高くする</span>」</span>です。
+  </p><p>
+<span class="original">
+   For most index methods, the speed of creating an index is
+   dependent on the setting of &lt;xref linkend="guc-maintenance-work-mem"/&gt;.
+   Larger values will reduce the time needed for index creation, so long
+   as you don't make it larger than the amount of memory really available,
+   which would drive the machine into swapping.
+</span>
+ほとんどのインデックスメソッドにおいて、インデックス作成速度は<a class="xref" href="runtime-config-resource.html#GUC-MAINTENANCE-WORK-MEM">maintenance_work_mem</a>の設定に依存します。
+より大きな値を設定すると、インデックス作成に必要となる時間が短縮されます。
+ただし、実際に使用できるメモリ量を超えるほど大きくすると、マシンがスワップ状態になり、遅くなります。
+  </p><p>
+<span class="original">
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; can build indexes while
+   leveraging multiple CPUs in order to process the table rows faster.
+   This feature is known as &lt;firstterm&gt;parallel index
+   build&lt;/firstterm&gt;.  For index methods that support building indexes
+   in parallel (currently, only B-tree),
+   &lt;varname&gt;maintenance_work_mem&lt;/varname&gt; specifies the maximum
+   amount of memory that can be used by each index build operation as
+   a whole, regardless of how many worker processes were started.
+   Generally, a cost model automatically determines how many worker
+   processes should be requested, if any.
+</span>
+<span class="productname">PostgreSQL</span>はテーブルの行をより高速に処理するために複数CPUを効かせてインデックスを作成できます。
+この機能は<em class="firstterm">パラレルインデックス作成</em>と呼ばれています。
+パラレルでのインデックス作成をサポートしているインデックスメソッド（今のところB-Treeのみ）に対して、<code class="varname">maintenance_work_mem</code>では、いくつのワーカプロセスが実行されているかに拘らず、各インデックス作成操作で使うことができる全体のメモリの最大量を指定します。
+一般にコストモデルは、もしあるなら、どれだけの数のワーカプロセスを要求すべきかを自動的に決定します。
+  </p><p>
+<span class="original">
+   Parallel index builds may benefit from increasing
+   &lt;varname&gt;maintenance_work_mem&lt;/varname&gt; where an equivalent serial
+   index build will see little or no benefit.  Note that
+   &lt;varname&gt;maintenance_work_mem&lt;/varname&gt; may influence the number of
+   worker processes requested, since parallel workers must have at
+   least a &lt;literal&gt;32MB&lt;/literal&gt; share of the total
+   &lt;varname&gt;maintenance_work_mem&lt;/varname&gt; budget.  There must also be
+   a remaining &lt;literal&gt;32MB&lt;/literal&gt; share for the leader process.
+   Increasing &lt;xref linkend="guc-max-parallel-workers-maintenance"/&gt;
+   may allow more workers to be used, which will reduce the time
+   needed for index creation, so long as the index build is not
+   already I/O bound.  Of course, there should also be sufficient
+   CPU capacity that would otherwise lie idle.
+</span>
+パラレルインデックス作成では<code class="varname">maintenance_work_mem</code>を増やすことで、同様の逐次インデックス作成ではほとんど恩恵がみられない場合でも恩恵があるかもしれません。
+パラレルワーカは<code class="varname">maintenance_work_mem</code>全体の内、少なくとも<code class="literal">32MB</code>の割り当て分を持たなければならないため、<code class="varname">maintenance_work_mem</code>は要求されるワーカプロセス数に影響を及ぼすかもしれないことに注意してください。
+また、リーダープロセスに対しても<code class="literal">32MB</code>の割り当てを残さなければなりません。
+<a class="xref" href="runtime-config-resource.html#GUC-MAX-PARALLEL-WORKERS-MAINTENANCE">max_parallel_maintenance_workers</a>を増やすことで、より多くのワーカが使用できるようになるかもしれません。これは、インデックス作成が既にI/Oバウンドであるのでない限り、インデックス作成の所要時間を減らすでしょう。
+もちろん、休止している十分なCPU容量もある前提です。
+  </p><p>
+<span class="original">
+   Setting a value for &lt;literal&gt;parallel_workers&lt;/literal&gt; via &lt;xref
+   linkend="sql-altertable"/&gt; directly controls how many parallel
+   worker processes will be requested by a &lt;command&gt;CREATE
+   INDEX&lt;/command&gt; against the table.  This bypasses the cost model
+   completely, and prevents &lt;varname&gt;maintenance_work_mem&lt;/varname&gt;
+   from affecting how many parallel workers are requested.  Setting
+   &lt;literal&gt;parallel_workers&lt;/literal&gt; to 0 via &lt;command&gt;ALTER
+   TABLE&lt;/command&gt; will disable parallel index builds on the table in
+   all cases.
+</span>
+<a class="xref" href="sql-altertable.html" title="ALTER TABLE"><span class="refentrytitle">ALTER TABLE</span></a>を通して<code class="literal">parallel_workers</code>の値を設定することで、テーブルに対して<code class="command">CREATE INDEX</code>でどれだけのワーカプロセス数が要求されるかを、直接に調整できます。
+これはコストモデルを完全に無視して、<code class="varname">maintenance_work_mem</code>がパラレルワーカの要求数に影響を与えることを回避します。
+<code class="command">ALTER TABLE</code>を通して<code class="literal">parallel_workers</code>を0に設定することは、そのテーブルに対するパラレルインデックス作成を全ての場合に無効化します。
+  </p><div class="tip"><h3 class="title">ヒント</h3><p>
+<span class="original">
+    You might want to reset &lt;literal&gt;parallel_workers&lt;/literal&gt; after
+    setting it as part of tuning an index build.  This avoids
+    inadvertent changes to query plans, since
+    &lt;literal&gt;parallel_workers&lt;/literal&gt; affects
+    &lt;emphasis&gt;all&lt;/emphasis&gt; parallel table scans.
+</span>
+インデックス作成のチューニング一部として<code class="literal">parallel_workers</code>を設定した後、これをリセットしたいかもしれません。
+<code class="literal">parallel_workers</code>は<span class="emphasis"><em>全ての</em></span>パラレルテーブルスキャンに影響を与えるので、これは不注意な問い合わせプランの変更を回避します。
+   </p></div><p>
+<span class="original">
+   While &lt;command&gt;CREATE INDEX&lt;/command&gt; with the
+   &lt;literal&gt;CONCURRENTLY&lt;/literal&gt; option supports parallel builds
+   without special restrictions, only the first table scan is actually
+   performed in parallel.
+</span>
+<code class="literal">CONCURRENTLY</code>オプションを伴う<code class="command">CREATE INDEX</code>は特に制限なくパラレル作成をサポートしますが、実際には最初のテーブルスキャンだけがパラレルに実行されます。
+  </p><p>
+<span class="original">
+   Use &lt;xref linkend="sql-dropindex"/&gt;
+   to remove an index.
+</span>
+インデックスを削除するには、<a class="xref" href="sql-dropindex.html" title="DROP INDEX"><span class="refentrytitle">DROP INDEX</span></a>を使用してください。
+  </p><p>
+<span class="original">
+   Prior releases of &lt;productname&gt;PostgreSQL&lt;/productname&gt; also had an
+   R-tree index method.  This method has been removed because
+   it had no significant advantages over the GiST method.
+   If &lt;literal&gt;USING rtree&lt;/literal&gt; is specified, &lt;command&gt;CREATE INDEX&lt;/command&gt;
+   will interpret it as &lt;literal&gt;USING gist&lt;/literal&gt;, to simplify conversion
+   of old databases to GiST.
+</span>
+以前の<span class="productname">PostgreSQL</span>にはR-treeインデックスメソッドがありました。
+GiSTメソッドに比べて大きな利点がありませんでしたので、このメソッドは削除されました。
+古いデータベースからGiSTへの変換を簡単にするため、<code class="literal">USING rtree</code>が指定された場合、<code class="command">CREATE INDEX</code>は<code class="literal">USING gist</code>と解釈します。
+  </p></div><div class="refsect1" id="id-1.9.3.69.8"><h2>例</h2><span class="original">
+  &lt;title&gt;Examples&lt;/title&gt;
+</span><p>
+<span class="original">
+   To create a unique B-tree index on the column &lt;literal&gt;title&lt;/literal&gt; in
+   the table &lt;literal&gt;films&lt;/literal&gt;:
+</span>
+テーブル<code class="literal">films</code>の列<code class="literal">title</code>に一意性のB-treeインデックスを作成します。
+</p><pre class="programlisting">
+CREATE UNIQUE INDEX title_idx ON films (title);
+</pre><p>
+  </p><p>
+<span class="original">
+   To create a unique B-tree index on the column &lt;literal&gt;title&lt;/literal&gt;
+   with included columns &lt;literal&gt;director&lt;/literal&gt;
+   and &lt;literal&gt;rating&lt;/literal&gt; in the table &lt;literal&gt;films&lt;/literal&gt;:
+</span>
+テーブル<code class="literal">films</code>の列<code class="literal">title</code>に、列<code class="literal">director</code>と列<code class="literal">rating</code>を含めて、一意性のB-treeインデックスを作成します。
+</p><pre class="programlisting">
+CREATE UNIQUE INDEX title_idx ON films (title) INCLUDE (director, rating);
+</pre><p>
+  </p><p>
+<span class="original">
+   To create an index on the expression &lt;literal&gt;lower(title)&lt;/literal&gt;,
+   allowing efficient case-insensitive searches:
+</span>
+大文字小文字を区別しない検索が効率的になるように、式<code class="literal">lower(title)</code>に対してインデックスを作成します。
+</p><pre class="programlisting">
+CREATE INDEX ON films ((lower(title)));
+</pre><p>
+<span class="original">
+   (In this example we have chosen to omit the index name, so the system
+   will choose a name, typically &lt;literal&gt;films_lower_idx&lt;/literal&gt;.)
+</span>
+(この例では、インデックス名を省略することを選びました。
+このためシステムが<code class="literal">films_lower_idx</code>などという名前を選ぶことになります。)
+  </p><p>
+<span class="original">
+   To create an index with non-default collation:
+</span>
+デフォルト以外の照合順序でインデックスを作成します。
+</p><pre class="programlisting">
+CREATE INDEX title_idx_german ON films (title COLLATE "de_DE");
+</pre><p>
+  </p><p>
+<span class="original">
+   To create an index with non-default sort ordering of nulls:
+</span>
+デフォルトと異なるNULLのソート順を指定したインデックスを作成します。
+</p><pre class="programlisting">
+CREATE INDEX title_idx_nulls_low ON films (title NULLS FIRST);
+</pre><p>
+  </p><p>
+<span class="original">
+   To create an index with non-default fill factor:
+</span>
+デフォルトと異なるフィルファクタを持つインデックスを作成します。
+</p><pre class="programlisting">
+CREATE UNIQUE INDEX title_idx ON films (title) WITH (fillfactor = 70);
+</pre><p>
+  </p><p>
+<span class="original">
+   To create a &lt;acronym&gt;GIN&lt;/acronym&gt; index with fast updates disabled:
+</span>
+高速更新を無効にして<acronym class="acronym">GIN</acronym>インデックスを作成します。
+</p><pre class="programlisting">
+CREATE INDEX gin_idx ON documents_table USING GIN (locations) WITH (fastupdate = off);
+</pre><p>
+  </p><p>
+<span class="original">
+   To create an index on the column &lt;literal&gt;code&lt;/literal&gt; in the table
+   &lt;literal&gt;films&lt;/literal&gt; and have the index reside in the tablespace
+   &lt;literal&gt;indexspace&lt;/literal&gt;:
+</span>
+テーブル<code class="literal">films</code>上の列<code class="literal">code</code>に対するインデックスを作成します。
+また、このインデックスをテーブル空間<code class="literal">indexspace</code>内に生成します。
+</p><pre class="programlisting">
+CREATE INDEX code_idx ON films (code) TABLESPACE indexspace;
+</pre><p>
+  </p><p>
+<span class="original">
+   To create a GiST index on a point attribute so that we
+   can efficiently use box operators on the result of the
+   conversion function:
+</span>
+変換関数の結果に対するbox操作を効率的に使用できるようにpoint属性にGiSTインデックスを作成します。
+</p><pre class="programlisting">
+CREATE INDEX pointloc
+    ON points USING gist (box(location,location));
+SELECT * FROM points
+    WHERE box(location,location) &amp;&amp; '(0,0),(1,1)'::box;
+</pre><p>
+  </p><p>
+<span class="original">
+   To create an index without locking out writes to the table:
+</span>
+対象テーブルへの書き込みをロックせずにインデックスを作成します。
+</p><pre class="programlisting">
+CREATE INDEX CONCURRENTLY sales_quantity_index ON sales_table (quantity);
+</pre></div><div class="refsect1" id="id-1.9.3.69.9"><h2>互換性</h2><span class="original">
+  &lt;title&gt;Compatibility&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;command&gt;CREATE INDEX&lt;/command&gt; is a
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; language extension.  There
+   are no provisions for indexes in the SQL standard.
+</span>
+<code class="command">CREATE INDEX</code>は<span class="productname">PostgreSQL</span>の拡張です。
+標準SQLにはインデックスについての規定はありません。
+  </p></div><div class="refsect1" id="id-1.9.3.69.10"><h2>関連項目</h2><span class="original">
+  &lt;title&gt;See Also&lt;/title&gt;
+</span><span class="simplelist"><a class="xref" href="sql-alterindex.html" title="ALTER INDEX"><span class="refentrytitle">ALTER INDEX</span></a>, <a class="xref" href="sql-dropindex.html" title="DROP INDEX"><span class="refentrytitle">DROP INDEX</span></a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-creategroup.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-createlanguage.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">CREATE GROUP </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> CREATE LANGUAGE</td></tr></table></div></body></html>

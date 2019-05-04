@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>F.17. intagg</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="hstore.html" title="F.16. hstore" /><link rel="next" href="intarray.html" title="F.18. intarray" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="contrib.html" title="付録F 追加で提供されるモジュール">付録F 追加で提供されるモジュール</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      intagg.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="hstore.html" title="F.16. hstore">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュール">上へ</a></td><td width="60%" align="center">F.17. intagg</td><td width="20%" align="right"> <a accesskey="n" href="intarray.html" title="F.18. intarray">次へ</a></td></tr></table><hr /></div><div class="sect1" id="INTAGG"><div class="titlepage"><div><div><h2 class="title" style="clear: both">F.17. intagg</h2></div></div></div><a id="id-1.11.7.26.2" class="indexterm"></a><p>
+<span class="original">
+  The &lt;filename&gt;intagg&lt;/filename&gt; module provides an integer aggregator and an
+  enumerator.  &lt;filename&gt;intagg&lt;/filename&gt; is now obsolete, because there
+  are built-in functions that provide a superset of its capabilities.
+  However, the module is still provided as a compatibility wrapper around
+  the built-in functions.
+</span>
+<code class="filename">intagg</code>モジュールは整数型の集約子と列挙子を提供します。
+その能力の上位集合を提供する組み込み関数が存在しますので、<code class="filename">intagg</code>は現在使われません。
+しかし、このモジュールは組み込み関数の互換ラッパとして今でもまだ提供されています。
+ </p><div class="sect2" id="id-1.11.7.26.4"><div class="titlepage"><div><div><h3 class="title">F.17.1. 関数</h3></div></div></div><span class="original">
+  &lt;title&gt;Functions&lt;/title&gt;
+</span><a id="id-1.11.7.26.4.2" class="indexterm"></a><a id="id-1.11.7.26.4.3" class="indexterm"></a><p>
+<span class="original">
+  The aggregator is an aggregate function
+  &lt;function&gt;int_array_aggregate(integer)&lt;/function&gt;
+  that produces an integer array
+  containing exactly the integers it is fed.
+  This is a wrapper around &lt;function&gt;array_agg&lt;/function&gt;,
+  which does the same thing for any array type.
+</span>
+集約子は、正確に提供する整数のみを含む整数型配列を生成する<code class="function">int_array_aggregate(integer)</code>集約関数です。
+これは任意の配列型で同じことを行う<code class="function">array_agg</code>のラッパです。
+ </p><a id="id-1.11.7.26.4.5" class="indexterm"></a><p>
+<span class="original">
+  The enumerator is a function
+  &lt;function&gt;int_array_enum(integer[])&lt;/function&gt;
+  that returns &lt;type&gt;setof integer&lt;/type&gt;.  It is essentially the reverse
+  operation of the aggregator: given an array of integers, expand it
+  into a set of rows.  This is a wrapper around &lt;function&gt;unnest&lt;/function&gt;,
+  which does the same thing for any array type.
+</span>
+列挙子は、<code class="type">setof integer</code>を返す<code class="function">int_array_enum(integer[])</code>関数です。
+これは基本的に上記集約子の反対の操作を行います。
+指定された整数型配列を行集合に拡張します。
+これは任意の配列型で同じことを行う<code class="function">unnest</code>のラッパです。
+ </p></div><div class="sect2" id="id-1.11.7.26.5"><div class="titlepage"><div><div><h3 class="title">F.17.2. 使用例</h3></div></div></div><span class="original">
+  &lt;title&gt;Sample Uses&lt;/title&gt;
+</span><p>
+<span class="original">
+   Many database systems have the notion of a one to many table. Such a table
+   usually sits between two indexed tables, for example:
+</span>
+多くのデータベースシステムは1対多のテーブルを持ちます。
+こうしたテーブルは通常、以下のように2つのインデックス用のテーブルの間に存在します。
+
+</p><pre class="programlisting">
+CREATE TABLE left (id INT PRIMARY KEY, ...);
+CREATE TABLE right (id INT PRIMARY KEY, ...);
+CREATE TABLE one_to_many(left INT REFERENCES left, right INT REFERENCES right);
+</pre><p>
+
+<span class="original">
+  It is typically used like this:
+</span>
+通常以下のように使用されます。
+
+</p><pre class="programlisting">
+SELECT right.* from right JOIN one_to_many ON (right.id = one_to_many.right)
+  WHERE one_to_many.left = <em class="replaceable"><code>item</code></em>;
+</pre><p>
+
+<span class="original">
+  This will return all the items in the right hand table for an entry
+  in the left hand table. This is a very common construct in SQL.
+</span>
+これは、左辺のテーブル内にある項目に対応した、右辺のテーブル内のすべての項目を返します。
+これはSQLで非常によく使用される式です。
+ </p><p>
+<span class="original">
+  Now, this methodology can be cumbersome with a very large number of
+  entries in the &lt;structname&gt;one_to_many&lt;/structname&gt; table.  Often,
+  a join like this would result in an index scan
+  and a fetch for each right hand entry in the table for a particular
+  left hand entry. If you have a very dynamic system, there is not much you
+  can do. However, if you have some data which is fairly static, you can
+  create a summary table with the aggregator.
+</span>
+さて、この方法論は<code class="structname">one_to_many</code>テーブル内に非常に多数の項目がある場合に扱いにくくなることがあり得ます。
+しばしばこうした結合は、インデックススキャンと特定された左辺の項目に対応した右辺のテーブル内の項目をそれぞれ取り出すことになります。
+非常に動的なシステムでは、できることは多くありません。
+しかし、ほぼ静的なデータが一部にある場合、集約子を使用して要約テーブルを作成することができます。
+
+</p><pre class="programlisting">
+CREATE TABLE summary AS
+  SELECT left, int_array_aggregate(right) AS right
+  FROM one_to_many
+  GROUP BY left;
+</pre><p>
+
+<span class="original">
+  This will create a table with one row per left item, and an array
+  of right items. Now this is pretty useless without some way of using
+  the array; that's why there is an array enumerator.  You can do
+</span>
+これは左辺項目毎に1行を持ち、右辺の項目の配列をもつテーブルを作成します。
+さて、これは配列を使用する何らかの方法がないとかなり使い勝手が悪くなります。
+これが配列列挙子が存在する理由です。
+以下を行うことができます。
+
+</p><pre class="programlisting">
+SELECT left, int_array_enum(right) FROM summary WHERE left = <em class="replaceable"><code>item</code></em>;
+</pre><p>
+
+<span class="original">
+  The above query using &lt;function&gt;int_array_enum&lt;/function&gt; produces the same results
+  as
+</span>
+上の<code class="function">int_array_enum</code>を使用した問い合わせは、以下と同じ結果を生成します。
+
+</p><pre class="programlisting">
+SELECT left, right FROM one_to_many WHERE left = <em class="replaceable"><code>item</code></em>;
+</pre><p>
+
+<span class="original">
+  The difference is that the query against the summary table has to get
+  only one row from the table, whereas the direct query against
+  &lt;structname&gt;one_to_many&lt;/structname&gt; must index scan and fetch a row for each entry.
+</span>
+違いは、要約テーブルに対する問い合わせはテーブルから1行だけを取り出す必要があるのに対し、直接<code class="structname">one_to_many</code>に問い合わせる場合はインデックススキャンと各項目に対し行を取り出さなければならないという点です。
+ </p><p>
+<span class="original">
+  On one system, an &lt;command&gt;EXPLAIN&lt;/command&gt; showed a query with a cost of 8488 was
+  reduced to a cost of 329.  The original query was a join involving the
+  &lt;structname&gt;one_to_many&lt;/structname&gt; table, which was replaced by:
+</span>
+あるシステムでは<code class="command">EXPLAIN</code>を行うと8488というコストを持つ問い合わせが329というコストまで減少しました。
+元の問い合わせは<code class="structname">one_to_many</code>テーブルを含む結合でしたが、以下のように置き換えられました。
+
+</p><pre class="programlisting">
+SELECT right, count(right) FROM
+  ( SELECT left, int_array_enum(right) AS right
+    FROM summary JOIN (SELECT left FROM left_table WHERE left = <em class="replaceable"><code>item</code></em>) AS lefts
+         ON (summary.left = lefts.left)
+  ) AS list
+  GROUP BY right
+  ORDER BY count DESC;
+</pre><p>
+ </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="hstore.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="contrib.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="intarray.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">F.16. hstore </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> F.18. intarray</td></tr></table></div></body></html>

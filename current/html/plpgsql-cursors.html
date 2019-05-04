@@ -1,0 +1,600 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>43.7. カーソル</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="plpgsql-control-structures.html" title="43.6. 制御構造" /><link rel="next" href="plpgsql-transactions.html" title="43.8. トランザクション制御" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="plpgsql.html" title="第43章 PL/pgSQL - SQL手続き言語">第43章 <span class="application">PL/pgSQL</span> - <acronym class="acronym">SQL</acronym>手続き言語</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      plpgsql-cursors.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="plpgsql-control-structures.html" title="43.6. 制御構造">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="plpgsql.html" title="第43章 PL/pgSQL - SQL手続き言語">上へ</a></td><td width="60%" align="center">43.7. カーソル</td><td width="20%" align="right"> <a accesskey="n" href="plpgsql-transactions.html" title="43.8. トランザクション制御">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PLPGSQL-CURSORS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">43.7. カーソル</h2></div></div></div><span class="original">
+   &lt;title&gt;Cursors&lt;/title&gt;
+</span><a id="id-1.8.8.9.2" class="indexterm"></a><p>
+<span class="original">
+    Rather than executing a whole query at once, it is possible to set
+    up a &lt;firstterm&gt;cursor&lt;/firstterm&gt; that encapsulates the query, and then read
+    the query result a few rows at a time. One reason for doing this is
+    to avoid memory overrun when the result contains a large number of
+    rows. (However, &lt;application&gt;PL/pgSQL&lt;/application&gt; users do not normally need
+    to worry about that, since &lt;literal&gt;FOR&lt;/literal&gt; loops automatically use a cursor
+    internally to avoid memory problems.) A more interesting usage is to
+    return a reference to a cursor that a function has created, allowing the
+    caller to read the rows. This provides an efficient way to return
+    large row sets from functions.
+</span>
+問い合わせ全体を一度に実行するのではなく、<em class="firstterm">カーソル</em>を設定して、問い合わせをカプセル化し、問い合わせの結果を一度に数行ずつ読み取ることができます。
+これを行う理由の1つは、結果内に多数の行がある場合のメモリの枯渇を防ぐことです。
+（しかし、<span class="application">PL/pgSQL</span>ユーザは通常これを心配する必要はありません。
+<code class="literal">FOR</code>ループは自動的にカーソルを内部的に使用してメモリの問題を防ぐからです。）
+より興味深い使用方法として、呼び出し元が行を読み取ることをできるように、作成されたカーソルへの参照を返す方法があります。
+これにより、関数から大量の行集合を返す際の効率が向上します。
+   </p><div class="sect2" id="PLPGSQL-CURSOR-DECLARATIONS"><div class="titlepage"><div><div><h3 class="title">43.7.1. カーソル変数の宣言</h3></div></div></div><span class="original">
+    &lt;title&gt;Declaring Cursor Variables&lt;/title&gt;
+</span><p>
+<span class="original">
+     All access to cursors in &lt;application&gt;PL/pgSQL&lt;/application&gt; goes through
+     cursor variables, which are always of the special data type
+     &lt;type&gt;refcursor&lt;/type&gt;.  One way to create a cursor variable
+     is just to declare it as a variable of type &lt;type&gt;refcursor&lt;/type&gt;.
+     Another way is to use the cursor declaration syntax,
+     which in general is:
+</span>
+<span class="application">PL/pgSQL</span>におけるカーソルへのアクセスは全て、カーソル変数を経由します。
+カーソル変数は、常に特殊な<code class="type">refcursor</code>データ型です。
+カーソル変数を作成する1つの方法は、単に<code class="type">refcursor</code>型の変数として宣言することです。
+他の方法は、カーソル宣言構文を使用することです。
+以下にその一般形を示します。
+</p><pre class="synopsis">
+<em class="replaceable"><code>name</code></em> [<span class="optional"> [<span class="optional"> NO </span>] SCROLL </span>] CURSOR [<span class="optional"> ( <em class="replaceable"><code>arguments</code></em> ) </span>] FOR <em class="replaceable"><code>query</code></em>;
+</pre><p>
+<span class="original">
+     (&lt;literal&gt;FOR&lt;/literal&gt; can be replaced by &lt;literal&gt;IS&lt;/literal&gt; for
+     &lt;productname&gt;Oracle&lt;/productname&gt; compatibility.)
+     If &lt;literal&gt;SCROLL&lt;/literal&gt; is specified, the cursor will be capable of
+     scrolling backward; if &lt;literal&gt;NO SCROLL&lt;/literal&gt; is specified, backward
+     fetches will be rejected; if neither specification appears, it is
+     query-dependent whether backward fetches will be allowed.
+     &lt;replaceable&gt;arguments&lt;/replaceable&gt;, if specified, is a
+     comma-separated list of pairs &lt;literal&gt;&lt;replaceable&gt;name&lt;/replaceable&gt;
+     &lt;replaceable&gt;datatype&lt;/replaceable&gt;&lt;/literal&gt; that define names to be
+     replaced by parameter values in the given query.  The actual
+     values to substitute for these names will be specified later,
+     when the cursor is opened.
+</span>
+（<span class="productname">Oracle</span>との互換性のため、<code class="literal">FOR</code>は<code class="literal">IS</code>に置き換えることができます。）
+もし<code class="literal">SCROLL</code>を指定すれば、カーソルは逆方向に移動できます。
+もし<code class="literal">NO SCROLL</code>を指定すれば、逆方向の行の取り出しはできません。
+どちらも指定しない時、逆方向に取り出しできるかは問い合わせに依存します。
+もし<em class="replaceable"><code>arguments</code></em>があれば、<code class="literal"><em class="replaceable"><code>name</code></em> <em class="replaceable"><code>datatype</code></em></code>をカンマで区切ったリストで、与えられた問い合わせ内のパラメータ値として置換される名前を定義します。
+その名前に実際に置換される値は、カーソルを開いた時点より後に指定されます。
+    </p><p>
+<span class="original">
+     Some examples:
+</span>
+以下に例を示します。
+</p><pre class="programlisting">
+DECLARE
+    curs1 refcursor;
+    curs2 CURSOR FOR SELECT * FROM tenk1;
+    curs3 CURSOR (key integer) FOR SELECT * FROM tenk1 WHERE unique1 = key;
+</pre><p>
+<span class="original">
+     All three of these variables have the data type &lt;type&gt;refcursor&lt;/type&gt;,
+     but the first can be used with any query, while the second has
+     a fully specified query already &lt;firstterm&gt;bound&lt;/firstterm&gt; to it, and the last
+     has a parameterized query bound to it.  (&lt;literal&gt;key&lt;/literal&gt; will be
+     replaced by an integer parameter value when the cursor is opened.)
+     The variable &lt;literal&gt;curs1&lt;/literal&gt;
+     is said to be &lt;firstterm&gt;unbound&lt;/firstterm&gt; since it is not bound to
+     any particular query.
+</span>
+これら3つの変数は全て<code class="type">refcursor</code>データ型を持ちますが、最初のものは全ての問い合わせに使用でき、2番目には完全な問い合わせが既に<em class="firstterm">バウンド</em>されています（結び付けられています）。
+また、最後のものには、パラメータ付きの問い合わせがバウンドされています
+（<code class="literal">key</code>はカーソルが開いた時に整数パラメータ値に置き換えられます）。
+<code class="literal">curs1</code>変数は、特定の問い合わせに結び付けられていませんので、<em class="firstterm">アンバウンド</em>であると呼ばれます。
+    </p></div><div class="sect2" id="PLPGSQL-CURSOR-OPENING"><div class="titlepage"><div><div><h3 class="title">43.7.2. カーソルを開く</h3></div></div></div><span class="original">
+    &lt;title&gt;Opening Cursors&lt;/title&gt;
+</span><p>
+<span class="original">
+     Before a cursor can be used to retrieve rows, it must be
+     &lt;firstterm&gt;opened&lt;/firstterm&gt;. (This is the equivalent action to the SQL
+     command &lt;command&gt;DECLARE CURSOR&lt;/command&gt;.) &lt;application&gt;PL/pgSQL&lt;/application&gt; has
+     three forms of the &lt;command&gt;OPEN&lt;/command&gt; statement, two of which use unbound
+     cursor variables while the third uses a bound cursor variable.
+</span>
+カーソルを使用して行を取り出す前に、<em class="firstterm">開かれる</em>必要があります。
+（これは<code class="command">DECLARE CURSOR</code> SQLコマンドの動作と同じです。）
+<span class="application">PL/pgSQL</span>には3種類の<code class="command">OPEN</code>文があり、そのうちの2つはアンバウンドカーソル変数を使用し、残りの1つはバウンドカーソル変数を使用します。
+    </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+      Bound cursor variables can also be used without explicitly opening the cursor,
+      via the &lt;command&gt;FOR&lt;/command&gt; statement described in
+      &lt;xref linkend="plpgsql-cursor-for-loop"/&gt;.
+</span>
+バウンドカーソル変数は<a class="xref" href="plpgsql-cursors.html#PLPGSQL-CURSOR-FOR-LOOP" title="43.7.4. カーソル結果に対するループ">43.7.4</a>で説明されている<code class="command">FOR</code>文で、明示的にカーソルを開かなくても使用することができます。
+     </p></div><div class="sect3" id="id-1.8.8.9.5.4"><div class="titlepage"><div><div><h4 class="title">43.7.2.1. <code class="command">OPEN FOR</code> <em class="replaceable"><code>query</code></em></h4></div></div></div><pre class="synopsis">
+OPEN <em class="replaceable"><code>unbound_cursorvar</code></em> [<span class="optional"> [<span class="optional"> NO </span>] SCROLL </span>] FOR <em class="replaceable"><code>query</code></em>;
+</pre><p>
+<span class="original">
+        The cursor variable is opened and given the specified query to
+        execute.  The cursor cannot be open already, and it must have been
+        declared as an unbound cursor variable (that is, as a simple
+        &lt;type&gt;refcursor&lt;/type&gt; variable).  The query must be a
+        &lt;command&gt;SELECT&lt;/command&gt;, or something else that returns rows
+        (such as &lt;command&gt;EXPLAIN&lt;/command&gt;).  The query
+        is treated in the same way as other SQL commands in
+        &lt;application&gt;PL/pgSQL&lt;/application&gt;: &lt;application&gt;PL/pgSQL&lt;/application&gt;
+        variable names are substituted, and the query plan is cached for
+        possible reuse.  When a &lt;application&gt;PL/pgSQL&lt;/application&gt;
+        variable is substituted into the cursor query, the value that is
+        substituted is the one it has at the time of the &lt;command&gt;OPEN&lt;/command&gt;;
+        subsequent changes to the variable will not affect the cursor's
+        behavior.
+        The &lt;literal&gt;SCROLL&lt;/literal&gt; and &lt;literal&gt;NO SCROLL&lt;/literal&gt;
+        options have the same meanings as for a bound cursor.
+</span>
+カーソル変数は開かれ、実行するよう指定した問い合わせが付与されます。
+既に開いたカーソルを開くことはできず、また、アンバウンドカーソル変数として（つまり、単なる<code class="type">refcursor</code>変数として）宣言されていなければなりません。
+この問い合わせは<code class="command">SELECT</code>文であるか、または（<code class="command">EXPLAIN</code>のように）何らかの行を返すものでなければなりません。
+この問い合わせは、他の<span class="application">PL/pgSQL</span>のSQL文と同様の方法で扱われます。
+<span class="application">PL/pgSQL</span>の変数名は置き換えられ、問い合わせ計画は再利用できるようにキャッシュされます。
+<span class="application">PL/pgSQL</span>変数がカーソルを使用する問い合わせに代入された時、変数は<code class="command">OPEN</code>時の値となり、その後の変更はカーソルの動きに影響しません。
+<code class="literal">SCROLL</code>および<code class="literal">NO SCROLL</code>オプションの意味はバウンドカーソルと同様です。
+       </p><p>
+<span class="original">
+        An example:
+</span>
+以下に例を示します。
+</p><pre class="programlisting">
+OPEN curs1 FOR SELECT * FROM foo WHERE key = mykey;
+</pre><p>
+       </p></div><div class="sect3" id="id-1.8.8.9.5.5"><div class="titlepage"><div><div><h4 class="title">43.7.2.2. <code class="command">OPEN FOR EXECUTE</code></h4></div></div></div><pre class="synopsis">
+OPEN <em class="replaceable"><code>unbound_cursorvar</code></em> [<span class="optional"> [<span class="optional"> NO </span>] SCROLL </span>] FOR EXECUTE <em class="replaceable"><code>query_string</code></em>
+                                     [<span class="optional"> USING <em class="replaceable"><code>expression</code></em> [<span class="optional">, ... </span>] </span>];
+</pre><p>
+<span class="original">
+          The cursor variable is opened and given the specified query to
+          execute.  The cursor cannot be open already, and it must have been
+          declared as an unbound cursor variable (that is, as a simple
+          &lt;type&gt;refcursor&lt;/type&gt; variable).  The query is specified as a string
+          expression, in the same way as in the &lt;command&gt;EXECUTE&lt;/command&gt;
+          command.  As usual, this gives flexibility so the query plan can vary
+          from one run to the next (see &lt;xref linkend="plpgsql-plan-caching"/&gt;),
+          and it also means that variable substitution is not done on the
+          command string. As with &lt;command&gt;EXECUTE&lt;/command&gt;, parameter values
+          can be inserted into the dynamic command via
+          &lt;literal&gt;format()&lt;/literal&gt; and &lt;literal&gt;USING&lt;/literal&gt;.
+          The &lt;literal&gt;SCROLL&lt;/literal&gt; and
+          &lt;literal&gt;NO SCROLL&lt;/literal&gt; options have the same meanings as for a bound
+          cursor.
+</span>
+カーソル変数は開かれ、実行するよう指定した問い合わせが付与されます。
+既に開いたカーソルを開くことはできず、また、アンバウンドカーソル変数として（つまり、単なる<code class="type">refcursor</code>変数として）宣言されていなければなりません。
+問い合わせは、<code class="command">EXECUTE</code>コマンドと同じ方法による文字列式として指定されます。
+通常と同様に、これにより、次回に実行する際に違った問い合わせを計画できる柔軟性が得られます(<a class="xref" href="plpgsql-implementation.html#PLPGSQL-PLAN-CACHING" title="43.11.2. 計画のキャッシュ">43.11.2</a>参照)。
+また、変数置換がコマンド文字列上で行われないことも意味します。
+<code class="command">EXECUTE</code>と同様に<code class="literal">format()</code>と<code class="literal">USING</code>を介して動的コマンドにパラメータ値を挿入することができます。
+<code class="literal">SCROLL</code>および<code class="literal">NO SCROLL</code>オプションの意味はバウンドカーソルと同様です。
+         </p><p>
+<span class="original">
+        An example:
+</span>
+以下に例を示します。
+</p><pre class="programlisting">
+OPEN curs1 FOR EXECUTE format('SELECT * FROM %I WHERE col1 = $1',tabname) USING keyvalue;
+</pre><p>
+<span class="original">
+        In this example, the table name is inserted into the query via
+        &lt;function&gt;format()&lt;/function&gt;.  The comparison value for &lt;literal&gt;col1&lt;/literal&gt;
+        is inserted via a &lt;literal&gt;USING&lt;/literal&gt; parameter, so it needs
+        no quoting.
+</span>
+この例では、テーブル名は問い合わせに<code class="function">format()</code>で挿入されています。
+<code class="literal">col1</code>との比較値は<code class="literal">USING</code>経由で埋め込まれますので、引用符を付ける必要がありません。
+       </p></div><div class="sect3" id="PLPGSQL-OPEN-BOUND-CURSOR"><div class="titlepage"><div><div><h4 class="title">43.7.2.3. バウンドカーソルを開く</h4></div></div></div><span class="original">
+     &lt;title&gt;Opening a Bound Cursor&lt;/title&gt;
+</span><pre class="synopsis">
+OPEN <em class="replaceable"><code>bound_cursorvar</code></em> [<span class="optional"> ( [<span class="optional"> <em class="replaceable"><code>argument_name</code></em> := </span>] <em class="replaceable"><code>argument_value</code></em> [<span class="optional">, ...</span>] ) </span>];
+</pre><p>
+<span class="original">
+          This form of &lt;command&gt;OPEN&lt;/command&gt; is used to open a cursor
+          variable whose query was bound to it when it was declared.  The
+          cursor cannot be open already.  A list of actual argument value
+          expressions must appear if and only if the cursor was declared to
+          take arguments.  These values will be substituted in the query.
+</span>
+宣言時に問い合わせが結び付いたカーソル変数を開くために使用される<code class="command">OPEN</code>の形式です。
+既に開いたカーソルを開くことはできません。
+実引数の式のリストはカーソルが引数を取るものと宣言された場合にのみ現れます。
+これらの値は問い合わせの中で置き換えられます。
+         </p><p>
+<span class="original">
+          The query plan for a bound cursor is always considered cacheable;
+          there is no equivalent of &lt;command&gt;EXECUTE&lt;/command&gt; in this case.
+          Notice that &lt;literal&gt;SCROLL&lt;/literal&gt; and &lt;literal&gt;NO SCROLL&lt;/literal&gt; cannot be
+          specified in &lt;command&gt;OPEN&lt;/command&gt;, as the cursor's scrolling
+          behavior was already determined.
+</span>
+バウンドカーソルの問い合わせ計画は常にキャッシュ可能とみなされます。
+この場合、<code class="command">EXECUTE</code>と等価なものはありません。
+<code class="literal">SCROLL</code>および<code class="literal">NO SCROLL</code>を<code class="command">OPEN</code>において指定できないことに注意してください。
+カーソル移動の仕様はすでに決まっているからです。
+         </p><p>
+<span class="original">
+          Argument values can be passed using either &lt;firstterm&gt;positional&lt;/firstterm&gt;
+          or &lt;firstterm&gt;named&lt;/firstterm&gt; notation.  In positional
+          notation, all arguments are specified in order.  In named notation,
+          each argument's name is specified using &lt;literal&gt;:=&lt;/literal&gt; to
+          separate it from the argument expression. Similar to calling
+          functions, described in &lt;xref linkend="sql-syntax-calling-funcs"/&gt;, it
+          is also allowed to mix positional and named notation.
+</span>
+<em class="firstterm">位置的</em>表記または<em class="firstterm">記名的</em>表記を使用して、引数の値を渡すことができます。
+位置的表記では、全ての引数が順番に指定されます。
+記名的表記では、引数の式と区別するために<code class="literal">:=</code>を使用して、各々の引数の名前が指定されます。
+<a class="xref" href="sql-syntax-calling-funcs.html" title="4.3. 関数呼び出し">4.3</a>に記述した関数呼び出しと同様に、位置的表記と記名的表記を混用できます。
+         </p><p>
+<span class="original">
+          Examples (these use the cursor declaration examples above):
+</span>
+例を示します（ここでは上例のカーソル宣言を使用します）。
+</p><pre class="programlisting">
+OPEN curs2;
+OPEN curs3(42);
+OPEN curs3(key := 42);
+</pre><p>
+         </p><p>
+<span class="original">
+          Because variable substitution is done on a bound cursor's query,
+          there are really two ways to pass values into the cursor: either
+          with an explicit argument to &lt;command&gt;OPEN&lt;/command&gt;, or implicitly by
+          referencing a &lt;application&gt;PL/pgSQL&lt;/application&gt; variable in the query.
+          However, only variables declared before the bound cursor was
+          declared will be substituted into it.  In either case the value to
+          be passed is determined at the time of the &lt;command&gt;OPEN&lt;/command&gt;.
+          For example, another way to get the same effect as the
+          &lt;literal&gt;curs3&lt;/literal&gt; example above is
+</span>
+変数の代入はバウンドカーソルの問い合わせで行われるため、カーソルへ値を渡す方法が2つあります。
+<code class="command">OPEN</code>コマンドの明確な引数とするものと、問い合わせにおける<span class="application">PL/pgSQL</span>変数として暗黙的に参照するものです。
+しかし、バウンドカーソルの宣言より前に宣言した変数だけが代入されます。
+どちらの場合も、<code class="command">OPEN</code>の実行時に変数値が決まります。
+例えば、上例の<code class="literal">curs3</code>と同じ結果を取得する方法を、以下に示します。
+</p><pre class="programlisting">
+DECLARE
+    key integer;
+    curs4 CURSOR FOR SELECT * FROM tenk1 WHERE unique1 = key;
+BEGIN
+    key := 42;
+    OPEN curs4;
+</pre><p>
+         </p></div></div><div class="sect2" id="PLPGSQL-CURSOR-USING"><div class="titlepage"><div><div><h3 class="title">43.7.3. カーソルの使用</h3></div></div></div><span class="original">
+    &lt;title&gt;Using Cursors&lt;/title&gt;
+</span><p>
+<span class="original">
+     Once a cursor has been opened, it can be manipulated with the
+     statements described here.
+</span>
+カーソルを開いてから、ここで説明する文を使用してカーソルを扱うことができます。
+    </p><p>
+<span class="original">
+     These manipulations need not occur in the same function that
+     opened the cursor to begin with.  You can return a &lt;type&gt;refcursor&lt;/type&gt;
+     value out of a function and let the caller operate on the cursor.
+     (Internally, a &lt;type&gt;refcursor&lt;/type&gt; value is simply the string name
+     of a so-called portal containing the active query for the cursor.  This name
+     can be passed around, assigned to other &lt;type&gt;refcursor&lt;/type&gt; variables,
+     and so on, without disturbing the portal.)
+</span>
+これらの操作は、カーソルを開始するために開いた関数内で行う必要はありません。
+関数から<code class="type">refcursor</code>値を返し、呼び出し元でそのカーソルの操作をさせることもできます。
+（内部的には<code class="type">refcursor</code>値は、カーソルへの有効な問い合わせを持つポータルの名前を示す単なる文字列です。
+この名前は、ポータルを壊すことなく、他の<code class="type">refcursor</code>型の変数に代入することで、他に渡すことができます。）
+    </p><p>
+<span class="original">
+     All portals are implicitly closed at transaction end.  Therefore
+     a &lt;type&gt;refcursor&lt;/type&gt; value is usable to reference an open cursor
+     only until the end of the transaction.
+</span>
+全てのポータルは、暗黙的にトランザクションの終わりで閉ざされます。
+したがって、<code class="type">refcursor</code>値はそのトランザクションの終わりまでの間のみ開いたカーソルへの参照として有効です。
+    </p><div class="sect3" id="id-1.8.8.9.6.5"><div class="titlepage"><div><div><h4 class="title">43.7.3.1. <code class="literal">FETCH</code></h4></div></div></div><pre class="synopsis">
+FETCH [<span class="optional"> <em class="replaceable"><code>direction</code></em> { FROM | IN } </span>] <em class="replaceable"><code>cursor</code></em> INTO <em class="replaceable"><code>target</code></em>;
+</pre><p>
+<span class="original">
+     &lt;command&gt;FETCH&lt;/command&gt; retrieves the next row from the
+     cursor into a target, which might be a row variable, a record
+     variable, or a comma-separated list of simple variables, just like
+     &lt;command&gt;SELECT INTO&lt;/command&gt;.  If there is no next row, the
+     target is set to NULL(s).  As with &lt;command&gt;SELECT
+     INTO&lt;/command&gt;, the special variable &lt;literal&gt;FOUND&lt;/literal&gt; can
+     be checked to see whether a row was obtained or not.
+</span>
+<code class="command">FETCH</code>は<code class="command">SELECT INTO</code>と同様に、カーソルから次の行を抽出し、対象に格納します。
+対象とは、行変数、レコード変数、または単純な変数をカンマで区切ったリストです。
+<code class="command">SELECT INTO</code>の場合と同様、特殊な<code class="literal">FOUND</code>変数を検査することで、行が取得できたかどうかを確認することができます。
+    </p><p>
+<span class="original">
+     The &lt;replaceable&gt;direction&lt;/replaceable&gt; clause can be any of the
+     variants allowed in the SQL &lt;xref linkend="sql-fetch"/&gt;
+     command except the ones that can fetch
+     more than one row; namely, it can be
+</span>
+<em class="replaceable"><code>direction</code></em>句は複数行を取り出すことができるコマンドを除き、SQL <a class="xref" href="sql-fetch.html" title="FETCH"><span class="refentrytitle">FETCH</span></a>で許可されたどのようなコマンドも可能です。
+すなわち、以下のものです。
+     <code class="literal">NEXT</code>,
+     <code class="literal">PRIOR</code>,
+     <code class="literal">FIRST</code>,
+     <code class="literal">LAST</code>,
+     <code class="literal">ABSOLUTE</code> <em class="replaceable"><code>count</code></em>,
+     <code class="literal">RELATIVE</code> <em class="replaceable"><code>count</code></em>,
+<span class="original">
+     &lt;literal&gt;FORWARD&lt;/literal&gt;, or
+</span>
+     <code class="literal">FORWARD</code>または
+     <code class="literal">BACKWARD</code>.
+<span class="original">
+     Omitting &lt;replaceable&gt;direction&lt;/replaceable&gt; is the same
+     as specifying &lt;literal&gt;NEXT&lt;/literal&gt;.
+     In the forms using a &lt;replaceable&gt;count&lt;/replaceable&gt;,
+     the &lt;replaceable&gt;count&lt;/replaceable&gt; can be any integer-valued
+     expression (unlike the SQL &lt;command&gt;FETCH&lt;/command&gt; command,
+     which only allows an integer constant).
+     &lt;replaceable&gt;direction&lt;/replaceable&gt; values that require moving
+     backward are likely to fail unless the cursor was declared or opened
+     with the &lt;literal&gt;SCROLL&lt;/literal&gt; option.
+</span>
+<em class="replaceable"><code>direction</code></em>句の省略は、<code class="literal">NEXT</code>の指定と同じです。
+<em class="replaceable"><code>count</code></em>を使う形式では、<em class="replaceable"><code>count</code></em>はいかなる整数値の式も可能です。(SQL <code class="command">FETCH</code>コマンドとは異なります。あちらは整数定数のみを受け付けます。)
+<code class="literal">SCROLL</code>オプションを用いてカーソルを宣言または開かないと、<em class="replaceable"><code>direction</code></em>の値による逆方向への移動の要求は失敗します。
+    </p><p>
+<span class="original">
+     &lt;replaceable&gt;cursor&lt;/replaceable&gt; must be the name of a &lt;type&gt;refcursor&lt;/type&gt;
+     variable that references an open cursor portal.
+</span>
+<em class="replaceable"><code>cursor</code></em>名は、開いているカーソルのポータルを参照する<code class="type">refcursor</code>変数名でなければなりません。
+    </p><p>
+<span class="original">
+     Examples:
+</span>
+例：
+</p><pre class="programlisting">
+FETCH curs1 INTO rowvar;
+FETCH curs2 INTO foo, bar, baz;
+FETCH LAST FROM curs3 INTO x, y;
+FETCH RELATIVE -2 FROM curs4 INTO x;
+</pre><p>
+       </p></div><div class="sect3" id="id-1.8.8.9.6.6"><div class="titlepage"><div><div><h4 class="title">43.7.3.2. <code class="literal">MOVE</code></h4></div></div></div><pre class="synopsis">
+MOVE [<span class="optional"> <em class="replaceable"><code>direction</code></em> { FROM | IN } </span>] <em class="replaceable"><code>cursor</code></em>;
+</pre><p>
+<span class="original">
+     &lt;command&gt;MOVE&lt;/command&gt; repositions a cursor without retrieving
+     any data. &lt;command&gt;MOVE&lt;/command&gt; works exactly like the
+     &lt;command&gt;FETCH&lt;/command&gt; command, except it only repositions the
+     cursor and does not return the row moved to. As with &lt;command&gt;SELECT
+     INTO&lt;/command&gt;, the special variable &lt;literal&gt;FOUND&lt;/literal&gt; can
+     be checked to see whether there was a next row to move to.
+</span>
+<code class="command">MOVE</code>コマンドは、データを取り出さないでカーソルの位置を変更します。
+移動先の行を返さないでカーソルの位置だけを変更することを除けば、<code class="command">FETCH</code>コマンドと同一の働きをします。
+<code class="command">SELECT INTO</code>と同様に、特殊な変数<code class="literal">FOUND</code>を用いて、移動先に行が存在するかどうかを検査できます。
+    </p><p>
+<span class="original">
+     Examples:
+</span>
+例:
+</p><pre class="programlisting">
+MOVE curs1;
+MOVE LAST FROM curs3;
+MOVE RELATIVE -2 FROM curs4;
+MOVE FORWARD 2 FROM curs4;
+</pre><p>
+       </p></div><div class="sect3" id="id-1.8.8.9.6.7"><div class="titlepage"><div><div><h4 class="title">43.7.3.3. <code class="literal">UPDATE/DELETE WHERE CURRENT OF</code></h4></div></div></div><pre class="synopsis">
+UPDATE <em class="replaceable"><code>table</code></em> SET ... WHERE CURRENT OF <em class="replaceable"><code>cursor</code></em>;
+DELETE FROM <em class="replaceable"><code>table</code></em> WHERE CURRENT OF <em class="replaceable"><code>cursor</code></em>;
+</pre><p>
+<span class="original">
+        When a cursor is positioned on a table row, that row can be updated
+        or deleted using the cursor to identify the row.  There are
+        restrictions on what the cursor's query can be (in particular,
+        no grouping) and it's best to use &lt;literal&gt;FOR UPDATE&lt;/literal&gt; in the
+        cursor.  For more information see the
+        &lt;xref linkend="sql-declare"/&gt;
+        reference page.
+</span>
+カーソルの位置をテーブルの行に変更すれば、カーソルによって特定した行を更新または消去できます。
+カーソル問い合わせは何が許されているのか（特にグループ化しないとき）についての制限があり、それはカーソル内で<code class="literal">FOR UPDATE</code>を使用することが最善です。
+より詳細については<a class="xref" href="sql-declare.html" title="DECLARE"><span class="refentrytitle">DECLARE</span></a>マニュアルページを参照下さい。
+       </p><p>
+<span class="original">
+        An example:
+</span>
+以下に例を示します。
+</p><pre class="programlisting">
+UPDATE foo SET dataval = myval WHERE CURRENT OF curs1;
+</pre><p>
+       </p></div><div class="sect3" id="id-1.8.8.9.6.8"><div class="titlepage"><div><div><h4 class="title">43.7.3.4. <code class="literal">CLOSE</code></h4></div></div></div><pre class="synopsis">
+CLOSE <em class="replaceable"><code>cursor</code></em>;
+</pre><p>
+<span class="original">
+        &lt;command&gt;CLOSE&lt;/command&gt; closes the portal underlying an open
+        cursor.  This can be used to release resources earlier than end of
+        transaction, or to free up the cursor variable to be opened again.
+</span>
+<code class="command">CLOSE</code>はポータルの背後にあるカーソルを閉じます。
+これを使用してトランザクションの終わりよりも前にリソースを解放することができ、また、カーソル変数を解放し、再度開くことができます。
+       </p><p>
+<span class="original">
+        An example:
+</span>
+例：
+</p><pre class="programlisting">
+CLOSE curs1;
+</pre><p>
+       </p></div><div class="sect3" id="id-1.8.8.9.6.9"><div class="titlepage"><div><div><h4 class="title">43.7.3.5. カーソルを返す</h4></div></div></div><span class="original">
+     &lt;title&gt;Returning Cursors&lt;/title&gt;
+</span><p>
+<span class="original">
+        &lt;application&gt;PL/pgSQL&lt;/application&gt; functions can return cursors to the
+        caller. This is useful to return multiple rows or columns,
+        especially with very large result sets.  To do this, the function
+        opens the cursor and returns the cursor name to the caller (or simply
+        opens the cursor using a portal name specified by or otherwise known
+        to the caller).  The caller can then fetch rows from the cursor. The
+        cursor can be closed by the caller, or it will be closed automatically
+        when the transaction closes.
+</span>
+<span class="application">PL/pgSQL</span>関数では、呼び出し元にカーソルを返すことができます。
+この方法は、関数から複数行または複数列を返す場合、特にその結果集合が非常に大きい場合に有用です。
+これを行うには、関数はカーソルを開き、呼び出し元にカーソル名を返します（もしくは、もし呼び出し元でポータル名がわかっていれば、単純に指定されたポータル名を使用してカーソルを開きます）。
+これにより、呼び出し元はカーソルから行を取り出すことができるようになります。
+カーソルは呼び出し元で閉じることができます。
+または、トランザクションが終了した際に自動的に閉じられます。
+       </p><p>
+<span class="original">
+        The portal name used for a cursor can be specified by the
+        programmer or automatically generated.  To specify a portal name,
+        simply assign a string to the &lt;type&gt;refcursor&lt;/type&gt; variable before
+        opening it.  The string value of the &lt;type&gt;refcursor&lt;/type&gt; variable
+        will be used by &lt;command&gt;OPEN&lt;/command&gt; as the name of the underlying portal.
+        However, if the &lt;type&gt;refcursor&lt;/type&gt; variable is null,
+        &lt;command&gt;OPEN&lt;/command&gt; automatically generates a name that does not
+        conflict with any existing portal, and assigns it to the
+        &lt;type&gt;refcursor&lt;/type&gt; variable.
+</span>
+カーソル用のポータル名は、プログラマが指定するか、または自動的に生成されます。
+ポータル名を指定するには、開く前に、単に<code class="type">refcursor</code>変数に文字列を代入します。
+<code class="type">refcursor</code>変数の文字列値は<code class="command">OPEN</code>によって、背後のポータル名として使用されます。
+しかし、<code class="type">refcursor</code>変数がNULLの場合、<code class="command">OPEN</code>は自動的に既存のポータルと競合しない名前を生成し、それを<code class="type">refcursor</code>変数に代入します。
+       </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+         A bound cursor variable is initialized to the string value
+         representing its name, so that the portal name is the same as
+         the cursor variable name, unless the programmer overrides it
+         by assignment before opening the cursor.  But an unbound cursor
+         variable defaults to the null value initially, so it will receive
+         an automatically-generated unique name, unless overridden.
+</span>
+バウンドカーソル変数は、その名前を表現する文字列値で初期化されます。
+そのため、プログラマがカーソルを開く前に代入により上書きしない限り、ポータル名はカーソル変数と同じになります。
+しかし、アンバウンドカーソル変数の初期値はデフォルトでNULLです。
+そのため、上書きされていない場合に自動的に生成される一意な名前を受け取ります。
+        </p></div><p>
+<span class="original">
+        The following example shows one way a cursor name can be supplied by
+        the caller:
+</span>
+以下の例は、呼び出し元でカーソル名を指定する方法を示しています。
+
+</p><pre class="programlisting">
+CREATE TABLE test (col text);
+INSERT INTO test VALUES ('123');
+
+CREATE FUNCTION reffunc(refcursor) RETURNS refcursor AS '
+BEGIN
+    OPEN $1 FOR SELECT col FROM test;
+    RETURN $1;
+END;
+' LANGUAGE plpgsql;
+
+BEGIN;
+SELECT reffunc('funccursor');
+FETCH ALL IN funccursor;
+COMMIT;
+</pre><p>
+       </p><p>
+<span class="original">
+        The following example uses automatic cursor name generation:
+</span>
+以下の例では、自動的に生成されたカーソル名を使用しています。
+
+</p><pre class="programlisting">
+CREATE FUNCTION reffunc2() RETURNS refcursor AS '
+DECLARE
+    ref refcursor;
+BEGIN
+    OPEN ref FOR SELECT col FROM test;
+    RETURN ref;
+END;
+' LANGUAGE plpgsql;
+
+<span class="original">
+&amp;#045;- need to be in a transaction to use cursors.
+</span>
+-- カーソルを使用するには、トランザクション内部である必要があります。
+BEGIN;
+SELECT reffunc2();
+
+      reffunc2
+--------------------
+ &lt;unnamed cursor 1&gt;
+(1 row)
+
+FETCH ALL IN "&lt;unnamed cursor 1&gt;";
+COMMIT;
+</pre><p>
+       </p><p>
+<span class="original">
+        The following example shows one way to return multiple cursors
+        from a single function:
+</span>
+以下の例は単一関数から複数のカーソルを返す方法を示しています。
+
+</p><pre class="programlisting">
+CREATE FUNCTION myfunc(refcursor, refcursor) RETURNS SETOF refcursor AS $$
+BEGIN
+    OPEN $1 FOR SELECT * FROM table_1;
+    RETURN NEXT $1;
+    OPEN $2 FOR SELECT * FROM table_2;
+    RETURN NEXT $2;
+END;
+$$ LANGUAGE plpgsql;
+
+<span class="original">
+&amp;#045;&amp;#045; need to be in a transaction to use cursors.
+</span>
+-- カーソルを使用するには、トランザクション内部である必要があります。
+BEGIN;
+
+SELECT * FROM myfunc('a', 'b');
+
+FETCH ALL FROM a;
+FETCH ALL FROM b;
+COMMIT;
+</pre><p>
+       </p></div></div><div class="sect2" id="PLPGSQL-CURSOR-FOR-LOOP"><div class="titlepage"><div><div><h3 class="title">43.7.4. カーソル結果に対するループ</h3></div></div></div><span class="original">
+    &lt;title&gt;Looping Through a Cursor's Result&lt;/title&gt;
+</span><p>
+<span class="original">
+     There is a variant of the &lt;command&gt;FOR&lt;/command&gt; statement that allows
+     iterating through the rows returned by a cursor.  The syntax is:
+</span>
+カーソルで返される行に対して反復することができる<code class="command">FOR</code>文の亜種があります。
+構文は以下のようになります。
+
+</p><pre class="synopsis">
+[<span class="optional"> &lt;&lt;<em class="replaceable"><code>label</code></em>&gt;&gt; </span>]
+FOR <em class="replaceable"><code>recordvar</code></em> IN <em class="replaceable"><code>bound_cursorvar</code></em> [<span class="optional"> ( [<span class="optional"> <em class="replaceable"><code>argument_name</code></em> := </span>] <em class="replaceable"><code>argument_value</code></em> [<span class="optional">, ...</span>] ) </span>] LOOP
+    <em class="replaceable"><code>statements</code></em>
+END LOOP [<span class="optional"> <em class="replaceable"><code>label</code></em> </span>];
+</pre><p>
+
+<span class="original">
+     The cursor variable must have been bound to some query when it was
+     declared, and it &lt;emphasis&gt;cannot&lt;/emphasis&gt; be open already.  The
+     &lt;command&gt;FOR&lt;/command&gt; statement automatically opens the cursor, and it closes
+     the cursor again when the loop exits.  A list of actual argument value
+     expressions must appear if and only if the cursor was declared to take
+     arguments.  These values will be substituted in the query, in just
+     the same way as during an &lt;command&gt;OPEN&lt;/command&gt; (see &lt;xref
+     linkend="plpgsql-open-bound-cursor"/&gt;).
+</span>
+カーソル変数は宣言されたとき、何らかの問い合わせとバウンドされていなければならず、また既に開かれていては<span class="emphasis"><em>なりません</em></span>。
+<code class="command">FOR</code>文は自動的にカーソルを開き、ループから抜けたときに再度閉じます。
+実際の引数値式のリストは、カーソルが引数を取ることを宣言された場合に限ってのみ出現できます。
+これらの値は、<code class="command">OPEN</code>過程と同じ方法で、問い合わせの中で置換されます（<a class="xref" href="plpgsql-cursors.html#PLPGSQL-OPEN-BOUND-CURSOR" title="43.7.2.3. バウンドカーソルを開く">43.7.2.3</a>を参照してください）。
+   </p><p>
+<span class="original">
+     The variable &lt;replaceable&gt;recordvar&lt;/replaceable&gt; is automatically
+     defined as type &lt;type&gt;record&lt;/type&gt; and exists only inside the loop (any
+     existing definition of the variable name is ignored within the loop).
+     Each row returned by the cursor is successively assigned to this
+     record variable and the loop body is executed.
+</span>
+<em class="replaceable"><code>recordvar</code></em>変数は、<code class="type">record</code>型として自動的に定義され、ループ内でのみ存在します
+（存在するいかなる変数名の定義もループ内では無視されます）。
+カーソルによって返されたそれぞれの行はこのレコード変数に引き続いて割り当てられ、ループ本体が実行されます。
+    </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="plpgsql-control-structures.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="plpgsql.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="plpgsql-transactions.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">43.6. 制御構造 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 43.8. トランザクション制御</td></tr></table></div></body></html>

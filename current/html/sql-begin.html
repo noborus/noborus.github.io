@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>BEGIN</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-analyze.html" title="ANALYZE" /><link rel="next" href="sql-call.html" title="CALL" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      sql-begin.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-analyze.html" title="ANALYZE">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">BEGIN</td><td width="20%" align="right"> <a accesskey="n" href="sql-call.html" title="CALL">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-BEGIN"><div class="titlepage"></div><a id="id-1.9.3.47.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">BEGIN</span></h2><p>BEGIN<span class="original">
+  &lt;refpurpose&gt;start a transaction block&lt;/refpurpose&gt;
+</span> — トランザクションブロックを開始する</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
+BEGIN [ WORK | TRANSACTION ] [ <em class="replaceable"><code>transaction_mode</code></em> [, ...] ]
+
+<span class="original">
+&lt;phrase&gt;where &lt;replaceable class="parameter"&gt;transaction_mode&lt;/replaceable&gt; is one of:&lt;/phrase&gt;
+</span>
+<span class="phrase"><em class="replaceable"><code>transaction_mode</code></em>は以下のいずれかです。</span>
+
+    ISOLATION LEVEL { SERIALIZABLE | REPEATABLE READ | READ COMMITTED | READ UNCOMMITTED }
+    READ WRITE | READ ONLY
+    [ NOT ] DEFERRABLE
+</pre></div><div class="refsect1" id="id-1.9.3.47.5"><h2>説明</h2><span class="original">
+  &lt;title&gt;Description&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;command&gt;BEGIN&lt;/command&gt; initiates a transaction block, that is,
+   all statements after a &lt;command&gt;BEGIN&lt;/command&gt; command will be
+   executed in a single transaction until an explicit &lt;xref
+   linkend="sql-commit"/&gt; or &lt;xref
+   linkend="sql-rollback"/&gt; is given.
+   By default (without &lt;command&gt;BEGIN&lt;/command&gt;),
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; executes
+   transactions in &lt;quote&gt;autocommit&lt;/quote&gt; mode, that is, each
+   statement is executed in its own transaction and a commit is
+   implicitly performed at the end of the statement (if execution was
+   successful, otherwise a rollback is done).
+</span>
+<code class="command">BEGIN</code>はトランザクションブロックを初期化します。
+<code class="command">BEGIN</code>コマンド以降の文は全て、明示的な<a class="xref" href="sql-commit.html" title="COMMIT"><span class="refentrytitle">COMMIT</span></a>もしくは<a class="xref" href="sql-rollback.html" title="ROLLBACK"><span class="refentrytitle">ROLLBACK</span></a>が与えられるまで、単一のトランザクションの中で実行されます。
+デフォルト（<code class="command">BEGIN</code>がない場合）は、<span class="productname">PostgreSQL</span>はトランザクションを<span class="quote">「<span class="quote">自動コミット</span>」</span>で実行します。
+つまり、各文はそれぞれ固有のトランザクションの中で実行され、文の終わりで暗黙的にコミットが実行されます（これは実行が成功した場合です。失敗した場合はロールバックされます）。
+
+  </p><p>
+<span class="original">
+   Statements are executed more quickly in a transaction block, because
+   transaction start/commit requires significant CPU and disk
+   activity. Execution of multiple statements inside a transaction is
+   also useful to ensure consistency when making several related changes:
+   other sessions will be unable to see the intermediate states
+   wherein not all the related updates have been done.
+</span>
+トランザクションブロック内では、文はより迅速に実行されます。
+なぜなら、トランザクションの開始やコミットは、CPUとディスクにかなり高い負荷をかけるからです。
+また、1つのトランザクションで複数の文を実行することは、複数の関連するテーブルを更新する際、確実に一貫性を保つためにも役立ちます。
+関連する更新の中に完了していないものが存在する中間的な状態が、他のセッションから参照できなくなるからです。
+  </p><p>
+<span class="original">
+   If the isolation level, read/write mode, or deferrable mode is specified, the new
+   transaction has those characteristics, as if
+   &lt;xref linkend="sql-set-transaction"/&gt;
+   was executed.
+</span>
+隔離レベル、読み書きモード、または遅延モードが指定されている場合、新しいトランザクションは、<a class="xref" href="sql-set-transaction.html" title="SET TRANSACTION"><span class="refentrytitle">SET TRANSACTION</span></a>が実行された時と同様の特性を持ちます。
+  </p></div><div class="refsect1" id="id-1.9.3.47.6"><h2>パラメータ</h2><span class="original">
+  &lt;title&gt;Parameters&lt;/title&gt;
+</span><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">WORK</code><br /></span><span class="term"><code class="literal">TRANSACTION</code></span></dt><dd><p>
+<span class="original">
+      Optional key words. They have no effect.
+</span>
+      省略可能なキーワードです。これらは何も効果がありません。
+
+     </p></dd></dl></div><p>
+<span class="original">
+   Refer to &lt;xref linkend="sql-set-transaction"/&gt; for information on the meaning
+   of the other parameters to this statement.
+</span>
+BEGIN文のこの他のパラメータについては、<a class="xref" href="sql-set-transaction.html" title="SET TRANSACTION"><span class="refentrytitle">SET TRANSACTION</span></a>を参照してください。
+  </p></div><div class="refsect1" id="id-1.9.3.47.7"><h2>注釈</h2><span class="original">
+  &lt;title&gt;Notes&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;xref linkend="sql-start-transaction"/&gt; has the same functionality
+   as &lt;command&gt;BEGIN&lt;/command&gt;.
+</span>
+<a class="xref" href="sql-start-transaction.html" title="START TRANSACTION"><span class="refentrytitle">START TRANSACTION</span></a>には<code class="command">BEGIN</code>と同じ機能があります。
+  </p><p>
+<span class="original">
+   Use &lt;xref linkend="sql-commit"/&gt; or
+   &lt;xref linkend="sql-rollback"/&gt;
+   to terminate a transaction block.
+</span>
+トランザクションを終了させるには<a class="xref" href="sql-commit.html" title="COMMIT"><span class="refentrytitle">COMMIT</span></a>または<a class="xref" href="sql-rollback.html" title="ROLLBACK"><span class="refentrytitle">ROLLBACK</span></a>を使用してください。
+  </p><p>
+<span class="original">
+   Issuing &lt;command&gt;BEGIN&lt;/command&gt; when already inside a transaction block will
+   provoke a warning message.  The state of the transaction is not affected.
+   To nest transactions within a transaction block, use savepoints
+   (see &lt;xref linkend="sql-savepoint"/&gt;).
+</span>
+トランザクションブロック内で<code class="command">BEGIN</code>を発行すると、警告メッセージが表示されます。
+ただし、トランザクションの状態には影響ありません。
+トランザクションブロック内でトランザクションを入れ子にするには、セーブポイントを使用してください
+（詳しくは<a class="xref" href="sql-savepoint.html" title="SAVEPOINT"><span class="refentrytitle">SAVEPOINT</span></a>を参照してください）。
+  </p><p>
+<span class="original">
+   For reasons of backwards compatibility, the commas between successive
+   &lt;replaceable class="parameter"&gt;transaction_modes&lt;/replaceable&gt; can be
+   omitted.
+</span>
+後方互換性の保持のため、連続する<em class="replaceable"><code>transaction_modes</code></em>間のカンマは省略することができます。
+  </p></div><div class="refsect1" id="id-1.9.3.47.8"><h2>例</h2><span class="original">
+  &lt;title&gt;Examples&lt;/title&gt;
+</span><p>
+<span class="original">
+   To begin a transaction block:
+</span>
+トランザクションブロックを開始します。
+
+</p><pre class="programlisting">
+BEGIN;
+</pre></div><div class="refsect1" id="id-1.9.3.47.9"><h2>互換性</h2><span class="original">
+  &lt;title&gt;Compatibility&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;command&gt;BEGIN&lt;/command&gt; is a &lt;productname&gt;PostgreSQL&lt;/productname&gt;
+   language extension.  It is equivalent to the SQL-standard command
+   &lt;xref linkend="sql-start-transaction"/&gt;, whose reference page
+   contains additional compatibility information.
+</span>
+<code class="command">BEGIN</code>は<span class="productname">PostgreSQL</span>の拡張です。
+標準SQLの<a class="xref" href="sql-start-transaction.html" title="START TRANSACTION"><span class="refentrytitle">START TRANSACTION</span></a>コマンドと等価です。
+このマニュアルページには互換性に関する詳細な情報が含まれます。
+  </p><p>
+<span class="original">
+   The &lt;literal&gt;DEFERRABLE&lt;/literal&gt;
+   &lt;replaceable class="parameter"&gt;transaction_mode&lt;/replaceable&gt;
+   is a &lt;productname&gt;PostgreSQL&lt;/productname&gt; language extension.
+</span>
+<code class="literal">DEFERRABLE</code> <em class="replaceable"><code>transaction_mode</code></em>は<span class="productname">PostgreSQL</span>の言語拡張です。
+  </p><p>
+<span class="original">
+   Incidentally, the &lt;literal&gt;BEGIN&lt;/literal&gt; key word is used for a
+   different purpose in embedded SQL. You are advised to be careful
+   about the transaction semantics when porting database applications.
+</span>
+埋め込みSQLでは、<code class="literal">BEGIN</code>というキーワードを異なった目的に使用しています。
+データベースアプリケーションを移植する時は、トランザクションの意味で使用されているのかどうかに注意してください。
+  </p></div><div class="refsect1" id="id-1.9.3.47.10"><h2>関連項目</h2><span class="original">
+  &lt;title&gt;See Also&lt;/title&gt;
+</span><span class="simplelist"><a class="xref" href="sql-commit.html" title="COMMIT"><span class="refentrytitle">COMMIT</span></a>, <a class="xref" href="sql-rollback.html" title="ROLLBACK"><span class="refentrytitle">ROLLBACK</span></a>, <a class="xref" href="sql-start-transaction.html" title="START TRANSACTION"><span class="refentrytitle">START TRANSACTION</span></a>, <a class="xref" href="sql-savepoint.html" title="SAVEPOINT"><span class="refentrytitle">SAVEPOINT</span></a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-analyze.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-call.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">ANALYZE </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> CALL</td></tr></table></div></body></html>

@@ -1,0 +1,904 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>9.4. 文字列関数と演算子</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="functions-math.html" title="9.3. 算術関数と演算子" /><link rel="next" href="functions-binarystring.html" title="9.5. バイナリ文字列関数と演算子" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="functions.html" title="第9章 関数と演算子">第9章 関数と演算子</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      functions-string.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="functions-math.html" title="9.3. 算術関数と演算子">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="functions.html" title="第9章 関数と演算子">上へ</a></td><td width="60%" align="center">9.4. 文字列関数と演算子</td><td width="20%" align="right"> <a accesskey="n" href="functions-binarystring.html" title="9.5. バイナリ文字列関数と演算子">次へ</a></td></tr></table><hr /></div><div class="sect1" id="FUNCTIONS-STRING"><div class="titlepage"><div><div><h2 class="title" style="clear: both">9.4. 文字列関数と演算子</h2></div></div></div><span class="original">
+   &lt;title&gt;String Functions and Operators&lt;/title&gt;
+</span><p>
+<span class="original">
+    This section describes functions and operators for examining and
+    manipulating string values.  Strings in this context include values
+    of the types &lt;type&gt;character&lt;/type&gt;, &lt;type&gt;character varying&lt;/type&gt;,
+    and &lt;type&gt;text&lt;/type&gt;.  Unless otherwise noted, all
+    of the functions listed below work on all of these types, but be
+    wary of potential effects of automatic space-padding when using the
+    &lt;type&gt;character&lt;/type&gt; type.  Some functions also exist
+    natively for the bit-string types.
+</span>
+本節では文字列の値の調査や操作のための関数と演算子について説明します。
+ここでの文字列とは<code class="type">character</code>データ型、<code class="type">character varying</code>データ型、および<code class="type">text</code>データ型の値を含みます。
+補足説明のない限り、下記に挙げている全ての関数はこれら全てのデータ型に対して使用できますが、<code class="type">character</code>データ型を使用した場合、自動的に空白文字が詰め込まれるという潜在的作用がありますので注意してください。
+ビット文字列データ型に対する専用の関数もいくつかあります。
+   </p><p>
+<span class="original">
+    &lt;acronym&gt;SQL&lt;/acronym&gt; defines some string functions that use
+    key words, rather than commas, to separate
+    arguments.  Details are in
+    &lt;xref linkend="functions-string-sql"/&gt;.
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; also provides versions of these functions
+    that use the regular function invocation syntax
+    (see &lt;xref linkend="functions-string-other"/&gt;).
+</span>
+<acronym class="acronym">SQL</acronym>では引数の区切りにカンマではなくキーワードを使用する文字列関数をいくつか定義しています。
+詳細については<a class="xref" href="functions-string.html#FUNCTIONS-STRING-SQL" title="表9.8 SQL文字列関数と演算子">表 9.8</a>を参照してください。
+また<span class="productname">PostgreSQL</span>は、これらの関数に対して通常の関数呼び出し構文を使用するバージョンを提供します（<a class="xref" href="functions-string.html#FUNCTIONS-STRING-OTHER" title="表9.9 その他の文字列関数">表 9.9</a>を参照してください）。
+   </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+     Before &lt;productname&gt;PostgreSQL&lt;/productname&gt; 8.3, these functions would
+     silently accept values of several non-string data types as well, due to
+     the presence of implicit coercions from those data types to
+     &lt;type&gt;text&lt;/type&gt;.  Those coercions have been removed because they frequently
+     caused surprising behaviors.  However, the string concatenation operator
+     (&lt;literal&gt;||&lt;/literal&gt;) still accepts non-string input, so long as at least one
+     input is of a string type, as shown in &lt;xref
+     linkend="functions-string-sql"/&gt;.  For other cases, insert an explicit
+     coercion to &lt;type&gt;text&lt;/type&gt; if you need to duplicate the previous behavior.
+</span>
+<span class="productname">PostgreSQL</span>の8.3より前において、これらの関数はいくつかの非文字列データ型の値を警告なしに受け付けたのは、それらデータ型を暗黙的に<code class="type">text</code>型に型変換していたことによります。
+この強制的な変換は、頻繁に予期しない動作の原因となったので削除されました。
+しかし、文字列連結演算子（<code class="literal">||</code>）は<a class="xref" href="functions-string.html#FUNCTIONS-STRING-SQL" title="表9.8 SQL文字列関数と演算子">表 9.8</a>で示されるように、少なくともひとつの入力が文字列型であれば、依然として非文字列入力を受け付けます。
+その他の場合、以前と同じ動作が必要なら、<code class="type">text</code>への明示的な変換を行ってください。
+    </p></div><div class="table" id="FUNCTIONS-STRING-SQL"><p class="title"><strong>表9.8 <acronym class="acronym">SQL</acronym>文字列関数と演算子</strong></p><div class="table-contents"><span class="original">
+    &lt;title&gt;&lt;acronym&gt;SQL&lt;/acronym&gt; String Functions and Operators&lt;/title&gt;
+</span><table class="table" summary="SQL文字列関数と演算子" border="1"><colgroup><col /><col /><col /><col /><col /></colgroup><thead><tr><th>関数</th><th>戻り値型</th><th>説明</th><th>例</th><th>結果</th></tr></thead><tbody><tr><td><code class="literal"><em class="parameter"><code>string</code></em> <code class="literal">||</code>
+        <em class="parameter"><code>string</code></em></code></td><td> <code class="type">text</code> </td><td>
+<span class="original">
+        String concatenation
+</span>
+        文字列結合
+        <a id="id-1.5.8.9.5.2.2.1.3.1" class="indexterm"></a>
+       </td><td><code class="literal">'Post' || 'greSQL'</code></td><td><code class="literal">PostgreSQL</code></td></tr><tr><td>
+<span class="original">
+        &lt;literal&gt;&lt;parameter&gt;string&lt;/parameter&gt; &lt;literal&gt;||&lt;/literal&gt;
+        &lt;parameter&gt;non-string&lt;/parameter&gt;&lt;/literal&gt;
+        or
+        &lt;literal&gt;&lt;parameter&gt;non-string&lt;/parameter&gt; &lt;literal&gt;||&lt;/literal&gt;
+        &lt;parameter&gt;string&lt;/parameter&gt;&lt;/literal&gt;
+</span>
+        <code class="literal"><em class="parameter"><code>文字列</code></em> <code class="literal">||</code>
+        <em class="parameter"><code>非文字列</code></em></code>
+        または、
+        <code class="literal"><em class="parameter"><code>非文字列</code></em> <code class="literal">||</code>
+        <em class="parameter"><code>文字列</code></em></code>
+       </td><td> <code class="type">text</code> </td><td>
+<span class="original">
+        String concatenation with one non-string input
+</span>
+        ひとつの非文字列の入力がある文字列結合
+       </td><td><code class="literal">'Value: ' || 42</code></td><td><code class="literal">Value: 42</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.5.2.2.3.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">bit_length(<em class="parameter"><code>string</code></em>)</code></code>
+       </td><td><code class="type">int</code></td><td>文字列中のビット数</td><td><code class="literal">bit_length('jose')</code></td><td><code class="literal">32</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.5.2.2.4.1.1" class="indexterm"></a>
+<span class="original">
+        &lt;literal&gt;&lt;function&gt;char_length(&lt;parameter&gt;string&lt;/parameter&gt;)&lt;/function&gt;&lt;/literal&gt; or &lt;literal&gt;&lt;function&gt;character_length(&lt;parameter&gt;string&lt;/parameter&gt;)&lt;/function&gt;&lt;/literal&gt;
+</span>
+        <code class="literal"><code class="function">char_length(<em class="parameter"><code>string</code></em>)</code></code> または <code class="literal"><code class="function">character_length(<em class="parameter"><code>string</code></em>)</code></code>
+       </td><td><code class="type">int</code></td><td>
+<span class="original">
+        Number of characters in string
+</span>
+        文字列中の文字数
+        <a id="id-1.5.8.9.5.2.2.4.3.1" class="indexterm"></a>
+        <a id="id-1.5.8.9.5.2.2.4.3.2" class="indexterm"></a>
+       </td><td><code class="literal">char_length('jose')</code></td><td><code class="literal">4</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.5.2.2.5.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">lower(<em class="parameter"><code>string</code></em>)</code></code>
+       </td><td><code class="type">text</code></td><td>文字列を小文字に変換</td><td><code class="literal">lower('TOM')</code></td><td><code class="literal">tom</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.5.2.2.6.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">octet_length(<em class="parameter"><code>string</code></em>)</code></code>
+       </td><td><code class="type">int</code></td><td>文字列中のバイト数</td><td><code class="literal">octet_length('jose')</code></td><td><code class="literal">4</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.5.2.2.7.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">overlay(<em class="parameter"><code>string</code></em> placing <em class="parameter"><code>string</code></em> from <code class="type">int</code> [<span class="optional">for <code class="type">int</code></span>])</code></code>
+       </td><td><code class="type">text</code></td><td>
+<span class="original">
+        Replace substring
+</span>
+        部分文字列の置換
+       </td><td><code class="literal">overlay('Txxxxas' placing 'hom' from 2 for 4)</code></td><td><code class="literal">Thomas</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.5.2.2.8.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">position(<em class="parameter"><code>substring</code></em> in <em class="parameter"><code>string</code></em>)</code></code>
+       </td><td><code class="type">int</code></td><td>指定した部分文字列の場所</td><td><code class="literal">position('om' in 'Thomas')</code></td><td><code class="literal">3</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.5.2.2.9.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">substring(<em class="parameter"><code>string</code></em> [<span class="optional">from <code class="type">int</code></span>] [<span class="optional">for <code class="type">int</code></span>])</code></code>
+       </td><td><code class="type">text</code></td><td>
+<span class="original">
+        Extract substring
+</span>
+        部分文字列の取り出し
+       </td><td><code class="literal">substring('Thomas' from 2 for 3)</code></td><td><code class="literal">hom</code></td></tr><tr><td><code class="literal"><code class="function">substring(<em class="parameter"><code>string</code></em> from <em class="replaceable"><code>pattern</code></em>)</code></code></td><td><code class="type">text</code></td><td>
+<span class="original">
+        Extract substring matching POSIX regular expression. See
+        &lt;xref linkend="functions-matching"/&gt; for more information on pattern
+        matching.
+</span>
+POSIX正規表現に一致する部分文字列を取り出します。
+パターンマッチに関してより詳細は、<a class="xref" href="functions-matching.html" title="9.7. パターンマッチ">9.7</a>を参照してください。
+       </td><td><code class="literal">substring('Thomas' from '...$')</code></td><td><code class="literal">mas</code></td></tr><tr><td><code class="literal"><code class="function">substring(<em class="parameter"><code>string</code></em> from <em class="replaceable"><code>pattern</code></em> for <em class="replaceable"><code>escape</code></em>)</code></code></td><td><code class="type">text</code></td><td>
+<span class="original">
+        Extract substring matching &lt;acronym&gt;SQL&lt;/acronym&gt; regular expression.
+        See &lt;xref linkend="functions-matching"/&gt; for more information on
+        pattern matching.
+</span>
+<acronym class="acronym">SQL</acronym>正規表現に一致する部分文字列を取り出します。
+パターンマッチに関してより詳細は、<a class="xref" href="functions-matching.html" title="9.7. パターンマッチ">9.7</a>を参照してください。
+       </td><td><code class="literal">substring('Thomas' from '%#"o_a#"_' for '#')</code></td><td><code class="literal">oma</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.5.2.2.12.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">trim([<span class="optional">leading | trailing | both</span>]
+        [<span class="optional"><em class="parameter"><code>characters</code></em></span>] from
+        <em class="parameter"><code>string</code></em>)</code></code>
+       </td><td><code class="type">text</code></td><td>
+<span class="original">
+        Remove the longest string containing only characters from
+        &lt;parameter&gt;characters&lt;/parameter&gt; (a space by default) from the
+        start, end, or both ends (&lt;literal&gt;both&lt;/literal&gt; is the default)
+        of &lt;parameter&gt;string&lt;/parameter&gt;
+</span>
+<em class="parameter"><code>characters</code></em>（デフォルトでは空白）に含まれる文字のみを含む最も長い文字列を、<em class="parameter"><code>string</code></em>の先頭（start）、末尾（end）、あるいはその両方（both、デフォルトは<code class="literal">both</code>です）から削除します。
+       </td><td><code class="literal">trim(both 'xyz' from 'yxTomxx')</code></td><td><code class="literal">Tom</code></td></tr><tr><td>
+        <code class="literal"><code class="function">trim([<span class="optional">leading | trailing
+        | both</span>] [<span class="optional">from</span>]
+        <em class="parameter"><code>string</code></em>
+        [<span class="optional">, <em class="parameter"><code>characters</code></em></span>]
+        )</code></code>
+       </td><td><code class="type">text</code></td><td>
+<span class="original">
+        Non-standard syntax for &lt;function&gt;trim()&lt;/function&gt;
+</span>
+        <code class="function">trim()</code>の標準と異なる構文
+       </td><td><code class="literal">trim(both from 'yxTomxx', 'xyz')</code></td><td><code class="literal">Tom</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.5.2.2.14.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">upper(<em class="parameter"><code>string</code></em>)</code></code>
+       </td><td><code class="type">text</code></td><td>文字列を大文字に変換</td><td><code class="literal">upper('tom')</code></td><td><code class="literal">TOM</code></td></tr></tbody></table></div></div><br class="table-break" /><p>
+<span class="original">
+    Additional string manipulation functions are available and are
+    listed in &lt;xref linkend="functions-string-other"/&gt;.  Some of them are used internally to implement the
+    &lt;acronym&gt;SQL&lt;/acronym&gt;-standard string functions listed in &lt;xref linkend="functions-string-sql"/&gt;.
+</span>
+この他、<a class="xref" href="functions-string.html#FUNCTIONS-STRING-OTHER" title="表9.9 その他の文字列関数">表 9.9</a>に列挙する文字列操作関数が使えます。
+そのいくつかは、<a class="xref" href="functions-string.html#FUNCTIONS-STRING-SQL" title="表9.8 SQL文字列関数と演算子">表 9.8</a>で列挙した標準<acronym class="acronym">SQL</acronym>の文字列関数を実装するため、内部的に使用されます。
+   </p><div class="table" id="FUNCTIONS-STRING-OTHER"><p class="title"><strong>表9.9 その他の文字列関数</strong></p><div class="table-contents"><span class="original">
+    &lt;title&gt;Other String Functions&lt;/title&gt;
+</span><table class="table" summary="その他の文字列関数" border="1"><colgroup><col /><col /><col /><col /><col /></colgroup><thead><tr><th>関数</th><th>戻り値型</th><th>説明</th><th>例</th><th>結果</th></tr></thead><tbody><tr><td>
+        <a id="id-1.5.8.9.7.2.2.1.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">ascii(<em class="parameter"><code>string</code></em>)</code></code>
+       </td><td><code class="type">int</code></td><td>
+<span class="original">
+        &lt;acronym&gt;ASCII&lt;/acronym&gt; code of the first character of the
+        argument.  For &lt;acronym&gt;UTF8&lt;/acronym&gt; returns the Unicode code
+        point of the character.  For other multibyte encodings, the
+        argument must be an &lt;acronym&gt;ASCII&lt;/acronym&gt; character.
+</span>
+引数の最初の文字の<acronym class="acronym">ASCII</acronym>コード。
+<acronym class="acronym">UTF8</acronym>に対しては文字のUnicodeコードポイントを返します。
+その他のマルチバイト符号化方式の場合、引数は<acronym class="acronym">ASCII</acronym>文字でなくてはなりません。
+       </td><td><code class="literal">ascii('x')</code></td><td><code class="literal">120</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.2.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">btrim(<em class="parameter"><code>string</code></em> <code class="type">text</code>
+        [<span class="optional">, <em class="parameter"><code>characters</code></em> <code class="type">text</code></span>])</code></code>
+       </td><td><code class="type">text</code></td><td>
+<span class="original">
+        Remove the longest string consisting only of characters
+        in &lt;parameter&gt;characters&lt;/parameter&gt; (a space by default)
+        from the start and end of &lt;parameter&gt;string&lt;/parameter&gt;
+</span>
+<em class="parameter"><code>characters</code></em>（デフォルトは空白文字）で指定された文字のみを有する最長の文字列を、<em class="parameter"><code>string</code></em>の先頭と末尾から削除します。
+       </td><td><code class="literal">btrim('xyxtrimyyx', 'xyz')</code></td><td><code class="literal">trim</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.3.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">chr(<code class="type">int</code>)</code></code>
+       </td><td><code class="type">text</code></td><td>
+<span class="original">
+        Character with the given code. For &lt;acronym&gt;UTF8&lt;/acronym&gt; the
+        argument is treated as a Unicode code point. For other multibyte
+        encodings the argument must designate an
+        &lt;acronym&gt;ASCII&lt;/acronym&gt; character.  The NULL (0) character is not
+        allowed because text data types cannot store such bytes.
+</span>
+与えられたコードの文字。<acronym class="acronym">UTF8</acronym>では引数はUnicodeコードポイントとして扱われます。
+その他のマルチバイト符号化方式で引数は<acronym class="acronym">ASCII</acronym>文字を指定するものである必要があります。
+NULL (0)文字はテキストデータ型がそのようなバイトを格納することができないので許可されません。
+       </td><td><code class="literal">chr(65)</code></td><td><code class="literal">A</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.4.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">concat(<em class="parameter"><code>str</code></em> <code class="type">"any"</code>
+         [, <em class="parameter"><code>str</code></em> <code class="type">"any"</code> [, ...] ])</code></code>
+       </td><td><code class="type">text</code></td><td>
+<span class="original">
+        Concatenate the text representations of all the arguments.
+        NULL arguments are ignored.
+</span>
+すべての引数のテキスト表現を結合します。NULLの引数は無視されます。
+       </td><td><code class="literal">concat('abcde', 2, NULL, 22)</code></td><td><code class="literal">abcde222</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.5.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">concat_ws(<em class="parameter"><code>sep</code></em> <code class="type">text</code>,
+        <em class="parameter"><code>str</code></em> <code class="type">"any"</code>
+        [, <em class="parameter"><code>str</code></em> <code class="type">"any"</code> [, ...] ])</code></code>
+       </td><td><code class="type">text</code></td><td>
+<span class="original">
+        Concatenate all but the first argument with separators. The first
+        argument is used as the separator string. NULL arguments are ignored.
+</span>
+第一引数を除くすべての引数を、区切り文字を付けて結合します。
+第一引数は区切り文字列として使用されます。
+NULLの引数は無視されます。
+       </td><td><code class="literal">concat_ws(',', 'abcde', 2, NULL, 22)</code></td><td><code class="literal">abcde,2,22</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.6.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">convert(<em class="parameter"><code>string</code></em> <code class="type">bytea</code>,
+        <em class="parameter"><code>src_encoding</code></em> <code class="type">name</code>,
+        <em class="parameter"><code>dest_encoding</code></em> <code class="type">name</code>)</code></code>
+       </td><td><code class="type">bytea</code></td><td>
+<span class="original">
+        Convert string to &lt;parameter&gt;dest_encoding&lt;/parameter&gt;.  The
+        original encoding is specified by
+        &lt;parameter&gt;src_encoding&lt;/parameter&gt;. The
+        &lt;parameter&gt;string&lt;/parameter&gt; must be valid in this encoding.
+        Conversions can be defined by &lt;command&gt;CREATE CONVERSION&lt;/command&gt;.
+        Also there are some predefined conversions. See &lt;xref
+        linkend="conversion-names"/&gt; for available conversions.
+</span>
+文字列を<em class="parameter"><code>dest_encoding</code></em>に変換します。
+元の符号化方式は<em class="parameter"><code>src_encoding</code></em>で指定されます。
+<em class="parameter"><code>string</code></em>はこの符号化方式で有効でなければなりません。
+変換は<code class="command">CREATE CONVERSION</code>で定義されます。
+また、あらかじめ定義された変換もあります。
+利用可能な変換については<a class="xref" href="functions-string.html#CONVERSION-NAMES" title="表9.10 組み込みの変換">表 9.10</a>を参照してください。
+       </td><td><code class="literal">convert('text_in_utf8', 'UTF8', 'LATIN1')</code></td><td>Latin-1（ISO 8859-1）符号化方式の<code class="literal">text_in_utf8</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.7.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">convert_from(<em class="parameter"><code>string</code></em> <code class="type">bytea</code>,
+        <em class="parameter"><code>src_encoding</code></em> <code class="type">name</code>)</code></code>
+       </td><td><code class="type">text</code></td><td>
+<span class="original">
+        Convert string to the database encoding.  The original encoding
+        is specified by &lt;parameter&gt;src_encoding&lt;/parameter&gt;. The
+        &lt;parameter&gt;string&lt;/parameter&gt; must be valid in this encoding.
+</span>
+データベースの符号化方式に文字列を変換します。
+元の符号化方式は<em class="parameter"><code>src_encoding</code></em>で指定されます。
+<em class="parameter"><code>string</code></em>はこの符号化方式で有効なものでなければなりません。
+       </td><td><code class="literal">convert_from('text_in_utf8', 'UTF8')</code></td><td>現在のデータベース符号化方式の<code class="literal">text_in_utf8</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.8.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">convert_to(<em class="parameter"><code>string</code></em> <code class="type">text</code>,
+        <em class="parameter"><code>dest_encoding</code></em> <code class="type">name</code>)</code></code>
+       </td><td><code class="type">bytea</code></td><td>
+<span class="original">
+        Convert string to &lt;parameter&gt;dest_encoding&lt;/parameter&gt;.
+</span>
+        文字列を<em class="parameter"><code>dest_encoding</code></em>に変換します。
+       </td><td><code class="literal">convert_to('some text', 'UTF8')</code></td><td>UTF8符号化方式の<code class="literal">some text</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.9.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">decode(<em class="parameter"><code>string</code></em> <code class="type">text</code>,
+        <em class="parameter"><code>format</code></em> <code class="type">text</code>)</code></code>
+       </td><td><code class="type">bytea</code></td><td>
+<span class="original">
+        Decode binary data from textual representation in &lt;parameter&gt;string&lt;/parameter&gt;.
+        Options for &lt;parameter&gt;format&lt;/parameter&gt; are same as in &lt;function&gt;encode&lt;/function&gt;.
+</span>
+<em class="parameter"><code>string</code></em>のテキスト表現からバイナリデータを復号します。
+<em class="parameter"><code>format</code></em>のオプションは<code class="function">encode()</code>と同じです。
+       </td><td><code class="literal">decode('MTIzAAE=', 'base64')</code></td><td><code class="literal">\x3132330001</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.10.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">encode(<em class="parameter"><code>data</code></em> <code class="type">bytea</code>,
+        <em class="parameter"><code>format</code></em> <code class="type">text</code>)</code></code>
+       </td><td><code class="type">text</code></td><td>
+<span class="original">
+        Encode binary data into a textual representation.  Supported
+        formats are: &lt;literal&gt;base64&lt;/literal&gt;, &lt;literal&gt;hex&lt;/literal&gt;, &lt;literal&gt;escape&lt;/literal&gt;.
+        &lt;literal&gt;escape&lt;/literal&gt; converts zero bytes and high-bit-set bytes to
+        octal sequences (&lt;literal&gt;\&lt;/literal&gt;&lt;replaceable&gt;nnn&lt;/replaceable&gt;) and
+        doubles backslashes.
+</span>
+バイナリデータをテキスト表現形式に符号化します。
+サポートされているformatは、<code class="literal">base64</code>、<code class="literal">hex</code>、<code class="literal">escape</code>です。
+<code class="literal">escape</code>は0のバイトと最上位ビットがセットされているバイトを8進数のシーケンス(<code class="literal">\</code><em class="replaceable"><code>nnn</code></em>)に変換し 、バックスラッシュを二重化します。
+       </td><td><code class="literal">encode('123\000\001', 'base64')</code></td><td><code class="literal">MTIzAAE=</code></td></tr><tr><td id="FORMAT">
+        <a id="id-1.5.8.9.7.2.2.11.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">format</code>(<em class="parameter"><code>formatstr</code></em> <code class="type">text</code>
+        [, <em class="parameter"><code>formatarg</code></em> <code class="type">"any"</code> [, ...] ])</code>
+       </td><td><code class="type">text</code></td><td>
+<span class="original">
+         Format arguments according to a format string.
+         This function is similar to the C function &lt;function&gt;sprintf&lt;/function&gt;.
+         See &lt;xref linkend="functions-string-format"/&gt;.
+</span>
+引数の書式をフォーマット文字列に従って整えます。
+この関数はC言語関数の<code class="function">sprintf</code>と似ています。
+<a class="xref" href="functions-string.html#FUNCTIONS-STRING-FORMAT" title="9.4.1. format">9.4.1</a>を参照してください。
+       </td><td><code class="literal">format('Hello %s, %1$s', 'World')</code></td><td><code class="literal">Hello World, World</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.12.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">initcap(<em class="parameter"><code>string</code></em>)</code></code>
+       </td><td><code class="type">text</code></td><td>
+<span class="original">
+        Convert the first letter of each word to upper case and the
+        rest to lower case. Words are sequences of alphanumeric
+        characters separated by non-alphanumeric characters.
+</span>
+それぞれの単語の第一文字を大文字に、残りは小文字に変換します。
+ここで単語とは、英数字以外の文字で区切られた、英数字からなる文字の並びのことです。
+       </td><td><code class="literal">initcap('hi THOMAS')</code></td><td><code class="literal">Hi Thomas</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.13.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">left(<em class="parameter"><code>str</code></em> <code class="type">text</code>,
+        <em class="parameter"><code>n</code></em> <code class="type">int</code>)</code></code>
+       </td><td><code class="type">text</code></td><td>
+<span class="original">
+        Return first &lt;replaceable&gt;n&lt;/replaceable&gt; characters in the string. When &lt;replaceable&gt;n&lt;/replaceable&gt;
+        is negative, return all but last |&lt;replaceable&gt;n&lt;/replaceable&gt;| characters.
+</span>
+文字列の先頭から<em class="replaceable"><code>n</code></em>文字を返します。
+<em class="replaceable"><code>n</code></em>が負数の場合、文字列の末尾から|<em class="replaceable"><code>n</code></em>|文字を切り取った文字列を返します。
+        </td><td><code class="literal">left('abcde', 2)</code></td><td><code class="literal">ab</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.14.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">length(<em class="parameter"><code>string</code></em>)</code></code>
+       </td><td><code class="type">int</code></td><td>
+<span class="original">
+        Number of characters in &lt;parameter&gt;string&lt;/parameter&gt;
+</span>
+        <em class="parameter"><code>string</code></em>内の文字数
+       </td><td><code class="literal">length('jose')</code></td><td><code class="literal">4</code></td></tr><tr><td><code class="literal"><code class="function">length(<em class="parameter"><code>string</code></em> <code class="type">bytea</code>,
+        <em class="parameter"><code>encoding</code></em> <code class="type">name</code> )</code></code></td><td><code class="type">int</code></td><td>
+<span class="original">
+        Number of characters in &lt;parameter&gt;string&lt;/parameter&gt; in the given
+        &lt;parameter&gt;encoding&lt;/parameter&gt;. The &lt;parameter&gt;string&lt;/parameter&gt;
+        must be valid in this encoding.
+</span>
+与えられた<em class="parameter"><code>encoding</code></em>での<em class="parameter"><code>string</code></em>内の文字数。
+<em class="parameter"><code>string</code></em>はこの符号化方式で有効でなければなりません。
+       </td><td><code class="literal">length('jose', 'UTF8')</code></td><td><code class="literal">4</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.16.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">lpad(<em class="parameter"><code>string</code></em> <code class="type">text</code>,
+        <em class="parameter"><code>length</code></em> <code class="type">int</code>
+        [<span class="optional">, <em class="parameter"><code>fill</code></em> <code class="type">text</code></span>])</code></code>
+       </td><td><code class="type">text</code></td><td>
+<span class="original">
+        Fill up the &lt;parameter&gt;string&lt;/parameter&gt; to length
+        &lt;parameter&gt;length&lt;/parameter&gt; by prepending the characters
+        &lt;parameter&gt;fill&lt;/parameter&gt; (a space by default).  If the
+        &lt;parameter&gt;string&lt;/parameter&gt; is already longer than
+        &lt;parameter&gt;length&lt;/parameter&gt; then it is truncated (on the
+        right).
+</span>
+文字<em class="parameter"><code>fill</code></em>（デフォルトは空白文字）を文字列の前に追加して、<em class="parameter"><code>string</code></em>を<em class="parameter"><code>length</code></em>の長さにします。
+<em class="parameter"><code>string</code></em>が既に<em class="parameter"><code>length</code></em>の長さを超えている場合は（右側が）切り捨てられます。
+       </td><td><code class="literal">lpad('hi', 5, 'xy')</code></td><td><code class="literal">xyxhi</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.17.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">ltrim(<em class="parameter"><code>string</code></em> <code class="type">text</code>
+        [<span class="optional">, <em class="parameter"><code>characters</code></em> <code class="type">text</code></span>])</code></code>
+       </td><td><code class="type">text</code></td><td>
+<span class="original">
+        Remove the longest string containing only characters from
+        &lt;parameter&gt;characters&lt;/parameter&gt; (a space by default) from the start of
+        &lt;parameter&gt;string&lt;/parameter&gt;
+</span>
+<em class="parameter"><code>string</code></em>の最初から、<em class="parameter"><code>characters</code></em>（デフォルトはスペース）で指定された文字だけを有する最長の文字列を削除します。
+       </td><td><code class="literal">ltrim('zzzytest', 'xyz')</code></td><td><code class="literal">test</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.18.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">md5(<em class="parameter"><code>string</code></em>)</code></code>
+       </td><td><code class="type">text</code></td><td>
+<span class="original">
+        Calculates the MD5 hash of &lt;parameter&gt;string&lt;/parameter&gt;,
+        returning the result in hexadecimal
+</span>
+<em class="parameter"><code>string</code></em>のMD5ハッシュを計算し、16進数で結果を返します。
+       </td><td><code class="literal">md5('abc')</code></td><td><code class="literal">900150983cd24fb0 d6963f7d28e17f72</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.19.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">parse_ident(<em class="parameter"><code>qualified_identifier</code></em> <code class="type">text</code>
+           [, <em class="parameter"><code>strictmode</code></em> <code class="type">boolean</code> DEFAULT true ] )</code></code>
+       </td><td><code class="type">text[]</code></td><td>
+<span class="original">
+        Split &lt;parameter&gt;qualified_identifier&lt;/parameter&gt; into an array of
+        identifiers, removing any quoting of individual identifiers.  By
+        default, extra characters after the last identifier are considered an
+        error; but if the second parameter is &lt;literal&gt;false&lt;/literal&gt;, then such
+        extra characters are ignored. (This behavior is useful for parsing
+        names for objects like functions.) Note that this function does not
+        truncate over-length identifiers. If you want truncation you can cast
+        the result to &lt;type&gt;name[]&lt;/type&gt;.
+</span>
+<em class="parameter"><code>qualified_identifier</code></em>を識別子の配列に分割し、個々の識別子に引用符があればそれを削除します。
+デフォルトでは、最後の識別子の後に続く余分な文字はエラーとされますが、2番目のパラメータが<code class="literal">false</code>の場合は、そのような余分な文字は無視されます。
+（この動作は、関数のようなオブジェクトに対して名前を解析するときに便利でしょう。）
+この関数は、長すぎる識別子を切り詰めないことに注意してください。
+切り詰めが必要なときは、その結果を<code class="type">name[]</code>にキャストすることができます。
+       </td><td><code class="literal">parse_ident('"SomeSchema".someTable')</code></td><td><code class="literal">{SomeSchema,sometable}</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.20.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">pg_client_encoding()</code></code>
+       </td><td><code class="type">name</code></td><td>
+<span class="original">
+        Current client encoding name
+</span>
+        現在のクライアントの符号化方式の名前。
+       </td><td><code class="literal">pg_client_encoding()</code></td><td><code class="literal">SQL_ASCII</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.21.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">quote_ident(<em class="parameter"><code>string</code></em> <code class="type">text</code>)</code></code>
+       </td><td><code class="type">text</code></td><td>
+<span class="original">
+        Return the given string suitably quoted to be used as an identifier
+        in an &lt;acronym&gt;SQL&lt;/acronym&gt; statement string.
+        Quotes are added only if necessary (i.e., if the string contains
+        non-identifier characters or would be case-folded).
+        Embedded quotes are properly doubled.
+        See also &lt;xref linkend="plpgsql-quote-literal-example"/&gt;.
+</span>
+与えられた文字列を、<acronym class="acronym">SQL</acronym>問い合わせ文字列で識別子として使用できるように、適切な引用符を付けて返します。
+引用符は、必要な場合（すなわち、文字列に識別子として使用できない文字が含まれる場合や、大文字変換される場合）にのみ追加されます。埋め込まれた引用符は、適切に二重化されます。
+<a class="xref" href="plpgsql-statements.html#PLPGSQL-QUOTE-LITERAL-EXAMPLE" title="例43.1 動的問い合わせの中の値の引用符付け">例 43.1</a>も参照してください。
+       </td><td><code class="literal">quote_ident('Foo bar')</code></td><td><code class="literal">"Foo bar"</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.22.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">quote_literal(<em class="parameter"><code>string</code></em> <code class="type">text</code>)</code></code>
+       </td><td><code class="type">text</code></td><td>
+<span class="original">
+        Return the given string suitably quoted to be used as a string literal
+        in an &lt;acronym&gt;SQL&lt;/acronym&gt; statement string.
+        Embedded single-quotes and backslashes are properly doubled.
+        Note that &lt;function&gt;quote_literal&lt;/function&gt; returns null on null
+        input; if the argument might be null,
+        &lt;function&gt;quote_nullable&lt;/function&gt; is often more suitable.
+        See also &lt;xref linkend="plpgsql-quote-literal-example"/&gt;.
+</span>
+与えられた文字列を、<acronym class="acronym">SQL</acronym>問い合わせ文字列で文字リテラルとして使用できるように、適切な引用符を付けて返します。
+埋め込まれた単一引用符およびバックスラッシュは、適切に二重化されます。
+<code class="function">quote_literal</code>はNULL入力に対してNULLを返すことに注意してください。引数がNULLとなる可能性がある場合、より<code class="function">quote_nullable</code>の方がしばしば適しています。
+<a class="xref" href="plpgsql-statements.html#PLPGSQL-QUOTE-LITERAL-EXAMPLE" title="例43.1 動的問い合わせの中の値の引用符付け">例 43.1</a>も参照してください。
+       </td><td><code class="literal">quote_literal(E'O\'Reilly')</code></td><td><code class="literal">'O''Reilly'</code></td></tr><tr><td><code class="literal"><code class="function">quote_literal(<em class="parameter"><code>value</code></em> <code class="type">anyelement</code>)</code></code></td><td><code class="type">text</code></td><td>
+<span class="original">
+        Coerce the given value to text and then quote it as a literal.
+        Embedded single-quotes and backslashes are properly doubled.
+</span>
+与えられた値をテキストに変換し、そしてリテラルとして引用符付けします。
+埋め込まれた単一引用符とバックスラッシュは適切に二重化されます。
+       </td><td><code class="literal">quote_literal(42.5)</code></td><td><code class="literal">'42.5'</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.24.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">quote_nullable(<em class="parameter"><code>string</code></em> <code class="type">text</code>)</code></code>
+       </td><td><code class="type">text</code></td><td>
+<span class="original">
+        Return the given string suitably quoted to be used as a string literal
+        in an &lt;acronym&gt;SQL&lt;/acronym&gt; statement string; or, if the argument
+        is null, return &lt;literal&gt;NULL&lt;/literal&gt;.
+        Embedded single-quotes and backslashes are properly doubled.
+        See also &lt;xref linkend="plpgsql-quote-literal-example"/&gt;.
+</span>
+与えられた文字列を、<acronym class="acronym">SQL</acronym>問い合わせ文字列で文字列リテラルとして使用できるように、適切な引用符を付けて返します。
+また、引数がNULLの場合、<code class="literal">NULL</code>を返します。
+埋め込まれた単一引用符およびバックスラッシュは適切に二重化されます。
+<a class="xref" href="plpgsql-statements.html#PLPGSQL-QUOTE-LITERAL-EXAMPLE" title="例43.1 動的問い合わせの中の値の引用符付け">例 43.1</a>も参照してください。
+       </td><td><code class="literal">quote_nullable(NULL)</code></td><td><code class="literal">NULL</code></td></tr><tr><td><code class="literal"><code class="function">quote_nullable(<em class="parameter"><code>value</code></em> <code class="type">anyelement</code>)</code></code></td><td><code class="type">text</code></td><td>
+<span class="original">
+        Coerce the given value to text and then quote it as a literal;
+        or, if the argument is null, return &lt;literal&gt;NULL&lt;/literal&gt;.
+        Embedded single-quotes and backslashes are properly doubled.
+</span>
+与えられた値をテキストに変換し、そしてリテラルとして引用符付けします。引数がNULLの場合は<code class="literal">NULL</code>を返します。
+埋め込まれた単一引用符とバックスラッシュは適切に二重化されます。
+       </td><td><code class="literal">quote_nullable(42.5)</code></td><td><code class="literal">'42.5'</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.26.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">regexp_match(<em class="parameter"><code>string</code></em> <code class="type">text</code>, <em class="parameter"><code>pattern</code></em> <code class="type">text</code> [, <em class="parameter"><code>flags</code></em> <code class="type">text</code>])</code></code>
+       </td><td><code class="type">text[]</code></td><td>
+<span class="original">
+        Return captured substring(s) resulting from the first match of a POSIX
+        regular expression to the &lt;parameter&gt;string&lt;/parameter&gt;. See
+        &lt;xref linkend="functions-posix-regexp"/&gt; for more information.
+</span>
+<em class="parameter"><code>string</code></em>に対してPOSIX正規表現でマッチし、捕捉された最初の部分文字列を返します。
+より詳細は<a class="xref" href="functions-matching.html#FUNCTIONS-POSIX-REGEXP" title="9.7.3. POSIX正規表現">9.7.3</a>を参照してください。
+       </td><td><code class="literal">regexp_match('foobarbequebaz', '(bar)(beque)')</code></td><td><code class="literal">{bar,beque}</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.27.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">regexp_matches(<em class="parameter"><code>string</code></em> <code class="type">text</code>, <em class="parameter"><code>pattern</code></em> <code class="type">text</code> [, <em class="parameter"><code>flags</code></em> <code class="type">text</code>])</code></code>
+       </td><td><code class="type">setof text[]</code></td><td>
+<span class="original">
+        Return captured substring(s) resulting from matching a POSIX regular
+        expression to the &lt;parameter&gt;string&lt;/parameter&gt;. See
+        &lt;xref linkend="functions-posix-regexp"/&gt; for more information.
+</span>
+<em class="parameter"><code>string</code></em>に対してPOSIX正規表現でマッチし、捕捉された部分文字列を返します。
+より詳細は<a class="xref" href="functions-matching.html#FUNCTIONS-POSIX-REGEXP" title="9.7.3. POSIX正規表現">9.7.3</a>を参照してください。
+       </td><td><code class="literal">regexp_matches('foobarbequebaz', 'ba.', 'g')</code></td><td><code class="literal">{bar}</code><p><code class="literal">{baz}</code></p> (2 rows)</td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.28.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">regexp_replace(<em class="parameter"><code>string</code></em> <code class="type">text</code>, <em class="parameter"><code>pattern</code></em> <code class="type">text</code>, <em class="parameter"><code>replacement</code></em> <code class="type">text</code> [, <em class="parameter"><code>flags</code></em> <code class="type">text</code>])</code></code>
+       </td><td><code class="type">text</code></td><td>
+<span class="original">
+        Replace substring(s) matching a POSIX regular expression. See
+        &lt;xref linkend="functions-posix-regexp"/&gt; for more information.
+</span>
+POSIX正規表現に一致する部分文字列を置換します。
+より詳細は<a class="xref" href="functions-matching.html#FUNCTIONS-POSIX-REGEXP" title="9.7.3. POSIX正規表現">9.7.3</a>を参照してください。
+       </td><td><code class="literal">regexp_replace('Thomas', '.[mN]a.', 'M')</code></td><td><code class="literal">ThM</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.29.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">regexp_split_to_array(<em class="parameter"><code>string</code></em> <code class="type">text</code>, <em class="parameter"><code>pattern</code></em> <code class="type">text</code> [, <em class="parameter"><code>flags</code></em> <code class="type">text</code> ])</code></code>
+       </td><td><code class="type">text[]</code></td><td>
+<span class="original">
+        Split &lt;parameter&gt;string&lt;/parameter&gt; using a POSIX regular expression as
+        the delimiter.  See &lt;xref linkend="functions-posix-regexp"/&gt; for more
+        information.
+</span>
+POSIX正規表現を区切り文字に使って<em class="parameter"><code>string</code></em>を分割します。
+詳しくは<a class="xref" href="functions-matching.html#FUNCTIONS-POSIX-REGEXP" title="9.7.3. POSIX正規表現">9.7.3</a>を参照ください。
+       </td><td><code class="literal">regexp_split_to_array('hello world', '\s+')</code></td><td><code class="literal">{hello,world}</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.30.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">regexp_split_to_table(<em class="parameter"><code>string</code></em> <code class="type">text</code>, <em class="parameter"><code>pattern</code></em> <code class="type">text</code> [, <em class="parameter"><code>flags</code></em> <code class="type">text</code>])</code></code>
+       </td><td><code class="type">setof text</code></td><td>
+<span class="original">
+        Split &lt;parameter&gt;string&lt;/parameter&gt; using a POSIX regular expression as
+        the delimiter.  See &lt;xref linkend="functions-posix-regexp"/&gt; for more
+        information.
+</span>
+POSIX正規表現を区切り文字に使って<em class="parameter"><code>string</code></em>を分割します。
+詳しくは<a class="xref" href="functions-matching.html#FUNCTIONS-POSIX-REGEXP" title="9.7.3. POSIX正規表現">9.7.3</a>を参照ください。
+       </td><td><code class="literal">regexp_split_to_table('hello world', '\s+')</code></td><td><code class="literal">hello</code><p><code class="literal">world</code></p> (2 rows)</td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.31.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">repeat(<em class="parameter"><code>string</code></em> <code class="type">text</code>, <em class="parameter"><code>number</code></em> <code class="type">int</code>)</code></code>
+       </td><td><code class="type">text</code></td><td>指定された<em class="parameter"><code>number</code></em>の数だけ<em class="parameter"><code>string</code></em>を繰り返します。</td><td><code class="literal">repeat('Pg', 4)</code></td><td><code class="literal">PgPgPgPg</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.32.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">replace(<em class="parameter"><code>string</code></em> <code class="type">text</code>,
+        <em class="parameter"><code>from</code></em> <code class="type">text</code>,
+        <em class="parameter"><code>to</code></em> <code class="type">text</code>)</code></code>
+       </td><td><code class="type">text</code></td><td><em class="parameter"><code>string</code></em>に出現する全ての<em class="parameter"><code>from</code></em>部分文字列を<em class="parameter"><code>to</code></em>部分文字列に置換します。
+       </td><td><code class="literal">replace('abcdefabcdef', 'cd', 'XX')</code></td><td><code class="literal">abXXefabXXef</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.33.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">reverse(<em class="parameter"><code>str</code></em>)</code></code>
+       </td><td><code class="type">text</code></td><td>
+<span class="original">
+        Return reversed string.
+</span>
+        逆順にした文字列を返します。
+       </td><td><code class="literal">reverse('abcde')</code></td><td><code class="literal">edcba</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.34.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">right(<em class="parameter"><code>str</code></em> <code class="type">text</code>,
+         <em class="parameter"><code>n</code></em> <code class="type">int</code>)</code></code>
+       </td><td><code class="type">text</code></td><td>
+<span class="original">
+        Return last &lt;replaceable&gt;n&lt;/replaceable&gt; characters in the string. When &lt;replaceable&gt;n&lt;/replaceable&gt;
+        is negative, return all but first |&lt;replaceable&gt;n&lt;/replaceable&gt;| characters.
+</span>
+文字列の末尾から<em class="replaceable"><code>n</code></em>文字を返します。
+<em class="replaceable"><code>n</code></em>が負数の場合は、文字列の先頭から|<em class="replaceable"><code>n</code></em>|文字だけ切り取った文字列を返します。
+       </td><td><code class="literal">right('abcde', 2)</code></td><td><code class="literal">de</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.35.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">rpad(<em class="parameter"><code>string</code></em> <code class="type">text</code>,
+        <em class="parameter"><code>length</code></em> <code class="type">int</code>
+        [<span class="optional">, <em class="parameter"><code>fill</code></em> <code class="type">text</code></span>])</code></code>
+       </td><td><code class="type">text</code></td><td>
+<span class="original">
+        Fill up the &lt;parameter&gt;string&lt;/parameter&gt; to length
+        &lt;parameter&gt;length&lt;/parameter&gt; by appending the characters
+        &lt;parameter&gt;fill&lt;/parameter&gt; (a space by default).  If the
+        &lt;parameter&gt;string&lt;/parameter&gt; is already longer than
+        &lt;parameter&gt;length&lt;/parameter&gt; then it is truncated.
+</span>
+文字<em class="parameter"><code>fill</code></em>（デフォルトはスペース）を文字列に追加して、<em class="parameter"><code>string</code></em>を<em class="parameter"><code>length</code></em>の長さにします。
+<em class="parameter"><code>string</code></em>が既に<em class="parameter"><code>length</code></em>の長さを超えている場合は切り捨てられます。
+       </td><td><code class="literal">rpad('hi', 5, 'xy')</code></td><td><code class="literal">hixyx</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.36.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">rtrim(<em class="parameter"><code>string</code></em> <code class="type">text</code>
+         [<span class="optional">, <em class="parameter"><code>characters</code></em> <code class="type">text</code></span>])</code></code>
+       </td><td><code class="type">text</code></td><td>
+<span class="original">
+        Remove the longest string containing only characters from
+        &lt;parameter&gt;characters&lt;/parameter&gt; (a space by default) from the end of
+        &lt;parameter&gt;string&lt;/parameter&gt;
+</span>
+<em class="parameter"><code>string</code></em>の末尾から、<em class="parameter"><code>characters</code></em>（デフォルトはスペース）で指定された文字のみを有する最長の文字列を削除します。
+       </td><td><code class="literal">rtrim('testxxzx', 'xyz')</code></td><td><code class="literal">test</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.37.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">split_part(<em class="parameter"><code>string</code></em> <code class="type">text</code>,
+        <em class="parameter"><code>delimiter</code></em> <code class="type">text</code>,
+        <em class="parameter"><code>field</code></em> <code class="type">int</code>)</code></code>
+       </td><td><code class="type">text</code></td><td><em class="parameter"><code>string</code></em>を<em class="parameter"><code>delimiter</code></em>で分割し、その結果から（1から始まるように数える）指定したフィールドを返します。
+       </td><td><code class="literal">split_part('abc~@~def~@~ghi', '~@~', 2)</code></td><td><code class="literal">def</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.38.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">strpos(<em class="parameter"><code>string</code></em>, <em class="parameter"><code>substring</code></em>)</code></code>
+       </td><td><code class="type">int</code></td><td>
+<span class="original">
+        Location of specified substring (same as
+        &lt;literal&gt;position(&lt;parameter&gt;substring&lt;/parameter&gt; in
+         &lt;parameter&gt;string&lt;/parameter&gt;)&lt;/literal&gt;, but note the reversed
+        argument order)
+</span>
+指定した部分文字列の位置を特定します（<code class="literal">position(<em class="parameter"><code>substring</code></em> in <em class="parameter"><code>string</code></em>)</code> と同じですが、引数の順序が逆になっていることに注意してください）。
+       </td><td><code class="literal">strpos('high', 'ig')</code></td><td><code class="literal">2</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.39.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">substr(<em class="parameter"><code>string</code></em>, <em class="parameter"><code>from</code></em> [<span class="optional">, <em class="parameter"><code>count</code></em></span>])</code></code>
+       </td><td><code class="type">text</code></td><td>
+<span class="original">
+        Extract substring (same as
+        &lt;literal&gt;substring(&lt;parameter&gt;string&lt;/parameter&gt; from &lt;parameter&gt;from&lt;/parameter&gt; for &lt;parameter&gt;count&lt;/parameter&gt;)&lt;/literal&gt;)
+</span>
+指定した部分文字列を取り出します（<code class="literal">substring(<em class="parameter"><code>string</code></em> from <em class="parameter"><code>from</code></em> for <em class="parameter"><code>count</code></em>)</code>と同じです）。
+       </td><td><code class="literal">substr('alphabet', 3, 2)</code></td><td><code class="literal">ph</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.40.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">starts_with(<em class="parameter"><code>string</code></em>, <em class="parameter"><code>prefix</code></em>)</code></code>
+       </td><td><code class="type">bool</code></td><td>
+<span class="original">
+        Returns true if &lt;parameter&gt;string&lt;/parameter&gt; starts with &lt;parameter&gt;prefix&lt;/parameter&gt;.
+</span>
+<em class="parameter"><code>string</code></em>が<em class="parameter"><code>prefix</code></em>で始まっていれば真を返します。
+       </td><td><code class="literal">starts_with('alphabet', 'alph')</code></td><td><code class="literal">t</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.41.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">to_ascii(<em class="parameter"><code>string</code></em> <code class="type">text</code>
+        [<span class="optional">, <em class="parameter"><code>encoding</code></em> <code class="type">text</code></span>])</code></code>
+       </td><td><code class="type">text</code></td><td>
+<span class="original">
+       Convert &lt;parameter&gt;string&lt;/parameter&gt; to &lt;acronym&gt;ASCII&lt;/acronym&gt; from another encoding
+       (only supports conversion from  &lt;literal&gt;LATIN1&lt;/literal&gt;, &lt;literal&gt;LATIN2&lt;/literal&gt;, &lt;literal&gt;LATIN9&lt;/literal&gt;,
+       and &lt;literal&gt;WIN1250&lt;/literal&gt; encodings)
+</span>
+<em class="parameter"><code>string</code></em>を他の符号化方式から<acronym class="acronym">ASCII</acronym>に変換します（<code class="literal">LATIN1</code>、<code class="literal">LATIN2</code>、<code class="literal">LATIN9</code>、<code class="literal">WIN1250</code>符号化方式からの変換のみをサポートします。）
+       </td><td><code class="literal">to_ascii('Karel')</code></td><td><code class="literal">Karel</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.42.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">to_hex(<em class="parameter"><code>number</code></em> <code class="type">int</code>
+        or <code class="type">bigint</code>)</code></code>
+       </td><td><code class="type">text</code></td><td><em class="parameter"><code>number</code></em>を、同等の16進数表現に変換します。
+       </td><td><code class="literal">to_hex(2147483647)</code></td><td><code class="literal">7fffffff</code></td></tr><tr><td>
+        <a id="id-1.5.8.9.7.2.2.43.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">translate(<em class="parameter"><code>string</code></em> <code class="type">text</code>,
+        <em class="parameter"><code>from</code></em> <code class="type">text</code>,
+        <em class="parameter"><code>to</code></em> <code class="type">text</code>)</code></code>
+       </td><td><code class="type">text</code></td><td>
+<span class="original">
+        Any character in &lt;parameter&gt;string&lt;/parameter&gt; that matches a
+        character in the &lt;parameter&gt;from&lt;/parameter&gt; set is replaced by
+        the corresponding character in the &lt;parameter&gt;to&lt;/parameter&gt;
+        set. If &lt;parameter&gt;from&lt;/parameter&gt; is longer than
+        &lt;parameter&gt;to&lt;/parameter&gt;, occurrences of the extra characters in
+        &lt;parameter&gt;from&lt;/parameter&gt; are removed.
+</span>
+<em class="parameter"><code>from</code></em>集合内の文字と一致する<em class="parameter"><code>string</code></em>にある全ての文字は、<em class="parameter"><code>to</code></em>集合内のそれに対応する文字に置き換えられます。
+もし<em class="parameter"><code>from</code></em>が<em class="parameter"><code>to</code></em>より長い場合、<em class="parameter"><code>from</code></em>で指定される余分な文字に一致するものは削除されます。
+       </td><td><code class="literal">translate('12345', '143', 'ax')</code></td><td><code class="literal">a2x5</code></td></tr></tbody></table></div></div><br class="table-break" /><p>
+<span class="original">
+    The &lt;function&gt;concat&lt;/function&gt;, &lt;function&gt;concat_ws&lt;/function&gt; and
+    &lt;function&gt;format&lt;/function&gt; functions are variadic, so it is possible to
+    pass the values to be concatenated or formatted as an array marked with
+    the &lt;literal&gt;VARIADIC&lt;/literal&gt; keyword (see &lt;xref
+    linkend="xfunc-sql-variadic-functions"/&gt;).  The array's elements are
+    treated as if they were separate ordinary arguments to the function.
+    If the variadic array argument is NULL, &lt;function&gt;concat&lt;/function&gt;
+    and &lt;function&gt;concat_ws&lt;/function&gt; return NULL, but
+    &lt;function&gt;format&lt;/function&gt; treats a NULL as a zero-element array.
+</span>
+<code class="function">concat</code>、<code class="function">concat_ws</code>および<code class="function">format</code>関数はVariadicです。従って、キーワード<code class="literal">VARIADIC</code>で標しをつけられた配列のように、値を連結またはフォーマットした形で受け渡すことが可能です（<a class="xref" href="xfunc-sql.html#XFUNC-SQL-VARIADIC-FUNCTIONS" title="38.5.5. 可変長引数を取るSQL関数">38.5.5</a>を参照してください）。
+配列の要素は関数に対して分割された通常の引数のように扱われます。
+もしvariadic配列引数がNULLであれば、<code class="function">concat</code>および<code class="function">concat_ws</code>はNULLを返しますが、<code class="function">format</code>はNULLを要素を持たない配列と扱います。
+   </p><p>
+<span class="original">
+   See also the aggregate function &lt;function&gt;string_agg&lt;/function&gt; in
+   &lt;xref linkend="functions-aggregate"/&gt;.
+</span>
+<a class="xref" href="functions-aggregate.html" title="9.20. 集約関数">9.20</a>内の<code class="function">string_agg</code>集約関数も参照してください。
+   </p><div class="table" id="CONVERSION-NAMES"><p class="title"><strong>表9.10 組み込みの変換</strong></p><div class="table-contents"><span class="original">
+    &lt;title&gt;Built-in Conversions&lt;/title&gt;
+</span><table class="table" summary="組み込みの変換" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>変換名
+        <a href="#ftn.id-1.5.8.9.10.2.1.1.1.1" class="footnote"><sup class="footnote" id="id-1.5.8.9.10.2.1.1.1.1">[a]</sup></a>
+       </th><th>変換前の符号化方式</th><th>変換後の符号化方式</th></tr></thead><tbody><tr><td><code class="literal">ascii_to_mic</code></td><td><code class="literal">SQL_ASCII</code></td><td><code class="literal">MULE_INTERNAL</code></td></tr><tr><td><code class="literal">ascii_to_utf8</code></td><td><code class="literal">SQL_ASCII</code></td><td><code class="literal">UTF8</code></td></tr><tr><td><code class="literal">big5_to_euc_tw</code></td><td><code class="literal">BIG5</code></td><td><code class="literal">EUC_TW</code></td></tr><tr><td><code class="literal">big5_to_mic</code></td><td><code class="literal">BIG5</code></td><td><code class="literal">MULE_INTERNAL</code></td></tr><tr><td><code class="literal">big5_to_utf8</code></td><td><code class="literal">BIG5</code></td><td><code class="literal">UTF8</code></td></tr><tr><td><code class="literal">euc_cn_to_mic</code></td><td><code class="literal">EUC_CN</code></td><td><code class="literal">MULE_INTERNAL</code></td></tr><tr><td><code class="literal">euc_cn_to_utf8</code></td><td><code class="literal">EUC_CN</code></td><td><code class="literal">UTF8</code></td></tr><tr><td><code class="literal">euc_jp_to_mic</code></td><td><code class="literal">EUC_JP</code></td><td><code class="literal">MULE_INTERNAL</code></td></tr><tr><td><code class="literal">euc_jp_to_sjis</code></td><td><code class="literal">EUC_JP</code></td><td><code class="literal">SJIS</code></td></tr><tr><td><code class="literal">euc_jp_to_utf8</code></td><td><code class="literal">EUC_JP</code></td><td><code class="literal">UTF8</code></td></tr><tr><td><code class="literal">euc_kr_to_mic</code></td><td><code class="literal">EUC_KR</code></td><td><code class="literal">MULE_INTERNAL</code></td></tr><tr><td><code class="literal">euc_kr_to_utf8</code></td><td><code class="literal">EUC_KR</code></td><td><code class="literal">UTF8</code></td></tr><tr><td><code class="literal">euc_tw_to_big5</code></td><td><code class="literal">EUC_TW</code></td><td><code class="literal">BIG5</code></td></tr><tr><td><code class="literal">euc_tw_to_mic</code></td><td><code class="literal">EUC_TW</code></td><td><code class="literal">MULE_INTERNAL</code></td></tr><tr><td><code class="literal">euc_tw_to_utf8</code></td><td><code class="literal">EUC_TW</code></td><td><code class="literal">UTF8</code></td></tr><tr><td><code class="literal">gb18030_to_utf8</code></td><td><code class="literal">GB18030</code></td><td><code class="literal">UTF8</code></td></tr><tr><td><code class="literal">gbk_to_utf8</code></td><td><code class="literal">GBK</code></td><td><code class="literal">UTF8</code></td></tr><tr><td><code class="literal">iso_8859_10_to_utf8</code></td><td><code class="literal">LATIN6</code></td><td><code class="literal">UTF8</code></td></tr><tr><td><code class="literal">iso_8859_13_to_utf8</code></td><td><code class="literal">LATIN7</code></td><td><code class="literal">UTF8</code></td></tr><tr><td><code class="literal">iso_8859_14_to_utf8</code></td><td><code class="literal">LATIN8</code></td><td><code class="literal">UTF8</code></td></tr><tr><td><code class="literal">iso_8859_15_to_utf8</code></td><td><code class="literal">LATIN9</code></td><td><code class="literal">UTF8</code></td></tr><tr><td><code class="literal">iso_8859_16_to_utf8</code></td><td><code class="literal">LATIN10</code></td><td><code class="literal">UTF8</code></td></tr><tr><td><code class="literal">iso_8859_1_to_mic</code></td><td><code class="literal">LATIN1</code></td><td><code class="literal">MULE_INTERNAL</code></td></tr><tr><td><code class="literal">iso_8859_1_to_utf8</code></td><td><code class="literal">LATIN1</code></td><td><code class="literal">UTF8</code></td></tr><tr><td><code class="literal">iso_8859_2_to_mic</code></td><td><code class="literal">LATIN2</code></td><td><code class="literal">MULE_INTERNAL</code></td></tr><tr><td><code class="literal">iso_8859_2_to_utf8</code></td><td><code class="literal">LATIN2</code></td><td><code class="literal">UTF8</code></td></tr><tr><td><code class="literal">iso_8859_2_to_windows_1250</code></td><td><code class="literal">LATIN2</code></td><td><code class="literal">WIN1250</code></td></tr><tr><td><code class="literal">iso_8859_3_to_mic</code></td><td><code class="literal">LATIN3</code></td><td><code class="literal">MULE_INTERNAL</code></td></tr><tr><td><code class="literal">iso_8859_3_to_utf8</code></td><td><code class="literal">LATIN3</code></td><td><code class="literal">UTF8</code></td></tr><tr><td><code class="literal">iso_8859_4_to_mic</code></td><td><code class="literal">LATIN4</code></td><td><code class="literal">MULE_INTERNAL</code></td></tr><tr><td><code class="literal">iso_8859_4_to_utf8</code></td><td><code class="literal">LATIN4</code></td><td><code class="literal">UTF8</code></td></tr><tr><td><code class="literal">iso_8859_5_to_koi8_r</code></td><td><code class="literal">ISO_8859_5</code></td><td><code class="literal">KOI8R</code></td></tr><tr><td><code class="literal">iso_8859_5_to_mic</code></td><td><code class="literal">ISO_8859_5</code></td><td><code class="literal">MULE_INTERNAL</code></td></tr><tr><td><code class="literal">iso_8859_5_to_utf8</code></td><td><code class="literal">ISO_8859_5</code></td><td><code class="literal">UTF8</code></td></tr><tr><td><code class="literal">iso_8859_5_to_windows_1251</code></td><td><code class="literal">ISO_8859_5</code></td><td><code class="literal">WIN1251</code></td></tr><tr><td><code class="literal">iso_8859_5_to_windows_866</code></td><td><code class="literal">ISO_8859_5</code></td><td><code class="literal">WIN866</code></td></tr><tr><td><code class="literal">iso_8859_6_to_utf8</code></td><td><code class="literal">ISO_8859_6</code></td><td><code class="literal">UTF8</code></td></tr><tr><td><code class="literal">iso_8859_7_to_utf8</code></td><td><code class="literal">ISO_8859_7</code></td><td><code class="literal">UTF8</code></td></tr><tr><td><code class="literal">iso_8859_8_to_utf8</code></td><td><code class="literal">ISO_8859_8</code></td><td><code class="literal">UTF8</code></td></tr><tr><td><code class="literal">iso_8859_9_to_utf8</code></td><td><code class="literal">LATIN5</code></td><td><code class="literal">UTF8</code></td></tr><tr><td><code class="literal">johab_to_utf8</code></td><td><code class="literal">JOHAB</code></td><td><code class="literal">UTF8</code></td></tr><tr><td><code class="literal">koi8_r_to_iso_8859_5</code></td><td><code class="literal">KOI8R</code></td><td><code class="literal">ISO_8859_5</code></td></tr><tr><td><code class="literal">koi8_r_to_mic</code></td><td><code class="literal">KOI8R</code></td><td><code class="literal">MULE_INTERNAL</code></td></tr><tr><td><code class="literal">koi8_r_to_utf8</code></td><td><code class="literal">KOI8R</code></td><td><code class="literal">UTF8</code></td></tr><tr><td><code class="literal">koi8_r_to_windows_1251</code></td><td><code class="literal">KOI8R</code></td><td><code class="literal">WIN1251</code></td></tr><tr><td><code class="literal">koi8_r_to_windows_866</code></td><td><code class="literal">KOI8R</code></td><td><code class="literal">WIN866</code></td></tr><tr><td><code class="literal">koi8_u_to_utf8</code></td><td><code class="literal">KOI8U</code></td><td><code class="literal">UTF8</code></td></tr><tr><td><code class="literal">mic_to_ascii</code></td><td><code class="literal">MULE_INTERNAL</code></td><td><code class="literal">SQL_ASCII</code></td></tr><tr><td><code class="literal">mic_to_big5</code></td><td><code class="literal">MULE_INTERNAL</code></td><td><code class="literal">BIG5</code></td></tr><tr><td><code class="literal">mic_to_euc_cn</code></td><td><code class="literal">MULE_INTERNAL</code></td><td><code class="literal">EUC_CN</code></td></tr><tr><td><code class="literal">mic_to_euc_jp</code></td><td><code class="literal">MULE_INTERNAL</code></td><td><code class="literal">EUC_JP</code></td></tr><tr><td><code class="literal">mic_to_euc_kr</code></td><td><code class="literal">MULE_INTERNAL</code></td><td><code class="literal">EUC_KR</code></td></tr><tr><td><code class="literal">mic_to_euc_tw</code></td><td><code class="literal">MULE_INTERNAL</code></td><td><code class="literal">EUC_TW</code></td></tr><tr><td><code class="literal">mic_to_iso_8859_1</code></td><td><code class="literal">MULE_INTERNAL</code></td><td><code class="literal">LATIN1</code></td></tr><tr><td><code class="literal">mic_to_iso_8859_2</code></td><td><code class="literal">MULE_INTERNAL</code></td><td><code class="literal">LATIN2</code></td></tr><tr><td><code class="literal">mic_to_iso_8859_3</code></td><td><code class="literal">MULE_INTERNAL</code></td><td><code class="literal">LATIN3</code></td></tr><tr><td><code class="literal">mic_to_iso_8859_4</code></td><td><code class="literal">MULE_INTERNAL</code></td><td><code class="literal">LATIN4</code></td></tr><tr><td><code class="literal">mic_to_iso_8859_5</code></td><td><code class="literal">MULE_INTERNAL</code></td><td><code class="literal">ISO_8859_5</code></td></tr><tr><td><code class="literal">mic_to_koi8_r</code></td><td><code class="literal">MULE_INTERNAL</code></td><td><code class="literal">KOI8R</code></td></tr><tr><td><code class="literal">mic_to_sjis</code></td><td><code class="literal">MULE_INTERNAL</code></td><td><code class="literal">SJIS</code></td></tr><tr><td><code class="literal">mic_to_windows_1250</code></td><td><code class="literal">MULE_INTERNAL</code></td><td><code class="literal">WIN1250</code></td></tr><tr><td><code class="literal">mic_to_windows_1251</code></td><td><code class="literal">MULE_INTERNAL</code></td><td><code class="literal">WIN1251</code></td></tr><tr><td><code class="literal">mic_to_windows_866</code></td><td><code class="literal">MULE_INTERNAL</code></td><td><code class="literal">WIN866</code></td></tr><tr><td><code class="literal">sjis_to_euc_jp</code></td><td><code class="literal">SJIS</code></td><td><code class="literal">EUC_JP</code></td></tr><tr><td><code class="literal">sjis_to_mic</code></td><td><code class="literal">SJIS</code></td><td><code class="literal">MULE_INTERNAL</code></td></tr><tr><td><code class="literal">sjis_to_utf8</code></td><td><code class="literal">SJIS</code></td><td><code class="literal">UTF8</code></td></tr><tr><td><code class="literal">tcvn_to_utf8</code></td><td><code class="literal">WIN1258</code></td><td><code class="literal">UTF8</code></td></tr><tr><td><code class="literal">uhc_to_utf8</code></td><td><code class="literal">UHC</code></td><td><code class="literal">UTF8</code></td></tr><tr><td><code class="literal">utf8_to_ascii</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">SQL_ASCII</code></td></tr><tr><td><code class="literal">utf8_to_big5</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">BIG5</code></td></tr><tr><td><code class="literal">utf8_to_euc_cn</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">EUC_CN</code></td></tr><tr><td><code class="literal">utf8_to_euc_jp</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">EUC_JP</code></td></tr><tr><td><code class="literal">utf8_to_euc_kr</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">EUC_KR</code></td></tr><tr><td><code class="literal">utf8_to_euc_tw</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">EUC_TW</code></td></tr><tr><td><code class="literal">utf8_to_gb18030</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">GB18030</code></td></tr><tr><td><code class="literal">utf8_to_gbk</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">GBK</code></td></tr><tr><td><code class="literal">utf8_to_iso_8859_1</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">LATIN1</code></td></tr><tr><td><code class="literal">utf8_to_iso_8859_10</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">LATIN6</code></td></tr><tr><td><code class="literal">utf8_to_iso_8859_13</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">LATIN7</code></td></tr><tr><td><code class="literal">utf8_to_iso_8859_14</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">LATIN8</code></td></tr><tr><td><code class="literal">utf8_to_iso_8859_15</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">LATIN9</code></td></tr><tr><td><code class="literal">utf8_to_iso_8859_16</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">LATIN10</code></td></tr><tr><td><code class="literal">utf8_to_iso_8859_2</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">LATIN2</code></td></tr><tr><td><code class="literal">utf8_to_iso_8859_3</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">LATIN3</code></td></tr><tr><td><code class="literal">utf8_to_iso_8859_4</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">LATIN4</code></td></tr><tr><td><code class="literal">utf8_to_iso_8859_5</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">ISO_8859_5</code></td></tr><tr><td><code class="literal">utf8_to_iso_8859_6</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">ISO_8859_6</code></td></tr><tr><td><code class="literal">utf8_to_iso_8859_7</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">ISO_8859_7</code></td></tr><tr><td><code class="literal">utf8_to_iso_8859_8</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">ISO_8859_8</code></td></tr><tr><td><code class="literal">utf8_to_iso_8859_9</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">LATIN5</code></td></tr><tr><td><code class="literal">utf8_to_johab</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">JOHAB</code></td></tr><tr><td><code class="literal">utf8_to_koi8_r</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">KOI8R</code></td></tr><tr><td><code class="literal">utf8_to_koi8_u</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">KOI8U</code></td></tr><tr><td><code class="literal">utf8_to_sjis</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">SJIS</code></td></tr><tr><td><code class="literal">utf8_to_tcvn</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">WIN1258</code></td></tr><tr><td><code class="literal">utf8_to_uhc</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">UHC</code></td></tr><tr><td><code class="literal">utf8_to_windows_1250</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">WIN1250</code></td></tr><tr><td><code class="literal">utf8_to_windows_1251</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">WIN1251</code></td></tr><tr><td><code class="literal">utf8_to_windows_1252</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">WIN1252</code></td></tr><tr><td><code class="literal">utf8_to_windows_1253</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">WIN1253</code></td></tr><tr><td><code class="literal">utf8_to_windows_1254</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">WIN1254</code></td></tr><tr><td><code class="literal">utf8_to_windows_1255</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">WIN1255</code></td></tr><tr><td><code class="literal">utf8_to_windows_1256</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">WIN1256</code></td></tr><tr><td><code class="literal">utf8_to_windows_1257</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">WIN1257</code></td></tr><tr><td><code class="literal">utf8_to_windows_866</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">WIN866</code></td></tr><tr><td><code class="literal">utf8_to_windows_874</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">WIN874</code></td></tr><tr><td><code class="literal">windows_1250_to_iso_8859_2</code></td><td><code class="literal">WIN1250</code></td><td><code class="literal">LATIN2</code></td></tr><tr><td><code class="literal">windows_1250_to_mic</code></td><td><code class="literal">WIN1250</code></td><td><code class="literal">MULE_INTERNAL</code></td></tr><tr><td><code class="literal">windows_1250_to_utf8</code></td><td><code class="literal">WIN1250</code></td><td><code class="literal">UTF8</code></td></tr><tr><td><code class="literal">windows_1251_to_iso_8859_5</code></td><td><code class="literal">WIN1251</code></td><td><code class="literal">ISO_8859_5</code></td></tr><tr><td><code class="literal">windows_1251_to_koi8_r</code></td><td><code class="literal">WIN1251</code></td><td><code class="literal">KOI8R</code></td></tr><tr><td><code class="literal">windows_1251_to_mic</code></td><td><code class="literal">WIN1251</code></td><td><code class="literal">MULE_INTERNAL</code></td></tr><tr><td><code class="literal">windows_1251_to_utf8</code></td><td><code class="literal">WIN1251</code></td><td><code class="literal">UTF8</code></td></tr><tr><td><code class="literal">windows_1251_to_windows_866</code></td><td><code class="literal">WIN1251</code></td><td><code class="literal">WIN866</code></td></tr><tr><td><code class="literal">windows_1252_to_utf8</code></td><td><code class="literal">WIN1252</code></td><td><code class="literal">UTF8</code></td></tr><tr><td><code class="literal">windows_1256_to_utf8</code></td><td><code class="literal">WIN1256</code></td><td><code class="literal">UTF8</code></td></tr><tr><td><code class="literal">windows_866_to_iso_8859_5</code></td><td><code class="literal">WIN866</code></td><td><code class="literal">ISO_8859_5</code></td></tr><tr><td><code class="literal">windows_866_to_koi8_r</code></td><td><code class="literal">WIN866</code></td><td><code class="literal">KOI8R</code></td></tr><tr><td><code class="literal">windows_866_to_mic</code></td><td><code class="literal">WIN866</code></td><td><code class="literal">MULE_INTERNAL</code></td></tr><tr><td><code class="literal">windows_866_to_utf8</code></td><td><code class="literal">WIN866</code></td><td><code class="literal">UTF8</code></td></tr><tr><td><code class="literal">windows_866_to_windows_1251</code></td><td><code class="literal">WIN866</code></td><td><code class="literal">WIN</code></td></tr><tr><td><code class="literal">windows_874_to_utf8</code></td><td><code class="literal">WIN874</code></td><td><code class="literal">UTF8</code></td></tr><tr><td><code class="literal">euc_jis_2004_to_utf8</code></td><td><code class="literal">EUC_JIS_2004</code></td><td><code class="literal">UTF8</code></td></tr><tr><td><code class="literal">utf8_to_euc_jis_2004</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">EUC_JIS_2004</code></td></tr><tr><td><code class="literal">shift_jis_2004_to_utf8</code></td><td><code class="literal">SHIFT_JIS_2004</code></td><td><code class="literal">UTF8</code></td></tr><tr><td><code class="literal">utf8_to_shift_jis_2004</code></td><td><code class="literal">UTF8</code></td><td><code class="literal">SHIFT_JIS_2004</code></td></tr><tr><td><code class="literal">euc_jis_2004_to_shift_jis_2004</code></td><td><code class="literal">EUC_JIS_2004</code></td><td><code class="literal">SHIFT_JIS_2004</code></td></tr><tr><td><code class="literal">shift_jis_2004_to_euc_jis_2004</code></td><td><code class="literal">SHIFT_JIS_2004</code></td><td><code class="literal">EUC_JIS_2004</code></td></tr></tbody><tbody class="footnotes"><tr><td colspan="3"><div id="ftn.id-1.5.8.9.10.2.1.1.1.1" class="footnote"><p><a href="#id-1.5.8.9.10.2.1.1.1.1" class="para"><sup class="para">[a] </sup></a>
+<span class="original">
+          The conversion names follow a standard naming scheme: The
+          official name of the source encoding with all
+          non-alphanumeric characters replaced by underscores, followed
+          by &lt;literal&gt;_to_&lt;/literal&gt;, followed by the similarly processed
+          destination encoding name. Therefore, the names might deviate
+          from the customary encoding names.
+</span>
+変換名は、標準命名体系に従っています。変換元符号化方式の公式名の内、英数字以外の文字をアンダースコアで置き換え、その後に<code class="literal">_to_</code>を付け、そして変換先符号化方式名を同様に処理したものを続けたものです。
+したがって、これらの名称は慣習的なコード名とは異なる可能性があります。
+         </p></div></td></tr></tbody></table></div></div><br class="table-break" /><div class="sect2" id="FUNCTIONS-STRING-FORMAT"><div class="titlepage"><div><div><h3 class="title">9.4.1. <code class="function">format</code></h3></div></div></div><a id="id-1.5.8.9.11.2" class="indexterm"></a><p>
+<span class="original">
+     The function &lt;function&gt;format&lt;/function&gt; produces output formatted according to
+     a format string, in a style similar to the C function
+     &lt;function&gt;sprintf&lt;/function&gt;.
+</span>
+関数<code class="function">format</code>は、C関数の<code class="function">sprintf</code>同様の形式で、フォーマット文字列に従ってフォーマットされた出力を生成します。
+    </p><p>
+</p><pre class="synopsis">
+<code class="function">format</code>(<em class="parameter"><code>formatstr</code></em> <code class="type">text</code> [, <em class="parameter"><code>formatarg</code></em> <code class="type">"any"</code> [, ...] ])
+</pre><p>
+<span class="original">
+     &lt;replaceable&gt;formatstr&lt;/replaceable&gt; is a format string that specifies how the
+     result should be formatted.  Text in the format string is copied
+     directly to the result, except where &lt;firstterm&gt;format specifiers&lt;/firstterm&gt; are
+     used.  Format specifiers act as placeholders in the string, defining how
+     subsequent function arguments should be formatted and inserted into the
+     result.  Each &lt;replaceable&gt;formatarg&lt;/replaceable&gt; argument is converted to text
+     according to the usual output rules for its data type, and then formatted
+     and inserted into the result string according to the format specifier(s).
+</span>
+<em class="replaceable"><code>formatstr</code></em>は結果がどのようにフォーマットされるかを指定するフォーマット文字列です。
+<em class="firstterm">フォーマット指示子</em>が使用されている箇所を除き、フォーマット文字列のテキストは結果に直接コピーされます。
+フォーマット指示子は文字列中のプレースホルダとして振舞い、その後に引き続く関数引数がどのようにフォーマットされ、どのように結果に挿入されるかを定義します。
+それぞれの<em class="replaceable"><code>formatarg</code></em>引数はそのデータ型に対する通常の出力規定に従ってテキストに変換され、その後フォーマット指示子に従って、結果文字列に挿入されます。
+    </p><p>
+<span class="original">
+     Format specifiers are introduced by a &lt;literal&gt;%&lt;/literal&gt; character and have
+     the form
+</span>
+フォーマット指示子は<code class="literal">%</code>文字で始まり、以下の形式をとります。
+</p><pre class="synopsis">
+%[<em class="replaceable"><code>position</code></em>][<em class="replaceable"><code>flags</code></em>][<em class="replaceable"><code>width</code></em>]<em class="replaceable"><code>type</code></em>
+</pre><p>
+<span class="original">
+     where the component fields are:
+</span>
+ここで要素フィールドとは以下になっています。
+
+     </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><em class="replaceable"><code>position</code></em> (省略可能)</span></dt><dd><p>
+<span class="original">
+         A string of the form &lt;literal&gt;&lt;replaceable&gt;n&lt;/replaceable&gt;$&lt;/literal&gt; where
+         &lt;replaceable&gt;n&lt;/replaceable&gt; is the index of the argument to print.
+         Index 1 means the first argument after
+         &lt;replaceable&gt;formatstr&lt;/replaceable&gt;.  If the &lt;replaceable&gt;position&lt;/replaceable&gt; is
+         omitted, the default is to use the next argument in sequence.
+</span>
+形式<code class="literal"><em class="replaceable"><code>n</code></em>$</code>の文字列で、<em class="replaceable"><code>n</code></em>は出力する引数のインデックスです。
+インデックス１は<em class="replaceable"><code>formatstr</code></em>の後の最初の引数です。
+<em class="replaceable"><code>position</code></em>が省略されると、一連の中の次の引数がデフォルトとして使用されます。
+        </p></dd><dt><span class="term"><em class="replaceable"><code>flags</code></em> (省略可能)</span></dt><dd><p>
+<span class="original">
+         Additional options controlling how the format specifier's output is
+         formatted.  Currently the only supported flag is a minus sign
+         (&lt;literal&gt;-&lt;/literal&gt;) which will cause the format specifier's output to be
+         left-justified.  This has no effect unless the &lt;replaceable&gt;width&lt;/replaceable&gt;
+         field is also specified.
+</span>
+フォーマット指示子の出力がどのようにフォーマットされるかを制御する追加の任意の要素です。
+現在、サポートされているflagはマイナス記号(<code class="literal">-</code>)のみで、フォーマット指示子の出力が左詰めになるようにします。
+これは<em class="replaceable"><code>width</code></em>フィールドが同時に指定されていない場合効果はありません。
+        </p></dd><dt><span class="term"><em class="replaceable"><code>width</code></em> (省略可能)</span></dt><dd><p>
+<span class="original">
+         Specifies the &lt;emphasis&gt;minimum&lt;/emphasis&gt; number of characters to use to
+         display the format specifier's output.  The output is padded on the
+         left or right (depending on the &lt;literal&gt;-&lt;/literal&gt; flag) with spaces as
+         needed to fill the width.  A too-small width does not cause
+         truncation of the output, but is simply ignored.  The width may be
+         specified using any of the following: a positive integer; an
+         asterisk (&lt;literal&gt;*&lt;/literal&gt;) to use the next function argument as the
+         width; or a string of the form &lt;literal&gt;*&lt;replaceable&gt;n&lt;/replaceable&gt;$&lt;/literal&gt; to
+         use the &lt;replaceable&gt;n&lt;/replaceable&gt;th function argument as the width.
+</span>
+フォーマット指示子の出力を表示する<span class="emphasis"><em>最小</em></span>文字数を指定します。
+出力は、幅を満たすのに必要な空白が左または右（flagの<code class="literal">-</code>による）に埋め込まれます。
+幅が小さすぎても出力が切り詰められることはなく、単に無視されます。
+幅は次のいずれかでも指定できます。それらは、正の整数、幅としての次の関数引数として使用する星印 (<code class="literal">*</code>)、または<em class="replaceable"><code>n</code></em>番目の関数引数を幅として使用する<code class="literal">*<em class="replaceable"><code>n</code></em>$</code>という形式の文字列です。
+        </p><p>
+<span class="original">
+         If the width comes from a function argument, that argument is
+         consumed before the argument that is used for the format specifier's
+         value.  If the width argument is negative, the result is left
+         aligned (as if the &lt;literal&gt;-&lt;/literal&gt; flag had been specified) within a
+         field of length &lt;function&gt;abs&lt;/function&gt;(&lt;replaceable&gt;width&lt;/replaceable&gt;).
+</span>
+幅を関数引数から取得する場合、その引数はフォーマット指示子の値に使用される引数より先に消費されます。
+幅の引数が負の場合、フィールド長<code class="function">abs</code>(<em class="replaceable"><code>width</code></em>)の範囲内で結果は（あたかもflagで<code class="literal">-</code>が指定されたように）左詰めになります。
+        </p></dd><dt><span class="term"><em class="replaceable"><code>type</code></em> (必須)</span></dt><dd><p>
+<span class="original">
+         The type of format conversion to use to produce the format
+         specifier's output.  The following types are supported:
+</span>
+フォーマット指示子の出力を生成するのに使用されるフォーマット変換の型。
+以下の型がサポートされています。
+         </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+            &lt;literal&gt;s&lt;/literal&gt; formats the argument value as a simple
+            string.  A null value is treated as an empty string.
+</span>
+<code class="literal">s</code>は引数の値を単純文字列にフォーマットします。
+NULL値は空文字列として扱われます。
+           </p></li><li class="listitem"><p>
+<span class="original">
+            &lt;literal&gt;I&lt;/literal&gt; treats the argument value as an SQL
+            identifier, double-quoting it if necessary.
+            It is an error for the value to be null (equivalent to
+            &lt;function&gt;quote_ident&lt;/function&gt;).
+</span>
+<code class="literal">I</code>は、引数をSQLの識別子として取り扱い、必要ならそれを二重引用符で括ります。
+NULL値はエラーです（<code class="function">quote_ident</code>と同等です）。
+           </p></li><li class="listitem"><p>
+<span class="original">
+            &lt;literal&gt;L&lt;/literal&gt; quotes the argument value as an SQL literal.
+            A null value is displayed as the string &lt;literal&gt;NULL&lt;/literal&gt;, without
+            quotes (equivalent to &lt;function&gt;quote_nullable&lt;/function&gt;).
+</span>
+<code class="literal">L</code>は引数値をSQLリテラルとして引用符が付けられます。
+NULL値は引用符無しの文字列<code class="literal">NULL</code>となります（<code class="function">quote_nullable</code>と同等です）。
+           </p></li></ul></div><p>
+        </p></dd></dl></div><p>
+    </p><p>
+<span class="original">
+     In addition to the format specifiers described above, the special sequence
+     &lt;literal&gt;%%&lt;/literal&gt; may be used to output a literal &lt;literal&gt;%&lt;/literal&gt; character.
+</span>
+上記で説明したフォーマット指示子に加え、特別の並びの<code class="literal">%%</code>がリテラル<code class="literal">%</code>文字を出力するために使用することもできます。
+    </p><p>
+<span class="original">
+     Here are some examples of the basic format conversions:
+</span>
+基本的なフォーマット変換の例を幾つか下記に紹介します。
+
+</p><pre class="screen">
+SELECT format('Hello %s', 'World');
+<em class="lineannotation"><span class="lineannotation">Result: </span></em><code class="computeroutput">Hello World</code>
+
+SELECT format('Testing %s, %s, %s, %%', 'one', 'two', 'three');
+<em class="lineannotation"><span class="lineannotation">Result: </span></em><code class="computeroutput">Testing one, two, three, %</code>
+
+SELECT format('INSERT INTO %I VALUES(%L)', 'Foo bar', E'O\'Reilly');
+<em class="lineannotation"><span class="lineannotation">Result: </span></em><code class="computeroutput">INSERT INTO "Foo bar" VALUES('O''Reilly')</code>
+
+SELECT format('INSERT INTO %I VALUES(%L)', 'locations', 'C:\Program Files');
+<em class="lineannotation"><span class="lineannotation">Result: </span></em><code class="computeroutput">INSERT INTO locations VALUES('C:\Program Files')</code>
+</pre><p>
+    </p><p>
+<span class="original">
+     Here are examples using &lt;replaceable&gt;width&lt;/replaceable&gt; fields
+     and the &lt;literal&gt;-&lt;/literal&gt; flag:
+</span>
+<em class="replaceable"><code>width</code></em>フィールドとflagの<code class="literal">-</code>を使用した例を以下に示します。
+
+</p><pre class="screen">
+SELECT format('|%10s|', 'foo');
+<em class="lineannotation"><span class="lineannotation">Result: </span></em><code class="computeroutput">|       foo|</code>
+
+SELECT format('|%-10s|', 'foo');
+<em class="lineannotation"><span class="lineannotation">Result: </span></em><code class="computeroutput">|foo       |</code>
+
+SELECT format('|%*s|', 10, 'foo');
+<em class="lineannotation"><span class="lineannotation">Result: </span></em><code class="computeroutput">|       foo|</code>
+
+SELECT format('|%*s|', -10, 'foo');
+<em class="lineannotation"><span class="lineannotation">Result: </span></em><code class="computeroutput">|foo       |</code>
+
+SELECT format('|%-*s|', 10, 'foo');
+<em class="lineannotation"><span class="lineannotation">Result: </span></em><code class="computeroutput">|foo       |</code>
+
+SELECT format('|%-*s|', -10, 'foo');
+<em class="lineannotation"><span class="lineannotation">Result: </span></em><code class="computeroutput">|foo       |</code>
+</pre><p>
+    </p><p>
+<span class="original">
+     These examples show use of &lt;replaceable&gt;position&lt;/replaceable&gt; fields:
+</span>
+以下の例は<em class="replaceable"><code>position</code></em>フィールドの使い方を示しています。
+
+</p><pre class="screen">
+SELECT format('Testing %3$s, %2$s, %1$s', 'one', 'two', 'three');
+<em class="lineannotation"><span class="lineannotation">Result: </span></em><code class="computeroutput">Testing three, two, one</code>
+
+SELECT format('|%*2$s|', 'foo', 10, 'bar');
+<em class="lineannotation"><span class="lineannotation">Result: </span></em><code class="computeroutput">|       bar|</code>
+
+SELECT format('|%1$*2$s|', 'foo', 10, 'bar');
+<em class="lineannotation"><span class="lineannotation">Result: </span></em><code class="computeroutput">|       foo|</code>
+</pre><p>
+    </p><p>
+<span class="original">
+     Unlike the standard C function &lt;function&gt;sprintf&lt;/function&gt;,
+     &lt;productname&gt;PostgreSQL&lt;/productname&gt;'s &lt;function&gt;format&lt;/function&gt; function allows format
+     specifiers with and without &lt;replaceable&gt;position&lt;/replaceable&gt; fields to be mixed
+     in the same format string.  A format specifier without a
+     &lt;replaceable&gt;position&lt;/replaceable&gt; field always uses the next argument after the
+     last argument consumed.
+     In addition, the &lt;function&gt;format&lt;/function&gt; function does not require all
+     function arguments to be used in the format string.
+     For example:
+</span>
+標準C関数<code class="function">sprintf</code>とは違って、<span class="productname">PostgreSQL</span>の<code class="function">format</code>関数は、同一のフォーマット文字列の中で<em class="replaceable"><code>position</code></em>フィールドがあるフォーマット指示子と、それがないフォーマット指示子の混在を許容します。
+<em class="replaceable"><code>position</code></em>フィールドが無いフォーマット指示子は常に最終の引数が消費された後に次の引数を使用します。
+さらに、<code class="function">format</code>関数はフォーマット文字列で使用されるべき全ての関数引数を要求しません。
+例を示します。
+
+</p><pre class="screen">
+SELECT format('Testing %3$s, %2$s, %s', 'one', 'two', 'three');
+<em class="lineannotation"><span class="lineannotation">Result: </span></em><code class="computeroutput">Testing three, two, three</code>
+</pre><p>
+    </p><p>
+<span class="original">
+     The &lt;literal&gt;%I&lt;/literal&gt; and &lt;literal&gt;%L&lt;/literal&gt; format specifiers are particularly
+     useful for safely constructing dynamic SQL statements.  See
+     &lt;xref linkend="plpgsql-quote-literal-example"/&gt;.
+</span>
+<code class="literal">%I</code> および <code class="literal">%L</code>のフォーマット指示子は特に動的SQL命令を安全に構築する場合に便利です。
+<a class="xref" href="plpgsql-statements.html#PLPGSQL-QUOTE-LITERAL-EXAMPLE" title="例43.1 動的問い合わせの中の値の引用符付け">例 43.1</a>を参照してください。
+    </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="functions-math.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="functions.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="functions-binarystring.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">9.3. 算術関数と演算子 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 9.5. バイナリ文字列関数と演算子</td></tr></table></div></body></html>

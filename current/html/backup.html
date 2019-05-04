@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>第25章 バックアップとリストア</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="logfile-maintenance.html" title="24.3. ログファイルの保守" /><link rel="next" href="backup-dump.html" title="25.1. SQLによるダンプ" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="admin.html" title="パート III. サーバの管理">パート III. サーバの管理</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      backup.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="logfile-maintenance.html" title="24.3. ログファイルの保守">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="admin.html" title="パート III. サーバの管理">上へ</a></td><td width="60%" align="center">第25章 バックアップとリストア</td><td width="20%" align="right"> <a accesskey="n" href="backup-dump.html" title="25.1. SQLによるダンプ">次へ</a></td></tr></table><hr /></div><div class="chapter" id="BACKUP"><div class="titlepage"><div><div><h2 class="title">第25章 バックアップとリストア</h2></div></div></div><div class="toc"><p><strong>目次</strong></p><dl class="toc"><dt><span class="sect1"><a href="backup-dump.html">25.1. <acronym class="acronym">SQL</acronym>によるダンプ</a></span></dt><dd><dl><dt><span class="sect2"><a href="backup-dump.html#BACKUP-DUMP-RESTORE">25.1.1. ダンプのリストア</a></span></dt><dt><span class="sect2"><a href="backup-dump.html#BACKUP-DUMP-ALL">25.1.2. <span class="application">pg_dumpall</span>の使用</a></span></dt><dt><span class="sect2"><a href="backup-dump.html#BACKUP-DUMP-LARGE">25.1.3. 大規模データベースの扱い</a></span></dt></dl></dd><dt><span class="sect1"><a href="backup-file.html">25.2. ファイルシステムレベルのバックアップ</a></span></dt><dt><span class="sect1"><a href="continuous-archiving.html">25.3. 継続的アーカイブとポイントインタイムリカバリ（PITR）</a></span></dt><dd><dl><dt><span class="sect2"><a href="continuous-archiving.html#BACKUP-ARCHIVING-WAL">25.3.1. WALアーカイブの設定</a></span></dt><dt><span class="sect2"><a href="continuous-archiving.html#BACKUP-BASE-BACKUP">25.3.2. ベースバックアップの作成</a></span></dt><dt><span class="sect2"><a href="continuous-archiving.html#BACKUP-LOWLEVEL-BASE-BACKUP">25.3.3. 低レベルAPIを使用したベースバックアップの作成</a></span></dt><dt><span class="sect2"><a href="continuous-archiving.html#BACKUP-PITR-RECOVERY">25.3.4. 継続的アーカイブによるバックアップを使用した復旧</a></span></dt><dt><span class="sect2"><a href="continuous-archiving.html#BACKUP-TIMELINES">25.3.5. タイムライン</a></span></dt><dt><span class="sect2"><a href="continuous-archiving.html#BACKUP-TIPS">25.3.6. ヒントと例</a></span></dt><dt><span class="sect2"><a href="continuous-archiving.html#CONTINUOUS-ARCHIVING-CAVEATS">25.3.7. 警告</a></span></dt></dl></dd></dl></div><span class="original">
+ &lt;title&gt;Backup and Restore&lt;/title&gt;
+</span><span class="original">
+ &lt;indexterm zone="backup"&gt;&lt;primary&gt;backup&lt;/primary&gt;&lt;/indexterm&gt;
+</span><a id="id-1.6.12.2" class="indexterm"></a><p>
+<span class="original">
+  As with everything that contains valuable data, &lt;productname&gt;PostgreSQL&lt;/productname&gt;
+  databases should be backed up regularly. While the procedure is
+  essentially simple, it is important to have a clear understanding of
+  the underlying techniques and assumptions.
+</span>
+貴重なデータを全て保存しているため、<span class="productname">PostgreSQL</span>データベースは定期的にバックアップされなければなりません。
+バックアップの手順は基本的に簡単ですが、使用されている諸技術といくつかの前提条件を明確に理解しておくことが重要です。
+ </p><p>
+<span class="original">
+  There are three fundamentally different approaches to backing up
+  &lt;productname&gt;PostgreSQL&lt;/productname&gt; data:
+</span>
+<span class="productname">PostgreSQL</span>のデータをバックアップする場合、3つの異なる手法があります。
+  </p><div class="itemizedlist"><span class="original">
+   &lt;listitem&gt;&lt;para&gt;&lt;acronym&gt;SQL&lt;/acronym&gt; dump&lt;/para&gt;&lt;/listitem&gt;
+   &lt;listitem&gt;&lt;para&gt;File system level backup&lt;/para&gt;&lt;/listitem&gt;
+   &lt;listitem&gt;&lt;para&gt;Continuous archiving&lt;/para&gt;&lt;/listitem&gt;
+</span><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p><acronym class="acronym">SQL</acronym>によるダンプ</p></li><li class="listitem"><p>ファイルシステムレベルのバックアップ</p></li><li class="listitem"><p>継続的アーカイブ</p></li></ul></div><p>
+<span class="original">
+  Each has its own strengths and weaknesses; each is discussed in turn
+  in the following sections.
+</span>
+それぞれ長所と短所があります。
+ひとつひとつ順を追って以下の節で説明します。
+ </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="logfile-maintenance.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="admin.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="backup-dump.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">24.3. ログファイルの保守 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 25.1. <acronym class="acronym">SQL</acronym>によるダンプ</td></tr></table></div></body></html>

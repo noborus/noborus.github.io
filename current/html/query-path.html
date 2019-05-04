@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>51.1. 問い合わせの経路</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="overview.html" title="第51章 PostgreSQL内部の概要" /><link rel="next" href="connect-estab.html" title="51.2. 接続の確立" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="overview.html" title="第51章 PostgreSQL内部の概要">第51章 PostgreSQL内部の概要</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      query-path.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="overview.html" title="第51章 PostgreSQL内部の概要">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="overview.html" title="第51章 PostgreSQL内部の概要">上へ</a></td><td width="60%" align="center">51.1. 問い合わせの経路</td><td width="20%" align="right"> <a accesskey="n" href="connect-estab.html" title="51.2. 接続の確立">次へ</a></td></tr></table><hr /></div><div class="sect1" id="QUERY-PATH"><div class="titlepage"><div><div><h2 class="title" style="clear: both">51.1. 問い合わせの経路</h2></div></div></div><span class="original">
+   &lt;title&gt;The Path of a Query&lt;/title&gt;
+</span><p>
+<span class="original">
+    Here we give a short overview of the stages a query has to pass in
+    order to obtain a result.
+</span>
+ここでは、問い合わせが結果を得るためにたどる過程を簡単に説明します。
+   </p><div class="procedure"><ol class="procedure" type="1"><li class="step"><p>
+<span class="original">
+      A connection from an application program to the &lt;productname&gt;PostgreSQL&lt;/productname&gt;
+      server has to be established. The application program transmits a
+      query to the server and waits to receive the results sent back by the
+      server.
+</span>
+アプリケーションプログラムから<span class="productname">PostgreSQL</span>サーバに接続が確立されなくてはなりません。
+アプリケーションプログラムはサーバに問い合わせを送り、そしてサーバから送り返される結果を待ちます。
+     </p></li><li class="step"><p>
+<span class="original">
+      The &lt;firstterm&gt;parser stage&lt;/firstterm&gt; checks the query
+      transmitted by the application
+      program for correct syntax and creates
+      a &lt;firstterm&gt;query tree&lt;/firstterm&gt;.
+</span>
+<em class="firstterm">構文解析過程</em>で、アプリケーションプログラムから送られた問い合わせの構文が正しいかをチェックし、<em class="firstterm">問い合わせツリー</em>を作成します。
+     </p></li><li class="step"><p>
+<span class="original">
+      The &lt;firstterm&gt;rewrite system&lt;/firstterm&gt; takes
+      the query tree created by the parser stage and looks for
+      any &lt;firstterm&gt;rules&lt;/firstterm&gt; (stored in the
+      &lt;firstterm&gt;system catalogs&lt;/firstterm&gt;) to apply to
+      the query tree.  It performs the
+      transformations given in the &lt;firstterm&gt;rule bodies&lt;/firstterm&gt;.
+</span>
+<em class="firstterm">書き換えシステム</em>は構文解析過程で作られた問い合わせツリーを受け取り、問い合わせツリーに適用するための（<em class="firstterm">システムカタログ</em>に格納されている）<em class="firstterm">ルール</em>を探します。
+そして<em class="firstterm">ルール本体</em>で与えられた変換を実行します。
+     </p><p>
+<span class="original">
+      One application of the rewrite system is in the realization of
+      &lt;firstterm&gt;views&lt;/firstterm&gt;.
+      Whenever a query against a view
+      (i.e., a &lt;firstterm&gt;virtual table&lt;/firstterm&gt;) is made,
+      the rewrite system rewrites the user's query to
+      a query that accesses the &lt;firstterm&gt;base tables&lt;/firstterm&gt; given in
+      the &lt;firstterm&gt;view definition&lt;/firstterm&gt; instead.
+</span>
+書き換えシステムの適用例の1つとして<em class="firstterm">ビュー</em>の具現化が挙げられます。
+ビュー（すなわち<em class="firstterm">仮想テーブル</em>）に対して問い合わせがあると、書き換えシステムが代わってユーザの問い合わせを、<em class="firstterm">ビュー定義</em>で与えられた<em class="firstterm">実テーブル</em>にアクセスする問い合わせに書き換えます。
+     </p></li><li class="step"><p>
+<span class="original">
+      The &lt;firstterm&gt;planner/optimizer&lt;/firstterm&gt; takes
+      the (rewritten) query tree and creates a
+      &lt;firstterm&gt;query plan&lt;/firstterm&gt; that will be the input to the
+      &lt;firstterm&gt;executor&lt;/firstterm&gt;.
+</span>
+<em class="firstterm">プランナ/オプティマイザ</em>は、（書き換えられた）問い合わせツリーを見て、<em class="firstterm">エクゼキュータ</em>に渡すための<em class="firstterm">問い合わせ計画</em>を作ります。
+     </p><p>
+<span class="original">
+      It does so by first creating all possible &lt;firstterm&gt;paths&lt;/firstterm&gt;
+      leading to the same result. For example if there is an index on a
+      relation to be scanned, there are two paths for the
+      scan. One possibility is a simple sequential scan and the other
+      possibility is to use the index. Next the cost for the execution of
+      each path is estimated and the cheapest path is chosen.  The cheapest
+      path is expanded into a complete plan that the executor can use.
+</span>
+そのためにまず同じ結果をもたらす全ての可能な限りの<em class="firstterm">経路</em>を作ります。
+例えば、スキャンの対象となるリレーション上にインデックスがあるとすると2つの経路があります。
+1つは単純なシーケンシャルスキャンで、もう1つはインデックスを使ったスキャンです。
+次にそれぞれの経路を実行するためのコストが見積もられ、一番コストの小さい経路が選ばれます。
+一番コストの小さな経路は、エクゼキュータが実行できるように完全な計画に拡張されます。
+     </p></li><li class="step"><p>
+<span class="original">
+      The executor recursively steps through
+      the &lt;firstterm&gt;plan tree&lt;/firstterm&gt; and
+      retrieves rows in the way represented by the plan.
+      The executor makes use of the
+      &lt;firstterm&gt;storage system&lt;/firstterm&gt; while scanning
+      relations, performs &lt;firstterm&gt;sorts&lt;/firstterm&gt; and &lt;firstterm&gt;joins&lt;/firstterm&gt;,
+      evaluates &lt;firstterm&gt;qualifications&lt;/firstterm&gt; and finally hands back the rows derived.
+</span>
+エクゼキュータは再帰的に<em class="firstterm">計画ツリー</em>上を進み、計画で示されている方法で行を抽出します。
+エクゼキュータはリレーションをスキャンする間<em class="firstterm">保存システム</em>を利用して<em class="firstterm">ソート</em>と<em class="firstterm">結合</em>を実行し、<em class="firstterm">検索条件</em>の評価を行い、最後に得られた行を返します。
+     </p></li></ol></div><p>
+<span class="original">
+    In the following sections we will cover each of the above listed items
+    in more detail to give a better understanding of &lt;productname&gt;PostgreSQL&lt;/productname&gt;'s internal
+    control and data structures.
+</span>
+これからの節では、<span class="productname">PostgreSQL</span>の内部制御とデータ構造をより良く理解するために、上に記載した事柄をさらに詳しく説明します。
+   </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="overview.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="overview.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="connect-estab.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第51章 PostgreSQL内部の概要 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 51.2. 接続の確立</td></tr></table></div></body></html>

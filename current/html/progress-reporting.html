@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>28.4. 進捗状況のレポート</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="monitoring-locks.html" title="28.3. ロックの表示" /><link rel="next" href="dynamic-trace.html" title="28.5. 動的追跡" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="monitoring.html" title="第28章 データベース活動状況の監視">第28章 データベース活動状況の監視</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      progress-reporting.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="monitoring-locks.html" title="28.3. ロックの表示">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="monitoring.html" title="第28章 データベース活動状況の監視">上へ</a></td><td width="60%" align="center">28.4. 進捗状況のレポート</td><td width="20%" align="right"> <a accesskey="n" href="dynamic-trace.html" title="28.5. 動的追跡">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PROGRESS-REPORTING"><div class="titlepage"><div><div><h2 class="title" style="clear: both">28.4. 進捗状況のレポート</h2></div></div></div><span class="original">
+  &lt;title&gt;Progress Reporting&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; has the ability to report the progress of
+   certain commands during command execution.  Currently, the only command
+   which supports progress reporting is &lt;command&gt;VACUUM&lt;/command&gt;.  This may be
+   expanded in the future.
+</span>
+<span class="productname">PostgreSQL</span>は、何らかのコマンドの実行中に進捗状況をレポートする能力があります。
+現在、進捗状況のレポートを唯一サポートしているのは<code class="command">VACUUM</code>です。
+将来的にサポートされるコマンドが拡大される可能性があります。
+  </p><div class="sect2" id="VACUUM-PROGRESS-REPORTING"><div class="titlepage"><div><div><h3 class="title">28.4.1. VACUUM進捗状況のレポート</h3></div></div></div><span class="original">
+  &lt;title&gt;VACUUM Progress Reporting&lt;/title&gt;
+</span><p>
+<span class="original">
+   Whenever &lt;command&gt;VACUUM&lt;/command&gt; is running, the
+   &lt;structname&gt;pg_stat_progress_vacuum&lt;/structname&gt; view will contain
+   one row for each backend (including autovacuum worker processes) that is
+   currently vacuuming.  The tables below describe the information
+   that will be reported and provide information about how to interpret it.
+   Progress reporting is not currently supported for &lt;command&gt;VACUUM FULL&lt;/command&gt;
+   and backends running &lt;command&gt;VACUUM FULL&lt;/command&gt; will not be listed in this
+   view.
+</span>
+<code class="command">VACUUM</code>を実行するときはいつでも、<code class="structname">pg_stat_progress_vacuum</code>ビューは、現在バキューム処理している（自動バキュームワーカプロセスを含む）それぞれのバックエンドごとに１行を格納します。
+その情報を説明している以下のテーブルにおいて、何がレポートされ、どのように解釈するかについての情報を提供します。
+進捗状況のレポートは、現在<code class="command">VACUUM FULL</code>はサポートされておらず、<code class="command">VACUUM FULL</code>を実行しているバックエンドはこのビューの一覧に表示されません。
+  </p><div class="table" id="PG-STAT-PROGRESS-VACUUM-VIEW"><p class="title"><strong>表28.21 <code class="structname">pg_stat_progress_vacuum</code>ビュー</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;&lt;structname&gt;pg_stat_progress_vacuum&lt;/structname&gt; View&lt;/title&gt;
+</span><table class="table" summary="pg_stat_progress_vacuumビュー" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>列</th><th>型</th><th>説明</th></tr></thead><tbody><tr><td><code class="structfield">pid</code></td><td><code class="type">integer</code></td><td>バックエンドのプロセスID。</td></tr><tr><td><code class="structfield">datid</code></td><td><code class="type">oid</code></td><td>このバックエンドが接続されたデータベースのOID。</td></tr><tr><td><code class="structfield">datname</code></td><td><code class="type">name</code></td><td>このバックエンドが接続されたデータベース名。</td></tr><tr><td><code class="structfield">relid</code></td><td><code class="type">oid</code></td><td>バキューム処理が行われているテーブルのOID。</td></tr><tr><td><code class="structfield">phase</code></td><td><code class="type">text</code></td><td>
+<span class="original">
+       Current processing phase of vacuum.  See &lt;xref linkend='vacuum-phases'/&gt;.
+</span>
+現在のバキュームの処理フェーズ。<a class="xref" href="progress-reporting.html#VACUUM-PHASES" title="表28.22 VACUUMのフェーズ">表 28.22</a>を参照してください。
+     </td></tr><tr><td><code class="structfield">heap_blks_total</code></td><td><code class="type">bigint</code></td><td>
+<span class="original">
+       Total number of heap blocks in the table.  This number is reported
+       as of the beginning of the scan; blocks added later will not be (and
+       need not be) visited by this &lt;command&gt;VACUUM&lt;/command&gt;.
+</span>
+テーブルのヒープブロックの総数。
+この数字は、スキャンの開始を基点としてレポートされます。
+後に追加されるブロックは、この<code class="command">VACUUM</code>によって処理されません（必要もありません）。
+     </td></tr><tr><td><code class="structfield">heap_blks_scanned</code></td><td><code class="type">bigint</code></td><td>
+<span class="original">
+       Number of heap blocks scanned.  Because the
+       &lt;link linkend="storage-vm"&gt;visibility map&lt;/link&gt; is used to optimize scans,
+       some blocks will be skipped without inspection; skipped blocks are
+       included in this total, so that this number will eventually become
+       equal to &lt;structfield&gt;heap_blks_total&lt;/structfield&gt; when the vacuum is complete.
+       This counter only advances when the phase is &lt;literal&gt;scanning heap&lt;/literal&gt;.
+</span>
+スキャンされたヒープブロックの数。
+<a class="link" href="storage-vm.html" title="68.4. 可視性マップ">可視性マップ</a>がスキャンを最適化するために使用されるため、いくつかのブロックが検査されずに読み飛ばされます。
+読み飛ばされたブロックはこの総数に含まれ、そのためこの数字はバキューム処理が完了した時に、最終的に<code class="structfield">heap_blks_total</code>と同じになります。
+このカウンタは、フェーズが<code class="literal">scanning heap</code>の時にのみ増加します。
+     </td></tr><tr><td><code class="structfield">heap_blks_vacuumed</code></td><td><code class="type">bigint</code></td><td>
+<span class="original">
+       Number of heap blocks vacuumed.  Unless the table has no indexes, this
+       counter only advances when the phase is &lt;literal&gt;vacuuming heap&lt;/literal&gt;.
+       Blocks that contain no dead tuples are skipped, so the counter may
+       sometimes skip forward in large increments.
+</span>
+バキューム処理されたヒープブロックの数。
+テーブルにインデックスが１つでも存在するなら、このカウンタはフェーズが<code class="literal">vacuuming heap</code>の時にのみ増加します。
+無効なタプルが含まれていないブロックは読み飛ばされ、それゆえカウンタは時々大きな増加量で早送りされます。
+     </td></tr><tr><td><code class="structfield">index_vacuum_count</code></td><td><code class="type">bigint</code></td><td>
+<span class="original">
+       Number of completed index vacuum cycles.
+</span>
+完了したインデックスバキュームサイクルの数。
+     </td></tr><tr><td><code class="structfield">max_dead_tuples</code></td><td><code class="type">bigint</code></td><td>
+<span class="original">
+      Number of dead tuples that we can store before needing to perform
+      an index vacuum cycle, based on
+      &lt;xref linkend="guc-maintenance-work-mem"/&gt;.
+</span>
+インデックスバキュームサイクルの実行に必要となる前に格納することが出来る、<a class="xref" href="runtime-config-resource.html#GUC-MAINTENANCE-WORK-MEM">maintenance_work_mem</a>に基づいた、無効なタプルの数。
+     </td></tr><tr><td><code class="structfield">num_dead_tuples</code></td><td><code class="type">bigint</code></td><td>
+<span class="original">
+       Number of dead tuples collected since the last index vacuum cycle.
+</span>
+最後のインデックスバキュームサイクルから収集された無効タプルの数。
+     </td></tr></tbody></table></div></div><br class="table-break" /><div class="table" id="VACUUM-PHASES"><p class="title"><strong>表28.22 VACUUMのフェーズ</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;VACUUM phases&lt;/title&gt;
+</span><table class="table" summary="VACUUMのフェーズ" border="1"><colgroup><col /><col /></colgroup><thead><tr><th>フェーズ</th><th>説明</th></tr></thead><tbody><tr><td><code class="literal">initializing</code></td><td>
+<span class="original">
+       &lt;command&gt;VACUUM&lt;/command&gt; is preparing to begin scanning the heap.  This
+       phase is expected to be very brief.
+</span>
+<code class="command">VACUUM</code>は、ヒープをスキャンし始める準備をしています。
+このフェーズは、非常に短時間であると予想されます。
+     </td></tr><tr><td><code class="literal">scanning heap</code></td><td>
+<span class="original">
+       &lt;command&gt;VACUUM&lt;/command&gt; is currently scanning the heap.  It will prune and
+       defragment each page if required, and possibly perform freezing
+       activity.  The &lt;structfield&gt;heap_blks_scanned&lt;/structfield&gt; column can be used
+       to monitor the progress of the scan.
+</span>
+<code class="command">VACUUM</code>は、現在ヒープをスキャン中です。
+必要であればそれぞれのページを切り取り、デフラグし、場合によってはフリーズ活動を実行します。
+スキャンの進捗状況の監視に<code class="structfield">heap_blks_scanned</code>列が使用できます。
+     </td></tr><tr><td><code class="literal">vacuuming indexes</code></td><td>
+<span class="original">
+       &lt;command&gt;VACUUM&lt;/command&gt; is currently vacuuming the indexes.  If a table has
+       any indexes, this will happen at least once per vacuum, after the heap
+       has been completely scanned.  It may happen multiple times per vacuum
+       if &lt;xref linkend="guc-maintenance-work-mem"/&gt; is insufficient to
+       store the number of dead tuples found.
+</span>
+<code class="command">VACUUM</code>は、現在インデックスをバキューム処理中です。
+テーブルにインデックスが存在する場合、ヒープが完全にスキャンされた後に、バキューム実行ごとに少なくとも１回発生します。
+<a class="xref" href="runtime-config-resource.html#GUC-MAINTENANCE-WORK-MEM">maintenance_work_mem</a>が、発見された無効タプルの数量を格納するのに不十分な場合は、バキューム実行ごとに複数回発生する可能性があります。
+     </td></tr><tr><td><code class="literal">vacuuming heap</code></td><td>
+<span class="original">
+       &lt;command&gt;VACUUM&lt;/command&gt; is currently vacuuming the heap.  Vacuuming the heap
+       is distinct from scanning the heap, and occurs after each instance of
+       vacuuming indexes.  If &lt;structfield&gt;heap_blks_scanned&lt;/structfield&gt; is less than
+       &lt;structfield&gt;heap_blks_total&lt;/structfield&gt;, the system will return to scanning
+       the heap after this phase is completed; otherwise, it will begin
+       cleaning up indexes after this phase is completed.
+</span>
+<code class="command">VACUUM</code>は、現在ヒープをバキューム処理中です。
+ヒープのバキュームは、ヒープのスキャンと異なり、インデックスをバキューム処理するそれぞれのインスタンスの後に発生します。
+<code class="structfield">heap_blks_scanned</code>が<code class="structfield">heap_blks_total</code>より少ない場合、システムはこのフェーズの完了後にヒープのスキャン処理に戻ります。
+さもなければ、このフェーズの完了後にインデックスの整理を始めます。
+     </td></tr><tr><td><code class="literal">cleaning up indexes</code></td><td>
+<span class="original">
+       &lt;command&gt;VACUUM&lt;/command&gt; is currently cleaning up indexes.  This occurs after
+       the heap has been completely scanned and all vacuuming of the indexes
+       and the heap has been completed.
+</span>
+<code class="command">VACUUM</code>は、現在インデックスの整理処理中です。
+これは、ヒープが完全にスキャンされ、インデックスとヒープが完全にすべてバキューム処理された後に発生します。
+     </td></tr><tr><td><code class="literal">truncating heap</code></td><td>
+<span class="original">
+       &lt;command&gt;VACUUM&lt;/command&gt; is currently truncating the heap so as to return
+       empty pages at the end of the relation to the operating system.  This
+       occurs after cleaning up indexes.
+</span>
+<code class="command">VACUUM</code>は、現在リレーションの終点の空のページをオペレーティングシステムに戻すためにヒープを削除しています。
+これは、インデックスの整理処理後に発生します。
+     </td></tr><tr><td><code class="literal">performing final cleanup</code></td><td>
+<span class="original">
+       &lt;command&gt;VACUUM&lt;/command&gt; is performing final cleanup.  During this phase,
+       &lt;command&gt;VACUUM&lt;/command&gt; will vacuum the free space map, update statistics
+       in &lt;literal&gt;pg_class&lt;/literal&gt;, and report statistics to the statistics
+       collector.  When this phase is completed, &lt;command&gt;VACUUM&lt;/command&gt; will end.
+</span>
+<code class="command">VACUUM</code>は、最終クリーンアップ処理をしています。
+このフェーズの間、<code class="command">VACUUM</code>空き領域マップをバキュームし、<code class="literal">pg_class</code>の統計情報を更新し、統計情報コレクタに統計情報を報告します。
+このフェーズが完了した時、<code class="command">VACUUM</code>は終了します。
+     </td></tr></tbody></table></div></div><br class="table-break" /></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="monitoring-locks.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="monitoring.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="dynamic-trace.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">28.3. ロックの表示 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 28.5. 動的追跡</td></tr></table></div></body></html>

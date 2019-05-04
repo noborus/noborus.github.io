@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>9.22. 副問い合わせ式</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="functions-window.html" title="9.21. ウィンドウ関数" /><link rel="next" href="functions-comparisons.html" title="9.23. 行と配列の比較" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="functions.html" title="第9章 関数と演算子">第9章 関数と演算子</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      functions-subquery.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="functions-window.html" title="9.21. ウィンドウ関数">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="functions.html" title="第9章 関数と演算子">上へ</a></td><td width="60%" align="center">9.22. 副問い合わせ式</td><td width="20%" align="right"> <a accesskey="n" href="functions-comparisons.html" title="9.23. 行と配列の比較">次へ</a></td></tr></table><hr /></div><div class="sect1" id="FUNCTIONS-SUBQUERY"><div class="titlepage"><div><div><h2 class="title" style="clear: both">9.22. 副問い合わせ式</h2></div></div></div><span class="original">
+  &lt;title&gt;Subquery Expressions&lt;/title&gt;
+</span><a id="id-1.5.8.27.2" class="indexterm"></a><a id="id-1.5.8.27.3" class="indexterm"></a><a id="id-1.5.8.27.4" class="indexterm"></a><a id="id-1.5.8.27.5" class="indexterm"></a><a id="id-1.5.8.27.6" class="indexterm"></a><a id="id-1.5.8.27.7" class="indexterm"></a><a id="id-1.5.8.27.8" class="indexterm"></a><p>
+<span class="original">
+   This section describes the &lt;acronym&gt;SQL&lt;/acronym&gt;-compliant subquery
+   expressions available in &lt;productname&gt;PostgreSQL&lt;/productname&gt;.
+   All of the expression forms documented in this section return
+   Boolean (true/false) results.
+</span>
+本節では<span class="productname">PostgreSQL</span>で使用できる<acronym class="acronym">SQL</acronym>準拠の副問い合わせについて説明します。
+本節で記載した全ての式は結果として論理値（真/偽）を返します。
+  </p><div class="sect2" id="FUNCTIONS-SUBQUERY-EXISTS"><div class="titlepage"><div><div><h3 class="title">9.22.1. <code class="literal">EXISTS</code></h3></div></div></div><pre class="synopsis">
+EXISTS (<em class="replaceable"><code>subquery</code></em>)
+</pre><p>
+<span class="original">
+   The argument of &lt;token&gt;EXISTS&lt;/token&gt; is an arbitrary &lt;command&gt;SELECT&lt;/command&gt; statement,
+   or &lt;firstterm&gt;subquery&lt;/firstterm&gt;.  The
+   subquery is evaluated to determine whether it returns any rows.
+   If it returns at least one row, the result of &lt;token&gt;EXISTS&lt;/token&gt; is
+   &lt;quote&gt;true&lt;/quote&gt;; if the subquery returns no rows, the result of &lt;token&gt;EXISTS&lt;/token&gt;
+   is &lt;quote&gt;false&lt;/quote&gt;.
+</span>
+<code class="token">EXISTS</code>の引数は、任意の<code class="command">SELECT</code>文、つまり<em class="firstterm">副問い合わせ</em>です。
+副問い合わせはそれが何らかの行を返すか否かの決定のために評価されます。
+もし1つでも行を返すのであれば、<code class="token">EXISTS</code>の結果は<span class="quote">「<span class="quote">true（真）</span>」</span>となり、副問い合わせが行を返さない場合、<code class="token">EXISTS</code>の結果は<span class="quote">「<span class="quote">false（偽）</span>」</span>となります。
+  </p><p>
+<span class="original">
+   The subquery can refer to variables from the surrounding query,
+   which will act as constants during any one evaluation of the subquery.
+</span>
+副問い合わせは、取り囲んでいる問い合わせから変数を参照することができ、その値は副問い合わせの評価時には定数として扱われます。
+  </p><p>
+<span class="original">
+   The subquery will generally only be executed long enough to determine
+   whether at least one row is returned, not all the way to completion.
+   It is unwise to write a subquery that has side effects (such as
+   calling sequence functions); whether the side effects occur
+   might be unpredictable.
+</span>
+この副問い合わせは通常、最後まで実行されず、少なくとも１つの行が返されたかどうかを判定し得るに足りる時点まで実行されます。
+（シーケンス関数を呼び出すような）副作用のある副問い合わせを記述することは配慮不足です。副作用が生じるかどうかは予想できません。
+  </p><p>
+<span class="original">
+   Since the result depends only on whether any rows are returned,
+   and not on the contents of those rows, the output list of the
+   subquery is normally unimportant.  A common coding convention is
+   to write all &lt;literal&gt;EXISTS&lt;/literal&gt; tests in the form
+   &lt;literal&gt;EXISTS(SELECT 1 WHERE ...)&lt;/literal&gt;.  There are exceptions to
+   this rule however, such as subqueries that use &lt;token&gt;INTERSECT&lt;/token&gt;.
+</span>
+結果は何らかの行が返されるのかのみに依存し、それらの行の内容には依存しないことから、副問い合わせの出力リストは通常重要ではありません。
+よく使われるコーディング規約は、全ての<code class="literal">EXISTS</code>テストを<code class="literal">EXISTS(SELECT 1 WHERE ...)</code>といった形式で記述することです。
+とは言っても、<code class="token">INTERSECT</code>を使う副問い合わせのようにこの規則には例外があります。
+  </p><p>
+<span class="original">
+   This simple example is like an inner join on &lt;literal&gt;col2&lt;/literal&gt;, but
+   it produces at most one output row for each &lt;literal&gt;tab1&lt;/literal&gt; row,
+   even if there are several matching &lt;literal&gt;tab2&lt;/literal&gt; rows:
+</span>
+以下の簡単な例は<code class="literal">col2</code>上の内部結合に似ていますが、しかしたとえ<code class="literal">tab2</code>の行といくつか一致したとしても<code class="literal">tab1</code>のそれぞれの行に対して最大限１つの出力行を生成します。
+</p><pre class="screen">
+SELECT col1
+FROM tab1
+WHERE EXISTS (SELECT 1 FROM tab2 WHERE col2 = tab1.col2);
+</pre><p>
+  </p></div><div class="sect2" id="FUNCTIONS-SUBQUERY-IN"><div class="titlepage"><div><div><h3 class="title">9.22.2. <code class="literal">IN</code></h3></div></div></div><pre class="synopsis">
+<em class="replaceable"><code>expression</code></em> IN (<em class="replaceable"><code>subquery</code></em>)
+</pre><p>
+<span class="original">
+   The right-hand side is a parenthesized
+   subquery, which must return exactly one column.  The left-hand expression
+   is evaluated and compared to each row of the subquery result.
+   The result of &lt;token&gt;IN&lt;/token&gt; is &lt;quote&gt;true&lt;/quote&gt; if any equal subquery row is found.
+   The result is &lt;quote&gt;false&lt;/quote&gt; if no equal row is found (including the
+   case where the subquery returns no rows).
+</span>
+右辺は括弧で括られた副問い合わせで、正確に１列を返すものでなければなりません。
+左辺式は評価され、副問い合わせの結果行と比較されます。
+副問い合わせの行のどれかと等しい場合、<code class="token">IN</code>の結果は<span class="quote">「<span class="quote">true（真）</span>」</span>です。
+（副問い合わせが行を返さない場合を含め）等しい行が見つからない場合、結果は<span class="quote">「<span class="quote">false（偽）</span>」</span>です。
+  </p><p>
+<span class="original">
+   Note that if the left-hand expression yields null, or if there are
+   no equal right-hand values and at least one right-hand row yields
+   null, the result of the &lt;token&gt;IN&lt;/token&gt; construct will be null, not false.
+   This is in accordance with SQL's normal rules for Boolean combinations
+   of null values.
+</span>
+左辺の式がNULLを生じる場合、または右辺の値に等しいものがなくて少なくとも1つの右辺の行がNULLを持つ場合、<code class="token">IN</code>構文の結果は偽ではなくNULLとなることに注意してください。
+これは、NULL値の論理的な組み合わせに対するSQLの標準規則に従うものです。
+  </p><p>
+<span class="original">
+   As with &lt;token&gt;EXISTS&lt;/token&gt;, it's unwise to assume that the subquery will
+   be evaluated completely.
+</span>
+<code class="token">EXISTS</code>と同様、副問い合わせが完全に評価されることを前提としてはなりません。
+  </p><pre class="synopsis">
+<em class="replaceable"><code>row_constructor</code></em> IN (<em class="replaceable"><code>subquery</code></em>)
+</pre><p>
+<span class="original">
+   The left-hand side of this form of &lt;token&gt;IN&lt;/token&gt; is a row constructor,
+   as described in &lt;xref linkend="sql-syntax-row-constructors"/&gt;.
+   The right-hand side is a parenthesized
+   subquery, which must return exactly as many columns as there are
+   expressions in the left-hand row.  The left-hand expressions are
+   evaluated and compared row-wise to each row of the subquery result.
+   The result of &lt;token&gt;IN&lt;/token&gt; is &lt;quote&gt;true&lt;/quote&gt; if any equal subquery row is found.
+   The result is &lt;quote&gt;false&lt;/quote&gt; if no equal row is found (including the
+   case where the subquery returns no rows).
+</span>
+<code class="token">IN</code>のこの形式の左辺は、<a class="xref" href="sql-expressions.html#SQL-SYNTAX-ROW-CONSTRUCTORS" title="4.2.13. 行コンストラクタ">4.2.13</a>で説明する、行のコンストラクタです。
+右辺は括弧で括られた副問い合わせで、左辺の行にある式の数と正確に同じ数の列を返さなければなりません。
+左辺の式は副問い合わせの結果のそれぞれの行に対し、行に関して評価、比較が行われます。
+副問い合わせの行に等しいものが見つかった場合、<code class="token">IN</code> の結果は<span class="quote">「<span class="quote">true（真）</span>」</span>となります。
+（副問い合わせが行を返さない場合を含め）等しい行が見つからない場合、結果は<span class="quote">「<span class="quote">false（偽）</span>」</span>です。
+  </p><p>
+<span class="original">
+   As usual, null values in the rows are combined per
+   the normal rules of SQL Boolean expressions.  Two rows are considered
+   equal if all their corresponding members are non-null and equal; the rows
+   are unequal if any corresponding members are non-null and unequal;
+   otherwise the result of that row comparison is unknown (null).
+   If all the per-row results are either unequal or null, with at least one
+   null, then the result of &lt;token&gt;IN&lt;/token&gt; is null.
+</span>
+通常通り、行にあるNULL値はSQLの論理式の標準規則で結合されます。
+２つの行は対応する全ての構成要素が非NULLかつ等しい場合に等しいとみなされます。
+１つでも対応する構成要素が非NULLかつ等しくないものがあれば、２つの行は等しくないとみなされます。
+それ以外の場合、その行の比較結果は不明（NULL）です。
+行毎の結果すべてが不等もしくはNULLの場合、少なくとも１つのNULLがあると、<code class="token">IN</code>の結果はNULLとなります。
+  </p></div><div class="sect2" id="FUNCTIONS-SUBQUERY-NOTIN"><div class="titlepage"><div><div><h3 class="title">9.22.3. <code class="literal">NOT IN</code></h3></div></div></div><pre class="synopsis">
+<em class="replaceable"><code>expression</code></em> NOT IN (<em class="replaceable"><code>subquery</code></em>)
+</pre><p>
+<span class="original">
+   The right-hand side is a parenthesized
+   subquery, which must return exactly one column.  The left-hand expression
+   is evaluated and compared to each row of the subquery result.
+   The result of &lt;token&gt;NOT IN&lt;/token&gt; is &lt;quote&gt;true&lt;/quote&gt; if only unequal subquery rows
+   are found (including the case where the subquery returns no rows).
+   The result is &lt;quote&gt;false&lt;/quote&gt; if any equal row is found.
+</span>
+右辺は括弧で括られた副問い合わせで、正確に１つの列を返さなければなりません。
+左辺の式は副問い合わせ結果の行それぞれに対して評価、比較されます。
+等しくない副問い合わせの行だけがある（副問い合わせが行を返さない場合を含む）と、<code class="token">NOT IN</code>の結果は<span class="quote">「<span class="quote">true（真）</span>」</span>です。
+等しい行が1つでもあれば、結果は<span class="quote">「<span class="quote">false（偽）</span>」</span>です。
+  </p><p>
+<span class="original">
+   Note that if the left-hand expression yields null, or if there are
+   no equal right-hand values and at least one right-hand row yields
+   null, the result of the &lt;token&gt;NOT IN&lt;/token&gt; construct will be null, not true.
+   This is in accordance with SQL's normal rules for Boolean combinations
+   of null values.
+</span>
+左辺の式でNULLが生じる場合、または右辺の値に等しいものがなく、少なくとも１つの右辺の式がNULLを生み出す場合、<code class="token">NOT IN</code>構文の結果は真ではなくNULLとなることに注意してください。
+これは、NULL値の論理的な組み合わせに対するSQLの標準規則に従うものです。
+  </p><p>
+<span class="original">
+   As with &lt;token&gt;EXISTS&lt;/token&gt;, it's unwise to assume that the subquery will
+   be evaluated completely.
+</span>
+<code class="token">EXISTS</code>と同様、副問い合わせが完全に評価されることを前提としてはなりません。
+  </p><pre class="synopsis">
+<em class="replaceable"><code>row_constructor</code></em> NOT IN (<em class="replaceable"><code>subquery</code></em>)
+</pre><p>
+<span class="original">
+   The left-hand side of this form of &lt;token&gt;NOT IN&lt;/token&gt; is a row constructor,
+   as described in &lt;xref linkend="sql-syntax-row-constructors"/&gt;.
+   The right-hand side is a parenthesized
+   subquery, which must return exactly as many columns as there are
+   expressions in the left-hand row.  The left-hand expressions are
+   evaluated and compared row-wise to each row of the subquery result.
+   The result of &lt;token&gt;NOT IN&lt;/token&gt; is &lt;quote&gt;true&lt;/quote&gt; if only unequal subquery rows
+   are found (including the case where the subquery returns no rows).
+   The result is &lt;quote&gt;false&lt;/quote&gt; if any equal row is found.
+</span>
+<code class="token">NOT IN</code>のこの形式の左辺は、<a class="xref" href="sql-expressions.html#SQL-SYNTAX-ROW-CONSTRUCTORS" title="4.2.13. 行コンストラクタ">4.2.13</a>で説明する行コンストラクタです。
+右辺は括弧で括られた副問い合わせで、左辺の行にある式の数と正確に同じ数の列を返さなければなりません。
+左辺の式は副問い合わせの結果のそれぞれの行に対し、評価、比較が行われます。
+副問い合わせの行に不等のもののみが見つかった場合（副問い合わせが行を返さない場合を含む）、<code class="token">NOT IN</code>の結果は<span class="quote">「<span class="quote">true（真）</span>」</span>となります。
+等しい行が１つでも見つかった場合、結果は<span class="quote">「<span class="quote">false（偽）</span>」</span>です。
+  </p><p>
+<span class="original">
+   As usual, null values in the rows are combined per
+   the normal rules of SQL Boolean expressions.  Two rows are considered
+   equal if all their corresponding members are non-null and equal; the rows
+   are unequal if any corresponding members are non-null and unequal;
+   otherwise the result of that row comparison is unknown (null).
+   If all the per-row results are either unequal or null, with at least one
+   null, then the result of &lt;token&gt;NOT IN&lt;/token&gt; is null.
+</span>
+通常通り、行にあるNULL値はSQLの論理式の標準規則で結合されます。
+2つの行は対応する全ての構成要素が非NULLかつ等しい場合に等しいとみなされます。
+１つでも構成要素が非NULLかつ等しくない場合、２つの行は等しくないとみなされます。
+それ以外の場合、その行の比較結果は不明（NULL）です。
+行毎の結果すべてが不等もしくはNULLの場合、少なくとも1つのNULLがあると、<code class="token">NOT IN</code>の結果はNULLとなります。
+  </p></div><div class="sect2" id="FUNCTIONS-SUBQUERY-ANY-SOME"><div class="titlepage"><div><div><h3 class="title">9.22.4. <code class="literal">ANY</code>/<code class="literal">SOME</code></h3></div></div></div><pre class="synopsis">
+<em class="replaceable"><code>expression</code></em> <em class="replaceable"><code>operator</code></em> ANY (<em class="replaceable"><code>subquery</code></em>)
+<em class="replaceable"><code>expression</code></em> <em class="replaceable"><code>operator</code></em> SOME (<em class="replaceable"><code>subquery</code></em>)
+</pre><p>
+<span class="original">
+   The right-hand side is a parenthesized
+   subquery, which must return exactly one column.  The left-hand expression
+   is evaluated and compared to each row of the subquery result using the
+   given &lt;replaceable&gt;operator&lt;/replaceable&gt;, which must yield a Boolean
+   result.
+   The result of &lt;token&gt;ANY&lt;/token&gt; is &lt;quote&gt;true&lt;/quote&gt; if any true result is obtained.
+   The result is &lt;quote&gt;false&lt;/quote&gt; if no true result is found (including the
+   case where the subquery returns no rows).
+</span>
+右辺は括弧で括られた副問い合わせで、正確に1つの列を返さなければなりません。
+左辺の式は副問い合わせの結果行それぞれに対して、指定された<em class="replaceable"><code>operator</code></em>を使用して評価、比較されます。なお、<em class="replaceable"><code>operator</code></em>は結果として論理値を生成する必要があります。
+真の結果が１つでもあると、<code class="token">ANY</code>の結果は<span class="quote">「<span class="quote">true（真）</span>」</span>です。
+真の結果がない（副問い合わせが行を返さない場合を含む）と、結果は<span class="quote">「<span class="quote">false（偽）</span>」</span>です。
+  </p><p>
+<span class="original">
+   &lt;token&gt;SOME&lt;/token&gt; is a synonym for &lt;token&gt;ANY&lt;/token&gt;.
+   &lt;token&gt;IN&lt;/token&gt; is equivalent to &lt;literal&gt;= ANY&lt;/literal&gt;.
+</span>
+<code class="token">SOME</code>は<code class="token">ANY</code>の同義語です。
+<code class="token">IN</code>は<code class="literal">= ANY</code>と等価です。
+  </p><p>
+<span class="original">
+   Note that if there are no successes and at least one right-hand row yields
+   null for the operator's result, the result of the &lt;token&gt;ANY&lt;/token&gt; construct
+   will be null, not false.
+   This is in accordance with SQL's normal rules for Boolean combinations
+   of null values.
+</span>
+成功がなく、右辺の行が演算子の結果として１つでもNULLを生成した場合、<code class="token">ANY</code>構文の結果は偽ではなくNULLになることに注意してください。
+これは、NULL値の論理的な組み合わせに対するSQLの標準規則に従うものです。
+  </p><p>
+<span class="original">
+   As with &lt;token&gt;EXISTS&lt;/token&gt;, it's unwise to assume that the subquery will
+   be evaluated completely.
+</span>
+<code class="token">EXISTS</code>と同様、副問い合わせが完全に評価されると前提してはなりません。
+  </p><pre class="synopsis">
+<em class="replaceable"><code>row_constructor</code></em> <em class="replaceable"><code>operator</code></em> ANY (<em class="replaceable"><code>subquery</code></em>)
+<em class="replaceable"><code>row_constructor</code></em> <em class="replaceable"><code>operator</code></em> SOME (<em class="replaceable"><code>subquery</code></em>)
+</pre><p>
+<span class="original">
+   The left-hand side of this form of &lt;token&gt;ANY&lt;/token&gt; is a row constructor,
+   as described in &lt;xref linkend="sql-syntax-row-constructors"/&gt;.
+   The right-hand side is a parenthesized
+   subquery, which must return exactly as many columns as there are
+   expressions in the left-hand row.  The left-hand expressions are
+   evaluated and compared row-wise to each row of the subquery result,
+   using the given &lt;replaceable&gt;operator&lt;/replaceable&gt;.
+   The result of &lt;token&gt;ANY&lt;/token&gt; is &lt;quote&gt;true&lt;/quote&gt; if the comparison
+   returns true for any subquery row.
+   The result is &lt;quote&gt;false&lt;/quote&gt; if the comparison returns false for every
+   subquery row (including the case where the subquery returns no
+   rows).
+   The result is NULL if no comparison with a subquery row returns true,
+   and at least one comparison returns NULL.
+</span>
+<code class="token">ANY</code>のこの形式の左辺は、<a class="xref" href="sql-expressions.html#SQL-SYNTAX-ROW-CONSTRUCTORS" title="4.2.13. 行コンストラクタ">4.2.13</a>で説明されている行コンストラクタです。
+右辺は括弧で括られた副問い合わせで、左辺の行にある式の数と正確に同じ数の列を返さなければなりません。
+左辺の式は副問い合わせの結果のそれぞれの行に対し、与えられた<em class="replaceable"><code>operator</code></em>を使用して行に関する評価、比較が行われます。
+比較の結果、副問い合わせの行のどれかに対して真となる場合、<code class="token">ANY</code>の結果は<span class="quote">「<span class="quote">true（真）</span>」</span>です。
+比較の結果、副問い合わせの全ての行に対して偽となる場合（副問い合わせが行を返さないという場合も含む）、結果は<span class="quote">「<span class="quote">false（偽）</span>」</span>です。
+いかなる副問合せ行との比較の結果も偽を返さず、かつ、少なくとも１つの比較がNULLを返す場合、結果はNULLになります。
+  </p><p>
+<span class="original">
+   See &lt;xref linkend="row-wise-comparison"/&gt; for details about the meaning
+   of a row constructor comparison.
+</span>
+行コンストラクタ比較の意味についての詳細は<a class="xref" href="functions-comparisons.html#ROW-WISE-COMPARISON" title="9.23.5. 行コンストラクタの比較">9.23.5</a>を参照して下さい。
+  </p></div><div class="sect2" id="FUNCTIONS-SUBQUERY-ALL"><div class="titlepage"><div><div><h3 class="title">9.22.5. <code class="literal">ALL</code></h3></div></div></div><pre class="synopsis">
+<em class="replaceable"><code>expression</code></em> <em class="replaceable"><code>operator</code></em> ALL (<em class="replaceable"><code>subquery</code></em>)
+</pre><p>
+<span class="original">
+   The right-hand side is a parenthesized
+   subquery, which must return exactly one column.  The left-hand expression
+   is evaluated and compared to each row of the subquery result using the
+   given &lt;replaceable&gt;operator&lt;/replaceable&gt;, which must yield a Boolean
+   result.
+   The result of &lt;token&gt;ALL&lt;/token&gt; is &lt;quote&gt;true&lt;/quote&gt; if all rows yield true
+   (including the case where the subquery returns no rows).
+   The result is &lt;quote&gt;false&lt;/quote&gt; if any false result is found.
+   The result is NULL if no comparison with a subquery row returns false,
+   and at least one comparison returns NULL.
+</span>
+右辺は括弧で括られた副問い合わせで、正確に１つの列を返さなければなりません。
+左辺の式は副問い合わせの結果行それぞれに対して、指定された<em class="replaceable"><code>operator</code></em>を使用して評価、比較されます。なお、<em class="replaceable"><code>operator</code></em>は結果として論理値を生成する必要があります。
+全ての行が真になる場合（副問い合わせが行を返さない場合を含む）、<code class="token">ALL</code>の結果は<span class="quote">「<span class="quote">true（真）</span>」</span>です。
+1つでも偽の結果があると、結果は<span class="quote">「<span class="quote">false（偽）</span>」</span>です。
+比較がどの行でも偽を返さず、かつ、少なくとも1つの行でNULLを返した場合、結果はNULLとなります。
+  </p><p>
+<span class="original">
+   &lt;token&gt;NOT IN&lt;/token&gt; is equivalent to &lt;literal&gt;&amp;lt;&amp;gt; ALL&lt;/literal&gt;.
+</span>
+   <code class="token">NOT IN</code>は<code class="literal">&lt;&gt; ALL</code>と等価です。
+  </p><p>
+<span class="original">
+   As with &lt;token&gt;EXISTS&lt;/token&gt;, it's unwise to assume that the subquery will
+   be evaluated completely.
+</span>
+<code class="token">EXISTS</code>と同様、副問い合わせが完全に評価されることを前提としてはなりません。
+  </p><pre class="synopsis">
+<em class="replaceable"><code>row_constructor</code></em> <em class="replaceable"><code>operator</code></em> ALL (<em class="replaceable"><code>subquery</code></em>)
+</pre><p>
+<span class="original">
+   The left-hand side of this form of &lt;token&gt;ALL&lt;/token&gt; is a row constructor,
+   as described in &lt;xref linkend="sql-syntax-row-constructors"/&gt;.
+   The right-hand side is a parenthesized
+   subquery, which must return exactly as many columns as there are
+   expressions in the left-hand row.  The left-hand expressions are
+   evaluated and compared row-wise to each row of the subquery result,
+   using the given &lt;replaceable&gt;operator&lt;/replaceable&gt;.
+   The result of &lt;token&gt;ALL&lt;/token&gt; is &lt;quote&gt;true&lt;/quote&gt; if the comparison
+   returns true for all subquery rows (including the
+   case where the subquery returns no rows).
+   The result is &lt;quote&gt;false&lt;/quote&gt; if the comparison returns false for any
+   subquery row.
+   The result is NULL if no comparison with a subquery row returns false,
+   and at least one comparison returns NULL.
+</span>
+<code class="token">ALL</code>のこの形式の左辺は、<a class="xref" href="sql-expressions.html#SQL-SYNTAX-ROW-CONSTRUCTORS" title="4.2.13. 行コンストラクタ">4.2.13</a>で説明する行コンストラクタです。
+右辺は括弧で括られた副問い合わせで、左辺の行にある式の数と正確に同じ数の列を返さなければなりません。
+左辺の式は副問い合わせの結果のそれぞれの行に対し、与えられた<em class="replaceable"><code>operator</code></em>を使用して行に関する評価、比較が行われます。
+比較した結果、すべての副問い合わせ行に対して真を返す場合（副問い合わせが行を返さないという場合も含む）、<code class="token">ALL</code>の結果は<span class="quote">「<span class="quote">true（真）</span>」</span>となります。
+比較した結果、いずれかの副問い合わせ行で偽を返す場合、この結果は<span class="quote">「<span class="quote">false（偽）</span>」</span>となります。
+比較結果がすべての副問い合わせ行に対して偽を返さず、少なくとも１行でNULLを返す場合、結果はNULLとなります。
+  </p><p>
+<span class="original">
+   See &lt;xref linkend="row-wise-comparison"/&gt; for details about the meaning
+   of a row constructor comparison.
+</span>
+行コンストラクタに関する比較の意味については<a class="xref" href="functions-comparisons.html#ROW-WISE-COMPARISON" title="9.23.5. 行コンストラクタの比較">9.23.5</a>を参照してください。
+  </p></div><div class="sect2" id="id-1.5.8.27.15"><div class="titlepage"><div><div><h3 class="title">9.22.6. 単独行に関する比較</h3></div></div></div><span class="original">
+   &lt;title&gt;Single-row Comparison&lt;/title&gt;
+</span><a id="id-1.5.8.27.15.2" class="indexterm"></a><pre class="synopsis">
+<em class="replaceable"><code>row_constructor</code></em> <em class="replaceable"><code>operator</code></em> (<em class="replaceable"><code>subquery</code></em>)
+</pre><p>
+<span class="original">
+   The left-hand side is a row constructor,
+   as described in &lt;xref linkend="sql-syntax-row-constructors"/&gt;.
+   The right-hand side is a parenthesized subquery, which must return exactly
+   as many columns as there are expressions in the left-hand row. Furthermore,
+   the subquery cannot return more than one row.  (If it returns zero rows,
+   the result is taken to be null.)  The left-hand side is evaluated and
+   compared row-wise to the single subquery result row.
+</span>
+左辺は、<a class="xref" href="sql-expressions.html#SQL-SYNTAX-ROW-CONSTRUCTORS" title="4.2.13. 行コンストラクタ">4.2.13</a>で説明されている行コンストラクタです。
+右辺は括弧で括られた副問い合わせで、左辺の行とまったく同じ数の列を返さなければなりません。さらに、副問い合わせは複数行を返すことはできません。
+（行をまったく返さない場合、結果はNULLとみなされます。）
+左辺は副問い合わせの結果の単一行に対し行全体で評価、比較が行われます。
+  </p><p>
+<span class="original">
+   See &lt;xref linkend="row-wise-comparison"/&gt; for details about the meaning
+   of a row constructor comparison.
+</span>
+行コンストラクタに関する比較の意味についての詳細は<a class="xref" href="functions-comparisons.html#ROW-WISE-COMPARISON" title="9.23.5. 行コンストラクタの比較">9.23.5</a>を参照してください。
+  </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="functions-window.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="functions.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="functions-comparisons.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">9.21. ウィンドウ関数 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 9.23. 行と配列の比較</td></tr></table></div></body></html>

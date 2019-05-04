@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>30.2. ログ先行書き込み(WAL)</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="wal-reliability.html" title="30.1. 信頼性" /><link rel="next" href="wal-async-commit.html" title="30.3. 非同期コミット" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="wal.html" title="第30章 信頼性とログ先行書き込み">第30章 信頼性とログ先行書き込み</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      wal-intro.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="wal-reliability.html" title="30.1. 信頼性">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="wal.html" title="第30章 信頼性とログ先行書き込み">上へ</a></td><td width="60%" align="center">30.2. ログ先行書き込み(<acronym class="acronym">WAL</acronym>)</td><td width="20%" align="right"> <a accesskey="n" href="wal-async-commit.html" title="30.3. 非同期コミット">次へ</a></td></tr></table><hr /></div><div class="sect1" id="WAL-INTRO"><div class="titlepage"><div><div><h2 class="title" style="clear: both">30.2. ログ先行書き込み(<acronym class="acronym">WAL</acronym>)</h2></div></div></div><span class="original">
+   &lt;title&gt;Write-Ahead Logging (&lt;acronym&gt;WAL&lt;/acronym&gt;)&lt;/title&gt;
+</span><a id="id-1.6.17.4.2" class="indexterm"></a><a id="id-1.6.17.4.3" class="indexterm"></a><p>
+<span class="original">
+    &lt;firstterm&gt;Write-Ahead Logging&lt;/firstterm&gt; (&lt;acronym&gt;WAL&lt;/acronym&gt;)
+    is a standard method for ensuring data integrity.  A detailed
+    description can be found in most (if not all) books about
+    transaction processing. Briefly, &lt;acronym&gt;WAL&lt;/acronym&gt;'s central
+    concept is that changes to data files (where tables and indexes
+    reside) must be written only after those changes have been logged,
+    that is, after log records describing the changes have been flushed
+    to permanent storage. If we follow this procedure, we do not need
+    to flush data pages to disk on every transaction commit, because we
+    know that in the event of a crash we will be able to recover the
+    database using the log: any changes that have not been applied to
+    the data pages can be redone from the log records.  (This is
+    roll-forward recovery, also known as REDO.)
+</span>
+<em class="firstterm">ログ先行書き込み</em>（<acronym class="acronym">WAL</acronym>）はデータの一貫性を確実にするための標準的な手法です。
+詳細については、トランザクション処理について書かれた(すべてとは言いませんが)たいていの書籍に記載されています。
+簡単に言うと、<acronym class="acronym">WAL</acronym>の基本的な考え方は、（テーブルやインデックスがある）データファイルへの変更は、ログへの記録、つまり、変更内容を記述したログレコードが永続格納領域に書き出された後にのみ書き出されなければならないということです。
+このような手順に従って処理を行えば、たとえクラッシュが起きてもログを使ってデータベースをリカバリすることができるため、トランザクションのコミットの度にデータページをディスクに吐き出す必要がなくなります。
+リカバリの時点では、まず、データページに対してまだ行われていない変更分はログレコードを使って再実行されます（これがREDOとして知られているロールフォワードリカバリです）。
+   </p><div class="tip"><h3 class="title">ヒント</h3><p>
+<span class="original">
+     Because &lt;acronym&gt;WAL&lt;/acronym&gt; restores database file
+     contents after a crash, journaled file systems are not necessary for
+     reliable storage of the data files or WAL files.  In fact, journaling
+     overhead can reduce performance, especially if journaling
+     causes file system &lt;emphasis&gt;data&lt;/emphasis&gt; to be flushed
+     to disk.  Fortunately, data flushing during journaling can
+     often be disabled with a file system mount option, e.g.
+     &lt;literal&gt;data=writeback&lt;/literal&gt; on a Linux ext3 file system.
+     Journaled file systems do improve boot speed after a crash.
+</span>
+<acronym class="acronym">WAL</acronym>によりデータベースファイルの中身を障害後にリストアするため、信頼性のある格納領域にあるデータファイルやWALファイルに対しては、ジャーナルファイルシステムは必要ありません。実際、特に、もしファイルシステムの<span class="emphasis"><em>データ</em></span>をディスクにフラッシュさせている場合には、ジャーナリングのオーバーヘッドは性能を劣化させることがあります。幸運なことに、ジャーナリング中のデータのフラッシュをマウントオプションにより無効にできることが多いです。例えばLinuxのext3ファイルシステムでは、<code class="literal">data=writeback</code>と指定します。ジャーナルファイルシステムは障害後の起動速度を改善します。
+    </p></div><p>
+<span class="original">
+    Using &lt;acronym&gt;WAL&lt;/acronym&gt; results in a
+    significantly reduced number of disk writes, because only the log
+    file needs to be flushed to disk to guarantee that a transaction is
+    committed, rather than every data file changed by the transaction.
+    The log file is written sequentially,
+    and so the cost of syncing the log is much less than the cost of
+    flushing the data pages.  This is especially true for servers
+    handling many small transactions touching different parts of the data
+    store.  Furthermore, when the server is processing many small concurrent
+    transactions, one &lt;function&gt;fsync&lt;/function&gt; of the log file may
+    suffice to commit many transactions.
+</span>
+<acronym class="acronym">WAL</acronym>を使用することでディスクへの書き込み回数が大幅に減少します。
+と言うのも、トランザクションがコミットされたことを保証するために、そのトランザクションで変更された全てのデータファイルではなく、ログファイルだけをディスクに吐き出す必要があるからです。
+ログファイルへの書き込みはシーケンシャルに行われるため、データページを吐き出すコストに比べログファイルの同期はずっと低コストになります。
+これは特に、データ格納領域の様々な部分を変更する小さなトランザクションを多く扱うサーバで顕著に現れます。
+さらに、サーバが小規模なトランザクションを同時に多く処理する時、ログファイルを一度<code class="function">fsync</code>することで、多くのトランザクションをコミットすることができる場合もあります。
+   </p><p>
+<span class="original">
+    &lt;acronym&gt;WAL&lt;/acronym&gt; also makes it possible to support on-line
+    backup and point-in-time recovery, as described in &lt;xref
+    linkend="continuous-archiving"/&gt;.  By archiving the WAL data we can support
+    reverting to any time instant covered by the available WAL data:
+    we simply install a prior physical backup of the database, and
+    replay the WAL log just as far as the desired time.  What's more,
+    the physical backup doesn't have to be an instantaneous snapshot
+    of the database state &amp;mdash; if it is made over some period of time,
+    then replaying the WAL log for that period will fix any internal
+    inconsistencies.
+</span>
+また、<acronym class="acronym">WAL</acronym>により、<a class="xref" href="continuous-archiving.html" title="25.3. 継続的アーカイブとポイントインタイムリカバリ（PITR）">25.3</a>で説明するオンラインバックアップとポイントインタイムリカバリをサポートすることができます。
+WALのデータを保持することにより、そのWALデータが範囲内とする任意の時点に戻すことができます。
+単純にデータベースの主となる物理バックアップをインストールし、WALログを目的の時点まで単に再生することで実現できます。
+さらに、物理バックアップはインスタンス化可能なデータベース状態のスナップショットである必要もありません。
+ある程度の時間を経過して作成されたバックアップであっても、その期間用のWALを再生することにより、内部の不整合を修復します。
+
+   </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="wal-reliability.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="wal.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="wal-async-commit.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">30.1. 信頼性 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 30.3. 非同期コミット</td></tr></table></div></body></html>

@@ -1,0 +1,548 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>E.114. リリース9.1.20</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="release-9-1-21.html" title="E.113. リリース9.1.21" /><link rel="next" href="release-9-1-19.html" title="E.115. リリース9.1.19" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="release.html" title="付録E リリースノート">付録E リリースノート</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      release-9-1-20.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="release-9-1-21.html" title="E.113. リリース9.1.21">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="release.html" title="付録E リリースノート">上へ</a></td><td width="60%" align="center">E.114. リリース9.1.20</td><td width="20%" align="right"> <a accesskey="n" href="release-9-1-19.html" title="E.115. リリース9.1.19">次へ</a></td></tr></table><hr /></div><div class="sect1" id="RELEASE-9-1-20"><div class="titlepage"><div><div><h2 class="title" style="clear: both">E.114. リリース9.1.20</h2></div></div></div><span class="original">
+  &lt;title&gt;Release 9.1.20&lt;/title&gt;
+</span><p><span class="original">
+  &lt;title&gt;Release date:&lt;/title&gt;
+</span><strong>リリース日: </strong>2016-02-11</p><p>
+<span class="original">
+   This release contains a variety of fixes from 9.1.19.
+   For information about new features in the 9.1 major release, see
+   &lt;xref linkend="release-9-1"/&gt;.
+</span>
+このリリースは9.1.19に対し、各種不具合を修正したものです。
+9.1メジャーリリースにおける新機能については、<a class="xref" href="release-9-1.html" title="E.134. リリース9.1">E.134</a>を参照してください。
+  </p><div class="sect2" id="id-1.11.6.118.4"><div class="titlepage"><div><div><h3 class="title">E.114.1. バージョン9.1.20への移行</h3></div></div></div><span class="original">
+   &lt;title&gt;Migration to Version 9.1.20&lt;/title&gt;
+</span><p>
+<span class="original">
+    A dump/restore is not required for those running 9.1.X.
+</span>
+9.1.Xからの移行ではダンプ/リストアは不要です。
+   </p><p>
+<span class="original">
+    However, if you are upgrading from a version earlier than 9.1.16,
+    see &lt;xref linkend="release-9-1-16"/&gt;.
+</span>
+しかしながら、9.1.16よりも前のリリースからアップグレードする場合は、<a class="xref" href="release-9-1-16.html" title="E.118. リリース9.1.16">E.118</a>を参照して下さい。
+   </p></div><div class="sect2" id="id-1.11.6.118.5"><div class="titlepage"><div><div><h3 class="title">E.114.2. 変更点</h3></div></div></div><span class="original">
+   &lt;title&gt;Changes&lt;/title&gt;
+</span><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+      Fix infinite loops and buffer-overrun problems in regular expressions
+      (Tom Lane)
+</span>
+正規表現での無限ループやバッファオーバーランの問題を修正しました。
+(Tom Lane)
+     </p><p>
+<span class="original">
+      Very large character ranges in bracket expressions could cause
+      infinite loops in some cases, and memory overwrites in other cases.
+      (CVE-2016-0773)
+</span>
+(正規表現における)ブラケット式の非常に大きな文字範囲が一部ケースで無限ループを、また別ケースでメモリ上書きを引き起こすおそれがありました。
+(CVE-2016-0773)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Perform an immediate shutdown if the &lt;filename&gt;postmaster.pid&lt;/filename&gt; file
+      is removed (Tom Lane)
+</span>
+<code class="filename">postmaster.pid</code>ファイルが削除されたなら、即時シャットダウンを実行するようになりました。
+(Tom Lane)
+     </p><p>
+<span class="original">
+      The postmaster now checks every minute or so
+      that &lt;filename&gt;postmaster.pid&lt;/filename&gt; is still there and still contains its
+      own PID.  If not, it performs an immediate shutdown, as though it had
+      received &lt;systemitem&gt;SIGQUIT&lt;/systemitem&gt;.  The main motivation for this change
+      is to ensure that failed buildfarm runs will get cleaned up without
+      manual intervention; but it also serves to limit the bad effects if a
+      DBA forcibly removes &lt;filename&gt;postmaster.pid&lt;/filename&gt; and then starts a new
+      postmaster.
+</span>
+postmasterは<code class="filename">postmaster.pid</code>が引き続き存在していて自身のPIDを含んでいるかを1分毎くらいに確認するようになります。
+ファイルが無かったりPIDが違っていたなら、<span class="systemitem">SIGQUIT</span>を受け取ったのと同様に即時シャットダウンを実行します。
+この変更の主な動機は失敗したビルドファーム実行を手動調整なしに確実にクリーンアップすることですが、DBAが無理に<code class="filename">postmaster.pid</code>を削除して新たなpostmasterを起動したときに悪影響を限定するのにも役立ちます。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      In &lt;literal&gt;SERIALIZABLE&lt;/literal&gt; transaction isolation mode, serialization
+      anomalies could be missed due to race conditions during insertions
+      (Kevin Grittner, Thomas Munro)
+</span>
+挿入時に競合条件のため、<code class="literal">SERIALIZABLE</code>トランザクション隔離モードで直列化例外を捉えそこなうおそれがありました。
+(Kevin Grittner, Thomas Munro)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix failure to emit appropriate WAL records when doing &lt;literal&gt;ALTER
+      TABLE ... SET TABLESPACE&lt;/literal&gt; for unlogged relations (Michael Paquier,
+      Andres Freund)
+</span>
+ログを取らないリレーションに対して<code class="literal">ALTER TABLE ... SET TABLESPACE</code>を行うとき、
+適切なWALレコードを出力するのに失敗していたものを修正しました。
+(Michael Paquier, Andres Freund)
+     </p><p>
+<span class="original">
+      Even though the relation's data is unlogged, the move must be logged or
+      the relation will be inaccessible after a standby is promoted to master.
+</span>
+リレーションのデータについてログを取らないとしても、移動はログ記録されるべきです。さもないと、そのリレーションはスタンバイがマスタに昇格した後にアクセス不能になるでしょう。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix possible misinitialization of unlogged relations at the end of
+      crash recovery (Andres Freund, Michael Paquier)
+</span>
+クラッシュリカバリの最後で起こりうる、ログを取らないリレーションの初期化漏れを修正しました。
+(Andres Freund, Michael Paquier)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix &lt;command&gt;ALTER COLUMN TYPE&lt;/command&gt; to reconstruct inherited check
+      constraints properly (Tom Lane)
+</span>
+継承されたチェック制約を適切に再構成するように<code class="command">ALTER COLUMN TYPE</code>を修正しました。
+(Tom Lane)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix &lt;command&gt;REASSIGN OWNED&lt;/command&gt; to change ownership of composite types
+      properly (&amp;Aacute;lvaro Herrera)
+</span>
+複合型の所有者を適切に変更するように<code class="command">REASSIGN OWNED</code>を修正しました。
+(Álvaro Herrera)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix &lt;command&gt;REASSIGN OWNED&lt;/command&gt; and &lt;command&gt;ALTER OWNER&lt;/command&gt; to correctly
+      update granted-permissions lists when changing owners of data types,
+      foreign data wrappers, or foreign servers (Bruce Momjian,
+      &amp;Aacute;lvaro Herrera)
+</span>
+データ型、外部データラッパ、および、外部サーバの所有者を変更するとき、付与された許可のリストを正しく更新するように、<code class="command">REASSIGN OWNED</code>と<code class="command">ALTER OWNER</code>を修正しました。
+(Bruce Momjian, Álvaro Herrera)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix &lt;command&gt;REASSIGN OWNED&lt;/command&gt; to ignore foreign user mappings,
+      rather than fail (&amp;Aacute;lvaro Herrera)
+</span>
+<code class="command">REASSIGN OWNED</code>が外部ユーザマッピングについてエラーにするのでなく無視するように修正しました。
+(Álvaro Herrera)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Add more defenses against bad planner cost estimates for GIN index
+      scans when the index's internal statistics are very out-of-date
+      (Tom Lane)
+</span>
+インデックスの内部統計がとても古いときにGINインデックススキャンの粗悪なプランナコスト見積りが生じるのを防ぐ仕組みをさらに追加しました。
+(Tom Lane)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Make planner cope with hypothetical GIN indexes suggested by an index
+      advisor plug-in (Julien Rouhaud)
+</span>
+インデックスアドバイザープラグインが提案する仮想のGINインデックスにプランナを対応させました。
+(Julien Rouhaud)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix dumping of whole-row Vars in &lt;literal&gt;ROW()&lt;/literal&gt;
+      and &lt;literal&gt;VALUES()&lt;/literal&gt; lists (Tom Lane)
+</span>
+<code class="literal">ROW()</code>および<code class="literal">VALUES()</code>リスト内にある行全体の変数のダンプを修正しました。
+(Tom Lane)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix possible internal overflow in &lt;type&gt;numeric&lt;/type&gt; division
+      (Dean Rasheed)
+</span>
+<code class="type">numeric</code>の除算で内部オーバーフローの可能性があるのを修正しました。
+(Dean Rasheed)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix enforcement of restrictions inside parentheses within regular
+      expression lookahead constraints (Tom Lane)
+</span>
+正規表現の先行検索制約の括弧内における制限の強制を修正しました。
+(Tom Lane)
+     </p><p>
+<span class="original">
+      Lookahead constraints aren't allowed to contain backrefs, and
+      parentheses within them are always considered non-capturing, according
+      to the manual.  However, the code failed to handle these cases properly
+      inside a parenthesized subexpression, and would give unexpected
+      results.
+</span>
+マニュアルによれば、先行検索制約に後方参照を含めることは許されていませんし、また、
+先行検索制約内の括弧は常に捕捉されません。
+しかしながら、括弧に入れられた副式の中ではこれらのケースを適切な処理に失敗していて、
+予期せぬ結果をもたらしていました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Conversion of regular expressions to indexscan bounds could produce
+      incorrect bounds from regexps containing lookahead constraints
+      (Tom Lane)
+</span>
+正規表現のインデックスキャン範囲への変換で、先行検索制約を含む正規表現にて不正な範囲が生じるおそれがありました。
+(Tom Lane)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix regular-expression compiler to handle loops of constraint arcs
+      (Tom Lane)
+</span>
+正規表現コンパイラが制約アークのループを処理するように修正しました。
+(Tom Lane)
+     </p><p>
+<span class="original">
+      The code added for CVE-2007-4772 was both incomplete, in that it didn't
+      handle loops involving more than one state, and incorrect, in that it
+      could cause assertion failures (though there seem to be no bad
+      consequences of that in a non-assert build).  Multi-state loops would
+      cause the compiler to run until the query was canceled or it reached
+      the too-many-states error condition.
+</span>
+CVE-2007-4772 対応で加えられたコードは、不完全でかつ正しくありませんでした。
+複数状態に影響を与えるループを処理できません。
+また、（アサート無しのビルドであれば悪い結果には見えないけれども）アサート失敗を
+引き起こす可能性がありました。
+複数状態ループにより、コンパイラがキャンセルされるか、状態数が多すぎるというエラー条件に達するまで走り続ける可能性がありました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Improve memory-usage accounting in regular-expression compiler
+      (Tom Lane)
+</span>
+正規表現コンパイラのメモリ使用計算を改善しました。
+(Tom Lane)
+     </p><p>
+<span class="original">
+      This causes the code to emit &lt;quote&gt;regular expression is too
+      complex&lt;/quote&gt; errors in some cases that previously used unreasonable
+      amounts of time and memory.
+</span>
+本修正により、これまで途方もない時間とメモリを使っていたいくつかのケースで、
+<span class="quote">「<span class="quote">regular expression is too complex</span>」</span>(正規表現が複雑すぎます)というエラーを出します。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Improve performance of regular-expression compiler (Tom Lane)
+</span>
+正規表現コンパイラの性能を改善しました。
+(Tom Lane)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Make &lt;literal&gt;%h&lt;/literal&gt; and &lt;literal&gt;%r&lt;/literal&gt; escapes
+      in &lt;varname&gt;log_line_prefix&lt;/varname&gt; work for messages emitted due
+      to &lt;varname&gt;log_connections&lt;/varname&gt; (Tom Lane)
+</span>
+<code class="varname">log_line_prefix</code>でのエスケープ<code class="literal">%h</code>および<code class="literal">%r</code>を<code class="varname">log_connections</code>によるメッセージ出力でも機能するようにしました。
+(Tom Lane)
+     </p><p>
+<span class="original">
+      Previously, &lt;literal&gt;%h&lt;/literal&gt;/&lt;literal&gt;%r&lt;/literal&gt; started to work just after a
+      new session had emitted the &lt;quote&gt;connection received&lt;/quote&gt; log message;
+      now they work for that message too.
+</span>
+これまで、<code class="literal">%h</code>と<code class="literal">%r</code>は新セッションがログメッセージ<span class="quote">「<span class="quote">connection received</span>」</span>を出力した直後から働き始めていました。これからはそのメッセージにおいても機能します。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      On Windows, ensure the shared-memory mapping handle gets closed in
+      child processes that don't need it (Tom Lane, Amit Kapila)
+</span>
+Windowsで共有メモリマッピングハンドルを必要としない子プロセスでハンドルを確実に閉じるようにしました。
+(Tom Lane, Amit Kapila)
+     </p><p>
+<span class="original">
+      This oversight resulted in failure to recover from crashes
+      whenever &lt;varname&gt;logging_collector&lt;/varname&gt; is turned on.
+</span>
+この見落としは、<code class="varname">logging_collector</code>をonにしていたとき常に、クラッシュからのリカバリ失敗をもたらしました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix possible failure to detect socket EOF in non-blocking mode on
+      Windows (Tom Lane)
+</span>
+WindowsにおけるノンブロッキングモードでソケットのEOF検知に失敗する可能性があるのを修正しました。
+(Tom Lane)
+     </p><p>
+<span class="original">
+      It's not entirely clear whether this problem can happen in pre-9.5
+      branches, but if it did, the symptom would be that a walsender process
+      would wait indefinitely rather than noticing a loss of connection.
+</span>
+この問題が9.5より前のブランチで起きるかは完全には明確でありませんが、起きるとすれば、
+その症状はwalsenderプロセスが接続の喪失に気づくのではなく際限なく待つというものでしょう。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Avoid leaking a token handle during SSPI authentication
+      (Christian Ullrich)
+</span>
+SSPI認証のときにトークンハンドルのリークを防ぐようになりました。
+(Christian Ullrich)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      In &lt;application&gt;psql&lt;/application&gt;, ensure that &lt;application&gt;libreadline&lt;/application&gt;'s idea
+      of the screen size is updated when the terminal window size changes
+      (Merlin Moncure)
+</span>
+<span class="application">psql</span>で、ターミナルウィンドウのサイズが変わったとき、<span class="application">libreadline</span>のスクリーンサイズ認識を確実に更新するようにしました。
+(Merlin Moncure)
+     </p><p>
+<span class="original">
+      Previously, &lt;application&gt;libreadline&lt;/application&gt; did not notice if the window
+      was resized during query output, leading to strange behavior during
+      later input of multiline queries.
+</span>
+これまで、問い合わせ出力の間にウィンドウがリサイズされた場合、<span class="application">libreadline</span>は気づかず、その後の複数行の問い合わせの入力において奇妙な振る舞いをもたらしていました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix &lt;application&gt;psql&lt;/application&gt;'s &lt;literal&gt;\det&lt;/literal&gt; command to interpret its
+      pattern argument the same way as other &lt;literal&gt;\d&lt;/literal&gt; commands with
+      potentially schema-qualified patterns do (Reece Hart)
+</span>
+<span class="application">psql</span>の<code class="literal">\det</code>コマンドが、そのパターン引数を潜在的にスキーマ修飾パターンを伴う他の<code class="literal">\d</code>コマンドが行うのと同様に解釈するように、修正しました。
+(Reece Hart)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Avoid possible crash in &lt;application&gt;psql&lt;/application&gt;'s &lt;literal&gt;\c&lt;/literal&gt; command
+      when previous connection was via Unix socket and command specifies a
+      new hostname and same username (Tom Lane)
+</span>
+<span class="application">psql</span>の<code class="literal">\c</code>コマンドで、以前の接続がUNIXソケット経由であってコマンドが新たなホスト名と同ユーザ名を指定しているときの、クラッシュの可能性を回避しました。
+(Tom Lane)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      In &lt;literal&gt;pg_ctl start -w&lt;/literal&gt;, test child process status directly
+      rather than relying on heuristics (Tom Lane, Michael Paquier)
+</span>
+<code class="literal">pg_ctl start -w</code>で子プロセス状態を、ヒューリスティックに頼るのではなく直接検査するようにしました。
+(Tom Lane, Michael Paquier)
+     </p><p>
+<span class="original">
+      Previously, &lt;application&gt;pg_ctl&lt;/application&gt; relied on an assumption that the new
+      postmaster would always create &lt;filename&gt;postmaster.pid&lt;/filename&gt; within five
+      seconds.  But that can fail on heavily-loaded systems,
+      causing &lt;application&gt;pg_ctl&lt;/application&gt; to report incorrectly that the
+      postmaster failed to start.
+</span>
+これまでは、<span class="application">pg_ctl</span>は新たなpostmasterは<code class="filename">postmaster.pid</code>を常に5秒以内に作るという想定に依存していました。
+しかし、これは高負荷システムでは失敗するおそれがあり、<span class="application">pg_ctl</span>がpostmaster起動に失敗したと間違って報告する原因になります。
+     </p><p>
+<span class="original">
+      Except on Windows, this change also means that a &lt;literal&gt;pg_ctl start
+      -w&lt;/literal&gt; done immediately after another such command will now reliably
+      fail, whereas previously it would report success if done within two
+      seconds of the first command.
+</span>
+Windows以外では、この変更は他のこのようなコマンドの直後に実行した<code class="literal">pg_ctl start -w</code>が確実に失敗することも意味します。対してこれまでは、最初のコマンドから2秒以内に実行したなら成功が報告されていました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      In &lt;literal&gt;pg_ctl start -w&lt;/literal&gt;, don't attempt to use a wildcard listen
+      address to connect to the postmaster (Kondo Yuta)
+</span>
+<code class="literal">pg_ctl start -w</code>で、ワイルドカードの監視アドレスをpostmasterに接続するのに使わないようにしました。
+(Kondo Yuta)
+     </p><p>
+<span class="original">
+      On Windows, &lt;application&gt;pg_ctl&lt;/application&gt; would fail to detect postmaster
+      startup if &lt;varname&gt;listen_addresses&lt;/varname&gt; is set to &lt;literal&gt;0.0.0.0&lt;/literal&gt;
+      or &lt;literal&gt;::&lt;/literal&gt;, because it would try to use that value verbatim as
+      the address to connect to, which doesn't work.  Instead assume
+      that &lt;literal&gt;127.0.0.1&lt;/literal&gt; or &lt;literal&gt;::1&lt;/literal&gt;, respectively, is the
+      right thing to use.
+</span>
+Windowsでは、<code class="varname">listen_addresses</code>に<code class="literal">0.0.0.0</code>または<code class="literal">::</code>が設定してあるとき、接続用アドレスとして機能しないこれらの値をそのままに使用しようとするため、<span class="application">pg_ctl</span>はpostmaster起動の検出に失敗していました。
+代わりにそれぞれ<code class="literal">127.0.0.1</code>または<code class="literal">::1</code>を使うものとするのが適正でした。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      In &lt;application&gt;pg_ctl&lt;/application&gt; on Windows, check service status to decide
+      where to send output, rather than checking if standard output is a
+      terminal (Michael Paquier)
+</span>
+Windowsの<span class="application">pg_ctl</span>で出力先をどこにするか決めるのに、標準出力先が端末であるかを確認するのではなく、サービス状態を確認するようになりました。
+(Michael Paquier)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      In &lt;application&gt;pg_dump&lt;/application&gt; and &lt;application&gt;pg_basebackup&lt;/application&gt;, adopt
+      the GNU convention for handling tar-archive members exceeding 8GB
+      (Tom Lane)
+</span>
+<span class="application">pg_dump</span>と<span class="application">pg_basebackup</span>で8GBを超えるtarアーカイブ要素を扱うのにGNU慣習を採用しました。
+(Tom Lane)
+     </p><p>
+<span class="original">
+      The POSIX standard for &lt;literal&gt;tar&lt;/literal&gt; file format does not allow
+      archive member files to exceed 8GB, but most modern implementations
+      of &lt;application&gt;tar&lt;/application&gt; support an extension that fixes that.  Adopt
+      this extension so that &lt;application&gt;pg_dump&lt;/application&gt; with &lt;option&gt;-Ft&lt;/option&gt; no
+      longer fails on tables with more than 8GB of data, and so
+      that &lt;application&gt;pg_basebackup&lt;/application&gt; can handle files larger than 8GB.
+      In addition, fix some portability issues that could cause failures for
+      members between 4GB and 8GB on some platforms.  Potentially these
+      problems could cause unrecoverable data loss due to unreadable backup
+      files.
+</span>
+<code class="literal">tar</code>ファイル形式のPOSIX標準ではアーカイブ要素ファイルが8GBを超えることを許していませんが、ほとんどの現代の<span class="application">tar</span>実装はそれを改善した拡張をサポートしています。
+この拡張を採用したので、<code class="option">-Ft</code>指定の<span class="application">pg_dump</span>はデータが8GB以上のテーブルでもはや失敗しませんし、また、<span class="application">pg_basebackup</span>は8GBより大きいファイルを扱えます。
+加えて、いくつかのプラットフォームで4GBから8BGの要素ファイルで失敗をもらたすおそれのある移植性の問題を修正しました。
+この問題は読めないバックアップファイルのため潜在的に回復できないデータ損失をもたらす可能性があります。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix assorted corner-case bugs in &lt;application&gt;pg_dump&lt;/application&gt;'s processing
+      of extension member objects (Tom Lane)
+</span>
+拡張の要素オブジェクトの処理に関する<span class="application">pg_dump</span>の様々な例外的な不具合を修正しました。
+(Tom Lane)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Make &lt;application&gt;pg_dump&lt;/application&gt; mark a view's triggers as needing to be
+      processed after its rule, to prevent possible failure during
+      parallel &lt;application&gt;pg_restore&lt;/application&gt; (Tom Lane)
+</span>
+パラレル<span class="application">pg_restore</span>のとき起こりうる失敗を防ぐため、<span class="application">pg_dump</span>がビューのトリガにそのルールの後に処理される必要ありと印づけするようにしました。
+(Tom Lane)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Ensure that relation option values are properly quoted
+      in &lt;application&gt;pg_dump&lt;/application&gt; (Kouhei Sutou, Tom Lane)
+</span>
+<span class="application">pg_dump</span>でリレーションのオプション値が確実に適切に引用符付けされるようにしました。
+(Kouhei Sutou, Tom Lane)
+     </p><p>
+<span class="original">
+      A reloption value that isn't a simple identifier or number could lead
+      to dump/reload failures due to syntax errors in CREATE statements
+      issued by &lt;application&gt;pg_dump&lt;/application&gt;.  This is not an issue with any
+      reloption currently supported by core &lt;productname&gt;PostgreSQL&lt;/productname&gt;, but
+      extensions could allow reloptions that cause the problem.
+</span>
+単純な識別子や数値でないreloption値は、<span class="application">pg_dump</span>により発行されるCREATE文の構文エラーでダンプ/リロードの失敗をもたらすおそれがありました。
+<span class="productname">PostgreSQL</span>本体で現在サポートされるreloptionでは問題ありませんが、拡張では問題を引き起こすreloptionが許されている可能性がありました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix &lt;application&gt;pg_upgrade&lt;/application&gt;'s file-copying code to handle errors
+      properly on Windows (Bruce Momjian)
+</span>
+Windowsにおいて<span class="application">pg_upgrade</span>のファイルコピーをするコードを、適切にエラー処理するように修正しました。
+(Bruce Momjian)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Install guards in &lt;application&gt;pgbench&lt;/application&gt; against corner-case overflow
+      conditions during evaluation of script-specified division or modulo
+      operators (Fabien Coelho, Michael Paquier)
+</span>
+<span class="application">pgbench</span>でスクリプトに記述された除算または剰余の演算子の評価における例外的なオーバーフロー状態に対する防御策を導入しました。
+(Fabien Coelho, Michael Paquier)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Prevent certain &lt;application&gt;PL/Java&lt;/application&gt; parameters from being set by
+      non-superusers (Noah Misch)
+</span>
+ある種の<span class="application">PL/Java</span>パラメータがスーパーユーザ以外から設定されることを防止しました。
+(Noah Misch)
+     </p><p>
+<span class="original">
+      This change mitigates a &lt;application&gt;PL/Java&lt;/application&gt; security bug
+      (CVE-2016-0766), which was fixed in &lt;application&gt;PL/Java&lt;/application&gt; by marking
+      these parameters as superuser-only.  To fix the security hazard for
+      sites that update &lt;productname&gt;PostgreSQL&lt;/productname&gt; more frequently
+      than &lt;application&gt;PL/Java&lt;/application&gt;, make the core code aware of them also.
+</span>
+この変更は<span class="application">PL/Java</span>のセキュリティ障害(CVE-2016-0766)を緩和します。
+<span class="application">PL/Java</span>ではそれらパラメータをスーパーユーザのみとすることで障害は修正されています。
+<span class="application">PL/Java</span>よりも<span class="productname">PostgreSQL</span>をより頻繁にアップデートするサイトのセキュリティ危険性を防ぐため、本体コードでもこれらパラメータを認識するようにしました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Improve &lt;application&gt;libpq&lt;/application&gt;'s handling of out-of-memory situations
+      (Michael Paquier, Amit Kapila, Heikki Linnakangas)
+</span>
+<span class="application">libpq</span>のメモリ不足状況の扱いを改善しました。
+(Michael Paquier, Amit Kapila, Heikki Linnakangas)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix order of arguments
+      in &lt;application&gt;ecpg&lt;/application&gt;-generated &lt;literal&gt;typedef&lt;/literal&gt; statements
+      (Michael Meskes)
+</span>
+<span class="application">ecpg</span>が生成する<code class="literal">typedef</code>文で引数の順序を修正しました。
+(Michael Meskes)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Use &lt;literal&gt;%g&lt;/literal&gt; not &lt;literal&gt;%f&lt;/literal&gt; format
+      in &lt;application&gt;ecpg&lt;/application&gt;'s &lt;function&gt;PGTYPESnumeric_from_double()&lt;/function&gt;
+      (Tom Lane)
+</span>
+<span class="application">ecpg</span>の<code class="function">PGTYPESnumeric_from_double()</code>で<code class="literal">%f</code>でなく<code class="literal">%g</code>書式を使うようにしました。
+(Tom Lane)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix &lt;application&gt;ecpg&lt;/application&gt;-supplied header files to not contain comments
+      continued from a preprocessor directive line onto the next line
+      (Michael Meskes)
+</span>
+プリプロセッサ命令行から次の行へと継続されるコメントが含まれないように<span class="application">ecpg</span>で供給されるヘッダファイルを修正しました。
+(Michael Meskes)
+     </p><p>
+<span class="original">
+      Such a comment is rejected by &lt;application&gt;ecpg&lt;/application&gt;.  It's not yet clear
+      whether &lt;application&gt;ecpg&lt;/application&gt; itself should be changed.
+</span>
+このようなコメントは<span class="application">ecpg</span>に受け付けられません。
+<span class="application">ecpg</span>自体が変更されるべきかまだ明らかではありません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Ensure that &lt;filename&gt;contrib/pgcrypto&lt;/filename&gt;'s &lt;function&gt;crypt()&lt;/function&gt;
+      function can be interrupted by query cancel (Andreas Karlsson)
+</span>
+<code class="filename">contrib/pgcrypto</code>の<code class="function">crypt()</code>関数を問い合わせキャンセルで確実に中断できるようにしました。
+(Andreas Karlsson)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Accept &lt;application&gt;flex&lt;/application&gt; versions later than 2.5.x
+      (Tom Lane, Michael Paquier)
+</span>
+2.5.xより後の<span class="application">flex</span>バージョンに対応しました。
+(Tom Lane, Michael Paquier)
+     </p><p>
+<span class="original">
+      Now that flex 2.6.0 has been released, the version checks in our build
+      scripts needed to be adjusted.
+</span>
+現在、flex 2.6.0がリリースされていて、ビルドスクリプトのバージョンチェックは調整する必要がありました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Install our &lt;filename&gt;missing&lt;/filename&gt; script where PGXS builds can find it
+      (Jim Nasby)
+</span>
+PGXSビルドで見つけられる場所に<code class="filename">missing</code>スクリプトを設置するようにしました。
+(Jim Nasby)
+     </p><p>
+<span class="original">
+      This allows sane behavior in a PGXS build done on a machine where build
+      tools such as &lt;application&gt;bison&lt;/application&gt; are missing.
+</span>
+<span class="application">bison</span>のようなビルドツールが存在しないマシンでのPGXSビルドにおいて、まっとうな振る舞いを可能にします。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Ensure that &lt;filename&gt;dynloader.h&lt;/filename&gt; is included in the installed
+      header files in MSVC builds (Bruce Momjian, Michael Paquier)
+</span>
+MSVCビルドにてインストールされるヘッダファイル群に<code class="filename">dynloader.h</code>が確実に含まれるようにしました。
+(Bruce Momjian, Michael Paquier)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Add variant regression test expected-output file to match behavior of
+      current &lt;application&gt;libxml2&lt;/application&gt; (Tom Lane)
+</span>
+現在の<span class="application">libxml2</span>の動作に適合するように別種のリグレッションテスト予想出力ファイルを追加しました。
+(Tom Lane)
+     </p><p>
+<span class="original">
+      The fix for &lt;application&gt;libxml2&lt;/application&gt;'s CVE-2015-7499 causes it not to
+      output error context reports in some cases where it used to do so.
+      This seems to be a bug, but we'll probably have to live with it for
+      some time, so work around it.
+</span>
+<span class="application">libxml2</span>におけるCVE-2015-7499の修正により、これまで出力していた一部ケースでエラーコンテキスト報告を出力しなくなります。
+これは障害に見えますが、私たちはおそらくしばらくは我慢する必要があり、対処しました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Update time zone data files to &lt;application&gt;tzdata&lt;/application&gt; release 2016a for
+      DST law changes in Cayman Islands, Metlakatla, and Trans-Baikal
+      Territory (Zabaykalsky Krai), plus historical corrections for Pakistan.
+</span>
+タイムゾーンデータファイルを<span class="application">tzdata</span> release 2016aに更新しました。
+ケイマン諸島、メトラカトラ、ザバイカリエ地方(Zabaykalsky Krai) の夏時間法の変更、パキスタンの歴史的な訂正が適用されています。
+     </p></li></ul></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="release-9-1-21.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="release.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="release-9-1-19.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">E.113. リリース9.1.21 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> E.115. リリース9.1.19</td></tr></table></div></body></html>

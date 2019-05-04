@@ -1,0 +1,1104 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>F.25. pgcrypto</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="pgbuffercache.html" title="F.24. pg_buffercache" /><link rel="next" href="pgfreespacemap.html" title="F.26. pg_freespacemap" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="contrib.html" title="付録F 追加で提供されるモジュール">付録F 追加で提供されるモジュール</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      pgcrypto.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="pgbuffercache.html" title="F.24. pg_buffercache">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュール">上へ</a></td><td width="60%" align="center">F.25. pgcrypto</td><td width="20%" align="right"> <a accesskey="n" href="pgfreespacemap.html" title="F.26. pg_freespacemap">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PGCRYPTO"><div class="titlepage"><div><div><h2 class="title" style="clear: both">F.25. pgcrypto</h2></div></div></div><a id="id-1.11.7.34.2" class="indexterm"></a><a id="id-1.11.7.34.3" class="indexterm"></a><p>
+<span class="original">
+  The &lt;filename&gt;pgcrypto&lt;/filename&gt; module provides cryptographic functions for
+  &lt;productname&gt;PostgreSQL&lt;/productname&gt;.
+</span>
+<code class="filename">pgcrypto</code>モジュールは<span class="productname">PostgreSQL</span>用の暗号関数を提供します。
+ </p><div class="sect2" id="id-1.11.7.34.5"><div class="titlepage"><div><div><h3 class="title">F.25.1. 汎用ハッシュ関数</h3></div></div></div><span class="original">
+  &lt;title&gt;General Hashing Functions&lt;/title&gt;
+</span><div class="sect3" id="id-1.11.7.34.5.2"><div class="titlepage"><div><div><h4 class="title">F.25.1.1. <code class="function">digest()</code></h4></div></div></div><a id="id-1.11.7.34.5.2.2" class="indexterm"></a><pre class="synopsis">
+digest(data text, type text) returns bytea
+digest(data bytea, type text) returns bytea
+</pre><p>
+<span class="original">
+    Computes a binary hash of the given &lt;parameter&gt;data&lt;/parameter&gt;.
+    &lt;parameter&gt;type&lt;/parameter&gt; is the algorithm to use.
+    Standard algorithms are &lt;literal&gt;md5&lt;/literal&gt;, &lt;literal&gt;sha1&lt;/literal&gt;,
+    &lt;literal&gt;sha224&lt;/literal&gt;, &lt;literal&gt;sha256&lt;/literal&gt;,
+    &lt;literal&gt;sha384&lt;/literal&gt; and &lt;literal&gt;sha512&lt;/literal&gt;.
+    If &lt;filename&gt;pgcrypto&lt;/filename&gt; was built with
+    OpenSSL, more algorithms are available, as detailed in
+    &lt;xref linkend="pgcrypto-with-without-openssl"/&gt;.
+</span>
+与えられた<em class="parameter"><code>data</code></em>のバイナリハッシュを計算します。
+<em class="parameter"><code>type</code></em>は使用するアルゴリズムです。
+標準アルゴリズムは<code class="literal">md5</code>、<code class="literal">sha1</code>、<code class="literal">sha224</code>、<code class="literal">sha256</code>、<code class="literal">sha384</code>、および<code class="literal">sha512</code>です。
+<code class="filename">pgcrypto</code>がOpenSSL付きで構築された場合、<a class="xref" href="pgcrypto.html#PGCRYPTO-WITH-WITHOUT-OPENSSL" title="表F.19 OpenSSLの有無による機能のまとめ">表 F.19</a>で詳解する、より多くのアルゴリズムを利用することができます。
+   </p><p>
+<span class="original">
+    If you want the digest as a hexadecimal string, use
+    &lt;function&gt;encode()&lt;/function&gt; on the result.  For example:
+</span>
+ダイジェストを16進数表記の文字列としたい場合は、結果に対して<code class="function">encode()</code>を使用してください。
+以下に例を示します。
+</p><pre class="programlisting">
+CREATE OR REPLACE FUNCTION sha1(bytea) returns text AS $$
+    SELECT encode(digest($1, 'sha1'), 'hex')
+$$ LANGUAGE SQL STRICT IMMUTABLE;
+</pre><p>
+   </p></div><div class="sect3" id="id-1.11.7.34.5.3"><div class="titlepage"><div><div><h4 class="title">F.25.1.2. <code class="function">hmac()</code></h4></div></div></div><a id="id-1.11.7.34.5.3.2" class="indexterm"></a><pre class="synopsis">
+hmac(data text, key text, type text) returns bytea
+hmac(data bytea, key bytea, type text) returns bytea
+</pre><p>
+<span class="original">
+    Calculates hashed MAC for &lt;parameter&gt;data&lt;/parameter&gt; with key &lt;parameter&gt;key&lt;/parameter&gt;.
+    &lt;parameter&gt;type&lt;/parameter&gt; is the same as in &lt;function&gt;digest()&lt;/function&gt;.
+</span>
+<em class="parameter"><code>key</code></em>をキーとした<em class="parameter"><code>data</code></em>のハッシュ化MACを計算します。
+<em class="parameter"><code>type</code></em>は<code class="function">digest()</code>の場合と同じです。
+   </p><p>
+<span class="original">
+    This is similar to &lt;function&gt;digest()&lt;/function&gt; but the hash can only be
+    recalculated knowing the key.  This prevents the scenario of someone
+    altering data and also changing the hash to match.
+</span>
+<code class="function">digest()</code>と似ていますが、ハッシュはキーを知っている場合にのみ再計算できます。
+これは、誰かがデータを変更し、同時に一致するようにハッシュを変更するという状況を防ぎます。
+   </p><p>
+<span class="original">
+    If the key is larger than the hash block size it will first be hashed and
+    the result will be used as key.
+</span>
+キーがハッシュブロックサイズより大きい場合、まずハッシュ化され、その結果をキーとして使用します。
+   </p></div></div><div class="sect2" id="id-1.11.7.34.6"><div class="titlepage"><div><div><h3 class="title">F.25.2. パスワードハッシュ化関数</h3></div></div></div><span class="original">
+  &lt;title&gt;Password Hashing Functions&lt;/title&gt;
+</span><p>
+<span class="original">
+   The functions &lt;function&gt;crypt()&lt;/function&gt; and &lt;function&gt;gen_salt()&lt;/function&gt;
+   are specifically designed for hashing passwords.
+   &lt;function&gt;crypt()&lt;/function&gt; does the hashing and &lt;function&gt;gen_salt()&lt;/function&gt;
+   prepares algorithm parameters for it.
+</span>
+<code class="function">crypt()</code>および<code class="function">gen_salt()</code>関数は特にパスワードのハッシュ化のために設計されたものです。
+<code class="function">crypt()</code>がハッシュ処理を行い、<code class="function">gen_salt()</code>はハッシュ処理用のアルゴリズム上のパラメータを準備します。
+  </p><p>
+<span class="original">
+   The algorithms in &lt;function&gt;crypt()&lt;/function&gt; differ from the usual
+   MD5 or SHA1 hashing algorithms in the following respects:
+</span>
+<code class="function">crypt()</code>アルゴリズムは、以下の点で通常のMD5やSHA1のようなハッシュ処理アルゴリズムと異なります。
+  </p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p>
+<span class="original">
+     They are slow.  As the amount of data is so small, this is the only
+     way to make brute-forcing passwords hard.
+</span>
+低速です。
+データ量が少ないためパスワード総当たり攻撃に対して頑健にする唯一の方法です。
+    </p></li><li class="listitem"><p>
+<span class="original">
+     They use a random value, called the &lt;firstterm&gt;salt&lt;/firstterm&gt;, so that users
+     having the same password will have different encrypted passwords.
+     This is also an additional defense against reversing the algorithm.
+</span>
+結果には<em class="firstterm">ソルト</em>というランダムな値が含まれます。
+このため同じパスワードのユーザでも異なった暗号化パスワードを持ちます。
+これはアルゴリズムの逆処理に対する追加の防御です。
+    </p></li><li class="listitem"><p>
+<span class="original">
+     They include the algorithm type in the result, so passwords hashed with
+     different algorithms can co-exist.
+</span>
+結果内にアルゴリズムの種類が含まれます。
+このため異なるアルゴリズムでハッシュ化したパスワードが混在可能です。
+    </p></li><li class="listitem"><p>
+<span class="original">
+     Some of them are adaptive &amp;mdash; that means when computers get
+     faster, you can tune the algorithm to be slower, without
+     introducing incompatibility with existing passwords.
+</span>
+一部は適応型です。
+つまり、コンピュータが高速になったとしても、既存のパスワードとの互換性を損なうことなくアルゴリズムを低速に調整することができます。
+    </p></li></ol></div><p>
+<span class="original">
+   &lt;xref linkend="pgcrypto-crypt-algorithms"/&gt; lists the algorithms
+   supported by the &lt;function&gt;crypt()&lt;/function&gt; function.
+</span>
+<code class="function">crypt()</code>関数がサポートするアルゴリズムを<a class="xref" href="pgcrypto.html#PGCRYPTO-CRYPT-ALGORITHMS" title="表F.16 crypt()がサポートするアルゴリズム">表 F.16</a>に列挙します。
+  </p><div class="table" id="PGCRYPTO-CRYPT-ALGORITHMS"><p class="title"><strong>表F.16 <code class="function">crypt()</code>がサポートするアルゴリズム</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;Supported Algorithms for &lt;function&gt;crypt()&lt;/function&gt;&lt;/title&gt;
+</span><table class="table" summary="crypt()がサポートするアルゴリズム" border="1"><colgroup><col /><col /><col /><col /><col /><col /></colgroup><thead><tr><th>アルゴリズム</th><th>パスワード最大長</th><th>適応型かどうか</th><th>ソルトビット長</th><th>出力長</th><th>説明</th></tr></thead><tbody><tr><td><code class="literal">bf</code></td><td>72</td><td>はい</td><td>128</td><td>60</td><td>Blowfishベース、2a版</td></tr><tr><td><code class="literal">md5</code></td><td>無制限</td><td>いいえ</td><td>48</td><td>34</td><td>MD5ベースの暗号</td></tr><tr><td><code class="literal">xdes</code></td><td>8</td><td>はい</td><td>24</td><td>20</td><td>拡張DES</td></tr><tr><td><code class="literal">des</code></td><td>8</td><td>いいえ</td><td>12</td><td>13</td><td>元来のUNIX crypt</td></tr></tbody></table></div></div><br class="table-break" /><div class="sect3" id="id-1.11.7.34.6.7"><div class="titlepage"><div><div><h4 class="title">F.25.2.1. <code class="function">crypt()</code></h4></div></div></div><a id="id-1.11.7.34.6.7.2" class="indexterm"></a><pre class="synopsis">
+crypt(password text, salt text) returns text
+</pre><p>
+<span class="original">
+    Calculates a crypt(3)-style hash of &lt;parameter&gt;password&lt;/parameter&gt;.
+    When storing a new password, you need to use
+    &lt;function&gt;gen_salt()&lt;/function&gt; to generate a new &lt;parameter&gt;salt&lt;/parameter&gt; value.
+    To check a password, pass the stored hash value as &lt;parameter&gt;salt&lt;/parameter&gt;,
+    and test whether the result matches the stored value.
+</span>
+<em class="parameter"><code>password</code></em>のcrypt(3)形式のハッシュを計算します。
+新しいパスワードを保管する時には、<code class="function">gen_salt()</code>を使用して新しい<em class="parameter"><code>salt</code></em>を生成する必要があります。
+パスワードを検査する時、既存のハッシュ値を<em class="parameter"><code>salt</code></em>として渡し、結果が格納された値と一致するかどうかを確認します。
+   </p><p>
+<span class="original">
+    Example of setting a new password:
+</span>
+新しいパスワードの設定例を以下に示します。
+</p><pre class="programlisting">
+UPDATE ... SET pswhash = crypt('new password', gen_salt('md5'));
+</pre><p>
+   </p><p>
+<span class="original">
+    Example of authentication:
+</span>
+認証の例です。
+</p><pre class="programlisting">
+SELECT (pswhash = crypt('entered password', pswhash)) AS pswmatch FROM ... ;
+</pre><p>
+<span class="original">
+    This returns &lt;literal&gt;true&lt;/literal&gt; if the entered password is correct.
+</span>
+入力パスワードが正しければ<code class="literal">true</code>を返します。
+   </p></div><div class="sect3" id="id-1.11.7.34.6.8"><div class="titlepage"><div><div><h4 class="title">F.25.2.2. <code class="function">gen_salt()</code></h4></div></div></div><a id="id-1.11.7.34.6.8.2" class="indexterm"></a><pre class="synopsis">
+gen_salt(type text [, iter_count integer ]) returns text
+</pre><p>
+<span class="original">
+    Generates a new random salt string for use in &lt;function&gt;crypt()&lt;/function&gt;.
+    The salt string also tells &lt;function&gt;crypt()&lt;/function&gt; which algorithm to use.
+</span>
+<code class="function">crypt()</code>で使用するランダムなソルト文字列を新規に生成します。
+また、このソルト文字列は<code class="function">crypt()</code>にどのアルゴリズムを使用するかを通知します。
+   </p><p>
+<span class="original">
+    The &lt;parameter&gt;type&lt;/parameter&gt; parameter specifies the hashing algorithm.
+    The accepted types are: &lt;literal&gt;des&lt;/literal&gt;, &lt;literal&gt;xdes&lt;/literal&gt;,
+    &lt;literal&gt;md5&lt;/literal&gt; and &lt;literal&gt;bf&lt;/literal&gt;.
+</span>
+<em class="parameter"><code>type</code></em>パラメータはハッシュ化アルゴリズムを指定します。
+受付可能な種類は、<code class="literal">des</code>、<code class="literal">xdes</code>、<code class="literal">md5</code>、<code class="literal">bf</code>です。
+   </p><p>
+<span class="original">
+    The &lt;parameter&gt;iter_count&lt;/parameter&gt; parameter lets the user specify the iteration
+    count, for algorithms that have one.
+    The higher the count, the more time it takes to hash
+    the password and therefore the more time to break it.  Although with
+    too high a count the time to calculate a hash may be several years
+    &amp;mdash; which is somewhat impractical.  If the &lt;parameter&gt;iter_count&lt;/parameter&gt;
+    parameter is omitted, the default iteration count is used.
+    Allowed values for &lt;parameter&gt;iter_count&lt;/parameter&gt; depend on the algorithm and
+    are shown in &lt;xref linkend="pgcrypto-icfc-table"/&gt;.
+</span>
+繰り返し回数を持つアルゴリズムでは、ユーザは<em class="parameter"><code>iter_count</code></em>パラメータを使用して繰り返し回数を指定できます。
+指定する回数を高くすれば、パスワードのハッシュ化にかかる時間が長くなり、それを破るための時間も長くなります。
+しかし、あまりに多くの回数を指定すると、ハッシュ計算にかかる時間は数年に渡ってしまう可能性があります。
+これは実用的ではありません。
+<em class="parameter"><code>iter_count</code></em>パラメータを省略した場合、デフォルトの繰り返し回数が使用されます。
+<em class="parameter"><code>iter_count</code></em>で受け付けられる値はアルゴリズムに依存し、<a class="xref" href="pgcrypto.html#PGCRYPTO-ICFC-TABLE" title="表F.17 crypt()用の繰り返し回数">表 F.17</a>に示す通りです。
+   </p><div class="table" id="PGCRYPTO-ICFC-TABLE"><p class="title"><strong>表F.17 <code class="function">crypt()</code>用の繰り返し回数</strong></p><div class="table-contents"><span class="original">
+    &lt;title&gt;Iteration Counts for &lt;function&gt;crypt()&lt;/function&gt;&lt;/title&gt;
+</span><table class="table" summary="crypt()用の繰り返し回数" border="1"><colgroup><col /><col /><col /><col /></colgroup><thead><tr><th>アルゴリズム</th><th>デフォルト</th><th>最小</th><th>最大</th></tr></thead><tbody><tr><td><code class="literal">xdes</code></td><td>725</td><td>1</td><td>16777215</td></tr><tr><td><code class="literal">bf</code></td><td>6</td><td>4</td><td>31</td></tr></tbody></table></div></div><br class="table-break" /><p>
+<span class="original">
+    For &lt;literal&gt;xdes&lt;/literal&gt; there is an additional limitation that the
+    iteration count must be an odd number.
+</span>
+<code class="literal">xdes</code>の場合は他にも、回数が奇数でなければならないという制限があります。
+   </p><p>
+<span class="original">
+    To pick an appropriate iteration count, consider that
+    the original DES crypt was designed to have the speed of 4 hashes per
+    second on the hardware of that time.
+    Slower than 4 hashes per second would probably dampen usability.
+    Faster than 100 hashes per second is probably too fast.
+</span>
+適切な繰り返し回数を選択するために、元々のDES暗号は当時のハードウェアで1秒あたり4個のハッシュを持つことができるように設計されたことを考えてください。
+毎秒4ハッシュより遅いと、おそらく使い勝手が悪いでしょう。
+毎秒100ハッシュより速いというのは、十中八九、あまりにも速すぎるでしょう。
+   </p><p>
+<span class="original">
+    &lt;xref linkend="pgcrypto-hash-speed-table"/&gt; gives an overview of the relative slowness
+    of different hashing algorithms.
+    The table shows how much time it would take to try all
+    combinations of characters in an 8-character password, assuming
+    that the password contains either only lower case letters, or
+    upper- and lower-case letters and numbers.
+    In the &lt;literal&gt;crypt-bf&lt;/literal&gt; entries, the number after a slash is
+    the &lt;parameter&gt;iter_count&lt;/parameter&gt; parameter of
+    &lt;function&gt;gen_salt&lt;/function&gt;.
+</span>
+ハッシュ化アルゴリズム別に相対的な速度に関する概要を<a class="xref" href="pgcrypto.html#PGCRYPTO-HASH-SPEED-TABLE" title="表F.18 ハッシュアルゴリズムの速度">表 F.18</a>にまとめました。
+この表は、8文字のパスワード内のすべての文字の組合せを取るためにかかる時間を示します。
+また、すべて小文字の英字のみのパスワードである場合と大文字小文字が混在した英字と数字のパスワードの場合を仮定します。
+<code class="literal">crypt-bf</code>の項では、スラッシュの後の数値は<code class="function">gen_salt</code>の<em class="parameter"><code>iter_count</code></em>です。
+   </p><div class="table" id="PGCRYPTO-HASH-SPEED-TABLE"><p class="title"><strong>表F.18 ハッシュアルゴリズムの速度</strong></p><div class="table-contents"><span class="original">
+    &lt;title&gt;Hash Algorithm Speeds&lt;/title&gt;
+</span><table class="table" summary="ハッシュアルゴリズムの速度" border="1"><colgroup><col /><col /><col /><col /><col /></colgroup><thead><tr><th>アルゴリズム</th><th>1秒当たりのハッシュ数</th><th><code class="literal">[a-z]</code>の場合</th><th><code class="literal">[A-Za-z0-9]</code>の場合</th><th><code class="literal">md5ハッシュ</code>を単位とした持続期間</th></tr></thead><tbody><tr><td><code class="literal">crypt-bf/8</code></td><td>1792</td><td>4年</td><td>3927年</td><td>100k</td></tr><tr><td><code class="literal">crypt-bf/7</code></td><td>3648</td><td>2年</td><td>1929年</td><td>50k</td></tr><tr><td><code class="literal">crypt-bf/6</code></td><td>7168</td><td>1年</td><td>982年</td><td>25k</td></tr><tr><td><code class="literal">crypt-bf/5</code></td><td>13504</td><td>188日</td><td>521年</td><td>12.5k</td></tr><tr><td><code class="literal">crypt-md5</code></td><td>171584</td><td>15日</td><td>41年</td><td>1k</td></tr><tr><td><code class="literal">crypt-des</code></td><td>23221568</td><td>157.5分</td><td>108日</td><td>7</td></tr><tr><td><code class="literal">sha1</code></td><td>37774272</td><td>90分</td><td>68日</td><td>4</td></tr><tr><td><code class="literal">md5</code>(ハッシュ)</td><td>150085504</td><td>22.5分</td><td>17日</td><td>1</td></tr></tbody></table></div></div><br class="table-break" /><p>
+<span class="original">
+    Notes:
+</span>
+注意：
+   </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+     The machine used is an Intel Mobile Core i3.
+</span>
+Intel Mobile Core i3のマシンを使用しました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      &lt;literal&gt;crypt-des&lt;/literal&gt; and &lt;literal&gt;crypt-md5&lt;/literal&gt; algorithm numbers are
+      taken from John the Ripper v1.6.38 &lt;literal&gt;-test&lt;/literal&gt; output.
+</span>
+<code class="literal">crypt-des</code>および<code class="literal">crypt-md5</code>アルゴリズムの数値はJohn the Ripper v1.6.38の<code class="literal">-test</code>出力から得たものです。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      &lt;literal&gt;md5 hash&lt;/literal&gt; numbers are from mdcrack 1.2.
+</span>
+<code class="literal">md5ハッシュ</code>の数値はmdcrack 1.2のものです。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      &lt;literal&gt;sha1&lt;/literal&gt; numbers are from lcrack-20031130-beta.
+</span>
+<code class="literal">sha1</code>の数値はlcrack-20031130-betaのものです。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      &lt;literal&gt;crypt-bf&lt;/literal&gt; numbers are taken using a simple program that
+      loops over 1000 8-character passwords.  That way I can show the speed
+      with different numbers of iterations.  For reference: &lt;literal&gt;john
+      -test&lt;/literal&gt; shows 13506 loops/sec for &lt;literal&gt;crypt-bf/5&lt;/literal&gt;.
+      (The very small
+      difference in results is in accordance with the fact that the
+      &lt;literal&gt;crypt-bf&lt;/literal&gt; implementation in &lt;filename&gt;pgcrypto&lt;/filename&gt;
+      is the same one used in John the Ripper.)
+</span>
+<code class="literal">crypt-bf</code>の数は、1000個の8文字パスワードをループする単純なプログラムを使用して得たものです。
+こうして、異なる回数の速度を示すことができました。
+参考までに、<code class="literal">john -test</code>は<code class="literal">crypt-bf/5</code>で13506 loops/secでした。
+（結果の差異が非常に小さいことは、<code class="filename">pgcrypto</code>における<code class="literal">crypt-bf</code>実装がJohn the Ripperで使用されるものと同じであるという事実と一致します。）
+     </p></li></ul></div><p>
+<span class="original">
+    Note that &lt;quote&gt;try all combinations&lt;/quote&gt; is not a realistic exercise.
+    Usually password cracking is done with the help of dictionaries, which
+    contain both regular words and various mutations of them.  So, even
+    somewhat word-like passwords could be cracked much faster than the above
+    numbers suggest, while a 6-character non-word-like password may escape
+    cracking.  Or not.
+</span>
+<span class="quote">「<span class="quote">すべての組み合わせを試行する</span>」</span>ことは現実的な行使ではありません。
+通常パスワード推定は、普通の単語とその変形の両方を含む辞書を使用して行われます。
+ですので、いささかなりとも言葉に似たパスワードは上で示した数値よりも速く推定されます。
+また6文字の単語に似ていないパスワードは推定を免れるかもしれませんし、免れないかもしれません。
+   </p></div></div><div class="sect2" id="id-1.11.7.34.7"><div class="titlepage"><div><div><h3 class="title">F.25.3. PGP暗号化関数</h3></div></div></div><span class="original">
+  &lt;title&gt;PGP Encryption Functions&lt;/title&gt;
+</span><p>
+<span class="original">
+   The functions here implement the encryption part of the OpenPGP (RFC 4880)
+   standard.  Supported are both symmetric-key and public-key encryption.
+</span>
+ここで示す関数はOpenPGP（RFC 4880）標準の暗号処理部分を実装します。
+対称鍵および公開鍵暗号化がサポートされます。
+  </p><p>
+<span class="original">
+   An encrypted PGP message consists of 2 parts, or &lt;firstterm&gt;packets&lt;/firstterm&gt;:
+</span>
+暗号化されたPGPメッセージは次の2つの部品（または<em class="firstterm">パケット</em>）から構成されます。
+  </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+     Packet containing a session key &amp;mdash; either symmetric-key or public-key
+     encrypted.
+</span>
+セッションキーを含むパケット。
+対称鍵または公開鍵で暗号化されています。
+    </p></li><li class="listitem"><p>
+<span class="original">
+     Packet containing data encrypted with the session key.
+</span>
+セッションキーにより暗号化されたデータを含むパケット。
+    </p></li></ul></div><p>
+<span class="original">
+   When encrypting with a symmetric key (i.e., a password):
+</span>
+対称鍵（つまりパスワード）で暗号化する場合
+  </p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p>
+<span class="original">
+     The given password is hashed using a String2Key (S2K) algorithm.  This is
+     rather similar to &lt;function&gt;crypt()&lt;/function&gt; algorithms &amp;mdash; purposefully
+     slow and with random salt &amp;mdash; but it produces a full-length binary
+     key.
+</span>
+与えられたパスワードはString2Key(S2K)アルゴリズムでハッシュ化されます。
+これはどちらかというと<code class="function">crypt()</code>アルゴリズムと似て、意図的に低速で、かつランダムなソルトを使用します。
+しかし、全長のバイナリキーを生成します。
+    </p></li><li class="listitem"><p>
+<span class="original">
+     If a separate session key is requested, a new random key will be
+     generated.  Otherwise the S2K key will be used directly as the session
+     key.
+</span>
+分離したセッションキーが要求された場合、新しいランダムなキーが生成されます。
+さもなくば、S2Kキーがそのままセッションキーとして使用されます。
+    </p></li><li class="listitem"><p>
+<span class="original">
+     If the S2K key is to be used directly, then only S2K settings will be put
+     into the session key packet.  Otherwise the session key will be encrypted
+     with the S2K key and put into the session key packet.
+</span>
+S2Kキーがそのまま使用される場合、S2K設定のみがセッションキーパケットに格納されます。
+さもなくば、セッションキーはS2Kキーで暗号化され、セッションキーパケットに格納されます。
+    </p></li></ol></div><p>
+<span class="original">
+   When encrypting with a public key:
+</span>
+公開鍵で暗号化する場合
+  </p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p>
+<span class="original">
+     A new random session key is generated.
+</span>
+新しいランダムなセッションキーが生成されます。
+    </p></li><li class="listitem"><p>
+<span class="original">
+     It is encrypted using the public key and put into the session key packet.
+</span>
+これは公開鍵を使用して暗号化され、セッションキーパケットに格納されます。
+    </p></li></ol></div><p>
+<span class="original">
+   In either case the data to be encrypted is processed as follows:
+</span>
+どちらの場合でもデータ暗号化は以下のように処理されます。
+  </p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p>
+<span class="original">
+     Optional data-manipulation: compression, conversion to UTF-8,
+     and/or conversion of line-endings.
+</span>
+省略可能なデータ操作として、圧縮、UTF-8への変換、改行の変換があります。
+    </p></li><li class="listitem"><p>
+<span class="original">
+     The data is prefixed with a block of random bytes.  This is equivalent
+     to using a random IV.
+</span>
+データの前にはランダムなバイト数のブロックが付きます。
+これはrandom IVを使用する場合と同じです。
+    </p></li><li class="listitem"><p>
+<span class="original">
+     An SHA1 hash of the random prefix and data is appended.
+</span>
+ランダムな前置ブロックとデータのSHA1ハッシュが後に付けられます。
+    </p></li><li class="listitem"><p>
+<span class="original">
+     All this is encrypted with the session key and placed in the data packet.
+</span>
+これをすべてセッションキーで暗号化し、データパケットに格納します。
+    </p></li></ol></div><div class="sect3" id="id-1.11.7.34.7.11"><div class="titlepage"><div><div><h4 class="title">F.25.3.1. <code class="function">pgp_sym_encrypt()</code></h4></div></div></div><a id="id-1.11.7.34.7.11.2" class="indexterm"></a><a id="id-1.11.7.34.7.11.3" class="indexterm"></a><pre class="synopsis">
+pgp_sym_encrypt(data text, psw text [, options text ]) returns bytea
+pgp_sym_encrypt_bytea(data bytea, psw text [, options text ]) returns bytea
+</pre><p>
+<span class="original">
+    Encrypt &lt;parameter&gt;data&lt;/parameter&gt; with a symmetric PGP key &lt;parameter&gt;psw&lt;/parameter&gt;.
+    The &lt;parameter&gt;options&lt;/parameter&gt; parameter can contain option settings,
+    as described below.
+</span>
+対称PGPキー<em class="parameter"><code>psw</code></em>で<em class="parameter"><code>data</code></em>を暗号化します。
+<em class="parameter"><code>options</code></em>パラメータには後述のオプション設定を含めることができます。
+   </p></div><div class="sect3" id="id-1.11.7.34.7.12"><div class="titlepage"><div><div><h4 class="title">F.25.3.2. <code class="function">pgp_sym_decrypt()</code></h4></div></div></div><a id="id-1.11.7.34.7.12.2" class="indexterm"></a><a id="id-1.11.7.34.7.12.3" class="indexterm"></a><pre class="synopsis">
+pgp_sym_decrypt(msg bytea, psw text [, options text ]) returns text
+pgp_sym_decrypt_bytea(msg bytea, psw text [, options text ]) returns bytea
+</pre><p>
+<span class="original">
+    Decrypt a symmetric-key-encrypted PGP message.
+</span>
+対称鍵で暗号化されたPGPメッセージを復号します。
+   </p><p>
+<span class="original">
+    Decrypting &lt;type&gt;bytea&lt;/type&gt; data with &lt;function&gt;pgp_sym_decrypt&lt;/function&gt; is disallowed.
+    This is to avoid outputting invalid character data.  Decrypting
+    originally textual data with &lt;function&gt;pgp_sym_decrypt_bytea&lt;/function&gt; is fine.
+</span>
+<code class="function">pgp_sym_decrypt</code>で<code class="type">bytea</code>型のデータを復号することはできません。
+これは無効な文字データの出力を防止するためです。
+元のテキストのデータを<code class="function">pgp_sym_decrypt_bytea</code>で復号することが正しい方法です。
+   </p><p>
+<span class="original">
+    The &lt;parameter&gt;options&lt;/parameter&gt; parameter can contain option settings,
+    as described below.
+</span>
+<em class="parameter"><code>options</code></em>パラメータには後述のオプション設定を含めることができます。
+   </p></div><div class="sect3" id="id-1.11.7.34.7.13"><div class="titlepage"><div><div><h4 class="title">F.25.3.3. <code class="function">pgp_pub_encrypt()</code></h4></div></div></div><a id="id-1.11.7.34.7.13.2" class="indexterm"></a><a id="id-1.11.7.34.7.13.3" class="indexterm"></a><pre class="synopsis">
+pgp_pub_encrypt(data text, key bytea [, options text ]) returns bytea
+pgp_pub_encrypt_bytea(data bytea, key bytea [, options text ]) returns bytea
+</pre><p>
+<span class="original">
+    Encrypt &lt;parameter&gt;data&lt;/parameter&gt; with a public PGP key &lt;parameter&gt;key&lt;/parameter&gt;.
+    Giving this function a secret key will produce an error.
+</span>
+公開PGPキー<em class="parameter"><code>key</code></em>で<em class="parameter"><code>data</code></em>を暗号化します。
+この関数に秘密キーを与えるとエラーになります。
+   </p><p>
+<span class="original">
+    The &lt;parameter&gt;options&lt;/parameter&gt; parameter can contain option settings,
+    as described below.
+</span>
+<em class="parameter"><code>options</code></em>パラメータには後述のオプション設定を含めることができます。
+   </p></div><div class="sect3" id="id-1.11.7.34.7.14"><div class="titlepage"><div><div><h4 class="title">F.25.3.4. <code class="function">pgp_pub_decrypt()</code></h4></div></div></div><a id="id-1.11.7.34.7.14.2" class="indexterm"></a><a id="id-1.11.7.34.7.14.3" class="indexterm"></a><pre class="synopsis">
+pgp_pub_decrypt(msg bytea, key bytea [, psw text [, options text ]]) returns text
+pgp_pub_decrypt_bytea(msg bytea, key bytea [, psw text [, options text ]]) returns bytea
+</pre><p>
+<span class="original">
+    Decrypt a public-key-encrypted message.  &lt;parameter&gt;key&lt;/parameter&gt; must be the
+    secret key corresponding to the public key that was used to encrypt.
+    If the secret key is password-protected, you must give the password in
+    &lt;parameter&gt;psw&lt;/parameter&gt;.  If there is no password, but you want to specify
+    options, you need to give an empty password.
+</span>
+公開鍵で暗号化されたメッセージを復号します。
+<em class="parameter"><code>key</code></em>は、暗号化に使用した公開鍵に対応する秘密鍵でなければなりません。
+秘密鍵がパスワードで保護されている場合は、そのパスワードを<em class="parameter"><code>psw</code></em>で指定しなければなりません。
+パスワードはないが、オプションを指定したい場合は空のパスワードを指定する必要があります。
+   </p><p>
+<span class="original">
+    Decrypting &lt;type&gt;bytea&lt;/type&gt; data with &lt;function&gt;pgp_pub_decrypt&lt;/function&gt; is disallowed.
+    This is to avoid outputting invalid character data.  Decrypting
+    originally textual data with &lt;function&gt;pgp_pub_decrypt_bytea&lt;/function&gt; is fine.
+</span>
+<code class="function">pgp_pub_decrypt</code>で<code class="type">bytea</code>型のデータを復号することはできません。
+これは無効な文字データの出力を防止するためです。
+元のテキストのデータを<code class="function">pgp_pub_decrypt_bytea</code>で復号することが正しい方法です。
+   </p><p>
+<span class="original">
+    The &lt;parameter&gt;options&lt;/parameter&gt; parameter can contain option settings,
+    as described below.
+</span>
+<em class="parameter"><code>options</code></em>パラメータには後述のオプション設定を含めることができます。
+   </p></div><div class="sect3" id="id-1.11.7.34.7.15"><div class="titlepage"><div><div><h4 class="title">F.25.3.5. <code class="function">pgp_key_id()</code></h4></div></div></div><a id="id-1.11.7.34.7.15.2" class="indexterm"></a><pre class="synopsis">
+pgp_key_id(bytea) returns text
+</pre><p>
+<span class="original">
+    &lt;function&gt;pgp_key_id&lt;/function&gt; extracts the key ID of a PGP public or secret key.
+    Or it gives the key ID that was used for encrypting the data, if given
+    an encrypted message.
+</span>
+<code class="function">pgp_key_id</code>はPGP公開鍵または秘密鍵のキーIDを取り出します。
+暗号化されたメッセージが指定された場合は、データの暗号化に使用されたキーIDを与えます。
+   </p><p>
+<span class="original">
+    It can return 2 special key IDs:
+</span>
+2つの特殊なキーIDを返すことがあります。
+   </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+      <code class="literal">SYMKEY</code>
+     </p><p>
+<span class="original">
+      The message is encrypted with a symmetric key.
+</span>
+メッセージは対称鍵で暗号化されました。
+     </p></li><li class="listitem"><p>
+      <code class="literal">ANYKEY</code>
+     </p><p>
+<span class="original">
+      The message is public-key encrypted, but the key ID has been removed.
+      That means you will need to try all your secret keys on it to see
+      which one decrypts it.  &lt;filename&gt;pgcrypto&lt;/filename&gt; itself does not produce
+      such messages.
+</span>
+メッセージは公開鍵で暗号化されましたが、キーIDが消去されていました。
+つまり、どれで復号できるかを判定するためにはすべての秘密キーを試行しなければならないことを意味します。
+<code class="filename">pgcrypto</code>自身はこうしたメッセージを生成しません。
+     </p></li></ul></div><p>
+<span class="original">
+    Note that different keys may have the same ID.   This is rare but a normal
+    event. The client application should then try to decrypt with each one,
+    to see which fits &amp;mdash; like handling &lt;literal&gt;ANYKEY&lt;/literal&gt;.
+</span>
+異なるキーが同一IDを持つ場合があることに注意してください。
+これは稀ですが、正常なイベントです。
+この場合クライアントアプリケーションはどちらが当てはまるかを調べるために、<code class="literal">ANYKEY</code>の場合と同様に、それぞれのキーで復号を試行しなければなりません。
+   </p></div><div class="sect3" id="id-1.11.7.34.7.16"><div class="titlepage"><div><div><h4 class="title">F.25.3.6. <code class="function">armor()</code>, <code class="function">dearmor()</code></h4></div></div></div><a id="id-1.11.7.34.7.16.2" class="indexterm"></a><a id="id-1.11.7.34.7.16.3" class="indexterm"></a><pre class="synopsis">
+armor(data bytea [ , keys text[], values text[] ]) returns text
+dearmor(data text) returns bytea
+</pre><p>
+<span class="original">
+    These functions wrap/unwrap binary data into PGP ASCII-armor format,
+    which is basically Base64 with CRC and additional formatting.
+</span>
+PGPのASCIIアーマー形式にデータを隠す、または、データを取り出します。
+ASCIIアーマーは基本的にCRC付きのBASE64という形式で、追加のフォーマットがあります。
+   </p><p>
+<span class="original">
+    If the &lt;parameter&gt;keys&lt;/parameter&gt; and &lt;parameter&gt;values&lt;/parameter&gt; arrays are specified,
+    an &lt;firstterm&gt;armor header&lt;/firstterm&gt; is added to the armored format for each
+    key/value pair. Both arrays must be single-dimensional, and they must
+    be of the same length.  The keys and values cannot contain any non-ASCII
+    characters.
+</span>
+<em class="parameter"><code>keys</code></em>と<em class="parameter"><code>values</code></em>の配列が指定された場合には、各キーと値の対に対して<em class="firstterm">アーマーヘッダ</em>がアーマー形式に追加されます。
+どちらの配列も1次元で、同じ長さでなければなりません。
+keysとvaluesに非ASCII文字を含めることはできません。
+   </p></div><div class="sect3" id="id-1.11.7.34.7.17"><div class="titlepage"><div><div><h4 class="title">F.25.3.7. <code class="function">pgp_armor_headers</code></h4></div></div></div><a id="id-1.11.7.34.7.17.2" class="indexterm"></a><pre class="synopsis">
+pgp_armor_headers(data text, key out text, value out text) returns setof record
+</pre><p>
+<span class="original">
+    &lt;function&gt;pgp_armor_headers()&lt;/function&gt; extracts the armor headers from
+    &lt;parameter&gt;data&lt;/parameter&gt;.  The return value is a set of rows with two columns,
+    key and value.  If the keys or values contain any non-ASCII characters,
+    they are treated as UTF-8.
+</span>
+<code class="function">pgp_armor_headers()</code>は<em class="parameter"><code>data</code></em>からアーマーヘッダを取り出します。
+戻り値はキーと値の2つの列からなる行の集合です。
+もしキーや値に非アスキー文字が含まれていれば、UTF-8として扱われます。
+   </p></div><div class="sect3" id="id-1.11.7.34.7.18"><div class="titlepage"><div><div><h4 class="title">F.25.3.8. PGP関数用のオプション</h4></div></div></div><span class="original">
+   &lt;title&gt;Options for PGP Functions&lt;/title&gt;
+</span><p>
+<span class="original">
+    Options are named to be similar to GnuPG.  An option's value should be
+    given after an equal sign; separate options from each other with commas.
+    For example:
+</span>
+オプションはGnuPGに似せて命名しています。
+オプションの値は等号記号の後に指定しなければなりません。
+複数のオプションはカンマで区切ってください。
+以下に例を示します。
+</p><pre class="programlisting">
+pgp_sym_encrypt(data, psw, 'compress-algo=1, cipher-algo=aes256')
+</pre><p>
+   </p><p>
+<span class="original">
+    All of the options except &lt;literal&gt;convert-crlf&lt;/literal&gt; apply only to
+    encrypt functions.  Decrypt functions get the parameters from the PGP
+    data.
+</span>
+<code class="literal">convert-crlf</code>を除くすべてのオプションは暗号化関数にのみ適用可能です。
+復号関数はPGPデータからこうしたパラメータを入手します。
+   </p><p>
+<span class="original">
+    The most interesting options are probably
+    &lt;literal&gt;compress-algo&lt;/literal&gt; and &lt;literal&gt;unicode-mode&lt;/literal&gt;.
+    The rest should have reasonable defaults.
+</span>
+もっとも興味深いオプションはおそらく<code class="literal">compress-algo</code>と<code class="literal">unicode-mode</code>でしょう。
+残りはデフォルトで問題ないはずです。
+   </p><div class="sect4" id="id-1.11.7.34.7.18.5"><div class="titlepage"><div><div><h5 class="title">F.25.3.8.1. cipher-algo</h5></div></div></div><p>
+<span class="original">
+    Which cipher algorithm to use.
+</span>
+使用する暗号アルゴリズム。
+   </p><div class="literallayout"><p><br />
+<span class="original"><br />
+Values: bf, aes128, aes192, aes256 (OpenSSL-only: &lt;literal&gt;3des&lt;/literal&gt;, &lt;literal&gt;cast5&lt;/literal&gt;)<br />
+Default: aes128<br />
+Applies to: pgp_sym_encrypt, pgp_pub_encrypt<br />
+</span><br />
+値: bf, aes128, aes192, aes256 (OpenSSL-only: <code class="literal">3des</code>, <code class="literal">cast5</code>)<br />
+デフォルト: aes128<br />
+適用範囲: pgp_sym_encrypt, pgp_pub_encrypt<br />
+</p></div></div><div class="sect4" id="id-1.11.7.34.7.18.6"><div class="titlepage"><div><div><h5 class="title">F.25.3.8.2. compress-algo</h5></div></div></div><p>
+<span class="original">
+    Which compression algorithm to use.  Only available if
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; was built with zlib.
+</span>
+使用する圧縮アルゴリズム。
+<span class="productname">PostgreSQL</span>がzlib付きで構築されている場合のみ利用可能です。
+   </p><div class="literallayout"><p><br />
+<span class="original"><br />
+Values:<br />
+  0 - no compression<br />
+  1 - ZIP compression<br />
+  2 - ZLIB compression (= ZIP plus meta-data and block CRCs)<br />
+Default: 0<br />
+Applies to: pgp_sym_encrypt, pgp_pub_encrypt<br />
+</span><br />
+値:<br />
+ 0 - 非圧縮<br />
+ 1 - ZIP圧縮<br />
+ 2 - ZLIB圧縮 (ZIPにメタデータとブロックCRCを加えたもの)<br />
+デフォルト: 0<br />
+適用範囲: pgp_sym_encrypt, pgp_pub_encrypt<br />
+</p></div></div><div class="sect4" id="id-1.11.7.34.7.18.7"><div class="titlepage"><div><div><h5 class="title">F.25.3.8.3. compress-level</h5></div></div></div><p>
+<span class="original">
+    How much to compress.  Higher levels compress smaller but are slower.
+    0 disables compression.
+</span>
+どの程度圧縮するかです。
+レベルが大きい程小さくなりますが、低速になります。
+0は圧縮を無効にします。
+   </p><div class="literallayout"><p><br />
+<span class="original"><br />
+Values: 0, 1-9<br />
+Default: 6<br />
+Applies to: pgp_sym_encrypt, pgp_pub_encrypt<br />
+</span><br />
+値: 0, 1-9<br />
+デフォルト: 6<br />
+適用範囲: pgp_sym_encrypt, pgp_pub_encrypt<br />
+</p></div></div><div class="sect4" id="id-1.11.7.34.7.18.8"><div class="titlepage"><div><div><h5 class="title">F.25.3.8.4. convert-crlf</h5></div></div></div><p>
+<span class="original">
+    Whether to convert &lt;literal&gt;\n&lt;/literal&gt; into &lt;literal&gt;\r\n&lt;/literal&gt; when
+    encrypting and &lt;literal&gt;\r\n&lt;/literal&gt; to &lt;literal&gt;\n&lt;/literal&gt; when
+    decrypting.  RFC 4880 specifies that text data should be stored using
+    &lt;literal&gt;\r\n&lt;/literal&gt; line-feeds.  Use this to get fully RFC-compliant
+    behavior.
+</span>
+暗号化の際に<code class="literal">\n</code>を<code class="literal">\r\n</code>に、復号の際に<code class="literal">\r\n</code> を<code class="literal">\n</code> に変換するかどうか。
+RFC 4880では、テキストデータは改行コードとして<code class="literal">\r\n</code> を使用して格納すべきであると規定されています。
+完全にRFC準拠の動作を行いたければ、これを使用してください。
+   </p><div class="literallayout"><p><br />
+<span class="original"><br />
+Values: 0, 1<br />
+Default: 0<br />
+Applies to: pgp_sym_encrypt, pgp_pub_encrypt, pgp_sym_decrypt, pgp_pub_decrypt<br />
+</span><br />
+値: 0, 1<br />
+デフォルト: 0<br />
+適用範囲: pgp_sym_encrypt, pgp_pub_encrypt, pgp_sym_decrypt, pgp_pub_decrypt<br />
+</p></div></div><div class="sect4" id="id-1.11.7.34.7.18.9"><div class="titlepage"><div><div><h5 class="title">F.25.3.8.5. disable-mdc</h5></div></div></div><p>
+<span class="original">
+    Do not protect data with SHA-1.  The only good reason to use this
+    option is to achieve compatibility with ancient PGP products, predating
+    the addition of SHA-1 protected packets to RFC 4880.
+    Recent gnupg.org and pgp.com software supports it fine.
+</span>
+データをSHA-1で保護しません。
+このオプションを使用することが良い唯一の理由は、SHA-1で保護されたパケットがRFC 4880に追加される前の、古いPGP製品との互換性を得るためです。
+最近のgnupg.orgおよびpgp.comのソフトウェアではこれを正しくサポートしています。
+   </p><div class="literallayout"><p><br />
+<span class="original"><br />
+Values: 0, 1<br />
+Default: 0<br />
+Applies to: pgp_sym_encrypt, pgp_pub_encrypt<br />
+</span><br />
+値: 0, 1<br />
+デフォルト: 0<br />
+適用範囲: pgp_sym_encrypt, pgp_pub_encrypt<br />
+</p></div></div><div class="sect4" id="id-1.11.7.34.7.18.10"><div class="titlepage"><div><div><h5 class="title">F.25.3.8.6. sess-key</h5></div></div></div><p>
+<span class="original">
+    Use separate session key.  Public-key encryption always uses a separate
+    session key; this option is for symmetric-key encryption, which by default
+    uses the S2K key directly.
+</span>
+分離したセッションキーを使用します。
+公開鍵暗号では常に分離したセッションキーを使用します。
+このオプションは対称鍵暗号向けのもので、デフォルトではS2Kキーをそのまま使用します。
+   </p><div class="literallayout"><p><br />
+<span class="original"><br />
+Values: 0, 1<br />
+Default: 0<br />
+Applies to: pgp_sym_encrypt<br />
+</span><br />
+値: 0, 1<br />
+デフォルト: 0<br />
+適用範囲: pgp_sym_encrypt<br />
+</p></div></div><div class="sect4" id="id-1.11.7.34.7.18.11"><div class="titlepage"><div><div><h5 class="title">F.25.3.8.7. s2k-mode</h5></div></div></div><p>
+<span class="original">
+    Which S2K algorithm to use.
+</span>
+使用するS2Kアルゴリズム。
+   </p><div class="literallayout"><p><br />
+<span class="original"><br />
+Values:<br />
+  0 - Without salt.  Dangerous!<br />
+  1 - With salt but with fixed iteration count.<br />
+  3 - Variable iteration count.<br />
+Default: 3<br />
+Applies to: pgp_sym_encrypt<br />
+</span><br />
+値:<br />
+  0 - ソルト無。危険です!<br />
+  1 - ソルト有。固定繰り返し回数。<br />
+  3 - 可変繰り返し回数。<br />
+デフォルト: 3<br />
+適用範囲: pgp_sym_encrypt<br />
+</p></div></div><div class="sect4" id="id-1.11.7.34.7.18.12"><div class="titlepage"><div><div><h5 class="title">F.25.3.8.8. s2k-count</h5></div></div></div><p>
+<span class="original">
+    The number of iterations of the S2K algorithm to use.  It must
+    be a value between 1024 and 65011712, inclusive.
+</span>
+使用するS2Kアルゴリズムで使う繰り返しの回数。
+1024以上、65011712以下の値でなければなりません。
+   </p><div class="literallayout"><p><br />
+<span class="original"><br />
+Default: A random value between 65536 and 253952<br />
+Applies to: pgp_sym_encrypt, only with s2k-mode=3<br />
+</span><br />
+デフォルト: 65536から253952までの乱数値<br />
+適用範囲: s2k-mode=3と指定した時のpgp_sym_encrypt<br />
+</p></div></div><div class="sect4" id="id-1.11.7.34.7.18.13"><div class="titlepage"><div><div><h5 class="title">F.25.3.8.9. s2k-digest-algo</h5></div></div></div><p>
+<span class="original">
+    Which digest algorithm to use in S2K calculation.
+</span>
+S2K計算で使用するダイジェストアルゴリズム。
+   </p><div class="literallayout"><p><br />
+<span class="original"><br />
+Values: md5, sha1<br />
+Default: sha1<br />
+Applies to: pgp_sym_encrypt<br />
+</span><br />
+値: md5, sha1<br />
+デフォルト: sha1<br />
+適用範囲: pgp_sym_encrypt<br />
+</p></div></div><div class="sect4" id="id-1.11.7.34.7.18.14"><div class="titlepage"><div><div><h5 class="title">F.25.3.8.10. s2k-cipher-algo</h5></div></div></div><p>
+<span class="original">
+    Which cipher to use for encrypting separate session key.
+</span>
+分離したセッションキーの暗号化に使用する暗号。
+   </p><div class="literallayout"><p><br />
+<span class="original"><br />
+Values: bf, aes, aes128, aes192, aes256<br />
+Default: use cipher-algo<br />
+Applies to: pgp_sym_encrypt<br />
+</span><br />
+値: bf, aes, aes128, aes192, aes256<br />
+デフォルト: cipher-algoを使用<br />
+適用範囲: pgp_sym_encrypt<br />
+</p></div></div><div class="sect4" id="id-1.11.7.34.7.18.15"><div class="titlepage"><div><div><h5 class="title">F.25.3.8.11. unicode-mode</h5></div></div></div><p>
+<span class="original">
+    Whether to convert textual data from database internal encoding to
+    UTF-8 and back.  If your database already is UTF-8, no conversion will
+    be done, but the message will be tagged as UTF-8.  Without this option
+    it will not be.
+</span>
+テキストデータをデータベース内部符号化方式からUTF-8に変換して戻すかどうかです。
+データベースがすでにUTF-8であれば、変換は起こらず、データにUTF-8としてタグが付くのみです。
+このオプションがないと、何も行われません。
+   </p><div class="literallayout"><p><br />
+<span class="original"><br />
+Values: 0, 1<br />
+Default: 0<br />
+Applies to: pgp_sym_encrypt, pgp_pub_encrypt<br />
+</span><br />
+値: 0, 1<br />
+デフォルト: 0<br />
+適用範囲: pgp_sym_encrypt, pgp_pub_encrypt<br />
+</p></div></div></div><div class="sect3" id="id-1.11.7.34.7.19"><div class="titlepage"><div><div><h4 class="title">F.25.3.9. GnuPGを使用したキーの生成</h4></div></div></div><span class="original">
+  &lt;title&gt;Generating PGP Keys with GnuPG&lt;/title&gt;
+</span><p>
+<span class="original">
+   To generate a new key:
+</span>
+新しいキーを生成します。
+</p><pre class="programlisting">
+gpg --gen-key
+</pre><p>
+  </p><p>
+<span class="original">
+   The preferred key type is &lt;quote&gt;DSA and Elgamal&lt;/quote&gt;.
+</span>
+推奨するキー種類は<span class="quote">「<span class="quote">DSAとElgamal</span>」</span>です。
+  </p><p>
+<span class="original">
+   For RSA encryption you must create either DSA or RSA sign-only key
+   as master and then add an RSA encryption subkey with
+   &lt;literal&gt;gpg &amp;#045;&amp;#045;edit-key&lt;/literal&gt;.
+</span>
+RSA暗号化のためには、マスタとしてDSAまたはRSAで署名のみのキーを作成し、そして<code class="literal">gpg --edit-key</code>を使用してRSAで暗号化された副キーを追加しなければなりません
+  </p><p>
+<span class="original">
+   To list keys:
+</span>
+キーを列挙します。
+</p><pre class="programlisting">
+gpg --list-secret-keys
+</pre><p>
+  </p><p>
+<span class="original">
+   To export a public key in ASCII-armor format:
+</span>
+ASCIIアーマー形式で公開鍵をエクスポートします。
+</p><pre class="programlisting">
+gpg -a --export KEYID &gt; public.key
+</pre><p>
+  </p><p>
+<span class="original">
+   To export a secret key in ASCII-armor format:
+</span>
+ASCIIアーマー形式の秘密鍵をエクスポートします。
+</p><pre class="programlisting">
+gpg -a --export-secret-keys KEYID &gt; secret.key
+</pre><p>
+  </p><p>
+<span class="original">
+   You need to use &lt;function&gt;dearmor()&lt;/function&gt; on these keys before giving them to
+   the PGP functions.  Or if you can handle binary data, you can drop
+   &lt;literal&gt;-a&lt;/literal&gt; from the command.
+</span>
+PGP関数にこれらのキーを渡す前に<code class="function">dearmor()</code>を使用する必要があります。
+バイナリデータを扱うことができる場合、gpgから<code class="literal">-a</code>フラグを省略することができます。
+  </p><p>
+<span class="original">
+   For more details see &lt;literal&gt;man gpg&lt;/literal&gt;,
+   &lt;ulink url="https://www.gnupg.org/gph/en/manual.html"&gt;The GNU
+   Privacy Handbook&lt;/ulink&gt; and other documentation on
+   &lt;ulink url="https://www.gnupg.org/"&gt;&lt;/ulink&gt;.
+</span>
+詳細は<code class="literal">man gpg</code>、<a class="ulink" href="https://www.gnupg.org/gph/en/manual.html" target="_top">The GNU Privacy Handbook</a>、<a class="ulink" href="https://www.gnupg.org/" target="_top">https://www.gnupg.org/</a>サイトの各種文書を参照してください。
+  </p></div><div class="sect3" id="id-1.11.7.34.7.20"><div class="titlepage"><div><div><h4 class="title">F.25.3.10. PGPコードの制限</h4></div></div></div><span class="original">
+  &lt;title&gt;Limitations of PGP Code&lt;/title&gt;
+</span><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+    No support for signing.  That also means that it is not checked
+    whether the encryption subkey belongs to the master key.
+</span>
+署名に関するサポートはありません。
+これはまた、暗号化副キーがマスタキーに属しているかどうか検査しないことを意味します。
+    </p></li><li class="listitem"><p>
+<span class="original">
+    No support for encryption key as master key.  As such practice
+    is generally discouraged, this should not be a problem.
+</span>
+マスタキーとして暗号化キーをサポートしません。
+一般的にこうした状況は現実的ではありませんので、問題にならないはずです。
+    </p></li><li class="listitem"><p>
+<span class="original">
+    No support for several subkeys.  This may seem like a problem, as this
+    is common practice.  On the other hand, you should not use your regular
+    GPG/PGP keys with &lt;filename&gt;pgcrypto&lt;/filename&gt;, but create new ones,
+    as the usage scenario is rather different.
+</span>
+複数の副キーに関するサポートはありません。
+よくありますので、これは問題になりそうに見えます。
+一方、通常のGPG/PGPキーを<code class="filename">pgcrypto</code>で使用すべきではありません。
+使用する状況が多少異なりますので新しく作成してください。
+    </p></li></ul></div></div></div><div class="sect2" id="id-1.11.7.34.8"><div class="titlepage"><div><div><h3 class="title">F.25.4. 暗号化そのものを行う関数</h3></div></div></div><span class="original">
+  &lt;title&gt;Raw Encryption Functions&lt;/title&gt;
+</span><p>
+<span class="original">
+   These functions only run a cipher over data; they don't have any advanced
+   features of PGP encryption.  Therefore they have some major problems:
+</span>
+これらの関数はデータ全体を暗号化するためだけに実行します。
+PGP暗号化の持つ先端的な機能はありません。
+したがって、大きな問題がいくつか存在します。
+  </p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p>
+<span class="original">
+    They use user key directly as cipher key.
+</span>
+暗号キーとしてユーザキーをそのまま使用します。
+    </p></li><li class="listitem"><p>
+<span class="original">
+    They don't provide any integrity checking, to see
+    if the encrypted data was modified.
+</span>
+暗号化されたデータが変更されたかどうかを確認するための整合性検査をまったく提供しません。
+    </p></li><li class="listitem"><p>
+<span class="original">
+    They expect that users manage all encryption parameters
+    themselves, even IV.
+</span>
+ユーザが、IVをも含め暗号化パラメータ自体をすべて管理していることを想定しています。
+    </p></li><li class="listitem"><p>
+<span class="original">
+    They don't handle text.
+</span>
+テキストは扱いません。
+    </p></li></ol></div><p>
+<span class="original">
+   So, with the introduction of PGP encryption, usage of raw
+   encryption functions is discouraged.
+</span>
+このため、PGP暗号化の導入もあり、暗号化のみの関数はあまり使用されません。
+  </p><a id="id-1.11.7.34.8.5" class="indexterm"></a><a id="id-1.11.7.34.8.6" class="indexterm"></a><a id="id-1.11.7.34.8.7" class="indexterm"></a><a id="id-1.11.7.34.8.8" class="indexterm"></a><pre class="synopsis">
+encrypt(data bytea, key bytea, type text) returns bytea
+decrypt(data bytea, key bytea, type text) returns bytea
+
+encrypt_iv(data bytea, key bytea, iv bytea, type text) returns bytea
+decrypt_iv(data bytea, key bytea, iv bytea, type text) returns bytea
+</pre><p>
+<span class="original">
+   Encrypt/decrypt data using the cipher method specified by
+   &lt;parameter&gt;type&lt;/parameter&gt;.  The syntax of the
+   &lt;parameter&gt;type&lt;/parameter&gt; string is:
+</span>
+<em class="parameter"><code>type</code></em>で指定した暗号方法を使用してデータの暗号化・復号を行います。
+<em class="parameter"><code>type</code></em>文字列の構文は以下の通りです。
+
+</p><pre class="synopsis">
+<em class="replaceable"><code>algorithm</code></em> [<span class="optional"> <code class="literal">-</code> <em class="replaceable"><code>mode</code></em> </span>] [<span class="optional"> <code class="literal">/pad:</code> <em class="replaceable"><code>padding</code></em> </span>]
+</pre><p>
+<span class="original">
+   where &lt;replaceable&gt;algorithm&lt;/replaceable&gt; is one of:
+</span>
+ここで<em class="replaceable"><code>algorithm</code></em>は以下の1つです。
+
+  </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p><code class="literal">bf</code> — Blowfish</p></li><li class="listitem"><p><code class="literal">aes</code> — AES (Rijndael-128, -192 or -256)</p></li></ul></div><p>
+<span class="original">
+   and &lt;replaceable&gt;mode&lt;/replaceable&gt; is one of:
+</span>
+また<em class="replaceable"><code>mode</code></em>は以下の1つです。
+  </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+    &lt;literal&gt;cbc&lt;/literal&gt; &amp;mdash; next block depends on previous (default)
+</span>
+<code class="literal">cbc</code> — 次のブロックは前ブロックに依存します（デフォルト）
+    </p></li><li class="listitem"><p>
+<span class="original">
+    &lt;literal&gt;ecb&lt;/literal&gt; &amp;mdash; each block is encrypted separately (for
+    testing only)
+</span>
+<code class="literal">ecb</code> — 各ブロックは独自に暗号化されます（試験用途のみ）
+    </p></li></ul></div><p>
+<span class="original">
+   and &lt;replaceable&gt;padding&lt;/replaceable&gt; is one of:
+</span>
+<em class="replaceable"><code>padding</code></em>は以下の1つです。
+  </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+    &lt;literal&gt;pkcs&lt;/literal&gt; &amp;mdash; data may be any length (default)
+</span>
+<code class="literal">pkcs</code> — データ長に制限はありません（デフォルト）
+    </p></li><li class="listitem"><p>
+<span class="original">
+    &lt;literal&gt;none&lt;/literal&gt; &amp;mdash; data must be multiple of cipher block size
+</span>
+<code class="literal">none</code> — データは暗号ブロックサイズの倍数でなければなりません
+    </p></li></ul></div><p>
+  </p><p>
+<span class="original">
+   So, for example, these are equivalent:
+</span>
+このため、例えば以下は同じです。
+</p><pre class="programlisting">
+encrypt(data, 'fooz', 'bf')
+encrypt(data, 'fooz', 'bf-cbc/pad:pkcs')
+</pre><p>
+  </p><p>
+<span class="original">
+   In &lt;function&gt;encrypt_iv&lt;/function&gt; and &lt;function&gt;decrypt_iv&lt;/function&gt;, the
+   &lt;parameter&gt;iv&lt;/parameter&gt; parameter is the initial value for the CBC mode;
+   it is ignored for ECB.
+   It is clipped or padded with zeroes if not exactly block size.
+   It defaults to all zeroes in the functions without this parameter.
+</span>
+<code class="function">encrypt_iv</code>および<code class="function">decrypt_iv</code>では、<em class="parameter"><code>iv</code></em>パラメータはCBCモード用の初期値となります。
+ECBでは無視されます。
+正確にブロック長でない場合、切り詰められるか、もしくはゼロで埋められます。
+このパラメータがない場合、関数のデフォルト値はすべてゼロです。
+  </p></div><div class="sect2" id="id-1.11.7.34.9"><div class="titlepage"><div><div><h3 class="title">F.25.5. ランダムデータ関数</h3></div></div></div><span class="original">
+  &lt;title&gt;Random-Data Functions&lt;/title&gt;
+</span><a id="id-1.11.7.34.9.2" class="indexterm"></a><pre class="synopsis">
+gen_random_bytes(count integer) returns bytea
+</pre><p>
+<span class="original">
+   Returns &lt;parameter&gt;count&lt;/parameter&gt; cryptographically strong random bytes.
+   At most 1024 bytes can be extracted at a time.  This is to avoid
+   draining the randomness generator pool.
+</span>
+暗号論的に強いランダムな<em class="parameter"><code>count</code></em>バイトを返します。
+一度に最大で1024バイトを抽出することができます。
+ランダム性ジェネレータプールを空にすることを防止するためのものです。
+  </p><a id="id-1.11.7.34.9.5" class="indexterm"></a><pre class="synopsis">
+gen_random_uuid() returns uuid
+</pre><p>
+<span class="original">
+   Returns a version 4 (random) UUID.
+</span>
+バージョン4(ランダムな)UUIDを返します。
+  </p></div><div class="sect2" id="id-1.11.7.34.10"><div class="titlepage"><div><div><h3 class="title">F.25.6. 注釈</h3></div></div></div><span class="original">
+  &lt;title&gt;Notes&lt;/title&gt;
+</span><div class="sect3" id="id-1.11.7.34.10.2"><div class="titlepage"><div><div><h4 class="title">F.25.6.1. 構築</h4></div></div></div><span class="original">
+   &lt;title&gt;Configuration&lt;/title&gt;
+</span><p>
+<span class="original">
+    &lt;filename&gt;pgcrypto&lt;/filename&gt; configures itself according to the findings of the
+    main PostgreSQL &lt;literal&gt;configure&lt;/literal&gt; script.  The options that
+    affect it are &lt;literal&gt;&amp;#045;&amp;#045;with-zlib&lt;/literal&gt; and
+    &lt;literal&gt;&amp;#045;&amp;#045;with-openssl&lt;/literal&gt;.
+</span>
+<code class="filename">pgcrypto</code>は自身で主PostgreSQLの<code class="literal">configure</code>スクリプトの検出結果に従って構築します。
+構築に影響するオプションは<code class="literal">--with-zlib</code>と<code class="literal">--with-openssl</code>です。
+   </p><p>
+<span class="original">
+    When compiled with zlib, PGP encryption functions are able to
+    compress data before encrypting.
+</span>
+ZLIB付きでコンパイルされた場合、PGP暗号化関数は暗号化前にデータを圧縮することができます。
+   </p><p>
+<span class="original">
+    When compiled with OpenSSL, there will be more algorithms available.
+    Also public-key encryption functions will be faster as OpenSSL
+    has more optimized BIGNUM functions.
+</span>
+OpenSSL付きでコンパイルされた場合、より多くのアルゴリズムが利用できるようになります。
+また、OpenSSLがより最適化されたBIGNUM関数を持つため、公開鍵暗号化関数は高速になります。
+   </p><div class="table" id="PGCRYPTO-WITH-WITHOUT-OPENSSL"><p class="title"><strong>表F.19 OpenSSLの有無による機能のまとめ</strong></p><div class="table-contents"><span class="original">
+    &lt;title&gt;Summary of Functionality with and without OpenSSL&lt;/title&gt;
+</span><table class="table" summary="OpenSSLの有無による機能のまとめ" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>機能</th><th>組み込み</th><th>OpenSSL付き</th></tr></thead><tbody><tr><td>MD5</td><td>○</td><td>○</td></tr><tr><td>SHA1</td><td>○</td><td>○</td></tr><tr><td>SHA224/256/384/512</td><td>○</td><td>○</td></tr><tr><td>この他のダイジェストアルゴリズム</td><td>×</td><td>○（注1）</td></tr><tr><td>Blowfish</td><td>○</td><td>○</td></tr><tr><td>AES</td><td>○</td><td>○</td></tr><tr><td>DES/3DES/CAST5</td><td>×</td><td>○</td></tr><tr><td>暗号化そのもの</td><td>○</td><td>○</td></tr><tr><td>PGP対称暗号化</td><td>○</td><td>○</td></tr><tr><td>PGP公開キー暗号化</td><td>○</td><td>○</td></tr></tbody></table></div></div><br class="table-break" /><p>
+<span class="original">
+    Notes:
+</span>
+注
+   </p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p>
+<span class="original">
+      Any digest algorithm OpenSSL supports is automatically picked up.
+      This is not possible with ciphers, which need to be supported
+      explicitly.
+</span>
+OpenSSLがサポートする任意のダイジェストアルゴリズムが自動的に選択されます。
+これは、明示的にサポートされなければならない暗号では使用できません。
+     </p></li></ol></div></div><div class="sect3" id="id-1.11.7.34.10.3"><div class="titlepage"><div><div><h4 class="title">F.25.6.2. NULLの扱い</h4></div></div></div><span class="original">
+   &lt;title&gt;NULL Handling&lt;/title&gt;
+</span><p>
+<span class="original">
+    As is standard in SQL, all functions return NULL, if any of the arguments
+    are NULL.  This may create security risks on careless usage.
+</span>
+標準SQLの通り、引数のいずれかがNULLの場合、すべての関数はNULLを返します。
+注意せずに使用すると、これがセキュリティ上の問題になるかもしれません。
+   </p></div><div class="sect3" id="id-1.11.7.34.10.4"><div class="titlepage"><div><div><h4 class="title">F.25.6.3. セキュリティ上の制限</h4></div></div></div><span class="original">
+   &lt;title&gt;Security Limitations&lt;/title&gt;
+</span><p>
+<span class="original">
+    All &lt;filename&gt;pgcrypto&lt;/filename&gt; functions run inside the database server.
+    That means that all
+    the data and passwords move between &lt;filename&gt;pgcrypto&lt;/filename&gt; and client
+    applications in clear text.  Thus you must:
+</span>
+<code class="filename">pgcrypto</code>の関数はすべてデータベースサーバ内部で実行されます。
+これは、<code class="filename">pgcrypto</code>とクライアントアプリケーションとの間でやり取りされるデータはすべて平文であることを意味します。
+したがって、以下を行う必要があります。
+   </p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><span class="original">
+     &lt;para&gt;Connect locally or use SSL connections.&lt;/para&gt;
+</span><p>ローカルまたはSSL接続で接続</p></li><li class="listitem"><span class="original">
+     &lt;para&gt;Trust both system and database administrator.&lt;/para&gt;
+</span><p>システム管理者およびデータベース管理者を信頼</p></li></ol></div><p>
+<span class="original">
+    If you cannot, then better do crypto inside client application.
+</span>
+これらが不可能であれば、クライアントアプリケーション内で暗号化する方が望まれます。
+   </p><p>
+<span class="original">
+    The implementation does not resist
+    &lt;ulink url="https://en.wikipedia.org/wiki/Side-channel_attack"&gt;side-channel
+    attacks&lt;/ulink&gt;.  For example, the time required for
+    a &lt;filename&gt;pgcrypto&lt;/filename&gt; decryption function to complete varies among
+    ciphertexts of a given size.
+</span>
+実装は<a class="ulink" href="https://en.wikipedia.org/wiki/Side-channel_attack" target="_top">サイドチャネル攻撃</a>に耐えられません。
+例えば、<code class="filename">pgcrypto</code>復号関数が完了するのに掛かる時間は、一定の長さの暗号文に対して一様ではありません。
+   </p></div><div class="sect3" id="id-1.11.7.34.10.5"><div class="titlepage"><div><div><h4 class="title">F.25.6.4. 有用な文書</h4></div></div></div><span class="original">
+   &lt;title&gt;Useful Reading&lt;/title&gt;
+</span><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p><a class="ulink" href="https://www.gnupg.org/gph/en/manual.html" target="_top">https://www.gnupg.org/gph/en/manual.html</a></p><span class="original">
+     &lt;para&gt;The GNU Privacy Handbook.&lt;/para&gt;
+</span><p>GNUプライバシーハンドブック</p></li><li class="listitem"><p><a class="ulink" href="http://www.openwall.com/crypt/" target="_top">http://www.openwall.com/crypt/</a></p><span class="original">
+     &lt;para&gt;Describes the crypt-blowfish algorithm.&lt;/para&gt;
+</span><p>blowfish暗号アルゴリズムの説明</p></li><li class="listitem"><p>
+      <a class="ulink" href="http://www.iusmentis.com/security/passphrasefaq/" target="_top">http://www.iusmentis.com/security/passphrasefaq/</a>
+     </p><span class="original">
+     &lt;para&gt;How to choose a good password.&lt;/para&gt;
+</span><p>優れたパスワードの選び方</p></li><li class="listitem"><p><a class="ulink" href="http://world.std.com/~reinhold/diceware.html" target="_top">http://world.std.com/~reinhold/diceware.html</a></p><span class="original">
+     &lt;para&gt;Interesting idea for picking passwords.&lt;/para&gt;
+</span><p>パスワード決定に関する面白い考え</p></li><li class="listitem"><p>
+      <a class="ulink" href="http://www.interhack.net/people/cmcurtin/snake-oil-faq.html" target="_top">http://www.interhack.net/people/cmcurtin/snake-oil-faq.html</a>
+     </p><span class="original">
+     &lt;para&gt;Describes good and bad cryptography.&lt;/para&gt;
+</span><p>良い暗号、悪い暗号に関する説明</p></li></ul></div></div><div class="sect3" id="id-1.11.7.34.10.6"><div class="titlepage"><div><div><h4 class="title">F.25.6.5. 技術的な参考情報</h4></div></div></div><span class="original">
+   &lt;title&gt;Technical References&lt;/title&gt;
+</span><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p><a class="ulink" href="https://tools.ietf.org/html/rfc4880" target="_top">https://tools.ietf.org/html/rfc4880</a></p><span class="original">
+     &lt;para&gt;OpenPGP message format.&lt;/para&gt;
+</span><p>OpenPGPメッセージフォーマット</p></li><li class="listitem"><p><a class="ulink" href="https://tools.ietf.org/html/rfc1321" target="_top">https://tools.ietf.org/html/rfc1321</a></p><span class="original">
+     &lt;para&gt;The MD5 Message-Digest Algorithm.&lt;/para&gt;
+</span><p>MD5 メッセージダイジェストアルゴリズム</p></li><li class="listitem"><p><a class="ulink" href="https://tools.ietf.org/html/rfc2104" target="_top">https://tools.ietf.org/html/rfc2104</a></p><p>HMAC: Keyed-Hashing for Message Authentication.</p></li><li class="listitem"><p>
+      <a class="ulink" href="https://www.usenix.org/legacy/events/usenix99/provos.html" target="_top">https://www.usenix.org/legacy/events/usenix99/provos.html</a>
+     </p><span class="original">
+     &lt;para&gt;Comparison of crypt-des, crypt-md5 and bcrypt algorithms.&lt;/para&gt;
+</span><p>DES暗号、MD5暗号、bcryptアルゴリズムの比較</p></li><li class="listitem"><p>
+      <a class="ulink" href="https://en.wikipedia.org/wiki/Fortuna_(PRNG)" target="_top">https://en.wikipedia.org/wiki/Fortuna_(PRNG)</a>
+     </p><span class="original">
+     &lt;para&gt;Description of Fortuna CSPRNG.&lt;/para&gt;
+</span><p>Fortuna CSPRNGの説明</p></li><li class="listitem"><p><a class="ulink" href="http://jlcooke.ca/random/" target="_top">http://jlcooke.ca/random/</a></p><span class="original">
+     &lt;para&gt;Jean-Luc Cooke Fortuna-based &lt;filename&gt;/dev/random&lt;/filename&gt; driver for Linux.&lt;/para&gt;
+</span><p>Linux用Jean-Luc Cooke Fortunaに基づく<code class="filename">/dev/random</code>ドライバ</p></li></ul></div></div></div><div class="sect2" id="id-1.11.7.34.11"><div class="titlepage"><div><div><h3 class="title">F.25.7. 作者</h3></div></div></div><span class="original">
+  &lt;title&gt;Author&lt;/title&gt;
+</span><p>
+   Marko Kreen <code class="email">&lt;<a class="email" href="mailto:markokr@gmail.com">markokr@gmail.com</a>&gt;</code>
+  </p><p>
+<span class="original">
+   &lt;filename&gt;pgcrypto&lt;/filename&gt; uses code from the following sources:
+</span>
+   <code class="literal">pgcrypto</code>は以下のソースを使用しています。
+  </p><div class="informaltable"><table class="informaltable" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th><p>アルゴリズム</p></th><th><p>作者</p></th><th><p>元ソース</p></th></tr></thead><tbody><tr><td>DES crypt</td><td>David Burren他</td><td>FreeBSD libcrypt</td></tr><tr><td>MD5 crypt</td><td>Poul-Henning Kamp</td><td>FreeBSD libcrypt</td></tr><tr><td>Blowfish crypt</td><td>Solar Designer</td><td>www.openwall.com</td></tr><tr><td>Blowfish cipher</td><td>Simon Tatham</td><td>PuTTY</td></tr><tr><td>Rijndael cipher</td><td>Brian Gladman</td><td>OpenBSD sys/crypto</td></tr><tr><td>MD5ハッシュとSHA1</td><td>WIDE Project</td><td>KAME kame/sys/crypto</td></tr><tr><td>SHA256/384/512 </td><td>Aaron D. Gifford</td><td>OpenBSD sys/crypto</td></tr><tr><td>BIGNUM math</td><td>Michael J. Fromberger</td><td>dartmouth.edu/~sting/sw/imath</td></tr></tbody></table></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="pgbuffercache.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="contrib.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="pgfreespacemap.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">F.24. pg_buffercache </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> F.26. pg_freespacemap</td></tr></table></div></body></html>

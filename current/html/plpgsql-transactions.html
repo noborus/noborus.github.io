@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>43.8. トランザクション制御</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="plpgsql-cursors.html" title="43.7. カーソル" /><link rel="next" href="plpgsql-errors-and-messages.html" title="43.9. エラーとメッセージ" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="plpgsql.html" title="第43章 PL/pgSQL - SQL手続き言語">第43章 <span class="application">PL/pgSQL</span> - <acronym class="acronym">SQL</acronym>手続き言語</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      plpgsql-transactions.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="plpgsql-cursors.html" title="43.7. カーソル">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="plpgsql.html" title="第43章 PL/pgSQL - SQL手続き言語">上へ</a></td><td width="60%" align="center">43.8. トランザクション制御</td><td width="20%" align="right"> <a accesskey="n" href="plpgsql-errors-and-messages.html" title="43.9. エラーとメッセージ">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PLPGSQL-TRANSACTIONS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">43.8. トランザクション制御</h2></div></div></div><span class="original">
+   &lt;title&gt;Transaction Management&lt;/title&gt;
+</span><p>
+<span class="original">
+    In procedures invoked by the &lt;command&gt;CALL&lt;/command&gt; command
+    as well as in anonymous code blocks (&lt;command&gt;DO&lt;/command&gt; command),
+    it is possible to end transactions using the
+    commands &lt;command&gt;COMMIT&lt;/command&gt; and &lt;command&gt;ROLLBACK&lt;/command&gt;.  A new
+    transaction is started automatically after a transaction is ended using
+    these commands, so there is no separate &lt;command&gt;START
+    TRANSACTION&lt;/command&gt; command.  (Note that &lt;command&gt;BEGIN&lt;/command&gt; and
+    &lt;command&gt;END&lt;/command&gt; have different meanings in PL/pgSQL.)
+</span>
+<code class="command">CALL</code>コマンドで呼び出されたプロシージャ、また同様に無名コードブロック（<code class="command">DO</code>コマンド）では、<code class="command">COMMIT</code>および<code class="command">ROLLBACK</code>コマンドを使ってトランザクションを終えることができます。
+トランザクションをこれらコマンドで終了した後、新たなトランザクションが自動的に開始されます。そのため、別途の<code class="command">START TRANSACTION</code>はありません。
+（PL/pgSQLでは<code class="command">BEGIN</code>と<code class="command">END</code>は別の意味を持つことに注意してください。）
+   </p><p>
+<span class="original">
+    Here is a simple example:
+</span>
+以下に例を示します。
+</p><pre class="programlisting">
+CREATE PROCEDURE transaction_test1()
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    FOR i IN 0..9 LOOP
+        INSERT INTO test1 (a) VALUES (i);
+        IF i % 2 = 0 THEN
+            COMMIT;
+        ELSE
+            ROLLBACK;
+        END IF;
+    END LOOP;
+END
+$$;
+
+CALL transaction_test1();
+</pre><p>
+   </p><p>
+<span class="original">
+    Transaction control is only possible in &lt;command&gt;CALL&lt;/command&gt; or
+    &lt;command&gt;DO&lt;/command&gt; invocations from the top level or nested
+    &lt;command&gt;CALL&lt;/command&gt; or &lt;command&gt;DO&lt;/command&gt; invocations without any
+    other intervening command.  For example, if the call stack is
+    &lt;command&gt;CALL proc1()&lt;/command&gt; &amp;rarr; &lt;command&gt;CALL proc2()&lt;/command&gt;
+    &amp;rarr; &lt;command&gt;CALL proc3()&lt;/command&gt;, then the second and third
+    procedures can perform transaction control actions.  But if the call stack
+    is &lt;command&gt;CALL proc1()&lt;/command&gt; &amp;rarr; &lt;command&gt;SELECT
+    func2()&lt;/command&gt; &amp;rarr; &lt;command&gt;CALL proc3()&lt;/command&gt;, then the last
+    procedure cannot do transaction control, because of the
+    &lt;command&gt;SELECT&lt;/command&gt; in between.
+</span>
+トランザクション制御は、トップレベル、または、他の干渉するコマンドを伴わない入れ子の<code class="command">CALL</code>または<code class="command">DO</code>呼び出しからの、<code class="command">CALL</code>または<code class="command">DO</code>による呼び出しのみで可能です。
+例えば、呼び出しスタックが<code class="command">CALL proc1()</code> → <code class="command">CALL proc2()</code> → <code class="command">CALL proc3()</code>である場合、二番目と三番目のプロシージャはトランザクション制御を実行できます。
+しかし、呼び出しスタックが<code class="command">CALL proc1()</code> → <code class="command">SELECT func2()</code> → <code class="command">CALL proc3()</code>である場合、間の<code class="command">SELECT</code>のため、最後のプロシージャはトランザクション制御を実行できません。
+   </p><p>
+<span class="original">
+    Special considerations apply to cursor loops.  Consider this example:
+</span>
+カーソルループには特別な考慮事項が当てはまります。
+以下の例をよく確認してください。
+</p><pre class="programlisting">
+CREATE PROCEDURE transaction_test2()
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN SELECT * FROM test2 ORDER BY x LOOP
+        INSERT INTO test1 (a) VALUES (r.x);
+        COMMIT;
+    END LOOP;
+END;
+$$;
+
+CALL transaction_test2();
+</pre><p>
+<span class="original">
+    Normally, cursors are automatically closed at transaction commit.
+    However, a cursor created as part of a loop like this is automatically
+    converted to a holdable cursor by the first &lt;command&gt;COMMIT&lt;/command&gt; or
+    &lt;command&gt;ROLLBACK&lt;/command&gt;.  That means that the cursor is fully
+    evaluated at the first &lt;command&gt;COMMIT&lt;/command&gt; or
+    &lt;command&gt;ROLLBACK&lt;/command&gt; rather than row by row.  The cursor is still
+    removed automatically after the loop, so this is mostly invisible to the
+    user.
+</span>
+通常、カーソルはトランザクションのコミット時に自動的に閉じられます。
+しかしながら、このようにループの一部として作られたカーソルは、最初の<code class="command">COMMIT</code>または<code class="command">ROLLBACK</code>から自動的にホールドカーソルに変換されます。
+このことは、今や、最初の<code class="command">COMMIT</code>や<code class="command">ROLLBACK</code>の時点でカーソルが行ごとではなく完全に評価されることを意味します。
+従来通りカーソルはループ後に自動で削除されるので、このことはユーザにほとんど認識されません。
+   </p><p>
+<span class="original">
+    Transaction commands are not allowed in cursor loops driven by commands
+    that are not read-only (for example &lt;command&gt;UPDATE
+    ... RETURNING&lt;/command&gt;).
+</span>
+トランザクションコマンドは、読み込み専用でないコマンド（例えば<code class="command">UPDATE ... RETURNING</code>）で駆動されるカーソルループ内では許可されません。
+   </p><p>
+<span class="original">
+    A transaction cannot be ended inside a block with exception handlers.
+</span>
+例外ハンドラを伴うブロック内ではトランザクションを終了できません。
+   </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="plpgsql-cursors.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="plpgsql.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="plpgsql-errors-and-messages.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">43.7. カーソル </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 43.9. エラーとメッセージ</td></tr></table></div></body></html>
