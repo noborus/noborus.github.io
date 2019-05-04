@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>3.5. ウィンドウ関数</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="tutorial-transactions.html" title="3.4. トランザクション" /><link rel="next" href="tutorial-inheritance.html" title="3.6. 継承" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="tutorial-advanced.html" title="第3章 高度な諸機能">第3章 高度な諸機能</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      tutorial-window.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="tutorial-transactions.html" title="3.4. トランザクション">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="tutorial-advanced.html" title="第3章 高度な諸機能">上へ</a></td><td width="60%" align="center">3.5. ウィンドウ関数</td><td width="20%" align="right"> <a accesskey="n" href="tutorial-inheritance.html" title="3.6. 継承">次へ</a></td></tr></table><hr /></div><div class="sect1" id="TUTORIAL-WINDOW"><div class="titlepage"><div><div><h2 class="title" style="clear: both">3.5. ウィンドウ関数</h2></div></div></div><span class="original">
+   &lt;title&gt;Window Functions&lt;/title&gt;
+</span><a id="id-1.4.5.6.2" class="indexterm"></a><p>
+<span class="original">
+    A &lt;firstterm&gt;window function&lt;/firstterm&gt; performs a calculation across a set of
+    table rows that are somehow related to the current row.  This is comparable
+    to the type of calculation that can be done with an aggregate function.
+    However, window functions do not cause rows to become grouped into a single
+    output row like non-window aggregate calls would.  Instead, the
+    rows retain their separate identities.  Behind the scenes, the window
+    function is able to access more than just the current row of the query
+    result.
+</span>
+<em class="firstterm">ウィンドウ関数</em>は現在の行に何らかとも関係するテーブル行の集合に渡って計算を行います。
+これは集約関数により行われる計算の形式と似たようなものです。
+とは言っても、非ウィンドウ集約呼び出しのように、ウィンドウ関数により行が単一出力行にグループ化されることはありません。
+その代わり、行はそれぞれ個別の身元を維持します。
+裏側では、ウィンドウ関数は問い合わせ結果による現在行だけでなく、それ以上の行にアクセスすることができます。
+   </p><p>
+<span class="original">
+    Here is an example that shows how to compare each employee's salary
+    with the average salary in his or her department:
+</span>
+これはその部署の平均給与とそれぞれの従業員の給与をどのように比較するかを示した例です。
+
+</p><pre class="programlisting">
+SELECT depname, empno, salary, avg(salary) OVER (PARTITION BY depname) FROM empsalary;
+</pre><p>
+
+</p><pre class="screen">
+  depname  | empno | salary |          avg          
+-----------+-------+--------+-----------------------
+ develop   |    11 |   5200 | 5020.0000000000000000
+ develop   |     7 |   4200 | 5020.0000000000000000
+ develop   |     9 |   4500 | 5020.0000000000000000
+ develop   |     8 |   6000 | 5020.0000000000000000
+ develop   |    10 |   5200 | 5020.0000000000000000
+ personnel |     5 |   3500 | 3700.0000000000000000
+ personnel |     2 |   3900 | 3700.0000000000000000
+ sales     |     3 |   4800 | 4866.6666666666666667
+ sales     |     1 |   5000 | 4866.6666666666666667
+ sales     |     4 |   4800 | 4866.6666666666666667
+(10 rows)
+</pre><p>
+
+<span class="original">
+    The first three output columns come directly from the table
+    &lt;structname&gt;empsalary&lt;/structname&gt;, and there is one output row for each row in the
+    table.  The fourth column represents an average taken across all the table
+    rows that have the same &lt;structfield&gt;depname&lt;/structfield&gt; value as the current row.
+    (This actually is the same function as the non-window &lt;function&gt;avg&lt;/function&gt;
+    aggregate, but the &lt;literal&gt;OVER&lt;/literal&gt; clause causes it to be
+    treated as a window function and computed across the window frame.)
+</span>
+最初の３つの出力列は、テーブル<code class="structname">empsalary</code>から直接もたらされ、テーブル内のそれぞれの行に対し１つの出力行が存在します。４番目の列は、現行の行と同じ<code class="structfield">depname</code>の値を持つ全てのテーブル行に渡って取得した平均値を表わしています。
+（これは実際、非ウィンドウ<code class="function">avg</code>集約関数と同じですが、<code class="literal">OVER</code>句によりウィンドウ関数として扱われ、ウィンドウフレームに渡り計算されます。）
+   </p><p>
+<span class="original">
+    A window function call always contains an &lt;literal&gt;OVER&lt;/literal&gt; clause
+    directly following the window function's name and argument(s).  This is what
+    syntactically distinguishes it from a normal function or non-window
+    aggregate.  The &lt;literal&gt;OVER&lt;/literal&gt; clause determines exactly how the
+    rows of the query are split up for processing by the window function.
+    The &lt;literal&gt;PARTITION BY&lt;/literal&gt; clause within &lt;literal&gt;OVER&lt;/literal&gt;
+    divides the rows into groups, or partitions, that share the same
+    values of the &lt;literal&gt;PARTITION BY&lt;/literal&gt; expression(s).  For each row,
+    the window function is computed across the rows that fall into the
+    same partition as the current row.
+</span>
+ウィンドウ関数呼び出しは常に、ウィンドウ関数名と引数の直後に続く<code class="literal">OVER</code>句を含みます。
+これが通常の関数、または非ウィンドウ集約関数と構文的に区別されるところです。
+<code class="literal">OVER</code>句は、ウィンドウ関数により処理のため問い合わせの行がどのように分解されるかを厳密に決定します。
+<code class="literal">OVER</code>内の<code class="literal">PARTITION BY</code>句は、行を<code class="literal">PARTITION BY</code>式の同じ値を共有するグループ、すなわちパーティションに分割します。
+それぞれの行に対し、ウィンドウ関数は現在行と同じパーティションに分類される行に渡って計算されます。
+   </p><p>
+<span class="original">
+    You can also control the order in which rows are processed by
+    window functions using &lt;literal&gt;ORDER BY&lt;/literal&gt; within &lt;literal&gt;OVER&lt;/literal&gt;.
+    (The window &lt;literal&gt;ORDER BY&lt;/literal&gt; does not even have to match the
+    order in which the rows are output.)  Here is an example:
+</span>
+<code class="literal">OVER</code>内で<code class="literal">ORDER BY</code>を使用することによりウィンドウ関数で処理される行の順序を制御することもできます。
+（ウィンドウの<code class="literal">ORDER BY</code>は行が出力される順序に一致する必要すらありません。）
+ここに例をあげます。
+
+</p><pre class="programlisting">
+SELECT depname, empno, salary,
+       rank() OVER (PARTITION BY depname ORDER BY salary DESC)
+FROM empsalary;
+</pre><p>
+
+</p><pre class="screen">
+  depname  | empno | salary | rank 
+-----------+-------+--------+------
+ develop   |     8 |   6000 |    1
+ develop   |    10 |   5200 |    2
+ develop   |    11 |   5200 |    2
+ develop   |     9 |   4500 |    4
+ develop   |     7 |   4200 |    5
+ personnel |     2 |   3900 |    1
+ personnel |     5 |   3500 |    2
+ sales     |     1 |   5000 |    1
+ sales     |     4 |   4800 |    2
+ sales     |     3 |   4800 |    2
+(10 rows)
+</pre><p>
+
+<span class="original">
+    As shown here, the &lt;function&gt;rank&lt;/function&gt; function produces a numerical rank
+    for each distinct &lt;literal&gt;ORDER BY&lt;/literal&gt; value in the current row's
+    partition, using the order defined by the &lt;literal&gt;ORDER BY&lt;/literal&gt; clause.
+    &lt;function&gt;rank&lt;/function&gt; needs no explicit parameter, because its behavior
+    is entirely determined by the &lt;literal&gt;OVER&lt;/literal&gt; clause.
+</span>
+ここで示されたように、<code class="function">rank</code>関数は、それぞれの別々の<code class="literal">ORDER BY</code>の値に対する現在行のパーティション内における順位を、<code class="literal">ORDER BY</code>句で定義された順序を使って生成します。
+<code class="function">rank</code>は明示的なパラメータを必要としません。この動作は<code class="literal">OVER</code>句により完全に決定されるためです。
+   </p><p>
+<span class="original">
+    The rows considered by a window function are those of the &lt;quote&gt;virtual
+    table&lt;/quote&gt; produced by the query's &lt;literal&gt;FROM&lt;/literal&gt; clause as filtered by its
+    &lt;literal&gt;WHERE&lt;/literal&gt;, &lt;literal&gt;GROUP BY&lt;/literal&gt;, and &lt;literal&gt;HAVING&lt;/literal&gt; clauses
+    if any.  For example, a row removed because it does not meet the
+    &lt;literal&gt;WHERE&lt;/literal&gt; condition is not seen by any window function.
+    A query can contain multiple window functions that slice up the data
+    in different ways using different &lt;literal&gt;OVER&lt;/literal&gt; clauses, but
+    they all act on the same collection of rows defined by this virtual table.
+</span>
+ウィンドウ関数で考慮される行は、その<code class="literal">WHERE</code>、<code class="literal">GROUP BY</code>、および<code class="literal">HAVING</code>句でフィルターをかけられた問い合わせの<code class="literal">FROM</code>句によって生成された<span class="quote">「<span class="quote">仮想テーブル</span>」</span>の行です。
+例えば、<code class="literal">WHERE</code>条件に一致しないため削除された行はウィンドウ関数からは見えません。
+異なった<code class="literal">OVER</code>句を用いて、異なった方法によりデータを分割する複数のウィンドウ関数を問い合わせが含んでも構いません。
+しかし、この仮想テーブルで定義された行の同一の集まり上で全てが作動します。
+   </p><p>
+<span class="original">
+    We already saw that &lt;literal&gt;ORDER BY&lt;/literal&gt; can be omitted if the ordering
+    of rows is not important.  It is also possible to omit &lt;literal&gt;PARTITION
+    BY&lt;/literal&gt;, in which case there is a single partition containing all rows.
+</span>
+<code class="literal">ORDER BY</code>は、行の順序付けが重要でない場合、省略可能であることを見てきました。
+<code class="literal">PARTITION BY</code>も同様に割愛することができます。
+この場合、全ての行を含む単一のパーティションが存在します。
+   </p><p>
+<span class="original">
+    There is another important concept associated with window functions:
+    for each row, there is a set of rows within its partition called its
+    &lt;firstterm&gt;window frame&lt;/firstterm&gt;.  Some window functions act only
+    on the rows of the window frame, rather than of the whole partition.
+    By default, if &lt;literal&gt;ORDER BY&lt;/literal&gt; is supplied then the frame consists of
+    all rows from the start of the partition up through the current row, plus
+    any following rows that are equal to the current row according to the
+    &lt;literal&gt;ORDER BY&lt;/literal&gt; clause.  When &lt;literal&gt;ORDER BY&lt;/literal&gt; is omitted the
+    default frame consists of all rows in the partition.
+</span>
+ウィンドウ関数に関連した別の重要な概念があります。
+それぞれの行に対して、その<em class="firstterm">ウィンドウフレーム</em>と呼ばれる、そのパーティション内の行の集合が存在します。
+ウィンドウ関数の中には、パーティション全体ではなく、ウィンドウフレームの行のみに対して作用するものもあります。
+デフォルトでは、<code class="literal">ORDER BY</code>が指定されると、フレームは、パーティションの始めから現在の行までのすべての行、およびそれより後にあるが<code class="literal">ORDER BY</code>句に従うと現在の行とおなじ順序になるすべての行から構成されます。
+<code class="literal">ORDER BY</code>が省略された場合、デフォルトのフレームはそのパーティション内のすべての行を含みます。
+     <a href="#ftn.id-1.4.5.6.9.5" class="footnote"><sup class="footnote" id="id-1.4.5.6.9.5">[4]</sup></a>
+<span class="original">
+    Here is an example using &lt;function&gt;sum&lt;/function&gt;:
+</span>
+<code class="function">sum</code>を使用した例を示します。
+   </p><pre class="programlisting">
+SELECT salary, sum(salary) OVER () FROM empsalary;
+</pre><pre class="screen">
+ salary |  sum  
+--------+-------
+   5200 | 47100
+   5000 | 47100
+   3500 | 47100
+   4800 | 47100
+   3900 | 47100
+   4200 | 47100
+   4500 | 47100
+   4800 | 47100
+   6000 | 47100
+   5200 | 47100
+(10 rows)
+</pre><p>
+<span class="original">
+    Above, since there is no &lt;literal&gt;ORDER BY&lt;/literal&gt; in the &lt;literal&gt;OVER&lt;/literal&gt;
+    clause, the window frame is the same as the partition, which for lack of
+    &lt;literal&gt;PARTITION BY&lt;/literal&gt; is the whole table; in other words each sum is
+    taken over the whole table and so we get the same result for each output
+    row.  But if we add an &lt;literal&gt;ORDER BY&lt;/literal&gt; clause, we get very different
+    results:
+</span>
+上では、<code class="literal">OVER</code>句内に<code class="literal">ORDER BY</code>が存在しませんので、ウィンドウフレームはパーティションと同一です。またパーティションは<code class="literal">PARTITION BY</code>もありませんのでテーブル全体となります。言い換えると、総和はそれぞれ、テーブル全体に対して行われ、その結果、各出力行で同じ結果を得ることになります。しかし以下のように、<code class="literal">ORDER BY</code>句を加えると、非常に異なる結果を得ます。
+   </p><pre class="programlisting">
+SELECT salary, sum(salary) OVER (ORDER BY salary) FROM empsalary;
+</pre><pre class="screen">
+ salary |  sum  
+--------+-------
+   3500 |  3500
+   3900 |  7400
+   4200 | 11600
+   4500 | 16100
+   4800 | 25700
+   4800 | 25700
+   5000 | 30700
+   5200 | 41100
+   5200 | 41100
+   6000 | 47100
+(10 rows)
+</pre><p>
+<span class="original">
+    Here the sum is taken from the first (lowest) salary up through the
+    current one, including any duplicates of the current one (notice the
+    results for the duplicated salaries).
+</span>
+ここで、sumは最初の（最も低い）salaryから現在の行まで、現在のものと重複する全てを含んで、計算されます（重複するsalaryに対する結果に注意してください）。
+   </p><p>
+<span class="original">
+    Window functions are permitted only in the &lt;literal&gt;SELECT&lt;/literal&gt; list
+    and the &lt;literal&gt;ORDER BY&lt;/literal&gt; clause of the query. They are forbidden
+    elsewhere, such as in &lt;literal&gt;GROUP BY&lt;/literal&gt;, &lt;literal&gt;HAVING&lt;/literal&gt;
+    and &lt;literal&gt;WHERE&lt;/literal&gt; clauses.  This is because they logically
+    execute after the processing of those clauses.  Also, window functions
+    execute after non-window aggregate functions.  This means it is valid to
+    include an aggregate function call in the arguments of a window function,
+    but not vice versa.
+</span>
+ウィンドウ関数は問い合わせの<code class="literal">SELECT</code>リストと<code class="literal">ORDER BY</code>句に限って許可されます。
+<code class="literal">GROUP BY</code>、<code class="literal">HAVING</code>、および<code class="literal">WHERE</code>句などその他の場所では禁止されています。
+その理由は、ウィンドウ関数は論理的に、ここに挙げたような句が処理された後に実行されるからです。
+またウィンドウ関数は非ウィンドウ集約関数の後に実行されます。
+これが意味する所は、ウィンドウ関数の引数に集約関数呼び出しを含めても有効ですが、その逆は成り立たないと言うことです。
+   </p><p>
+<span class="original">
+    If there is a need to filter or group rows after the window calculations
+    are performed, you can use a sub-select.  For example:
+</span>
+ウィンドウ演算が行われた後、行にフィルタ処理を行ったりグループ化を行う必要が生じた場合、副問い合わせを使用します。
+例をあげます。
+
+</p><pre class="programlisting">
+SELECT depname, empno, salary, enroll_date
+FROM
+  (SELECT depname, empno, salary, enroll_date,
+          rank() OVER (PARTITION BY depname ORDER BY salary DESC, empno) AS pos
+     FROM empsalary
+  ) AS ss
+WHERE pos &lt; 3;
+</pre><p>
+
+<span class="original">
+    The above query only shows the rows from the inner query having
+    &lt;literal&gt;rank&lt;/literal&gt; less than 3.
+</span>
+上記問い合わせは3より小さい<code class="literal">rank</code>を持った内部問い合わせからの行のみを表示します。
+   </p><p>
+<span class="original">
+    When a query involves multiple window functions, it is possible to write
+    out each one with a separate &lt;literal&gt;OVER&lt;/literal&gt; clause, but this is
+    duplicative and error-prone if the same windowing behavior is wanted
+    for several functions.  Instead, each windowing behavior can be named
+    in a &lt;literal&gt;WINDOW&lt;/literal&gt; clause and then referenced in &lt;literal&gt;OVER&lt;/literal&gt;.
+    For example:
+</span>
+問い合わせが複数のウィンドウ関数を含む場合、各ウィンドウ関数に異なる<code class="literal">OVER</code>句を記述することができます。しかし複数の関数で同じウィンドウ処理動作が必要な場合は重複となり、またエラーを招きがちです。代わりに<code class="literal">WINDOW</code>句でウィンドウ処理動作に名前を付け、これを<code class="literal">OVER</code>内で参照することができます。以下に例を示します。
+
+</p><pre class="programlisting">
+SELECT sum(salary) OVER w, avg(salary) OVER w
+  FROM empsalary
+  WINDOW w AS (PARTITION BY depname ORDER BY salary DESC);
+</pre><p>
+   </p><p>
+<span class="original">
+    More details about window functions can be found in
+    &lt;xref linkend="syntax-window-functions"/&gt;,
+    &lt;xref linkend="functions-window"/&gt;,
+    &lt;xref linkend="queries-window"/&gt;, and the
+    &lt;xref linkend="sql-select"/&gt; reference page.
+</span>
+ウィンドウ関数についてより詳細は、
+    <a class="xref" href="sql-expressions.html#SYNTAX-WINDOW-FUNCTIONS" title="4.2.8. ウィンドウ関数呼び出し">4.2.8</a>、
+    <a class="xref" href="functions-window.html" title="9.21. ウィンドウ関数">9.21</a>、
+    <a class="xref" href="queries-table-expressions.html#QUERIES-WINDOW" title="7.2.5. ウィンドウ関数処理">7.2.5</a>、および
+    <a class="xref" href="sql-select.html" title="SELECT"><span class="refentrytitle">SELECT</span></a> マニュアルページにあります。
+   </p><div class="footnotes"><br /><hr style="width:100; text-align:left;margin-left: 0" /><div id="ftn.id-1.4.5.6.9.5" class="footnote"><p><a href="#id-1.4.5.6.9.5" class="para"><sup class="para">[4] </sup></a>
+<span class="original">
+       There are options to define the window frame in other ways, but
+       this tutorial does not cover them.  See
+       &lt;xref linkend="syntax-window-functions"/&gt; for details.
+</span>
+ほかの方法でウィンドウフレームを定義するいくつかのオプションがありますが、このチュートリアルでは扱いません。詳細は、<a class="xref" href="sql-expressions.html#SYNTAX-WINDOW-FUNCTIONS" title="4.2.8. ウィンドウ関数呼び出し">4.2.8</a>を参照してください。
+      </p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="tutorial-transactions.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="tutorial-advanced.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="tutorial-inheritance.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">3.4. トランザクション </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 3.6. 継承</td></tr></table></div></body></html>

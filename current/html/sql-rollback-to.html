@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>ROLLBACK TO SAVEPOINT</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-rollback-prepared.html" title="ROLLBACK PREPARED" /><link rel="next" href="sql-savepoint.html" title="SAVEPOINT" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      sql-rollback-to.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-rollback-prepared.html" title="ROLLBACK PREPARED">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">ROLLBACK TO SAVEPOINT</td><td width="20%" align="right"> <a accesskey="n" href="sql-savepoint.html" title="SAVEPOINT">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-ROLLBACK-TO"><div class="titlepage"></div><a id="id-1.9.3.168.1" class="indexterm"></a><a id="id-1.9.3.168.2" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">ROLLBACK TO SAVEPOINT</span></h2><p>ROLLBACK TO SAVEPOINT<span class="original">
+  &lt;refpurpose&gt;roll back to a savepoint&lt;/refpurpose&gt;
+</span> — セーブポイントまでロールバックする</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
+ROLLBACK [ WORK | TRANSACTION ] TO [ SAVEPOINT ] <em class="replaceable"><code>savepoint_name</code></em>
+</pre></div><div class="refsect1" id="id-1.9.3.168.6"><h2>説明</h2><span class="original">
+  &lt;title&gt;Description&lt;/title&gt;
+</span><p>
+<span class="original">
+   Roll back all commands that were executed after the savepoint was
+   established.  The savepoint remains valid and can be rolled back to
+   again later, if needed.
+</span>
+セーブポイントの設定後に実行されたコマンドを全てロールバックします。
+セーブポイントは有効なまま残るので、必要に応じて、その後再度ロールバックすることができます。
+  </p><p>
+<span class="original">
+   &lt;command&gt;ROLLBACK TO SAVEPOINT&lt;/command&gt; implicitly destroys all savepoints that
+   were established after the named savepoint.
+</span>
+<code class="command">ROLLBACK TO SAVEPOINT</code>は、指定したセーブポイントより後に設定した全てのセーブポイントを暗黙的に破棄します。
+  </p></div><div class="refsect1" id="id-1.9.3.168.7"><h2>パラメータ</h2><span class="original">
+  &lt;title&gt;Parameters&lt;/title&gt;
+</span><div class="variablelist"><dl class="variablelist"><dt><span class="term"><em class="replaceable"><code>savepoint_name</code></em></span></dt><dd><p>
+<span class="original">
+      The savepoint to roll back to.
+</span>
+ロールバック先のセーブポイントです。
+     </p></dd></dl></div></div><div class="refsect1" id="id-1.9.3.168.8"><h2>注釈</h2><span class="original">
+  &lt;title&gt;Notes&lt;/title&gt;
+</span><p>
+<span class="original">
+   Use &lt;xref linkend="sql-release-savepoint"/&gt; to destroy a savepoint
+   without discarding the effects of commands executed after it was
+   established.
+</span>
+セーブポイントの設定後に実行されたコマンドの結果を維持したままセーブポイントを破棄するには、<a class="xref" href="sql-release-savepoint.html" title="RELEASE SAVEPOINT"><span class="refentrytitle">RELEASE SAVEPOINT</span></a>を使用してください。
+  </p><p>
+<span class="original">
+   Specifying a savepoint name that has not been established is an error.
+</span>
+設定されていないセーブポイントの名前を指定するとエラーになります。
+  </p><p>
+<span class="original">
+   Cursors have somewhat non-transactional behavior with respect to
+   savepoints.  Any cursor that is opened inside a savepoint will be closed
+   when the savepoint is rolled back.  If a previously opened cursor is
+   affected by a &lt;command&gt;FETCH&lt;/command&gt; or &lt;command&gt;MOVE&lt;/command&gt; command inside a
+   savepoint that is later rolled back, the cursor remains at the
+   position that &lt;command&gt;FETCH&lt;/command&gt; left it pointing to (that is, the cursor
+   motion caused by &lt;command&gt;FETCH&lt;/command&gt; is not rolled back).
+   Closing a cursor is not undone by rolling back, either.
+   However, other side-effects caused by the cursor's query (such as
+   side-effects of volatile functions called by the query) &lt;emphasis&gt;are&lt;/emphasis&gt;
+   rolled back if they occur during a savepoint that is later rolled back.
+   A cursor whose execution causes a transaction to abort is put in a
+   cannot-execute state, so while the transaction can be restored using
+   &lt;command&gt;ROLLBACK TO SAVEPOINT&lt;/command&gt;, the cursor can no longer be used.
+</span>
+カーソルはセーブポイントという観点から見るとトランザクションの外にあるかのように振舞います。
+セーブポイントの内部で開かれたカーソルは全て、そのセーブポイントがロールバックした時に閉ざされます。
+セーブポイントの前に開かれたカーソルに対しセーブポイント内で<code class="command">FETCH</code>または<code class="command">MOVE</code>コマンドを実行した場合、その後、ロールバックされたとしても、カーソルの位置は<code class="command">FETCH</code>の結果、移動した位置から変わりません
+（つまり<code class="command">FETCH</code>による位置の移動はロールバックされません）。
+また、カーソルのクローズはロールバックしても取り消すことはできません。
+しかしカーソルの問い合わせにより発生するその他の副作用（問い合わせにより呼出される揮発性関数の影響など）は、セーブポイント内で実行され、それがロールバックされた場合に、<span class="emphasis"><em>ロールバックされます</em></span>。
+カーソルの実行によってトランザクションのアボートが引き起こされた場合、そのカーソルは実行不可能状態に遷移します。
+この場合、トランザクションは<code class="command">ROLLBACK TO SAVEPOINT</code>を使用して戻すことができますが、そのカーソルは使用することができません。
+  </p></div><div class="refsect1" id="id-1.9.3.168.9"><h2>例</h2><span class="original">
+  &lt;title&gt;Examples&lt;/title&gt;
+</span><p>
+<span class="original">
+   To undo the effects of the commands executed after &lt;literal&gt;my_savepoint&lt;/literal&gt;
+   was established:
+</span>
+<code class="literal">my_savepoint</code>の設定後に実行されたコマンドの効果を取り消します。
+</p><pre class="programlisting">
+ROLLBACK TO SAVEPOINT my_savepoint;
+</pre><p>
+  </p><p>
+<span class="original">
+   Cursor positions are not affected by savepoint rollback:
+</span>
+セーブポイントへのロールバックは、カーソル位置に影響を与えません。
+</p><pre class="programlisting">
+BEGIN;
+
+DECLARE foo CURSOR FOR SELECT 1 UNION SELECT 2;
+
+SAVEPOINT foo;
+
+FETCH 1 FROM foo;
+ ?column? 
+----------
+        1
+
+ROLLBACK TO SAVEPOINT foo;
+
+FETCH 1 FROM foo;
+ ?column? 
+----------
+        2
+
+COMMIT;
+</pre></div><div class="refsect1" id="id-1.9.3.168.10"><h2>互換性</h2><span class="original">
+  &lt;title&gt;Compatibility&lt;/title&gt;
+</span><p>
+<span class="original">
+   The &lt;acronym&gt;SQL&lt;/acronym&gt; standard specifies that the key word
+   &lt;literal&gt;SAVEPOINT&lt;/literal&gt; is mandatory, but &lt;productname&gt;PostgreSQL&lt;/productname&gt;
+   and &lt;productname&gt;Oracle&lt;/productname&gt; allow it to be omitted.  SQL allows
+   only &lt;literal&gt;WORK&lt;/literal&gt;, not &lt;literal&gt;TRANSACTION&lt;/literal&gt;, as a noise word
+   after &lt;literal&gt;ROLLBACK&lt;/literal&gt;.  Also, SQL has an optional clause
+   &lt;literal&gt;AND [ NO ] CHAIN&lt;/literal&gt; which is not currently supported by
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt;.  Otherwise, this command conforms to
+   the SQL standard.
+</span>
+標準<acronym class="acronym">SQL</acronym>では、<code class="literal">SAVEPOINT</code>キーワードは必須です。
+しかし、<span class="productname">PostgreSQL</span>と<span class="productname">Oracle</span>では省略することができます。
+SQLで使用できるのは、<code class="literal">WORK</code>のみです。
+<code class="literal">TRANSACTION</code>は使用できず、<code class="literal">ROLLBACK</code>の後の意味のない言葉として扱われます。
+また、SQLでは<code class="literal">AND [ NO ] CHAIN</code>句(省略可能)がありますが、これは<span class="productname">PostgreSQL</span>では現在サポートされていません。
+その他については、このコマンドは標準SQLと互換性を持ちます。
+  </p></div><div class="refsect1" id="id-1.9.3.168.11"><h2>関連項目</h2><span class="original">
+  &lt;title&gt;See Also&lt;/title&gt;
+</span><span class="simplelist"><a class="xref" href="sql-begin.html" title="BEGIN"><span class="refentrytitle">BEGIN</span></a>, <a class="xref" href="sql-commit.html" title="COMMIT"><span class="refentrytitle">COMMIT</span></a>, <a class="xref" href="sql-release-savepoint.html" title="RELEASE SAVEPOINT"><span class="refentrytitle">RELEASE SAVEPOINT</span></a>, <a class="xref" href="sql-rollback.html" title="ROLLBACK"><span class="refentrytitle">ROLLBACK</span></a>, <a class="xref" href="sql-savepoint.html" title="SAVEPOINT"><span class="refentrytitle">SAVEPOINT</span></a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-rollback-prepared.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-savepoint.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">ROLLBACK PREPARED </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> SAVEPOINT</td></tr></table></div></body></html>

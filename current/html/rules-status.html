@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>41.6. ルールおよびコマンドの状態</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="rules-privileges.html" title="41.5. ルールと権限" /><link rel="next" href="rules-triggers.html" title="41.7. ルール対トリガ" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="rules.html" title="第41章 ルールシステム">第41章 ルールシステム</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      rules-status.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="rules-privileges.html" title="41.5. ルールと権限">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="rules.html" title="第41章 ルールシステム">上へ</a></td><td width="60%" align="center">41.6. ルールおよびコマンドの状態</td><td width="20%" align="right"> <a accesskey="n" href="rules-triggers.html" title="41.7. ルール対トリガ">次へ</a></td></tr></table><hr /></div><div class="sect1" id="RULES-STATUS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">41.6. ルールおよびコマンドの状態</h2></div></div></div><span class="original">
+&lt;title&gt;Rules and Command Status&lt;/title&gt;
+</span><p>
+<span class="original">
+    The &lt;productname&gt;PostgreSQL&lt;/productname&gt; server returns a command
+    status string, such as &lt;literal&gt;INSERT 149592 1&lt;/literal&gt;, for each
+    command it receives.  This is simple enough when there are no rules
+    involved, but what happens when the query is rewritten by rules?
+</span>
+<span class="productname">PostgreSQL</span>サーバでは、受け取った問い合わせのそれぞれに対して、<code class="literal">INSERT 149592 1</code>のようなコマンド状態文字列を返します。
+これは簡単ですが、ルールが使用されていない場合には十分なものです。
+しかし、問い合わせがルールにより書き換えられた場合、どのようになるでしょうか。
+</p><p>
+<span class="original">
+    Rules affect the command status as follows:
+</span>
+ルールはコマンド状態に以下のように影響を与えます。
+
+    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+       If there is no unconditional &lt;literal&gt;INSTEAD&lt;/literal&gt; rule for the query, then
+       the originally given query will be executed, and its command
+       status will be returned as usual.  (But note that if there were
+       any conditional &lt;literal&gt;INSTEAD&lt;/literal&gt; rules, the negation of their qualifications
+       will have been added to the original query.  This might reduce the
+       number of rows it processes, and if so the reported status will
+       be affected.)
+</span>
+問い合わせに無条件の<code class="literal">INSTEAD</code>ルールが使用されていない場合、元々与えられていた問い合わせが実行され、そのコマンド状態は通常通り返されます
+（しかし、条件付き<code class="literal">INSTEAD</code>ルールが使用されている場合、その条件の否定が元の問い合わせに追加されることに注意してください。
+これにより、処理する行の数が減り、その結果報告される状態が影響を受けるかもしれません）。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       If there is any unconditional &lt;literal&gt;INSTEAD&lt;/literal&gt; rule for the query, then
+       the original query will not be executed at all.  In this case,
+       the server will return the command status for the last query
+       that was inserted by an &lt;literal&gt;INSTEAD&lt;/literal&gt; rule (conditional or
+       unconditional) and is of the same command type
+       (&lt;command&gt;INSERT&lt;/command&gt;, &lt;command&gt;UPDATE&lt;/command&gt;, or
+       &lt;command&gt;DELETE&lt;/command&gt;) as the original query.  If no query
+       meeting those requirements is added by any rule, then the
+       returned command status shows the original query type and
+       zeroes for the row-count and OID fields.
+</span>
+問い合わせに無条件の<code class="literal">INSTEAD</code>ルールが使用されている場合、元の問い合わせはまったく実行されません。
+この場合、サーバでは、（条件付きもしくは無条件の）<code class="literal">INSTEAD</code>ルールによって挿入され、かつ、元の問い合わせと同じ種類（<code class="command">INSERT</code>、<code class="command">UPDATE</code>または<code class="command">DELETE</code>）の最後の問い合わせについてコマンド状態を返します。
+この条件に合致する問い合わせがルールによって追加されない場合、返されるコマンド状態は、元の問い合わせの種類と行数およびOIDフィールドに0が表示されます。
+      </p></li></ul></div><p>
+</p><p>
+<span class="original">
+    The programmer can ensure that any desired &lt;literal&gt;INSTEAD&lt;/literal&gt; rule is the one
+    that sets the command status in the second case, by giving it the
+    alphabetically last rule name among the active rules, so that it
+    gets applied last.
+</span>
+後者の場合、プログラマは、有効ルールの中でアルファベット順の最後のルール名を与えることによって、必要な<code class="literal">INSTEAD</code>ルールを最後に実行することができます。そして、そのことによって、コマンド状態が確実にそのルールで設定されるようにできます。
+</p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="rules-privileges.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="rules.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="rules-triggers.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">41.5. ルールと権限 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 41.7. ルール対トリガ</td></tr></table></div></body></html>

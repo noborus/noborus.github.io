@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>52.73. pg_locks</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="view-pg-indexes.html" title="52.72. pg_indexes" /><link rel="next" href="view-pg-matviews.html" title="52.74. pg_matviews" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="catalogs.html" title="第52章 システムカタログ">第52章 システムカタログ</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      view-pg-locks.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="view-pg-indexes.html" title="52.72. pg_indexes">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="catalogs.html" title="第52章 システムカタログ">上へ</a></td><td width="60%" align="center">52.73. <code class="structname">pg_locks</code></td><td width="20%" align="right"> <a accesskey="n" href="view-pg-matviews.html" title="52.74. pg_matviews">次へ</a></td></tr></table><hr /></div><div class="sect1" id="VIEW-PG-LOCKS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">52.73. <code class="structname">pg_locks</code></h2></div></div></div><a id="id-1.10.4.75.2" class="indexterm"></a><p>
+<span class="original">
+   The view &lt;structname&gt;pg_locks&lt;/structname&gt; provides access to
+   information about the locks held by active processes within the
+   database server.  See &lt;xref linkend="mvcc"/&gt; for more discussion
+   of locking.
+</span>
+<code class="structname">pg_locks</code>ビューはデータベースサーバ内でアクティブなプロセスによって保持されたロックに関する情報へのアクセスを提供します。
+ロックに関するより詳細な説明は<a class="xref" href="mvcc.html" title="第13章 同時実行制御">第13章</a>を参照してください。
+  </p><p>
+<span class="original">
+   &lt;structname&gt;pg_locks&lt;/structname&gt; contains one row per active lockable
+   object, requested lock mode, and relevant process.  Thus, the same
+   lockable object might
+   appear many times, if multiple processes are holding or waiting
+   for locks on it.  However, an object that currently has no locks on it
+   will not appear at all.
+</span>
+<code class="structname">pg_locks</code>にはロック対象となる進行中のオブジェクト、要求されたロックモード、および関連するプロセス毎に1つの行を持ちます。
+ですから、もし複数のプロセスが同じロック対象オブジェクトに対してロックを保持していたりロックを待機している場合には、同じロック対象オブジェクトが何度も出現することがあります。
+しかし現在ロックされていないオブジェクトはまったく現れません。
+  </p><p>
+<span class="original">
+   There are several distinct types of lockable objects:
+   whole relations (e.g., tables), individual pages of relations,
+   individual tuples of relations,
+   transaction IDs (both virtual and permanent IDs),
+   and general database objects (identified by class OID and object OID,
+   in the same way as in &lt;structname&gt;pg_description&lt;/structname&gt; or
+   &lt;structname&gt;pg_depend&lt;/structname&gt;).  Also, the right to extend a
+   relation is represented as a separate lockable object.
+   Also, &lt;quote&gt;advisory&lt;/quote&gt; locks can be taken on numbers that have
+   user-defined meanings.
+</span>
+ロック対象オブジェクトには異なる型がいくつか存在します。
+リレーション全体（例：テーブル）、リレーションの個別のページ、リレーションの個別のタプル、トランザクションID（仮想と永続の両方のID）、一般的なデータベースオブジェクト（これは<code class="structname">pg_description</code>や<code class="structname">pg_depend</code>と同様にクラスOIDとオブジェクトOIDで識別されます）。
+さらに、リレーションを拡張する権利は、別のロック対象オブジェクトとして表現されます。
+また<span class="quote">「<span class="quote">勧告的</span>」</span>ロックはユーザ定義の意味を持つ複数から形成されるかもしれません。
+  </p><div class="table" id="id-1.10.4.75.6"><p class="title"><strong>表52.74 <code class="structname">pg_locks</code>の列</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;&lt;structname&gt;pg_locks&lt;/structname&gt; Columns&lt;/title&gt;
+</span><table class="table" summary="pg_locksの列" border="1"><colgroup><col /><col /><col /><col /></colgroup><thead><tr><th>名前</th><th>型</th><th>参照先</th><th>説明</th></tr></thead><tbody><tr><td><code class="structfield">locktype</code></td><td><code class="type">text</code></td><td> </td><td>
+<span class="original">
+       Type of the lockable object:
+       &lt;literal&gt;relation&lt;/literal&gt;,
+       &lt;literal&gt;extend&lt;/literal&gt;,
+       &lt;literal&gt;page&lt;/literal&gt;,
+       &lt;literal&gt;tuple&lt;/literal&gt;,
+       &lt;literal&gt;transactionid&lt;/literal&gt;,
+       &lt;literal&gt;virtualxid&lt;/literal&gt;,
+       &lt;literal&gt;object&lt;/literal&gt;,
+       &lt;literal&gt;userlock&lt;/literal&gt;, or
+       &lt;literal&gt;advisory&lt;/literal&gt;
+</span>
+       ロック対象オブジェクトの種類。
+       <code class="literal">relation</code>、
+       <code class="literal">extend</code>、
+       <code class="literal">page</code>、
+       <code class="literal">tuple</code>、
+       <code class="literal">transactionid</code>、
+       <code class="literal">virtualxid</code>、
+       <code class="literal">object</code>、
+       <code class="literal">userlock</code>、
+       <code class="literal">advisory</code>
+      </td></tr><tr><td><code class="structfield">database</code></td><td><code class="type">oid</code></td><td><code class="literal"><a class="link" href="catalog-pg-database.html" title="52.15. pg_database"><code class="structname">pg_database</code></a>.oid</code></td><td>
+<span class="original">
+       OID of the database in which the lock target exists, or
+       zero if the target is a shared object, or
+       null if the target is a transaction ID
+</span>
+ロック対象が存在しているデータベースのOID。対象が共有オブジェクトの場合はゼロ。対象がトランザクションIDである場合はNULL。
+      </td></tr><tr><td><code class="structfield">relation</code></td><td><code class="type">oid</code></td><td><code class="literal"><a class="link" href="catalog-pg-class.html" title="52.11. pg_class"><code class="structname">pg_class</code></a>.oid</code></td><td>
+<span class="original">
+       OID of the relation targeted by the lock, or null if the target is not
+       a relation or part of a relation
+</span>
+ロックの対象となるリレーションのOID。対象がリレーションではない場合かリレーションの一部である場合はNULL。
+      </td></tr><tr><td><code class="structfield">page</code></td><td><code class="type">integer</code></td><td> </td><td>
+<span class="original">
+       Page number targeted by the lock within the relation,
+       or null if the target is not a relation page or tuple
+</span>
+ロックの対象となるリレーション内のページ番号。対象がタプルもしくはリレーションページではない場合はNULL。
+      </td></tr><tr><td><code class="structfield">tuple</code></td><td><code class="type">smallint</code></td><td> </td><td>
+<span class="original">
+       Tuple number targeted by the lock within the page,
+       or null if the target is not a tuple
+</span>
+ページ内のロックの対象となっているタプル番号。対象がタプルではない場合はNULL。
+      </td></tr><tr><td><code class="structfield">virtualxid</code></td><td><code class="type">text</code></td><td> </td><td>
+ロックの対象となるトランザクションの仮想ID。対象が仮想トランザクションIDではない場合はNULL。
+      </td></tr><tr><td><code class="structfield">transactionid</code></td><td><code class="type">xid</code></td><td> </td><td>
+<span class="original">
+       ID of the transaction targeted by the lock,
+       or null if the target is not a transaction ID
+</span>
+ロックの対象となるトランザクションのID。対象がトランザクションIDではない場合はNULL。
+      </td></tr><tr><td><code class="structfield">classid</code></td><td><code class="type">oid</code></td><td><code class="literal"><a class="link" href="catalog-pg-class.html" title="52.11. pg_class"><code class="structname">pg_class</code></a>.oid</code></td><td>
+<span class="original">
+       OID of the system catalog containing the lock target, or null if the
+       target is not a general database object
+</span>
+ロックの対象を含むシステムカタログのOID。対象が一般的なデータベースオブジェクトではない場合はNULL。
+      </td></tr><tr><td><code class="structfield">objid</code></td><td><code class="type">oid</code></td><td>any OID column</td><td>
+<span class="original">
+       OID of the lock target within its system catalog, or null if the
+       target is not a general database object
+</span>
+システムカタログ内のロックの対象のOID。
+対象が一般的なデータベースオブジェクトでない場合はNULL。
+      </td></tr><tr><td><code class="structfield">objsubid</code></td><td><code class="type">smallint</code></td><td> </td><td>
+<span class="original">
+       Column number targeted by the lock (the
+       &lt;structfield&gt;classid&lt;/structfield&gt; and &lt;structfield&gt;objid&lt;/structfield&gt; refer to the
+       table itself),
+       or zero if the target is some other general database object,
+       or null if the target is not a general database object
+</span>
+ロック対象の列番号（<code class="structfield">classid</code>と<code class="structfield">objid</code>はテーブル自身を参照します）、その他の一般的なデータベースオブジェクトではゼロ、一般的ではないデータベースオブジェクトではNULLです。
+      </td></tr><tr><td><code class="structfield">virtualtransaction</code></td><td><code class="type">text</code></td><td> </td><td>
+<span class="original">
+       Virtual ID of the transaction that is holding or awaiting this lock
+</span>
+      ロックを保持、もしくは待っている仮想トランザクションID。
+      </td></tr><tr><td><code class="structfield">pid</code></td><td><code class="type">integer</code></td><td> </td><td>
+<span class="original">
+       Process ID of the server process holding or awaiting this
+       lock, or null if the lock is held by a prepared transaction
+</span>
+ロックを保持、もしくは待っているサーバプロセスのプロセスID。
+ただしプリペアードトランザクションによりロックが保持されている場合はNULL。
+      </td></tr><tr><td><code class="structfield">mode</code></td><td><code class="type">text</code></td><td> </td><td>
+このプロセスで保持または要求するロックモードの名称。
+（<a class="xref" href="explicit-locking.html#LOCKING-TABLES" title="13.3.1. テーブルレベルロック">13.3.1</a> and <a class="xref" href="transaction-iso.html#XACT-SERIALIZABLE" title="13.2.3. シリアライザブル分離レベル">13.2.3</a>参照）
+      </td></tr><tr><td><code class="structfield">granted</code></td><td><code class="type">boolean</code></td><td> </td><td>ロックが保持されている場合は真、ロックが待ち状態の場合は偽</td></tr><tr><td><code class="structfield">fastpath</code></td><td><code class="type">boolean</code></td><td> </td><td>
+      ファストパス経由でロックが獲得されている場合は真、メインロックテーブル経由で獲得されている場合は偽。
+      </td></tr></tbody></table></div></div><br class="table-break" /><p>
+<span class="original">
+   &lt;structfield&gt;granted&lt;/structfield&gt; is true in a row representing a lock
+   held by the indicated process.  False indicates that this process is
+   currently waiting to acquire this lock, which implies that at least one
+   other process is holding or waiting for a conflicting lock mode on the same
+   lockable object.  The waiting process will sleep until the other lock is
+   released (or a deadlock situation is detected).  A single process can be
+   waiting to acquire at most one lock at a time.
+</span>
+指定されたプロセスにより保持されているロックを表す行内では<code class="structfield">granted</code>は真です。
+偽の場合はこのロックを獲得するため現在プロセスが待機中であることを示しています。
+つまり、同じロック対象のオブジェクトに対して何らかの他のプロセスが競合するロックを保持、もしくは待機していることを意味します。
+待機中のプロセスはその別のプロセスがロックを解放するまで活動を控えます。
+（もしくはデッドロック状態が検出されることになります）。
+単一プロセスでは一度に多くても1つのロックを獲得するために待機します。
+  </p><p>
+<span class="original">
+   Throughout running a transaction, a server process holds an exclusive lock
+   on the transaction's virtual transaction ID.  If a permanent ID is assigned
+   to the transaction (which normally happens only if the transaction changes
+   the state of the database), it also holds an exclusive lock on the
+   transaction's permanent transaction ID until it ends.  When a process finds
+   it necessary to wait specifically for another transaction to end, it does
+   so by attempting to acquire share lock on the other transaction's ID
+   (either virtual or permanent ID depending on the situation). That will
+   succeed only when the other transaction terminates and releases its locks.
+</span>
+トランザクションの実行中は常に、サーバプロセスはその仮想トランザクションID上に排他的ロックをかけます。
+もしある永続IDがトランザクションに割り当てられる（普通はトランザクションがデータベースの状態を変化させるときのみに発生します）と、トランザクションは終了するまで永続トランザクションIDに対して排他ロックを保持します。
+あるトランザクションが他のトランザクションを特定して終了まで待機しなければならないと判断した場合、他とみなしたトランザクションのIDに対し共有ロックを獲得するように試み、目的を達します。
+（仮想IDであるか永続IDであるかは、その状況によります）。
+これは、他とみなしたトランザクションが完了し、そしてロックを解放した場合のみ成功します。
+  </p><p>
+<span class="original">
+   Although tuples are a lockable type of object,
+   information about row-level locks is stored on disk, not in memory,
+   and therefore row-level locks normally do not appear in this view.
+   If a process is waiting for a
+   row-level lock, it will usually appear in the view as waiting for the
+   permanent transaction ID of the current holder of that row lock.
+</span>
+タプルはロック対象のオブジェクト種類ですが、行レベルロックについての情報はメモリではなく、ディスクに保存されます。
+よって行レベルロックは通常、このビューには現れません。
+もしプロセスが行レベルロックの待ち状態である場合は、その行ロックを保持している永続トランザクションIDを待つ状態で、そのトランザクションはビューに現れます。
+  </p><p>
+<span class="original">
+   Advisory locks can be acquired on keys consisting of either a single
+   &lt;type&gt;bigint&lt;/type&gt; value or two integer values.
+   A &lt;type&gt;bigint&lt;/type&gt; key is displayed with its
+   high-order half in the &lt;structfield&gt;classid&lt;/structfield&gt; column, its low-order half
+   in the &lt;structfield&gt;objid&lt;/structfield&gt; column, and &lt;structfield&gt;objsubid&lt;/structfield&gt; equal
+   to 1. The original &lt;type&gt;bigint&lt;/type&gt; value can be reassembled with the
+   expression &lt;literal&gt;(classid::bigint &amp;lt;&amp;lt; 32) |
+   objid::bigint&lt;/literal&gt;. Integer keys are displayed with the
+   first key in the
+   &lt;structfield&gt;classid&lt;/structfield&gt; column, the second key in the &lt;structfield&gt;objid&lt;/structfield&gt;
+   column, and &lt;structfield&gt;objsubid&lt;/structfield&gt; equal to 2.  The actual meaning of
+   the keys is up to the user.  Advisory locks are local to each database,
+   so the &lt;structfield&gt;database&lt;/structfield&gt; column is meaningful for an advisory lock.
+</span>
+勧告的ロックは、単一の<code class="type">bigint</code>値、または、2つの整数値をキーとして獲得することができます。
+<code class="type">bigint</code>の場合は、その上位半分が<code class="structfield">classid</code>列内に表示され、残りの下位半分は<code class="structfield">objid</code>列内に表示されます。
+また、<code class="structfield">objsubid</code>は1です。
+元の<code class="type">bigint</code>値を<code class="literal">(classid::bigint &lt;&lt; 32) | objid::bigint</code>という式で再構成することができます。
+整数値キーでは、最初のキーが<code class="structfield">classid</code>列に、2番目のキーが<code class="structfield">objid</code>列に表示され、<code class="structfield">objsubid</code>は2です。
+キーの実際の意味はユーザに任されています。
+勧告的ロックはデータベースに対して局所的ですので、勧告的ロックでは<code class="structfield">database</code>列が意味を持ちます。
+  </p><p>
+<span class="original">
+   &lt;structname&gt;pg_locks&lt;/structname&gt; provides a global view of all locks
+   in the database cluster, not only those relevant to the current database.
+   Although its &lt;structfield&gt;relation&lt;/structfield&gt; column can be joined
+   against &lt;structname&gt;pg_class&lt;/structname&gt;.&lt;structfield&gt;oid&lt;/structfield&gt; to identify locked
+   relations, this will only work correctly for relations in the current
+   database (those for which the &lt;structfield&gt;database&lt;/structfield&gt; column
+   is either the current database's OID or zero).
+</span>
+<code class="structname">pg_locks</code>は現行のデータベースに関連するロックのみならず、データベースクラスタ内のすべてのロックに関する全体的なビューを提供します。
+<code class="structfield">relation</code>列はロックされたリレーションを識別するために<code class="structname">pg_class</code>.<code class="structfield">oid</code>と結合することができますが、これは現行のデータベース内のリレーション（<code class="structfield">database</code>列が現行のデータベースのOIDまたはゼロとなっているもの）に対してのみ正常に動作します。
+  </p><p>
+<span class="original">
+   The &lt;structfield&gt;pid&lt;/structfield&gt; column can be joined to the
+   &lt;structfield&gt;pid&lt;/structfield&gt; column of the &lt;link
+   linkend="pg-stat-activity-view"&gt;&lt;structname&gt;pg_stat_activity&lt;/structname&gt;&lt;/link&gt;
+   view to get more
+   information on the session holding or awaiting each lock,
+   for example
+</span>
+それぞれのロックを保持もしくは待機しているセッションのさらなる情報を入手するため<a class="link" href="monitoring-stats.html#PG-STAT-ACTIVITY-VIEW" title="表28.3 pg_stat_activityビュー"><code class="structname">pg_stat_activity</code></a>ビューの<code class="structfield">pid</code>列と<code class="structfield">pid</code>列を結合することができます。
+例えば、このような感じです。
+</p><pre class="programlisting">
+SELECT * FROM pg_locks pl LEFT JOIN pg_stat_activity psa
+    ON pl.pid = psa.pid;
+</pre><p>
+<span class="original">
+   Also, if you are using prepared transactions, the
+   &lt;structfield&gt;virtualtransaction&lt;/structfield&gt; column can be joined to the
+   &lt;structfield&gt;transaction&lt;/structfield&gt; column of the &lt;link
+   linkend="view-pg-prepared-xacts"&gt;&lt;structname&gt;pg_prepared_xacts&lt;/structname&gt;&lt;/link&gt;
+   view to get more information on prepared transactions that hold locks.
+   (A prepared transaction can never be waiting for a lock,
+   but it continues to hold the locks it acquired while running.)
+   For example:
+</span>
+また、プリペアードトランザクションを使用している場合には、ロックを保持しているプリペアードトランザクションに関してより多くの情報を得るため、<code class="structfield">virtualtransaction</code>列は、<a class="link" href="view-pg-prepared-xacts.html" title="52.77. pg_prepared_xacts"><code class="structname">pg_prepared_xacts</code></a>ビューの<code class="structfield">transaction</code>列と結合することができます。
+（プリペアードトランザクションはロックを待つことはありませんが、実行時に獲得したロックを保持し続けます。）
+例えば、このような感じです。
+</p><pre class="programlisting">
+SELECT * FROM pg_locks pl LEFT JOIN pg_prepared_xacts ppx
+    ON pl.virtualtransaction = '-1/' || ppx.transaction;
+</pre><p>
+  </p><p>
+<span class="original">
+   While it is possible to obtain information about which processes block
+   which other processes by joining &lt;structname&gt;pg_locks&lt;/structname&gt; against
+   itself, this is very difficult to get right in detail.  Such a query would
+   have to encode knowledge about which lock modes conflict with which
+   others.  Worse, the &lt;structname&gt;pg_locks&lt;/structname&gt; view does not expose
+   information about which processes are ahead of which others in lock wait
+   queues, nor information about which processes are parallel workers running
+   on behalf of which other client sessions.  It is better to use
+   the &lt;function&gt;pg_blocking_pids()&lt;/function&gt; function
+   (see &lt;xref linkend="functions-info-session-table"/&gt;) to identify which
+   process(es) a waiting process is blocked behind.
+</span>
+<code class="structname">pg_locks</code>ビューとそれ自身の結合によって、どのプロセスが他のどのプロセスをブロックしているかの情報を入手することが可能ですが、同時に詳細な正しい情報を得ることは非常に困難です。
+このようなクエリはどのロックモードが他のものと衝突しているかについての知見を書き出すべきです。
+さらに悪いことに、<code class="structname">pg_locks</code>ビューは、ロック待ちキューにてどのプロセスが他のどのプロセスに先行しているかの情報を提供しない、またはどのプロセスが他のクライアントセッションのために動作している並列ワーカプロセスかの情報を提供しません。
+待機しているプロセスが、どのプロセスにブロックされているかを識別するためにより良い方法は、<code class="function">pg_blocking_pids()</code>関数（<a class="xref" href="functions-info.html#FUNCTIONS-INFO-SESSION-TABLE" title="表9.60 セッション情報関数">表 9.60</a>を参照してください）を使用することです。
+  </p><p>
+<span class="original">
+   The &lt;structname&gt;pg_locks&lt;/structname&gt; view displays data from both the
+   regular lock manager and the predicate lock manager, which are
+   separate systems; in addition, the regular lock manager subdivides its
+   locks into regular and &lt;firstterm&gt;fast-path&lt;/firstterm&gt; locks.
+   This data is not guaranteed to be entirely consistent.
+   When the view is queried,
+   data on fast-path locks (with &lt;structfield&gt;fastpath&lt;/structfield&gt; = &lt;literal&gt;true&lt;/literal&gt;)
+   is gathered from each backend one at a time, without freezing the state of
+   the entire lock manager, so it is possible for locks to be taken or
+   released while information is gathered.  Note, however, that these locks are
+   known not to conflict with any other lock currently in place.  After
+   all backends have been queried for fast-path locks, the remainder of the
+   regular lock manager is locked as a unit, and a consistent snapshot of all
+   remaining locks is collected as an atomic action.  After unlocking the
+   regular lock manager, the predicate lock manager is similarly locked and all
+   predicate locks are collected as an atomic action.  Thus, with the exception
+   of fast-path locks, each lock manager will deliver a consistent set of
+   results, but as we do not lock both lock managers simultaneously, it is
+   possible for locks to be taken or released after we interrogate the regular
+   lock manager and before we interrogate the predicate lock manager.
+</span>
+<code class="structname">pg_locks</code>ビューは、異なるシステムにおける、通常のロックマネージャと述部ロックマネージャの両方からのデータを表示します。
+さらに通常のロックマネージャではロックを通常ロックと<em class="firstterm">近道</em>ロックに細分化します。
+このデータが完全に一貫性があることは保証されません。
+ビューが問い合わせられると、近道ロック（<code class="structfield">fastpath</code> = <code class="literal">true</code>が真）は、ロックマネージャ全体の状態を凍結することなく、各バックエンドからひとつひとつ収集されます。
+このため情報収集期間中にロックが獲得されたり解放されたりされる可能性があります。
+しかし、これらのロックはその時点で存在する他のロックと競合することがないことが分かっていることに注意してください。
+近道ロックについてすべてのバックエンドを問い合わせた後、通常のロックマネージャの残りは１つの単位としてロックされ、残りすべてのロックの一貫性があるスナップショットを原子的な処理で収集します。
+ロックマネージャのロックを解除した後、述部ロックマネージャは同様にロックされ、すべての述部ロックを原子的な処理で収集します。
+このように、近道ロックという例外がありますが、各ロックマネージャは一貫性をもった結果セットを生成します。
+しかし、両方のロックマネージャを同時にロックしませんので、通常のロックマネージャを問い合わせた後と述部ロックマネージャを問い合わせる前の間にロックが獲得されたり解放されたりされる可能性があります。
+  </p><p>
+<span class="original">
+   Locking the regular and/or predicate lock manager could have some
+   impact on database performance if this view is very frequently accessed.
+   The locks are held only for the minimum amount of time necessary to
+   obtain data from the lock managers, but this does not completely eliminate
+   the possibility of a performance impact.
+</span>
+このビューが頻繁にアクセスされている場合は、通常もしくは述部ロックマネージャをロックするとデータベースのパフォーマンスに影響があります。
+ロックマネージャからデータを取得するために、ロックは必要最低限の時間だけ保持されますが、パフォーマンスに影響がある可能性が全くないわけではありません。
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="view-pg-indexes.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="catalogs.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="view-pg-matviews.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">52.72. <code class="structname">pg_indexes</code> </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 52.74. <code class="structname">pg_matviews</code></td></tr></table></div></body></html>

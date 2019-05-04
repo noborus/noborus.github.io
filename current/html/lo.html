@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>F.20. lo</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="isn.html" title="F.19. isn" /><link rel="next" href="ltree.html" title="F.21. ltree" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="contrib.html" title="付録F 追加で提供されるモジュール">付録F 追加で提供されるモジュール</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      lo.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="isn.html" title="F.19. isn">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュール">上へ</a></td><td width="60%" align="center">F.20. lo</td><td width="20%" align="right"> <a accesskey="n" href="ltree.html" title="F.21. ltree">次へ</a></td></tr></table><hr /></div><div class="sect1" id="LO"><div class="titlepage"><div><div><h2 class="title" style="clear: both">F.20. lo</h2></div></div></div><a id="id-1.11.7.29.2" class="indexterm"></a><p>
+<span class="original">
+  The &lt;filename&gt;lo&lt;/filename&gt; module provides support for managing Large Objects
+  (also called LOs or BLOBs).  This includes a data type &lt;type&gt;lo&lt;/type&gt;
+  and a trigger &lt;function&gt;lo_manage&lt;/function&gt;.
+</span>
+<code class="filename">lo</code>モジュールはラージオブジェクト（LOやBLOBとも呼ばれます）保守作業のサポートを提供します。
+<code class="type">lo</code>データ型と<code class="function">lo_manage</code>トリガが含まれます。
+ </p><div class="sect2" id="id-1.11.7.29.4"><div class="titlepage"><div><div><h3 class="title">F.20.1. 原理</h3></div></div></div><span class="original">
+  &lt;title&gt;Rationale&lt;/title&gt;
+</span><p>
+<span class="original">
+   One of the problems with the JDBC driver (and this affects the ODBC driver
+   also), is that the specification assumes that references to BLOBs (Binary
+   Large OBjects) are stored within a table, and if that entry is changed, the
+   associated BLOB is deleted from the database.
+</span>
+JDBCドライバにおける問題の1つ（ODBCドライバでもこれは影響します）は、規定ではBLOB（バイナリラージオブジェクト）への参照はテーブル内に格納され、その項目が変更されると、関連するBLOBがデータベースから削除されると想定している点です。
+  </p><p>
+<span class="original">
+   As &lt;productname&gt;PostgreSQL&lt;/productname&gt; stands, this doesn't occur.  Large objects
+   are treated as objects in their own right; a table entry can reference a
+   large object by OID, but there can be multiple table entries referencing
+   the same large object OID, so the system doesn't delete the large object
+   just because you change or remove one such entry.
+</span>
+<span class="productname">PostgreSQL</span>の立場では、これは起こりません。
+ラージオブジェクトは独自の権限をもったオブジェクトとして扱われます。
+テーブル項目はOIDによりラージオブジェクトを参照することはできますが、同じラージオブジェクトOIDを参照するテーブル項目を複数持つことも可能です。
+このため、システムは、こうした項目を変更または削除したという理由だけでは、ラージオブジェクトを削除しません。
+  </p><p>
+<span class="original">
+   Now this is fine for &lt;productname&gt;PostgreSQL&lt;/productname&gt;-specific applications, but
+   standard code using JDBC or ODBC won't delete the objects, resulting in
+   orphan objects &amp;mdash; objects that are not referenced by anything, and
+   simply occupy disk space.
+</span>
+さて、これは<span class="productname">PostgreSQL</span>固有のアプリケーションでは問題ありませんが、JDBCやODBCを使用する標準的なコードでは、オブジェクトが削除されず、孤児、つまりどこからも参照されずディスクを消費するだけのオブジェクトになります。
+  </p><p>
+<span class="original">
+   The &lt;filename&gt;lo&lt;/filename&gt; module allows fixing this by attaching a trigger
+   to tables that contain LO reference columns.  The trigger essentially just
+   does a &lt;function&gt;lo_unlink&lt;/function&gt; whenever you delete or modify a value
+   referencing a large object.  When you use this trigger, you are assuming
+   that there is only one database reference to any large object that is
+   referenced in a trigger-controlled column!
+</span>
+<code class="filename">lo</code>モジュールによりLO参照列を持つテーブルにトリガを付与して、これを解消することができます。
+このトリガは基本的には、ラージオブジェクトを参照する値を削除または変更した時常に<code class="function">lo_unlink</code>を単に行います。
+このトリガを使用する時は、単一のデータベースのみがトリガの対象列で参照されるラージオブジェクトを参照することを前提とします。
+  </p><p>
+<span class="original">
+   The module also provides a data type &lt;type&gt;lo&lt;/type&gt;, which is really just
+   a domain of the &lt;type&gt;oid&lt;/type&gt; type.  This is useful for differentiating
+   database columns that hold large object references from those that are
+   OIDs of other things.  You don't have to use the &lt;type&gt;lo&lt;/type&gt; type to
+   use the trigger, but it may be convenient to use it to keep track of which
+   columns in your database represent large objects that you are managing with
+   the trigger.  It is also rumored that the ODBC driver gets confused if you
+   don't use &lt;type&gt;lo&lt;/type&gt; for BLOB columns.
+</span>
+また、本モジュールは、単に<code class="type">oid</code>型のドメインに過ぎない<code class="type">lo</code>データ型を提供します。
+ラージオブジェクトへの参照を持つデータベース列とこの他のOIDを持つデータベース列との間に違いを持たせるために有用です。
+実際このトリガを使用するために<code class="type">lo</code>型を使用する必要はありません。
+しかし、データベース内のどの列がトリガで管理されているラージオブジェクトを示しているかを保持するために、これを使用することは簡便かもしれません。
+また、BLOB列で<code class="type">lo</code>を使用しない場合、ODBCドライバが混乱してしまうと取りざたされています。
+  </p></div><div class="sect2" id="id-1.11.7.29.5"><div class="titlepage"><div><div><h3 class="title">F.20.2. 使用方法</h3></div></div></div><span class="original">
+  &lt;title&gt;How to Use It&lt;/title&gt;
+</span><p>
+<span class="original">
+   Here's a simple example of usage:
+</span>
+簡単な使用例を示します。
+  </p><pre class="programlisting">
+CREATE TABLE image (title text, raster lo);
+
+CREATE TRIGGER t_raster BEFORE UPDATE OR DELETE ON image
+    FOR EACH ROW EXECUTE FUNCTION lo_manage(raster);
+</pre><p>
+<span class="original">
+   For each column that will contain unique references to large objects,
+   create a &lt;literal&gt;BEFORE UPDATE OR DELETE&lt;/literal&gt; trigger, and give the column
+   name as the sole trigger argument.  You can also restrict the trigger
+   to only execute on updates to the column by using &lt;literal&gt;BEFORE UPDATE
+   OF&lt;/literal&gt; &lt;replaceable class="parameter"&gt;column_name&lt;/replaceable&gt;.
+   If you need multiple &lt;type&gt;lo&lt;/type&gt;
+   columns in the same table, create a separate trigger for each one,
+   remembering to give a different name to each trigger on the same table.
+</span>
+一意なラージオブジェクト参照を含む列それぞれに対し、<code class="literal">BEFORE UPDATE OR DELETE</code>トリガを作成してください。
+そして、単一のトリガ引数として列名を指定してください。
+<code class="literal">BEFORE UPDATE OF</code> <em class="replaceable"><code>column_name</code></em>を使って列が更新される時にのみ実行するようトリガを制限することもできます。
+同一テーブル上に複数の<code class="type">lo</code>型の列を持たせる必要がある場合、それぞれに対して別のトリガを作成してください。
+同一テーブル上の各トリガに別の名前を与えることは忘れないでください。
+  </p></div><div class="sect2" id="id-1.11.7.29.6"><div class="titlepage"><div><div><h3 class="title">F.20.3. 制限</h3></div></div></div><span class="original">
+  &lt;title&gt;Limitations&lt;/title&gt;
+</span><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+     Dropping a table will still orphan any objects it contains, as the trigger
+     is not executed.  You can avoid this by preceding the &lt;command&gt;DROP
+     TABLE&lt;/command&gt; with &lt;command&gt;DELETE FROM &lt;replaceable&gt;table&lt;/replaceable&gt;&lt;/command&gt;.
+</span>
+トリガが実行されませんので、テーブル削除により含まれるオブジェクトは孤児化します。
+<code class="command">DROP TABLE</code>の前に<code class="command">DELETE FROM <em class="replaceable"><code>table</code></em></code>を行うことで防止することができます。
+    </p><p>
+<span class="original">
+     &lt;command&gt;TRUNCATE&lt;/command&gt; has the same hazard.
+</span>
+<code class="command">TRUNCATE</code>も同様の危険があります。
+    </p><p>
+<span class="original">
+     If you already have, or suspect you have, orphaned large objects, see the
+     &lt;xref linkend="vacuumlo"/&gt; module to help
+     you clean them up.  It's a good idea to run &lt;application&gt;vacuumlo&lt;/application&gt;
+     occasionally as a back-stop to the &lt;function&gt;lo_manage&lt;/function&gt; trigger.
+</span>
+ラージオブジェクトを孤児化させた、または孤児化させた疑いがある場合は、消去するための手助けとなる<a class="xref" href="vacuumlo.html" title="vacuumlo"><span class="refentrytitle"><span class="application">vacuumlo</span></span></a>モジュールを参照してください。
+<code class="function">lo_manage</code>トリガのバックネットとして<span class="application">vacuumlo</span>を時々実行することを勧めます。
+    </p></li><li class="listitem"><p>
+<span class="original">
+     Some frontends may create their own tables, and will not create the
+     associated trigger(s).  Also, users may not remember (or know) to create
+     the triggers.
+</span>
+フロントエンドの中には独自のテーブルを作成するものがあり、その場合、関連するトリガは作成されません。
+また、ユーザはトリガを作成することを忘れる（または知らない）かもしれません。
+    </p></li></ul></div></div><div class="sect2" id="id-1.11.7.29.7"><div class="titlepage"><div><div><h3 class="title">F.20.4. 作者</h3></div></div></div><span class="original">
+  &lt;title&gt;Author&lt;/title&gt;
+</span><p>
+   Peter Mount <code class="email">&lt;<a class="email" href="mailto:peter@retep.org.uk">peter@retep.org.uk</a>&gt;</code>
+  </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="isn.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="contrib.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="ltree.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">F.19. isn </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> F.21. ltree</td></tr></table></div></body></html>

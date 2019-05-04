@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>43.12. PL/pgSQLによる開発向けのヒント</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="plpgsql-implementation.html" title="43.11. PL/pgSQLの秘訣" /><link rel="next" href="plpgsql-porting.html" title="43.13. Oracle PL/SQLからの移植" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="plpgsql.html" title="第43章 PL/pgSQL - SQL手続き言語">第43章 <span class="application">PL/pgSQL</span> - <acronym class="acronym">SQL</acronym>手続き言語</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      plpgsql-development-tips.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="plpgsql-implementation.html" title="43.11. PL/pgSQLの秘訣">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="plpgsql.html" title="第43章 PL/pgSQL - SQL手続き言語">上へ</a></td><td width="60%" align="center">43.12. <span class="application">PL/pgSQL</span>による開発向けのヒント</td><td width="20%" align="right"> <a accesskey="n" href="plpgsql-porting.html" title="43.13. Oracle PL/SQLからの移植">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PLPGSQL-DEVELOPMENT-TIPS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">43.12. <span class="application">PL/pgSQL</span>による開発向けのヒント</h2></div></div></div><span class="original">
+  &lt;title&gt;Tips for Developing in &lt;application&gt;PL/pgSQL&lt;/application&gt;&lt;/title&gt;
+</span><p>
+<span class="original">
+    One good way to develop in
+    &lt;application&gt;PL/pgSQL&lt;/application&gt; is to use the text editor of your
+    choice to create your functions, and in another window, use
+    &lt;application&gt;psql&lt;/application&gt; to load and test those functions.
+    If you are doing it this way, it
+    is a good idea to write the function using &lt;command&gt;CREATE OR
+    REPLACE FUNCTION&lt;/command&gt;. That way you can just reload the file to update
+    the function definition.  For example:
+</span>
+<span class="application">PL/pgSQL</span>で開発する1つの良い方法は、関数を作成するのに自分の好きなテキストエディタを使い、もう1つのウィンドウで<span class="application">psql</span>を使用して関数を読み込ませて試験を行うことです。
+この方法で行う場合には<code class="command">CREATE OR REPLACE FUNCTION</code>を使用して関数を作成する方が良いでしょう。
+この方法でファイルを再読み込みすると、関数定義を更新することができます。
+例えば以下のようにします。
+</p><pre class="programlisting">
+CREATE OR REPLACE FUNCTION testfunc(integer) RETURNS integer AS $$
+          ....
+$$ LANGUAGE plpgsql;
+</pre><p>
+   </p><p>
+<span class="original">
+    While running &lt;application&gt;psql&lt;/application&gt;, you can load or reload such
+    a function definition file with:
+</span>
+<span class="application">psql</span>を実行し、以下のように関数定義ファイルを読み込み、または再読み込みすることができます。
+</p><pre class="programlisting">
+\i filename.sql
+</pre><p>
+<span class="original">
+    and then immediately issue SQL commands to test the function.
+</span>
+その後すぐに、関数を試験するためにSQLコマンドを発行することができます。
+   </p><p>
+<span class="original">
+    Another good way to develop in &lt;application&gt;PL/pgSQL&lt;/application&gt; is with a
+    GUI database access tool that facilitates development in a
+    procedural language. One example of such a tool is
+    &lt;application&gt;pgAdmin&lt;/application&gt;, although others exist. These tools often
+    provide convenient features such as escaping single quotes and
+    making it easier to recreate and debug functions.
+</span>
+<span class="application">PL/pgSQL</span>における開発のもう1つの良い方法は、手続き言語の開発機能を持つGUIデータベースアクセスツールを使用することです。
+他にもありますが、<span class="application">pgAdmin</span>がこうしたツールの一例です。
+こうしたツールは、単一引用符をエスケープさせたり、関数の作り直しやデバッグが容易に行えたりする便利な機能をよく持っています。
+   </p><div class="sect2" id="PLPGSQL-QUOTE-TIPS"><div class="titlepage"><div><div><h3 class="title">43.12.1. 引用符の扱い</h3></div></div></div><span class="original">
+   &lt;title&gt;Handling of Quotation Marks&lt;/title&gt;
+</span><p>
+<span class="original">
+    The code of a &lt;application&gt;PL/pgSQL&lt;/application&gt; function is specified in
+    &lt;command&gt;CREATE FUNCTION&lt;/command&gt; as a string literal.  If you
+    write the string literal in the ordinary way with surrounding
+    single quotes, then any single quotes inside the function body
+    must be doubled; likewise any backslashes must be doubled (assuming
+    escape string syntax is used).
+    Doubling quotes is at best tedious, and in more complicated cases
+    the code can become downright incomprehensible, because you can
+    easily find yourself needing half a dozen or more adjacent quote marks.
+    It's recommended that you instead write the function body as a
+    &lt;quote&gt;dollar-quoted&lt;/quote&gt; string literal (see &lt;xref
+    linkend="sql-syntax-dollar-quoting"/&gt;).  In the dollar-quoting
+    approach, you never double any quote marks, but instead take care to
+    choose a different dollar-quoting delimiter for each level of
+    nesting you need.  For example, you might write the &lt;command&gt;CREATE
+    FUNCTION&lt;/command&gt; command as:
+</span>
+<span class="application">PL/pgSQL</span>関数のコードは<code class="command">CREATE FUNCTION</code>内で文字列リテラルとして指定されます。
+単一引用符で囲む通常のやり方で文字列リテラルを記述する時、関数本体内部の全ての単一引用符を二重化しなければなりません。
+同様に、全てのバックスラッシュを二重化しなければなりません。
+なお、文字列としてエスケープする構文が使用されると仮定します。
+引用符を単に重ねるやり方は最も冗長であり、簡単に想像できると思いますが、複雑な状態では数個以上の隣接した引用符が必要となるため、コードを率直には理解しにくくなります。
+それに代わって推奨されるのは、関数本体を<span class="quote">「<span class="quote">ドル引用符</span>」</span>の文字列リテラルとして記述することです（<a class="xref" href="sql-syntax-lexical.html#SQL-SYNTAX-DOLLAR-QUOTING" title="4.1.2.4. ドル記号で引用符付けされた文字列定数">4.1.2.4</a>を見てください）。
+ドル引用符を用いるやり方では他の引用符を二重化する必要はありませんが、それぞれの入れ子になった階層ごとに異なったドル引用符による区切り符号を用いなければなりません。
+例えば、<code class="command">CREATE FUNCTION</code>コマンドを以下のように記述しても構いません。
+</p><pre class="programlisting">
+CREATE OR REPLACE FUNCTION testfunc(integer) RETURNS integer AS $PROC$
+          ....
+$PROC$ LANGUAGE plpgsql;
+</pre><p>
+<span class="original">
+    Within this, you might use quote marks for simple literal strings in
+    SQL commands and &lt;literal&gt;$$&lt;/literal&gt; to delimit fragments of SQL commands
+    that you are assembling as strings.  If you need to quote text that
+    includes &lt;literal&gt;$$&lt;/literal&gt;, you could use &lt;literal&gt;$Q$&lt;/literal&gt;, and so on.
+</span>
+このやり方では、SQLコマンドの中で単純なリテラル文字列に対して引用符を使用でき、文字列として集積したSQLコマンドの断片を区切るために<code class="literal">$$</code>を使用できます。
+もし<code class="literal">$$</code>を含んだテキストを引用符で囲む時は、<code class="literal">$Q$</code>のような記述を使用できます。
+   </p><p>
+<span class="original">
+    The following chart shows what you have to do when writing quote
+    marks without dollar quoting.  It might be useful when translating
+    pre-dollar quoting code into something more comprehensible.
+</span>
+以下の表はドル引用符を用いない時の引用符の記述法を示したものです。
+ドル引用符を用いる以前における引用符の記述を理解するのに、この表は役立つと思われます。
+  </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">1つの引用符</span></dt><dd><p>
+<span class="original">
+      To begin and end the function body, for example:
+</span>
+関数本体の先頭と末尾。
+以下に例を示します。
+</p><pre class="programlisting">
+CREATE FUNCTION foo() RETURNS integer AS '
+          ....
+' LANGUAGE plpgsql;
+</pre><p>
+<span class="original">
+      Anywhere within a single-quoted function body, quote marks
+      &lt;emphasis&gt;must&lt;/emphasis&gt; appear in pairs.
+</span>
+関数本体内部では引用符は<span class="emphasis"><em>必ず</em></span>ペアで現れます。
+     </p></dd><dt><span class="term">2つの引用符</span></dt><dd><p>
+<span class="original">
+      For string literals inside the function body, for example:
+</span>
+関数本体内部の文字列リテラル用。
+以下に例を示します。
+</p><pre class="programlisting">
+a_output := ''Blah'';
+SELECT * FROM users WHERE f_name=''foobar'';
+</pre><p>
+<span class="original">
+      In the dollar-quoting approach, you'd just write:
+</span>
+ドル引用符を用いる時は、次のように記述します。
+</p><pre class="programlisting">
+a_output := 'Blah';
+SELECT * FROM users WHERE f_name='foobar';
+</pre><p>
+<span class="original">
+      which is exactly what the &lt;application&gt;PL/pgSQL&lt;/application&gt; parser would see
+      in either case.
+</span>
+どちらも<span class="application">PL/pgSQL</span>パーサから見ると同一となります。
+     </p></dd><dt><span class="term">4つの引用符</span></dt><dd><p>
+<span class="original">
+      When you need a single quotation mark in a string constant inside the
+      function body, for example:
+</span>
+関数本体内部の文字列リテラル内の単一引用符がある場合。
+以下に例を示します。
+</p><pre class="programlisting">
+a_output := a_output || '' AND name LIKE ''''foobar'''' AND xyz''
+</pre><p>
+<span class="original">
+      The value actually appended to &lt;literal&gt;a_output&lt;/literal&gt; would be:
+      &lt;literal&gt; AND name LIKE 'foobar' AND xyz&lt;/literal&gt;.
+</span>
+実際に<code class="literal">a_output</code>に追加される値は、<code class="literal"> AND name LIKE 'foobar' AND xyz</code>です。
+     </p><p>
+<span class="original">
+      In the dollar-quoting approach, you'd write:
+</span>
+ドル引用符を用いる時は、次のように記述します。
+</p><pre class="programlisting">
+a_output := a_output || $$ AND name LIKE 'foobar' AND xyz$$
+</pre><p>
+<span class="original">
+      being careful that any dollar-quote delimiters around this are not
+      just &lt;literal&gt;$$&lt;/literal&gt;.
+</span>
+なお、ドル引用符の区切り文字は<code class="literal">$$</code>だけとは限らないことに注意してください。
+     </p></dd><dt><span class="term">6つの引用符</span></dt><dd><p>
+<span class="original">
+      When a single quotation mark in a string inside the function body is
+      adjacent to the end of that string constant, for example:
+</span>
+関数本体内部の文字列内の単一引用符が、文字列定数の末尾にある場合。
+以下に例を示します。
+</p><pre class="programlisting">
+a_output := a_output || '' AND name LIKE ''''foobar''''''
+</pre><p>
+<span class="original">
+      The value appended to &lt;literal&gt;a_output&lt;/literal&gt; would then be:
+      &lt;literal&gt; AND name LIKE 'foobar'&lt;/literal&gt;.
+</span>
+実際に<code class="literal">a_output</code>に追加される値は、<code class="literal"> AND name LIKE 'foobar'</code>です。
+     </p><p>
+<span class="original">
+      In the dollar-quoting approach, this becomes:
+</span>
+ドル引用符を用いる時は、次のようになります。
+</p><pre class="programlisting">
+a_output := a_output || $$ AND name LIKE 'foobar'$$
+</pre><p>
+     </p></dd><dt><span class="term">10個の引用符</span></dt><dd><p>
+<span class="original">
+      When you want two single quotation marks in a string constant (which
+      accounts for 8 quotation marks) and this is adjacent to the end of that
+      string constant (2 more).  You will probably only need that if
+      you are writing a function that generates other functions, as in
+      &lt;xref linkend="plpgsql-porting-ex2"/&gt;.
+      For example:
+</span>
+文字列定数内に 2つの単一引用符を持たせたい場合（これで8個の単一引用符になり）、かつ、この文字列定数の末尾にある場合（これで2個追加されます）。
+おそらく、他の関数を生成する関数を作成する場合（<a class="xref" href="plpgsql-porting.html#PLPGSQL-PORTING-EX2" title="例43.10 他の関数を生成するPL/SQLをPL/pgSQLに移植">例 43.10</a>）のみにこれが必要になるでしょう。
+以下に例を示します。
+</p><pre class="programlisting">
+a_output := a_output || '' if v_'' ||
+    referrer_keys.kind || '' like ''''''''''
+    || referrer_keys.key_string || ''''''''''
+    then return ''''''  || referrer_keys.referrer_type
+    || ''''''; end if;'';
+</pre><p>
+<span class="original">
+      The value of &lt;literal&gt;a_output&lt;/literal&gt; would then be:
+</span>
+<code class="literal">a_output</code>の値は以下のようになります。
+</p><pre class="programlisting">
+if v_... like ''...'' then return ''...''; end if;
+</pre><p>
+     </p><p>
+<span class="original">
+      In the dollar-quoting approach, this becomes:
+</span>
+ドル引用符を用いる時は、次のようになります。
+</p><pre class="programlisting">
+a_output := a_output || $$ if v_$$ || referrer_keys.kind || $$ like '$$
+    || referrer_keys.key_string || $$'
+    then return '$$  || referrer_keys.referrer_type
+    || $$'; end if;$$;
+</pre><p>
+<span class="original">
+      where we assume we only need to put single quote marks into
+      &lt;literal&gt;a_output&lt;/literal&gt;, because it will be re-quoted before use.
+</span>
+ここで単一引用符は使用前に再評価されるため、<code class="literal">a_output</code>内部だけで必要であると仮定します。
+     </p></dd></dl></div></div><div class="sect2" id="PLPGSQL-EXTRA-CHECKS"><div class="titlepage"><div><div><h3 class="title">43.12.2. コンパイル時の付加的チェック</h3></div></div></div><span class="original">
+   &lt;title&gt;Additional Compile-time Checks&lt;/title&gt;
+</span><p>
+<span class="original">
+    To aid the user in finding instances of simple but common problems before
+    they cause harm, &lt;application&gt;PL/pgSQL&lt;/application&gt; provides additional
+    &lt;replaceable&gt;checks&lt;/replaceable&gt;. When enabled, depending on the configuration, they
+    can be used to emit either a &lt;literal&gt;WARNING&lt;/literal&gt; or an &lt;literal&gt;ERROR&lt;/literal&gt;
+    during the compilation of a function. A function which has received
+    a &lt;literal&gt;WARNING&lt;/literal&gt; can be executed without producing further messages,
+    so you are advised to test in a separate development environment.
+</span>
+単純でありふれた問題が有害となる前の実例を発見するユーザを助けるため<span class="application">PL/PgSQL</span>は付加的<em class="replaceable"><code>checks</code></em>を提供します。
+可能かどうかは設定に依存しますが、関数のコンパイルのとき<code class="literal">WARNING</code>または<code class="literal">ERROR</code>を省略して使用できます。
+<code class="literal">WARNING</code>を指定された関数は、それ以上のメッセージを生成しないで実行できます。
+したがって、分離された開発環境でテストを実行できます。
+   </p><p>
+<span class="original">
+  These additional checks are enabled through the configuration variables
+  &lt;varname&gt;plpgsql.extra_warnings&lt;/varname&gt; for warnings and
+  &lt;varname&gt;plpgsql.extra_errors&lt;/varname&gt; for errors. Both can be set either to
+  a comma-separated list of checks, &lt;literal&gt;"none"&lt;/literal&gt; or &lt;literal&gt;"all"&lt;/literal&gt;.
+  The default is &lt;literal&gt;"none"&lt;/literal&gt;. Currently the list of available checks
+  includes only one:
+</span>
+この付加的チェックでは、設定変数<code class="varname">plpgsql.extra_warnings</code>を警告のために<code class="varname">plpgsql.extra_errors</code>をエラーのために使用できます。
+どちらも、コンマで区切ったチェックリストまたは<code class="literal">"none"</code>または<code class="literal">"all"</code>と設定できます。
+デフォルトは<code class="literal">"none"</code>です。
+現在、1つのチェックリストで可能なチェックは1つです。
+  </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="varname">shadowed_variables</code></span></dt><dd><p>
+<span class="original">
+      Checks if a declaration shadows a previously defined variable.
+</span>
+宣言が以前に定義した変数を隠すかどうかチェックする。
+     </p></dd></dl></div><p>
+
+<span class="original">
+  The following example shows the effect of &lt;varname&gt;plpgsql.extra_warnings&lt;/varname&gt;
+  set to &lt;varname&gt;shadowed_variables&lt;/varname&gt;:
+</span>
+以下の例では、<code class="varname">plpgsql.extra_warnings</code>を<code class="varname">shadowed_variables</code>に設定した結果を示します。
+</p><pre class="programlisting">
+SET plpgsql.extra_warnings TO 'shadowed_variables';
+
+CREATE FUNCTION foo(f1 int) RETURNS int AS $$
+DECLARE
+f1 int;
+BEGIN
+RETURN f1;
+END
+$$ LANGUAGE plpgsql;
+WARNING:  variable "f1" shadows a previously defined variable
+LINE 3: f1 int;
+        ^
+CREATE FUNCTION
+</pre><p>
+ </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="plpgsql-implementation.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="plpgsql.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="plpgsql-porting.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">43.11. <span class="application">PL/pgSQL</span>の秘訣 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 43.13. <span class="productname">Oracle</span> PL/SQLからの移植</td></tr></table></div></body></html>

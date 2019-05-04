@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>34.8. 非同期通知</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="libpq-fastpath.html" title="34.7. 近道インタフェース" /><link rel="next" href="libpq-copy.html" title="34.9. COPYコマンド関連関数" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="libpq.html" title="第34章 libpq - C ライブラリ">第34章 <span class="application">libpq</span> - C ライブラリ</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      libpq-notify.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="libpq-fastpath.html" title="34.7. 近道インタフェース">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="libpq.html" title="第34章 libpq - C ライブラリ">上へ</a></td><td width="60%" align="center">34.8. 非同期通知</td><td width="20%" align="right"> <a accesskey="n" href="libpq-copy.html" title="34.9. COPYコマンド関連関数">次へ</a></td></tr></table><hr /></div><div class="sect1" id="LIBPQ-NOTIFY"><div class="titlepage"><div><div><h2 class="title" style="clear: both">34.8. 非同期通知</h2></div></div></div><span class="original">
+  &lt;title&gt;Asynchronous Notification&lt;/title&gt;
+</span><a id="id-1.7.3.15.2" class="indexterm"></a><p>
+<span class="original">
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; offers asynchronous notification
+   via the &lt;command&gt;LISTEN&lt;/command&gt; and &lt;command&gt;NOTIFY&lt;/command&gt;
+   commands.  A client session registers its interest in a particular
+   notification channel with the &lt;command&gt;LISTEN&lt;/command&gt; command (and
+   can stop listening with the &lt;command&gt;UNLISTEN&lt;/command&gt; command).  All
+   sessions listening on a particular channel will be notified
+   asynchronously when a &lt;command&gt;NOTIFY&lt;/command&gt; command with that
+   channel name is executed by any session. A &lt;quote&gt;payload&lt;/quote&gt; string can
+   be passed to communicate additional data to the listeners.
+</span>
+<span class="productname">PostgreSQL</span>は、<code class="command">LISTEN</code>と<code class="command">NOTIFY</code>コマンドを使用した、非同期通知をサポートします。
+クライアントセッションは、<code class="command">LISTEN</code>コマンドを使用して処理対象とする特定の通知チャネルを登録します。
+（通知監視を取り止めるには<code class="command">UNLISTEN</code>コマンドを使用します。）
+任意のセッションでそのチャネル名による<code class="command">NOTIFY</code>コマンドが実行されると、特定チャネルを監視しているすべてのセッションは非同期に通知を受け取ります。
+監視者に追加データを通信するために<span class="quote">「<span class="quote">ペイロード</span>」</span>文字列を渡すことができます。
+  </p><p>
+<span class="original">
+   &lt;application&gt;libpq&lt;/application&gt; applications submit
+   &lt;command&gt;LISTEN&lt;/command&gt;, &lt;command&gt;UNLISTEN&lt;/command&gt;,
+   and &lt;command&gt;NOTIFY&lt;/command&gt; commands as
+   ordinary SQL commands.  The arrival of &lt;command&gt;NOTIFY&lt;/command&gt;
+   messages can subsequently be detected by calling
+   &lt;function&gt;PQnotifies&lt;/function&gt;.&lt;indexterm&gt;&lt;primary&gt;PQnotifies&lt;/primary&gt;&lt;/indexterm&gt;
+</span>
+<span class="application">libpq</span>アプリケーションは、通常のSQLによる問い合わせと同じように<code class="command">LISTEN</code>、<code class="command">UNLISTEN</code>および<code class="command">NOTIFY</code>コマンドを発行することができます。
+<code class="command">NOTIFY</code>メッセージの到着は、続いて<code class="function">PQnotifies</code>を呼び出せば検出できます。
+<a id="id-1.7.3.15.4.7" class="indexterm"></a>
+  </p><p>
+<span class="original">
+   The function &lt;function&gt;PQnotifies&lt;/function&gt; returns the next notification
+   from a list of unhandled notification messages received from the server.
+   It returns a null pointer if there are no pending notifications.  Once a
+   notification is returned from &lt;function&gt;PQnotifies&lt;/function&gt;, it is considered
+   handled and will be removed from the list of notifications.
+</span>
+<code class="function">PQnotifies</code>関数は、サーバから受信した通知メッセージの未処理リストから次の通知を返します。
+保留中の通知がなくなればヌルポインタを返します。
+<code class="function">PQnotifies</code>が通知を返すと、その通知は処理済みとみなされ、通知リストから取り除かれます。
+
+</p><pre class="synopsis">
+PGnotify *PQnotifies(PGconn *conn);
+
+typedef struct pgNotify
+{
+<span class="original">
+    char *relname;              /* notification channel name */
+    int  be_pid;                /* process ID of notifying server process */
+    char *extra;                /* notification payload string */
+</span>
+    char *relname;              /* 通知チャネル名 */
+    int  be_pid;                /* 通知元サーバプロセスのプロセスID */
+    char *extra;                /* 通知ペイロード文字列 */
+} PGnotify;
+</pre><p>
+
+<span class="original">
+   After processing a &lt;structname&gt;PGnotify&lt;/structname&gt; object returned
+   by &lt;function&gt;PQnotifies&lt;/function&gt;, be sure to free it with
+   &lt;function&gt;PQfreemem&lt;/function&gt;.  It is sufficient to free the
+   &lt;structname&gt;PGnotify&lt;/structname&gt; pointer; the
+   &lt;structfield&gt;relname&lt;/structfield&gt; and &lt;structfield&gt;extra&lt;/structfield&gt;
+   fields do not represent separate allocations.  (The names of these fields
+   are historical; in particular, channel names need not have anything to
+   do with relation names.)
+</span>
+<code class="function">PQnotifies</code>で返された<code class="structname">PGnotify</code>オブジェクトの処理が終わったら、<code class="function">PQfreemem</code>を使用して確実に解放してください。
+<code class="structname">PGnotify</code>ポインタを解放することは重要です。
+<code class="structfield">relname</code>と<code class="structfield">extra</code>フィールドは別の割り当てを表していません。
+(これらのフィールド名は歴史的なものです。特にチャネル名はリレーション名と関係するものである必要はありません。)
+  </p><p>
+<span class="original">
+   &lt;xref linkend="libpq-example-2"/&gt; gives a sample program that illustrates
+   the use of asynchronous notification.
+</span>
+<a class="xref" href="libpq-example.html#LIBPQ-EXAMPLE-2" title="例34.2 libpq サンプルプログラム 2">例 34.2</a>で非同期通知を使用したサンプルプログラムを示しています。
+  </p><p>
+<span class="original">
+   &lt;function&gt;PQnotifies&lt;/function&gt; does not actually read data from the
+   server; it just returns messages previously absorbed by another
+   &lt;application&gt;libpq&lt;/application&gt; function.  In ancient releases of
+   &lt;application&gt;libpq&lt;/application&gt;, the only way to ensure timely receipt
+   of &lt;command&gt;NOTIFY&lt;/command&gt; messages was to constantly submit commands, even
+   empty ones, and then check &lt;function&gt;PQnotifies&lt;/function&gt; after each
+   &lt;function&gt;PQexec&lt;/function&gt;.  While this still works, it is deprecated
+   as a waste of processing power.
+</span>
+<code class="function">PQnotifies()</code>は実際にサーバのデータを読み出すわけではありません。
+これは単に、他の<span class="application">libpq</span>関数が吸収してしまっていた通知メッセージを返すだけです。
+<span class="application">libpq</span>の古いリリースでは、通知メッセージを適切な時点で確実に受け取るには、空の問い合わせでも何でも、とにかく一定時間ごとに問い合わせを送り、そして<code class="function">PQexec()</code>を実行するたびに<code class="function">PQnotifies()</code>を検査するしかありませんでした。
+今でもこの方法は動作しますが、処理能力の無駄使いをすることになるのでやめておくべきでしょう。
+  </p><p>
+<span class="original">
+   A better way to check for &lt;command&gt;NOTIFY&lt;/command&gt; messages when you have no
+   useful commands to execute is to call
+   &lt;function&gt;PQconsumeInput&lt;/function&gt;, then check
+   &lt;function&gt;PQnotifies&lt;/function&gt;.  You can use
+   &lt;function&gt;select()&lt;/function&gt; to wait for data to arrive from the
+   server, thereby using no &lt;acronym&gt;CPU&lt;/acronym&gt; power unless there is
+   something to do.  (See &lt;function&gt;PQsocket&lt;/function&gt; to obtain the file
+   descriptor number to use with &lt;function&gt;select()&lt;/function&gt;.) Note that
+   this will work OK whether you submit commands with
+   &lt;function&gt;PQsendQuery&lt;/function&gt;/&lt;function&gt;PQgetResult&lt;/function&gt; or
+   simply use &lt;function&gt;PQexec&lt;/function&gt;.  You should, however, remember
+   to check &lt;function&gt;PQnotifies&lt;/function&gt; after each
+   &lt;function&gt;PQgetResult&lt;/function&gt; or &lt;function&gt;PQexec&lt;/function&gt;, to
+   see if any notifications came in during the processing of the command.
+</span>
+実行すべき問い合わせがない時に通知メッセージを検査するよい方法は、まず<code class="function">PQconsumeInput()</code>を呼び出し、それから<code class="function">PQnotifies()</code>を検査することです。
+サーバからのデータの到着を<code class="function">select()</code>で待つことができ、不必要な動作で<acronym class="acronym">CPU</acronym>パワーを消費してしまうことがありません。
+（<code class="function">select()</code>で使用するファイル記述子番号の取得については、<code class="function">PQsocket()</code>を参照してください。）
+なお、これは問い合わせに<code class="function">PQsendQuery</code>と<code class="function">PQgetResult</code>を使った時でも、またはおなじみの<code class="function">PQexec</code>を使った時でも動作します。
+しかし通知がコマンドの処理中に届いていないかどうか、<code class="function">PQgetResult</code>あるいは<code class="function">PQexec</code>の実行ごとに<code class="function">PQnotifies()</code>を調べることを忘れないようにしておくべきです。
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="libpq-fastpath.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="libpq.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="libpq-copy.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">34.7. 近道インタフェース </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 34.9. <code class="command">COPY</code>コマンド関連関数</td></tr></table></div></body></html>

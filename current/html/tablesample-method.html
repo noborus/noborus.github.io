@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>第58章 テーブルサンプリングメソッドの書き方</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="fdw-row-locking.html" title="57.5. 外部データラッパでの行ロック" /><link rel="next" href="tablesample-support-functions.html" title="58.1. サンプリングメソッドサポート関数" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="internals.html" title="パート VII. 内部情報">パート VII. 内部情報</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      tablesample-method.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="fdw-row-locking.html" title="57.5. 外部データラッパでの行ロック">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="internals.html" title="パート VII. 内部情報">上へ</a></td><td width="60%" align="center">第58章 テーブルサンプリングメソッドの書き方</td><td width="20%" align="right"> <a accesskey="n" href="tablesample-support-functions.html" title="58.1. サンプリングメソッドサポート関数">次へ</a></td></tr></table><hr /></div><div class="chapter" id="TABLESAMPLE-METHOD"><div class="titlepage"><div><div><h2 class="title">第58章 テーブルサンプリングメソッドの書き方</h2></div></div></div><div class="toc"><p><strong>目次</strong></p><dl class="toc"><dt><span class="sect1"><a href="tablesample-support-functions.html">58.1. サンプリングメソッドサポート関数</a></span></dt></dl></div><span class="original">
+ &lt;title&gt;Writing A Table Sampling Method&lt;/title&gt;
+</span><a id="id-1.10.10.2" class="indexterm"></a><a id="id-1.10.10.3" class="indexterm"></a><p>
+<span class="original">
+  &lt;productname&gt;PostgreSQL&lt;/productname&gt;'s implementation of the &lt;literal&gt;TABLESAMPLE&lt;/literal&gt;
+  clause supports custom table sampling methods, in addition to
+  the &lt;literal&gt;BERNOULLI&lt;/literal&gt; and &lt;literal&gt;SYSTEM&lt;/literal&gt; methods that are required
+  by the SQL standard.  The sampling method determines which rows of the
+  table will be selected when the &lt;literal&gt;TABLESAMPLE&lt;/literal&gt; clause is used.
+</span>
+<span class="productname">PostgreSQL</span>による<code class="literal">TABLESAMPLE</code>句の実装は、SQL標準が求める<code class="literal">BERNOULLI</code>と<code class="literal">SYSTEM</code>のメソッドに加え、ユーザ定義のテーブルサンプリングメソッドをサポートしています。
+サンプリングメソッドは、<code class="literal">TABLESAMPLE</code>句が使用された際にどの行が選択されるかを決定します。
+ </p><p>
+<span class="original">
+  At the SQL level, a table sampling method is represented by a single SQL
+  function, typically implemented in C, having the signature
+</span>
+SQLレベルでは、テーブルサンプリングメソッドは、以下の呼び出し形式を持ち、典型的にはCで実装された単一のSQLの関数で表現されます。
+</p><pre class="programlisting">
+method_name(internal) RETURNS tsm_handler
+</pre><p>
+<span class="original">
+  The name of the function is the same method name appearing in the
+  &lt;literal&gt;TABLESAMPLE&lt;/literal&gt; clause.  The &lt;type&gt;internal&lt;/type&gt; argument is a dummy
+  (always having value zero) that simply serves to prevent this function from
+  being called directly from a SQL command.
+  The result of the function must be a palloc'd struct of
+  type &lt;type&gt;TsmRoutine&lt;/type&gt;, which contains pointers to support functions for
+  the sampling method.  These support functions are plain C functions and
+  are not visible or callable at the SQL level.  The support functions are
+  described in &lt;xref linkend="tablesample-support-functions"/&gt;.
+</span>
+関数の名前は<code class="literal">TABLESAMPLE</code>句に現れるメソッド名と同じです。
+<code class="type">internal</code>引数は、ダミー(常に0の値を持つ)で、単にこの関数がSQLコマンドから直接呼ばれるのを防ぐために用意されています。
+関数の戻り値は、pallocされた<code class="type">TsmRoutine</code>型の構造体でなければなりません。
+その構造体の中には、サンプリングメソッド用のサポート関数へのポインタが含まれています。
+サポート関数は普通のC関数で、SQLレベルからは見ることも呼び出すこともできません。
+サポート関数は<a class="xref" href="tablesample-support-functions.html" title="58.1. サンプリングメソッドサポート関数">58.1</a>で説明されています。
+ </p><p>
+<span class="original">
+  In addition to function pointers, the &lt;type&gt;TsmRoutine&lt;/type&gt; struct must
+  provide these additional fields:
+</span>
+関数へのポインタに加え、<code class="type">TsmRoutine</code>構造体は以下の追加のフィールドを提供しなければなりません。
+ </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">List *parameterTypes</code></span></dt><dd><p>
+<span class="original">
+     This is an OID list containing the data type OIDs of the parameter(s)
+     that will be accepted by the &lt;literal&gt;TABLESAMPLE&lt;/literal&gt; clause when this
+     sampling method is used.  For example, for the built-in methods, this
+     list contains a single item with value &lt;literal&gt;FLOAT4OID&lt;/literal&gt;, which
+     represents the sampling percentage.  Custom sampling methods can have
+     more or different parameters.
+</span>
+このサンプリングメソッドが使用される際に、<code class="literal">TABLESAMPLE</code>句が受け付ける引数のデータ型のOIDが格納された、OIDのリストです。
+たとえば、組み込みのメソッドに対しては、このリストは、サンプリングのパーセンテージを表す<code class="literal">FLOAT4OID</code>という値を持つ単一の要素が含まれています。
+カスタムサンプリングメソッドは、複数の異なるパラメータを持つことができます。
+    </p></dd><dt><span class="term"><code class="literal">bool repeatable_across_queries</code></span></dt><dd><p>
+<span class="original">
+     If &lt;literal&gt;true&lt;/literal&gt;, the sampling method can deliver identical samples
+     across successive queries, if the same parameters
+     and &lt;literal&gt;REPEATABLE&lt;/literal&gt; seed value are supplied each time and the
+     table contents have not changed.  When this is &lt;literal&gt;false&lt;/literal&gt;,
+     the &lt;literal&gt;REPEATABLE&lt;/literal&gt; clause is not accepted for use with the
+     sampling method.
+</span>
+<code class="literal">true</code>の場合、もし毎回同じ引数と<code class="literal">REPEATABLE</code>シード値が提供され、テーブル内容に変更がないならば、サンプリングメソッドは実行されたどの問い合わせに対しても、同一のサンプルを出力することができます。
+<code class="literal">false</code>の場合は、サンプリングメソッドを使用する際に<code class="literal">REPEATABLE</code>句を受け付けません。
+    </p></dd><dt><span class="term"><code class="literal">bool repeatable_across_scans</code></span></dt><dd><p>
+<span class="original">
+     If &lt;literal&gt;true&lt;/literal&gt;, the sampling method can deliver identical samples
+     across successive scans in the same query (assuming unchanging
+     parameters, seed value, and snapshot).
+     When this is &lt;literal&gt;false&lt;/literal&gt;, the planner will not select plans that
+     would require scanning the sampled table more than once, since that
+     might result in inconsistent query output.
+</span>
+<code class="literal">true</code>の場合、サンプリングメソッドは同じ問い合わせ内で実行されたどのスキャンに対しても、同一のサンプルを出力することができます(パラメータ、シード値、スナップショットに変更がない、という前提で)。
+<code class="literal">false</code>の場合、プランナは、サンプル対象のテーブルを2度以上スキャンする必要のあるようなプランは選択しません。
+問い合わせの結果に不整合が発生する可能性があるからです。
+    </p></dd></dl></div><p>
+<span class="original">
+  The &lt;type&gt;TsmRoutine&lt;/type&gt; struct type is declared
+  in &lt;filename&gt;src/include/access/tsmapi.h&lt;/filename&gt;, which see for additional
+  details.
+</span>
+<code class="type">TsmRoutine</code>構造体は<code class="filename">src/include/access/tsmapi.h</code>で宣言されています。
+詳細はそちらをご覧ください。
+ </p><p>
+
+<span class="original">
+  The table sampling methods included in the standard distribution are good
+  references when trying to write your own.  Look into
+  the &lt;filename&gt;src/backend/access/tablesample&lt;/filename&gt; subdirectory of the source
+  tree for the built-in sampling methods, and into the &lt;filename&gt;contrib&lt;/filename&gt;
+  subdirectory for add-on methods.
+</span>
+標準配布物に含まれるテーブルサンプリングメソッドは、自分でサンプリングメソッドを書く際に良いお手本になります。
+組み込みのサンプリングメソッドに関しては、ソースツリー中の<code class="filename">src/backend/access/tablesample</code>サブディレクトリを見てください。
+追加のメソッドに関しては<code class="filename">contrib</code>サブディレクトリを見てください。
+ </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="fdw-row-locking.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="internals.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="tablesample-support-functions.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">57.5. 外部データラッパでの行ロック </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 58.1. サンプリングメソッドサポート関数</td></tr></table></div></body></html>

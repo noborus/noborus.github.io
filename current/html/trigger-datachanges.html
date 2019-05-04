@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>39.2. データ変更の可視性</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="trigger-definition.html" title="39.1. トリガ動作の概要" /><link rel="next" href="trigger-interface.html" title="39.3. Cによるトリガ関数の作成" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="triggers.html" title="第39章 トリガ">第39章 トリガ</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      trigger-datachanges.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="trigger-definition.html" title="39.1. トリガ動作の概要">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="triggers.html" title="第39章 トリガ">上へ</a></td><td width="60%" align="center">39.2. データ変更の可視性</td><td width="20%" align="right"> <a accesskey="n" href="trigger-interface.html" title="39.3. Cによるトリガ関数の作成">次へ</a></td></tr></table><hr /></div><div class="sect1" id="TRIGGER-DATACHANGES"><div class="titlepage"><div><div><h2 class="title" style="clear: both">39.2. データ変更の可視性</h2></div></div></div><span class="original">
+   &lt;title&gt;Visibility of Data Changes&lt;/title&gt;
+</span><p>
+<span class="original">
+    If you execute SQL commands in your trigger function, and these
+    commands access the table that the trigger is for, then
+    you need to be aware of the data visibility rules, because they determine
+    whether these SQL commands will see the data change that the trigger
+    is fired for.  Briefly:
+</span>
+トリガ関数内でSQLコマンドを実行し、このコマンドがトリガの元となったテーブルにアクセスする場合、データの可視性規則に注意する必要があります。
+この規則が、SQLコマンドがトリガの発行原因となったデータ変更を見ることができるかどうかを決定するからです。
+簡単に以下に示します。
+
+    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+       Statement-level triggers follow simple visibility rules: none of
+       the changes made by a statement are visible to statement-level
+       &lt;literal&gt;BEFORE&lt;/literal&gt; triggers, whereas all
+       modifications are visible to statement-level &lt;literal&gt;AFTER&lt;/literal&gt;
+       triggers.
+</span>
+文レベルトリガは次に示す簡単な可視性規則に従います。
+文によってなされた変更は、文レベルの<code class="literal">BEFORE</code>トリガでは不可視です。
+一方、文レベルの<code class="literal">AFTER</code>トリガでは全ての変更が可視です。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       The data change (insertion, update, or deletion) causing the
+       trigger to fire is naturally &lt;emphasis&gt;not&lt;/emphasis&gt; visible
+       to SQL commands executed in a row-level &lt;literal&gt;BEFORE&lt;/literal&gt; trigger,
+       because it hasn't happened yet.
+</span>
+当然ながら行レベルの<code class="literal">BEFORE</code>トリガ内のSQLコマンドでは、トリガの発生原因となったデータ変更（挿入、更新、削除）はまだ発生していませんので、可視<span class="emphasis"><em>ではありません</em></span>。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       However, SQL commands executed in a row-level &lt;literal&gt;BEFORE&lt;/literal&gt;
+       trigger &lt;emphasis&gt;will&lt;/emphasis&gt; see the effects of data
+       changes for rows previously processed in the same outer
+       command.  This requires caution, since the ordering of these
+       change events is not in general predictable; a SQL command that
+       affects multiple rows can visit the rows in any order.
+</span>
+しかし、行レベルの<code class="literal">BEFORE</code>トリガで実行されるSQLコマンドは、その外側のコマンドで以前に処理された行へのデータ変更の影響を見る<span class="emphasis"><em>ことになるでしょう</em></span>。
+これらの変更イベントの順序は一般的に予測できませんので、注意が必要です。
+複数行に影響するSQLコマンドはどのような順番でもその行を更新することができます。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       Similarly, a row-level &lt;literal&gt;INSTEAD OF&lt;/literal&gt; trigger will see the
+       effects of data changes made by previous firings of &lt;literal&gt;INSTEAD
+       OF&lt;/literal&gt; triggers in the same outer command.
+</span>
+同様に、行レベルの<code class="literal">INSTEAD OF</code>トリガは、同じ外側のコマンドで以前に処理された<code class="literal">INSTEAD OF</code>トリガよる変更結果を見ることになるでしょう。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       When a row-level &lt;literal&gt;AFTER&lt;/literal&gt; trigger is fired, all data
+       changes made
+       by the outer command are already complete, and are visible to
+       the invoked trigger function.
+</span>
+行レベルの<code class="literal">AFTER</code>トリガが発生すると、その外側のコマンドによってなされた全ての変更は既に完了していますので、呼び出されたトリガ関数から可視になります。
+      </p></li></ul></div><p>
+   </p><p>
+<span class="original">
+    If your trigger function is written in any of the standard procedural
+    languages, then the above statements apply only if the function is
+    declared &lt;literal&gt;VOLATILE&lt;/literal&gt;.  Functions that are declared
+    &lt;literal&gt;STABLE&lt;/literal&gt; or &lt;literal&gt;IMMUTABLE&lt;/literal&gt; will not see changes made by
+    the calling command in any case.
+</span>
+もし、あなたのトリガが標準的な手続き型言語のいずれかで記述されている時、上記の可視性は関数が<code class="literal">VOLATILE</code>で定義されている場合のみ適用されます。
+<code class="literal">STABLE</code>、もしくは<code class="literal">IMMUTABLE</code>で定義されている関数は、どのようなケースにおいても、呼び出しコマンドによる変更は見ないでしょう。
+   </p><p>
+<span class="original">
+    Further information about data visibility rules can be found in
+    &lt;xref linkend="spi-visibility"/&gt;.  The example in &lt;xref
+    linkend="trigger-example"/&gt; contains a demonstration of these rules.
+</span>
+データ可視性規則に関する詳細は<a class="xref" href="spi-visibility.html" title="47.5. データ変更の可視性">47.5</a>にあります。
+<a class="xref" href="trigger-example.html" title="39.4. 完全なトリガの例">39.4</a>の例にこの規則を示します。
+   </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="trigger-definition.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="triggers.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="trigger-interface.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">39.1. トリガ動作の概要 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 39.3. Cによるトリガ関数の作成</td></tr></table></div></body></html>

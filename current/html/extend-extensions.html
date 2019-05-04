@@ -1,0 +1,885 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>38.16. 関連するオブジェクトを拡張としてパッケージ化</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="xindex.html" title="38.15. インデックス拡張機能へのインタフェース" /><link rel="next" href="extend-pgxs.html" title="38.17. 拡張構築基盤" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="extend.html" title="第38章 SQLの拡張">第38章 <acronym class="acronym">SQL</acronym>の拡張</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      extend-extensions.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="xindex.html" title="38.15. インデックス拡張機能へのインタフェース">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="extend.html" title="第38章 SQLの拡張">上へ</a></td><td width="60%" align="center">38.16. 関連するオブジェクトを拡張としてパッケージ化</td><td width="20%" align="right"> <a accesskey="n" href="extend-pgxs.html" title="38.17. 拡張構築基盤">次へ</a></td></tr></table><hr /></div><div class="sect1" id="EXTEND-EXTENSIONS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">38.16. 関連するオブジェクトを拡張としてパッケージ化</h2></div></div></div><span class="original">
+   &lt;title&gt;Packaging Related Objects into an Extension&lt;/title&gt;
+</span><a id="id-1.8.3.19.2" class="indexterm"></a><p>
+<span class="original">
+    A useful extension to &lt;productname&gt;PostgreSQL&lt;/productname&gt; typically includes
+    multiple SQL objects; for example, a new data type will require new
+    functions, new operators, and probably new index operator classes.
+    It is helpful to collect all these objects into a single package
+    to simplify database management.  &lt;productname&gt;PostgreSQL&lt;/productname&gt; calls
+    such a package an &lt;firstterm&gt;extension&lt;/firstterm&gt;.  To define an extension,
+    you need at least a &lt;firstterm&gt;script file&lt;/firstterm&gt; that contains the
+    &lt;acronym&gt;SQL&lt;/acronym&gt; commands to create the extension's objects, and a
+    &lt;firstterm&gt;control file&lt;/firstterm&gt; that specifies a few basic properties
+    of the extension itself.  If the extension includes C code, there
+    will typically also be a shared library file into which the C code
+    has been built.  Once you have these files, a simple
+    &lt;xref linkend="sql-createextension"/&gt; command loads the objects into
+    your database.
+</span>
+<span class="productname">PostgreSQL</span>への有用な拡張は通常、複数のSQLオブジェクトを含んでいます。
+例えば、新しいデータ型は新しい関数、新しい演算子、おそらく新しいインデックス演算子クラスを必要とします。
+これらのオブジェクトをすべて単一のパッケージとしてまとめることは、データベース管理を単純化するために役に立ちます。
+<span class="productname">PostgreSQL</span>ではこうしたパッケージを<em class="firstterm">拡張</em>とよびます。
+拡張を定義するためには、少なくとも、拡張のオブジェクトを作成するための<acronym class="acronym">SQL</acronym>コマンドを含む<em class="firstterm">スクリプトファイル</em>、拡張自身の数個の基本属性を指定する<em class="firstterm">制御ファイル</em>が必要です。
+また拡張がCコードを含む場合、通常Cコードで構築された共有ライブラリが存在します。
+これらのファイルがあれば、単純な<a class="xref" href="sql-createextension.html" title="CREATE EXTENSION"><span class="refentrytitle">CREATE EXTENSION</span></a>コマンドがそのオブジェクトをデータベース内に読み込みます。
+   </p><p>
+<span class="original">
+    The main advantage of using an extension, rather than just running the
+    &lt;acronym&gt;SQL&lt;/acronym&gt; script to load a bunch of &lt;quote&gt;loose&lt;/quote&gt; objects
+    into your database, is that &lt;productname&gt;PostgreSQL&lt;/productname&gt; will then
+    understand that the objects of the extension go together.  You can
+    drop all the objects with a single &lt;xref linkend="sql-dropextension"/&gt;
+    command (no need to maintain a separate &lt;quote&gt;uninstall&lt;/quote&gt; script).
+    Even more useful, &lt;application&gt;pg_dump&lt;/application&gt; knows that it should not
+    dump the individual member objects of the extension &amp;mdash; it will
+    just include a &lt;command&gt;CREATE EXTENSION&lt;/command&gt; command in dumps, instead.
+    This vastly simplifies migration to a new version of the extension
+    that might contain more or different objects than the old version.
+    Note however that you must have the extension's control, script, and
+    other files available when loading such a dump into a new database.
+</span>
+拡張を使用する主な利点は、<acronym class="acronym">SQL</acronym>スクリプトを実行するだけでデータベースに<span class="quote">「<span class="quote">粗な</span>」</span>なオブジェクトの群をロードできることではなく、<span class="productname">PostgreSQL</span>が拡張のオブジェクトをまとまったものと理解できることです。
+単一の<a class="xref" href="sql-dropextension.html" title="DROP EXTENSION"><span class="refentrytitle">DROP EXTENSION</span></a>コマンドでオブジェクトすべてを削除することができます（個々の<span class="quote">「<span class="quote">アンインストール</span>」</span>スクリプトを保守する必要はありません）。
+もっと有用なことは、<span class="application">pg_dump</span>が拡張の個々のメンバオブジェクトを削除してはならないことを把握していることです。
+代わりにダンプ内には<code class="command">CREATE EXTENSION</code>コマンドだけが含まれます。
+これは、古いバージョンよりも多くのまたは異なるオブジェクトを含む可能性がある、拡張の新しいバージョンへの移行を大きく単純化します。
+しかし、こうしたダンプを新しいデータベースにロードする際には、拡張の制御ファイル、スクリプトファイル、その他のファイルが利用できるようにしておく必要があります。
+   </p><p>
+<span class="original">
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; will not let you drop an individual object
+    contained in an extension, except by dropping the whole extension.
+    Also, while you can change the definition of an extension member object
+    (for example, via &lt;command&gt;CREATE OR REPLACE FUNCTION&lt;/command&gt; for a
+    function), bear in mind that the modified definition will not be dumped
+    by &lt;application&gt;pg_dump&lt;/application&gt;.  Such a change is usually only sensible if
+    you concurrently make the same change in the extension's script file.
+    (But there are special provisions for tables containing configuration
+    data; see &lt;xref linkend="extend-extensions-config-tables"/&gt;.)
+    In production situations, it's generally better to create an extension
+    update script to perform changes to extension member objects.
+</span>
+<span class="productname">PostgreSQL</span>はユーザに、拡張全体を削除させる以外に、拡張内に含まれる個々のオブジェクトを削除させません。
+また、拡張のメンバオブジェクトの定義を変更する（例えば関数では<code class="command">CREATE OR REPLACE FUNCTION</code>を介して変更する）ことはできますが、変更した定義は<span class="application">pg_dump</span>によりダンプされないことに留意してください。
+こうした変更は通常、同時に拡張のスクリプトファイルにも同じ変更を行った場合のみ認識することができます。
+（しかし設定データを持つテーブルに対しては特殊な準備があります。<a class="xref" href="extend-extensions.html#EXTEND-EXTENSIONS-CONFIG-TABLES" title="38.16.4. 拡張設定テーブル">38.16.4</a>を参照してください。）
+本番環境では、拡張メンバオブジェクトへの変更を処理するために拡張更新スクリプトを作成するのが一般により良い方法です。
+   </p><p>
+<span class="original">
+    The extension script may set privileges on objects that are part of the
+    extension via &lt;command&gt;GRANT&lt;/command&gt; and &lt;command&gt;REVOKE&lt;/command&gt;
+    statements.  The final set of privileges for each object (if any are set)
+    will be stored in the
+    &lt;link linkend="catalog-pg-init-privs"&gt;&lt;structname&gt;pg_init_privs&lt;/structname&gt;&lt;/link&gt;
+    system catalog.  When &lt;application&gt;pg_dump&lt;/application&gt; is used, the
+    &lt;command&gt;CREATE EXTENSION&lt;/command&gt; command will be included in the dump, followed
+    by the set of &lt;command&gt;GRANT&lt;/command&gt; and &lt;command&gt;REVOKE&lt;/command&gt;
+    statements necessary to set the privileges on the objects to what they were
+    at the time the dump was taken.
+</span>
+拡張スクリプトは、<code class="command">GRANT</code>文と<code class="command">REVOKE</code>文を使って拡張の一部のオブジェクトに権限を設定するかもしれません。
+それぞれのオブジェクト（どれかが設定される場合）の最終的な権限のセットは、<a class="link" href="catalog-pg-init-privs.html" title="52.28. pg_init_privs"><code class="structname">pg_init_privs</code></a>システムカタログに格納されます。
+<span class="application">pg_dump</span>が使用されると、<code class="command">CREATE EXTENSION</code>コマンドがダンプ内に含まれ、オブジェクトの権限をダンプが取られた時点のものに設定するために必要となる<code class="command">GRANT</code>文と<code class="command">REVOKE</code>文が後に続きます。
+   </p><p>
+<span class="original">
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; does not currently support extension scripts
+    issuing &lt;command&gt;CREATE POLICY&lt;/command&gt; or &lt;command&gt;SECURITY LABEL&lt;/command&gt;
+    statements.  These are expected to be set after the extension has been
+    created.  All RLS policies and security labels on extension objects will be
+    included in dumps created by &lt;application&gt;pg_dump&lt;/application&gt;.
+</span>
+<span class="productname">PostgreSQL</span>は、現在拡張スクリプトにて<code class="command">CREATE POLICY</code>文や<code class="command">SECURITY LABEL</code>文の発行をサポートしていません。
+これらは拡張が作成された後に設定されるべきです。
+拡張オブジェクトのすべての行セキュリティポリシーとセキュリティラベルは<span class="application">pg_dump</span>によって作成されたダンプに含まれます。
+   </p><p>
+<span class="original">
+    The extension mechanism also has provisions for packaging modification
+    scripts that adjust the definitions of the SQL objects contained in an
+    extension.  For example, if version 1.1 of an extension adds one function
+    and changes the body of another function compared to 1.0, the extension
+    author can provide an &lt;firstterm&gt;update script&lt;/firstterm&gt; that makes just those
+    two changes.  The &lt;command&gt;ALTER EXTENSION UPDATE&lt;/command&gt; command can then
+    be used to apply these changes and track which version of the extension
+    is actually installed in a given database.
+</span>
+また拡張機構は、拡張に含まれるSQLオブジェクトの定義を調整するパッケージ調整スクリプトを準備しています。
+例えば、拡張のバージョン1.1でバージョン1.0と比べて１つの関数を追加し、他の関数本体を変更する場合、拡張の作成者はこれらの２つの変更のみを行う<em class="firstterm">更新スクリプト</em>を提供することができます。
+そして<code class="command">ALTER EXTENSION UPDATE</code>コマンドを使用して、これらの変更を適用し、指定されたデータベース内に実際にインストールされた拡張のバージョンが何かを記録します。
+   </p><p>
+<span class="original">
+    The kinds of SQL objects that can be members of an extension are shown in
+    the description of &lt;xref linkend="sql-alterextension"/&gt;.  Notably, objects
+    that are database-cluster-wide, such as databases, roles, and tablespaces,
+    cannot be extension members since an extension is only known within one
+    database.  (Although an extension script is not prohibited from creating
+    such objects, if it does so they will not be tracked as part of the
+    extension.)  Also notice that while a table can be a member of an
+    extension, its subsidiary objects such as indexes are not directly
+    considered members of the extension.
+    Another important point is that schemas can belong to extensions, but not
+    vice versa: an extension as such has an unqualified name and does not
+    exist &lt;quote&gt;within&lt;/quote&gt; any schema.  The extension's member objects,
+    however, will belong to schemas whenever appropriate for their object
+    types.  It may or may not be appropriate for an extension to own the
+    schema(s) its member objects are within.
+</span>
+拡張のメンバとなり得るSQLオブジェクトの種類を<a class="xref" href="sql-alterextension.html" title="ALTER EXTENSION"><span class="refentrytitle">ALTER EXTENSION</span></a>で説明します。
+拡張は１つのデータベースの中でのみ認識されますので、データベース、ロール、テーブル空間などデータベースクラスタ全体のオブジェクトは拡張のメンバにすることができないことに注意してください。
+（拡張のスクリプトでこうしたオブジェクトを生成することは禁止されていませんが、作成したとしても、拡張の一部として記録されません。）
+また、テーブルは拡張のメンバになることができますが、インデックスなどそれに付随するオブジェクトは拡張の直接的なメンバとはみなされません。
+もう一つの重要な点は、スキーマは拡張に属すことがありますがその逆はないということです。
+拡張は非修飾名でいかなるスキーマ<span class="quote">「<span class="quote">の中に</span>」</span>も存在しません。
+しかし、拡張のメンバオブジェクトはオブジェクトの型が適切であればスキーマに属します。
+拡張が自身のメンバオブジェクトが属するスキーマを所有することは適切かも知れませんし、そうでないかも知れません。
+   </p><p>
+<span class="original">
+    If an extension's script creates any temporary objects (such as temp
+    tables), those objects are treated as extension members for the
+    remainder of the current session, but are automatically dropped at
+    session end, as any temporary object would be.  This is an exception
+    to the rule that extension member objects cannot be dropped without
+    dropping the whole extension.
+</span>
+ある拡張のスクリプトが（一時テーブルのような）一時オブジェクトを作成する場合、現在のセッションで、以降そのオブジェクトは拡張のメンバーとして扱われます。
+しかしすべての一時オブジェクト同様、セッションの終わりに削除されます。
+これは、拡張全体を削除することなしに、拡張のメンバーオブジェクトは削除できない、という規則の例外です。
+   </p><div class="sect2" id="EXTEND-EXTENSIONS-STYLE"><div class="titlepage"><div><div><h3 class="title">38.16.1. 拡張オブジェクトの定義</h3></div></div></div><span class="original">
+    &lt;title&gt;Defining Extension Objects&lt;/title&gt;
+</span><span class="original"> XXX It's not enough to use qualified names, because one might write a
+         qualified name to an object that itself uses unqualified names.  Many
+         information_schema functions have that defect, for example.  However,
+         that's a defect in the referenced object, and relatively few queries
+         will be affected.  Also, we direct applications to secure search_path
+         when connecting to an untrusted database; if applications do that,
+         they are immune to known attacks even if some extension refers to a
+         defective object.  Therefore, guide extension authors as though core
+         PostgreSQL contained no such defect. </span><p>
+<span class="original">
+     Widely-distributed extensions should assume little about the database
+     they occupy.  In particular, unless you issued &lt;literal&gt;SET search_path =
+     pg_temp&lt;/literal&gt;, assume each unqualified name could resolve to an
+     object that a malicious user has defined.  Beware of constructs that
+     depend on &lt;varname&gt;search_path&lt;/varname&gt; implicitly: &lt;token&gt;IN&lt;/token&gt;
+     and &lt;literal&gt;CASE &lt;replaceable&gt;expression&lt;/replaceable&gt; WHEN&lt;/literal&gt;
+     always select an operator using the search path.  In their place, use
+     &lt;literal&gt;OPERATOR(&lt;replaceable&gt;schema&lt;/replaceable&gt;.=) ANY&lt;/literal&gt;
+     and &lt;literal&gt;CASE WHEN &lt;replaceable&gt;expression&lt;/replaceable&gt;&lt;/literal&gt;.
+</span>
+広く配布される拡張では、インストールされるデータベースについて前提とすることは最小限にすべきです。
+とりわけ、<code class="literal">SET search_path = pg_temp</code>を実行しない限り、修飾されない名前は、悪意のあるユーザが定義したオブジェクトになる可能性があることを前提としてください。
+暗黙的に<code class="varname">search_path</code>に依存するような構文要素に注意してください。
+<code class="token">IN</code>と<code class="literal">CASE <em class="replaceable"><code>式</code></em> WHEN</code>は、サーチパスを使って演算子を選択します。
+代わりに、<code class="literal">OPERATOR(<em class="replaceable"><code>schema</code></em>.=) ANY</code>と<code class="literal">CASE WHEN <em class="replaceable"><code>式</code></em></code>を使ってください。
+    </p></div><div class="sect2" id="id-1.8.3.19.12"><div class="titlepage"><div><div><h3 class="title">38.16.2. 拡張のファイル</h3></div></div></div><span class="original">
+    &lt;title&gt;Extension Files&lt;/title&gt;
+</span><a id="id-1.8.3.19.12.2" class="indexterm"></a><p>
+<span class="original">
+     The &lt;xref linkend="sql-createextension"/&gt; command relies on a control
+     file for each extension, which must be named the same as the extension
+     with a suffix of &lt;literal&gt;.control&lt;/literal&gt;, and must be placed in the
+     installation's &lt;literal&gt;SHAREDIR/extension&lt;/literal&gt; directory.  There
+     must also be at least one &lt;acronym&gt;SQL&lt;/acronym&gt; script file, which follows the
+     naming pattern
+     &lt;literal&gt;&lt;replaceable&gt;extension&lt;/replaceable&gt;&amp;#045;&amp;#045;&lt;replaceable&gt;version&lt;/replaceable&gt;.sql&lt;/literal&gt;
+     (for example, &lt;literal&gt;foo&amp;#045;&amp;#045;1.0.sql&lt;/literal&gt; for version &lt;literal&gt;1.0&lt;/literal&gt; of
+     extension &lt;literal&gt;foo&lt;/literal&gt;).  By default, the script file(s) are also
+     placed in the &lt;literal&gt;SHAREDIR/extension&lt;/literal&gt; directory; but the
+     control file can specify a different directory for the script file(s).
+</span>
+<a class="xref" href="sql-createextension.html" title="CREATE EXTENSION"><span class="refentrytitle">CREATE EXTENSION</span></a>コマンドは各拡張に関して、拡張と同じ名前に<code class="literal">.control</code>という拡張子を持つファイル名である必要がある、制御ファイルに依存します。
+また、このファイルはインストレーションの<code class="literal">SHAREDIR/extension</code>ディレクトリ内に存在しなければなりません。
+また少なくとも１つの、<code class="literal"><em class="replaceable"><code>extension</code></em>--<em class="replaceable"><code>version</code></em>.sql</code>という命名規約（例えば<code class="literal">foo</code>拡張のバージョン<code class="literal">1.0</code>では<code class="literal">foo--1.0.sql</code>）に従った<acronym class="acronym">SQL</acronym>スクリプトファイルが存在しなければなりません。
+デフォルトでは、このスクリプトファイルも<code class="literal">SHAREDIR/extension</code>ディレクトリに格納されますが、制御ファイルでスクリプトファイルを別のディレクトリに指定することができます。
+    </p><p>
+<span class="original">
+     The file format for an extension control file is the same as for the
+     &lt;filename&gt;postgresql.conf&lt;/filename&gt; file, namely a list of
+     &lt;replaceable&gt;parameter_name&lt;/replaceable&gt; &lt;literal&gt;=&lt;/literal&gt; &lt;replaceable&gt;value&lt;/replaceable&gt;
+     assignments, one per line.  Blank lines and comments introduced by
+     &lt;literal&gt;#&lt;/literal&gt; are allowed.  Be sure to quote any value that is not
+     a single word or number.
+</span>
+拡張の制御ファイルのファイル書式は<code class="filename">postgresql.conf</code>ファイルと同じです。
+すなわち、<em class="replaceable"><code>parameter_name</code></em> <code class="literal">=</code> <em class="replaceable"><code>value</code></em>という代入を１行当たり１つ記述します。
+空行および<code class="literal">#</code>から始まるコメントが許されます。
+単一の単語または数字ではない値にはすべて引用符で確実にくくってください。
+    </p><p>
+<span class="original">
+     A control file can set the following parameters:
+</span>
+制御ファイルは以下のパラメータを設定することができます。
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="varname">directory</code> (<code class="type">string</code>)</span></dt><dd><p>
+<span class="original">
+        The directory containing the extension's &lt;acronym&gt;SQL&lt;/acronym&gt; script
+        file(s).  Unless an absolute path is given, the name is relative to
+        the installation's &lt;literal&gt;SHAREDIR&lt;/literal&gt; directory.  The
+        default behavior is equivalent to specifying
+        &lt;literal&gt;directory = 'extension'&lt;/literal&gt;.
+</span>
+拡張の<acronym class="acronym">SQL</acronym>スクリプトファイルを含むディレクトリです。
+絶対パスで指定されていない限り、この名前はインストレーションの<code class="literal">SHAREDIR</code>ディレクトリからの相対パスになります。
+デフォルトの動作は<code class="literal">directory = 'extension'</code>と指定した場合と同じです。
+       </p></dd><dt><span class="term"><code class="varname">default_version</code> (<code class="type">string</code>)</span></dt><dd><p>
+<span class="original">
+        The default version of the extension (the one that will be installed
+        if no version is specified in &lt;command&gt;CREATE EXTENSION&lt;/command&gt;).  Although
+        this can be omitted, that will result in &lt;command&gt;CREATE EXTENSION&lt;/command&gt;
+        failing if no &lt;literal&gt;VERSION&lt;/literal&gt; option appears, so you generally
+        don't want to do that.
+</span>
+拡張のデフォルトのバージョン（<code class="command">CREATE EXTENSION</code>でバージョン指定がない場合にインストールされるバージョン）です。
+これは省略することができますが、その場合<code class="literal">VERSION</code>オプションがない<code class="command">CREATE EXTENSION</code>は失敗します。
+ですので通常省略しようとは思わないでしょう。
+       </p></dd><dt><span class="term"><code class="varname">comment</code> (<code class="type">string</code>)</span></dt><dd><p>
+<span class="original">
+        A comment (any string) about the extension.  The comment is applied
+        when initially creating an extension, but not during extension updates
+        (since that might override user-added comments).  Alternatively,
+        the extension's comment can be set by writing
+        a &lt;xref linkend="sql-comment"/&gt; command in the script file.
+</span>
+拡張に関するコメント（任意の文字列）です。
+最初に拡張が作成されるときにコメントは適用されますが、拡張が更新される間はされません（ユーザが追加したコメントを上書いてしまうため）。
+この他の方法として、スクリプトファイル内で<a class="xref" href="sql-comment.html" title="COMMENT"><span class="refentrytitle">COMMENT</span></a>コマンドを使用してコメントを設定することができます。
+       </p></dd><dt><span class="term"><code class="varname">encoding</code> (<code class="type">string</code>)</span></dt><dd><p>
+<span class="original">
+        The character set encoding used by the script file(s).  This should
+        be specified if the script files contain any non-ASCII characters.
+        Otherwise the files will be assumed to be in the database encoding.
+</span>
+スクリプトファイルで使用される文字セット符号化方式です。
+スクリプトファイルに何らかの非ASCII文字が含まれる場合に指定しなければなりません。
+指定がなければ、ファイルはデータベース符号化方式であると仮定されます。
+       </p></dd><dt><span class="term"><code class="varname">module_pathname</code> (<code class="type">string</code>)</span></dt><dd><p>
+<span class="original">
+        The value of this parameter will be substituted for each occurrence
+        of &lt;literal&gt;MODULE_PATHNAME&lt;/literal&gt; in the script file(s).  If it is not
+        set, no substitution is made.  Typically, this is set to
+        &lt;literal&gt;$libdir/&lt;replaceable&gt;shared_library_name&lt;/replaceable&gt;&lt;/literal&gt; and
+        then &lt;literal&gt;MODULE_PATHNAME&lt;/literal&gt; is used in &lt;command&gt;CREATE
+        FUNCTION&lt;/command&gt; commands for C-language functions, so that the script
+        files do not need to hard-wire the name of the shared library.
+</span>
+このパラメータの値でスクリプトファイル内の<code class="literal">MODULE_PATHNAME</code>の出現箇所が置換されます。
+設定されていない場合は置換は行われません。
+通常これは、スクリプトファイル内で共有ライブラリの名前を直接書き込む必要がなくなるように<code class="literal">$libdir/<em class="replaceable"><code>shared_library_name</code></em></code>に設定され、C言語関数では<code class="command">CREATE FUNCTION</code>コマンド中で<code class="literal">MODULE_PATHNAME</code>を使用します。
+       </p></dd><dt><span class="term"><code class="varname">requires</code> (<code class="type">string</code>)</span></dt><dd><p>
+<span class="original">
+        A list of names of extensions that this extension depends on,
+        for example &lt;literal&gt;requires = 'foo, bar'&lt;/literal&gt;.  Those
+        extensions must be installed before this one can be installed.
+</span>
+拡張が依存する拡張の名前のリストです。
+例えば<code class="literal">requires = 'foo, bar'</code>です。
+対象の拡張がインストールできるようになる前に、これらの拡張がインストールされていなければなりません。
+       </p></dd><dt><span class="term"><code class="varname">superuser</code> (<code class="type">boolean</code>)</span></dt><dd><p>
+<span class="original">
+        If this parameter is &lt;literal&gt;true&lt;/literal&gt; (which is the default),
+        only superusers can create the extension or update it to a new
+        version.  If it is set to &lt;literal&gt;false&lt;/literal&gt;, just the privileges
+        required to execute the commands in the installation or update script
+        are required.
+</span>
+このパラメータが<code class="literal">true</code>（デフォルト）の場合、スーパーユーザのみが拡張を作成または新しいバージョンに更新することができます。
+<code class="literal">false</code>に設定されている場合は、インストレーション内でコマンドを実行するまたはスクリプトを更新するために必要な権限のみが必要とされます。
+       </p></dd><dt><span class="term"><code class="varname">relocatable</code> (<code class="type">boolean</code>)</span></dt><dd><p>
+<span class="original">
+        An extension is &lt;firstterm&gt;relocatable&lt;/firstterm&gt; if it is possible to move
+        its contained objects into a different schema after initial creation
+        of the extension.  The default is &lt;literal&gt;false&lt;/literal&gt;, i.e. the
+        extension is not relocatable.
+        See &lt;xref linkend="extend-extensions-relocation"/&gt; for more information.
+</span>
+拡張を最初に作成した後に拡張により含まれるオブジェクトを別のスキーマに移動することができる場合、拡張は<em class="firstterm">再配置可能</em>です。
+デフォルトは<code class="literal">false</code>、つまり、拡張は再配置可能ではありません。
+詳しくは<a class="xref" href="extend-extensions.html#EXTEND-EXTENSIONS-RELOCATION" title="38.16.3. 拡張の再配置性">38.16.3</a>を参照してください。
+       </p></dd><dt><span class="term"><code class="varname">schema</code> (<code class="type">string</code>)</span></dt><dd><p>
+<span class="original">
+        This parameter can only be set for non-relocatable extensions.
+        It forces the extension to be loaded into exactly the named schema
+        and not any other.
+        The &lt;varname&gt;schema&lt;/varname&gt; parameter is consulted only when
+        initially creating an extension, not during extension updates.
+        See &lt;xref linkend="extend-extensions-relocation"/&gt; for more information.
+</span>
+このパラメータは再配置可能ではない拡張に対してのみ設定することができます。
+拡張が指名したスキーマのみにロードされ、他にはロードされないことを強制します。
+<code class="varname">schema</code>パラメータは、拡張を最初に作成するときにのみ参照され、拡張が更新される間はされません。
+詳しくは<a class="xref" href="extend-extensions.html#EXTEND-EXTENSIONS-RELOCATION" title="38.16.3. 拡張の再配置性">38.16.3</a>を参照してください。
+       </p></dd></dl></div><p>
+<span class="original">
+     In addition to the primary control file
+     &lt;literal&gt;&lt;replaceable&gt;extension&lt;/replaceable&gt;.control&lt;/literal&gt;,
+     an extension can have secondary control files named in the style
+     &lt;literal&gt;&lt;replaceable&gt;extension&lt;/replaceable&gt;&amp;#045;-&lt;replaceable&gt;version&lt;/replaceable&gt;.control&lt;/literal&gt;.
+     If supplied, these must be located in the script file directory.
+     Secondary control files follow the same format as the primary control
+     file.  Any parameters set in a secondary control file override the
+     primary control file when installing or updating to that version of
+     the extension.  However, the parameters &lt;varname&gt;directory&lt;/varname&gt; and
+     &lt;varname&gt;default_version&lt;/varname&gt; cannot be set in a secondary control file.
+</span>
+主制御ファイル<code class="literal"><em class="replaceable"><code>extension</code></em>.control</code>に加え、拡張は<code class="literal"><em class="replaceable"><code>extension</code></em>--<em class="replaceable"><code>version</code></em>.control</code>という形の名前の副制御ファイルを持つことができます。
+これらを提供する場合は、スクリプトファイルディレクトリに格納しなければなりません。
+副制御ファイルは主制御ファイルと同じ書式に従います。
+拡張の対応するバージョンをインストールまたは更新する時、副制御ファイル内で設定されるパラメータはいずれも、主制御ファイルを上書きします。
+しかし<code class="varname">directory</code>および<code class="varname">default_version</code>パラメータは副制御ファイルで設定することはできません。
+    </p><p>
+<span class="original">
+     An extension's &lt;acronym&gt;SQL&lt;/acronym&gt; script files can contain any SQL commands,
+     except for transaction control commands (&lt;command&gt;BEGIN&lt;/command&gt;,
+     &lt;command&gt;COMMIT&lt;/command&gt;, etc) and commands that cannot be executed inside a
+     transaction block (such as &lt;command&gt;VACUUM&lt;/command&gt;).  This is because the
+     script files are implicitly executed within a transaction block.
+</span>
+拡張の<acronym class="acronym">SQL</acronym>スクリプトファイルにはトランザクション制御コマンド（<code class="command">BEGIN</code>、<code class="command">COMMIT</code>など）およびトランザクションブロックの内側で実行することができないコマンド（<code class="command">VACUUM</code>など）を除く任意のSQLコマンドを含めることができます。
+スクリプトファイルが暗黙的にトランザクションブロック内で実行されるためです。
+    </p><p>
+<span class="original">
+     An extension's &lt;acronym&gt;SQL&lt;/acronym&gt; script files can also contain lines
+     beginning with &lt;literal&gt;\echo&lt;/literal&gt;, which will be ignored (treated as
+     comments) by the extension mechanism.  This provision is commonly used
+     to throw an error if the script file is fed to &lt;application&gt;psql&lt;/application&gt;
+     rather than being loaded via &lt;command&gt;CREATE EXTENSION&lt;/command&gt; (see example
+     script in &lt;xref linkend="extend-extensions-example"/&gt;).
+     Without that, users might accidentally load the
+     extension's contents as &lt;quote&gt;loose&lt;/quote&gt; objects rather than as an
+     extension, a state of affairs that's a bit tedious to recover from.
+</span>
+拡張の<acronym class="acronym">SQL</acronym>スクリプトファイルには、<code class="literal">\echo</code>から始まる行を含めることができます。
+この行は拡張の機構では無視されます（コメントとして扱われます）。
+これは、このスクリプトが<code class="command">CREATE EXTENSION</code>（<a class="xref" href="extend-extensions.html#EXTEND-EXTENSIONS-EXAMPLE" title="38.16.7. 拡張の例">38.16.7</a>のスクリプト例を参照）ではなく<span class="application">psql</span>に渡された場合にエラーを発生するために一般的に使用するために用意されたものです。
+これがないと、ユーザは間違って拡張としてではなく、<span class="quote">「<span class="quote">まとまっていない</span>」</span>オブジェクトとして拡張の内容をロードしてしまい、復旧が多少困難な状態になる可能性があります。
+    </p><p>
+<span class="original">
+     While the script files can contain any characters allowed by the specified
+     encoding, control files should contain only plain ASCII, because there
+     is no way for &lt;productname&gt;PostgreSQL&lt;/productname&gt; to know what encoding a
+     control file is in.  In practice this is only an issue if you want to
+     use non-ASCII characters in the extension's comment.  Recommended
+     practice in that case is to not use the control file &lt;varname&gt;comment&lt;/varname&gt;
+     parameter, but instead use &lt;command&gt;COMMENT ON EXTENSION&lt;/command&gt;
+     within a script file to set the comment.
+</span>
+スクリプトファイルは指定した符号化方式で認められる任意の文字を含めることができますが、<span class="productname">PostgreSQL</span>が制御ファイルの符号化方式が何かを把握する方法がありませんので、制御ファイルにはASCII文字のみを含めなければなりません。
+実際には、拡張のコメントに非ASCII文字を含めたい場合にのみ、これが問題になります。
+このような場合には、制御ファイルの<code class="varname">comment</code>を使用せず、代わりにコメントを設定するためにスクリプトファイル内で<code class="command">COMMENT ON EXTENSION</code>を使用することを勧めます。
+    </p></div><div class="sect2" id="EXTEND-EXTENSIONS-RELOCATION"><div class="titlepage"><div><div><h3 class="title">38.16.3. 拡張の再配置性</h3></div></div></div><span class="original">
+    &lt;title&gt;Extension Relocatability&lt;/title&gt;
+</span><p>
+<span class="original">
+     Users often wish to load the objects contained in an extension into a
+     different schema than the extension's author had in mind.  There are
+     three supported levels of relocatability:
+</span>
+ユーザは拡張に含まれるオブジェクトを拡張の作成者が考えていたスキーマとは別のスキーマにロードしたいとよく考えます。
+再配置性に関して３つのレベルがサポートされます。
+    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+       A fully relocatable extension can be moved into another schema
+       at any time, even after it's been loaded into a database.
+       This is done with the &lt;command&gt;ALTER EXTENSION SET SCHEMA&lt;/command&gt;
+       command, which automatically renames all the member objects into
+       the new schema.  Normally, this is only possible if the extension
+       contains no internal assumptions about what schema any of its
+       objects are in.  Also, the extension's objects must all be in one
+       schema to begin with (ignoring objects that do not belong to any
+       schema, such as procedural languages).  Mark a fully relocatable
+       extension by setting &lt;literal&gt;relocatable = true&lt;/literal&gt; in its control
+       file.
+</span>
+完全な再配置可能な拡張は、いつでも、データベースにロードされた後であっても、他のスキーマに移動させることができます。
+これは、自動的にすべてのメンバオブジェクトを新しいスキーマに名前を変更する、<code class="command">ALTER EXTENSION SET SCHEMA</code>を用いて行います。
+通常これは、拡張がオブジェクトが含まれるスキーマが何かに関して内部的な仮定を持たない場合のみ可能です。
+また、拡張のオブジェクト（手続き言語など何らかのスキーマに属さないオブジェクトは無視して）はすべて最初に１つのスキーマ内に存在しなければなりません。
+制御ファイル内で<code class="literal">relocatable = true</code>と設定することで、完全な再配置可能と印付けます。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       An extension might be relocatable during installation but not
+       afterwards.  This is typically the case if the extension's script
+       file needs to reference the target schema explicitly, for example
+       in setting &lt;literal&gt;search_path&lt;/literal&gt; properties for SQL functions.
+       For such an extension, set &lt;literal&gt;relocatable = false&lt;/literal&gt; in its
+       control file, and use &lt;literal&gt;@extschema@&lt;/literal&gt; to refer to the target
+       schema in the script file.  All occurrences of this string will be
+       replaced by the actual target schema's name before the script is
+       executed.  The user can set the target schema using the
+       &lt;literal&gt;SCHEMA&lt;/literal&gt; option of &lt;command&gt;CREATE EXTENSION&lt;/command&gt;.
+</span>
+拡張はインストール処理の間再配置可能ですが、その後再配置することはできません。
+通常これは、拡張のスクリプトファイルが、SQL関数用の<code class="literal">search_path</code>属性の設定など、対象のスキーマを明示的に参照する必要がある場合です。
+こうした拡張では、制御ファイルで<code class="literal">relocatable = false</code>と設定し、スクリプトファイル内で対象のスキーマを参照するために<code class="literal">@extschema@</code>を設定してください。
+この文字列の出現箇所はすべて、スクリプトが実行される前に、実際の対象のスキーマ名に置換されます。
+ユーザは<code class="command">CREATE EXTENSION</code>の<code class="literal">SCHEMA</code>オプションを使用して対象のスキーマを設定することができます。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       If the extension does not support relocation at all, set
+       &lt;literal&gt;relocatable = false&lt;/literal&gt; in its control file, and also set
+       &lt;literal&gt;schema&lt;/literal&gt; to the name of the intended target schema.  This
+       will prevent use of the &lt;literal&gt;SCHEMA&lt;/literal&gt; option of &lt;command&gt;CREATE
+       EXTENSION&lt;/command&gt;, unless it specifies the same schema named in the control
+       file.  This choice is typically necessary if the extension contains
+       internal assumptions about schema names that can't be replaced by
+       uses of &lt;literal&gt;@extschema@&lt;/literal&gt;.  The &lt;literal&gt;@extschema@&lt;/literal&gt;
+       substitution mechanism is available in this case too, although it is
+       of limited use since the schema name is determined by the control file.
+</span>
+拡張が再配置をまったくサポートしない場合、制御ファイルで<code class="literal">relocatable = false</code>を設定し、かつ、<code class="literal">schema</code>を意図している対象スキーマの名前に設定してください。
+これは、制御ファイル内で指定されたスキーマと同じ名前が指定されていない限り、<code class="command">CREATE EXTENSION</code>の<code class="literal">SCHEMA</code>オプションの指定を阻止します。
+この選択は通常、拡張が<code class="literal">@extschema@</code>を使用して置き換えることができないスキーマ名について内部的な仮定を持つ場合に必要です。
+<code class="literal">@extschema@</code>置換機構はこの場合でも使用することができますが、スキーマ名が制御ファイルによって決定されますので、用途は限定されます。
+      </p></li></ul></div><p>
+<span class="original">
+     In all cases, the script file will be executed with
+     &lt;xref linkend="guc-search-path"/&gt; initially set to point to the target
+     schema; that is, &lt;command&gt;CREATE EXTENSION&lt;/command&gt; does the equivalent of
+     this:
+</span>
+すべての場合において、スクリプトファイルは対象のスキーマを指し示すようにあらかじめ設定した<a class="xref" href="runtime-config-client.html#GUC-SEARCH-PATH">search_path</a>を用いて実行されます。
+つまり<code class="command">CREATE EXTENSION</code>は以下と同じことを行います。
+</p><pre class="programlisting">
+SET LOCAL search_path TO @extschema@;
+</pre><p>
+<span class="original">
+     This allows the objects created by the script file to go into the target
+     schema.  The script file can change &lt;varname&gt;search_path&lt;/varname&gt; if it wishes,
+     but that is generally undesirable.  &lt;varname&gt;search_path&lt;/varname&gt; is restored
+     to its previous setting upon completion of &lt;command&gt;CREATE EXTENSION&lt;/command&gt;.
+</span>
+これによりスクリプトファイルで作成されるオブジェクトを対象のスキーマ内に格納することができます。
+スクリプトファイルは要望に応じて<code class="varname">search_path</code>を変更することができますが、一般的には望まれません。
+<code class="command">CREATE EXTENSION</code>の実行後、<code class="varname">search_path</code>は以前の設定に戻されます。
+    </p><p>
+<span class="original">
+     The target schema is determined by the &lt;varname&gt;schema&lt;/varname&gt; parameter in
+     the control file if that is given, otherwise by the &lt;literal&gt;SCHEMA&lt;/literal&gt;
+     option of &lt;command&gt;CREATE EXTENSION&lt;/command&gt; if that is given, otherwise the
+     current default object creation schema (the first one in the caller's
+     &lt;varname&gt;search_path&lt;/varname&gt;).  When the control file &lt;varname&gt;schema&lt;/varname&gt;
+     parameter is used, the target schema will be created if it doesn't
+     already exist, but in the other two cases it must already exist.
+</span>
+対象のスキーマは制御ファイル内の<code class="varname">schema</code>パラメータがあればこのパラメータにより決定されます。
+このパラメータがなければ、<code class="command">CREATE EXTENSION</code>の<code class="literal">SCHEMA</code>があればこの値で決まり、これ以外の場合は現在のデフォルトのオブジェクト生成用スキーマ（呼び出し元の<code class="varname">search_path</code>の最初のもの）になります。
+制御ファイルの<code class="varname">schema</code>パラメータが使用される時、対象のスキーマが存在しない場合は作成されますが、これ以外の２つの場合ではすでに存在しなければなりません。
+    </p><p>
+<span class="original">
+     If any prerequisite extensions are listed in &lt;varname&gt;requires&lt;/varname&gt;
+     in the control file, their target schemas are appended to the initial
+     setting of &lt;varname&gt;search_path&lt;/varname&gt;.  This allows their objects to be
+     visible to the new extension's script file.
+</span>
+何らかの事前に必要な拡張が制御ファイル内の<code class="varname">requires</code>に列挙されていた場合、それらの対象スキーマが<code class="varname">search_path</code>の初期設定に追加されます。
+これにより新しい拡張のスクリプトファイルからそれらのオブジェクトが可視になります。
+    </p><p>
+<span class="original">
+     Although a non-relocatable extension can contain objects spread across
+     multiple schemas, it is usually desirable to place all the objects meant
+     for external use into a single schema, which is considered the extension's
+     target schema.  Such an arrangement works conveniently with the default
+     setting of &lt;varname&gt;search_path&lt;/varname&gt; during creation of dependent
+     extensions.
+</span>
+再配置不可能な拡張は複数スキーマにまたがるオブジェクトを含めることができますが、通常、外部使用を意図したオブジェクトはすべて単一スキーマに格納することが望まれます。
+この単一スキーマが拡張の対象のスキーマとみなされます。
+こうした調整は依存する拡張を作成する間、デフォルトの<code class="varname">search_path</code>設定を都合に合わせて扱います。
+    </p></div><div class="sect2" id="EXTEND-EXTENSIONS-CONFIG-TABLES"><div class="titlepage"><div><div><h3 class="title">38.16.4. 拡張設定テーブル</h3></div></div></div><span class="original">
+    &lt;title&gt;Extension Configuration Tables&lt;/title&gt;
+</span><p>
+<span class="original">
+     Some extensions include configuration tables, which contain data that
+     might be added or changed by the user after installation of the
+     extension.  Ordinarily, if a table is part of an extension, neither
+     the table's definition nor its content will be dumped by
+     &lt;application&gt;pg_dump&lt;/application&gt;.  But that behavior is undesirable for a
+     configuration table; any data changes made by the user need to be
+     included in dumps, or the extension will behave differently after a dump
+     and reload.
+</span>
+一部の拡張は、拡張をインストールした後でユーザにより追加または変更される可能性があるデータを持つ設定テーブルを含みます。
+通常、テーブルが拡張の一部である場合、テーブル定義もその内容も<span class="application">pg_dump</span>によりダンプされません。
+しかしこの振舞いは設定テーブルの場合望まれません。
+ユーザによってなされたデータ変更はダンプ内に含まれなければなりません。
+さもないとダンプしリストアした後で拡張の動作が変わってしまいます。
+    </p><a id="id-1.8.3.19.14.3" class="indexterm"></a><p>
+<span class="original">
+     To solve this problem, an extension's script file can mark a table
+     or a sequence it has created as a configuration relation, which will
+     cause &lt;application&gt;pg_dump&lt;/application&gt; to include the table's or the sequence's
+     contents (not its definition) in dumps.  To do that, call the function
+     &lt;function&gt;pg_extension_config_dump(regclass, text)&lt;/function&gt; after creating the
+     table or the sequence, for example
+</span>
+この問題を解消するために、拡張のスクリプトファイルでは設定リレーションとして作成されるテーブル、またはシーケンスに印を付け、<span class="application">pg_dump</span>にテーブルの、またはシーケンスの内容をダンプに含める（定義は含まれません）ようにさせることができます。
+このためには、以下の例のようにテーブル、またはシーケンスを作成した後に<code class="function">pg_extension_config_dump(regclass, text)</code>関数を呼び出してください。
+</p><pre class="programlisting">
+CREATE TABLE my_config (key text, value text);
+CREATE SEQUENCE my_config_seq;
+
+SELECT pg_catalog.pg_extension_config_dump('my_config', '');
+SELECT pg_catalog.pg_extension_config_dump('my_config_seq', '');
+</pre><p>
+<span class="original">
+     Any number of tables or sequences can be marked this way. Sequences
+     associated with &lt;type&gt;serial&lt;/type&gt; or &lt;type&gt;bigserial&lt;/type&gt; columns can
+     be marked as well.
+</span>
+任意数のテーブル、またはシーケンスをこの方法で印付けることができます。
+<code class="type">serial</code>列または<code class="type">bigserial</code>列に関連したシーケンスが、同様に印付けることができます。
+    </p><p>
+<span class="original">
+     When the second argument of &lt;function&gt;pg_extension_config_dump&lt;/function&gt; is
+     an empty string, the entire contents of the table are dumped by
+     &lt;application&gt;pg_dump&lt;/application&gt;.  This is usually only correct if the table
+     is initially empty as created by the extension script.  If there is
+     a mixture of initial data and user-provided data in the table,
+     the second argument of &lt;function&gt;pg_extension_config_dump&lt;/function&gt; provides
+     a &lt;literal&gt;WHERE&lt;/literal&gt; condition that selects the data to be dumped.
+     For example, you might do
+</span>
+<code class="function">pg_extension_config_dump</code>の第２引数が空文字列である場合、テーブルのすべての内容が<span class="application">pg_dump</span>によりダンプされます。
+これは、拡張のスクリプトによって作成された初期段階においてテーブルが空である場合のみ正しいものです。
+テーブルの中で初期データとユーザが提供したデータが混在する場合、<code class="function">pg_extension_config_dump</code>の第２引数においてダンプすべきデータを選択する<code class="literal">WHERE</code>条件を提供します。
+以下に例を示します。
+</p><pre class="programlisting">
+CREATE TABLE my_config (key text, value text, standard_entry boolean);
+
+SELECT pg_catalog.pg_extension_config_dump('my_config', 'WHERE NOT standard_entry');
+</pre><p>
+<span class="original">
+     and then make sure that &lt;structfield&gt;standard_entry&lt;/structfield&gt; is true only
+     in the rows created by the extension's script.
+</span>
+このようにした後、拡張のスクリプトで作成される行のみで<code class="structfield">standard_entry</code>が確実に真になるようにします。
+    </p><p>
+<span class="original">
+     For sequences, the second argument of &lt;function&gt;pg_extension_config_dump&lt;/function&gt;
+     has no effect.
+</span>
+シーケンスにおいて、<code class="function">pg_extension_config_dump</code>の第２引数は何も影響を及ぼしません。
+    </p><p>
+<span class="original">
+     More complicated situations, such as initially-provided rows that might
+     be modified by users, can be handled by creating triggers on the
+     configuration table to ensure that modified rows are marked correctly.
+</span>
+初期状態で提供される行がユーザによって変更されるようなもっと複雑な状況では、設定テーブルに対するトリガを作成して、変更された行が正しく印付けられることを確実にするように取り扱うことができます。
+    </p><p>
+<span class="original">
+     You can alter the filter condition associated with a configuration table
+     by calling &lt;function&gt;pg_extension_config_dump&lt;/function&gt; again.  (This would
+     typically be useful in an extension update script.)  The only way to mark
+     a table as no longer a configuration table is to dissociate it from the
+     extension with &lt;command&gt;ALTER EXTENSION ... DROP TABLE&lt;/command&gt;.
+</span>
+<code class="function">pg_extension_config_dump</code>を再度呼び出すことにより、設定テーブルに関連付いたフィルタ条件を変更することができます。
+（通常これは拡張の更新スクリプト内で役に立つでしょう。）
+設定ファイルからテーブルを取り除くように印付ける方法は、<code class="command">ALTER EXTENSION ... DROP TABLE</code>を用いてテーブルを拡張から分離するしかありません。
+    </p><p>
+<span class="original">
+     Note that foreign key relationships between these tables will dictate the
+     order in which the tables are dumped out by pg_dump.  Specifically, pg_dump
+     will attempt to dump the referenced-by table before the referencing table.
+     As the foreign key relationships are set up at CREATE EXTENSION time (prior
+     to data being loaded into the tables) circular dependencies are not
+     supported.  When circular dependencies exist, the data will still be dumped
+     out but the dump will not be able to be restored directly and user
+     intervention will be required.
+</span>
+このテーブルとの外部キーの関係は、テーブルがpg_dumpによってダンプされる順序に影響します。
+特に、pg_dumpは参照しているテーブルの前に参照されているテーブルをダンプしようとします。
+外部キーの関係はCREATE EXTENSION時(データがテーブルにロードされる前)に設定されますので、循環依存はサポートされません。
+循環依存が存在すれば、データはダンプされますが、そのダンプを直接はリストアできず、ユーザの介入が必要になります。
+    </p><p>
+<span class="original">
+     Sequences associated with &lt;type&gt;serial&lt;/type&gt; or &lt;type&gt;bigserial&lt;/type&gt; columns
+     need to be directly marked to dump their state. Marking their parent
+     relation is not enough for this purpose.
+</span>
+<code class="type">serial</code>列または<code class="type">bigserial</code>列に関連したシーケンスは、それらの状態をダンプするために直接印付けする必要があります。
+親リレーションを印付けすることは、この目的に十分ではありません。
+    </p></div><div class="sect2" id="id-1.8.3.19.15"><div class="titlepage"><div><div><h3 class="title">38.16.5. 拡張の更新</h3></div></div></div><span class="original">
+    &lt;title&gt;Extension Updates&lt;/title&gt;
+</span><p>
+<span class="original">
+     One advantage of the extension mechanism is that it provides convenient
+     ways to manage updates to the SQL commands that define an extension's
+     objects.  This is done by associating a version name or number with
+     each released version of the extension's installation script.
+     In addition, if you want users to be able to update their databases
+     dynamically from one version to the next, you should provide
+     &lt;firstterm&gt;update scripts&lt;/firstterm&gt; that make the necessary changes to go from
+     one version to the next.  Update scripts have names following the pattern
+     &lt;literal&gt;&lt;replaceable&gt;extension&lt;/replaceable&gt;&amp;#045;-&lt;replaceable&gt;oldversion&lt;/replaceable&gt;&amp;#045;-&lt;replaceable&gt;newversion&lt;/replaceable&gt;.sql&lt;/literal&gt;
+     (for example, &lt;literal&gt;foo&amp;#045;-1.0&amp;#045;-1.1.sql&lt;/literal&gt; contains the commands to modify
+     version &lt;literal&gt;1.0&lt;/literal&gt; of extension &lt;literal&gt;foo&lt;/literal&gt; into version
+     &lt;literal&gt;1.1&lt;/literal&gt;).
+</span>
+拡張機構の１つの利点は、拡張のオブジェクトを定義するSQLコマンドの更新を簡便に管理する方法を提供していることです。
+これは、拡張のインストール用スクリプトのリリース版それぞれにバージョン名称またはバージョン番号を関連付けることで行われます。
+さらに、ユーザにあるバージョンから次のバージョンへ動的にデータベースを更新させることができるようにしたい場合、あるバージョンから次のバージョンまでの間に行われる必要な変更を行う<em class="firstterm">更新スクリプト</em>を提供しなければなりません。
+更新スクリプトは<code class="literal"><em class="replaceable"><code>extension</code></em>--<em class="replaceable"><code>oldversion</code></em>--<em class="replaceable"><code>newversion</code></em>.sql</code>というパターンに従った名前（例えば、<code class="literal">foo--1.0--1.1.sql</code>は<code class="literal">foo</code>拡張のバージョン<code class="literal">1.0</code>からバージョン<code class="literal">1.1</code>に変更するコマンドを含みます。）を持たなければなりません。
+    </p><p>
+<span class="original">
+     Given that a suitable update script is available, the command
+     &lt;command&gt;ALTER EXTENSION UPDATE&lt;/command&gt; will update an installed extension
+     to the specified new version.  The update script is run in the same
+     environment that &lt;command&gt;CREATE EXTENSION&lt;/command&gt; provides for installation
+     scripts: in particular, &lt;varname&gt;search_path&lt;/varname&gt; is set up in the same
+     way, and any new objects created by the script are automatically added
+     to the extension.  Also, if the script chooses to drop extension member
+     objects, they are automatically dissociated from the extension.
+</span>
+適切な更新スクリプトが利用可能である場合、<code class="command">ALTER EXTENSION UPDATE</code>コマンドはインストール済みの拡張を指定した新しいバージョンへ更新します。
+更新スクリプトは、<code class="command">CREATE EXTENSION</code>がインストール用スクリプト向けに提供する環境と同じ環境で実行されます。
+具体的には<code class="varname">search_path</code>は同じ方法で設定され、スクリプトにより作成される新しいオブジェクトはすべて自動的に拡張に追加されます。
+また、スクリプトが拡張のメンバーオブジェクトを削除する場合には、それらのメンバーオブジェクトは拡張から自動的に分離されます。
+    </p><p>
+<span class="original">
+     If an extension has secondary control files, the control parameters
+     that are used for an update script are those associated with the script's
+     target (new) version.
+</span>
+拡張が副制御ファイルを持つ場合、更新スクリプトで使用される制御パラメータは、スクリプトの対象の（新しい）バージョンに関連付けされたものになります。
+    </p><p>
+<span class="original">
+     The update mechanism can be used to solve an important special case:
+     converting a &lt;quote&gt;loose&lt;/quote&gt; collection of objects into an extension.
+     Before the extension mechanism was added to
+     &lt;productname&gt;PostgreSQL&lt;/productname&gt; (in 9.1), many people wrote
+     extension modules that simply created assorted unpackaged objects.
+     Given an existing database containing such objects, how can we convert
+     the objects into a properly packaged extension?  Dropping them and then
+     doing a plain &lt;command&gt;CREATE EXTENSION&lt;/command&gt; is one way, but it's not
+     desirable if the objects have dependencies (for example, if there are
+     table columns of a data type created by the extension).  The way to fix
+     this situation is to create an empty extension, then use &lt;command&gt;ALTER
+     EXTENSION ADD&lt;/command&gt; to attach each pre-existing object to the extension,
+     then finally create any new objects that are in the current extension
+     version but were not in the unpackaged release.  &lt;command&gt;CREATE
+     EXTENSION&lt;/command&gt; supports this case with its &lt;literal&gt;FROM&lt;/literal&gt; &lt;replaceable
+     class="parameter"&gt;old_version&lt;/replaceable&gt; option, which causes it to not run the
+     normal installation script for the target version, but instead the update
+     script named
+     &lt;literal&gt;&lt;replaceable&gt;extension&lt;/replaceable&gt;&amp;#045;-&lt;replaceable&gt;old_version&lt;/replaceable&gt;&amp;#045;-&lt;replaceable&gt;target_version&lt;/replaceable&gt;.sql&lt;/literal&gt;.
+     The choice of the dummy version name to use as &lt;replaceable
+     class="parameter"&gt;old_version&lt;/replaceable&gt; is up to the extension author, though
+     &lt;literal&gt;unpackaged&lt;/literal&gt; is a common convention.  If you have multiple
+     prior versions you need to be able to update into extension style, use
+     multiple dummy version names to identify them.
+</span>
+更新機構を使用して、オブジェクトの<span class="quote">「<span class="quote">粗</span>」</span>集合から拡張に変換するという、特別かつ重大な状況を解消することができます。
+拡張機構が<span class="productname">PostgreSQL</span>に（9.1で）追加されるようになる前では、パッケージ化されずに単に詰めあわされたオブジェクトを作成する拡張モジュールを多くのユーザが作成していました。
+こうしたオブジェクトを持つデータベースが存在する場合、どのようにすればこれらのオブジェクトを適切にパッケージ化された拡張に変換できるでしょうか？
+削除した後で普通に<code class="command">CREATE EXTENSION</code>を行うことも１つの方法ですが、オブジェクトに依存関係がある（例えば拡張により作成されたデータ型のテーブル列が存在する場合など）場合は好まれません。
+こうした状況を解消する方法は、空の拡張を作成し、<code class="command">ALTER EXTENSION ADD</code>を使用して、既存のオブジェクトそれぞれを拡張に関連づけ、最後にパッケージ化されていないリリースに存在しないが現在のバージョンの拡張には存在する新しいオブジェクトを作成するという方法です。
+<code class="command">CREATE EXTENSION</code>は<code class="literal">FROM</code> <em class="replaceable"><code>old_version</code></em>オプションでこの状況をサポートします。
+この場合、通常のインストール用スクリプトは実行されず、代わりに<code class="literal"><em class="replaceable"><code>extension</code></em>--<em class="replaceable"><code>old_version</code></em>--<em class="replaceable"><code>target_version</code></em>.sql</code>という名前の更新スクリプトが実行されるようになります。
+<em class="replaceable"><code>old_version</code></em>として使用するダミーのバージョン名の選択は拡張の作成者に任せられていますが、<code class="literal">unpackaged</code>がよく使われる規約です。
+拡張形式に更新できるようにしたい過去のバージョンが複数存在する場合、それらを識別できるように複数のダミーバージョン番号を使用していください。
+    </p><p>
+<span class="original">
+     &lt;command&gt;ALTER EXTENSION&lt;/command&gt; is able to execute sequences of update
+     script files to achieve a requested update.  For example, if only
+     &lt;literal&gt;foo&amp;#045;-1.0&amp;#045;-1.1.sql&lt;/literal&gt; and &lt;literal&gt;foo&amp;#045;-1.1&amp;#045;-2.0.sql&lt;/literal&gt; are
+     available, &lt;command&gt;ALTER EXTENSION&lt;/command&gt; will apply them in sequence if an
+     update to version &lt;literal&gt;2.0&lt;/literal&gt; is requested when &lt;literal&gt;1.0&lt;/literal&gt; is
+     currently installed.
+</span>
+<code class="command">ALTER EXTENSION</code>は、要求される更新を実現するために更新スクリプトを連続して実行することができます。
+例えば<code class="literal">foo--1.0--1.1.sql</code>と<code class="literal">foo--1.1--2.0.sql</code>のみが利用可能であるとすると、現在<code class="literal">1.0</code>がインストールされている時にバージョン<code class="literal">2.0</code>への更新が要求された場合、<code class="command">ALTER EXTENSION</code>はこれらを順番に適用します。
+    </p><p>
+<span class="original">
+     &lt;productname&gt;PostgreSQL&lt;/productname&gt; doesn't assume anything about the properties
+     of version names: for example, it does not know whether &lt;literal&gt;1.1&lt;/literal&gt;
+     follows &lt;literal&gt;1.0&lt;/literal&gt;.  It just matches up the available version names
+     and follows the path that requires applying the fewest update scripts.
+     (A version name can actually be any string that doesn't contain
+     &lt;literal&gt;&amp;#045;-&lt;/literal&gt; or leading or trailing &lt;literal&gt;-&lt;/literal&gt;.)
+</span>
+<span class="productname">PostgreSQL</span>はバージョン名称の特性についてまったく仮定を行いません。
+例えば<code class="literal">1.0</code>の次が<code class="literal">1.1</code>であるかどうかを把握しません。
+これは利用可能なバージョン名をかみ合わせ、もっとも少ない数の更新スクリプトを適用するために必要な経路を続けるだけです。
+（バージョン名には、<code class="literal">--</code>を含まず先頭または最後に<code class="literal">-</code>が付かなければ、任意の文字を取ることができます。）
+    </p><p>
+<span class="original">
+     Sometimes it is useful to provide &lt;quote&gt;downgrade&lt;/quote&gt; scripts, for
+     example &lt;literal&gt;foo&amp;#045;-1.1&amp;#045;-1.0.sql&lt;/literal&gt; to allow reverting the changes
+     associated with version &lt;literal&gt;1.1&lt;/literal&gt;.  If you do that, be careful
+     of the possibility that a downgrade script might unexpectedly
+     get applied because it yields a shorter path.  The risky case is where
+     there is a &lt;quote&gt;fast path&lt;/quote&gt; update script that jumps ahead several
+     versions as well as a downgrade script to the fast path's start point.
+     It might take fewer steps to apply the downgrade and then the fast
+     path than to move ahead one version at a time.  If the downgrade script
+     drops any irreplaceable objects, this will yield undesirable results.
+</span>
+<span class="quote">「<span class="quote">ダウングレード</span>」</span>スクリプトを提供することが便利な場合があります。
+例えば<code class="literal">foo--1.1--1.0.sql</code>は、バージョン<code class="literal">1.1</code>に関連した変更を元に戻すことができます。
+この場合、ダウングレードスクリプトがより短いパスを生成するために、予期せず適用されてしまう可能性に注意してください。
+複数のバージョンをまたがって更新する<span class="quote">「<span class="quote">近道</span>」</span>更新スクリプトと近道の開始バージョンへのダウングレードスクリプトが存在する場合に危険性があります。
+ダウングレードしてから近道となる更新スクリプトを実行する方が、バージョンを１つずつ進めるよりも少ない処理で済んでしまうかもしれません。
+ダウングレードスクリプトが取り返しがつかないオブジェクトを何か削除してしまう場合、望まない結果になってしまいます。
+    </p><p>
+<span class="original">
+     To check for unexpected update paths, use this command:
+</span>
+想定外の更新経路かどうかを検査するためには、以下のコマンドを使用してください。
+</p><pre class="programlisting">
+SELECT * FROM pg_extension_update_paths('<em class="replaceable"><code>extension_name</code></em>');
+</pre><p>
+<span class="original">
+     This shows each pair of distinct known version names for the specified
+     extension, together with the update path sequence that would be taken to
+     get from the source version to the target version, or &lt;literal&gt;NULL&lt;/literal&gt; if
+     there is no available update path.  The path is shown in textual form
+     with &lt;literal&gt;&amp;#045;-&lt;/literal&gt; separators.  You can use
+     &lt;literal&gt;regexp_split_to_array(path,'&amp;#045;-')&lt;/literal&gt; if you prefer an array
+     format.
+</span>
+これは指定した拡張の個々の既知のバージョン名の組み合わせをそれぞれ、元のバージョンから対象のバージョンへ進む時に取られる更新経路順、またはもし利用できる更新経路がなければ<code class="literal">NULL</code>を付けて、表示します。
+経路は<code class="literal">--</code>を区切り文字として使用したテキスト形式で表示されます。
+配列形式の方が良ければ<code class="literal">regexp_split_to_array(path,'--')</code>を使用することができます。
+    </p></div><div class="sect2" id="id-1.8.3.19.16"><div class="titlepage"><div><div><h3 class="title">38.16.6. 更新スクリプトを利用した拡張のインストール</h3></div></div></div><span class="original">
+    &lt;title&gt;Installing Extensions using Update Scripts&lt;/title&gt;
+</span><p>
+<span class="original">
+     An extension that has been around for awhile will probably exist in
+     several versions, for which the author will need to write update scripts.
+     For example, if you have released a &lt;literal&gt;foo&lt;/literal&gt; extension in
+     versions &lt;literal&gt;1.0&lt;/literal&gt;, &lt;literal&gt;1.1&lt;/literal&gt;, and &lt;literal&gt;1.2&lt;/literal&gt;, there
+     should be update scripts &lt;filename&gt;foo&amp;#045;&amp;#045;1.0&amp;#045;&amp;#045;1.1.sql&lt;/filename&gt;
+     and &lt;filename&gt;foo&amp;#045;&amp;#045;1.1&amp;#045;&amp;#045;1.2.sql&lt;/filename&gt;.
+     Before &lt;productname&gt;PostgreSQL&lt;/productname&gt; 10, it was necessary to also create
+     new script files &lt;filename&gt;foo&amp;#045;&amp;#045;1.1.sql&lt;/filename&gt; and &lt;filename&gt;foo&amp;#045;&amp;#045;1.2.sql&lt;/filename&gt;
+     that directly build the newer extension versions, or else the newer
+     versions could not be installed directly, only by
+     installing &lt;literal&gt;1.0&lt;/literal&gt; and then updating.  That was tedious and
+     duplicative, but now it's unnecessary, because &lt;command&gt;CREATE
+     EXTENSION&lt;/command&gt; can follow update chains automatically.
+     For example, if only the script
+     files &lt;filename&gt;foo&amp;#045;&amp;#045;1.0.sql&lt;/filename&gt;, &lt;filename&gt;foo&amp;#045;&amp;#045;1.0&amp;#045;&amp;#045;1.1.sql&lt;/filename&gt;,
+     and &lt;filename&gt;foo&amp;#045;&amp;#045;1.1&amp;#045;&amp;#045;1.2.sql&lt;/filename&gt; are available then a request to
+     install version &lt;literal&gt;1.2&lt;/literal&gt; is honored by running those three
+     scripts in sequence.  The processing is the same as if you'd first
+     installed &lt;literal&gt;1.0&lt;/literal&gt; and then updated to &lt;literal&gt;1.2&lt;/literal&gt;.
+     (As with &lt;command&gt;ALTER EXTENSION UPDATE&lt;/command&gt;, if multiple pathways are
+     available then the shortest is preferred.)  Arranging an extension's
+     script files in this style can reduce the amount of maintenance effort
+     needed to produce small updates.
+</span>
+以前から存在している拡張は、おそらく複数のバージョンに渡って存在しているので、拡張の作者は更新スクリプトを開発する必要性が出てきます。
+たとえば、拡張<code class="literal">foo</code>がバージョン<code class="literal">1.0</code>、<code class="literal">1.1</code>、<code class="literal">1.2</code>をリリースしていたとすると、更新スクリプト<code class="filename">foo--1.0--1.1.sql</code>と<code class="filename">foo--1.1--1.2.sql</code>が存在しなければなりません。
+<span class="productname">PostgreSQL</span> 10より前では、新しい拡張のバージョンを直接作成するスクリプトファイル<code class="filename">foo--1.1.sql</code>と<code class="filename">foo--1.2.sql</code>も新規に作る必要がありました。
+これらがないと、新しいバージョンの拡張を直接インストールすることはできず、<code class="literal">1.0</code>をインストールしてから更新するしかありませんでした。
+それにはうんざりしますし、また冗長です。
+しかし、今では<code class="command">CREATE EXTENSION</code>が自動的に更新連鎖を追跡してくるので、それは不要になりました。
+たとえば、<code class="filename">foo--1.0.sql</code>、<code class="filename">foo--1.0--1.1.sql</code>、<code class="filename">foo--1.1--1.2.sql</code>だけしかない場合、バージョン<code class="literal">1.2</code>のインストールのリクエストは、これらのスクリプトを順に実行することによって達成されます。
+この手順は、最初に<code class="literal">1.0</code>をインストールして、<code class="literal">1.2</code>にアップデートする場合でも同じです。
+（<code class="command">ALTER EXTENSION UPDATE</code>は、複数の手順がある場合には、最短の手順を選びます。）
+この方法で拡張のスクリプトを調整することにより、小さな更新を複数作成するための保守の手間を減らすことができます。
+    </p><p>
+<span class="original">
+     If you use secondary (version-specific) control files with an extension
+     maintained in this style, keep in mind that each version needs a control
+     file even if it has no stand-alone installation script, as that control
+     file will determine how the implicit update to that version is performed.
+     For example, if &lt;filename&gt;foo&amp;#045;&amp;#045;1.0.control&lt;/filename&gt; specifies &lt;literal&gt;requires
+     = 'bar'&lt;/literal&gt; but &lt;literal&gt;foo&lt;/literal&gt;'s other control files do not, the
+     extension's dependency on &lt;literal&gt;bar&lt;/literal&gt; will be dropped when updating
+     from &lt;literal&gt;1.0&lt;/literal&gt; to another version.
+</span>
+この方法で保守している拡張に二次的な（バージョン固有の）制御ファイルがある場合は、スタンドアローンのインストールスクリプトがない場合でも、各バージョンで制御ファイルが必要になることに注意してください。
+そのバージョンへと更新する暗黙的な方法を、制御ファイルが決定するからです。
+たとえば、<code class="filename">foo--1.0.control</code>が<code class="literal">requires = 'bar'</code>を指定しているのに、<code class="literal">foo</code>の他の制御ファイルが指定していないとすると、<code class="literal">1.0</code>から他のバージョンに更新した際に<code class="literal">bar</code>への依存性が削除されてしまうでしょう。
+    </p></div><div class="sect2" id="EXTEND-EXTENSIONS-EXAMPLE"><div class="titlepage"><div><div><h3 class="title">38.16.7. 拡張の例</h3></div></div></div><span class="original">
+    &lt;title&gt;Extension Example&lt;/title&gt;
+</span><p>
+<span class="original">
+     Here is a complete example of an &lt;acronym&gt;SQL&lt;/acronym&gt;-only
+     extension, a two-element composite type that can store any type of value
+     in its slots, which are named &lt;quote&gt;k&lt;/quote&gt; and &lt;quote&gt;v&lt;/quote&gt;.  Non-text
+     values are automatically coerced to text for storage.
+</span>
+ここでは、<acronym class="acronym">SQL</acronym>のみの拡張の完全な例を示します。
+<span class="quote">「<span class="quote">k</span>」</span>と<span class="quote">「<span class="quote">v</span>」</span>という名称の２つの要素からなる複合型であり、そのスロットには任意の型の値を格納することができるものです。
+格納の際テキスト以外の値は自動的にテキストに変換されます。
+    </p><p>
+<span class="original">
+     The script file &lt;filename&gt;pair&amp;#045;-1.0.sql&lt;/filename&gt; looks like this:
+</span>
+<code class="filename">pair--1.0.sql</code>スクリプトファイルは以下のようになります。
+
+</p><pre class="programlisting">
+<span class="original">
+&amp;#045;- complain if script is sourced in psql, rather than via CREATE EXTENSION
+</span>
+-- スクリプトが、CREATE EXTENSION経由ではなく、psqlのソースとして使われた場合には文句を言う
+\echo Use "CREATE EXTENSION pair" to load this file. \quit
+
+CREATE TYPE pair AS ( k text, v text );
+
+CREATE OR REPLACE FUNCTION pair(text, text)
+RETURNS pair LANGUAGE SQL AS 'SELECT ROW($1, $2)::@extschema@.pair;';
+
+CREATE OPERATOR ~&gt; (LEFTARG = text, RIGHTARG = text, FUNCTION = pair);
+
+-- "SET search_path" is easy to get right, but qualified names perform better.
+CREATE OR REPLACE FUNCTION lower(pair)
+RETURNS pair LANGUAGE SQL
+AS 'SELECT ROW(lower($1.k), lower($1.v))::@extschema@.pair;'
+SET search_path = pg_temp;
+
+CREATE OR REPLACE FUNCTION pair_concat(pair, pair)
+RETURNS pair LANGUAGE SQL
+AS 'SELECT ROW($1.k OPERATOR(pg_catalog.||) $2.k,
+               $1.v OPERATOR(pg_catalog.||) $2.v)::@extschema@.pair;';
+
+</pre><p>
+    </p><p>
+<span class="original">
+     The control file &lt;filename&gt;pair.control&lt;/filename&gt; looks like this:
+</span>
+<code class="filename">pair.control</code>制御ファイルは以下のようになります。
+
+</p><pre class="programlisting">
+# pair extension
+comment = 'A key/value pair data type'
+default_version = '1.0'
+relocatable = false
+</pre><p>
+    </p><p>
+<span class="original">
+     While you hardly need a makefile to install these two files into the
+     correct directory, you could use a &lt;filename&gt;Makefile&lt;/filename&gt; containing this:
+</span>
+これらの２つのファイルを正しいディレクトリにインストールするためにメークファイルを作成する必要はほとんどありませんが、以下を含む<code class="filename">Makefile</code>を使用することができます。
+
+</p><pre class="programlisting">
+EXTENSION = pair
+DATA = pair--1.0.sql
+
+PG_CONFIG = pg_config
+PGXS := $(shell $(PG_CONFIG) --pgxs)
+include $(PGXS)
+</pre><p>
+
+<span class="original">
+     This makefile relies on &lt;acronym&gt;PGXS&lt;/acronym&gt;, which is described
+     in &lt;xref linkend="extend-pgxs"/&gt;.  The command &lt;literal&gt;make install&lt;/literal&gt;
+     will install the control and script files into the correct
+     directory as reported by &lt;application&gt;pg_config&lt;/application&gt;.
+</span>
+このメークファイルは<a class="xref" href="extend-pgxs.html" title="38.17. 拡張構築基盤">38.17</a>で説明する<acronym class="acronym">PGXS</acronym>に依存します。
+<code class="literal">make install</code>コマンドは制御ファイルとスクリプトファイルを<span class="application">pg_config</span>で報告される正しいディレクトリにインストールします。
+    </p><p>
+<span class="original">
+     Once the files are installed, use the
+     &lt;xref linkend="sql-createextension"/&gt; command to load the objects into
+     any particular database.
+</span>
+ファイルがインストールされた後、<a class="xref" href="sql-createextension.html" title="CREATE EXTENSION"><span class="refentrytitle">CREATE EXTENSION</span></a>コマンドを使用してオブジェクトを任意の特定のデータベースにロードしてください。
+    </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="xindex.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="extend.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="extend-pgxs.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">38.15. インデックス拡張機能へのインタフェース </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 38.17. 拡張構築基盤</td></tr></table></div></body></html>

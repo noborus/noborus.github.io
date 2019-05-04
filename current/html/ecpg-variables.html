@@ -1,0 +1,1266 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>36.4. ホスト変数の使用</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="ecpg-commands.html" title="36.3. SQLコマンドの実行" /><link rel="next" href="ecpg-dynamic.html" title="36.5. 動的SQL" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="ecpg.html" title="第36章 ECPG - C言語による埋め込みSQL">第36章 <span class="application">ECPG</span> - C言語による埋め込み<acronym class="acronym">SQL</acronym></a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      ecpg-variables.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="ecpg-commands.html" title="36.3. SQLコマンドの実行">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="ecpg.html" title="第36章 ECPG - C言語による埋め込みSQL">上へ</a></td><td width="60%" align="center">36.4. ホスト変数の使用</td><td width="20%" align="right"> <a accesskey="n" href="ecpg-dynamic.html" title="36.5. 動的SQL">次へ</a></td></tr></table><hr /></div><div class="sect1" id="ECPG-VARIABLES"><div class="titlepage"><div><div><h2 class="title" style="clear: both">36.4. ホスト変数の使用</h2></div></div></div><span class="original">
+  &lt;title&gt;Using Host Variables&lt;/title&gt;
+</span><p>
+<span class="original">
+   In &lt;xref linkend="ecpg-commands"/&gt; you saw how you can execute SQL
+   statements from an embedded SQL program.  Some of those statements
+   only used fixed values and did not provide a way to insert
+   user-supplied values into statements or have the program process
+   the values returned by the query.  Those kinds of statements are
+   not really useful in real applications.  This section explains in
+   detail how you can pass data between your C program and the
+   embedded SQL statements using a simple mechanism called
+   &lt;firstterm&gt;host variables&lt;/firstterm&gt;. In an embedded SQL program  we
+   consider the SQL statements to be &lt;firstterm&gt;guests&lt;/firstterm&gt; in the C
+   program code which is the &lt;firstterm&gt;host language&lt;/firstterm&gt;. Therefore
+   the variables of the C program are called &lt;firstterm&gt;host
+   variables&lt;/firstterm&gt;.
+</span>
+<a class="xref" href="ecpg-commands.html" title="36.3. SQLコマンドの実行">36.3</a>では、埋め込みSQLプログラムでどのようにSQL文を実行するのかについて説明しました。
+このSQL文の中には固定値しか使用しないものや、ユーザが指定する値をSQL文の中に挿入する手段を提供しないもの、問い合わせが返す値をプログラムで処理する手段を提供しないものがありました。
+この種のSQL文は実際のアプリケーションでは役に立ちません。
+本節では、<em class="firstterm">ホスト変数</em>という単純な機構を使用した、Cプログラムと埋め込みSQL文との間でデータをやり取りする方法を詳細に説明します。
+埋め込みSQLプログラムでは、SQL文を<em class="firstterm">ホスト言語</em>となるCプログラムコードにおける<em class="firstterm">ゲスト</em>とみなします。
+したがって、Cプログラムの変数は<em class="firstterm">ホスト変数</em>と呼ばれます。
+  </p><p>
+<span class="original">
+   Another way to exchange values between PostgreSQL backends and ECPG
+   applications is the use of SQL descriptors, described
+   in &lt;xref linkend="ecpg-descriptors"/&gt;.
+</span>
+   PostgreSQLバックエンドとECPGアプリケーションの間で値をやり取りするその他の方法は、 <a class="xref" href="ecpg-descriptors.html" title="36.7. 記述子領域の使用">36.7</a> で説明されているSQLデスクリプタを使う方法です。
+  </p><div class="sect2" id="ECPG-VARIABLES-OVERVIEW"><div class="titlepage"><div><div><h3 class="title">36.4.1. 概要</h3></div></div></div><span class="original">
+   &lt;title&gt;Overview&lt;/title&gt;
+</span><p>
+<span class="original">
+    Passing data between the C program and the SQL statements is
+    particularly simple in embedded SQL.  Instead of having the
+    program paste the data into the statement, which entails various
+    complications, such as properly quoting the value, you can simply
+    write the name of a C variable into the SQL statement, prefixed by
+    a colon.  For example:
+</span>
+埋め込みSQLにおけるCプログラムとSQL文との間でのデータのやり取りは特に単純です。
+値に適切な引用符を付与するといった、様々な複雑な処理を伴う、プログラムにデータを文中に貼り付けさせるという方法はなく、単にSQL文の中に、先頭にコロンを付けたC変数名を書くだけです。
+以下に例を示します。
+</p><pre class="programlisting">
+EXEC SQL INSERT INTO sometable VALUES (:v1, 'foo', :v2);
+</pre><p>
+<span class="original">
+    This statement refers to two C variables named
+    &lt;varname&gt;v1&lt;/varname&gt; and &lt;varname&gt;v2&lt;/varname&gt; and also uses a
+    regular SQL string literal, to illustrate that you are not
+    restricted to use one kind of data or the other.
+</span>
+このSQL文は、<code class="varname">v1</code>と<code class="varname">v2</code>という2つのC変数を参照し、また、通常のSQL文字列リテラルも使用しています。
+これは、使用できるデータの種類は1つだけという制限がないことを表しています。
+   </p><p>
+<span class="original">
+    This style of inserting C variables in SQL statements works
+    anywhere a value expression is expected in an SQL statement.
+</span>
+SQL文内にCの変数を挿入するこの様式は、SQL文で値式が想定されている所であればどこでも動作します。
+   </p></div><div class="sect2" id="ECPG-DECLARE-SECTIONS"><div class="titlepage"><div><div><h3 class="title">36.4.2. 宣言セクション</h3></div></div></div><span class="original">
+   &lt;title&gt;Declare Sections&lt;/title&gt;
+</span><p>
+<span class="original">
+    To pass data from the program to the database, for example as
+    parameters in a query, or to pass data from the database back to
+    the program, the C variables that are intended to contain this
+    data need to be declared in specially marked sections, so the
+    embedded SQL preprocessor is made aware of them.
+</span>
+例えば問い合わせ内のパラメータとして、プログラムからデータベースへデータを渡す、もしくは、データベースからプログラムへデータを渡すためには、このようなデータを含むように意図されたC変数を、埋め込みSQLプリプロセッサが管理できるように、特殊な印のついたセクションで宣言する必要があります。
+   </p><p>
+<span class="original">
+    This section starts with:
+</span>
+このセクションは以下で始まります。
+</p><pre class="programlisting">
+EXEC SQL BEGIN DECLARE SECTION;
+</pre><p>
+<span class="original">
+    and ends with:
+</span>
+そして、以下で終わります。
+</p><pre class="programlisting">
+EXEC SQL END DECLARE SECTION;
+</pre><p>
+<span class="original">
+    Between those lines, there must be normal C variable declarations,
+    such as:
+</span>
+この行の間は、以下のような通常のC変数宣言でなければなりません。
+</p><pre class="programlisting">
+int   x = 4;
+char  foo[16], bar[16];
+</pre><p>
+<span class="original">
+    As you can see, you can optionally assign an initial value to the variable.
+    The variable's scope is determined by the location of its declaring
+    section within the program.
+    You can also declare variables with the following syntax which implicitly
+    creates a declare section:
+</span>
+見てわかるとおり、省略可能ですが、変数に初期値を代入することができます。
+変数のスコープはプログラム内の宣言セクションの場所により決まります。
+また、以下のような暗黙的に宣言セクションを生成する構文を使って変数を宣言することもできます。
+</p><pre class="programlisting">
+EXEC SQL int i = 4;
+</pre><p>
+<span class="original">
+    You can have as many declare sections in a program as you like.
+</span>
+プログラム内に複数の宣言セクションを持たせることができます。
+   </p><p>
+<span class="original">
+    The declarations are also echoed to the output file as normal C
+    variables, so there's no need to declare them again.  Variables
+    that are not intended to be used in SQL commands can be declared
+    normally outside these special sections.
+</span>
+また、宣言は普通のC変数としてそのまま出力ファイルに出力されます。
+ですので、これらを再度宣言する必要はありません。
+通常、SQLコマンドで使用する予定がない変数はこの特別なセクションの外側で宣言されます。
+   </p><p>
+<span class="original">
+    The definition of a structure or union also must be listed inside
+    a &lt;literal&gt;DECLARE&lt;/literal&gt; section. Otherwise the preprocessor cannot
+    handle these types since it does not know the definition.
+</span>
+構造体や共用体の定義もまた、<code class="literal">DECLARE</code>セクションの内側で表す必要があります。
+さもないと、プリプロセッサはその定義が不明であるために、これらの型を扱うことができません。
+   </p></div><div class="sect2" id="ECPG-RETRIEVING"><div class="titlepage"><div><div><h3 class="title">36.4.3. クエリ実行結果の受け取り</h3></div></div></div><span class="original">
+   &lt;title&gt;Retrieving Query Results&lt;/title&gt;
+</span><p>
+<span class="original">
+    Now you should be able to pass data generated by your program into
+    an SQL command.  But how do you retrieve the results of a query?
+    For that purpose, embedded SQL provides special variants of the
+    usual commands &lt;command&gt;SELECT&lt;/command&gt; and
+    &lt;command&gt;FETCH&lt;/command&gt;.  These commands have a special
+    &lt;literal&gt;INTO&lt;/literal&gt; clause that specifies which host variables
+    the retrieved values are to be stored in.
+    &lt;command&gt;SELECT&lt;/command&gt; is used for a query that returns only
+    single row, and &lt;command&gt;FETCH&lt;/command&gt; is used for a query that
+    returns multiple rows, using a cursor.
+</span>
+ここまでで、プログラムで生成したデータをSQLコマンドに渡すことができるようになりました。
+しかし、どのように問い合わせの結果を取り出すのでしょうか？
+この目的のために、埋め込みSQLでは、通常の<code class="command">SELECT</code>と<code class="command">FETCH</code>を派生した、特殊なコマンドを提供しています。
+これらのコマンドは特別な<code class="literal">INTO</code>句を持ち、ここで返された値をどのホスト変数に格納すればよいかを指定します。
+<code class="command">SELECT</code> は単一行を返却する問い合わせに使用され、<code class="command">FETCH</code> は複数の行を返却する問い合わせにおいてカーソルとともに使用されます。
+   </p><p>
+<span class="original">
+    Here is an example:
+</span>
+以下にサンプルを示します。
+</p><pre class="programlisting">
+/*
+<span class="original">
+ * assume this table:
+</span>
+ * 以下のテーブルを前提とする
+ * CREATE TABLE test1 (a int, b varchar(50));
+ */
+
+EXEC SQL BEGIN DECLARE SECTION;
+int v1;
+VARCHAR v2;
+EXEC SQL END DECLARE SECTION;
+
+ ...
+
+EXEC SQL SELECT a, b INTO :v1, :v2 FROM test;
+</pre><p>
+<span class="original">
+    So the &lt;literal&gt;INTO&lt;/literal&gt; clause appears between the select
+    list and the &lt;literal&gt;FROM&lt;/literal&gt; clause.  The number of
+    elements in the select list and the list after
+    &lt;literal&gt;INTO&lt;/literal&gt; (also called the target list) must be
+    equal.
+</span>
+<code class="literal">INTO</code>句が選択リストと<code class="literal">FROM</code>句の間に現れます。
+選択リスト内の要素数と<code class="literal">INTO</code>直後のリスト（目的リストとも呼ばれます）の要素数は等しくなければなりません。
+   </p><p>
+<span class="original">
+    Here is an example using the command &lt;command&gt;FETCH&lt;/command&gt;:
+</span>
+以下に<code class="command">FETCH</code>コマンドの使用例を示します。
+</p><pre class="programlisting">
+EXEC SQL BEGIN DECLARE SECTION;
+int v1;
+VARCHAR v2;
+EXEC SQL END DECLARE SECTION;
+
+ ...
+
+EXEC SQL DECLARE foo CURSOR FOR SELECT a, b FROM test;
+
+ ...
+
+do
+{
+    ...
+    EXEC SQL FETCH NEXT FROM foo INTO :v1, :v2;
+    ...
+} while (...);
+</pre><p>
+<span class="original">
+    Here the &lt;literal&gt;INTO&lt;/literal&gt; clause appears after all the
+    normal clauses.
+</span>
+ここでは、<code class="literal">INTO</code>句が通常のすべての句の後ろに現れています。
+   </p></div><div class="sect2" id="ECPG-VARIABLES-TYPE-MAPPING"><div class="titlepage"><div><div><h3 class="title">36.4.4. データ型の対応</h3></div></div></div><span class="original">
+   &lt;title&gt;Type Mapping&lt;/title&gt;
+</span><p>
+<span class="original">
+    When ECPG applications exchange values between the PostgreSQL
+    server and the C application, such as when retrieving query
+    results from the server or executing SQL statements with input
+    parameters, the values need to be converted between PostgreSQL
+    data types and host language variable types (C language data
+    types, concretely).  One of the main points of ECPG is that it
+    takes care of this automatically in most cases.
+</span>
+    ECPGアプリケーションがPostgreSQLバックエンドとCアプリケーションの間で値をやり取りする際、例えばサーバからクエリの結果を受け取る、または入力パラメータとともにSQL文を実行する場合、それらの値はPostgreSQLのデータ型とホスト言語の変数の型（具体的にはC言語のデータ型）の間で変換される必要があります。
+    ECPGの重要な点のひとつは、ほとんどの場合においてECPGがこれらを自動的に扱うということです。
+   </p><p>
+<span class="original">
+    In this respect, there are two kinds of data types: Some simple
+    PostgreSQL data types, such as &lt;type&gt;integer&lt;/type&gt;
+    and &lt;type&gt;text&lt;/type&gt;, can be read and written by the application
+    directly.  Other PostgreSQL data types, such
+    as &lt;type&gt;timestamp&lt;/type&gt; and &lt;type&gt;numeric&lt;/type&gt; can only be
+    accessed through special library functions; see
+    &lt;xref linkend="ecpg-special-types"/&gt;.
+</span>
+    この点において、2つのデータ型があります: いくつかの単純なPostgreSQLのデータ型、<code class="type">integer</code> や <code class="type">text</code> などは、アプリケーションから直接読んだり書いたりすることができます。
+    その他のPostgreSQLのデータ型、<code class="type">timestamp</code> や <code class="type">numeric</code> などは、特別なライブラリ関数によってしかアクセスすることができません; <a class="xref" href="ecpg-variables.html#ECPG-SPECIAL-TYPES" title="36.4.4.2. 特殊なデータ型へのアクセス">36.4.4.2</a> を参照してください。
+   </p><p>
+<span class="original">
+    &lt;xref linkend="ecpg-datatype-hostvars-table"/&gt; shows which PostgreSQL
+    data types correspond to which C data types.  When you wish to
+    send or receive a value of a given PostgreSQL data type, you
+    should declare a C variable of the corresponding C data type in
+    the declare section.
+</span>
+<a class="xref" href="ecpg-variables.html#ECPG-DATATYPE-HOSTVARS-TABLE" title="表36.1 PostgreSQLデータ型とC言語変数型の対応">表 36.1</a>には、PostgreSQLのどのデータ型がC言語のデータ型に対応するかが示されています。
+与えられたPostgreSQLのデータ型へ値を書き込みまたは読み込みしたい場合には、対応するC言語のデータ型の変数を宣言セクションにおいて宣言しなければなりません。
+   </p><div class="table" id="ECPG-DATATYPE-HOSTVARS-TABLE"><p class="title"><strong>表36.1 PostgreSQLデータ型とC言語変数型の対応</strong></p><div class="table-contents"><span class="original">
+    &lt;title&gt;Mapping Between PostgreSQL Data Types and C Variable Types&lt;/title&gt;
+</span><table class="table" summary="PostgreSQLデータ型とC言語変数型の対応" border="1"><colgroup><col /><col /></colgroup><thead><tr><th>PostgreSQLデータ型</th><th>ホスト変数型</th></tr></thead><tbody><tr><td><code class="type">smallint</code></td><td><code class="type">short</code></td></tr><tr><td><code class="type">integer</code></td><td><code class="type">int</code></td></tr><tr><td><code class="type">bigint</code></td><td><code class="type">long long int</code></td></tr><tr><td><code class="type">decimal</code></td><td><code class="type">decimal</code><a href="#ftn.ECPG-DATATYPE-TABLE-FN" class="footnote"><sup class="footnote" id="ECPG-DATATYPE-TABLE-FN">[a]</sup></a></td></tr><tr><td><code class="type">numeric</code></td><td><code class="type">numeric</code><a href="ecpg-variables.html#ftn.ECPG-DATATYPE-TABLE-FN" class="footnoteref"><sup class="footnoteref">[a]</sup></a></td></tr><tr><td><code class="type">real</code></td><td><code class="type">float</code></td></tr><tr><td><code class="type">double precision</code></td><td><code class="type">double</code></td></tr><tr><td><code class="type">smallserial</code></td><td><code class="type">short</code></td></tr><tr><td><code class="type">serial</code></td><td><code class="type">int</code></td></tr><tr><td><code class="type">bigserial</code></td><td><code class="type">long long int</code></td></tr><tr><td><code class="type">oid</code></td><td><code class="type">unsigned int</code></td></tr><tr><td><code class="type">character(<em class="replaceable"><code>n</code></em>)</code>, <code class="type">varchar(<em class="replaceable"><code>n</code></em>)</code>, <code class="type">text</code></td><td><code class="type">char[<em class="replaceable"><code>n</code></em>+1]</code>, <code class="type">VARCHAR[<em class="replaceable"><code>n</code></em>+1]</code><a href="#ftn.id-1.7.5.10.7.5.2.2.12.2.3" class="footnote"><sup class="footnote" id="id-1.7.5.10.7.5.2.2.12.2.3">[b]</sup></a></td></tr><tr><td><code class="type">name</code></td><td><code class="type">char[NAMEDATALEN]</code></td></tr><tr><td><code class="type">timestamp</code></td><td><code class="type">timestamp</code><a href="ecpg-variables.html#ftn.ECPG-DATATYPE-TABLE-FN" class="footnoteref"><sup class="footnoteref">[a]</sup></a></td></tr><tr><td><code class="type">interval</code></td><td><code class="type">interval</code><a href="ecpg-variables.html#ftn.ECPG-DATATYPE-TABLE-FN" class="footnoteref"><sup class="footnoteref">[a]</sup></a></td></tr><tr><td><code class="type">date</code></td><td><code class="type">date</code><a href="ecpg-variables.html#ftn.ECPG-DATATYPE-TABLE-FN" class="footnoteref"><sup class="footnoteref">[a]</sup></a></td></tr><tr><td><code class="type">boolean</code></td><td><code class="type">bool</code><a href="#ftn.id-1.7.5.10.7.5.2.2.17.2.2" class="footnote"><sup class="footnote" id="id-1.7.5.10.7.5.2.2.17.2.2">[c]</sup></a></td></tr><tr><td><code class="type">bytea</code></td><td><code class="type">char *</code></td></tr></tbody><tbody class="footnotes"><tr><td colspan="2"><div id="ftn.ECPG-DATATYPE-TABLE-FN" class="footnote"><p><a href="#ECPG-DATATYPE-TABLE-FN" class="para"><sup class="para">[a] </sup></a>この型は特別なライブラリ関数を通してのみアクセスできます; <a class="xref" href="ecpg-variables.html#ECPG-SPECIAL-TYPES" title="36.4.4.2. 特殊なデータ型へのアクセス">36.4.4.2</a> を参照。</p></div><div id="ftn.id-1.7.5.10.7.5.2.2.12.2.3" class="footnote"><p><a href="#id-1.7.5.10.7.5.2.2.12.2.3" class="para"><sup class="para">[b] </sup></a><code class="filename">ecpglib.h</code> で宣言。</p></div><div id="ftn.id-1.7.5.10.7.5.2.2.17.2.2" class="footnote"><p><a href="#id-1.7.5.10.7.5.2.2.17.2.2" class="para"><sup class="para">[c] </sup></a>ネイティブでなければ <code class="filename">ecpglib.h</code> で宣言。</p></div></td></tr></tbody></table></div></div><br class="table-break" /><div class="sect3" id="ECPG-CHAR"><div class="titlepage"><div><div><h4 class="title">36.4.4.1. 文字列の処理</h4></div></div></div><span class="original">
+    &lt;title&gt;Handling Character Strings&lt;/title&gt;
+</span><p>
+<span class="original">
+     To handle SQL character string data types, such
+     as &lt;type&gt;varchar&lt;/type&gt; and &lt;type&gt;text&lt;/type&gt;, there are two
+     possible ways to declare the host variables.
+</span>
+<code class="type">varchar</code>や<code class="type">text</code>のような文字列のデータ型を扱うため、ホスト変数を宣言するための2つの方法があります。
+    </p><p>
+<span class="original">
+     One way is using &lt;type&gt;char[]&lt;/type&gt;, an array
+     of &lt;type&gt;char&lt;/type&gt;, which is the most common way to handle
+     character data in C.
+</span>
+     ひとつは <code class="type">char</code> の配列 <code class="type">char[]</code> を使うことで、C言語において文字列データを扱うもっとも一般的な方法です。
+</p><pre class="programlisting">
+EXEC SQL BEGIN DECLARE SECTION;
+    char str[50];
+EXEC SQL END DECLARE SECTION;
+</pre><p>
+<span class="original">
+     Note that you have to take care of the length yourself.  If you
+     use this host variable as the target variable of a query which
+     returns a string with more than 49 characters, a buffer overflow
+     occurs.
+</span>
+     文字列の長さについて、自分自身で気を付けておく必要があります。
+     上記のホスト変数を49文字以上の文字列を返すクエリのターゲット変数として使った場合、バッファオーバーフローが発生します。
+    </p><p>
+<span class="original">
+     The other way is using the &lt;type&gt;VARCHAR&lt;/type&gt; type, which is a
+     special type provided by ECPG.  The definition on an array of
+     type &lt;type&gt;VARCHAR&lt;/type&gt; is converted into a
+     named &lt;type&gt;struct&lt;/type&gt; for every variable. A declaration like:
+</span>
+     その他の方法は、ECPGによって提供される特殊なデータ型 <code class="type">VARCHAR</code> を使う方法です。
+     <code class="type">VARCHAR</code> の配列の定義は、すべての変数が名前の付いた <code class="type">struct</code> に変換されます。
+     以下のような宣言は:
+</p><pre class="programlisting">
+VARCHAR var[180];
+</pre><p>
+<span class="original">
+     is converted into:
+</span>
+     次のように変換されます:
+</p><pre class="programlisting">
+struct varchar_var { int len; char arr[180]; } var;
+</pre><p>
+<span class="original">
+     The member &lt;structfield&gt;arr&lt;/structfield&gt; hosts the string
+     including a terminating zero byte.  Thus, to store a string in
+     a &lt;type&gt;VARCHAR&lt;/type&gt; host variable, the host variable has to be
+     declared with the length including the zero byte terminator.  The
+     member &lt;structfield&gt;len&lt;/structfield&gt; holds the length of the
+     string stored in the &lt;structfield&gt;arr&lt;/structfield&gt; without the
+     terminating zero byte.  When a host variable is used as input for
+     a query, if &lt;literal&gt;strlen(arr)&lt;/literal&gt;
+     and &lt;structfield&gt;len&lt;/structfield&gt; are different, the shorter one
+     is used.
+</span>
+     メンバー変数 <code class="structfield">arr</code> は終端のゼロの1バイトを含む文字列を保持します。
+     よって、文字列を <code class="type">VARCHAR</code> ホスト変数に格納する場合には、ホスト変数はゼロ終端を含んだ長さで宣言されなければなりません。
+     メンバー変数 <code class="structfield">len</code> は <code class="structfield">arr</code> に格納された文字列のゼロ終端を含まない長さを保持します。
+     ホスト変数をクエリの入力として使用する際、<code class="literal">strlen(arr)</code> と <code class="structfield">len</code> が違った場合には短いものが使用されます。
+    </p><p>
+<span class="original">
+     &lt;type&gt;VARCHAR&lt;/type&gt; can be written in upper or lower case, but
+     not in mixed case.
+</span>
+     <code class="type">VARCHAR</code> は大文字でも小文字でも記述することができますが、混在して記述することはできません。
+    </p><p>
+<span class="original">
+     &lt;type&gt;char&lt;/type&gt; and &lt;type&gt;VARCHAR&lt;/type&gt; host variables can
+     also hold values of other SQL types, which will be stored in
+     their string forms.
+</span>
+     <code class="type">char</code> と <code class="type">VARCHAR</code> ホスト変数は、他のSQLのデータ型の値を文字列表現として保持することもできます。
+    </p></div><div class="sect3" id="ECPG-SPECIAL-TYPES"><div class="titlepage"><div><div><h4 class="title">36.4.4.2. 特殊なデータ型へのアクセス</h4></div></div></div><span class="original">
+    &lt;title&gt;Accessing Special Data Types&lt;/title&gt;
+</span><p>
+<span class="original">
+     ECPG contains some special types that help you to interact easily
+     with some special data types from the PostgreSQL server. In
+     particular, it has implemented support for the
+     &lt;type&gt;numeric&lt;/type&gt;, &lt;type&gt;decimal&lt;/type&gt;, &lt;type&gt;date&lt;/type&gt;, &lt;type&gt;timestamp&lt;/type&gt;,
+     and &lt;type&gt;interval&lt;/type&gt; types.  These data types cannot usefully be
+     mapped to primitive host variable types (such
+     as &lt;type&gt;int&lt;/type&gt;, &lt;type&gt;long long int&lt;/type&gt;,
+     or &lt;type&gt;char[]&lt;/type&gt;), because they have a complex internal
+     structure.  Applications deal with these types by declaring host
+     variables in special types and accessing them using functions in
+     the pgtypes library.  The pgtypes library, described in detail
+     in &lt;xref linkend="ecpg-pgtypes"/&gt; contains basic functions to deal
+     with those types, such that you do not need to send a query to
+     the SQL server just for adding an interval to a time stamp for
+     example.
+</span>
+     ECPGには、PostgreSQLサーバからのいくつかの特殊なデータ型とやりとりするための特殊なデータ型があります。
+     特に、<code class="type">numeric</code>, <code class="type">decimal</code>, <code class="type">date</code>, <code class="type">timestamp</code>, <code class="type">interval</code> 型へのサポートを実装しています。
+     これらのデータ型は複雑な内部構造を持つため、ホスト変数のプリミティブ型（<code class="type">int</code>, <code class="type">long long int</code>, または <code class="type">char[]</code>）に対応させることはできません。
+     アプリケーションは特別な型としてホスト変数を宣言し、pgtypesライブラリ内の関数を使ってアクセスすることで、これらの型を扱います。
+     <a class="xref" href="ecpg-pgtypes.html" title="36.6. pgtypes ライブラリ">36.6</a> で詳細を解説されるpgtypesライブラリは、例えばタイムスタンプにインターバルを加算する際にクエリをSQLサーバに送らずに済ますような、これらの型を扱うための基本的な関数を含んでいます。
+    </p><p>
+<span class="original">
+     The follow subsections describe these special data types. For
+     more details about pgtypes library functions,
+     see &lt;xref linkend="ecpg-pgtypes"/&gt;.
+</span>
+以降のサブセクションは、これらの特殊なデータ型を説明します。
+pgtypesライブラリ関数についての詳細は<a class="xref" href="ecpg-pgtypes.html" title="36.6. pgtypes ライブラリ">36.6</a>を参照してください。
+    </p><div class="sect4" id="id-1.7.5.10.7.7.4"><div class="titlepage"><div><div><h5 class="title">36.4.4.2.1. timestamp, date</h5></div></div></div><p>
+<span class="original">
+      Here is a pattern for handling &lt;type&gt;timestamp&lt;/type&gt; variables
+      in the ECPG host application.
+</span>
+      以下は、<code class="type">timestamp</code> 変数をECPGホストアプリケーションで扱う典型的なパターンです。
+     </p><p>
+<span class="original">
+      First, the program has to include the header file for the
+      &lt;type&gt;timestamp&lt;/type&gt; type:
+</span>
+      最初に、プログラムは <code class="type">timestamp</code> 型のためのヘッダファイルをインクルードする必要があります:
+</p><pre class="programlisting">
+#include &lt;pgtypes_timestamp.h&gt;
+</pre><p>
+     </p><p>
+<span class="original">
+      Next, declare a host variable as type &lt;type&gt;timestamp&lt;/type&gt; in
+      the declare section:
+</span>
+      次に、宣言セクションで <code class="type">timestamp</code> 型のホスト変数を宣言します:
+</p><pre class="programlisting">
+EXEC SQL BEGIN DECLARE SECTION;
+timestamp ts;
+EXEC SQL END DECLARE SECTION;
+</pre><p>
+     </p><p>
+<span class="original">
+      And after reading a value into the host variable, process it
+      using pgtypes library functions. In following example, the
+      &lt;type&gt;timestamp&lt;/type&gt; value is converted into text (ASCII) form
+      with the &lt;function&gt;PGTYPEStimestamp_to_asc()&lt;/function&gt;
+      function:
+</span>
+      そして、ホスト変数へ値を読み込んだら、pgtypesライブラリ関数を使って処理をします。
+      以降の例では、<code class="type">timestamp</code> の値は <code class="function">PGTYPEStimestamp_to_asc()</code> 関数によって text (ASCII) 形式に変換されます:
+</p><pre class="programlisting">
+EXEC SQL SELECT now()::timestamp INTO :ts;
+
+printf("ts = %s\n", PGTYPEStimestamp_to_asc(ts));
+</pre><p>
+<span class="original">
+      This example will show some result like following:
+</span>
+この例は、以下のような結果を表示します。
+</p><pre class="screen">
+ts = 2010-06-27 18:03:56.949343
+</pre><p>
+     </p><p>
+<span class="original">
+      In addition, the DATE type can be handled in the same way. The
+      program has to include &lt;filename&gt;pgtypes_date.h&lt;/filename&gt;, declare a host variable
+      as the date type and convert a DATE value into a text form using
+      &lt;function&gt;PGTYPESdate_to_asc()&lt;/function&gt; function. For more details about the
+      pgtypes library functions, see &lt;xref linkend="ecpg-pgtypes"/&gt;.
+</span>
+      また、DATE型も同じ方法で扱うことができます。
+      プログラムは <code class="filename">pgtypes_date.h</code> をインクルードし、ホスト変数を date 型として宣言し、<code class="function">PGTYPESdate_to_asc()</code> 関数によって DATE の値を text 形式に変換します。
+      pgtypesライブラリ関数についての詳細は、<a class="xref" href="ecpg-pgtypes.html" title="36.6. pgtypes ライブラリ">36.6</a> を参照してください。
+     </p></div><div class="sect4" id="ECPG-TYPE-INTERVAL"><div class="titlepage"><div><div><h5 class="title">36.4.4.2.2. interval</h5></div></div></div><p>
+<span class="original">
+      The handling of the &lt;type&gt;interval&lt;/type&gt; type is also similar
+      to the &lt;type&gt;timestamp&lt;/type&gt; and &lt;type&gt;date&lt;/type&gt; types.  It
+      is required, however, to allocate memory for
+      an &lt;type&gt;interval&lt;/type&gt; type value explicitly.  In other words,
+      the memory space for the variable has to be allocated in the
+      heap memory, not in the stack memory.
+</span>
+      <code class="type">interval</code> 型の扱い方は <code class="type">timestamp</code> や <code class="type">date</code> 型と似ています。
+      但し、<code class="type">interval</code> 型の値のために明示的にメモリを確保する必要があります。
+      言い換えると、この変数のためのメモリ領域はスタックではなくヒープ上に確保されます。
+     </p><p>
+<span class="original">
+      Here is an example program:
+</span>
+      以下にプログラム例を示します:
+</p><pre class="programlisting">
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;pgtypes_interval.h&gt;
+
+int
+main(void)
+{
+EXEC SQL BEGIN DECLARE SECTION;
+    interval *in;
+EXEC SQL END DECLARE SECTION;
+
+    EXEC SQL CONNECT TO testdb;
+    EXEC SQL SELECT pg_catalog.set_config('search_path', '', false); EXEC SQL COMMIT;
+
+    in = PGTYPESinterval_new();
+    EXEC SQL SELECT '1 min'::interval INTO :in;
+    printf("interval = %s\n", PGTYPESinterval_to_asc(in));
+    PGTYPESinterval_free(in);
+
+    EXEC SQL COMMIT;
+    EXEC SQL DISCONNECT ALL;
+    return 0;
+}
+</pre><p>
+     </p></div><div class="sect4" id="ECPG-TYPE-NUMERIC-DECIMAL"><div class="titlepage"><div><div><h5 class="title">36.4.4.2.3. numeric, decimal</h5></div></div></div><p>
+<span class="original">
+      The handling of the &lt;type&gt;numeric&lt;/type&gt;
+      and &lt;type&gt;decimal&lt;/type&gt; types is similar to the
+      &lt;type&gt;interval&lt;/type&gt; type: It requires defining a pointer,
+      allocating some memory space on the heap, and accessing the
+      variable using the pgtypes library functions.  For more details
+      about the pgtypes library functions,
+      see &lt;xref linkend="ecpg-pgtypes"/&gt;.
+</span>
+      <code class="type">numeric</code> と <code class="type">decimal</code> 型の扱い方は <code class="type">interval</code> 型と似ています: ポインタ宣言を必要とし、ヒープメモリを確保する必要があり、pgtypesライブラリ関数を使って変数にアクセスします。
+      pgtypesライブラリ関数の詳細については、<a class="xref" href="ecpg-pgtypes.html" title="36.6. pgtypes ライブラリ">36.6</a> を参照してください。
+     </p><p>
+<span class="original">
+      No functions are provided specifically for
+      the &lt;type&gt;decimal&lt;/type&gt; type.  An application has to convert it
+      to a &lt;type&gt;numeric&lt;/type&gt; variable using a pgtypes library
+      function to do further processing.
+</span>
+      <code class="type">decimal</code> 型に対する専用の関数は提供されていません。
+      アプリケーションは処理を行うために pgtypesライブラリ関数を使って <code class="type">numeric</code> 変数に変換する必要があります。
+     </p><p>
+<span class="original">
+      Here is an example program handling &lt;type&gt;numeric&lt;/type&gt;
+      and &lt;type&gt;decimal&lt;/type&gt; type variables.
+</span>
+      以下に <code class="type">numeric</code> および <code class="type">decimal</code> 型の変数の処理の例を示します。
+</p><pre class="programlisting">
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;pgtypes_numeric.h&gt;
+
+EXEC SQL WHENEVER SQLERROR STOP;
+
+int
+main(void)
+{
+EXEC SQL BEGIN DECLARE SECTION;
+    numeric *num;
+    numeric *num2;
+    decimal *dec;
+EXEC SQL END DECLARE SECTION;
+
+    EXEC SQL CONNECT TO testdb;
+    EXEC SQL SELECT pg_catalog.set_config('search_path', '', false); EXEC SQL COMMIT;
+
+    num = PGTYPESnumeric_new();
+    dec = PGTYPESdecimal_new();
+
+    EXEC SQL SELECT 12.345::numeric(4,2), 23.456::decimal(4,2) INTO :num, :dec;
+
+    printf("numeric = %s\n", PGTYPESnumeric_to_asc(num, 0));
+    printf("numeric = %s\n", PGTYPESnumeric_to_asc(num, 1));
+    printf("numeric = %s\n", PGTYPESnumeric_to_asc(num, 2));
+
+<span class="original">
+    /* Convert decimal to numeric to show a decimal value. */
+</span>
+    /* decimalの値を表示するためdecimalをnumericに変換する。 */
+    num2 = PGTYPESnumeric_new();
+    PGTYPESnumeric_from_decimal(dec, num2);
+
+    printf("decimal = %s\n", PGTYPESnumeric_to_asc(num2, 0));
+    printf("decimal = %s\n", PGTYPESnumeric_to_asc(num2, 1));
+    printf("decimal = %s\n", PGTYPESnumeric_to_asc(num2, 2));
+
+    PGTYPESnumeric_free(num2);
+    PGTYPESdecimal_free(dec);
+    PGTYPESnumeric_free(num);
+
+    EXEC SQL COMMIT;
+    EXEC SQL DISCONNECT ALL;
+    return 0;
+}
+</pre><p>
+     </p></div></div><div class="sect3" id="ECPG-VARIABLES-NONPRIMITIVE-C"><div class="titlepage"><div><div><h4 class="title">36.4.4.3. 非プリミティブ型のホスト変数</h4></div></div></div><span class="original">
+    &lt;title&gt;Host Variables with Nonprimitive Types&lt;/title&gt;
+</span><p>
+<span class="original">
+     As a host variable you can also use arrays, typedefs, structs, and
+     pointers.
+</span>
+     ホスト変数として、配列、typedef、構造体およびポインタも使うことができます。
+    </p><div class="sect4" id="ECPG-VARIABLES-ARRAYS"><div class="titlepage"><div><div><h5 class="title">36.4.4.3.1. 配列</h5></div></div></div><span class="original">
+     &lt;title&gt;Arrays&lt;/title&gt;
+</span><p>
+<span class="original">
+      There are two use cases for arrays as host variables.  The first
+      is a way to store some text string in &lt;type&gt;char[]&lt;/type&gt;
+      or &lt;type&gt;VARCHAR[]&lt;/type&gt;, as
+      explained in &lt;xref linkend="ecpg-char"/&gt;.  The second use case is to
+      retrieve multiple rows from a query result without using a
+      cursor.  Without an array, to process a query result consisting
+      of multiple rows, it is required to use a cursor and
+      the &lt;command&gt;FETCH&lt;/command&gt; command.  But with array host
+      variables, multiple rows can be received at once.  The length of
+      the array has to be defined to be able to accommodate all rows,
+      otherwise a buffer overflow will likely occur.
+</span>
+      ホスト変数としての配列の使い方には二通りの利用方法があります。
+      一つ目の使い方は、<a class="xref" href="ecpg-variables.html#ECPG-CHAR" title="36.4.4.1. 文字列の処理">36.4.4.1</a> で説明されたように <code class="type">char[]</code> または <code class="type">VARCHAR[]</code> の何らかのテキスト文字列を保持するための方法です。
+      二つ目の使い方は、カーソルを用いずに複数行を返却するクエリ結果を受け取るために使う方法です。
+      配列を使わない場合、複数行からなるクエリの実行結果を処理するには、カーソルと <code class="command">FETCH</code> コマンドを使用する必要があります。
+      しかし、配列のホスト変数を使うと、複数行を一括して受け取ることができます。
+      配列の長さはすべての行を受け入れられるように定義されなければなりません。でなければバッファーオーバーフローが発生するでしょう。
+     </p><p>
+<span class="original">
+      Following example scans the &lt;literal&gt;pg_database&lt;/literal&gt;
+      system table and shows all OIDs and names of the available
+      databases:
+</span>
+      以下の例は <code class="literal">pg_database</code> システムテーブルをスキャンし、利用可能なデータベースのすべてのOIDとデータベース名を表示します:
+</p><pre class="programlisting">
+int
+main(void)
+{
+EXEC SQL BEGIN DECLARE SECTION;
+    int dbid[8];
+    char dbname[8][16];
+    int i;
+EXEC SQL END DECLARE SECTION;
+
+    memset(dbname, 0, sizeof(char)* 16 * 8);
+    memset(dbid, 0, sizeof(int) * 8);
+
+    EXEC SQL CONNECT TO testdb;
+    EXEC SQL SELECT pg_catalog.set_config('search_path', '', false); EXEC SQL COMMIT;
+
+<span class="original">
+    /* Retrieve multiple rows into arrays at once. */
+</span>
+    /* 複数行を一度に配列へと取り出す。 */
+    EXEC SQL SELECT oid,datname INTO :dbid, :dbname FROM pg_database;
+
+    for (i = 0; i &lt; 8; i++)
+        printf("oid=%d, dbname=%s\n", dbid[i], dbname[i]);
+
+    EXEC SQL COMMIT;
+    EXEC SQL DISCONNECT ALL;
+    return 0;
+}
+</pre><p>
+
+<span class="original">
+    This example shows following result. (The exact values depend on
+    local circumstances.)
+</span>
+    この例は、以下の結果を表示します。（実際の値はローカルな環境に依存します）
+</p><pre class="screen">
+oid=1, dbname=template1
+oid=11510, dbname=template0
+oid=11511, dbname=postgres
+oid=313780, dbname=testdb
+oid=0, dbname=
+oid=0, dbname=
+oid=0, dbname=
+</pre><p>
+     </p></div><div class="sect4" id="ECPG-VARIABLES-STRUCT"><div class="titlepage"><div><div><h5 class="title">36.4.4.3.2. 構造体</h5></div></div></div><span class="original">
+     &lt;title&gt;Structures&lt;/title&gt;
+</span><p>
+<span class="original">
+      A structure whose member names match the column names of a query
+      result, can be used to retrieve multiple columns at once.  The
+      structure enables handling multiple column values in a single
+      host variable.
+</span>
+      メンバー変数の名前がクエリ結果のカラム名に合致する構造体は、複数のカラムを一括して受け取るために利用することができます。
+      構造体は複数のカラムの値を単一のホスト変数で扱うことを可能にします。
+     </p><p>
+<span class="original">
+      The following example retrieves OIDs, names, and sizes of the
+      available databases from the &lt;literal&gt;pg_database&lt;/literal&gt;
+      system table and using
+      the &lt;function&gt;pg_database_size()&lt;/function&gt; function.  In this
+      example, a structure variable &lt;varname&gt;dbinfo_t&lt;/varname&gt; with
+      members whose names match each column in
+      the &lt;literal&gt;SELECT&lt;/literal&gt; result is used to retrieve one
+      result row without putting multiple host variables in
+      the &lt;literal&gt;FETCH&lt;/literal&gt; statement.
+</span>
+以下の例は、<code class="literal">pg_database</code>システムテーブルおよび<code class="function">pg_database_size()</code>関数を使って、利用可能なデータベースのOID、名前、サイズを取得します。
+この例では、メンバー変数の名前が<code class="literal">SELECT</code>結果の各カラムに合致する構造体<code class="varname">dbinfo_t</code>が、複数のホスト変数に格納することなく<code class="literal">FETCH</code>文の一行の結果を受け取るために使用されています。
+</p><pre class="programlisting">
+EXEC SQL BEGIN DECLARE SECTION;
+    typedef struct
+    {
+       int oid;
+       char datname[65];
+       long long int size;
+    } dbinfo_t;
+
+    dbinfo_t dbval;
+EXEC SQL END DECLARE SECTION;
+
+    memset(&amp;dbval, 0, sizeof(dbinfo_t));
+
+    EXEC SQL DECLARE cur1 CURSOR FOR SELECT oid, datname, pg_database_size(oid) AS size FROM pg_database;
+    EXEC SQL OPEN cur1;
+
+<span class="original">
+    /* when end of result set reached, break out of while loop */
+</span>
+    /* 結果集合の最後に到達したら、whileループから抜ける */
+    EXEC SQL WHENEVER NOT FOUND DO BREAK;
+
+    while (1)
+    {
+<span class="original">
+        /* Fetch multiple columns into one structure. */
+</span>
+        /* 複数列を1つの構造体に取り込む。 */
+        EXEC SQL FETCH FROM cur1 INTO :dbval;
+
+<span class="original">
+        /* Print members of the structure. */
+</span>
+        /* 構造体のメンバを表示する。 */
+        printf("oid=%d, datname=%s, size=%lld\n", dbval.oid, dbval.datname, dbval.size);
+    }
+
+    EXEC SQL CLOSE cur1;
+</pre><p>
+     </p><p>
+<span class="original">
+      This example shows following result. (The exact values depend on
+      local circumstances.)
+</span>
+      この例は、次の結果を示します（実際の値はローカルな環境に依存します）
+</p><pre class="screen">
+oid=1, datname=template1, size=4324580
+oid=11510, datname=template0, size=4243460
+oid=11511, datname=postgres, size=4324580
+oid=313780, datname=testdb, size=8183012
+</pre><p>
+     </p><p>
+<span class="original">
+      Structure host variables &lt;quote&gt;absorb&lt;/quote&gt; as many columns
+      as the structure as fields.  Additional columns can be assigned
+      to other host variables. For example, the above program could
+      also be restructured like this, with the &lt;varname&gt;size&lt;/varname&gt;
+      variable outside the structure:
+</span>
+      構造体のホスト変数は、多数のカラムを構造体のフィールドとして<span class="quote">「<span class="quote">吸収</span>」</span>します。
+      追加のカラムは他のホスト変数に割り当てることができます。
+      例えば、上記のプログラムは構造体に含まれない <code class="varname">size</code> 変数を使って以下のように書き換えることができます。
+</p><pre class="programlisting">
+EXEC SQL BEGIN DECLARE SECTION;
+    typedef struct
+    {
+       int oid;
+       char datname[65];
+    } dbinfo_t;
+
+    dbinfo_t dbval;
+    long long int size;
+EXEC SQL END DECLARE SECTION;
+
+    memset(&amp;dbval, 0, sizeof(dbinfo_t));
+
+    EXEC SQL DECLARE cur1 CURSOR FOR SELECT oid, datname, pg_database_size(oid) AS size FROM pg_database;
+    EXEC SQL OPEN cur1;
+
+<span class="original">
+    /* when end of result set reached, break out of while loop */
+</span>
+    /* 結果集合の最後に到達したら、whileループから抜ける */
+    EXEC SQL WHENEVER NOT FOUND DO BREAK;
+
+    while (1)
+    {
+<span class="original">
+        /* Fetch multiple columns into one structure. */
+</span>
+        /* 複数列を1つの構造体に取り込む。 */
+        EXEC SQL FETCH FROM cur1 INTO :dbval, :size;
+
+<span class="original">
+        /* Print members of the structure. */
+</span>
+        /* 構造体のメンバを表示する。 */
+        printf("oid=%d, datname=%s, size=%lld\n", dbval.oid, dbval.datname, size);
+    }
+
+    EXEC SQL CLOSE cur1;
+</pre><p>
+     </p></div><div class="sect4" id="id-1.7.5.10.7.8.5"><div class="titlepage"><div><div><h5 class="title">36.4.4.3.3. typedef</h5></div></div></div><span class="original">
+     &lt;title&gt;Typedefs&lt;/title&gt;
+</span><p>
+<span class="original">
+      Use the &lt;literal&gt;typedef&lt;/literal&gt; keyword to map new types to already
+      existing types.
+</span>
+      新しい型と既存の型を対応付けるためには <code class="literal">typedef</code> キーワードを使ってください。
+</p><pre class="programlisting">
+EXEC SQL BEGIN DECLARE SECTION;
+    typedef char mychartype[40];
+    typedef long serial_t;
+EXEC SQL END DECLARE SECTION;
+</pre><p>
+<span class="original">
+      Note that you could also use:
+</span>
+      また、同様に以下を使うこともできます:
+</p><pre class="programlisting">
+EXEC SQL TYPE serial_t IS long;
+</pre><p>
+<span class="original">
+      This declaration does not need to be part of a declare section.
+</span>
+      この宣言は、宣言セクションの一部である必要はありません。
+     </p></div><div class="sect4" id="id-1.7.5.10.7.8.6"><div class="titlepage"><div><div><h5 class="title">36.4.4.3.4. ポインタ</h5></div></div></div><span class="original">
+     &lt;title&gt;Pointers&lt;/title&gt;
+</span><p>
+<span class="original">
+      You can declare pointers to the most common types. Note however
+      that you cannot use pointers as target variables of queries
+      without auto-allocation. See &lt;xref linkend="ecpg-descriptors"/&gt;
+      for more information on auto-allocation.
+</span>
+      ほとんどの一般的な型のポインタを宣言することができます。
+      但し、自動メモリ確保を使わずにクエリのターゲット変数として使うことはできません。
+      自動メモリ確保については <a class="xref" href="ecpg-descriptors.html" title="36.7. 記述子領域の使用">36.7</a> を参照してください。
+     </p><p>
+</p><pre class="programlisting">
+EXEC SQL BEGIN DECLARE SECTION;
+    int   *intp;
+    char **charp;
+EXEC SQL END DECLARE SECTION;
+</pre><p>
+     </p></div></div></div><div class="sect2" id="ECPG-VARIABLES-NONPRIMITIVE-SQL"><div class="titlepage"><div><div><h3 class="title">36.4.5. 非プリミティブSQLデータ型の扱い方</h3></div></div></div><span class="original">
+   &lt;title&gt;Handling Nonprimitive SQL Data Types&lt;/title&gt;
+</span><p>
+<span class="original">
+    This section contains information on how to handle nonscalar and
+    user-defined SQL-level data types in ECPG applications.  Note that
+    this is distinct from the handling of host variables of
+    nonprimitive types, described in the previous section.
+</span>
+    本節では、非スカラー型およびユーザ定義のSQLデータ型をECPGアプリケーションで扱う方法を示します。
+    この内容は、前の説で説明した非プリミティブ型のホスト変数の扱い方とは別のものです。
+   </p><div class="sect3" id="id-1.7.5.10.8.3"><div class="titlepage"><div><div><h4 class="title">36.4.5.1. 配列</h4></div></div></div><span class="original">
+    &lt;title&gt;Arrays&lt;/title&gt;
+</span><p>
+<span class="original">
+     Multi-dimensional SQL-level arrays are not directly supported in ECPG.
+     One-dimensional SQL-level arrays can be mapped into C array host
+     variables and vice-versa.  However, when creating a statement ecpg does
+     not know the types of the columns, so that it cannot check if a C array
+     is input into a corresponding SQL-level array.  When processing the
+     output of a SQL statement, ecpg has the necessary information and thus
+     checks if both are arrays.
+</span>
+SQLの多次元配列は、ECPGにおいては直接的にはサポートされていません。
+SQLの1次元配列をC言語の配列のホスト変数に対応させることはできますし、その逆もできます。
+しかし、文の作成時にはecpgがその列の型を知らないので、C言語の配列を対応するSQLの配列に入力できるか確かめられません。
+SQL文の出力を処理する時には、ecpgは必要な情報を持っていますので、どちらも配列であるか確かめます。
+    </p><p>
+<span class="original">
+     If a query accesses &lt;emphasis&gt;elements&lt;/emphasis&gt; of an array
+     separately, then this avoids the use of arrays in ECPG.  Then, a
+     host variable with a type that can be mapped to the element type
+     should be used.  For example, if a column type is array of
+     &lt;type&gt;integer&lt;/type&gt;, a host variable of type &lt;type&gt;int&lt;/type&gt;
+     can be used.  Also if the element type is &lt;type&gt;varchar&lt;/type&gt;
+     or &lt;type&gt;text&lt;/type&gt;, a host variable of type &lt;type&gt;char[]&lt;/type&gt;
+     or &lt;type&gt;VARCHAR[]&lt;/type&gt; can be used.
+</span>
+     もし、クエリが配列の <span class="emphasis"><em>要素</em></span> に対して個別にアクセスした場合、ECPGにおける配列の利用を避けることができます。
+     その際、要素に対応させることができる型のホスト変数を利用しなければなりません。
+     例えば、カラムの型が <code class="type">integer</code> の配列の場合、<code class="type">int</code> 型のホスト変数を使用することができます。
+     同様に、要素の型が <code class="type">varchar</code> または <code class="type">text</code> の場合、 <code class="type">char[]</code> ないし <code class="type">VARCHAR[]</code> 型のホスト変数を使用することができます。
+    </p><p>
+<span class="original">
+     Here is an example.  Assume the following table:
+</span>
+     以下に例を示します。次のようなテーブルを仮定します:
+</p><pre class="programlisting">
+CREATE TABLE t3 (
+    ii integer[]
+);
+
+testdb=&gt; SELECT * FROM t3;
+     ii
+-------------
+ {1,2,3,4,5}
+(1 row)
+</pre><p>
+
+<span class="original">
+     The following example program retrieves the 4th element of the
+     array and stores it into a host variable of
+     type &lt;type&gt;int&lt;/type&gt;:
+</span>
+     以下のプログラム例は、配列の4番目の要素を取得し、それを <code class="type">int</code> 型のホスト変数に保存します:
+</p><pre class="programlisting">
+EXEC SQL BEGIN DECLARE SECTION;
+int ii;
+EXEC SQL END DECLARE SECTION;
+
+EXEC SQL DECLARE cur1 CURSOR FOR SELECT ii[4] FROM t3;
+EXEC SQL OPEN cur1;
+
+EXEC SQL WHENEVER NOT FOUND DO BREAK;
+
+while (1)
+{
+    EXEC SQL FETCH FROM cur1 INTO :ii ;
+    printf("ii=%d\n", ii);
+}
+
+EXEC SQL CLOSE cur1;
+</pre><p>
+
+<span class="original">
+     This example shows the following result:
+</span>
+     この例は以下のような結果を示します:
+</p><pre class="screen">
+ii=4
+</pre><p>
+    </p><p>
+<span class="original">
+     To map multiple array elements to the multiple elements in an
+     array type host variables each element of array column and each
+     element of the host variable array have to be managed separately,
+     for example:
+</span>
+     複数の配列の要素を、配列型のホスト変数の複数の要素にマッピングするためには、配列型のカラムの各要素とホスト変数配列の各要素は、以下の例のように別々に管理されなければなりません:
+</p><pre class="programlisting">
+EXEC SQL BEGIN DECLARE SECTION;
+int ii_a[8];
+EXEC SQL END DECLARE SECTION;
+
+EXEC SQL DECLARE cur1 CURSOR FOR SELECT ii[1], ii[2], ii[3], ii[4] FROM t3;
+EXEC SQL OPEN cur1;
+
+EXEC SQL WHENEVER NOT FOUND DO BREAK;
+
+while (1)
+{
+    EXEC SQL FETCH FROM cur1 INTO :ii_a[0], :ii_a[1], :ii_a[2], :ii_a[3];
+    ...
+}
+</pre><p>
+    </p><p>
+<span class="original">
+     Note again that
+</span>
+     繰り返しになりますが、以下の例は
+</p><pre class="programlisting">
+EXEC SQL BEGIN DECLARE SECTION;
+int ii_a[8];
+EXEC SQL END DECLARE SECTION;
+
+EXEC SQL DECLARE cur1 CURSOR FOR SELECT ii FROM t3;
+EXEC SQL OPEN cur1;
+
+EXEC SQL WHENEVER NOT FOUND DO BREAK;
+
+while (1)
+{
+<span class="original">
+    /* WRONG */
+</span>
+    /* 間違い */
+    EXEC SQL FETCH FROM cur1 INTO :ii_a;
+    ...
+}
+</pre><p>
+<span class="original">
+     would not work correctly in this case, because you cannot map an
+     array type column to an array host variable directly.
+</span>
+     この場合は正しく動作しません。なぜなら、配列型のカラムをホストの配列変数に直接対応させることはできないからです。
+    </p><p>
+<span class="original">
+     Another workaround is to store arrays in their external string
+     representation in host variables of type &lt;type&gt;char[]&lt;/type&gt;
+     or &lt;type&gt;VARCHAR[]&lt;/type&gt;.  For more details about this
+     representation, see &lt;xref linkend="arrays-input"/&gt;.  Note that
+     this means that the array cannot be accessed naturally as an
+     array in the host program (without further processing that parses
+     the text representation).
+</span>
+     もうひとつの回避策は、配列をホスト変数の <code class="type">char[]</code> または <code class="type">VARCHAR[]</code> 型に文字列表現として保存することです。
+     この表現方法についての詳細は <a class="xref" href="arrays.html#ARRAYS-INPUT" title="8.15.2. 配列の値の入力">8.15.2</a> を参照してください。
+     このことは、配列にはホストプログラム内で自然な形ではアクセスできないことを意味しています（文字列表現を解析する追加処理が無ければ）。
+    </p></div><div class="sect3" id="id-1.7.5.10.8.4"><div class="titlepage"><div><div><h4 class="title">36.4.5.2. 複合型</h4></div></div></div><span class="original">
+    &lt;title&gt;Composite Types&lt;/title&gt;
+</span><p>
+<span class="original">
+     Composite types are not directly supported in ECPG, but an easy workaround is possible.
+  The
+     available workarounds are similar to the ones described for
+     arrays above: Either access each attribute separately or use the
+     external string representation.
+</span>
+複合型はECPGでは直接はサポートされていませんが、簡単な回避方法が利用可能です。
+利用可能なワークアラウンドは、先に配列において説明されたものと似ています: 各属性に個別にアクセスするか、外部の文字列表現を使います。
+    </p><p>
+<span class="original">
+     For the following examples, assume the following type and table:
+</span>
+以降の例のため、以下の型とテーブルを仮定します:
+</p><pre class="programlisting">
+CREATE TYPE comp_t AS (intval integer, textval varchar(32));
+CREATE TABLE t4 (compval comp_t);
+INSERT INTO t4 VALUES ( (256, 'PostgreSQL') );
+</pre><p>
+
+<span class="original">
+     The most obvious solution is to access each attribute separately.
+     The following program retrieves data from the example table by
+     selecting each attribute of the type &lt;type&gt;comp_t&lt;/type&gt;
+     separately:
+</span>
+もっとも分かりやすい解決法は、各属性に個別にアクセスすることです。
+以下のプログラムは、<code class="type">comp_t</code>型の各要素を個別に選択することによってサンプルのテーブルからデータを受け取ります:
+</p><pre class="programlisting">
+EXEC SQL BEGIN DECLARE SECTION;
+int intval;
+varchar textval[33];
+EXEC SQL END DECLARE SECTION;
+
+<span class="original">
+/* Put each element of the composite type column in the SELECT list. */
+</span>
+/* SELECTリストに複合型の列の各要素を書く。 */
+EXEC SQL DECLARE cur1 CURSOR FOR SELECT (compval).intval, (compval).textval FROM t4;
+EXEC SQL OPEN cur1;
+
+EXEC SQL WHENEVER NOT FOUND DO BREAK;
+
+while (1)
+{
+<span class="original">
+    /* Fetch each element of the composite type column into host variables. */
+</span>
+    /* 複合型の列の各要素をホスト変数に取り出す。 */
+    EXEC SQL FETCH FROM cur1 INTO :intval, :textval;
+
+    printf("intval=%d, textval=%s\n", intval, textval.arr);
+}
+
+EXEC SQL CLOSE cur1;
+</pre><p>
+    </p><p>
+<span class="original">
+     To enhance this example, the host variables to store values in
+     the &lt;command&gt;FETCH&lt;/command&gt; command can be gathered into one
+     structure.  For more details about the host variable in the
+     structure form, see &lt;xref linkend="ecpg-variables-struct"/&gt;.
+     To switch to the structure, the example can be modified as below.
+     The two host variables, &lt;varname&gt;intval&lt;/varname&gt;
+     and &lt;varname&gt;textval&lt;/varname&gt;, become members of
+     the &lt;structname&gt;comp_t&lt;/structname&gt; structure, and the structure
+     is specified on the &lt;command&gt;FETCH&lt;/command&gt; command.
+</span>
+     この例を拡張して、 <code class="command">FETCH</code> コマンドの値を格納するホスト変数を一つの構造体にまとめることができます。
+     構造体の形のホスト変数の詳細については <a class="xref" href="ecpg-variables.html#ECPG-VARIABLES-STRUCT" title="36.4.4.3.2. 構造体">36.4.4.3.2</a> を参照してください。
+     構造体に変更するために、この例は以下のように変更することができます。
+     二つのホスト変数 <code class="varname">intval</code> と <code class="varname">textval</code> を <code class="structname">comp_t</code> 構造体のメンバー変数とし、構造体を <code class="command">FETCH</code> コマンドで指定します。
+</p><pre class="programlisting">
+EXEC SQL BEGIN DECLARE SECTION;
+typedef struct
+{
+    int intval;
+    varchar textval[33];
+} comp_t;
+
+comp_t compval;
+EXEC SQL END DECLARE SECTION;
+
+<span class="original">
+/* Put each element of the composite type column in the SELECT list. */
+</span>
+/* SELECTリストに複合型の列の各要素を書く。 */
+EXEC SQL DECLARE cur1 CURSOR FOR SELECT (compval).intval, (compval).textval FROM t4;
+EXEC SQL OPEN cur1;
+
+EXEC SQL WHENEVER NOT FOUND DO BREAK;
+
+while (1)
+{
+ <span class="original">
+    /* Put all values in the SELECT list into one structure. */
+</span>
+    /* SELECTリストの値をすべて1つの構造体に取り込む。 */
+    EXEC SQL FETCH FROM cur1 INTO :compval;
+
+    printf("intval=%d, textval=%s\n", compval.intval, compval.textval.arr);
+}
+
+EXEC SQL CLOSE cur1;
+</pre><p>
+
+<span class="original">
+     Although a structure is used in the &lt;command&gt;FETCH&lt;/command&gt;
+     command, the attribute names in the &lt;command&gt;SELECT&lt;/command&gt;
+     clause are specified one by one.  This can be enhanced by using
+     a &lt;literal&gt;*&lt;/literal&gt; to ask for all attributes of the composite
+     type value.
+</span>
+     構造体が <code class="command">FETCH</code> コマンドで使われていますが、属性名は <code class="command">SELECT</code> 句において各々が指定されています。
+     これは、複合型の値のすべての属性を示す <code class="literal">*</code> を用いることで拡張することができます。
+</p><pre class="programlisting">
+...
+EXEC SQL DECLARE cur1 CURSOR FOR SELECT (compval).* FROM t4;
+EXEC SQL OPEN cur1;
+
+EXEC SQL WHENEVER NOT FOUND DO BREAK;
+
+while (1)
+{
+<span class="original">
+    /* Put all values in the SELECT list into one structure. */
+</span>
+    /* SELECTリストの値をすべて1つの構造体に取り込む。 */
+    EXEC SQL FETCH FROM cur1 INTO :compval;
+
+    printf("intval=%d, textval=%s\n", compval.intval, compval.textval.arr);
+}
+...
+</pre><p>
+<span class="original">
+     This way, composite types can be mapped into structures almost
+     seamlessly, even though ECPG does not understand the composite
+     type itself.
+</span>
+     この方法であれば、ECPGが複合型そのものを理解できないとしても、複合型はほぼシームレスに構造体に対応させることができます。
+    </p><p>
+<span class="original">
+     Finally, it is also possible to store composite type values in
+     their external string representation in host variables of
+     type &lt;type&gt;char[]&lt;/type&gt; or &lt;type&gt;VARCHAR[]&lt;/type&gt;.  But that
+     way, it is not easily possible to access the fields of the value
+     from the host program.
+</span>
+     最後に、<code class="type">char[]</code> または <code class="type">VARCHAR[]</code> 型のホスト変数に外部の文字列表現として複合型の値を格納することもできます。
+     しかし、この方法ではホストプログラムから値のフィールドにアクセスするのは簡単ではありません。
+    </p></div><div class="sect3" id="id-1.7.5.10.8.5"><div class="titlepage"><div><div><h4 class="title">36.4.5.3. ユーザ定義の基本型</h4></div></div></div><span class="original">
+    &lt;title&gt;User-defined Base Types&lt;/title&gt;
+</span><p>
+<span class="original">
+     New user-defined base types are not directly supported by ECPG.
+     You can use the external string representation and host variables
+     of type &lt;type&gt;char[]&lt;/type&gt; or &lt;type&gt;VARCHAR[]&lt;/type&gt;, and this
+     solution is indeed appropriate and sufficient for many types.
+</span>
+     新しいユーザ定義の基本型は、ECPGでは直接的にはサポートされていません。
+     外部の文字列表現、<code class="type">char[]</code>または<code class="type">VARCHAR[]</code> 型のホスト変数を使うことができ、この解決法は多くの型について確かに適切かつ十分です。
+    </p><p>
+<span class="original">
+     Here is an example using the data type &lt;type&gt;complex&lt;/type&gt; from
+     the example in &lt;xref linkend="xtypes"/&gt;.  The external string
+     representation of that type is &lt;literal&gt;(%f,%f)&lt;/literal&gt;,
+     which is defined in the
+     functions &lt;function&gt;complex_in()&lt;/function&gt;
+     and &lt;function&gt;complex_out()&lt;/function&gt; functions
+     in &lt;xref linkend="xtypes"/&gt;.  The following example inserts the
+     complex type values &lt;literal&gt;(1,1)&lt;/literal&gt;
+     and &lt;literal&gt;(3,3)&lt;/literal&gt; into the
+     columns &lt;literal&gt;a&lt;/literal&gt; and &lt;literal&gt;b&lt;/literal&gt;, and select
+     them from the table after that.
+</span>
+以下に<a class="xref" href="xtypes.html" title="38.12. ユーザ定義の型">38.12</a>に含まれる<code class="type">complex</code>型を使った例を示します。
+この型の外部文字列表現は<code class="literal">(%f,%f)</code>で、<a class="xref" href="xtypes.html" title="38.12. ユーザ定義の型">38.12</a>の<code class="function">complex_in()</code>関数および<code class="function">complex_out()</code>関数で定義されています。
+以下の例は、カラム<code class="literal">a</code>と<code class="literal">b</code>に、complex型の値<code class="literal">(1,1)</code>および<code class="literal">(3,3)</code>を挿入し、その後、それらをテーブルからSELECTします。
+
+</p><pre class="programlisting">
+EXEC SQL BEGIN DECLARE SECTION;
+    varchar a[64];
+    varchar b[64];
+EXEC SQL END DECLARE SECTION;
+
+    EXEC SQL INSERT INTO test_complex VALUES ('(1,1)', '(3,3)');
+
+    EXEC SQL DECLARE cur1 CURSOR FOR SELECT a, b FROM test_complex;
+    EXEC SQL OPEN cur1;
+
+    EXEC SQL WHENEVER NOT FOUND DO BREAK;
+
+    while (1)
+    {
+        EXEC SQL FETCH FROM cur1 INTO :a, :b;
+        printf("a=%s, b=%s\n", a.arr, b.arr);
+    }
+
+    EXEC SQL CLOSE cur1;
+</pre><p>
+
+<span class="original">
+     This example shows following result:
+</span>
+     この例は、以下の結果を示します。
+</p><pre class="screen">
+a=(1,1), b=(3,3)
+</pre><p>
+   </p><p>
+<span class="original">
+     Another workaround is avoiding the direct use of the user-defined
+     types in ECPG and instead create a function or cast that converts
+     between the user-defined type and a primitive type that ECPG can
+     handle.  Note, however, that type casts, especially implicit
+     ones, should be introduced into the type system very carefully.
+</span>
+     その他の回避方法は、ユーザ定義型をECPGにおいて直接的に使うことを避けることであり、ユーザ定義型とECPGが扱えるプリミティブ型を変換する関数またはキャストを作成することです。
+     ただし、型のキャスト、特に暗黙のものは型システムにおいて慎重に導入されなければなりません。
+    </p><p>
+<span class="original">
+     For example,
+</span>
+     例を示します。
+</p><pre class="programlisting">
+CREATE FUNCTION create_complex(r double, i double) RETURNS complex
+LANGUAGE SQL
+IMMUTABLE
+AS $$ SELECT $1 * complex '(1,0')' + $2 * complex '(0,1)' $$;
+</pre><p>
+<span class="original">
+    After this definition, the following
+</span>
+    この定義の後、以下の例は
+</p><pre class="programlisting">
+EXEC SQL BEGIN DECLARE SECTION;
+double a, b, c, d;
+EXEC SQL END DECLARE SECTION;
+
+a = 1;
+b = 2;
+c = 3;
+d = 4;
+
+EXEC SQL INSERT INTO test_complex VALUES (create_complex(:a, :b), create_complex(:c, :d));
+</pre><p>
+<span class="original">
+    has the same effect as
+</span>
+    以下と同じ効果をもたらします。
+</p><pre class="programlisting">
+EXEC SQL INSERT INTO test_complex VALUES ('(1,2)', '(3,4)');
+</pre><p>
+    </p></div></div><div class="sect2" id="ECPG-INDICATORS"><div class="titlepage"><div><div><h3 class="title">36.4.6. 指示子</h3></div></div></div><span class="original">
+   &lt;title&gt;Indicators&lt;/title&gt;
+</span><p>
+<span class="original">
+    The examples above do not handle null values.  In fact, the
+    retrieval examples will raise an error if they fetch a null value
+    from the database.  To be able to pass null values to the database
+    or retrieve null values from the database, you need to append a
+    second host variable specification to each host variable that
+    contains data.  This second host variable is called the
+    &lt;firstterm&gt;indicator&lt;/firstterm&gt; and contains a flag that tells
+    whether the datum is null, in which case the value of the real
+    host variable is ignored.  Here is an example that handles the
+    retrieval of null values correctly:
+</span>
+上の例ではNULL値を扱いません。
+実際、取り出し例では、もしデータベースからNULL値が取り出された場合にはエラーが発生します。
+データベースへNULL値を渡す、または、データベースからNULL値を取り出すためには、第二のホスト変数指定をデータを格納するホスト変数それぞれに追加しなければなりません。
+第二のホスト変数は<em class="firstterm">指示子</em>と呼ばれ、データがNULLかどうかを表すフラグが含まれます。
+NULLの場合、実際のホスト変数の値は無視されます。
+以下に、NULL値の取り出しを正しく扱う例を示します。
+</p><pre class="programlisting">
+EXEC SQL BEGIN DECLARE SECTION;
+VARCHAR val;
+int val_ind;
+EXEC SQL END DECLARE SECTION:
+
+ ...
+
+EXEC SQL SELECT b INTO :val :val_ind FROM test1;
+</pre><p>
+<span class="original">
+    The indicator variable &lt;varname&gt;val_ind&lt;/varname&gt; will be zero if
+    the value was not null, and it will be negative if the value was
+    null.
+</span>
+値がNULLでなければ、指示子変数<code class="varname">val_ind</code>は0となります。
+値がNULLならば負の値となります。
+   </p><p>
+<span class="original">
+    The indicator has another function: if the indicator value is
+    positive, it means that the value is not null, but it was
+    truncated when it was stored in the host variable.
+</span>
+指示子は他の機能を持ちます。
+指示子の値が正ならば、値がNULLではありませんが、ホスト変数に格納する際に一部切り詰められたことを示します。
+   </p><p>
+<span class="original">
+    If the argument &lt;literal&gt;-r no_indicator&lt;/literal&gt; is passed to
+    the preprocessor &lt;command&gt;ecpg&lt;/command&gt;, it works in
+    &lt;quote&gt;no-indicator&lt;/quote&gt; mode. In no-indicator mode, if no
+    indicator variable is specified, null values are signaled (on
+    input and output) for character string types as empty string and
+    for integer types as the lowest possible value for type (for
+    example, &lt;symbol&gt;INT_MIN&lt;/symbol&gt; for &lt;type&gt;int&lt;/type&gt;).
+</span>
+    プリプロセッサ <code class="command">ecpg</code> に引数 <code class="literal">-r no_indicator</code> が渡された場合、<span class="quote">「<span class="quote">no-indicator</span>」</span> モードで動作します。
+    no-indicator モードでは、指示子変数が指定されなかった場合、（入力および出力において）文字列型に対して空の文字列としてnull値が、整数型に対してはもっとも小さな値が割り当てられます（例えば、<code class="type">int</code> の場合 <code class="symbol">INT_MIN</code> です）。
+   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ecpg-commands.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="ecpg.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="ecpg-dynamic.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">36.3. SQLコマンドの実行 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 36.5. 動的SQL</td></tr></table></div></body></html>

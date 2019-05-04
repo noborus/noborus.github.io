@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>31.4. 制限事項</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="logical-replication-conflicts.html" title="31.3. コンフリクト" /><link rel="next" href="logical-replication-architecture.html" title="31.5. アーキテクチャ" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="logical-replication.html" title="第31章 論理レプリケーション">第31章 論理レプリケーション</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      logical-replication-restrictions.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="logical-replication-conflicts.html" title="31.3. コンフリクト">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="logical-replication.html" title="第31章 論理レプリケーション">上へ</a></td><td width="60%" align="center">31.4. 制限事項</td><td width="20%" align="right"> <a accesskey="n" href="logical-replication-architecture.html" title="31.5. アーキテクチャ">次へ</a></td></tr></table><hr /></div><div class="sect1" id="LOGICAL-REPLICATION-RESTRICTIONS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">31.4. 制限事項</h2></div></div></div><span class="original">
+  &lt;title&gt;Restrictions&lt;/title&gt;
+</span><p>
+<span class="original">
+   Logical replication currently has the following restrictions or missing
+   functionality.  These might be addressed in future releases.
+</span>
+論理レプリケーションには、以下の制限事項とサポートされていない機能があります。
+将来のリリースでは、これらは対処されるかもしれません。
+  </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+     The database schema and DDL commands are not replicated.  The initial
+     schema can be copied by hand using &lt;literal&gt;pg_dump
+     &amp;#045;&amp;#045;schema-only&lt;/literal&gt;.  Subsequent schema changes would need to be kept
+     in sync manually.  (Note, however, that there is no need for the schemas
+     to be absolutely the same on both sides.)  Logical replication is robust
+     when schema definitions change in a live database: When the schema is
+     changed on the publisher and replicated data starts arriving at the
+     subscriber but does not fit into the table schema, replication will error
+     until the schema is updated.  In many cases, intermittent errors can be
+     avoided by applying additive schema changes to the subscriber first.
+</span>
+データベーススキーマおよびDDLコマンドはレプリケーションされません。
+初期スキーマは、<code class="literal">pg_dump --schema-only</code>を使ってコピーすることができます。
+以後のスキーマ変更の同期は手動で行ないます。
+（なお、両者でスキーマ名は完全に同じである必要はないことに留意してください。）
+稼働中のスキーマ定義変更に対して、論理レプリケーションは頑健です。
+スキーマがパブリッシャー側で変更され、複製データがサブスクライバー側に到着し始めたものの、データがテーブルスキーマに合致しない場合は、スキーマが変更されるまではレプリケーションはエラーとなります。
+多くの場合、間欠的なエラーは、サブスクライバーに先に追加的なスキーマ変更を行うことで避けることができます。
+    </p></li><li class="listitem"><p>
+<span class="original">
+     Sequence data is not replicated.  The data in serial or identity columns
+     backed by sequences will of course be replicated as part of the table,
+     but the sequence itself would still show the start value on the
+     subscriber.  If the subscriber is used as a read-only database, then this
+     should typically not be a problem.  If, however, some kind of switchover
+     or failover to the subscriber database is intended, then the sequences
+     would need to be updated to the latest values, either by copying the
+     current data from the publisher (perhaps
+     using &lt;command&gt;pg_dump&lt;/command&gt;) or by determining a sufficiently high
+     value from the tables themselves.
+</span>
+シーケンスデータはレプリケーションされません。
+シーケンスによって裏付けされたSERIAL型や識別列のデータは、もちろんテーブルの一部としてレプリケーションされます。
+しかし、シーケンス自体は、サブスクライバーがスタートした時の値のままです。
+サブスクライバーが読み取り専用のデータベースとして使われているなら、通常は問題になりません。
+しかし、サブスクライバーのデータベースをスイッチオーバーやフェイルオーバーするつもりなら、パブリッシャーから現在のデータをコピーするか（おそらく<code class="command">pg_dump</code>を使います）、テーブル自身から十分に大きな値を決定し、シーケンスを最新の値に更新しなければなりません。
+    </p></li><li class="listitem"><p>
+<span class="original">
+     Replication of &lt;command&gt;TRUNCATE&lt;/command&gt; commands is supported, but
+     some care must be taken when truncating groups of tables connected by
+     foreign keys.  When replicating a truncate action, the subscriber will
+     truncate the same group of tables that was truncated on the publisher,
+     either explicitly specified or implicitly collected via
+     &lt;literal&gt;CASCADE&lt;/literal&gt;, minus tables that are not part of the
+     subscription.  This will work correctly if all affected tables are part
+     of the same subscription.  But if some tables to be truncated on the
+     subscriber have foreign-key links to tables that are not part of the same
+     (or any) subscription, then the application of the truncate action on the
+     subscriber will fail.
+</span>
+<code class="command">TRUNCATE</code>コマンドのレプリケーションはサポートされますが、外部キーで結びついたテーブル群を削除する場合には注意が必要です。
+削除処理をレプリケーションするとき、サブスクライバーはパブリッシャーで明示的に指定され削除された、もしくは<code class="literal">CASCADE</code>により暗黙的に削除されたテーブル群から、サブスクリプションの一部ではないテーブルを除いたテーブル群を削除します。
+この処理は、外部キーで関連付けられた全てのテーブルが同一のサブスクリプションの一部であれば、正常に動作します。
+しかし、サブスクライバーで削除されるテーブルが同一のサブスクリプションの一部でないテーブルと外部キーで接続されていた場合、サブスクライバー上の削除処理は失敗します。
+    </p></li><li class="listitem"><p>
+<span class="original">
+     Large objects (see &lt;xref linkend="largeobjects"/&gt;) are not replicated.
+     There is no workaround for that, other than storing data in normal
+     tables.
+</span>
+ラージオブジェクト（<a class="xref" href="largeobjects.html" title="第35章 ラージオブジェクト">第35章</a>参照）はレプリケーションされません。
+通常のテーブルにデータを格納する以外に回避方法はありません。
+    </p></li><li class="listitem"><p>
+<span class="original">
+     Replication is only possible from base tables to base tables.  That is,
+     the tables on the publication and on the subscription side must be normal
+     tables, not views, materialized views, partition root tables, or foreign
+     tables.  In the case of partitions, you can therefore replicate a
+     partition hierarchy one-to-one, but you cannot currently replicate to a
+     differently partitioned setup.  Attempts to replicate tables other than
+     base tables will result in an error.
+</span>
+レプリケーションは基底テーブルから基底テーブルのみに行われます。
+つまり、パブリッシャー側とサブスクリプション側のテーブルは、通常のテーブルでなければならず、ビュー、マテリアライズドビュー、パーティションのルートテーブル、外部テーブルであってはいけません。
+パーティションの場合は、パーティションの階層を一つずつレプリケーションできますが、今のところ異なるやり方でパーティションされたテーブルにはレプリケーションできません。
+基底テーブル以外をレプリケーションしようとすると、エラーになります。
+    </p></li></ul></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="logical-replication-conflicts.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="logical-replication.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="logical-replication-architecture.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">31.3. コンフリクト </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 31.5. アーキテクチャ</td></tr></table></div></body></html>

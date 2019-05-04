@@ -1,0 +1,395 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>E.42. リリース9.4.16</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="release-9-4-17.html" title="E.41. リリース9.4.17" /><link rel="next" href="release-9-4-15.html" title="E.43. リリース9.4.15" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="release.html" title="付録E リリースノート">付録E リリースノート</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      release-9-4-16.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="release-9-4-17.html" title="E.41. リリース9.4.17">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="release.html" title="付録E リリースノート">上へ</a></td><td width="60%" align="center">E.42. リリース9.4.16</td><td width="20%" align="right"> <a accesskey="n" href="release-9-4-15.html" title="E.43. リリース9.4.15">次へ</a></td></tr></table><hr /></div><div class="sect1" id="RELEASE-9-4-16"><div class="titlepage"><div><div><h2 class="title" style="clear: both">E.42. リリース9.4.16</h2></div></div></div><span class="original">
+  &lt;title&gt;Release 9.4.16&lt;/title&gt;
+</span><p><span class="original">
+  &lt;title&gt;Release date:&lt;/title&gt;
+</span><strong>リリース日: </strong>2018-02-08</p><p>
+<span class="original">
+   This release contains a variety of fixes from 9.4.15.
+   For information about new features in the 9.4 major release, see
+   &lt;xref linkend="release-9-4"/&gt;.
+</span>
+このリリースは9.4.15に対し、各種不具合を修正したものです。
+9.4メジャーリリースにおける新機能については、<a class="xref" href="release-9-4.html" title="E.58. リリース9.4">E.58</a>を参照してください。
+  </p><div class="sect2" id="id-1.11.6.46.4"><div class="titlepage"><div><div><h3 class="title">E.42.1. バージョン9.4.16への移行</h3></div></div></div><span class="original">
+   &lt;title&gt;Migration to Version 9.4.16&lt;/title&gt;
+</span><p>
+<span class="original">
+    A dump/restore is not required for those running 9.4.X.
+</span>
+9.4.Xからの移行ではダンプ/リストアは不要です。
+   </p><p>
+<span class="original">
+    However, if you are upgrading from a version earlier than 9.4.13,
+    see &lt;xref linkend="release-9-4-13"/&gt;.
+</span>
+しかしながら、9.4.13よりも前のリリースからアップグレードする場合は、<a class="xref" href="release-9-4-13.html" title="E.45. リリース9.4.13">E.45</a>を参照して下さい。
+   </p></div><div class="sect2" id="id-1.11.6.46.5"><div class="titlepage"><div><div><h3 class="title">E.42.2. 変更点</h3></div></div></div><span class="original">
+   &lt;title&gt;Changes&lt;/title&gt;
+</span><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+      Ensure that all temporary files made
+      by &lt;application&gt;pg_upgrade&lt;/application&gt; are non-world-readable
+      (Tom Lane, Noah Misch)
+</span>
+<span class="application">pg_upgrade</span>で作られる全ての一時ファイルが全ユーザ読み取り可にならないようにしました。
+      (Tom Lane, Noah Misch)
+     </p><p>
+<span class="original">
+      &lt;application&gt;pg_upgrade&lt;/application&gt; normally restricts its
+      temporary files to be readable and writable only by the calling user.
+      But the temporary file containing &lt;literal&gt;pg_dumpall -g&lt;/literal&gt;
+      output would be group- or world-readable, or even writable, if the
+      user's &lt;literal&gt;umask&lt;/literal&gt; setting allows.  In typical usage on
+      multi-user machines, the &lt;literal&gt;umask&lt;/literal&gt; and/or the working
+      directory's permissions would be tight enough to prevent problems;
+      but there may be people using &lt;application&gt;pg_upgrade&lt;/application&gt;
+      in scenarios where this oversight would permit disclosure of database
+      passwords to unfriendly eyes.
+      (CVE-2018-1053)
+</span>
+<span class="application">pg_upgrade</span>は、通常は一時ファイルを実行ユーザのみ読み書きできるように制限します。
+しかし、ユーザの<code class="literal">umask</code>設定が許している場合には、<code class="literal">pg_dumpall -g</code>の出力を含む一時ファイルがグループ読み取り可や全ユーザ読み取り可、さらには書き込み可になっていました。
+複数ユーザがいるマシンでの典型的な使用では、<code class="literal">umask</code>および作業ディレクトリのパーミッションを本問題を防ぐのに足りるだけ厳しくしているはずですが、本障害でデータベースパスワードを衆目に晒してしまうように<span class="application">pg_upgrade</span>を使う人々もいるでしょう。
+(CVE-2018-1053)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix vacuuming of tuples that were updated while key-share locked
+      (Andres Freund, &amp;Aacute;lvaro Herrera)
+</span>
+KEY SHAREロック中に更新されたタプルのバキュームを修正しました。
+      (Andres Freund, Álvaro Herrera)
+     </p><p>
+<span class="original">
+      In some cases &lt;command&gt;VACUUM&lt;/command&gt; would fail to remove such
+      tuples even though they are now dead, leading to assorted data
+      corruption scenarios.
+</span>
+一部のケースで<code class="command">VACUUM</code>は、このようなタプルの除去に、それらが無効なタプルであるのに、失敗していました。これにより様々なデータ破損動作がひき起こされます。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix inadequate buffer locking in some LSN fetches (Jacob Champion,
+      Asim Praveen, Ashwin Agrawal)
+</span>
+一部のLSN取得で不十分なバッファロックを修正しました。
+(Jacob Champion, Asim Praveen, Ashwin Agrawal)
+     </p><p>
+<span class="original">
+      These errors could result in misbehavior under concurrent load.
+      The potential consequences have not been characterized fully.
+</span>
+これらの誤りにより同時データ読み込みで誤動作のおそれがありました。
+起こりうる結果は完全には解明されていません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Avoid unnecessary failure in a query on an inheritance tree that
+      occurs concurrently with some child table being removed from the tree
+      by &lt;command&gt;ALTER TABLE NO INHERIT&lt;/command&gt; (Tom Lane)
+</span>
+<code class="command">ALTER TABLE NO INHERIT</code>でツリーから削除されている幾つかの子テーブルに伴って同時発生する継承ツリー上の問い合わせでの不要な失敗を回避しました。
+(Tom Lane)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix spurious deadlock failures when multiple sessions are
+      running &lt;command&gt;CREATE INDEX CONCURRENTLY&lt;/command&gt; (Jeff Janes)
+</span>
+複数セッションが<code class="command">CREATE INDEX CONCURRENTLY</code>を実行しているときの偽性のデッドロックエラーを修正しました。
+(Jeff Janes)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Repair failure with correlated sub-&lt;literal&gt;SELECT&lt;/literal&gt;
+      inside &lt;literal&gt;VALUES&lt;/literal&gt; inside a &lt;literal&gt;LATERAL&lt;/literal&gt;
+      subquery (Tom Lane)
+</span>
+<code class="literal">LATERAL</code>副問い合わせ内の<code class="literal">VALUES</code>内の相関サブ<code class="literal">SELECT</code>での失敗を修正しました。
+(Tom Lane)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix &lt;quote&gt;could not devise a query plan for the given query&lt;/quote&gt;
+      planner failure for some cases involving nested &lt;literal&gt;UNION
+      ALL&lt;/literal&gt; inside a lateral subquery (Tom Lane)
+</span>
+LATERAL副問い合わせ内の入れ子になった<code class="literal">UNION ALL</code>を伴う一部の場合での<span class="quote">「<span class="quote">could not devise a query plan for the given query（与えられた問合せに対してクエリプランを生成できませんでした）</span>」</span>プランナエラーを修正しました。
+(Tom Lane)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix logical decoding to correctly clean up disk files for crashed
+      transactions (Atsushi Torikoshi)
+</span>
+クラッシュしたトランザクションに対するディスクファイルを正しくクリーンアップするようにロジカルデコーディングを修正しました。
+(Atsushi Torikoshi)
+     </p><p>
+<span class="original">
+      Logical decoding may spill WAL records to disk for transactions
+      generating many WAL records.  Normally these files are cleaned up
+      after the transaction's commit or abort record arrives; but if
+      no such record is ever seen, the removal code misbehaved.
+</span>
+ロジカルデコーディングでは多数のWALレコードを生成するトランザクションに対してWALレコードがディスクに溢れ出すことがあります。
+通常はこれらのファイルはトランザクションのコミットまたはアボートのレコードが到着した後にクリーンアップされますが、そのようなレコードがずっと見つからない場合に削除をするコードは不適切な動作をしました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix walsender timeout failure and failure to respond to interrupts
+      when processing a large transaction (Petr Jelinek)
+</span>
+大きなトランザクションを実行しているときのwalsenderのタイムアウト失敗と割り込み応答失敗を修正しました。
+(Petr Jelinek)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix &lt;function&gt;has_sequence_privilege()&lt;/function&gt; to
+      support &lt;literal&gt;WITH GRANT OPTION&lt;/literal&gt; tests,
+      as other privilege-testing functions do (Joe Conway)
+</span>
+他の権限検査関数と同様に、<code class="function">has_sequence_privilege()</code>を<code class="literal">WITH GRANT OPTION</code>検査をサポートするように修正しました。
+(Joe Conway)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      In databases using UTF8 encoding, ignore any XML declaration that
+      asserts a different encoding (Pavel Stehule, Noah Misch)
+</span>
+UTF8エンコーディングを使ったデータベースで、異なるエンコーディングを主張するあらゆるXML宣言を無視するようにしました。
+(Pavel Stehule, Noah Misch)
+     </p><p>
+<span class="original">
+      We always store XML strings in the database encoding, so allowing
+      libxml to act on a declaration of another encoding gave wrong results.
+      In encodings other than UTF8, we don't promise to support non-ASCII
+      XML data anyway, so retain the previous behavior for bug compatibility.
+      This change affects only &lt;function&gt;xpath()&lt;/function&gt; and related
+      functions; other XML code paths already acted this way.
+</span>
+XML文字列は常にデータベースエンコーディングで格納されますので、libxmlを他エンコーディングの宣言で動作させることは誤った結果をもたらします。
+いずれにせよUTF8以外のエンコーディングでは非ASCIIのXMLデータのサポートは保証されませんので、バグ互換のために以前の動作を維持します。
+本変更は<code class="function">xpath()</code>と関連関数のみに影響があります。
+他のXMLコードパスは既にこのように動作します。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Provide for forward compatibility with future minor protocol versions
+      (Robert Haas, Badrul Chowdhury)
+</span>
+将来のマイナープロトコルバージョンに対する前方互換性を提供します。
+(Robert Haas, Badrul Chowdhury)
+     </p><p>
+<span class="original">
+      Up to now, &lt;productname&gt;PostgreSQL&lt;/productname&gt; servers simply
+      rejected requests to use protocol versions newer than 3.0, so that
+      there was no functional difference between the major and minor parts
+      of the protocol version number.  Allow clients to request versions 3.x
+      without failing, sending back a message showing that the server only
+      understands 3.0.  This makes no difference at the moment, but
+      back-patching this change should allow speedier introduction of future
+      minor protocol upgrades.
+</span>
+今まで<span class="productname">PostgreSQL</span>サーバは3.0より新しいバージョンのプロトコルを使った要求を単に拒絶していました。
+そのため、プロトコルバージョン番号のメジャー部分とマイナー部分に機能的な違いがありませんでした。
+クライアントがエラーにならずにバージョン3.xを要求できるようにしました。
+サーバは3.0しか理解しないことを示すメッセージが返されます。
+現時点では本変更による違いは生じませんが、これをバックパッチすることで将来のマイナープロトコル更新の導入を高速化できるでしょう。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Cope with failure to start a parallel worker process
+      (Amit Kapila, Robert Haas)
+</span>
+パラレルワーカプロセスの開始失敗をうまく扱えるようにしました。
+      (Amit Kapila, Robert Haas)
+     </p><p>
+<span class="original">
+      Parallel query previously tended to hang indefinitely if a worker
+      could not be started, as the result of &lt;literal&gt;fork()&lt;/literal&gt;
+      failure or other low-probability problems.
+</span>
+これまで並列問い合わせは、<code class="literal">fork()</code>の失敗や他の低確率な問題の結果でワーカが開始できない場合に、無期限にハングアップすることがありました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Prevent stack-overflow crashes when planning extremely deeply
+      nested set operations
+      (&lt;literal&gt;UNION&lt;/literal&gt;/&lt;literal&gt;INTERSECT&lt;/literal&gt;/&lt;literal&gt;EXCEPT&lt;/literal&gt;)
+      (Tom Lane)
+</span>
+極端に深く入れ子になった集合演算のプラン作成時のスタックオーバーフローによるクラッシュを防止しました。
+      (Tom Lane)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix null-pointer crashes for some types of LDAP URLs appearing
+      in &lt;filename&gt;pg_hba.conf&lt;/filename&gt; (Thomas Munro)
+</span>
+<code class="filename">pg_hba.conf</code>にあらわれるLDAP URLの一部タイプに対するNULLポインタクラッシュを修正しました。
+(Thomas Munro)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix sample &lt;function&gt;INSTR()&lt;/function&gt; functions in the PL/pgSQL
+      documentation (Yugo Nagata, Tom Lane)
+</span>
+PL/pgSQL文書内の<code class="function">INSTR()</code>関数のサンプルを修正しました。
+(Yugo Nagata, Tom Lane)
+     </p><p>
+<span class="original">
+      These functions are stated to
+      be &lt;trademark class="registered"&gt;Oracle&lt;/trademark&gt; compatible, but
+      they weren't exactly.  In particular, there was a discrepancy in the
+      interpretation of a negative third parameter: Oracle thinks that a
+      negative value indicates the last place where the target substring can
+      begin, whereas our functions took it as the last place where the
+      target can end.  Also, Oracle throws an error for a zero or negative
+      fourth parameter, whereas our functions returned zero.
+</span>
+これらの関数は<span class="trademark">Oracle</span>®互換であると述べられていますが、それは厳密ではありませんでした。
+特に負の第3パラメータの解釈に不一致がありました。
+Oracleは負値は対象部分文字列を開始できる最終位置を示すものと考えますが、サンプル関数は終わりにできる最終位置であると解釈していました。
+また、Oracleは第4パラメータに対するゼロまたは負値でエラーを出しますが、サンプル関数はゼロを返しました。
+     </p><p>
+<span class="original">
+      The sample code has been adjusted to match Oracle's behavior more
+      precisely.  Users who have copied this code into their applications
+      may wish to update their copies.
+</span>
+本サンプルコードはOracleの振る舞いにより正確に一致するように修正されました。
+このコードをアプリケーション内にコピーしていたユーザはそのコピーを更新したいでしょう。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix &lt;application&gt;pg_dump&lt;/application&gt; to make ACL (permissions),
+      comment, and security label entries reliably identifiable in archive
+      output formats (Tom Lane)
+</span>
+アーカイブ出力フォーマットでACL（パーミッション）、コメントおよびセキュリティラベルの項目を確実に識別可能にするように<span class="application">pg_dump</span>を修正しました。
+(Tom Lane)
+     </p><p>
+<span class="original">
+      The &lt;quote&gt;tag&lt;/quote&gt; portion of an ACL archive entry was usually
+      just the name of the associated object.  Make it start with the object
+      type instead, bringing ACLs into line with the convention already used
+      for comment and security label archive entries.  Also, fix the
+      comment and security label entries for the whole database, if present,
+      to make their tags start with &lt;literal&gt;DATABASE&lt;/literal&gt; so that they
+      also follow this convention.  This prevents false matches in code that
+      tries to identify large-object-related entries by seeing if the tag
+      starts with &lt;literal&gt;LARGE OBJECT&lt;/literal&gt;.  That could have resulted
+      in misclassifying entries as data rather than schema, with undesirable
+      results in a schema-only or data-only dump.
+</span>
+ACLアーカイブエントリの<span class="quote">「<span class="quote">tag</span>」</span>部分は通常は単に関連したオブジェクトの名前です。
+これをそうでなくてオブジェクトタイプで始まるようにして、ACLをコメントとセキュリティラベルのアーカイブ項目で既に使われている慣習に一致させます。
+また、データベース全体に対するコメントとセキュリティラベルの項目を、もし在るなら、これらも習慣に従うように、タグが<code class="literal">DATABASE</code>で始まるように修正しました。
+これはタグが<code class="literal">LARGE OBJECT</code>で始まるかどうかでラージオブジェクト関連の項目を識別しようとするコードでの誤った一致を防ぎます。
+スキーマのみ、または、データのみのダンプで、スキーマでなくデータとして項目を誤って分類してしまい、望ましくない結果になる可能性がありました。
+     </p><p>
+<span class="original">
+      Note that this change has user-visible results in the output
+      of &lt;command&gt;pg_restore &amp;#045;-list&lt;/command&gt;.
+</span>
+この変更により<code class="command">pg_restore --list</code>の出力でユーザに見える違いがある点に注意してください。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      In &lt;application&gt;ecpg&lt;/application&gt;, detect indicator arrays that do
+      not have the correct length and report an error (David Rader)
+</span>
+<span class="application">ecpg</span>で正しい長さを持たない指示子の配列を検出してエラーを出すようにしました。
+(David Rader)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Avoid triggering a libc assertion
+      in &lt;filename&gt;contrib/hstore&lt;/filename&gt;, due to use
+      of &lt;function&gt;memcpy()&lt;/function&gt; with equal source and destination
+      pointers (Tomas Vondra)
+</span>
+同一のコピー元と宛先のポインタで<code class="function">memcpy()</code>を使うことで、<code class="filename">contrib/hstore</code>でlibcアサートが発生するのを回避しました。
+(Tomas Vondra)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Provide modern examples of how to auto-start Postgres on macOS
+      (Tom Lane)
+</span>
+macOSでPostgresを自動起動する方法の現代的なサンプルを提供しました。
+(Tom Lane)
+     </p><p>
+<span class="original">
+      The scripts in &lt;filename&gt;contrib/start-scripts/osx&lt;/filename&gt; use
+      infrastructure that's been deprecated for over a decade, and which no
+      longer works at all in macOS releases of the last couple of years.
+      Add a new subdirectory &lt;filename&gt;contrib/start-scripts/macos&lt;/filename&gt;
+      containing scripts that use the newer &lt;application&gt;launchd&lt;/application&gt;
+      infrastructure.
+</span>
+
+<code class="filename">contrib/start-scripts/osx</code>のスクリプトは10年以上の間、非推奨とされた基盤を使っていて、ここ数年のmacOSリリースではもはや全く動作しません。
+新しい<span class="application">launchd</span>基盤を使ったスクリプトを含む新たなサブディレクトリ<code class="filename">contrib/start-scripts/macos</code>を追加しました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix incorrect selection of configuration-specific libraries for
+      OpenSSL on Windows (Andrew Dunstan)
+</span>
+Windowsでビルド時に設定で指定するOpenSSLライブラリの誤選択を修正しました。
+(Andrew Dunstan)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Support linking to MinGW-built versions of libperl (Noah Misch)
+</span>
+libperlのMinGWビルドバージョンのリンクに対応しました。
+(Noah Misch)
+     </p><p>
+<span class="original">
+      This allows building PL/Perl with some common Perl distributions for
+      Windows.
+</span>
+これはいくつかの一般的なWindowsむけPerl配布物でPL/Perlをビルド可能にします。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix MSVC build to test whether 32-bit libperl
+      needs &lt;literal&gt;-D_USE_32BIT_TIME_T&lt;/literal&gt; (Noah Misch)
+</span>
+32bitのlibperlが<code class="literal">-D_USE_32BIT_TIME_T</code>を要するかを検査するようにMSVCビルドを修正しました。
+(Noah Misch)
+     </p><p>
+<span class="original">
+      Available Perl distributions are inconsistent about what they expect,
+      and lack any reliable means of reporting it, so resort to a build-time
+      test on what the library being used actually does.
+</span>
+利用可能なPerl配布物は何を除いているかについて一貫性に欠けていて、そのことの信頼できる報告手段も不足しています。
+そのため、ビルド時の実際に使われているライブラリが何をするかのテストに依存します。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      On Windows, install the crash dump handler earlier in postmaster
+      startup (Takayuki Tsunakawa)
+</span>
+Windowsでpostmaster起動にてクラッシュダンプハンドラをより早く導入するようにしました。
+(Takayuki Tsunakawa)
+     </p><p>
+<span class="original">
+      This may allow collection of a core dump for some early-startup
+      failures that did not produce a dump before.
+</span>
+これにより起動時初期の従来ダンプを生成しなかった障害で、コアダンプ取得が可能になるでしょう。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      On Windows, avoid encoding-conversion-related crashes when emitting
+      messages very early in postmaster startup (Takayuki Tsunakawa)
+</span>
+Windowsでpostmaster起動時の早い時点でメッセージを出力するときの、文字エンコーディング変換関連のクラッシュを回避しました。
+(Takayuki Tsunakawa)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Use our existing Motorola 68K spinlock code on OpenBSD as
+      well as NetBSD (David Carlier)
+</span>
+既存のNetBSDのMotorola 68KのスピンロックのコードをOpenBSDむけにも使用するようにしました。
+(David Carlier)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Add support for spinlocks on Motorola 88K (David Carlier)
+</span>
+Motorola 88Kのスピンロック対応を加えました。
+(David Carlier)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Update time zone data files to &lt;application&gt;tzdata&lt;/application&gt;
+      release 2018c for DST law changes in Brazil, Sao Tome and Principe,
+      plus historical corrections for Bolivia, Japan, and South Sudan.
+      The &lt;literal&gt;US/Pacific-New&lt;/literal&gt; zone has been removed (it was
+      only an alias for &lt;literal&gt;America/Los_Angeles&lt;/literal&gt; anyway).
+</span>
+タイムゾーンデータファイルを<span class="application">tzdata</span> release 2018cに更新しました。
+ブラジル、サントメ・プリンシペの夏時間法の変更、ボリビア、日本、南スーダンの歴史的な修正が含まれます。
+<code class="literal">US/Pacific-New</code>ゾーンは削除されました（これはいずれにせよ<code class="literal">America/Los_Angeles</code>の別名にすぎません）。
+     </p></li></ul></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="release-9-4-17.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="release.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="release-9-4-15.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">E.41. リリース9.4.17 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> E.43. リリース9.4.15</td></tr></table></div></body></html>

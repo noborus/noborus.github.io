@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>2.7. 集約関数</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="tutorial-join.html" title="2.6. テーブル間を結合" /><link rel="next" href="tutorial-update.html" title="2.8. 更新" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="tutorial-sql.html" title="第2章 SQL言語">第2章 <acronym class="acronym">SQL</acronym>言語</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      tutorial-agg.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="tutorial-join.html" title="2.6. テーブル間を結合">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="tutorial-sql.html" title="第2章 SQL言語">上へ</a></td><td width="60%" align="center">2.7. 集約関数</td><td width="20%" align="right"> <a accesskey="n" href="tutorial-update.html" title="2.8. 更新">次へ</a></td></tr></table><hr /></div><div class="sect1" id="TUTORIAL-AGG"><div class="titlepage"><div><div><h2 class="title" style="clear: both">2.7. 集約関数</h2></div></div></div><span class="original">
+   &lt;title&gt;Aggregate Functions&lt;/title&gt;
+</span><a id="id-1.4.4.8.2" class="indexterm"></a><p>
+<span class="original">
+    Like  most  other relational database products,
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; supports
+    &lt;firstterm&gt;aggregate functions&lt;/firstterm&gt;.
+    An aggregate function computes a single result from multiple input rows.
+    For example, there are aggregates to compute the
+    &lt;function&gt;count&lt;/function&gt;, &lt;function&gt;sum&lt;/function&gt;,
+    &lt;function&gt;avg&lt;/function&gt; (average), &lt;function&gt;max&lt;/function&gt; (maximum) and
+    &lt;function&gt;min&lt;/function&gt; (minimum) over a set of rows.
+</span>
+他のほとんどのリレーショナルデータベース製品同様、<span class="productname">PostgreSQL</span>は<em class="firstterm">集約関数</em>をサポートします。
+集約関数は複数の入力行から1つの結果を計算します。
+例えば、行の集合に対して、<code class="function">count</code>（総数）、<code class="function">sum</code>（総和）、<code class="function">avg</code>（平均）、<code class="function">max</code>（最大）、<code class="function">min</code>（最小）といった演算を行う集約があります。
+   </p><p>
+<span class="original">
+    As an example, we can find the highest low-temperature reading anywhere
+    with:
+</span>
+例として、次のように全ての都市の最低気温から最も高い気温を求めることができます。
+
+</p><pre class="programlisting">
+SELECT max(temp_lo) FROM weather;
+</pre><p>
+
+</p><pre class="screen">
+ max
+-----
+  46
+(1 row)
+</pre><p>
+   </p><p>
+<span class="original">
+    &lt;indexterm&gt;&lt;primary&gt;subquery&lt;/primary&gt;&lt;/indexterm&gt;
+</span>
+    <a id="id-1.4.4.8.5.1" class="indexterm"></a>
+
+<span class="original">
+    If we wanted to know what city (or cities) that reading occurred in,
+    we might try:
+</span>
+どの都市のデータなのかを知りたいとしたら、下記のような問い合わせを試行するかもしれません。
+
+</p><pre class="programlisting">
+<span class="original">
+SELECT city FROM weather WHERE temp_lo = max(temp_lo);     &lt;lineannotation&gt;WRONG&lt;/lineannotation&gt;
+</span>
+SELECT city FROM weather WHERE temp_lo = max(temp_lo);     <em class="lineannotation"><span class="lineannotation">間違い</span></em>
+</pre><p>
+
+<span class="original">
+    but this will not work since the aggregate
+    &lt;function&gt;max&lt;/function&gt; cannot be used in the
+    &lt;literal&gt;WHERE&lt;/literal&gt; clause.  (This restriction exists because
+    the &lt;literal&gt;WHERE&lt;/literal&gt; clause determines which rows will be
+    included in the aggregate calculation; so obviously it has to be evaluated
+    before aggregate functions are computed.)
+    However, as is often the case
+    the query can be restated to accomplish the desired result, here
+    by using a &lt;firstterm&gt;subquery&lt;/firstterm&gt;:
+</span>
+しかし、<code class="function">max</code>集約を<code class="literal">WHERE</code>句で使用することができませんので、このコマンドは動作しません
+（<code class="literal">WHERE</code>句はどの行を集約処理に渡すのかを決定するものであり、したがって、集約関数の演算を行う前に評価されなければならないことは明らかです。
+このためにこの制限があります）。
+しかし、よくあることですが、問い合わせを書き直すことで、意図した結果が得られます。
+これには以下のような<em class="firstterm">副問い合わせ</em>を使用します。
+
+</p><pre class="programlisting">
+SELECT city FROM weather
+    WHERE temp_lo = (SELECT max(temp_lo) FROM weather);
+</pre><p>
+
+</p><pre class="screen">
+     city
+---------------
+ San Francisco
+(1 row)
+</pre><p>
+
+<span class="original">
+    This is OK because the subquery is an independent computation
+    that computes its own aggregate separately from what is happening
+    in the outer query.
+</span>
+副問い合わせは、外側の問い合わせで起こることとは別々に集約を計算する独立した演算ですので、この問い合わせは問題ありません。
+   </p><p>
+    <a id="id-1.4.4.8.6.1" class="indexterm"></a>
+    <a id="id-1.4.4.8.6.2" class="indexterm"></a>
+
+<span class="original">
+    Aggregates are also very useful in combination with &lt;literal&gt;GROUP
+    BY&lt;/literal&gt; clauses.  For example, we can get the maximum low
+    temperature observed in each city with:
+</span>
+また、<code class="literal">GROUP BY</code>句と組み合わせた集約も非常に役に立ちます。
+例えば、以下のコマンドで都市ごとに最低気温の最大値を求めることができます。
+
+</p><pre class="programlisting">
+SELECT city, max(temp_lo)
+    FROM weather
+    GROUP BY city;
+</pre><p>
+
+</p><pre class="screen">
+     city      | max
+---------------+-----
+ Hayward       |  37
+ San Francisco |  46
+(2 rows)
+</pre><p>
+
+<span class="original">
+    which gives us one output row per city.  Each aggregate result is
+    computed over the table rows matching that city.
+    We can filter these grouped
+    rows using &lt;literal&gt;HAVING&lt;/literal&gt;:
+</span>
+ここには都市ごとに1行の出力があります。
+それぞれの集約結果はその都市に一致するテーブル行全体に対する演算結果です。
+以下のように、<code class="literal">HAVING</code>を使用すると、グループ化された行にフィルタをかけることができます。
+
+</p><pre class="programlisting">
+SELECT city, max(temp_lo)
+    FROM weather
+    GROUP BY city
+    HAVING max(temp_lo) &lt; 40;
+</pre><p>
+
+</p><pre class="screen">
+  city   | max
+---------+-----
+ Hayward |  37
+(1 row)
+</pre><p>
+
+<span class="original">
+    which gives us the same results for only the cities that have all
+    &lt;structfield&gt;temp_lo&lt;/structfield&gt; values below 40.  Finally, if we only care about
+    cities whose
+    names begin with &lt;quote&gt;&lt;literal&gt;S&lt;/literal&gt;&lt;/quote&gt;, we might do:
+</span>
+このコマンドは上と同じ計算を行うものですが、全ての<code class="structfield">temp_lo</code>の値が40未満の都市のみを出力します。
+最後になりますが、<span class="quote">「<span class="quote"><code class="literal">S</code></span>」</span>から始まる名前の都市のみを対象にしたい場合は、以下を行います。
+
+</p><pre class="programlisting">
+SELECT city, max(temp_lo)
+    FROM weather
+    WHERE city LIKE 'S%'            -- <span id="co.tutorial-agg-like"></span>(1)
+    GROUP BY city
+    HAVING max(temp_lo) &lt; 40;
+</pre><p>
+   </p><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><p><a href="#co.tutorial-agg-like">(1)</a> </p></td><td valign="top" align="left"><p>
+<span class="original">
+      The &lt;literal&gt;LIKE&lt;/literal&gt; operator does pattern matching and
+      is explained in &lt;xref linkend="functions-matching"/&gt;.
+</span>
+<code class="literal">LIKE</code>演算子はパターンマッチを行います。これについては<a class="xref" href="functions-matching.html" title="9.7. パターンマッチ">9.7</a>で説明します。
+     </p></td></tr></table></div><p>
+   </p><p>
+<span class="original">
+    It is important to understand the interaction between aggregates and
+    &lt;acronym&gt;SQL&lt;/acronym&gt;'s &lt;literal&gt;WHERE&lt;/literal&gt; and &lt;literal&gt;HAVING&lt;/literal&gt; clauses.
+    The fundamental difference between &lt;literal&gt;WHERE&lt;/literal&gt; and
+    &lt;literal&gt;HAVING&lt;/literal&gt; is this: &lt;literal&gt;WHERE&lt;/literal&gt; selects
+    input rows before groups and aggregates are computed (thus, it controls
+    which rows go into the aggregate computation), whereas
+    &lt;literal&gt;HAVING&lt;/literal&gt; selects group rows after groups and
+    aggregates are computed.  Thus, the
+    &lt;literal&gt;WHERE&lt;/literal&gt; clause must not contain aggregate functions;
+    it makes no sense to try to use an aggregate to determine which rows
+    will be inputs to the aggregates.  On the other hand, the
+    &lt;literal&gt;HAVING&lt;/literal&gt; clause always contains aggregate functions.
+    (Strictly speaking, you are allowed to write a &lt;literal&gt;HAVING&lt;/literal&gt;
+    clause that doesn't use aggregates, but it's seldom useful. The same
+    condition could be used more efficiently at the &lt;literal&gt;WHERE&lt;/literal&gt;
+    stage.)
+</span>
+集約と<acronym class="acronym">SQL</acronym>の<code class="literal">WHERE</code>と<code class="literal">HAVING</code>句の間の相互作用を理解することが重要です。
+<code class="literal">WHERE</code>と<code class="literal">HAVING</code>の基本的な違いは、<code class="literal">WHERE</code>が、グループや集約を演算する前に入力行を選択する（したがって、これはどの行を使用して集約演算を行うかを制御します）のに対し、<code class="literal">HAVING</code>は、グループと集約を演算した後に、グループ化された行を選択する、ということです。
+したがって、<code class="literal">WHERE</code>句は集約関数を持つことはできません。
+集約を使用して、どの行をその集約の入力にするのかを決定することは意味をなしません。
+一方で、<code class="literal">HAVING</code>句は常に集約関数を持ちます
+（厳密に言うと、集約を使用しない<code class="literal">HAVING</code>句を書くことはできますが、これは有用となることはほぼありません。
+同じ条件は<code class="literal">WHERE</code>の段階でもっと効率良く使用できます）。
+   </p><p>
+<span class="original">
+    In the previous example, we can apply the city name restriction in
+    &lt;literal&gt;WHERE&lt;/literal&gt;, since it needs no aggregate.  This is
+    more efficient than adding the restriction to &lt;literal&gt;HAVING&lt;/literal&gt;,
+    because we avoid doing the grouping and aggregate calculations
+    for all rows that fail the &lt;literal&gt;WHERE&lt;/literal&gt; check.
+</span>
+前の例では<code class="literal">WHERE</code>内に都市名の制限を適用することができます。
+集約を行う必要がないからです。
+これは<code class="literal">HAVING</code>に制限を追加するよりも効率的です。
+なぜなら<code class="literal">WHERE</code>の検査で失敗する全ての行についてグループ化や集約演算が行われないからです。
+   </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="tutorial-join.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="tutorial-sql.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="tutorial-update.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">2.6. テーブル間を結合 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 2.8. 更新</td></tr></table></div></body></html>

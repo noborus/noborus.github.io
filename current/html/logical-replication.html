@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>第31章 論理レプリケーション</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="wal-internals.html" title="30.5. WALの内部" /><link rel="next" href="logical-replication-publication.html" title="31.1. パブリケーション" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="admin.html" title="パート III. サーバの管理">パート III. サーバの管理</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      logical-replication.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="wal-internals.html" title="30.5. WALの内部">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="admin.html" title="パート III. サーバの管理">上へ</a></td><td width="60%" align="center">第31章 論理レプリケーション</td><td width="20%" align="right"> <a accesskey="n" href="logical-replication-publication.html" title="31.1. パブリケーション">次へ</a></td></tr></table><hr /></div><div class="chapter" id="LOGICAL-REPLICATION"><div class="titlepage"><div><div><h2 class="title">第31章 論理レプリケーション</h2></div></div></div><div class="toc"><p><strong>目次</strong></p><dl class="toc"><dt><span class="sect1"><a href="logical-replication-publication.html">31.1. パブリケーション</a></span></dt><dt><span class="sect1"><a href="logical-replication-subscription.html">31.2. サブスクリプション</a></span></dt><dd><dl><dt><span class="sect2"><a href="logical-replication-subscription.html#LOGICAL-REPLICATION-SUBSCRIPTION-SLOT">31.2.1. レプリケーションスロットの管理</a></span></dt></dl></dd><dt><span class="sect1"><a href="logical-replication-conflicts.html">31.3. コンフリクト</a></span></dt><dt><span class="sect1"><a href="logical-replication-restrictions.html">31.4. 制限事項</a></span></dt><dt><span class="sect1"><a href="logical-replication-architecture.html">31.5. アーキテクチャ</a></span></dt><dd><dl><dt><span class="sect2"><a href="logical-replication-architecture.html#LOGICAL-REPLICATION-SNAPSHOT">31.5.1. 初期スナップショット</a></span></dt></dl></dd><dt><span class="sect1"><a href="logical-replication-monitoring.html">31.6. 監視</a></span></dt><dt><span class="sect1"><a href="logical-replication-security.html">31.7. セキュリティ</a></span></dt><dt><span class="sect1"><a href="logical-replication-config.html">31.8. 構成設定</a></span></dt><dt><span class="sect1"><a href="logical-replication-quick-setup.html">31.9. 簡単な設定</a></span></dt></dl></div><span class="original">
+ &lt;title&gt;Logical Replication&lt;/title&gt;
+</span><p>
+<span class="original">
+  Logical replication is a method of replicating data objects and their
+  changes, based upon their replication identity (usually a primary key).  We
+  use the term logical in contrast to physical replication, which uses exact
+  block addresses and byte-by-byte replication.  PostgreSQL supports both
+  mechanisms concurrently, see &lt;xref linkend="high-availability"/&gt;.  Logical
+  replication allows fine-grained control over both data replication and
+  security.
+</span>
+論理レプリケーションとは、レプリケーションアイデンティティ(replication identity)（通常は主キーです）に基づき、データオブジェクトと、それに対する変更を複製する手法です。
+この論理という用語は、正確なブロックアドレスを使い、バイト同士の複製を行う物理レプリケーションと対比的に使用しています。
+PostgreSQLは両方の仕組みを同時にサポートします。
+<a class="xref" href="high-availability.html" title="第26章 高可用性、負荷分散およびレプリケーション">第26章</a>をご覧ください。
+論理レプリケーションにより、データの複製とセキュリティに対するきめの細かい制御が可能になります。
+ </p><p>
+<span class="original">
+  Logical replication uses a &lt;firstterm&gt;publish&lt;/firstterm&gt;
+  and &lt;firstterm&gt;subscribe&lt;/firstterm&gt; model with one or
+  more &lt;firstterm&gt;subscribers&lt;/firstterm&gt; subscribing to one or more
+  &lt;firstterm&gt;publications&lt;/firstterm&gt; on a &lt;firstterm&gt;publisher&lt;/firstterm&gt;
+  node.  Subscribers pull data from the publications they subscribe to and may
+  subsequently re-publish data to allow cascading replication or more complex
+  configurations.
+</span>
+論理レプリケーションは、ひとつの<em class="firstterm">パブリッシャー(publisher)</em>ノード上の一つ以上の<em class="firstterm">パブリケーション(publications)</em>を購読する一つ以上の<em class="firstterm">サブスクライバー(subscribers)</em>を伴う、<em class="firstterm">パブリッシュ(publish)</em>と<em class="firstterm">サブスクライブ(subscribe)</em>モデルを使用します。
+サブスクライバーは、サブスクライブするパブリケーションからデータを取得し、再パブリッシュしてカスケードレプリケーションや、更に複雑な構成を構築することができます。
+ </p><p>
+<span class="original">
+  Logical replication of a table typically starts with taking a snapshot
+  of the data on the publisher database and copying that to the subscriber.
+  Once that is done, the changes on the publisher are sent to the subscriber
+  as they occur in real-time.  The subscriber applies the data in the same
+  order as the publisher so that transactional consistency is guaranteed for
+  publications within a single subscription.  This method of data replication
+  is sometimes referred to as transactional replication.
+</span>
+テーブルの論理レプリケーションは、通常、パブリッシャーのデータベース上のデータのスナップショットを取り、サブスクライバーにコピーすることから始まります。
+それが完了したあとは、パブリッシャーにおける変更は、発生した時にリアルタイムでサブスクライバーに送られます。
+サブスクライバーはパブリッシャーと同じ順にデータを適用します。
+そのため、一つのサブスクリプション内のパブリケーションに対するトランザクションの一貫性が保証されます。
+この方式によるデータレプリケーションは、トランザクショナルレプリケーション(transactional replication)と呼ばれることがあります。
+ </p><p>
+<span class="original">
+  The typical use-cases for logical replication are:
+</span>
+典型的な論理レプリケーションの利用例には、以下のようなものがあります。
+  </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+     Sending incremental changes in a single database or a subset of a
+     database to subscribers as they occur.
+</span>
+一つのデータベース、あるいはデータベースの一部に起こった更新の差分を、発生都度サブスクライバーに送る。
+    </p></li><li class="listitem"><p>
+<span class="original">
+     Firing triggers for individual changes as they arrive on the
+     subscriber.
+</span>
+サブスクライバーに更新が到着した時に、それぞれの更新に対してトリガーを起動する。
+    </p></li><li class="listitem"><p>
+<span class="original">
+     Consolidating multiple databases into a single one (for example for
+     analytical purposes).
+</span>
+複数のデータベースを一つのデータベースに統合する。（たとえば分析目的で。）
+    </p></li><li class="listitem"><p>
+<span class="original">
+     Replicating between different major versions of PostgreSQL.
+</span>
+異なるメジャーバージョンのPostgreSQL間でレプリケーションする。
+    </p></li><li class="listitem"><p>
+<span class="original">
+     Replicating between PostgreSQL instances on different platforms (for
+     example Linux to Windows)
+  </span>
+異なるプラットフォーム上のPostgreSQLインスタンス間（たとえばLinuxからWindows）でレプリケーションする。
+    </p></li><li class="listitem"><p>
+<span class="original">
+     Giving access to replicated data to different groups of users.
+</span>
+異なるユーザのグループに対して、複製されたデータにアクセスさせる。
+    </p></li><li class="listitem"><p>
+<span class="original">
+     Sharing a subset of the database between multiple databases.
+</span>
+複数のデータベース間でデータベースの一部を共有する。
+    </p></li></ul></div><p>
+ </p><p>
+<span class="original">
+  The subscriber database behaves in the same way as any other PostgreSQL
+  instance and can be used as a publisher for other databases by defining its
+  own publications.  When the subscriber is treated as read-only by
+  application, there will be no conflicts from a single subscription.  On the
+  other hand, if there are other writes done either by an application or by other
+  subscribers to the same set of tables, conflicts can arise.
+</span>
+サブスクライバーのデータベースは、他のPostgreSQLインスタンスと同様に振る舞い、自分用のパブリケーションを定義することにより、他のデータベースに対するパブリッシャーとして利用できます。
+アプリケーションがそのサブスクライバーを読み取り専用として取り扱うときには、単独のサブスクリプションからはコンフリクトは発生しません。
+一方、アプリケーションあるいは他のサブスクライバーから同じテーブルに書き込みが起こるとすると、コンフリクトが発生する可能性があります。
+ </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="wal-internals.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="admin.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="logical-replication-publication.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">30.5. WALの内部 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 31.1. パブリケーション</td></tr></table></div></body></html>

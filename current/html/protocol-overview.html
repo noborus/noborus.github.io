@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>53.1. 概要</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="protocol.html" title="第53章 フロントエンド/バックエンドプロトコル" /><link rel="next" href="protocol-flow.html" title="53.2. メッセージの流れ" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="protocol.html" title="第53章 フロントエンド/バックエンドプロトコル">第53章 フロントエンド/バックエンドプロトコル</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      protocol-overview.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="protocol.html" title="第53章 フロントエンド/バックエンドプロトコル">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="protocol.html" title="第53章 フロントエンド/バックエンドプロトコル">上へ</a></td><td width="60%" align="center">53.1. 概要</td><td width="20%" align="right"> <a accesskey="n" href="protocol-flow.html" title="53.2. メッセージの流れ">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PROTOCOL-OVERVIEW"><div class="titlepage"><div><div><h2 class="title" style="clear: both">53.1. 概要</h2></div></div></div><span class="original">
+  &lt;title&gt;Overview&lt;/title&gt;
+</span><p>
+<span class="original">
+   The protocol has separate phases for startup and normal operation.
+   In the startup phase, the frontend opens a connection to the server
+   and authenticates itself to the satisfaction of the server.  (This might
+   involve a single message, or multiple messages depending on the
+   authentication method being used.)  If all goes well, the server then sends
+   status information to the frontend, and finally enters normal operation.
+   Except for the initial startup-request message, this part of the
+   protocol is driven by the server.
+</span>
+このプロトコルでは、接続開始と通常操作で段階が分かれています。
+接続開始段階で、フロントエンドはサーバへの接続を開き、サーバの義務を履行できるよう自身を証明します。
+（これは使用する認証方法に応じて、単一のメッセージになったり、複数のメッセージになったりします。）
+すべてうまく行けば、サーバはフロントエンドに状態情報を送信し、最終的に通常操作段階に入ります。
+初期の開始要求メッセージを除いて、プロトコルのこの部分はサーバによって駆動されます。
+  </p><p>
+<span class="original">
+   During normal operation, the frontend sends queries and
+   other commands to the backend, and the backend sends back query results
+   and other responses.  There are a few cases (such as &lt;command&gt;NOTIFY&lt;/command&gt;)
+   wherein the
+   backend will send unsolicited messages, but for the most part this portion
+   of a session is driven by frontend requests.
+</span>
+通常操作の間、フロントエンドは問い合わせやその他のコマンドをバックエンドに送信し、バックエンドは問い合わせ結果やその他の応答を返送します。
+（<code class="command">NOTIFY</code>のように）バックエンドから依頼されずにメッセージが送信されるまれな場合がありますが、セッションのこの部分のほとんどはフロントエンドの要求によって駆動されます。
+  </p><p>
+<span class="original">
+   Termination of the session is normally by frontend choice, but can be
+   forced by the backend in certain cases.  In any case, when the backend
+   closes the connection, it will roll back any open (incomplete) transaction
+   before exiting.
+</span>
+セッションの終了は通常フロントエンドが選択することですが、特定の場合はバックエンドによって強制される可能性があります。
+どちらの場合でも、バックエンドが接続を閉ざす時、終了前に実行中の（未完の）トランザクションをすべてロールバックします。
+  </p><p>
+<span class="original">
+   Within normal operation, SQL commands can be executed through either of
+   two sub-protocols.  In the &lt;quote&gt;simple query&lt;/quote&gt; protocol, the frontend
+   just sends a textual query string, which is parsed and immediately
+   executed by the backend.  In the &lt;quote&gt;extended query&lt;/quote&gt; protocol,
+   processing of queries is separated into multiple steps: parsing,
+   binding of parameter values, and execution.  This offers flexibility
+   and performance benefits, at the cost of extra complexity.
+</span>
+通常操作中は、SQLコマンドを２つのサブプロトコルのうちのいずれかによって実行することができます。
+<span class="quote">「<span class="quote">簡易問い合わせ</span>」</span>プロトコルでは、フロントエンドはテキストで問い合わせ文字列を単に送信し、バックエンドによって解析され、即実行されます。
+<span class="quote">「<span class="quote">拡張問い合わせ</span>」</span>プロトコルでは、問い合わせの処理は、解析、パラメータ値の結び付け、そして実行という複数の段階に分離されます。
+これは複雑性が加わりますが、柔軟性と性能という点で利点が生まれます。
+  </p><p>
+<span class="original">
+   Normal operation has additional sub-protocols for special operations
+   such as &lt;command&gt;COPY&lt;/command&gt;.
+</span>
+通常操作には、さらに、<code class="command">COPY</code>のような特殊な操作向けのサブプロトコルがあります。
+  </p><div class="sect2" id="PROTOCOL-MESSAGE-CONCEPTS"><div class="titlepage"><div><div><h3 class="title">53.1.1. メッセージ処理の概要</h3></div></div></div><span class="original">
+  &lt;title&gt;Messaging Overview&lt;/title&gt;
+</span><p>
+<span class="original">
+   All communication is through a stream of messages.  The first byte of a
+   message identifies the message type, and the next four bytes specify the
+   length of the rest of the message (this length count includes itself, but
+   not the message-type byte).  The remaining contents of the message are
+   determined by the message type.  For historical reasons, the very first
+   message sent by the client (the startup message) has no initial
+   message-type byte.
+</span>
+すべての通信はメッセージストリームを介します。
+メッセージの先頭バイトはメッセージ種類を識別するもの、次の４バイトはメッセージの残りの長さを指定するものです
+（この長さにはメッセージ種類バイトは含まれませんが、自身を含んで数えられます）。
+残りのメッセージの内容は、メッセージ種類で決まります。
+歴史的な理由のため、一番初めにクライアントから送信されるメッセージ（開始メッセージ）にはメッセージ種類バイトはありません。
+  </p><p>
+<span class="original">
+   To avoid losing synchronization with the message stream, both servers and
+   clients typically read an entire message into a buffer (using the byte
+   count) before attempting to process its contents.  This allows easy
+   recovery if an error is detected while processing the contents.  In
+   extreme situations (such as not having enough memory to buffer the
+   message), the receiver can use the byte count to determine how much
+   input to skip before it resumes reading messages.
+</span>
+メッセージストリームの同期ずれを防ぐために、サーバとクライアントの両方は、通常、メッセージの内容を処理し始める前に、（バイト数を使用して）メッセージ全体をバッファ内に読み込みます。
+これにより、その内容を処理する時にエラーが検出された場合に、簡単に復旧することができます。
+（メッセージをバッファするために十分なメモリがない場合のような）極限状況では、受信側はメッセージの読み取りを再開する前にどれだけの量の入力を飛ばすかどうかを決定するために、バイト数を活用することができます。
+  </p><p>
+<span class="original">
+   Conversely, both servers and clients must take care never to send an
+   incomplete message.  This is commonly done by marshaling the entire message
+   in a buffer before beginning to send it.  If a communications failure
+   occurs partway through sending or receiving a message, the only sensible
+   response is to abandon the connection, since there is little hope of
+   recovering message-boundary synchronization.
+</span>
+反対に、サーバとクライアントの両方は、不完全なメッセージを決して送信しないように注意しなければなりません。
+これは通常、送信する前にバッファ内のメッセージ全体を整列させることで行われます。
+メッセージの送受信の途中で通信エラーが発生した場合、メッセージ境界の同期を復旧できる望みはほとんどありませんので、実用的な唯一の応答は通信を中断することです。
+  </p></div><div class="sect2" id="PROTOCOL-QUERY-CONCEPTS"><div class="titlepage"><div><div><h3 class="title">53.1.2. 拡張問い合わせの概要</h3></div></div></div><span class="original">
+   &lt;title&gt;Extended Query Overview&lt;/title&gt;
+</span><p>
+<span class="original">
+    In the extended-query protocol, execution of SQL commands is divided
+    into multiple steps.  The state retained between steps is represented
+    by two types of objects: &lt;firstterm&gt;prepared statements&lt;/firstterm&gt; and
+    &lt;firstterm&gt;portals&lt;/firstterm&gt;.  A prepared statement represents the result of
+    parsing and semantic analysis of a textual query string.
+    A prepared statement is not in itself ready to execute, because it might
+    lack specific values for &lt;firstterm&gt;parameters&lt;/firstterm&gt;.  A portal represents
+    a ready-to-execute or already-partially-executed statement, with any
+    missing parameter values filled in.  (For &lt;command&gt;SELECT&lt;/command&gt; statements,
+    a portal is equivalent to an open cursor, but we choose to use a different
+    term since cursors don't handle non-&lt;command&gt;SELECT&lt;/command&gt; statements.)
+</span>
+拡張問い合わせプロトコルでは、SQLコマンドの実行は複数の段階に分割されます。
+段階間で保持される状態は、<em class="firstterm">プリペアド文</em>と<em class="firstterm">ポータル</em>の２種類のオブジェクトで表現されます。
+プリペアド文は、テキスト問い合わせ文字列の解析、意味解析を表現します。
+プリペアド文は実行準備が整ったことを示すものではありません。
+<em class="firstterm">パラメータ</em>の特定の値が欠落しているかもしれないからです。
+ポータルは、すべてのパラメータ値が設定され、実行準備が整った、あるいは、既に一部実行された文を表現します。
+（<code class="command">SELECT</code>文では、ポータルは開いているカーソルと等価です。
+しかし、カーソルは<code class="command">SELECT</code>以外の文を扱いませんので、ここでは異なる用語を使用するよう選択しました。）
+   </p><p>
+<span class="original">
+    The overall execution cycle consists of a &lt;firstterm&gt;parse&lt;/firstterm&gt; step,
+    which creates a prepared statement from a textual query string; a
+    &lt;firstterm&gt;bind&lt;/firstterm&gt; step, which creates a portal given a prepared
+    statement and values for any needed parameters; and an
+    &lt;firstterm&gt;execute&lt;/firstterm&gt; step that runs a portal's query.  In the case of
+    a query that returns rows (&lt;command&gt;SELECT&lt;/command&gt;, &lt;command&gt;SHOW&lt;/command&gt;, etc),
+    the execute step can be told to fetch only
+    a limited number of rows, so that multiple execute steps might be needed
+    to complete the operation.
+</span>
+実行サイクル全体は、テキストの問い合わせ文字列からプリペアド文を生成する<em class="firstterm">解析</em>段階、プリペアド文と必要なパラメータ値によりポータルを作成する<em class="firstterm">バインド</em>段階、ポータルの問い合わせを実行する<em class="firstterm">実行</em>段階からなります。
+行を返す問い合わせ（<code class="command">SELECT</code>、<code class="command">SHOW</code>など）の場合、操作を完了させるために複数の実行段階が必要とすることができるように、実行段階に限定された行数のみを取り出すよう指示することができます。
+   </p><p>
+<span class="original">
+    The backend can keep track of multiple prepared statements and portals
+    (but note that these exist only within a session, and are never shared
+    across sessions).  Existing prepared statements and portals are
+    referenced by names assigned when they were created.  In addition,
+    an &lt;quote&gt;unnamed&lt;/quote&gt; prepared statement and portal exist.  Although these
+    behave largely the same as named objects, operations on them are optimized
+    for the case of executing a query only once and then discarding it,
+    whereas operations on named objects are optimized on the expectation
+    of multiple uses.
+</span>
+バックエンドは複数のプリペアド文とポータルの経過を追うことができます
+（しかし、1つのセッション内でのみ存在可能です。複数のセッションで共有することはできません）。
+存在するプリペアド文とポータルは、作成時に割り当てられた名前で参照されます。
+さらに、<span class="quote">「<span class="quote">無名の</span>」</span>プリペアド文とポータルも存在します。
+これらは名前付きのオブジェクトとほとんど同じ動きをしますが、問い合わせを一回だけ実行し、その後に破棄する場合に備えて、これらに対する操作は最適化されています。
+一方、名前付きオブジェクトの操作は複数回の使用を想定して最適化されています。
+   </p></div><div class="sect2" id="PROTOCOL-FORMAT-CODES"><div class="titlepage"><div><div><h3 class="title">53.1.3. 書式と書式コード</h3></div></div></div><span class="original">
+   &lt;title&gt;Formats and Format Codes&lt;/title&gt;
+</span><p>
+<span class="original">
+    Data of a particular data type might be transmitted in any of several
+    different &lt;firstterm&gt;formats&lt;/firstterm&gt;.  As of &lt;productname&gt;PostgreSQL&lt;/productname&gt; 7.4
+    the only supported formats are &lt;quote&gt;text&lt;/quote&gt; and &lt;quote&gt;binary&lt;/quote&gt;,
+    but the protocol makes provision for future extensions.  The desired
+    format for any value is specified by a &lt;firstterm&gt;format code&lt;/firstterm&gt;.
+    Clients can specify a format code for each transmitted parameter value
+    and for each column of a query result.  Text has format code zero,
+    binary has format code one, and all other format codes are reserved
+    for future definition.
+</span>
+特定のデータ型のデータはいくつかの異なる<em class="firstterm">書式</em>で転送することができます。
+<span class="productname">PostgreSQL</span> 7.4の時点でサポートしている書式は<span class="quote">「<span class="quote">テキスト</span>」</span>と<span class="quote">「<span class="quote">バイナリ</span>」</span>のみですが、プロトコルは将来の拡張に備えて準備をしています。
+任意の値の必要な書式は<em class="firstterm">書式コード</em>で指定されます。
+クライアントは、転送されるパラメータ値それぞれに書式コードを指定することも、問い合わせ結果の列それぞれに書式コードを指定することもできます。
+テキストは書式コード0、バイナリは書式コード1です。
+他の書式コードは将来の定義用に予約されています。
+   </p><p>
+<span class="original">
+    The text representation of values is whatever strings are produced
+    and accepted by the input/output conversion functions for the
+    particular data type.  In the transmitted representation, there is
+    no trailing null character; the frontend must add one to received
+    values if it wants to process them as C strings.
+    (The text format does not allow embedded nulls, by the way.)
+</span>
+値のテキスト表現は、特定のデータ型の入出力変換関数で生成され、受け付けられる何らかの文字列です。
+転送時の表現では、ヌル終端文字はありません。
+フロントエンドでC言語文字列として処理したい場合は、必ず受信した値にヌル終端文字を追加しなければなりません。
+（ついでですが、テキスト書式ではヌルを埋め込むことはできません。）
+   </p><p>
+<span class="original">
+    Binary representations for integers use network byte order (most
+    significant byte first).  For other data types consult the documentation
+    or source code to learn about the binary representation.  Keep in mind
+    that binary representations for complex data types might change across
+    server versions; the text format is usually the more portable choice.
+</span>
+整数用のバイナリ表現はネットワークバイト順（先頭に最上位バイト）を使用します。
+他のデータ型のバイナリ表現については、文書もしくはソースコードを参照してください。
+複雑なデータ型のバイナリ表現はサーバのバージョンによって異なる可能性があることに注意してください。
+通常、テキスト書式がより移植性が高い選択肢です。
+   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="protocol.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="protocol.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="protocol-flow.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第53章 フロントエンド/バックエンドプロトコル </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 53.2. メッセージの流れ</td></tr></table></div></body></html>

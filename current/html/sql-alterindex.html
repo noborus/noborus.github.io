@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>ALTER INDEX</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-altergroup.html" title="ALTER GROUP" /><link rel="next" href="sql-alterlanguage.html" title="ALTER LANGUAGE" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      sql-alterindex.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-altergroup.html" title="ALTER GROUP">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">ALTER INDEX</td><td width="20%" align="right"> <a accesskey="n" href="sql-alterlanguage.html" title="ALTER LANGUAGE">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-ALTERINDEX"><div class="titlepage"></div><a id="id-1.9.3.16.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">ALTER INDEX</span></h2><p>ALTER INDEX<span class="original">
+  &lt;refpurpose&gt;change the definition of an index&lt;/refpurpose&gt;
+</span> — インデックス定義を変更する</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
+ALTER INDEX [ IF EXISTS ] <em class="replaceable"><code>name</code></em> RENAME TO <em class="replaceable"><code>new_name</code></em>
+ALTER INDEX [ IF EXISTS ] <em class="replaceable"><code>name</code></em> SET TABLESPACE <em class="replaceable"><code>tablespace_name</code></em>
+ALTER INDEX <em class="replaceable"><code>name</code></em> ATTACH PARTITION <em class="replaceable"><code>index_name</code></em>
+ALTER INDEX <em class="replaceable"><code>name</code></em> DEPENDS ON EXTENSION <em class="replaceable"><code>extension_name</code></em>
+ALTER INDEX [ IF EXISTS ] <em class="replaceable"><code>name</code></em> SET ( <em class="replaceable"><code>storage_parameter</code></em> = <em class="replaceable"><code>value</code></em> [, ... ] )
+ALTER INDEX [ IF EXISTS ] <em class="replaceable"><code>name</code></em> RESET ( <em class="replaceable"><code>storage_parameter</code></em> [, ... ] )
+ALTER INDEX [ IF EXISTS ] <em class="replaceable"><code>name</code></em> ALTER [ COLUMN ] <em class="replaceable"><code>column_number</code></em>
+    SET STATISTICS <em class="replaceable"><code>integer</code></em>
+ALTER INDEX ALL IN TABLESPACE <em class="replaceable"><code>name</code></em> [ OWNED BY <em class="replaceable"><code>role_name</code></em> [, ... ] ]
+    SET TABLESPACE <em class="replaceable"><code>new_tablespace</code></em> [ NOWAIT ]
+</pre></div><div class="refsect1" id="id-1.9.3.16.5"><h2>説明</h2><span class="original">
+  &lt;title&gt;Description&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;command&gt;ALTER INDEX&lt;/command&gt; changes the definition of an existing index.
+   There are several subforms:
+</span>
+<code class="command">ALTER INDEX</code>は既存のインデックスの定義を変更します。
+以下のような副構文が存在します。
+
+  </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">RENAME</code></span></dt><dd><p>
+<span class="original">
+      The &lt;literal&gt;RENAME&lt;/literal&gt; form changes the name of the index.
+      If the index is associated with a table constraint (either
+      &lt;literal&gt;UNIQUE&lt;/literal&gt;, &lt;literal&gt;PRIMARY KEY&lt;/literal&gt;,
+      or &lt;literal&gt;EXCLUDE&lt;/literal&gt;), the constraint is renamed as well.
+      There is no effect on the stored data.
+</span>
+この<code class="literal">RENAME</code>構文は、インデックスの名前を変更します。
+インデックスがテーブル制約（<code class="literal">UNIQUE</code>、<code class="literal">PRIMARY KEY</code>、<code class="literal">EXCLUDE</code>のいずれか）と関連付けられていた場合、制約名も変更されます。
+格納されたデータには影響しません。
+     </p></dd><dt><span class="term"><code class="literal">SET TABLESPACE</code></span></dt><dd><p>
+<span class="original">
+      This form changes the index's tablespace to the specified tablespace and
+      moves the data file(s) associated with the index to the new tablespace.
+      To change the tablespace of an index, you must own the index and have
+      &lt;literal&gt;CREATE&lt;/literal&gt; privilege on the new tablespace.
+      All indexes in the current database in a tablespace can be moved by using
+      the &lt;literal&gt;ALL IN TABLESPACE&lt;/literal&gt; form, which will lock all
+      indexes to be moved and then move each one.  This form also supports
+      &lt;literal&gt;OWNED BY&lt;/literal&gt;, which will only move indexes owned by the
+      roles specified.  If the &lt;literal&gt;NOWAIT&lt;/literal&gt; option is specified
+      then the command will fail if it is unable to acquire all of the locks
+      required immediately.  Note that system catalogs will not be moved by
+      this command, use &lt;command&gt;ALTER DATABASE&lt;/command&gt; or explicit
+      &lt;command&gt;ALTER INDEX&lt;/command&gt; invocations instead if desired.
+      See also
+      &lt;xref linkend="sql-createtablespace"/&gt;.
+</span>
+この構文は、インデックスのテーブル空間を指定したテーブル空間に変更し、インデックスに関連するデータファイルを移動します。
+インデックスのテーブル空間を変更するには、インデックスの所有者であり、かつ新しいテーブル空間の<code class="literal">CREATE</code>権限を有している必要があります。
+<code class="literal">ALL IN TABLESPACE</code>構文を使うことで、テーブル空間内の現在のデータベースのすべてのインデックスを移動することができます。
+この場合、移動されるすべてのインデックスがロックされ、それから1つずつ移動されます。
+この構文は<code class="literal">OWNED BY</code>もサポートしており、これを使うと、指定のロールが所有しているインデックスだけを移動します。
+<code class="literal">NOWAIT</code>オプションを指定した場合、必要とするすべてのロックを即座に獲得できなければ、このコマンドは失敗します。
+このコマンドではシステムカタログは移動されないことに注意してください。
+必要であれば、<code class="command">ALTER DATABASE</code>を使うか、あるいは<code class="command">ALTER INDEX</code>で明示的に指定してください。
+<a class="xref" href="sql-createtablespace.html" title="CREATE TABLESPACE"><span class="refentrytitle">CREATE TABLESPACE</span></a>も参照してください。
+     </p></dd><dt><span class="term"><code class="literal">ATTACH PARTITION</code></span></dt><dd><p>
+<span class="original">
+      Causes the named index to become attached to the altered index.
+      The named index must be on a partition of the table containing the
+      index being altered, and have an equivalent definition.  An attached
+      index cannot be dropped by itself, and will automatically be dropped
+      if its parent index is dropped.
+</span>
+指定されたインデックスを変更するインデックスに付加します。
+指定されたインデックスは、変更するインデックスを持つテーブルのパーティションに対するもので、かつ、同じ定義を持たなければなりません。
+付加されたインデックスは、それ自身として削除できず、親インデックスが削除された場合に自動的に削除されます。
+     </p></dd><dt><span class="term"><code class="literal">DEPENDS ON EXTENSION</code></span></dt><dd><p>
+<span class="original">
+      This form marks the index as dependent on the extension, such that if the
+      extension is dropped, the index will automatically be dropped as well.
+</span>
+この構文は、インデックスが拡張に依存するものとして印をつけます。
+これにより、拡張が削除されたときに、インデックスも自動的に削除されるようになります。
+     </p></dd><dt><span class="term"><code class="literal">SET ( <em class="replaceable"><code>storage_parameter</code></em> = <em class="replaceable"><code>value</code></em> [, ... ] )</code></span></dt><dd><p>
+<span class="original">
+      This form changes one or more index-method-specific storage parameters
+      for the index.  See
+      &lt;xref linkend="sql-createindex"/&gt;
+      for details on the available parameters.  Note that the index contents
+      will not be modified immediately by this command; depending on the
+      parameter you might need to rebuild the index with
+      &lt;xref linkend="sql-reindex"/&gt;
+      to get the desired effects.
+</span>
+この構文は、インデックスに対し、インデックスメソッド固有の1つ以上の格納パラメータを変更します。
+設定可能なパラメータについては<a class="xref" href="sql-createindex.html" title="CREATE INDEX"><span class="refentrytitle">CREATE INDEX</span></a>を参照してください。
+このコマンドにより、インデックスの内容がすぐに変更されるわけではないことに注意してください。
+パラメータによりますが、期待する効果を得るために<a class="xref" href="sql-reindex.html" title="REINDEX"><span class="refentrytitle">REINDEX</span></a>を使用してインデックスを再構築しなければならない場合もあります。
+     </p></dd><dt><span class="term"><code class="literal">RESET ( <em class="replaceable"><code>storage_parameter</code></em> [, ... ] )</code></span></dt><dd><p>
+<span class="original">
+      This form resets one or more index-method-specific storage parameters to
+      their defaults.  As with &lt;literal&gt;SET&lt;/literal&gt;, a &lt;literal&gt;REINDEX&lt;/literal&gt;
+      might be needed to update the index entirely.
+</span>
+この構文は、1つ以上のインデックスメソッド固有の格納パラメータをデフォルト値に再設定します。
+<code class="literal">SET</code>同様、インデックスを完全に更新するために<code class="literal">REINDEX</code>が必要になる場合があります。
+     </p></dd><dt><span class="term"><code class="literal">ALTER [ COLUMN ] <em class="replaceable"><code>column_number</code></em> SET STATISTICS <em class="replaceable"><code>integer</code></em></code></span></dt><dd><p>
+<span class="original">
+      This form sets the per-column statistics-gathering target for
+      subsequent &lt;xref linkend="sql-analyze"/&gt; operations, though can
+      be used only on index columns that are defined as an expression.
+      Since expressions lack a unique name, we refer to them using the
+      ordinal number of the index column.
+      The target can be set in the range 0 to 10000; alternatively, set it
+      to -1 to revert to using the system default statistics
+      target (&lt;xref linkend="guc-default-statistics-target"/&gt;).
+      For more information on the use of statistics by the
+      &lt;productname&gt;PostgreSQL&lt;/productname&gt; query planner, refer to
+      &lt;xref linkend="planner-stats"/&gt;.
+</span>
+この構文は、以後の<a class="xref" href="sql-analyze.html" title="ANALYZE"><span class="refentrytitle">ANALYZE</span></a>操作にむけた、列ごとの統計収集対象を設定します。ただし、式として定義されたインデックス列のみに使えます。
+式には一意な名前が無いため、これらはインデックス列の序数を使って参照します。
+対象は0から10000の範囲で設定できます。代わりに-1と設定すると、システムのデフォルト統計対象（<a class="xref" href="runtime-config-query.html#GUC-DEFAULT-STATISTICS-TARGET">default_statistics_target</a>）に戻します。
+<span class="productname">PostgreSQL</span>の問い合わせプランナによる統計の利用についての詳細は<a class="xref" href="planner-stats.html" title="14.2. プランナで使用される統計情報">14.2</a>を参照してください。
+     </p></dd></dl></div><p>
+  </p></div><div class="refsect1" id="id-1.9.3.16.6"><h2>パラメータ</h2><span class="original">
+  &lt;title&gt;Parameters&lt;/title&gt;
+</span><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">IF EXISTS</code></span></dt><dd><p>
+<span class="original">
+        Do not throw an error if the index does not exist. A notice is issued
+        in this case.
+</span>
+インデックスが存在しない場合にエラーとしません。
+この場合注意メッセージが発生します。
+       </p></dd><dt><span class="term"><em class="replaceable"><code>column_number</code></em></span></dt><dd><p>
+<span class="original">
+        The ordinal number refers to the ordinal (left-to-right) position
+        of the index column.
+</span>
+インデックス列の順序位置（左から右）を参照する序数。
+       </p></dd><dt><span class="term"><em class="replaceable"><code>name</code></em></span></dt><dd><p>
+<span class="original">
+        The name (possibly schema-qualified) of an existing index to
+        alter.
+</span>
+変更対象の既存のインデックスの名前です（スキーマ修飾名も可）。
+       </p></dd><dt><span class="term"><em class="replaceable"><code>new_name</code></em></span></dt><dd><p>
+<span class="original">
+        The new name for the index.
+</span>
+インデックスの新しい名前です。
+       </p></dd><dt><span class="term"><em class="replaceable"><code>tablespace_name</code></em></span></dt><dd><p>
+<span class="original">
+        The tablespace to which the index will be moved.
+</span>
+インデックスの移動先のテーブル空間です。
+       </p></dd><dt><span class="term"><em class="replaceable"><code>extension_name</code></em></span></dt><dd><p>
+<span class="original">
+        The name of the extension that the index is to depend on.
+</span>
+インデックスが依存することになる拡張の名前です。
+       </p></dd><dt><span class="term"><em class="replaceable"><code>storage_parameter</code></em></span></dt><dd><p>
+<span class="original">
+        The name of an index-method-specific storage parameter.
+</span>
+インデックスメソッド固有の格納パラメータの名前です。
+       </p></dd><dt><span class="term"><em class="replaceable"><code>value</code></em></span></dt><dd><p>
+<span class="original">
+        The new value for an index-method-specific storage parameter.
+        This might be a number or a word depending on the parameter.
+</span>
+インデックスメソッド固有の格納パラメータの新しい値です。
+パラメータに応じてこれが数値になることも文字列になることもあります。
+       </p></dd></dl></div></div><div class="refsect1" id="id-1.9.3.16.7"><h2>注釈</h2><span class="original">
+  &lt;title&gt;Notes&lt;/title&gt;
+</span><p>
+<span class="original">
+    These operations are also possible using
+    &lt;xref linkend="sql-altertable"/&gt;.
+    &lt;command&gt;ALTER INDEX&lt;/command&gt; is in fact just an alias for the forms
+    of &lt;command&gt;ALTER TABLE&lt;/command&gt; that apply to indexes.
+</span>
+これらの操作は<a class="xref" href="sql-altertable.html" title="ALTER TABLE"><span class="refentrytitle">ALTER TABLE</span></a>を使用して行うこともできます。
+実際には、<code class="command">ALTER INDEX</code>は、<code class="command">ALTER TABLE</code>のインデックス用構文の別名に過ぎません。
+   </p><p>
+<span class="original">
+    There was formerly an &lt;command&gt;ALTER INDEX OWNER&lt;/command&gt; variant, but
+    this is now ignored (with a warning).  An index cannot have an owner
+    different from its table's owner.  Changing the table's owner
+    automatically changes the index as well.
+</span>
+以前は<code class="command">ALTER INDEX OWNER</code>という種類の構文がありましたが、（警告の上）無視されるようになりました。
+インデックスの所有者は基のテーブルの所有者と異なるものにすることができません。
+テーブルの所有者を変更すると自動的にインデックスの所有者も変わります。
+   </p><p>
+<span class="original">
+    Changing any part of a system catalog index is not permitted.
+</span>
+システムカタログ用インデックスに対する変更は許されていません。
+   </p></div><div class="refsect1" id="id-1.9.3.16.8"><h2>例</h2><span class="original">
+  &lt;title&gt;Examples&lt;/title&gt;
+</span><p>
+<span class="original">
+   To rename an existing index:
+</span>
+既存のインデックスの名前を変更します。
+</p><pre class="programlisting">
+ALTER INDEX distributors RENAME TO suppliers;
+</pre><p>
+  </p><p>
+<span class="original">
+   To move an index to a different tablespace:
+</span>
+インデックスを別のテーブル空間に移動します。
+</p><pre class="programlisting">
+ALTER INDEX distributors SET TABLESPACE fasttablespace;
+</pre><p>
+  </p><p>
+<span class="original">
+   To change an index's fill factor (assuming that the index method
+   supports it):
+</span>
+インデックスのフィルファクタを変更します（インデックスメソッドがフィルファクタをサポートしていることを前提とします）。
+</p><pre class="programlisting">
+ALTER INDEX distributors SET (fillfactor = 75);
+REINDEX INDEX distributors;
+</pre><p>
+<span class="original">
+   Set the statistics-gathering target for an expression index:
+</span>
+式インデックスに対して統計収集対象を設定します。
+</p><pre class="programlisting">
+CREATE INDEX coord_idx ON measured (x, y, (z + t));
+ALTER INDEX coord_idx ALTER COLUMN 3 SET STATISTICS 1000;
+</pre></div><div class="refsect1" id="id-1.9.3.16.9"><h2>互換性</h2><span class="original">
+  &lt;title&gt;Compatibility&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;command&gt;ALTER INDEX&lt;/command&gt; is a &lt;productname&gt;PostgreSQL&lt;/productname&gt;
+   extension.
+</span>
+<code class="command">ALTER INDEX</code>は<span class="productname">PostgreSQL</span>の拡張です。
+  </p></div><div class="refsect1" id="id-1.9.3.16.10"><h2>関連項目</h2><span class="original">
+  &lt;title&gt;See Also&lt;/title&gt;
+</span><span class="simplelist"><a class="xref" href="sql-createindex.html" title="CREATE INDEX"><span class="refentrytitle">CREATE INDEX</span></a>, <a class="xref" href="sql-reindex.html" title="REINDEX"><span class="refentrytitle">REINDEX</span></a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-altergroup.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-alterlanguage.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">ALTER GROUP </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> ALTER LANGUAGE</td></tr></table></div></body></html>

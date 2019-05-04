@@ -1,0 +1,429 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>10.3. 関数</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="typeconv-oper.html" title="10.2. 演算子" /><link rel="next" href="typeconv-query.html" title="10.4. 値の格納" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="typeconv.html" title="第10章 型変換">第10章 型変換</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      typeconv-func.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="typeconv-oper.html" title="10.2. 演算子">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="typeconv.html" title="第10章 型変換">上へ</a></td><td width="60%" align="center">10.3. 関数</td><td width="20%" align="right"> <a accesskey="n" href="typeconv-query.html" title="10.4. 値の格納">次へ</a></td></tr></table><hr /></div><div class="sect1" id="TYPECONV-FUNC"><div class="titlepage"><div><div><h2 class="title" style="clear: both">10.3. 関数</h2></div></div></div><span class="original">
+&lt;title&gt;Functions&lt;/title&gt;
+</span><a id="id-1.5.9.8.2" class="indexterm"></a><p>
+<span class="original">
+   The specific function that is referenced by a function call
+   is determined using the following procedure.
+</span>
+関数呼び出しによって参照される特定の関数は、以下の手順に従って解決されます。
+  </p><div class="procedure" id="id-1.5.9.8.4"><p class="title"><strong>関数における型の解決</strong></p><span class="original">
+&lt;title&gt;Function Type Resolution&lt;/title&gt;
+</span><ol class="procedure" type="1"><li class="step"><p>
+<span class="original">
+Select the functions to be considered from the
+&lt;classname&gt;pg_proc&lt;/classname&gt; system catalog.  If a non-schema-qualified
+function name was used, the functions
+considered are those with the matching name and argument count that are
+visible in the current search path (see &lt;xref linkend="ddl-schemas-path"/&gt;).
+If a qualified function name was given, only functions in the specified
+schema are considered.
+</span>
+<code class="classname">pg_proc</code>システムカタログから、調査の対象とする関数を選択します。
+スキーマ修飾がされていない関数名が使用される場合、現行の検索パスで可視になっていて、同一の名前と引数の数を持つ関数が調査対象であるとみなされます
+（<a class="xref" href="ddl-schemas.html#DDL-SCHEMAS-PATH" title="5.8.3. スキーマ検索パス">5.8.3</a>を参照してください）。
+修飾された関数名が与えられている場合、指定されたスキーマの関数のみが調査対象とみなされます。
+</p><ol type="a" class="substeps"><li class="step"><p>
+<span class="original">
+If the search path finds multiple functions of identical argument types,
+only the one appearing earliest in the path is considered.  Functions of
+different argument types are considered on an equal footing regardless of
+search path position.
+</span>
+検索パスで、引数のデータ型が同じである複数の関数を検出した場合、そのパスで最初に検出された関数のみを調査対象とみなします。
+引数のデータ型が異なる関数は、検索パス内の位置に関係なく、同じように調べられます。
+</p></li><li class="step"><p>
+<span class="original">
+If a function is declared with a &lt;literal&gt;VARIADIC&lt;/literal&gt; array parameter, and
+the call does not use the &lt;literal&gt;VARIADIC&lt;/literal&gt; keyword, then the function
+is treated as if the array parameter were replaced by one or more occurrences
+of its element type, as needed to match the call.  After such expansion the
+function might have effective argument types identical to some non-variadic
+function.  In that case the function appearing earlier in the search path is
+used, or if the two functions are in the same schema, the non-variadic one is
+preferred.
+</span>
+もし関数が<code class="literal">VARIADIC</code>型の配列パラメータを伴って定義されており、そして<code class="literal">VARIADIC</code>キーワードを用いずに呼ばれた場合は、呼び出しに適合するよう、一つかそれ以上の要素の型に配列のパラメータを置き換えた形で扱われます。
+このような拡張後は、その関数は実際の引数の型を持つので、他の非可変長の引数を持つ関数と同一になるかもしれません。この場合、検索パスで先に見つかった関数が使われます。また、同じスキーマに2つの関数が見つかった場合は非可変長の関数が優先されます。
+</p><p>
+<span class="original">
+This creates a security hazard when calling, via qualified name
+</span>
+信用できないユーザにオブジェクトの作成を許可しているスキーマで見つかる可変長引数の関数を、修飾された名前で
+  <a href="#ftn.FUNC-QUALIFIED-SECURITY" class="footnote"><sup class="footnote" id="FUNC-QUALIFIED-SECURITY">[9]</sup></a><span class="original">,
+a variadic function found in a schema that permits untrusted users to create
+objects.  A malicious user can take control and execute arbitrary SQL
+functions as though you executed them.  Substitute a call bearing
+the &lt;literal&gt;VARIADIC&lt;/literal&gt; keyword, which bypasses this hazard.  Calls
+populating &lt;literal&gt;VARIADIC "any"&lt;/literal&gt; parameters often have no
+equivalent formulation containing the &lt;literal&gt;VARIADIC&lt;/literal&gt; keyword.  To
+issue those calls safely, the function's schema must permit only trusted users
+to create objects.
+</span>
+呼び出す時にセキュリティの危険が発生します。
+悪意のあるユーザは、支配権を奪い、あたかもあなたが実行したかのように任意のSQL関数を実行できます。
+<code class="literal">VARIADIC</code>キーワードを持つ呼び出しを代わりに使ってください。そうすればこの危険は避けられます。
+<code class="literal">VARIADIC "any"</code>パラメータにデータを入れての呼び出しには、しばしば同等の<code class="literal">VARIADIC</code>キーワード含む定式化がありません。
+この呼び出しを安全に行なうには、関数のスキーマは信用できるユーザだけがオブジェクトを作成できるようにしなければなりません。
+</p></li><li class="step"><p>
+<span class="original">
+Functions that have default values for parameters are considered to match any
+call that omits zero or more of the defaultable parameter positions.  If more
+than one such function matches a call, the one appearing earliest in the
+search path is used.  If there are two or more such functions in the same
+schema with identical parameter types in the non-defaulted positions (which is
+possible if they have different sets of defaultable parameters), the system
+will not be able to determine which to prefer, and so an &lt;quote&gt;ambiguous
+function call&lt;/quote&gt; error will result if no better match to the call can be
+found.
+</span>
+パラメータにデフォルト値を持つ関数は、デフォルト指定可能なパラメータ位置のうち、0以上が省略されたどのような呼び出しに対しても適合すると見なされます。
+もし呼び出し時にこのような関数が2つ以上適合した場合、検索パスで先に見つかったものが使用されます。
+もし、デフォルト指定のない位置に同じパラメータ型を持つ関数(もしそれらが異なるデフォルト指定のあるパラメータのセットを持っていればあり得ます)が同じスキーマに2つ以上あった時は、システムはどの関数を使うべきか決定できず、呼び出しにより適合するものが見つからなければ<span class="quote">「<span class="quote">ambiguous function call</span>」</span>エラーが結果として返るでしょう。
+</p><p>
+<span class="original">
+This creates an availability hazard when calling, via qualified
+name&lt;footnoteref linkend="func-qualified-security"/&gt;, any function found in a
+schema that permits untrusted users to create objects.  A malicious user can
+create a function with the name of an existing function, replicating that
+function's parameters and appending novel parameters having default values.
+This precludes new calls to the original function.  To forestall this hazard,
+place functions in schemas that permit only trusted users to create objects.
+</span>
+信用できないユーザにオブジェクトの作成を許可しているスキーマで見つかる関数を修飾された名前で<a href="typeconv-func.html#ftn.FUNC-QUALIFIED-SECURITY" class="footnoteref"><sup class="footnoteref">[9]</sup></a>呼び出す時に、これは濫用の危険を起こします。
+悪意のあるユーザは、既存の関数の名前で、その関数のパラメータを複製し、デフォルト値を持つ新しいパラメータを追加した関数を作成できます。
+これは元の関数への新しい呼び出しを妨げます。
+この危険を未然に防ぐには、関数を信用できるユーザだけがオブジェクトを作成できるスキーマに置いてください。
+</p></li></ol></li><li class="step"><p>
+<span class="original">
+Check for a function accepting exactly the input argument types.
+If one exists (there can be only one exact match in the set of
+functions considered), use it.  Lack of an exact match creates a security
+hazard when calling, via qualified
+name&lt;footnoteref linkend="func-qualified-security"/&gt;, a function found in a
+schema that permits untrusted users to create objects.  In such situations,
+cast arguments to force an exact match.  (Cases involving &lt;type&gt;unknown&lt;/type&gt;
+will never find a match at this step.)
+</span>
+正確に入力引数型を受け付ける関数があるかどうか検査します。
+該当する関数があれば（調査される関数の集合内で正確に一致するものは1つしかあり得ません）、それを使用します。
+正確に一致するものがない場合、信用できないユーザにオブジェクトの作成を許可しているスキーマで見つかる関数を、修飾された名前で<a href="typeconv-func.html#ftn.FUNC-QUALIFIED-SECURITY" class="footnoteref"><sup class="footnoteref">[9]</sup></a>呼び出す時にセキュリティの危険が発生します。
+そのような状況では、強制的に正確に一致するように引数をキャストしてください。
+（<code class="type">unknown</code>を含む場合は、この段階で一致するものは決して見つかりません。）
+</p></li><li class="step"><p>
+<span class="original">
+If no exact match is found, see if the function call appears
+to be a special type conversion request.  This happens if the function call
+has just one argument and the function name is the same as the (internal)
+name of some data type.  Furthermore, the function argument must be either
+an unknown-type literal, or a type that is binary-coercible to the named
+data type, or a type that could be converted to the named data type by
+applying that type's I/O functions (that is, the conversion is either to or
+from one of the standard string types).  When these conditions are met,
+the function call is treated as a form of &lt;literal&gt;CAST&lt;/literal&gt; specification.
+</span>
+正確に一致するものが存在しなかった場合、その関数呼び出しが特別な型変換要求であるかどうかを確認します。
+これは、関数呼び出しがただ1つの引数を取り、関数名が何らかのデータ型の（内部的な）名前と同一である場合に発生します。
+さらに、その関数の引数は、unknown型のリテラルか指定されたデータ型へのバイナリ変換可能な型か、型の入出力関数を適用することで指定された型に変換可能な型（つまり、変換が標準文字列型との間の変換である）であるかのいずれかでなければなりません。
+これらの条件に合う場合、関数呼び出しは<code class="literal">CAST</code>仕様の形式と同様に扱われます。
+  <a href="#ftn.id-1.5.9.8.4.4.1.2" class="footnote"><sup class="footnote" id="id-1.5.9.8.4.4.1.2">[10]</sup></a>
+</p></li><li class="step"><p>
+<span class="original">
+Look for the best match.
+</span>
+最適なものを検索します。
+</p><ol type="a" class="substeps"><li class="step"><p>
+<span class="original">
+Discard candidate functions for which the input types do not match
+and cannot be converted (using an implicit conversion) to match.
+&lt;type&gt;unknown&lt;/type&gt; literals are
+assumed to be convertible to anything for this purpose.  If only one
+candidate remains, use it; else continue to the next step.
+</span>
+関数の候補のうち、入力値のデータ型が一致せず、また、（暗黙的な変換を使用して）一致するように変換できないものを破棄します。
+<code class="type">unknown</code>リテラルは、上記の目的で何にでも変換可能とみなされます。
+1つの候補しか残らない場合、それを使います。
+それ以外の場合は次の段階に進みます。
+</p></li><li class="step"><p>
+<span class="original">
+If any input argument is of a domain type, treat it as being of the
+domain's base type for all subsequent steps.  This ensures that domains
+act like their base types for purposes of ambiguous-function resolution.
+</span>
+入力引数のいずれかがドメイン型であれば、以降の段階すべてでドメインの基本型であるかのように扱います。
+これにより、曖昧な関数を解決するのを目的としてその基本型であるかのようにドメインが振る舞うことが確実になります。
+</p></li><li class="step"><p>
+<span class="original">
+Run through all candidates and keep those with the most exact matches
+on input types.  Keep all candidates if none have exact matches.
+If only one candidate remains, use it; else continue to the next step.
+</span>
+全ての候補を検索し、入力型に最も正確に合うものを残します。
+正確に合うものが何もなければ全ての候補を残します。
+1つの候補しか残らない場合、それを使います。
+それ以外の場合は次の段階に進みます。
+</p></li><li class="step"><p>
+<span class="original">
+Run through all candidates and keep those that accept preferred types (of the
+input data type's type category) at the most positions where type conversion
+will be required.
+Keep all candidates if none accept preferred types.
+If only one candidate remains, use it; else continue to the next step.
+</span>
+全ての候補を検索し、型変換が必要とされるところで（入力データ型カテゴリの）優先される型を受け付けるものを残します。
+優先される型を受け付けるものが何もなければ全ての候補を残します。
+1つの候補しか残らない場合、それを使います。
+それ以外の場合は次の段階に進みます。
+</p></li><li class="step"><p>
+<span class="original">
+If any input arguments are &lt;type&gt;unknown&lt;/type&gt;, check the type categories
+accepted
+at those argument positions by the remaining candidates.  At each position,
+select the &lt;type&gt;string&lt;/type&gt; category if any candidate accepts that category.
+(This bias towards string
+is appropriate since an unknown-type literal looks like a string.)
+Otherwise, if all the remaining candidates accept the same type category,
+select that category; otherwise fail because
+the correct choice cannot be deduced without more clues.
+Now discard candidates that do not accept the selected type category.
+Furthermore, if any candidate accepts a preferred type in that category,
+discard candidates that accept non-preferred types for that argument.
+Keep all candidates if none survive these tests.
+If only one candidate remains, use it; else continue to the next step.
+</span>
+入力引数で<code class="type">unknown</code>のものがあった場合、それらの残った候補に引数位置で受け入れられる型カテゴリを検査します。
+各位置で候補が<code class="type">string</code>カテゴリを受け付ける場合は、そのカテゴリを選択します
+（unknown 型のリテラルは文字列のようなものですので、この文字列への重み付けは適切です）。
+そうでなければ、もし残った全ての候補が同じ型カテゴリを受け入れる場合はそのカテゴリを選択します。
+そうでもなければ、さらに手掛かりがなければ正しい選択が演繹されることができませんので、失敗となります。
+ここで、選択された型カテゴリを受け付けない演算子候補は破棄されます。
+さらに、このカテゴリ内の優先される型を受け付ける候補が1つでもある場合、その引数の優先されない型を受け付ける候補は破棄されます。
+これらの検査をどれも通らなかったら全ての候補を残します。
+1つの候補しか残らない場合、それを使います。
+それ以外の場合は次の段階に進みます。
+</p></li><li class="step"><p>
+<span class="original">
+If there are both &lt;type&gt;unknown&lt;/type&gt; and known-type arguments, and all
+the known-type arguments have the same type, assume that the
+&lt;type&gt;unknown&lt;/type&gt; arguments are also of that type, and check which
+candidates can accept that type at the &lt;type&gt;unknown&lt;/type&gt;-argument
+positions.  If exactly one candidate passes this test, use it.
+Otherwise, fail.
+</span>
+もし<code class="type">unknown</code>と既知の型の引数の両方があり、そして全ての既知の型の引数が同じ型を持っていた場合、<code class="type">unknown</code>引数も同じ型であると仮定し、
+どの候補が<code class="type">unknown</code>引数の位置にある型を受け付けることができるかを検査します。
+正確に1つの候補がこの検査を通過した場合、それを使います。それ以外は失敗します。
+</p></li></ol></li></ol></div><p>
+<span class="original">
+Note that the &lt;quote&gt;best match&lt;/quote&gt; rules are identical for operator and
+function type resolution.
+Some examples follow.
+</span>
+この<span class="quote">「<span class="quote">最善一致</span>」</span>規則は演算子と関数の型解決で同一であることに注意してください。
+以下に例を示します。
+</p><div class="example" id="id-1.5.9.8.6"><p class="title"><strong>例10.6 丸め関数引数の型解決</strong></p><div class="example-contents"><span class="original">
+&lt;title&gt;Rounding Function Argument Type Resolution&lt;/title&gt;
+</span><p>
+<span class="original">
+There is only one &lt;function&gt;round&lt;/function&gt; function that takes two
+arguments; it takes a first argument of type &lt;type&gt;numeric&lt;/type&gt; and
+a second argument of type &lt;type&gt;integer&lt;/type&gt;.
+So the following query automatically converts
+the first argument of type &lt;type&gt;integer&lt;/type&gt; to
+&lt;type&gt;numeric&lt;/type&gt;:
+
+</span>
+2つの引数を取る<code class="function">round</code>関数は1つしかありません
+第1引数として<code class="type">numeric</code>型、第2引数として<code class="type">integer</code>型を取ります。
+ですから、以下の問い合わせは自動的に、<code class="type">integer</code>型の第1引数を<code class="type">numeric</code>に変換します。
+</p><pre class="screen">
+SELECT round(4, 4);
+
+ round
+--------
+ 4.0000
+(1 row)
+</pre><p>
+
+<span class="original">
+That query is actually transformed by the parser to:
+</span>
+問い合わせはパーサによって実質以下のように変形されます。
+</p><pre class="screen">
+SELECT round(CAST (4 AS numeric), 4);
+</pre><p>
+</p><p>
+<span class="original">
+Since numeric constants with decimal points are initially assigned the
+type &lt;type&gt;numeric&lt;/type&gt;, the following query will require no type
+conversion and therefore might be slightly more efficient:
+</span>
+小数点を持つ数値定数はまず<code class="type">numeric</code>に割り当てられますので、以下の問い合わせでは型変換が不要です。そのためかなり効率的になる可能性があります。
+</p><pre class="screen">
+SELECT round(4.0, 4);
+</pre><p>
+</p></div></div><br class="example-break" /><div class="example" id="id-1.5.9.8.7"><p class="title"><strong>例10.7 可変長引数の関数の解決</strong></p><div class="example-contents"><span class="original">
+&lt;title&gt;Variadic Function Resolution&lt;/title&gt;
+</span><p>
+</p><pre class="screen">
+CREATE FUNCTION public.variadic_example(VARIADIC numeric[]) RETURNS int
+  LANGUAGE sql AS 'SELECT 1';
+CREATE FUNCTION
+</pre><p>
+
+<span class="original">
+This function accepts, but does not require, the VARIADIC keyword.  It
+tolerates both integer and numeric arguments:
+</span>
+この関数は、必須ではないですがVARIADICキーワードを受け付けます。
+整数の引数と数値の引数の両方を許容します。
+
+</p><pre class="screen">
+SELECT public.variadic_example(0),
+       public.variadic_example(0.0),
+       public.variadic_example(VARIADIC array[0.0]);
+ variadic_example | variadic_example | variadic_example
+------------------+------------------+------------------
+                1 |                1 |                1
+(1 row)
+</pre><p>
+
+<span class="original">
+However, the first and second calls will prefer more-specific functions, if
+available:
+</span>
+しかしながら、1番目と2番目の呼び出しは、もし利用可能なら、より特定の関数を優先します。
+
+</p><pre class="screen">
+CREATE FUNCTION public.variadic_example(numeric) RETURNS int
+  LANGUAGE sql AS 'SELECT 2';
+CREATE FUNCTION
+
+CREATE FUNCTION public.variadic_example(int) RETURNS int
+  LANGUAGE sql AS 'SELECT 3';
+CREATE FUNCTION
+
+SELECT public.variadic_example(0),
+       public.variadic_example(0.0),
+       public.variadic_example(VARIADIC array[0.0]);
+ variadic_example | variadic_example | variadic_example
+------------------+------------------+------------------
+                3 |                2 |                1
+(1 row)
+</pre><p>
+
+<span class="original">
+Given the default configuration and only the first function existing, the
+first and second calls are insecure.  Any user could intercept them by
+creating the second or third function.  By matching the argument type exactly
+and using the &lt;literal&gt;VARIADIC&lt;/literal&gt; keyword, the third call is secure.
+</span>
+もしデフォルトの設定で最初の関数だけが存在しているなら、1番目と2番目の呼び出しは安全ではありません。
+ユーザは、2番目や3番目の関数を作成することで、それらを妨害できます。
+引数の型を厳密に一致させ<code class="literal">VARIADIC</code>キーワードを使うのなら、3番目の呼び出しは安全です。
+</p></div></div><br class="example-break" /><div class="example" id="id-1.5.9.8.8"><p class="title"><strong>例10.8 部分文字列関数の型解決</strong></p><div class="example-contents"><span class="original">
+&lt;title&gt;Substring Function Type Resolution&lt;/title&gt;
+</span><p>
+<span class="original">
+There are several &lt;function&gt;substr&lt;/function&gt; functions, one of which
+takes types &lt;type&gt;text&lt;/type&gt; and &lt;type&gt;integer&lt;/type&gt;.  If called
+with a string constant of unspecified type, the system chooses the
+candidate function that accepts an argument of the preferred category
+&lt;literal&gt;string&lt;/literal&gt; (namely of type &lt;type&gt;text&lt;/type&gt;).
+</span>
+<code class="function">substr</code>関数は複数存在します。
+その1つは<code class="type">text</code>と<code class="type">integer</code>型を取ります。
+型の指定がない文字列定数で呼び出した場合、システムは優先されるカテゴリ<code class="literal">string</code>（すなわち<code class="type">text</code>型）の引数を受け付ける候補関数を選択します。
+
+</p><pre class="screen">
+SELECT substr('1234', 3);
+
+ substr
+--------
+     34
+(1 row)
+</pre><p>
+</p><p>
+<span class="original">
+If the string is declared to be of type &lt;type&gt;varchar&lt;/type&gt;, as might be the case
+if it comes from a table, then the parser will try to convert it to become &lt;type&gt;text&lt;/type&gt;:
+</span>
+文字列が<code class="type">varchar</code>型と宣言された場合、これはテーブルから取り出した場合が考えられますが、パーサはそれを<code class="type">text</code>になるように変換しようと試みます。
+</p><pre class="screen">
+SELECT substr(varchar '1234', 3);
+
+ substr
+--------
+     34
+(1 row)
+</pre><p>
+
+<span class="original">
+This is transformed by the parser to effectively become:
+</span>
+これは以下になるようにパーサによって変換されます。
+</p><pre class="screen">
+SELECT substr(CAST (varchar '1234' AS text), 3);
+</pre><p>
+</p><p>
+</p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+The parser learns from the &lt;structname&gt;pg_cast&lt;/structname&gt; catalog that
+&lt;type&gt;text&lt;/type&gt; and &lt;type&gt;varchar&lt;/type&gt;
+are binary-compatible, meaning that one can be passed to a function that
+accepts the other without doing any physical conversion.  Therefore, no
+type conversion call is really inserted in this case.
+</span>
+パーサは<code class="structname">pg_cast</code>カタログから<code class="type">text</code>と<code class="type">varchar</code>がバイナリ互換、つまり、何らかの物理的な変換を行うことなく片方を受け付ける関数にもう片方を渡すことができることを知ります。
+したがって、この場合実際に挿入される型変換呼び出しはありません。
+</p></div><p>
+</p><p>
+<span class="original">
+And, if the function is called with an argument of type &lt;type&gt;integer&lt;/type&gt;,
+the parser will try to convert that to &lt;type&gt;text&lt;/type&gt;:
+</span>
+また、<code class="type">integer</code>型の引数でこの関数が呼び出された場合、パーサはそれを<code class="type">text</code>に変換しようと試みます。
+</p><pre class="screen">
+SELECT substr(1234, 3);
+ERROR:  function substr(integer, integer) does not exist
+HINT:  No function matches the given name and argument types. You might need
+to add explicit type casts.
+</pre><p>
+
+<span class="original">
+This does not work because &lt;type&gt;integer&lt;/type&gt; does not have an implicit cast
+to &lt;type&gt;text&lt;/type&gt;.  An explicit cast will work, however:
+</span>
+<code class="type">integer</code>は<code class="type">text</code>への暗黙的なキャストを持たないため、これは失敗します。
+成功させるには、以下のように明示的なキャストを行います。
+</p><pre class="screen">
+SELECT substr(CAST (1234 AS text), 3);
+
+ substr
+--------
+     34
+(1 row)
+</pre><p>
+</p></div></div><br class="example-break" /><div class="footnotes"><br /><hr style="width:100; text-align:left;margin-left: 0" /><div id="ftn.FUNC-QUALIFIED-SECURITY" class="footnote"><span class="original"> 原文コメント If you edit this, consider editing op-qualified-security. </span><p><a href="#FUNC-QUALIFIED-SECURITY" class="para"><sup class="para">[9] </sup></a>
+<span class="original">
+    The hazard does not arise with a non-schema-qualified name, because a
+    search path containing schemas that permit untrusted users to create
+    objects is not a &lt;link linkend="ddl-schemas-patterns"&gt;secure schema usage
+    pattern&lt;/link&gt;.
+</span>
+信用できないユーザにオブジェクトの作成を許可するスキーマを含む検索パスは、<a class="link" href="ddl-schemas.html#DDL-SCHEMAS-PATTERNS" title="5.8.6. 使用パターン">安全なスキーマ使用パターン</a>ではありませんので、スキーマで修飾されていない名前では危険は起こりません。
+   </p></div><div id="ftn.id-1.5.9.8.4.4.1.2" class="footnote"><p><a href="#id-1.5.9.8.4.4.1.2" class="para"><sup class="para">[10] </sup></a>
+<span class="original">
+    The reason for this step is to support function-style cast specifications
+    in cases where there is not an actual cast function.  If there is a cast
+    function, it is conventionally named after its output type, and so there
+    is no need to have a special case.  See
+    &lt;xref linkend="sql-createcast"/&gt;
+    for additional commentary.
+</span>
+この処理の理由は、実際にはキャスト関数が存在しない状況において、関数形態のキャスト仕様をサポートすることです。
+キャスト関数が存在する場合、慣習的に出力型に因んで名付けられます。
+ですので、特殊な状況を持つ必要はありません。
+詳細な解説については<a class="xref" href="sql-createcast.html" title="CREATE CAST"><span class="refentrytitle">CREATE CAST</span></a>を参照してください。
+   </p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="typeconv-oper.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="typeconv.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="typeconv-query.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">10.2. 演算子 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 10.4. 値の格納</td></tr></table></div></body></html>

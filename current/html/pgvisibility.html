@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>F.32. pg_visibility</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="pgtrgm.html" title="F.31. pg_trgm" /><link rel="next" href="postgres-fdw.html" title="F.33. postgres_fdw" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="contrib.html" title="付録F 追加で提供されるモジュール">付録F 追加で提供されるモジュール</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      pgvisibility.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="pgtrgm.html" title="F.31. pg_trgm">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュール">上へ</a></td><td width="60%" align="center">F.32. pg_visibility</td><td width="20%" align="right"> <a accesskey="n" href="postgres-fdw.html" title="F.33. postgres_fdw">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PGVISIBILITY"><div class="titlepage"><div><div><h2 class="title" style="clear: both">F.32. pg_visibility</h2></div></div></div><a id="id-1.11.7.41.2" class="indexterm"></a><p>
+<span class="original">
+  The &lt;filename&gt;pg_visibility&lt;/filename&gt; module provides a means for examining the
+  visibility map (VM) and page-level visibility information of a table.
+  It also provides functions to check the integrity of a visibility map and to
+  force it to be rebuilt.
+</span>
+<code class="filename">pg_visibility</code>モジュールは可視性マップ(Visibility Map, VM)およびテーブルのページレベルでの可視性情報を検査する手段を提供します。
+このモジュールはまた、可視性マップの整合性を検査し、強制的に再構築する機能も提供します。
+ </p><p>
+<span class="original">
+  Three different bits are used to store information about page-level
+  visibility.  The all-visible bit in the visibility map indicates that every
+  tuple in the corresponding page of the relation is visible to every current
+  and future transaction.  The all-frozen bit in the visibility map indicates
+  that every tuple in the page is frozen; that is, no future vacuum will need
+  to modify the page until such time as a tuple is inserted, updated, deleted,
+  or locked on that page.
+  The page header's &lt;literal&gt;PD_ALL_VISIBLE&lt;/literal&gt; bit has the
+  same meaning as the all-visible bit in the visibility map, but is stored
+  within the data page itself rather than in a separate data structure.
+  These two bits will normally agree, but the page's all-visible bit can
+  sometimes be set while the visibility map bit is clear after a crash
+  recovery.  The reported values can also disagree because of a change that
+  occurs after &lt;literal&gt;pg_visibility&lt;/literal&gt; examines the visibility map and
+  before it examines the data page.  Any event that causes data corruption
+  can also cause these bits to disagree.
+</span>
+ページレベルの可視性についての情報を格納するために、3つの異なるビットが使用されます。
+可視性マップの全可視ビットは、対応するリレーションのページの全タプルがすべての現在および将来のトランザクションに対して可視であることを示します。
+可視性マップの全凍結ビットは、そのページのすべてのタプルが凍結されていることを示します。
+これはすなわち、そのページに対してタプルの挿入、更新、削除、ロックなどが発生しない限り、将来もバキュームによる修正が必要ないことを意味します。
+ページヘッダの<code class="literal">PD_ALL_VISIBLE</code>ビットは、可視性マップの全可視ビットと同じ意味ですが、別のデータ構造ではなく、データページ自体の中に格納されています。
+これら2つのビットは通常は同じ値になりますが、クラッシュリカバリの後は、ページの全可視ビットがセットされているのに、可視性マップの全可視ビットはクリアされているということもあります。
+また、<code class="literal">pg_visibility</code>が可視性マップを検査した後、データページを検査する前に更新が行われたために、これらについて報告される値が一致しないということもあり得ます。
+データ破壊を起こすような何らかのイベントの後も、これらのビットが異なることがあり得ます。
+ </p><p>
+<span class="original">
+  Functions that display information about &lt;literal&gt;PD_ALL_VISIBLE&lt;/literal&gt; bits
+  are much more costly than those that only consult the visibility map,
+  because they must read the relation's data blocks rather than only the
+  (much smaller) visibility map.  Functions that check the relation's
+  data blocks are similarly expensive.
+</span>
+<code class="literal">PD_ALL_VISIBLE</code>ビットに関する情報を表示する関数は、可視性マップのみを参照する関数に比べるとずっと高価です。
+これは、可視性マップだけではなく、（それよりずっと大きな）リレーションのデータブロックを読む必要があるからです。
+リレーションのデータブロックを検査する関数は、同様に高価です。
+ </p><div class="sect2" id="id-1.11.7.41.6"><div class="titlepage"><div><div><h3 class="title">F.32.1. 関数</h3></div></div></div><span class="original">
+  &lt;title&gt;Functions&lt;/title&gt;
+</span><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="function">pg_visibility_map(relation regclass, blkno bigint, all_visible OUT boolean, all_frozen OUT boolean) returns record</code></span></dt><dd><p>
+<span class="original">
+      Returns the all-visible and all-frozen bits in the visibility map for
+      the given block of the given relation.
+</span>
+指定のリレーションの指定のブロックについて、可視性マップ内の全可視ビットと全凍結ビットを返します。
+     </p></dd><dt><span class="term"><code class="function">pg_visibility(relation regclass, blkno bigint, all_visible OUT boolean, all_frozen OUT boolean, pd_all_visible OUT boolean) returns record</code></span></dt><dd><p>
+<span class="original">
+      Returns the all-visible and all-frozen bits in the visibility map for
+      the given block of the given relation, plus the
+      &lt;literal&gt;PD_ALL_VISIBLE&lt;/literal&gt; bit of that block.
+</span>
+指定のリレーションの指定のブロックについて、可視性マップ内の全可視ビットと全凍結ビット、およびそのブロックの<code class="literal">PD_ALL_VISIBLE</code>を返します。
+     </p></dd><dt><span class="term"><code class="function">pg_visibility_map(relation regclass, blkno OUT bigint, all_visible OUT boolean, all_frozen OUT boolean) returns setof record</code></span></dt><dd><p>
+<span class="original">
+      Returns the all-visible and all-frozen bits in the visibility map for
+      each block of the given relation.
+</span>
+指定のリレーションの各ブロックについて、全可視ビットと全凍結ビットを返します。
+     </p></dd><dt><span class="term"><code class="function">pg_visibility(relation regclass, blkno OUT bigint, all_visible OUT boolean, all_frozen OUT boolean, pd_all_visible OUT boolean) returns setof record</code></span></dt><dd><p>
+<span class="original">
+      Returns the all-visible and all-frozen bits in the visibility map for
+      each block of the given relation, plus the &lt;literal&gt;PD_ALL_VISIBLE&lt;/literal&gt;
+      bit of each block.
+</span>
+指定のリレーションの各ブロックについて、全可視ビットと全凍結ビット、および各ブロックの<code class="literal">PD_ALL_VISIBLE</code>ビットを返します。
+     </p></dd><dt><span class="term"><code class="function">pg_visibility_map_summary(relation regclass, all_visible OUT bigint, all_frozen OUT bigint) returns record</code></span></dt><dd><p>
+<span class="original">
+      Returns the number of all-visible pages and the number of all-frozen
+      pages in the relation according to the visibility map.
+</span>
+可視性マップに従って、リレーション内の全可視ページの数と全凍結ページの数を返します。
+     </p></dd><dt><span class="term"><code class="function">pg_check_frozen(relation regclass, t_ctid OUT tid) returns setof tid</code></span></dt><dd><p>
+<span class="original">
+      Returns the TIDs of non-frozen tuples stored in pages marked all-frozen
+      in the visibility map.  If this function returns a non-empty set of
+      TIDs, the visibility map is corrupt.
+</span>
+可視性マップ内で全凍結と印を付けられたページ内に格納されている非凍結タプルのTIDを返します。
+この関数が返すTIDの集合が空でないなら、可視性マップは壊れています。
+     </p></dd><dt><span class="term"><code class="function">pg_check_visible(relation regclass, t_ctid OUT tid) returns setof tid</code></span></dt><dd><p>
+<span class="original">
+      Returns the TIDs of non-all-visible tuples stored in pages marked
+      all-visible in the visibility map.  If this function returns a non-empty
+      set of TIDs, the visibility map is corrupt.
+</span>
+可視性マップ内で全可視と印を付けられたページ内に格納されている全可視でないタプルのTIDを返します。
+この関数が返すTIDの集合が空でないなら、可視性マップは壊れています。
+     </p></dd><dt><span class="term"><code class="function">pg_truncate_visibility_map(relation regclass) returns void</code></span></dt><dd><p>
+<span class="original">
+      Truncates the visibility map for the given relation.  This function is
+      useful if you believe that the visibility map for the relation is
+      corrupt and wish to force rebuilding it.  The first &lt;command&gt;VACUUM&lt;/command&gt;
+      executed on the given relation after this function is executed will scan
+      every page in the relation and rebuild the visibility map.  (Until that
+      is done, queries will treat the visibility map as containing all zeroes.)
+</span>
+指定のリレーションの可視性マップを切り詰めます。
+そのリレーションの可視性マップが壊れていると思われ、強制的に再構築したい場合にこの関数は有効です。
+この関数を実行した後に、指定のリレーション上で実行される最初の<code class="command">VACUUM</code>において、リレーション内の全ページがスキャンされ、可視性マップが再構築されます。
+（それが終わるまでは、可視性マップの中がすべてゼロになっているものとして問い合わせは動作します。）
+     </p></dd></dl></div><p>
+<span class="original">
+   By default, these functions are executable only by superusers and members of the
+   &lt;literal&gt;pg_stat_scan_tables&lt;/literal&gt; role, with the exception of
+   &lt;function&gt;pg_truncate_visibility_map(relation regclass)&lt;/function&gt; which can only
+   be executed by superusers.
+</span>
+デフォルトでは、これらの関数はスーパーユーザと<code class="literal">pg_stat_scan_tables</code>のメンバのみが実行可能です。<code class="function">pg_truncate_visibility_map(relation regclass)</code>は例外で、スーパーユーザのみが実行可能です。
+  </p></div><div class="sect2" id="id-1.11.7.41.7"><div class="titlepage"><div><div><h3 class="title">F.32.2. 作者</h3></div></div></div><span class="original">
+  &lt;title&gt;Author&lt;/title&gt;
+</span><p>
+   Robert Haas <code class="email">&lt;<a class="email" href="mailto:rhaas@postgresql.org">rhaas@postgresql.org</a>&gt;</code>
+  </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="pgtrgm.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="contrib.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="postgres-fdw.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">F.31. pg_trgm </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> F.33. postgres_fdw</td></tr></table></div></body></html>

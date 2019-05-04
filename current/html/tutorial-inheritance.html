@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>3.6. 継承</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="tutorial-window.html" title="3.5. ウィンドウ関数" /><link rel="next" href="tutorial-conclusion.html" title="3.7. まとめ" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="tutorial-advanced.html" title="第3章 高度な諸機能">第3章 高度な諸機能</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      tutorial-inheritance.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="tutorial-window.html" title="3.5. ウィンドウ関数">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="tutorial-advanced.html" title="第3章 高度な諸機能">上へ</a></td><td width="60%" align="center">3.6. 継承</td><td width="20%" align="right"> <a accesskey="n" href="tutorial-conclusion.html" title="3.7. まとめ">次へ</a></td></tr></table><hr /></div><div class="sect1" id="TUTORIAL-INHERITANCE"><div class="titlepage"><div><div><h2 class="title" style="clear: both">3.6. 継承</h2></div></div></div><span class="original">
+   &lt;title&gt;Inheritance&lt;/title&gt;
+</span><a id="id-1.4.5.7.2" class="indexterm"></a><p>
+<span class="original">
+    Inheritance is a concept from object-oriented databases.  It opens
+    up interesting new possibilities of database design.
+</span>
+継承とはオブジェクト指向データベースの概念です。
+データベース設計においてこれまでになかった興味深い可能性を広げてくれます。
+   </p><p>
+<span class="original">
+    Let's create two tables:  A table &lt;classname&gt;cities&lt;/classname&gt;
+    and a table &lt;classname&gt;capitals&lt;/classname&gt;.  Naturally, capitals
+    are also cities, so you want some way to show the capitals
+    implicitly when you list all cities.  If you're really clever you
+    might invent some scheme like this:
+</span>
+2つのテーブル<code class="classname">cities</code>（都市）テーブルと<code class="classname">capitals</code>（州都）テーブルを作ってみましょう。
+州都は本来同時に都市でもありますので、全ての都市をリストする時は何もしなくても州都も表示する何らかの方法が必要です。
+賢い人なら次のような案を工夫するかもしれません。
+
+</p><pre class="programlisting">
+CREATE TABLE capitals (
+  name       text,
+  population real,
+<span class="original">  altitude   int,    &amp;#045;- (in ft) </span>
+  altitude   int,    -- （フィート単位）
+  state      char(2)
+);
+
+CREATE TABLE non_capitals (
+  name       text,
+  population real,
+<span class="original">  altitude   int     &amp;#045;- (in ft) </span>
+  altitude   int     -- （フィート単位）
+);
+
+CREATE VIEW cities AS
+  SELECT name, population, altitude FROM capitals
+    UNION
+  SELECT name, population, altitude FROM non_capitals;
+</pre><p>
+
+<span class="original">
+    This works OK as far as querying goes, but it gets ugly when you
+    need to update several rows, for one thing.
+</span>
+問い合わせを続ける分には問題はありませんが、例えば、複数の行を更新する時に醜くなります。
+   </p><p>
+<span class="original">
+    A better solution is this:
+</span>
+より良い解決策は次のような構文です。
+
+</p><pre class="programlisting">
+CREATE TABLE cities (
+  name       text,
+  population real,
+<span class="original">  altitude   int     &amp;#045;- (in ft) </span>
+  altitude   int     -- （フィート単位）
+);
+
+CREATE TABLE capitals (
+  state      char(2)
+) INHERITS (cities);
+</pre><p>
+   </p><p>
+<span class="original">
+    In this case, a row of &lt;classname&gt;capitals&lt;/classname&gt;
+    &lt;firstterm&gt;inherits&lt;/firstterm&gt; all columns (&lt;structfield&gt;name&lt;/structfield&gt;,
+    &lt;structfield&gt;population&lt;/structfield&gt;, and &lt;structfield&gt;altitude&lt;/structfield&gt;) from its
+    &lt;firstterm&gt;parent&lt;/firstterm&gt;, &lt;classname&gt;cities&lt;/classname&gt;.  The
+    type of the column &lt;structfield&gt;name&lt;/structfield&gt; is
+    &lt;type&gt;text&lt;/type&gt;, a native &lt;productname&gt;PostgreSQL&lt;/productname&gt;
+    type for variable length character strings.  State capitals have
+    an extra column, &lt;structfield&gt;state&lt;/structfield&gt;, that shows their state.  In
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt;, a table can inherit from
+    zero or more other tables.
+</span>
+この例では、<code class="classname">capitals</code>テーブルの行は<em class="firstterm">親</em>の<code class="classname">cities</code>テーブルから全ての列、すなわち<code class="structfield">name</code>（都市名）、<code class="structfield">population</code>（人口）そして<code class="structfield">altitude</code>（標高）を<em class="firstterm">継承</em>します。
+<code class="structfield">name</code>列のデータ型は、可変長文字列のために<span class="productname">PostgreSQL</span>が初めから備えている<code class="type">text</code>型です。
+州都のテーブルは、これに加えて州を示す<code class="structfield">state</code>列を持ちます。
+<span class="productname">PostgreSQL</span>では、テーブルは関連付けられたテーブルがあればそれぞれから属性を継承することができます。
+   </p><p>
+<span class="original">
+    For example, the  following  query finds the  names  of  all  cities,
+    including  state capitals, that are located at an altitude
+    over 500 feet:
+</span>
+以下の問い合わせの例は、州都も含めて、標高500フィート以上に位置する全ての都市を求めるものです。
+
+</p><pre class="programlisting">
+SELECT name, altitude
+  FROM cities
+  WHERE altitude &gt; 500;
+</pre><p>
+
+<span class="original">
+    which returns:
+</span>
+これは以下を返します。
+
+</p><pre class="screen">
+   name    | altitude
+-----------+----------
+ Las Vegas |     2174
+ Mariposa  |     1953
+ Madison   |      845
+(3 rows)
+</pre><p>
+   </p><p>
+<span class="original">
+    On the other hand, the  following  query  finds
+    all  the cities that are not state capitals and
+    are situated at an altitude over 500 feet:
+</span>
+その一方、州都ではない標高500フィート以上に位置する都市を見つけ出したい時は次のような問い合わせになります。
+
+</p><pre class="programlisting">
+SELECT name, altitude
+    FROM ONLY cities
+    WHERE altitude &gt; 500;
+</pre><p>
+
+</p><pre class="screen">
+   name    | altitude
+-----------+----------
+ Las Vegas |     2174
+ Mariposa  |     1953
+(2 rows)
+</pre><p>
+   </p><p>
+<span class="original">
+    Here the &lt;literal&gt;ONLY&lt;/literal&gt; before &lt;literal&gt;cities&lt;/literal&gt;
+    indicates that the query should be run over only the
+    &lt;classname&gt;cities&lt;/classname&gt; table, and not tables below
+    &lt;classname&gt;cities&lt;/classname&gt; in the inheritance hierarchy.  Many
+    of the commands that we have already discussed &amp;mdash;
+    &lt;command&gt;SELECT&lt;/command&gt;, &lt;command&gt;UPDATE&lt;/command&gt;, and
+    &lt;command&gt;DELETE&lt;/command&gt; &amp;mdash; support this &lt;literal&gt;ONLY&lt;/literal&gt;
+    notation.
+</span>
+ここで<code class="literal">cities</code>の前に置かれた<code class="literal">ONLY</code>は、継承階層において<code class="classname">cities</code>テーブルの下層にあるテーブルではなく、<code class="classname">cities</code>テーブルのみを参照することを意味します。
+既に説明した<code class="command">SELECT</code>、<code class="command">UPDATE</code>および<code class="command">DELETE</code>など数多くのコマンドは、この<code class="literal">ONLY</code>表記をサポートしています。
+   </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+     Although inheritance is frequently useful, it has not been integrated
+     with unique constraints or foreign keys, which limits its usefulness.
+     See &lt;xref linkend="ddl-inherit"/&gt; for more detail.
+</span>
+継承は多くの場合で便利ですが、一意性制約や外部キーと統合されていないので万能ではありません。
+詳細は<a class="xref" href="ddl-inherit.html" title="5.9. 継承">5.9</a>を参照してください。
+    </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="tutorial-window.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="tutorial-advanced.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="tutorial-conclusion.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">3.5. ウィンドウ関数 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 3.7. まとめ</td></tr></table></div></body></html>

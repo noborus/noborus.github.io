@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>36.3. SQLコマンドの実行</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="ecpg-connect.html" title="36.2. データベース接続の管理" /><link rel="next" href="ecpg-variables.html" title="36.4. ホスト変数の使用" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="ecpg.html" title="第36章 ECPG - C言語による埋め込みSQL">第36章 <span class="application">ECPG</span> - C言語による埋め込み<acronym class="acronym">SQL</acronym></a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      ecpg-commands.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="ecpg-connect.html" title="36.2. データベース接続の管理">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="ecpg.html" title="第36章 ECPG - C言語による埋め込みSQL">上へ</a></td><td width="60%" align="center">36.3. SQLコマンドの実行</td><td width="20%" align="right"> <a accesskey="n" href="ecpg-variables.html" title="36.4. ホスト変数の使用">次へ</a></td></tr></table><hr /></div><div class="sect1" id="ECPG-COMMANDS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">36.3. SQLコマンドの実行</h2></div></div></div><span class="original">
+  &lt;title&gt;Running SQL Commands&lt;/title&gt;
+</span><p>
+<span class="original">
+   Any SQL command can be run from within an embedded SQL application.
+   Below are some examples of how to do that.
+</span>
+すべてのSQLコマンドは、埋め込みSQLアプリケーション内で実行できます。
+以下に例をいくつか示します。
+  </p><div class="sect2" id="ECPG-EXECUTING"><div class="titlepage"><div><div><h3 class="title">36.3.1. SQL文の実行</h3></div></div></div><span class="original">
+   &lt;title&gt;Executing SQL Statements&lt;/title&gt;
+</span><p>
+<span class="original">
+   Creating a table:
+</span>
+テーブルの作成:
+</p><pre class="programlisting">
+EXEC SQL CREATE TABLE foo (number integer, ascii char(16));
+EXEC SQL CREATE UNIQUE INDEX num1 ON foo(number);
+EXEC SQL COMMIT;
+</pre><p>
+  </p><p>
+<span class="original">
+   Inserting rows:
+</span>
+行の挿入:
+</p><pre class="programlisting">
+EXEC SQL INSERT INTO foo (number, ascii) VALUES (9999, 'doodad');
+EXEC SQL COMMIT;
+</pre><p>
+  </p><p>
+<span class="original">
+   Deleting rows:
+</span>
+行の削除:
+</p><pre class="programlisting">
+EXEC SQL DELETE FROM foo WHERE number = 9999;
+EXEC SQL COMMIT;
+</pre><p>
+  </p><p>
+<span class="original">
+   Updates:
+</span>
+行の更新:
+</p><pre class="programlisting">
+EXEC SQL UPDATE foo
+    SET ascii = 'foobar'
+    WHERE number = 9999;
+EXEC SQL COMMIT;
+</pre><p>
+  </p><p>
+<span class="original">
+   &lt;literal&gt;SELECT&lt;/literal&gt; statements that return a single result
+   row can also be executed using
+   &lt;literal&gt;EXEC SQL&lt;/literal&gt; directly.  To handle result sets with
+   multiple rows, an application has to use a cursor;
+   see &lt;xref linkend="ecpg-cursors"/&gt; below.  (As a special case, an
+   application can fetch multiple rows at once into an array host
+   variable; see &lt;xref linkend="ecpg-variables-arrays"/&gt;.)
+</span>
+   単一の行を返す<code class="literal">SELECT</code>文は、同様に <code class="literal">EXEC SQL</code> を用いて直接実行することができます。複数の行を扱うためには、アプリケーションはカーソルを使わなければなりません; <a class="xref" href="ecpg-commands.html#ECPG-CURSORS" title="36.3.2. カーソルの使用">36.3.2</a> を参照してください。
+(特殊なケースでは、アプリケーションは複数の行をホスト変数の配列に一度に読み込むことができます; <a class="xref" href="ecpg-variables.html#ECPG-VARIABLES-ARRAYS" title="36.4.4.3.1. 配列">36.4.4.3.1</a> を参照してください)
+  </p><p>
+<span class="original">
+   Single-row select:
+</span>
+   単一行の検索:
+</p><pre class="programlisting">
+EXEC SQL SELECT foo INTO :FooBar FROM table1 WHERE ascii = 'doodad';
+</pre><p>
+  </p><p>
+<span class="original">
+   Also, a configuration parameter can be retrieved with the
+   &lt;literal&gt;SHOW&lt;/literal&gt; command:
+</span>
+   同様に、設定パラメータは <code class="literal">SHOW</code> コマンドによって取得することができます:
+</p><pre class="programlisting">
+EXEC SQL SHOW search_path INTO :var;
+</pre><p>
+  </p><p>
+<span class="original">
+   The tokens of the form
+   &lt;literal&gt;:&lt;replaceable&gt;something&lt;/replaceable&gt;&lt;/literal&gt; are
+   &lt;firstterm&gt;host variables&lt;/firstterm&gt;, that is, they refer to
+   variables in the C program.  They are explained in &lt;xref
+   linkend="ecpg-variables"/&gt;.
+</span>
+<code class="literal">:<em class="replaceable"><code>something</code></em></code>という形のトークンは<em class="firstterm">ホスト変数</em>です。
+つまり、Cプログラム内の変数を参照するものです。
+これについては<a class="xref" href="ecpg-variables.html" title="36.4. ホスト変数の使用">36.4</a>で説明します。
+  </p></div><div class="sect2" id="ECPG-CURSORS"><div class="titlepage"><div><div><h3 class="title">36.3.2. カーソルの使用</h3></div></div></div><span class="original">
+   &lt;title&gt;Using Cursors&lt;/title&gt;
+</span><p>
+<span class="original">
+   To retrieve a result set holding multiple rows, an application has
+   to declare a cursor and fetch each row from the cursor.  The steps
+   to use a cursor are the following: declare a cursor, open it, fetch
+   a row from the cursor, repeat, and finally close it.
+</span>
+複数行の結果セットを受け取るためには、アプリケーションはカーソルを定義し、必要に応じてレコードを一行ずつ取り込む必要があります。カーソルを使った処理は、カーソルの宣言、カーソルのオープン、カーソルからのFETCH、カーソルのクローズという流れになります。
+  </p><p>
+<span class="original">
+   Select using cursors:
+</span>
+カーソルを用いたSELECT:
+</p><pre class="programlisting">
+EXEC SQL DECLARE foo_bar CURSOR FOR
+    SELECT number, ascii FROM foo
+    ORDER BY ascii;
+EXEC SQL OPEN foo_bar;
+EXEC SQL FETCH foo_bar INTO :FooBar, DooDad;
+...
+EXEC SQL CLOSE foo_bar;
+EXEC SQL COMMIT;
+</pre><p>
+  </p><p>
+<span class="original">
+   For more details about declaration of the cursor,
+   see &lt;xref linkend="ecpg-sql-declare"/&gt;, and
+   see &lt;xref linkend="sql-fetch"/&gt; for &lt;literal&gt;FETCH&lt;/literal&gt; command
+   details.
+</span>
+カーソルの宣言の詳細については <a class="xref" href="ecpg-sql-declare.html" title="DECLARE">DECLARE</a> を、<code class="literal">FETCH</code> コマンドの詳細については <a class="xref" href="sql-fetch.html" title="FETCH"><span class="refentrytitle">FETCH</span></a> を参照してください。
+  </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+     The ECPG &lt;command&gt;DECLARE&lt;/command&gt; command does not actually
+     cause a statement to be sent to the PostgreSQL backend.  The
+     cursor is opened in the backend (using the
+     backend's &lt;command&gt;DECLARE&lt;/command&gt; command) at the point when
+     the &lt;command&gt;OPEN&lt;/command&gt; command is executed.
+</span>
+     ECPGの <code class="command">DECLARE</code> コマンド自身は、PostgreSQLバックエンドに送られるSQL文を実行しません。<code class="command">OPEN</code> コマンドが実行された段階で、バックエンド内部で（<code class="command">DECLARE</code>コマンドで宣言された）カーソルが開かれます。
+    </p></div></div><div class="sect2" id="ECPG-TRANSACTIONS"><div class="titlepage"><div><div><h3 class="title">36.3.3. トランザクションの管理</h3></div></div></div><span class="original">
+   &lt;title&gt;Managing Transactions&lt;/title&gt;
+</span><p>
+<span class="original">
+   In the default mode, statements are committed only when
+   &lt;command&gt;EXEC SQL COMMIT&lt;/command&gt; is issued. The embedded SQL
+   interface also supports autocommit of transactions (similar to
+   &lt;application&gt;psql&lt;/application&gt;'s default behavior) via the &lt;option&gt;-t&lt;/option&gt;
+   command-line option to &lt;command&gt;ecpg&lt;/command&gt; (see &lt;xref
+   linkend="app-ecpg"/&gt;) or via the &lt;literal&gt;EXEC SQL SET AUTOCOMMIT TO
+   ON&lt;/literal&gt; statement. In autocommit mode, each command is
+   automatically committed unless it is inside an explicit transaction
+   block. This mode can be explicitly turned off using &lt;literal&gt;EXEC
+   SQL SET AUTOCOMMIT TO OFF&lt;/literal&gt;.
+</span>
+デフォルトモードでは、SQL文は<code class="command">EXEC SQL COMMIT</code>が発行されることによってのみコミットされます。
+埋め込みSQLインタフェースでも、<code class="command">ecpg</code>コマンド（以下を参照）の<code class="option">-t</code>コマンドラインオプション、あるいは <code class="literal">EXEC SQL SET AUTOCOMMIT TO ON</code>文によって（<span class="application">psql</span>のデフォルトの振舞いに似た）トランザクションの自動コミットをサポートしています。
+自動コミットモードでは、問い合わせが明示的なトランザクションブロックの内部にある場合を除き、すべての問い合わせが自動的にコミットされます。
+自動コミットモードは、<code class="literal">EXEC SQL SET AUTOCOMMIT TO OFF</code>を使用して明示的に無効にすることができます。
+  </p><p>
+<span class="original">
+    The following transaction management commands are available:
+</span>
+以下のトランザクション管理コマンドを使用することができます:
+
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">EXEC SQL COMMIT</code></span></dt><dd><p>
+<span class="original">
+        Commit an in-progress transaction.
+</span>
+        実行中のトランザクションのコミット。
+       </p></dd><dt><span class="term"><code class="literal">EXEC SQL ROLLBACK</code></span></dt><dd><p>
+<span class="original">
+        Roll back an in-progress transaction.
+</span>
+        実行中のトランザクションのロールバック。
+       </p></dd><dt><span class="term"><code class="literal">EXEC SQL PREPARE TRANSACTION </code><em class="replaceable"><code>transaction_id</code></em></span></dt><dd><p>
+<span class="original">
+        Prepare the current transaction for two-phase commit.
+</span>
+2相コミット用に現在のトランザクションをプリペアします。
+       </p></dd><dt><span class="term"><code class="literal">EXEC SQL COMMIT PREPARED </code><em class="replaceable"><code>transaction_id</code></em></span></dt><dd><p>
+<span class="original">
+        Commit a transaction that is in prepared state.
+</span>
+プリペアド状態のトランザクションをコミットします。
+       </p></dd><dt><span class="term"><code class="literal">EXEC SQL ROLLBACK PREPARED </code><em class="replaceable"><code>transaction_id</code></em></span></dt><dd><p>
+<span class="original">
+        Roll back a transaction that is in prepared state.
+</span>
+プリペアド状態のトランザクションをロールバックします。
+       </p></dd><dt><span class="term"><code class="literal">EXEC SQL SET AUTOCOMMIT TO ON</code></span></dt><dd><p>
+<span class="original">
+        Enable autocommit mode.
+</span>
+        自動コミットモードの有効化。
+       </p></dd><dt><span class="term"><code class="literal">EXEC SQL SET AUTOCOMMIT TO OFF</code></span></dt><dd><p>
+<span class="original">
+        Disable autocommit mode.  This is the default.
+</span>
+        自動コミットモードの無効化。デフォルト状態。
+       </p></dd></dl></div><p>
+   </p></div><div class="sect2" id="ECPG-PREPARED"><div class="titlepage"><div><div><h3 class="title">36.3.4. プリペアド文</h3></div></div></div><span class="original">
+   &lt;title&gt;Prepared Statements&lt;/title&gt;
+</span><p>
+<span class="original">
+    When the values to be passed to an SQL statement are not known at
+    compile time, or the same statement is going to be used many
+    times, then prepared statements can be useful.
+</span>
+SQL文に渡す値がコンパイル時に決まらない場合、または同じSQL文を何度も実行する場合、プリペアド文が便利です。
+   </p><p>
+<span class="original">
+    The statement is prepared using the
+    command &lt;literal&gt;PREPARE&lt;/literal&gt;.  For the values that are not
+    known yet, use the
+    placeholder &lt;quote&gt;&lt;literal&gt;?&lt;/literal&gt;&lt;/quote&gt;:
+</span>
+SQL文は<code class="literal">PREPARE</code>コマンドを使ってプリペアします。
+まだ決まっていない値については、プレースホルダ <span class="quote">「<span class="quote"><code class="literal">?</code></span>」</span> を使います:
+</p><pre class="programlisting">
+EXEC SQL PREPARE stmt1 FROM "SELECT oid, datname FROM pg_database WHERE oid = ?";
+</pre><p>
+   </p><p>
+<span class="original">
+    If a statement returns a single row, the application can
+    call &lt;literal&gt;EXECUTE&lt;/literal&gt; after
+    &lt;literal&gt;PREPARE&lt;/literal&gt; to execute the statement, supplying the
+    actual values for the placeholders with a &lt;literal&gt;USING&lt;/literal&gt;
+    clause:
+</span>
+SQL文が一行のみの結果を返却する場合には、アプリケーションはSQL文を<code class="literal">PREPARE</code>した後、<code class="literal">USING</code>を用いてプレースホルダに実際の値を与えて<code class="literal">EXECUTE</code>を実行することができます。
+</p><pre class="programlisting">
+EXEC SQL EXECUTE stmt1 INTO :dboid, :dbname USING 1;
+</pre><p>
+   </p><p>
+<span class="original">
+    If a statement returns multiple rows, the application can use a
+    cursor declared based on the prepared statement.  To bind input
+    parameters, the cursor must be opened with
+    a &lt;literal&gt;USING&lt;/literal&gt; clause:
+</span>
+SQL文が複数の行を返却する場合には、アプリケーションはプリペアド文の宣言に対応したカーソルを利用することができます。
+入力パラメータを設定するために、カーソルは<code class="literal">USING</code>とともに開かれなければなりません:
+</p><pre class="programlisting">
+EXEC SQL PREPARE stmt1 FROM "SELECT oid,datname FROM pg_database WHERE oid &gt; ?";
+EXEC SQL DECLARE foo_bar CURSOR FOR stmt1;
+
+<span class="original">
+/* when end of result set reached, break out of while loop */
+</span>
+/* 結果集合の最後に到達したら、whileループから抜ける */
+EXEC SQL WHENEVER NOT FOUND DO BREAK;
+
+EXEC SQL OPEN foo_bar USING 100;
+...
+while (1)
+{
+    EXEC SQL FETCH NEXT FROM foo_bar INTO :dboid, :dbname;
+    ...
+}
+EXEC SQL CLOSE foo_bar;
+</pre><p>
+   </p><p>
+<span class="original">
+    When you don't need the prepared statement anymore, you should
+    deallocate it:
+</span>
+プリペアド文をこれ以上必要としなくなったら、解放処理をしなければなりません:
+</p><pre class="programlisting">
+EXEC SQL DEALLOCATE PREPARE <em class="replaceable"><code>name</code></em>;
+</pre><p>
+   </p><p>
+<span class="original">
+    For more details about &lt;literal&gt;PREPARE&lt;/literal&gt;,
+    see &lt;xref linkend="ecpg-sql-prepare"/&gt;. Also
+    see &lt;xref linkend="ecpg-dynamic"/&gt; for more details about using
+    placeholders and input parameters.
+</span>
+    <code class="literal">PREPARE</code> についての詳細は <a class="xref" href="ecpg-sql-prepare.html" title="PREPARE">PREPARE</a> を参照してください。
+    また、プレースホルダと入力パラメータの利用についての詳細は <a class="xref" href="ecpg-dynamic.html" title="36.5. 動的SQL">36.5</a> を参照してください。
+   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ecpg-connect.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="ecpg.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="ecpg-variables.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">36.2. データベース接続の管理 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 36.4. ホスト変数の使用</td></tr></table></div></body></html>

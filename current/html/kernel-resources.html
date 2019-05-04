@@ -1,0 +1,1021 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>18.4. カーネルリソースの管理</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="server-start.html" title="18.3. データベースサーバの起動" /><link rel="next" href="server-shutdown.html" title="18.5. サーバのシャットダウン" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="runtime.html" title="第18章 サーバの準備と運用">第18章 サーバの準備と運用</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      kernel-resources.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="server-start.html" title="18.3. データベースサーバの起動">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="runtime.html" title="第18章 サーバの準備と運用">上へ</a></td><td width="60%" align="center">18.4. カーネルリソースの管理</td><td width="20%" align="right"> <a accesskey="n" href="server-shutdown.html" title="18.5. サーバのシャットダウン">次へ</a></td></tr></table><hr /></div><div class="sect1" id="KERNEL-RESOURCES"><div class="titlepage"><div><div><h2 class="title" style="clear: both">18.4. カーネルリソースの管理</h2></div></div></div><span class="original">
+  &lt;title&gt;Managing Kernel Resources&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; can sometimes exhaust various operating system
+   resource limits, especially when multiple copies of the server are running
+   on the same system, or in very large installations.  This section explains
+   the kernel resources used by &lt;productname&gt;PostgreSQL&lt;/productname&gt; and the steps you
+   can take to resolve problems related to kernel resource consumption.
+</span>
+<span class="productname">PostgreSQL</span>は、特に同一システム上で複数のサーバコピーを実行している場合や非常に大規模なインストレーションでは、オペレーティングシステムの様々なリソース制限を超えてしまうことがあります。
+本節では、<span class="productname">PostgreSQL</span>で使用されるカーネルリソース、およびカーネルリソース消費に関連した問題を解消する時に取ることができる手順について説明します。
+  </p><div class="sect2" id="SYSVIPC"><div class="titlepage"><div><div><h3 class="title">18.4.1. 共有メモリとセマフォ</h3></div></div></div><span class="original">
+   &lt;title&gt;Shared Memory and Semaphores&lt;/title&gt;
+</span><a id="id-1.6.5.6.3.2" class="indexterm"></a><a id="id-1.6.5.6.3.3" class="indexterm"></a><p>
+<span class="original">
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; requires the operating system to provide
+    inter-process communication (&lt;acronym&gt;IPC&lt;/acronym&gt;) features, specifically
+    shared memory and semaphores.  Unix-derived systems typically provide
+    &lt;quote&gt;&lt;systemitem class="osname"&gt;System V&lt;/systemitem&gt;&lt;/quote&gt; &lt;acronym&gt;IPC&lt;/acronym&gt;,
+    &lt;quote&gt;&lt;systemitem class="osname"&gt;POSIX&lt;/systemitem&gt;&lt;/quote&gt; &lt;acronym&gt;IPC&lt;/acronym&gt;, or both.
+    &lt;systemitem class="osname"&gt;Windows&lt;/systemitem&gt; has its own implementation of
+    these features and is not discussed here.
+</span>
+<span class="productname">PostgreSQL</span>はオペレーティングシステムが、プロセス間通信(<acronym class="acronym">IPC</acronym>)特に共有メモリとセマフォ機能を提供することを要求します。
+Unix（派生）システムでは、<span class="quote">「<span class="quote"><span class="systemitem">System V</span></span>」</span> <acronym class="acronym">IPC</acronym>や、<span class="quote">「<span class="quote"><span class="systemitem">POSIX</span></span>」</span> <acronym class="acronym">IPC</acronym>、またはその両方を提供します。
+<span class="systemitem">Windows</span>は、これらの機能を独自で実装しているため、ここでは説明しません。
+   </p><p>
+<span class="original">
+    The complete lack of these facilities is usually manifested by an
+    &lt;quote&gt;&lt;errorname&gt;Illegal system call&lt;/errorname&gt;&lt;/quote&gt; error upon server
+    start.  In that case there is no alternative but to reconfigure your
+    kernel.  &lt;productname&gt;PostgreSQL&lt;/productname&gt; won't work without them.
+    This situation is rare, however, among modern operating systems.
+</span>
+これらの機能の完全な欠落は、サーバ起動時の<span class="quote">「<span class="quote"><span class="errorname">Illegal system call</span></span>」</span>エラーによって判明します。
+その場合はカーネルを設定し直すしかありません。
+<span class="productname">PostgreSQL</span>はこれらの機能なしでは動きません。
+しかし最近のオペレーティングシステムではこうした状況はまれなものです。
+   </p><p>
+<span class="original">
+    Upon starting the server, &lt;productname&gt;PostgreSQL&lt;/productname&gt; normally allocates
+    a very small amount of System V shared memory, as well as a much larger
+    amount of POSIX (&lt;function&gt;mmap&lt;/function&gt;) shared memory.
+    In addition a significant number of semaphores, which can be either
+    System V or POSIX style, are created at server startup.  Currently,
+    POSIX semaphores are used on Linux and FreeBSD systems while other
+    platforms use System V semaphores.
+</span>
+サーバの起動時、<span class="productname">PostgreSQL</span>は通常、非常に少量のSystem V共有メモリと、もっと大量のPOSIX (<code class="function">mmap</code>)共有メモリを持ちます。
+さらに、System V又はPOSIXスタイルのどちらかのセマフォがサーバの起動時に作成されます。
+現在、LinuxとFreeBSDシステムではPOSIXセマフォが使用され、それ以外のプラットフォームではSystem Vセマフォが使用されます。
+   </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+     Prior to &lt;productname&gt;PostgreSQL&lt;/productname&gt; 9.3, only System V shared memory
+     was used, so the amount of System V shared memory required to start the
+     server was much larger.  If you are running an older version of the
+     server, please consult the documentation for your server version.
+</span>
+<span class="productname">PostgreSQL</span> 9.3より前では、System V共有メモリだけが使用されていたので、サーバを起動させるために必要なSystem V共有メモリの量は非常に大きなものでした。
+より古いバージョンのサーバで実行しているのであれば、該当するバージョンのサーバの文書を参照してください。
+    </p></div><p>
+<span class="original">
+    System V &lt;acronym&gt;IPC&lt;/acronym&gt; features are typically constrained by
+    system-wide allocation limits.
+    When &lt;productname&gt;PostgreSQL&lt;/productname&gt; exceeds one of these limits,
+    the server will refuse to start and
+    should leave an instructive error message describing the problem
+    and what to do about it. (See also &lt;xref
+    linkend="server-start-failures"/&gt;.) The relevant kernel
+    parameters are named consistently across different systems; &lt;xref
+    linkend="sysvipc-parameters"/&gt; gives an overview. The methods to set
+    them, however, vary. Suggestions for some platforms are given below.
+</span>
+System V <acronym class="acronym">IPC</acronym>機能は、通常システム全体の割り当て制限に制約されます。
+<span class="productname">PostgreSQL</span>がこれらの制限のいずれかを超えると、サーバは起動を拒否し、問題および何をすべきかを説明するエラーメッセージを残します。
+（<a class="xref" href="server-start.html#SERVER-START-FAILURES" title="18.3.1. サーバ起動の失敗">18.3.1</a> も参照してください。）
+関係するカーネルパラメータは別々のシステム上でも統一して名付けられています。
+<a class="xref" href="kernel-resources.html#SYSVIPC-PARAMETERS" title="表18.1 System V IPCパラメータ">表 18.1</a>で概略がわかります。
+しかしこれらを設定するための方法は異なります。
+以下に、いくつかのプラットフォームへの提案を挙げます。
+   </p><div class="table" id="SYSVIPC-PARAMETERS"><p class="title"><strong>表18.1 <span class="systemitem">System V</span> <acronym class="acronym">IPC</acronym>パラメータ</strong></p><div class="table-contents"><span class="original">
+    &lt;title&gt;&lt;systemitem class="osname"&gt;System V&lt;/systemitem&gt; &lt;acronym&gt;IPC&lt;/acronym&gt; Parameters&lt;/title&gt;
+</span><table class="table" summary="System V IPCパラメータ" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>名前</th><th>説明</th><th>一つの<span class="productname">PostgreSQL</span>インスタンスに必要な値</th></tr></thead><tbody><tr><td><code class="varname">SHMMAX</code></td><td>共有メモリセグメントの最大サイズ（バイト）</td><td>最小でも1キロバイト（ただしデフォルトはもっと多くなっています）</td></tr><tr><td><code class="varname">SHMMIN</code></td><td>共有メモリセグメントの最小サイズ（バイト）</td><td>1</td></tr><tr><td><code class="varname">SHMALL</code></td><td>使用可能な共有メモリの総量（バイトまたはページ）</td><td>バイト指定の場合は<code class="varname">SHMMAX</code>と同じ。ページ指定の場合は<code class="literal">ceil(SHMMAX/PAGE_SIZE)</code>。 + 他のアプリケーション用の空間</td></tr><tr><td><code class="varname">SHMSEG</code></td><td>プロセスごとの共有メモリセグメントの最大数</td><td>必要なのは1セグメントのみ（ただしデフォルトはもっと多くなっています）</td></tr><tr><td><code class="varname">SHMMNI</code></td><td>システム全体の共有メモリセグメントの最大数</td><td><code class="varname">SHMSEG</code>と同様 + 他のアプリケーション用の空間</td></tr><tr><td><code class="varname">SEMMNI</code></td><td>セマフォ識別子の最大数（つまりセット）</td><td>最低<code class="literal">ceil((max_connections + autovacuum_max_workers + max_worker_processes + 5) / 16)</code> + 他のアプリケーション用の空間</td></tr><tr><td><code class="varname">SEMMNS</code></td><td>システム全体のセマフォの最大数</td><td><code class="literal">ceil((max_connections + autovacuum_max_workers + max_worker_processes + 5) / 16) * 17</code> + 他のアプリケーション用の空間</td></tr><tr><td><code class="varname">SEMMSL</code></td><td>セットごとのセマフォの最大数</td><td>最低17</td></tr><tr><td><code class="varname">SEMMAP</code></td><td>セマフォマップの中の項目の数</td><td>本文を参照</td></tr><tr><td><code class="varname">SEMVMX</code></td><td>セマフォの最大値</td><td>最低1000（デフォルトはしばしば32767ですが、必要がなければ変更しないでください）</td></tr></tbody></table></div></div><br class="table-break" /><p>
+<span class="original">
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; requires a few bytes of System V shared memory
+    (typically 48 bytes, on 64-bit platforms) for each copy of the server.
+    On most modern operating systems, this amount can easily be allocated.
+    However, if you are running many copies of the server, or if other
+    applications are also using System V shared memory, it may be necessary to
+    increase &lt;varname&gt;SHMALL&lt;/varname&gt;, which is the total amount of System V shared
+    memory system-wide.  Note that &lt;varname&gt;SHMALL&lt;/varname&gt; is measured in pages
+    rather than bytes on many systems.
+</span>
+<span class="productname">PostgreSQL</span>は、サーバのコピー毎にSystem V共有メモリの数バイト（64ビットプラットフォームでは通常48バイト）を必要とします。
+最近のほとんどのオペレーティングシステムでは、このくらいの量は簡単に割り当てられます。
+しかし複数のサーバのコピーを実行している場合やSystem V共有メモリを使用する他のアプリケーションを実行している場合は、システム全体のSystem V共有メモリである<code class="varname">SHMALL</code>を増加させる必要があるかもしれません。
+多くのシステムでは<code class="varname">SHMALL</code>をバイト単位ではなくページ単位で測ることに注意してください。
+   </p><p>
+<span class="original">
+    Less likely to cause problems is the minimum size for shared
+    memory segments (&lt;varname&gt;SHMMIN&lt;/varname&gt;), which should be at most
+    approximately 32 bytes for &lt;productname&gt;PostgreSQL&lt;/productname&gt; (it is
+    usually just 1). The maximum number of segments system-wide
+    (&lt;varname&gt;SHMMNI&lt;/varname&gt;) or per-process (&lt;varname&gt;SHMSEG&lt;/varname&gt;) are unlikely
+    to cause a problem unless your system has them set to zero.
+</span>
+問題が少ないのは共有メモリセグメントの最小サイズ（<code class="varname">SHMMIN</code>）で、<span class="productname">PostgreSQL</span>では最大でもおよそ32バイトのはずです（通常では1です）。
+システム全体のセグメントの最大数（<code class="varname">SHMMNI</code>）もしくはプロセスごとのセグメントの最大数（<code class="varname">SHMSEG</code>）に関して、使用しているシステムで0に設定されていない限り、問題が起きることはほぼありません。
+   </p><p>
+<span class="original">
+    When using System V semaphores,
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; uses one semaphore per allowed connection
+    (&lt;xref linkend="guc-max-connections"/&gt;), allowed autovacuum worker process
+    (&lt;xref linkend="guc-autovacuum-max-workers"/&gt;) and allowed background
+    process (&lt;xref linkend="guc-max-worker-processes"/&gt;), in sets of 16.
+    Each such set will
+    also contain a 17th semaphore which contains a &lt;quote&gt;magic
+    number&lt;/quote&gt;, to detect collision with semaphore sets used by
+    other applications. The maximum number of semaphores in the system
+    is set by &lt;varname&gt;SEMMNS&lt;/varname&gt;, which consequently must be at least
+    as high as &lt;varname&gt;max_connections&lt;/varname&gt; plus
+    &lt;varname&gt;autovacuum_max_workers&lt;/varname&gt; plus &lt;varname&gt;max_worker_processes&lt;/varname&gt;,
+    plus one extra for each 16
+    allowed connections plus workers (see the formula in &lt;xref
+    linkend="sysvipc-parameters"/&gt;).  The parameter &lt;varname&gt;SEMMNI&lt;/varname&gt;
+    determines the limit on the number of semaphore sets that can
+    exist on the system at one time.  Hence this parameter must be at
+    least &lt;literal&gt;ceil((max_connections + autovacuum_max_workers + max_worker_processes + 5) / 16)&lt;/literal&gt;.
+    Lowering the number
+    of allowed connections is a temporary workaround for failures,
+    which are usually confusingly worded &lt;quote&gt;No space
+    left on device&lt;/quote&gt;, from the function &lt;function&gt;semget&lt;/function&gt;.
+</span>
+System V セマフォを使用している場合、<span class="productname">PostgreSQL</span>は、許可した接続（<a class="xref" href="runtime-config-connection.html#GUC-MAX-CONNECTIONS">max_connections</a>）、許可したオートバキュームワーカプロセス（<a class="xref" href="runtime-config-autovacuum.html#GUC-AUTOVACUUM-MAX-WORKERS">autovacuum_max_workers</a>）、許可したバックエンドプロセス(<a class="xref" href="runtime-config-resource.html#GUC-MAX-WORKER-PROCESSES">max_worker_processes</a>)ごとに1つのセマフォを使用し、16個のセマフォをセットとして扱います。
+それぞれそのようなセットは、他のアプリケーションに使われているセマフォセットとの衝突を検出するための<span class="quote">「<span class="quote">マジックナンバー</span>」</span>が含まれている17個目のセマフォを持っています。
+システム内のセマフォの最大数は<code class="varname">SEMMNS</code>によって設定され、その結果としてその値は少なくとも<code class="varname">max_connections</code>＋<code class="varname">autovacuum_max_workers</code>＋<code class="varname">max_worker_processes</code>と同じ、ただし、許可された接続とワーカ16個ごとに余分な1個を加えた値以上はなければいけません（<a class="xref" href="kernel-resources.html#SYSVIPC-PARAMETERS" title="表18.1 System V IPCパラメータ">表 18.1</a>の公式を参照してください）。
+<code class="varname">SEMMNI</code>パラメータはシステム上に同時に存在できるセマフォ集合の数の上限を決定します。
+ですから、このパラメータは少なくとも<code class="literal">ceil((max_connections + autovacuum_max_workers + max_worker_processes + 5) / 16)</code>以上はなくてはいけません。
+一時的な失敗の回避策としては許可される接続の数を下げることができますが、<span class="quote">「<span class="quote">No space left on device</span>」</span>という紛らわしい言葉が<code class="function">semget</code>関数から表示されます。
+   </p><p>
+<span class="original">
+    In some cases it might also be necessary to increase
+    &lt;varname&gt;SEMMAP&lt;/varname&gt; to be at least on the order of
+    &lt;varname&gt;SEMMNS&lt;/varname&gt;. This parameter defines the size of the semaphore
+    resource map, in which each contiguous block of available semaphores
+    needs an entry. When a semaphore set is freed it is either added to
+    an existing entry that is adjacent to the freed block or it is
+    registered under a new map entry. If the map is full, the freed
+    semaphores get lost (until reboot). Fragmentation of the semaphore
+    space could over time lead to fewer available semaphores than there
+    should be.
+</span>
+場合によっては<code class="varname">SEMMAP</code>を少なくとも<code class="varname">SEMMNS</code>と同程度に増やすことが必要になる場合があるかもしれません。
+このパラメータはセマフォリソースマップのサイズを定義し、その中では有効なセマフォのそれぞれの隣接したブロックの項目が必要です。
+セマフォ集合が解放されると、解放されたブロックに隣接する既に存在する項目に追加されるか、もしくは新しいマップの項目の下に登録されます。
+もしマップが一杯だった場合、解放されたセマフォは（再起動するまで）失われます。
+セマフォ空間の断片化により時間が経つごとに、有効なセマフォがあるべき量よりも少なくなる可能性があります。
+   </p><p>
+<span class="original">
+    Various other settings related to &lt;quote&gt;semaphore undo&lt;/quote&gt;, such as
+    &lt;varname&gt;SEMMNU&lt;/varname&gt; and &lt;varname&gt;SEMUME&lt;/varname&gt;, do not affect
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt;.
+</span>
+<code class="varname">SEMMNU</code>と<code class="varname">SEMUME</code>のような、その他の様々な<span class="quote">「<span class="quote">semaphore undo</span>」</span>に関する設定は<span class="productname">PostgreSQL</span>には影響を与えません。
+   </p><p>
+<span class="original">
+    When using POSIX semaphores, the number of semaphores needed is the
+    same as for System V, that is one semaphore per allowed connection
+    (&lt;xref linkend="guc-max-connections"/&gt;), allowed autovacuum worker process
+    (&lt;xref linkend="guc-autovacuum-max-workers"/&gt;) and allowed background
+    process (&lt;xref linkend="guc-max-worker-processes"/&gt;).
+    On the platforms where this option is preferred, there is no specific
+    kernel limit on the number of POSIX semaphores.
+</span>
+POSIXセマフォを使用している場合、System Vと同じ数のセマフォを必要とします。
+つまり、許可した接続（<a class="xref" href="runtime-config-connection.html#GUC-MAX-CONNECTIONS">max_connections</a>）、許可したオートバキュームワーカプロセス（<a class="xref" href="runtime-config-autovacuum.html#GUC-AUTOVACUUM-MAX-WORKERS">autovacuum_max_workers</a>）、許可したバックエンドプロセス(<a class="xref" href="runtime-config-resource.html#GUC-MAX-WORKER-PROCESSES">max_worker_processes</a>)ごとに1つのセマフォを使用します。
+このオプションが優先されるプラットフォームでは、POSIXセマフォの数に特定のカーネル制限はありません。
+   </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><span class="systemitem">AIX</span>
+<span class="original">
+      &lt;indexterm&gt;&lt;primary&gt;AIX&lt;/primary&gt;&lt;secondary&gt;IPC configuration&lt;/secondary&gt;&lt;/indexterm&gt;
+</span>
+      <a id="id-1.6.5.6.3.16.1.1.2" class="indexterm"></a>
+      </span></dt><dd><p>
+<span class="original">
+        At least as of version 5.1, it should not be necessary to do
+        any special configuration for such parameters as
+        &lt;varname&gt;SHMMAX&lt;/varname&gt;, as it appears this is configured to
+        allow all memory to be used as shared memory.  That is the
+        sort of configuration commonly used for other databases such
+        as &lt;application&gt;DB/2&lt;/application&gt;.&lt;/para&gt;
+</span>
+少なくともバージョン5.1では、すべてのメモリが共有メモリとして使用できるように設定されているようにみえますので、<code class="varname">SHMMAX</code>などのパラメータに対して特別な設定は必要ありません。
+これは<span class="application">DB/2</span>などの他のデータベースでも使用される、一般的な設定方法です。
+
+       </p><span class="original">
+       &lt;para&gt; It might, however, be necessary to modify the global
+       &lt;command&gt;ulimit&lt;/command&gt; information in
+       &lt;filename&gt;/etc/security/limits&lt;/filename&gt;, as the default hard
+       limits for file sizes (&lt;varname&gt;fsize&lt;/varname&gt;) and numbers of
+       files (&lt;varname&gt;nofiles&lt;/varname&gt;) might be too low.
+</span><p>
+しかし、<code class="filename">/etc/security/limits</code>内の大域的な<code class="command">ulimit</code>情報は変更しなければならないかもしれません。
+デフォルトのファイルサイズ（<code class="varname">fsize</code>）とファイル数（<code class="varname">nofiles</code>）用のハードリミットは低過ぎるかもしれないためです。
+       </p></dd><dt><span class="term"><span class="systemitem">FreeBSD</span>
+<span class="original">
+      &lt;indexterm&gt;&lt;primary&gt;FreeBSD&lt;/primary&gt;&lt;secondary&gt;IPC configuration&lt;/secondary&gt;&lt;/indexterm&gt;
+</span>
+      <a id="id-1.6.5.6.3.16.2.1.2" class="indexterm"></a>
+      </span></dt><dd><p>
+<span class="original">
+        The default settings can be changed using
+        the &lt;command&gt;sysctl&lt;/command&gt; or
+        &lt;command&gt;loader&lt;/command&gt; interfaces.  The following
+        parameters can be set using &lt;command&gt;sysctl&lt;/command&gt;:
+</span>
+デフォルトの設定は<code class="command">sysctl</code>または<code class="command">loader</code>インタフェースを使用して変更を行うことができます。
+以下では<code class="command">sysctl</code>を使用してパラメータを変更しています。
+</p><pre class="screen">
+<code class="prompt">#</code> <strong class="userinput"><code>sysctl kern.ipc.shmall=32768</code></strong>
+<code class="prompt">#</code> <strong class="userinput"><code>sysctl kern.ipc.shmmax=134217728</code></strong>
+</pre><p>
+<span class="original">
+        To make these settings persist over reboots, modify
+        &lt;filename&gt;/etc/sysctl.conf&lt;/filename&gt;.
+</span>
+これらの設定を再起動しても永続化するには、<code class="filename">/etc/sysctl.conf</code>を変更します。
+       </p><p>
+<span class="original">
+        These semaphore-related settings are read-only as far as
+        &lt;command&gt;sysctl&lt;/command&gt; is concerned, but can be set in
+        &lt;filename&gt;/boot/loader.conf&lt;/filename&gt;:
+</span>
+セマフォ関連の設定は<code class="command">sysctl</code>では読み取りのみとみなされていますが、<code class="filename">/boot/loader.conf</code>内で設定することができます。
+</p><pre class="programlisting">
+kern.ipc.semmni=256
+kern.ipc.semmns=512
+kern.ipc.semmnu=256
+</pre><p>
+<span class="original">
+        After modifying these values a reboot is required for the new
+        settings to take effect.
+        (Note: FreeBSD does not use &lt;varname&gt;SEMMAP&lt;/varname&gt;.  Older versions
+        would accept but ignore a setting for &lt;literal&gt;kern.ipc.semmap&lt;/literal&gt;;
+        newer versions reject it altogether.)
+</span>
+これらの値を変更した後、新しい設定を有効にするためには再起動が必要です。
+(注意: FreeBSD は<code class="varname">SEMMAP</code>を使用しません。古いバージョンは<code class="literal">kern.ipc.semmap</code>の設定を受け入れますが無視します; 新しいバージョンでは拒否します。)
+       </p><p>
+<span class="original">
+        You might also want to configure your kernel to lock shared
+        memory into RAM and prevent it from being paged out to swap.
+        This can be accomplished using the &lt;command&gt;sysctl&lt;/command&gt;
+        setting &lt;literal&gt;kern.ipc.shm_use_phys&lt;/literal&gt;.
+</span>
+また、共有メモリをRAM上に固定して、スワップによってページアウトされるのを避けるために、カーネルを設定したいと考えるかもしれません。
+これは<code class="command">sysctl</code>を使用して<code class="literal">kern.ipc.shm_use_phys</code>を設定することで実現できます。
+       </p><p>
+<span class="original">
+        If running in FreeBSD jails by enabling &lt;application&gt;sysctl&lt;/application&gt;'s
+        &lt;literal&gt;security.jail.sysvipc_allowed&lt;/literal&gt;, &lt;application&gt;postmaster&lt;/application&gt;s
+        running in different jails should be run by different operating system
+        users.  This improves security because it prevents non-root users
+        from interfering with shared memory or semaphores in different jails,
+        and it allows the PostgreSQL IPC cleanup code to function properly.
+        (In FreeBSD 6.0 and later the IPC cleanup code does not properly detect
+        processes in other jails, preventing the running of postmasters on the
+        same port in different jails.)
+</span>
+<span class="application">sysctl</span>の<code class="literal">security.jail.sysvipc_allowed</code>を有効にしてFreeBSD jailを実行している場合、異なるjailで実行する<span class="application">postmaster</span>を別のオペレーティングシステムユーザで実行しなければなりません。
+これは、非特権ユーザが別のjailの共有メモリやセマフォに干渉することを防止できるため、セキュリティが向上します。
+また、これによりPostgreSQLのIPCを整理するコードを適切に動作させることができます。
+（FreeBSD 6.0以降では、IPC整理コードは他のjailにおけるプロセスを適切に検出せず、異なるjailで同一ポートでpostmasterを実行させることができません。）
+       </p><p>
+<span class="original">
+        &lt;systemitem class="osname"&gt;FreeBSD&lt;/systemitem&gt; versions before 4.0 work like
+        &lt;systemitem class="osname"&gt;OpenBSD&lt;/systemitem&gt; (see below).
+</span>
+<span class="systemitem">FreeBSD</span>バージョン4.0以前では、（後述の）<span class="systemitem">OpenBSD</span>と同様に動作します。
+       </p></dd><dt><span class="term"><span class="systemitem">NetBSD</span>
+<span class="original">
+      &lt;indexterm&gt;&lt;primary&gt;NetBSD&lt;/primary&gt;&lt;secondary&gt;IPC configuration&lt;/secondary&gt;&lt;/indexterm&gt;
+</span>
+      <a id="id-1.6.5.6.3.16.3.1.2" class="indexterm"></a>
+      </span></dt><dd><p>
+<span class="original">
+        In &lt;systemitem class="osname"&gt;NetBSD&lt;/systemitem&gt; 5.0 and later,
+        IPC parameters can be adjusted using &lt;command&gt;sysctl&lt;/command&gt;,
+        for example:
+</span>
+<span class="systemitem">NetBSD</span> 5.0以降では、以下の例のようにIPCパラメータを<code class="command">sysctl</code>を用いて調整することができます。
+</p><pre class="screen">
+<code class="prompt">$</code> <strong class="userinput"><code>sysctl -w kern.ipc.shmmax=16777216</code></strong>
+</pre><p>
+<span class="original">
+        To have these settings persist over reboots, modify
+        &lt;filename&gt;/etc/sysctl.conf&lt;/filename&gt;.
+</span>
+この設定を再起動しても永続化させるためには<code class="filename">/etc/sysctl.conf</code>を編集してください。
+       </p><p>
+<span class="original">
+        You might also want to configure your kernel to lock shared
+        memory into RAM and prevent it from being paged out to swap.
+        This can be accomplished using the &lt;command&gt;sysctl&lt;/command&gt;
+        setting &lt;literal&gt;kern.ipc.shm_use_phys&lt;/literal&gt;.
+</span>
+また、共有メモリをRAM上に固定して、スワップによってページアウトされるのを避けるために、カーネルを設定したいと考えるかもしれません。
+これは<code class="command">sysctl</code>を使用して<code class="literal">kern.ipc.shm_use_phys</code>を設定することで実現できます。
+       </p><p>
+<span class="original">
+        &lt;systemitem class="osname"&gt;NetBSD&lt;/systemitem&gt; versions before 5.0 work like
+        &lt;systemitem class="osname"&gt;OpenBSD&lt;/systemitem&gt; (see below), except that
+        parameters should be set with the keyword &lt;literal&gt;options&lt;/literal&gt; not
+        &lt;literal&gt;option&lt;/literal&gt;.
+</span>
+5.0より前のバージョンの<span class="systemitem">NetBSD</span>では、（後述の）<span class="systemitem">OpenBSD</span>のように動作します。
+ただし、パラメータは<code class="literal">option</code>ではなく<code class="literal">options</code>キーワードを付けて設定する必要があります。
+       </p></dd><dt><span class="term"><span class="systemitem">OpenBSD</span>
+<span class="original">
+      &lt;indexterm&gt;&lt;primary&gt;OpenBSD&lt;/primary&gt;&lt;secondary&gt;IPC configuration&lt;/secondary&gt;&lt;/indexterm&gt;
+</span>
+      <a id="id-1.6.5.6.3.16.4.1.2" class="indexterm"></a>
+      </span></dt><dd><p>
+<span class="original">
+        The options &lt;varname&gt;SYSVSHM&lt;/varname&gt; and &lt;varname&gt;SYSVSEM&lt;/varname&gt; need
+        to be enabled when the kernel is compiled. (They are by
+        default.) The maximum size of shared memory is determined by
+        the option &lt;varname&gt;SHMMAXPGS&lt;/varname&gt; (in pages). The following
+        shows an example of how to set the various parameters:
+</span>
+<code class="varname">SYSVSHM</code>オプションと<code class="varname">SYSVSEM</code>オプションはカーネルのコンパイル時に有効にする必要があります（デフォルトでは有効になっています）。
+共有メモリの最大サイズは<code class="varname">SHMMAXPGS</code>オプション（ページ数）で決定されます。
+以下に様々なパラメータの設定方法の例を示します。
+</p><pre class="programlisting">
+option        SYSVSHM
+option        SHMMAXPGS=4096
+option        SHMSEG=256
+
+option        SYSVSEM
+option        SEMMNI=256
+option        SEMMNS=512
+option        SEMMNU=256
+</pre><p>
+       </p></dd><dt><span class="term"><span class="systemitem">HP-UX</span>
+<span class="original">
+      &lt;indexterm&gt;&lt;primary&gt;HP-UX&lt;/primary&gt;&lt;secondary&gt;IPC configuration&lt;/secondary&gt;&lt;/indexterm&gt;
+</span>
+      <a id="id-1.6.5.6.3.16.5.1.2" class="indexterm"></a>
+      </span></dt><dd><p>
+<span class="original">
+        The default settings tend to suffice for normal installations.
+        On &lt;productname&gt;HP-UX&lt;/productname&gt; 10, the factory default for
+        &lt;varname&gt;SEMMNS&lt;/varname&gt; is 128, which might be too low for larger
+        database sites.
+</span>
+デフォルトの設定は通常のインストールではほぼ十分です。
+<span class="productname">HP-UX</span> 10では<code class="varname">SEMMNS</code>の出荷時のデフォルトは128ですが、これは大規模なデータベースサイトには低過ぎるかもしれません。
+       </p><p>
+<span class="original">
+        &lt;acronym&gt;IPC&lt;/acronym&gt; parameters can be set in the &lt;application&gt;System
+        Administration Manager&lt;/application&gt; (&lt;acronym&gt;SAM&lt;/acronym&gt;) under
+        &lt;menuchoice&gt;&lt;guimenu&gt;Kernel
+        Configuration&lt;/guimenu&gt;&lt;guimenuitem&gt;Configurable Parameters&lt;/guimenuitem&gt;&lt;/menuchoice&gt;. Choose
+        &lt;guibutton&gt;Create A New Kernel&lt;/guibutton&gt; when you're done.
+</span>
+<acronym class="acronym">IPC</acronym>パラメータは<span class="application">システム管理マネージャ</span>（<acronym class="acronym">SAM</acronym>）から<span class="guimenu">Kernel Configuration</span> → <span class="guimenuitem">Configurable Parameters</span>の下で、設定することができます。
+終わったら<span class="guibutton">Create A New Kernel</span>を選択してください。
+       </p></dd><dt><span class="term"><span class="systemitem">Linux</span>
+<span class="original">
+      &lt;indexterm&gt;&lt;primary&gt;Linux&lt;/primary&gt;&lt;secondary&gt;IPC configuration&lt;/secondary&gt;&lt;/indexterm&gt;
+</span>
+      <a id="id-1.6.5.6.3.16.6.1.2" class="indexterm"></a>
+      </span></dt><dd><p>
+<span class="original">
+        The default maximum segment size is 32 MB, and the
+        default maximum total size is 2097152
+        pages.  A page is almost always 4096 bytes except in unusual
+        kernel configurations with &lt;quote&gt;huge pages&lt;/quote&gt;
+        (use &lt;literal&gt;getconf PAGE_SIZE&lt;/literal&gt; to verify).
+</span>
+デフォルトの最大セグメントサイズは32メガバイト、デフォルトの最大総サイズは2097152ページです。
+<span class="quote">「<span class="quote">huge pages</span>」</span>を持つ通常ではないカーネル設定を除き、1ページはほとんど常に4096バイトです。
+(検証には<code class="literal">getconf PAGE_SIZE</code>を使用してください。)
+       </p><p>
+<span class="original">
+        The shared memory size settings can be changed via the
+        &lt;command&gt;sysctl&lt;/command&gt; interface.  For example, to allow 16 GB:
+</span>
+共有メモリサイズの設定は<code class="command">sysctl</code>インタフェースを使用して変更可能です。
+例えば16ギガバイトまで許すには以下のようにします。
+</p><pre class="screen">
+<code class="prompt">$</code> <strong class="userinput"><code>sysctl -w kernel.shmmax=17179869184</code></strong>
+<code class="prompt">$</code> <strong class="userinput"><code>sysctl -w kernel.shmall=4194304</code></strong>
+</pre><p>
+<span class="original">
+        In addition these settings can be preserved between reboots in
+        the file &lt;filename&gt;/etc/sysctl.conf&lt;/filename&gt;.  Doing that is
+        highly recommended.
+</span>
+更にこれらの設定を再起動時に保持できるように<code class="filename">/etc/sysctl.conf</code>に保存することができます。
+こうすることを大いに勧めます。
+       </p><p>
+<span class="original">
+        Ancient distributions might not have the &lt;command&gt;sysctl&lt;/command&gt; program,
+        but equivalent changes can be made by manipulating the
+        &lt;filename&gt;/proc&lt;/filename&gt; file system:
+</span>
+古めのディストリビューションでは<code class="command">sysctl</code>プログラムが存在しない可能性があります。
+この場合、<code class="filename">/proc</code>ファイルシステムに対する操作で同等の変更を行うことができます。
+</p><pre class="screen">
+<code class="prompt">$</code> <strong class="userinput"><code>echo 17179869184 &gt;/proc/sys/kernel/shmmax</code></strong>
+<code class="prompt">$</code> <strong class="userinput"><code>echo 4194304 &gt;/proc/sys/kernel/shmall</code></strong>
+</pre><p>
+       </p><p>
+<span class="original">
+        The remaining defaults are quite generously sized, and usually
+        do not require changes.
+</span>
+他のデフォルトはかなり豊富なサイズですので、通常は変更する必要はありません。
+       </p></dd><dt><span class="term"><span class="systemitem">macOS</span>
+<span class="original">
+      &lt;indexterm&gt;&lt;primary&gt;macOS&lt;/primary&gt;&lt;secondary&gt;IPC configuration&lt;/secondary&gt;&lt;/indexterm&gt;
+</span>
+      <a id="id-1.6.5.6.3.16.7.1.2" class="indexterm"></a>
+      </span></dt><dd><p>
+<span class="original">
+        The recommended method for configuring shared memory in macOS
+        is to create a file named &lt;filename&gt;/etc/sysctl.conf&lt;/filename&gt;,
+        containing variable assignments such as:
+</span>
+macOSにおける共有メモリの推奨設定方法は、以下のような変数代入文からなる<code class="filename">/etc/sysctl.conf</code>という名称のファイルを作成することです。
+</p><pre class="programlisting">
+kern.sysv.shmmax=4194304
+kern.sysv.shmmin=1
+kern.sysv.shmmni=32
+kern.sysv.shmseg=8
+kern.sysv.shmall=1024
+</pre><p>
+<span class="original">
+        Note that in some macOS versions,
+        &lt;emphasis&gt;all five&lt;/emphasis&gt; shared-memory parameters must be set in
+        &lt;filename&gt;/etc/sysctl.conf&lt;/filename&gt;, else the values will be ignored.
+</span>
+一部のバージョンのmacOSでは<code class="filename">/etc/sysctl.conf</code>内に共有メモリパラメータ<span class="emphasis"><em>5つすべて</em></span>を設定しなければならないという点に注意してください。
+さもなくば値が無視されます。
+       </p><p>
+<span class="original">
+        Beware that recent releases of macOS ignore attempts to set
+        &lt;varname&gt;SHMMAX&lt;/varname&gt; to a value that isn't an exact multiple of 4096.
+</span>
+最近のリリースのmacOSは、<code class="varname">SHMMAX</code>を4096の倍数以外に設定しようとすると無視しますので、注意してください。
+       </p><p>
+<span class="original">
+        &lt;varname&gt;SHMALL&lt;/varname&gt; is measured in 4 kB pages on this platform.
+</span>
+このプラットフォームでは<code class="varname">SHMALL</code>は4キロバイトページ単位です。
+       </p><p>
+<span class="original">
+        In older macOS versions, you will need to reboot to have changes in the
+        shared memory parameters take effect.  As of 10.5 it is possible to
+        change all but &lt;varname&gt;SHMMNI&lt;/varname&gt; on the fly, using
+        &lt;application&gt;sysctl&lt;/application&gt;.  But it's still best to set up your preferred
+        values via &lt;filename&gt;/etc/sysctl.conf&lt;/filename&gt;, so that the values will be
+        kept across reboots.
+</span>
+古めのバージョンのmacOSでは、共有メモリパラメータの変更を有効にするために再起動が必要になります。
+10.5から<code class="varname">SHMMNI</code>以外の変更は、<span class="application">sysctl</span>を用いることにより、その場で行うことができます。
+しかしいずれにせよ<code class="filename">/etc/sysctl.conf</code>経由で望む値に設定することが最善です。
+再起動を行っても値が保持されるからです。
+       </p><p>
+<span class="original">
+        The file &lt;filename&gt;/etc/sysctl.conf&lt;/filename&gt; is only honored in macOS
+        10.3.9 and later.  If you are running a previous 10.3.x release,
+        you must edit the file &lt;filename&gt;/etc/rc&lt;/filename&gt;
+        and change the values in the following commands:
+</span>
+<code class="filename">/etc/sysctl.conf</code>はmacOS 10.3.9以降でのみ使用されます。
+もしこれより前の10.3.xリリースを使用しているのであれば、<code class="filename">/etc/rc</code>ファイルを編集し、以下のコマンドで値を変更しなければなりません。
+</p><pre class="programlisting">
+sysctl -w kern.sysv.shmmax
+sysctl -w kern.sysv.shmmin
+sysctl -w kern.sysv.shmmni
+sysctl -w kern.sysv.shmseg
+sysctl -w kern.sysv.shmall
+</pre><p>
+<span class="original">
+        Note that
+        &lt;filename&gt;/etc/rc&lt;/filename&gt; is usually overwritten by macOS system updates,
+        so you should expect to have to redo these edits after each update.
+</span>
+通常<code class="filename">/etc/rc</code>はmacOSのアップデートで上書きされることに注意してください。
+ですので、アップデートの度に編集し直す必要があるものと考えなければなりません。
+       </p><p>
+<span class="original">
+        In macOS 10.2 and earlier, instead edit these commands in the file
+        &lt;filename&gt;/System/Library/StartupItems/SystemTuning/SystemTuning&lt;/filename&gt;.
+</span>
+macOS 10.2以前では、代わりに<code class="filename">/System/Library/StartupItems/SystemTuning/SystemTuning</code>ファイル内にあるこれらのコマンドを編集してください。
+       </p></dd><dt><span class="term"><span class="systemitem">Solaris</span> 2.6から2.9 (Solaris 6からSolaris 9)
+      <a id="id-1.6.5.6.3.16.8.1.2" class="indexterm"></a>
+      </span></dt><dd><p>
+<span class="original">
+        The relevant settings can be changed in
+        &lt;filename&gt;/etc/system&lt;/filename&gt;, for example:
+</span>
+必要な設定は<code class="filename">/etc/system</code>で変えることができ、例えば以下のようになります。
+</p><pre class="programlisting">
+set shmsys:shminfo_shmmax=0x2000000
+set shmsys:shminfo_shmmin=1
+set shmsys:shminfo_shmmni=256
+set shmsys:shminfo_shmseg=256
+
+set semsys:seminfo_semmap=256
+set semsys:seminfo_semmni=512
+set semsys:seminfo_semmns=512
+set semsys:seminfo_semmsl=32
+</pre><p>
+<span class="original">
+        You need to reboot for the changes to take effect.  See also
+        &lt;ulink url="http://sunsite.uakom.sk/sunworldonline/swol-09-1997/swol-09-insidesolaris.html"&gt;&lt;/ulink&gt;
+        for information on shared memory under older versions of Solaris.
+</span>
+変更を反映させるには再起動する必要があります。
+古めのバージョンのSolarisにおける共有メモリの情報は<a class="ulink" href="http://sunsite.uakom.sk/sunworldonline/swol-09-1997/swol-09-insidesolaris.html" target="_top">http://sunsite.uakom.sk/sunworldonline/swol-09-1997/swol-09-insidesolaris.html</a>を参照してください。
+       </p></dd><dt><span class="term"><span class="systemitem">Solaris</span> 2.10 (Solaris 10)以降<br /></span><span class="term"><span class="systemitem">OpenSolaris</span></span></dt><dd><p>
+<span class="original">
+        In Solaris 10 and later, and OpenSolaris, the default shared memory and
+        semaphore settings are good enough for most
+        &lt;productname&gt;PostgreSQL&lt;/productname&gt; applications.  Solaris now defaults
+        to a &lt;varname&gt;SHMMAX&lt;/varname&gt; of one-quarter of system &lt;acronym&gt;RAM&lt;/acronym&gt;.
+        To further adjust this setting, use a project setting associated
+        with the &lt;literal&gt;postgres&lt;/literal&gt; user.  For example, run the
+        following as &lt;literal&gt;root&lt;/literal&gt;:
+</span>
+Solaris 10以降とOpenSolarisでは、デフォルトの共有メモリとセマフォ設定は大抵の<span class="productname">PostgreSQL</span>アプリケーションで十分あります。
+Solarisのデフォルトの<code class="varname">SHMMAX</code>はシステムの<acronym class="acronym">RAM</acronym>の1/4になりました。
+さらにこの設定を調整するためには、<code class="literal">postgres</code>ユーザに関するプロジェクト設定を使用しなければなりません。
+例えば以下を<code class="literal">root</code>権限で実行してください。
+</p><pre class="programlisting">
+projadd -c "PostgreSQL DB User" -K "project.max-shm-memory=(privileged,8GB,deny)" -U postgres -G postgres user.postgres
+</pre><p>
+       </p><p>
+<span class="original">
+        This command adds the &lt;literal&gt;user.postgres&lt;/literal&gt; project and
+        sets the shared memory maximum for the &lt;literal&gt;postgres&lt;/literal&gt;
+        user to 8GB, and takes effect the next time that user logs
+        in, or when you restart &lt;productname&gt;PostgreSQL&lt;/productname&gt; (not reload).
+        The above assumes that &lt;productname&gt;PostgreSQL&lt;/productname&gt; is run by
+        the &lt;literal&gt;postgres&lt;/literal&gt; user in the &lt;literal&gt;postgres&lt;/literal&gt;
+        group.  No server reboot is required.
+</span>
+このコマンドは<code class="literal">user.postgres</code>プロジェクトを追加し、<code class="literal">postgres</code>ユーザの共有メモリの最大サイズを8GBに設定します。
+この影響は次にこのユーザがログインした時、または<span class="productname">PostgreSQL</span>を再起動した時（再読み込み時ではありません）に有効になります。
+上では<span class="productname">PostgreSQL</span>は<code class="literal">postgres</code>グループに属する<code class="literal">postgres</code>ユーザにより実行されていることを前提としています。
+サーバの再起動は不要です。
+       </p><p>
+<span class="original">
+        Other recommended kernel setting changes for database servers which will
+        have a large number of connections are:
+</span>
+多くの接続を受け付けるデータベースサーバにおいて推奨するカーネル設定にはこの他に以下があります。
+</p><pre class="programlisting">
+project.max-shm-ids=(priv,32768,deny)
+project.max-sem-ids=(priv,4096,deny)
+project.max-msg-ids=(priv,4096,deny)
+</pre><p>
+       </p><p>
+<span class="original">
+        Additionally, if you are running &lt;productname&gt;PostgreSQL&lt;/productname&gt;
+        inside a zone, you may need to raise the zone resource usage
+        limits as well.  See "Chapter2:  Projects and Tasks" in the
+        &lt;citetitle&gt;System Administrator's Guide&lt;/citetitle&gt; for more
+        information on &lt;literal&gt;projects&lt;/literal&gt; and &lt;command&gt;prctl&lt;/command&gt;.
+</span>
+さらに、ゾーン内で<span class="productname">PostgreSQL</span>を実行している場合、ゾーンのリソース使用上限も上げる必要があるかもしれません。
+<code class="literal">projects</code>と<code class="command">prctl</code>については<em class="citetitle">System Administrator's Guide</em>の第2章 プロジェクトとタスクを参照してください。
+       </p></dd></dl></div></div><div class="sect2" id="SYSTEMD-REMOVEIPC"><div class="titlepage"><div><div><h3 class="title">18.4.2. systemd RemoveIPC</h3></div></div></div><a id="id-1.6.5.6.4.2" class="indexterm"></a><p>
+<span class="original">
+    If &lt;productname&gt;systemd&lt;/productname&gt; is in use, some care must be taken
+    that IPC resources (shared memory and semaphores) are not prematurely
+    removed by the operating system.  This is especially of concern when
+    installing PostgreSQL from source.  Users of distribution packages of
+    PostgreSQL are less likely to be affected, as
+    the &lt;literal&gt;postgres&lt;/literal&gt; user is then normally created as a system
+    user.
+</span>
+<span class="productname">systemd</span>が使用されている場合、IPCリソース（共有メモリとセマフォ）がオペレーティングシステムによって時期尚早に削除されないように注意する必要があります。
+これはPostgreSQLをソースからインストールした場合に特に重要です。
+PostgreSQLのディストリビューションパッケージのユーザーは、通常<code class="literal">postgres</code>ユーザーがシステムユーザーで作成されるため、影響を受けにくいでしょう。
+   </p><p>
+<span class="original">
+    The setting &lt;literal&gt;RemoveIPC&lt;/literal&gt;
+    in &lt;filename&gt;logind.conf&lt;/filename&gt; controls whether IPC objects are
+    removed when a user fully logs out.  System users are exempt.  This
+    setting defaults to on in stock &lt;productname&gt;systemd&lt;/productname&gt;, but
+    some operating system distributions default it to off.
+</span>
+<code class="filename">logind.conf</code>の<code class="literal">RemoveIPC</code>の設定はユーザが完全にログアウトしたときにIPCオブジェクトを削除するかどうかを制御します。
+システムユーザは免除されます。
+この設定のデフォルトは<span class="productname">systemd</span>ですが、いくつかのオペレーティングシステムではデフォルトでオフになっています。
+   </p><p>
+<span class="original">
+    A typical observed effect when this setting is on is that the semaphore
+    objects used by a PostgreSQL server are removed at apparently random
+    times, leading to the server crashing with log messages like
+</span>
+この設定が有効になっている時の典型的な影響は、PostgreSQLサーバが使用しているセマフォオブジェクトがランダムな時間に削除され、サーバが以下のようなログメッセージでクラッシュします。
+</p><pre class="screen">
+LOG: semctl(1234567890, 0, IPC_RMID, ...) failed: Invalid argument
+</pre><p>
+<span class="original">
+    Different types of IPC objects (shared memory vs. semaphores, System V
+    vs. POSIX) are treated slightly differently
+    by &lt;productname&gt;systemd&lt;/productname&gt;, so one might observe that some IPC
+    resources are not removed in the same way as others.  But it is not
+    advisable to rely on these subtle differences.
+</span>
+IPCオブジェクトの違い（共有メモリ vs. セマフォ、System V vs. POSIX）は<span class="productname">systemd</span>によって若干扱いが異なるため一部のIPCは他のものと違って削除されないことがあります。
+しかし、これらの微妙な違いに依存することはお勧めできません。
+   </p><p>
+<span class="original">
+    A &lt;quote&gt;user logging out&lt;/quote&gt; might happen as part of a maintenance
+    job or manually when an administrator logs in as
+    the &lt;literal&gt;postgres&lt;/literal&gt; user or something similar, so it is hard
+    to prevent in general.
+</span>
+<span class="quote">「<span class="quote">ユーザーログアウト</span>」</span>は、メンテナンスジョブの一環として、又は手動で、管理者が<code class="literal">postgres</code>ユーザーや類似のユーザでログインする可能性があるため、一般的に防止することは困難です。
+   </p><p>
+<span class="original">
+    What is a &lt;quote&gt;system user&lt;/quote&gt; is determined
+    at &lt;productname&gt;systemd&lt;/productname&gt; compile time from
+    the &lt;symbol&gt;SYS_UID_MAX&lt;/symbol&gt; setting
+    in &lt;filename&gt;/etc/login.defs&lt;/filename&gt;.
+</span>
+<span class="quote">「<span class="quote">システムユーザー</span>」</span>は、<code class="filename">/etc/login.defs</code>の<code class="symbol">SYS_UID_MAX</code>の設定により<span class="productname">systemd</span>のコンパイル時に決定されます。
+   </p><p>
+<span class="original">
+    Packaging and deployment scripts should be careful to create
+    the &lt;literal&gt;postgres&lt;/literal&gt; user as a system user by
+    using &lt;literal&gt;useradd -r&lt;/literal&gt;, &lt;literal&gt;adduser &amp;#045;&amp;#045;system&lt;/literal&gt;,
+    or equivalent.
+</span>
+パッケージとデプロイスクリプトは、<code class="literal">useradd -r</code>, <code class="literal">adduser --system</code>又は同等のコマンドを使用して<code class="literal">postgres</code>ユーザを作成するように注意する必要があります。
+   </p><p>
+<span class="original">
+    Alternatively, if the user account was created incorrectly or cannot be
+    changed, it is recommended to set
+</span>
+また、ユーザアカウントが誤って作成されて変更出来ないような場合は、以下を設定することを推奨します。
+</p><pre class="programlisting">
+RemoveIPC=no
+</pre><p>
+<span class="original">
+    in &lt;filename&gt;/etc/systemd/logind.conf&lt;/filename&gt; or another appropriate
+    configuration file.
+</span>
+<code class="filename">/etc/systemd/logind.conf</code>又はその他の設定ファイルで上記を入れます。
+   </p><div class="caution"><h3 class="title">注意</h3><p>
+<span class="original">
+     At least one of these two things has to be ensured, or the PostgreSQL
+     server will be very unreliable.
+</span>
+これらの２つのうち少なくとも１つが保証されてないとなりません。そうでないとPostgreSQLサーバは非常に信頼性が低くなります。
+    </p></div></div><div class="sect2" id="id-1.6.5.6.5"><div class="titlepage"><div><div><h3 class="title">18.4.3. リソースの制限</h3></div></div></div><span class="original">
+   &lt;title&gt;Resource Limits&lt;/title&gt;
+</span><p>
+<span class="original">
+    Unix-like operating systems enforce various kinds of resource limits
+    that might interfere with the operation of your
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; server. Of particular
+    importance are limits on the number of processes per user, the
+    number of open files per process, and the amount of memory available
+    to each process. Each of these have a &lt;quote&gt;hard&lt;/quote&gt; and a
+    &lt;quote&gt;soft&lt;/quote&gt; limit. The soft limit is what actually counts
+    but it can be changed by the user up to the hard limit. The hard
+    limit can only be changed by the root user. The system call
+    &lt;function&gt;setrlimit&lt;/function&gt; is responsible for setting these
+    parameters. The shell's built-in command &lt;command&gt;ulimit&lt;/command&gt;
+    (Bourne shells) or &lt;command&gt;limit&lt;/command&gt; (&lt;application&gt;csh&lt;/application&gt;) is
+    used to control the resource limits from the command line. On
+    BSD-derived systems the file &lt;filename&gt;/etc/login.conf&lt;/filename&gt;
+    controls the various resource limits set during login. See the
+    operating system documentation for details. The relevant
+    parameters are &lt;varname&gt;maxproc&lt;/varname&gt;,
+    &lt;varname&gt;openfiles&lt;/varname&gt;, and &lt;varname&gt;datasize&lt;/varname&gt;. For
+    example:
+</span>
+Unixライクなオペレーティングシステムでは<span class="productname">PostgreSQL</span>サーバの操作と関係する可能性のある様々な種類のリソース制限があります。
+特に重要なのは、ユーザごとのプロセス数の制限、プロセスごとのオープンファイルの数、プロセスごとの利用可能なメモリの量です。
+これらのそれぞれが<span class="quote">「<span class="quote">ハード</span>」</span>と<span class="quote">「<span class="quote">ソフト</span>」</span>の2つの制限を持っています。
+ソフト制限が実際に有効な制限ですが、ユーザによってハード制限まで変えることが可能です。
+ハード制限はrootユーザによってのみ変えることができます。
+<code class="function">setrlimit</code>システムコールがこれらのパラメータの設定を行います。
+シェルの組み込みコマンド<code class="command">ulimit</code>（Bourne シェル）もしくは<code class="command">limit</code>（<span class="application">csh</span>）は、コマンドラインからリソース制限を制御するために使われます。
+BSD派生システム上では<code class="filename">/etc/login.conf</code>ファイルが、ログイン時に設定される様々なリソース制限を制御します。
+詳細はオペレーティングシステムの文書を参照してください。
+関連するパラメータは<code class="varname">maxproc</code>、<code class="varname">openfiles</code>、<code class="varname">datasize</code>です。
+以下に例を示します。
+</p><pre class="programlisting">
+default:\
+...
+        :datasize-cur=256M:\
+        :maxproc-cur=256:\
+        :openfiles-cur=256:\
+...
+</pre><p>
+<span class="original">
+    (&lt;literal&gt;-cur&lt;/literal&gt; is the soft limit.  Append
+    &lt;literal&gt;-max&lt;/literal&gt; to set the hard limit.)
+</span>
+（<code class="literal">-cur</code>はソフト制限です。
+ハード制限を設定するためには<code class="literal">-max</code>を付けてください。）
+   </p><p>
+<span class="original">
+    Kernels can also have system-wide limits on some resources.
+</span>
+カーネルはいくつかのリソースに対して、システム全体の制限も持つことができます。
+    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+      On &lt;productname&gt;Linux&lt;/productname&gt;
+      &lt;filename&gt;/proc/sys/fs/file-max&lt;/filename&gt; determines the
+      maximum number of open files that the kernel will support.  It can
+      be changed by writing a different number into the file or by
+      adding an assignment in &lt;filename&gt;/etc/sysctl.conf&lt;/filename&gt;.
+      The maximum limit of files per process is fixed at the time the
+      kernel is compiled; see
+      &lt;filename&gt;/usr/src/linux/Documentation/proc.txt&lt;/filename&gt; for
+      more information.
+</span>
+<span class="productname">Linux</span>では、<code class="filename">/proc/sys/fs/file-max</code>が、カーネルがサポートするオープンファイル数の最大を決定します。
+この数を変えるためには、そのファイルに別の数を書き込むか、あるいは<code class="filename">/etc/sysctl.conf</code>に代入式を追加します。
+プロセスごとのファイルの最大制限はカーネルがコンパイルされた時に固定されます。
+詳しい情報については<code class="filename">/usr/src/linux/Documentation/proc.txt</code>を参照してください。
+      </p></li></ul></div><p>
+   </p><p>
+<span class="original">
+    The &lt;productname&gt;PostgreSQL&lt;/productname&gt; server uses one process
+    per connection so you should provide for at least as many processes
+    as allowed connections, in addition to what you need for the rest
+    of your system.  This is usually not a problem but if you run
+    several servers on one machine things might get tight.
+</span>
+<span class="productname">PostgreSQL</span>サーバは接続ごとに1つのプロセスを使うので、少なくとも許可された接続の数だけのプロセスに残りのシステムで必要な分を追加したものが必要になります。
+通常はこれは問題ではありませんが、1つのマシン上でいくつかのサーバを起動している場合は厳しい状況になるかもしれません。
+   </p><p>
+<span class="original">
+    The factory default limit on open files is often set to
+    &lt;quote&gt;socially friendly&lt;/quote&gt; values that allow many users to
+    coexist on a machine without using an inappropriate fraction of
+    the system resources.  If you run many servers on a machine this
+    is perhaps what you want, but on dedicated servers you might want to
+    raise this limit.
+</span>
+オープンファイルの制限の出荷時のデフォルトは、しばしば大多数のユーザはマシン上でシステムリソースの不正使用をしないという前堤に立った<span class="quote">「<span class="quote">社会的に友好的な</span>」</span>値を設定してしまいます。
+もし1つのマシン上で複数のサーバを起動する場合はそれが必要でしょうが、専用サーバではこの制限を上げたいかもしれません。
+   </p><p>
+<span class="original">
+    On the other side of the coin, some systems allow individual
+    processes to open large numbers of files; if more than a few
+    processes do so then the system-wide limit can easily be exceeded.
+    If you find this happening, and you do not want to alter the
+    system-wide limit, you can set &lt;productname&gt;PostgreSQL&lt;/productname&gt;'s &lt;xref
+    linkend="guc-max-files-per-process"/&gt; configuration parameter to
+    limit the consumption of open files.
+</span>
+反対に、個々のプロセスが多数のファイルをオープンすることを許可するシステムもあります。
+そのようなプロセスが数個以上あれば、システム全体の制限は簡単に超えてしまいます。
+この発生を検知し、システム全体の制限の変更を望まない場合は、<span class="productname">PostgreSQL</span>の<a class="xref" href="runtime-config-resource.html#GUC-MAX-FILES-PER-PROCESS">max_files_per_process</a>設定パラメータを設定し、オープンファイルの消費を制限することができます。
+   </p></div><div class="sect2" id="LINUX-MEMORY-OVERCOMMIT"><div class="titlepage"><div><div><h3 class="title">18.4.4. Linuxのメモリオーバーコミット</h3></div></div></div><span class="original">
+   &lt;title&gt;Linux Memory Overcommit&lt;/title&gt;
+</span><a id="id-1.6.5.6.6.2" class="indexterm"></a><a id="id-1.6.5.6.6.3" class="indexterm"></a><a id="id-1.6.5.6.6.4" class="indexterm"></a><p>
+<span class="original">
+    In Linux 2.4 and later, the default virtual memory behavior is not
+    optimal for &lt;productname&gt;PostgreSQL&lt;/productname&gt;. Because of the
+    way that the kernel implements memory overcommit, the kernel might
+    terminate the &lt;productname&gt;PostgreSQL&lt;/productname&gt; postmaster (the
+    master server process) if the memory demands of either
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; or another process cause the
+    system to run out of virtual memory.
+</span>
+Linux 2.4以降では、デフォルトの仮想メモリの動作は<span class="productname">PostgreSQL</span>には最適ではありません。
+カーネルがメモリオーバーコミットを実装する方法のため、カーネルは、<span class="productname">PostgreSQL</span>や他のプロセスのメモリ要求がシステムの仮想メモリを枯渇させた場合、<span class="productname">PostgreSQL</span> postmaster （マスタサーバプロセス）を終了させる可能性があります。
+   </p><p>
+<span class="original">
+    If this happens, you will see a kernel message that looks like
+    this (consult your system documentation and configuration on where
+    to look for such a message):
+</span>
+これが発生した場合、以下のようなカーネルメッセージが現れます
+（こうしたメッセージを検索する場所についてはシステム文書と設定を参照してください）。
+</p><pre class="programlisting">
+Out of Memory: Killed process 12345 (postgres).
+</pre><p>
+<span class="original">
+    This indicates that the &lt;filename&gt;postgres&lt;/filename&gt; process
+    has been terminated due to memory pressure.
+    Although existing database connections will continue to function
+    normally, no new connections will be accepted.  To recover,
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; will need to be restarted.
+</span>
+これは、<code class="filename">postgres</code>プロセスがメモリ不足のために終了してしまったことを示します。
+起動中のデータベース接続は正常に動作しますが、新しい接続は受け付けられません。
+復旧するには、<span class="productname">PostgreSQL</span>を再起動しなければなりません。
+   </p><p>
+<span class="original">
+    One way to avoid this problem is to run
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; on a machine where you can
+    be sure that other processes will not run the machine out of
+    memory.  If memory is tight, increasing the swap space of the
+    operating system can help avoid the problem, because the
+    out-of-memory (OOM) killer is invoked only when physical memory and
+    swap space are exhausted.
+</span>
+この問題を防止する1つの方法として、<span class="productname">PostgreSQL</span>を他のプロセスがそのマシンのメモリを枯渇させないことが確実なマシンで起動するというものがあります。
+物理メモリとスワップ領域が消費尽くされた時のみにメモリ不足（OOM）killerが発生するため、メモリが不足する場合、オペレーティングシステムのスワップ領域を増やすことが問題解決の役にたちます。
+   </p><p>
+<span class="original">
+    If &lt;productname&gt;PostgreSQL&lt;/productname&gt; itself is the cause of the
+    system running out of memory, you can avoid the problem by changing
+    your configuration.  In some cases, it may help to lower memory-related
+    configuration parameters, particularly
+    &lt;link linkend="guc-shared-buffers"&gt;&lt;varname&gt;shared_buffers&lt;/varname&gt;&lt;/link&gt;
+    and &lt;link linkend="guc-work-mem"&gt;&lt;varname&gt;work_mem&lt;/varname&gt;&lt;/link&gt;.  In
+    other cases, the problem may be caused by allowing too many connections
+    to the database server itself.  In many cases, it may be better to reduce
+    &lt;link linkend="guc-max-connections"&gt;&lt;varname&gt;max_connections&lt;/varname&gt;&lt;/link&gt;
+    and instead make use of external connection-pooling software.
+</span>
+<span class="productname">PostgreSQL</span>自体が実行中のシステムのメモリ不足を引き起こした場合、設定を変更することで問題を防止することができます。
+メモリ関連の設定パラメータ、具体的には<a class="link" href="runtime-config-resource.html#GUC-SHARED-BUFFERS"><code class="varname">shared_buffers</code></a>および<a class="link" href="runtime-config-resource.html#GUC-WORK-MEM"><code class="varname">work_mem</code></a>、を低くすることで回避できる場合もあります。
+個の他にもデータベースサーバ自体への接続が多く許可しすぎることで問題が引き起こされる場合もあります。
+多くの場合、<a class="link" href="runtime-config-connection.html#GUC-MAX-CONNECTIONS"><code class="varname">max_connections</code></a>を減らし、外部のコネクションプールソフトウェアを使用することで改善されます。
+   </p><p>
+<span class="original">
+    On Linux 2.6 and later, it is possible to modify the
+    kernel's behavior so that it will not &lt;quote&gt;overcommit&lt;/quote&gt; memory.
+    Although this setting will not prevent the &lt;ulink
+    url="https://lwn.net/Articles/104179/"&gt;OOM killer&lt;/ulink&gt; from being invoked
+    altogether, it will lower the chances significantly and will therefore
+    lead to more robust system behavior.  This is done by selecting strict
+    overcommit mode via &lt;command&gt;sysctl&lt;/command&gt;:
+</span>
+Linux 2.6以降では、メモリを<span class="quote">「<span class="quote">オーバーコミット</span>」</span>させないようにカーネルの動作を変更することができます。
+この設定は完全に<a class="ulink" href="https://lwn.net/Articles/104179/" target="_top">OOM killer</a>の発生を防ぐことはできませんが、その発生頻度をかなり軽減しますので、システム動作の堅牢性をより高めます。
+これは、以下のように<code class="command">sysctl</code>を使用して厳密なオーバーコミットモードを選択すること、もしくは、<code class="filename">/etc/sysctl.conf</code>に同等の項目を記述することで実施されます。
+</p><pre class="programlisting">
+sysctl -w vm.overcommit_memory=2
+</pre><p>
+<span class="original">
+    or placing an equivalent entry in &lt;filename&gt;/etc/sysctl.conf&lt;/filename&gt;.
+    You might also wish to modify the related setting
+    &lt;varname&gt;vm.overcommit_ratio&lt;/varname&gt;.  For details see the kernel documentation
+    file &lt;ulink url="https://www.kernel.org/doc/Documentation/vm/overcommit-accounting"&gt;&lt;/ulink&gt;.
+</span>
+また、関連する<code class="varname">vm.overcommit_ratio</code>設定を変更した方が良いでしょう。
+詳細はカーネル文書ファイル<a class="ulink" href="https://www.kernel.org/doc/Documentation/vm/overcommit-accounting" target="_top">https://www.kernel.org/doc/Documentation/vm/overcommit-accounting</a>を参照してください。
+   </p><p>
+<span class="original">
+    Another approach, which can be used with or without altering
+    &lt;varname&gt;vm.overcommit_memory&lt;/varname&gt;, is to set the process-specific
+    &lt;firstterm&gt;OOM score adjustment&lt;/firstterm&gt; value for the postmaster process to
+    &lt;literal&gt;-1000&lt;/literal&gt;, thereby guaranteeing it will not be targeted by the OOM
+    killer.  The simplest way to do this is to execute
+</span>
+<code class="varname">vm.overcommit_memory</code>の変更と関係なく使用できるその他の方法は、プロセス固有の<em class="firstterm">OOMスコア調整</em>値をpostmasterプロセス向けに<code class="literal">-1000</code>に設定することです。
+これによりOOM killerの対象とならないことが保証されます。
+このための最も簡単な方法は以下をpostmasterの起動スクリプト内でpostmasterを実行する直前に実行することです。
+</p><pre class="programlisting">
+echo -1000 &gt; /proc/self/oom_score_adj
+</pre><p>
+<span class="original">
+    in the postmaster's startup script just before invoking the postmaster.
+    Note that this action must be done as root, or it will have no effect;
+    so a root-owned startup script is the easiest place to do it.  If you
+    do this, you should also set these environment variables in the startup
+    script before invoking the postmaster:
+</span>
+この作業をrootで実行しなければならないことに注意して下さい。
+さもないと効果がありません。
+このためrootが所有する起動スクリプトが、これを行うための最も簡単な場所です。
+その場合には、スタートアップスクリプトのpostmasterの起動前に以下の環境変数を設定することも推奨します。
+</p><pre class="programlisting">
+export PG_OOM_ADJUST_FILE=/proc/self/oom_score_adj
+export PG_OOM_ADJUST_VALUE=0
+</pre><p>
+<span class="original">
+    These settings will cause postmaster child processes to run with the
+    normal OOM score adjustment of zero, so that the OOM killer can still
+    target them at need.  You could use some other value for
+    &lt;envar&gt;PG_OOM_ADJUST_VALUE&lt;/envar&gt; if you want the child processes to run
+    with some other OOM score adjustment.  (&lt;envar&gt;PG_OOM_ADJUST_VALUE&lt;/envar&gt;
+    can also be omitted, in which case it defaults to zero.)  If you do not
+    set &lt;envar&gt;PG_OOM_ADJUST_FILE&lt;/envar&gt;, the child processes will run with the
+    same OOM score adjustment as the postmaster, which is unwise since the
+    whole point is to ensure that the postmaster has a preferential setting.
+</span>
+これらの設定は、いざという時にpostmasterの子プロセスをOOM killerのターゲットに出来るようにOOMスコア調整を通常のゼロで実行します。
+子プロセスを他のOOMスコア調整で実行したい場合には、<code class="envar">PG_OOM_ADJUST_VALUE</code>により別の値にすることが出来ます。
+（<code class="envar">PG_OOM_ADJUST_VALUE</code>は省略することが出来て、その場合はデフォルトのゼロになります。）
+<code class="envar">PG_OOM_ADJUST_FILE</code>を設定しない場合、子プロセスはpostmasterと同じOOMスコア調整で実行されますが、postmasterが優先される設定にすることが肝心なので、それは賢明とは言えません。
+   </p><p>
+<span class="original">
+    Older Linux kernels do not offer &lt;filename&gt;/proc/self/oom_score_adj&lt;/filename&gt;,
+    but may have a previous version of the same functionality called
+    &lt;filename&gt;/proc/self/oom_adj&lt;/filename&gt;.  This works the same except the disable
+    value is &lt;literal&gt;-17&lt;/literal&gt; not &lt;literal&gt;-1000&lt;/literal&gt;.
+</span>
+古いLinuxカーネルは<code class="filename">/proc/self/oom_score_adj</code>を提供していませんが、同様の機能を持つ<code class="filename">/proc/self/oom_adj</code>があるでしょう。
+これは、無効にするための設定値が<code class="literal">-1000</code>ではなく<code class="literal">-17</code>であるという点を除いては同じように動作します。
+   </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+    Some vendors' Linux 2.4 kernels are reported to have early versions
+    of the 2.6 overcommit &lt;command&gt;sysctl&lt;/command&gt; parameter.  However, setting
+    &lt;literal&gt;vm.overcommit_memory&lt;/literal&gt; to 2
+    on a 2.4 kernel that does not have the relevant code will make
+    things worse, not better.  It is recommended that you inspect
+    the actual kernel source code (see the function
+    &lt;function&gt;vm_enough_memory&lt;/function&gt; in the file &lt;filename&gt;mm/mmap.c&lt;/filename&gt;)
+    to verify what is supported in your kernel before you try this in a 2.4
+    installation.  The presence of the &lt;filename&gt;overcommit-accounting&lt;/filename&gt;
+    documentation file should &lt;emphasis&gt;not&lt;/emphasis&gt; be taken as evidence that the
+    feature is there.  If in any doubt, consult a kernel expert or your
+    kernel vendor.
+</span>
+Linux 2.4カーネルのベンダの中には、2.6のオーバーコミット<code class="command">sysctl</code>版を持つものがあることが報告されています。
+しかし、関係するコードを持たない2.4カーネルで<code class="literal">vm.overcommit_memory</code>を2に設定することはより状況を悪化させます。
+2.4のインストレーションではこれを試す前に、実際のカーネルソースコードを調査し、その中でサポートしているかどうかを検証することをお勧めします（<code class="filename">mm/mmap.c</code>ファイル内の<code class="function">vm_enough_memory</code>関数を参照してください）。
+<code class="filename">overcommit-accounting</code>文書ファイルの存在は、この機能が存在するかどうかを証明するものでは<span class="emphasis"><em>ありません</em></span>。
+疑わしい場合は、使用中のカーネルベンダのカーネル専門家に相談してください。
+   </p></div></div><div class="sect2" id="LINUX-HUGE-PAGES"><div class="titlepage"><div><div><h3 class="title">18.4.5. LinuxのHugePages</h3></div></div></div><span class="original">
+   &lt;title&gt;Linux Huge Pages&lt;/title&gt;
+</span><p>
+<span class="original">
+    Using huge pages reduces overhead when using large contiguous chunks of
+    memory, as &lt;productname&gt;PostgreSQL&lt;/productname&gt; does, particularly when
+    using large values of &lt;xref linkend="guc-shared-buffers"/&gt;.  To use this
+    feature in &lt;productname&gt;PostgreSQL&lt;/productname&gt; you need a kernel
+    with &lt;varname&gt;CONFIG_HUGETLBFS=y&lt;/varname&gt; and
+    &lt;varname&gt;CONFIG_HUGETLB_PAGE=y&lt;/varname&gt;. You will also have to adjust
+    the kernel setting &lt;varname&gt;vm.nr_hugepages&lt;/varname&gt;. To estimate the
+    number of huge pages needed, start &lt;productname&gt;PostgreSQL&lt;/productname&gt;
+    without huge pages enabled and check the
+    postmaster's anonymous shared memory segment size, as well as the system's
+    huge page size, using the &lt;filename&gt;/proc&lt;/filename&gt; file system.  This might
+    look like:
+</span>
+<span class="productname">PostgreSQL</span>のように、メモリの大きな連続チャンクを使用するとき、特に<a class="xref" href="runtime-config-resource.html#GUC-SHARED-BUFFERS">shared_buffers</a>の値が大きい場合に、huge pagesを使用するとオーバーヘッドが減少します。
+<span class="productname">PostgreSQL</span>でこの機能を有効にするには、<code class="varname">CONFIG_HUGETLBFS=y</code>および<code class="varname">CONFIG_HUGETLB_PAGE=y</code>としたカーネルが必要です。
+またカーネル設定<code class="varname">vm.nr_hugepages</code>を調整する必要もあるでしょう。
+必要なhuge pages数を見積もるには、huge pagesを有効にせずに<span class="productname">PostgreSQL</span>を起動し、procファイルシステムを使用してpostmasterの無名共有セグメントサイズとシステムのhuge pageサイズの値をチェックします。
+これは以下のような感じになるでしょう。
+</p><pre class="programlisting">
+$ <strong class="userinput"><code>head -1 $PGDATA/postmaster.pid</code></strong>
+4170
+$ <strong class="userinput"><code>pmap 4170 | awk '/rw-s/ &amp;&amp; /zero/ {print $2}'</code></strong>
+6490428K
+$ <strong class="userinput"><code>grep ^Hugepagesize /proc/meminfo</code></strong>
+Hugepagesize:       2048 kB
+</pre><p>
+<span class="original">
+     &lt;literal&gt;6490428&lt;/literal&gt; / &lt;literal&gt;2048&lt;/literal&gt; gives approximately
+     &lt;literal&gt;3169.154&lt;/literal&gt;, so in this example we need at
+     least &lt;literal&gt;3170&lt;/literal&gt; huge pages, which we can set with:
+</span>
+<code class="literal">6490428</code> / <code class="literal">2048</code>はおよそ<code class="literal">3169.154</code>ですので、この例では少なくとも<code class="literal">3170</code>のhuge pagesが必要で、それは以下のようにして設定できます。
+</p><pre class="programlisting">
+$ <strong class="userinput"><code>sysctl -w vm.nr_hugepages=3170</code></strong>
+</pre><p>
+<span class="original">
+    A larger setting would be appropriate if other programs on the machine
+    also need huge pages.  Don't forget to add this setting
+    to &lt;filename&gt;/etc/sysctl.conf&lt;/filename&gt; so that it will be reapplied
+    after reboots.
+</span>
+同じマシン上で他にもhuge pagesが必要なプログラムがあるなら、もっと大きな設定が適切でしょう。
+再起動のときにこの設定が適用されるように、これを<code class="filename">/etc/sysctl.conf</code>に追加するのを忘れないで下さい。
+   </p><p>
+<span class="original">
+    Sometimes the kernel is not able to allocate the desired number of huge
+    pages immediately, so it might be necessary to repeat the command or to
+    reboot.  (Immediately after a reboot, most of the machine's memory
+    should be available to convert into huge pages.)  To verify the huge
+    page allocation situation, use:
+</span>
+時には、カーネルは求められた数のhuge pagesを割り当てることができないことがあるので、そのコマンドを繰り返すか、再起動する必要があるかもしれません。
+（再起動の直後は、マシンのメモリの大部分はhuge pagesへの変更が可能なはずです。）
+huge pagesの割り当ての状況を確認するには、次のようにします。
+</p><pre class="programlisting">
+$ <strong class="userinput"><code>grep Huge /proc/meminfo</code></strong>
+</pre><p>
+   </p><p>
+<span class="original">
+    It may also be necessary to give the database server's operating system
+    user permission to use huge pages by setting
+    &lt;varname&gt;vm.hugetlb_shm_group&lt;/varname&gt; via &lt;application&gt;sysctl&lt;/application&gt;, and/or
+    give permission to lock memory with &lt;command&gt;ulimit -l&lt;/command&gt;.
+</span>
+<span class="application">sysctl</span>を使って<code class="varname">vm.hugetlb_shm_group</code>を設定する、あるいは<code class="command">ulimit -l</code>でメモリをロックする権限を与えることで、データベースサーバのOSユーザにhuge pagesを使用する権限を与える必要もあるかもしれません。
+   </p><p>
+<span class="original">
+    The default behavior for huge pages in
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; is to use them when possible and
+    to fall back to normal pages when failing. To enforce the use of huge
+    pages, you can set &lt;xref linkend="guc-huge-pages"/&gt;
+    to &lt;literal&gt;on&lt;/literal&gt; in &lt;filename&gt;postgresql.conf&lt;/filename&gt;.
+    Note that with this setting &lt;productname&gt;PostgreSQL&lt;/productname&gt; will fail to
+    start if not enough huge pages are available.
+</span>
+<span class="productname">PostgreSQL</span>のhuge pagesのデフォルトの動作は、可能な場合はhuge pagesを使用し、失敗した場合は通常のページを使用します。
+<code class="filename">postgresql.conf</code>で<a class="link" href="runtime-config-resource.html#GUC-HUGE-PAGES"><code class="varname">huge_pages</code></a>を<code class="literal">on</code>に設定することで、huge pagesの使用を強制することができます。
+この設定の場合、十分なhuge pagesが確保できなければ、<span class="productname">PostgreSQL</span>の起動に失敗することに注意してください。
+   </p><p>
+<span class="original">
+    For a detailed description of the &lt;productname&gt;Linux&lt;/productname&gt; huge
+    pages feature have a look
+    at &lt;ulink url="https://www.kernel.org/doc/Documentation/vm/hugetlbpage.txt"&gt;&lt;/ulink&gt;.
+</span>
+<span class="productname">Linux</span>のhuge pages機能の詳細は<a class="ulink" href="https://www.kernel.org/doc/Documentation/vm/hugetlbpage.txt" target="_top">https://www.kernel.org/doc/Documentation/vm/hugetlbpage.txt</a>を参照してください。
+   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="server-start.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="runtime.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="server-shutdown.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">18.3. データベースサーバの起動 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 18.5. サーバのシャットダウン</td></tr></table></div></body></html>

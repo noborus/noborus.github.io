@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>45.4. PL/Perlにおけるグローバルな値</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="plperl-builtins.html" title="45.3. 組み込み関数" /><link rel="next" href="plperl-trusted.html" title="45.5. 信頼されたPL/Perlおよび信頼されないPL/Perl" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="plperl.html" title="第45章 PL/Perl - Perl手続き言語">第45章 PL/Perl - Perl手続き言語</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      plperl-global.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="plperl-builtins.html" title="45.3. 組み込み関数">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="plperl.html" title="第45章 PL/Perl - Perl手続き言語">上へ</a></td><td width="60%" align="center">45.4. PL/Perlにおけるグローバルな値</td><td width="20%" align="right"> <a accesskey="n" href="plperl-trusted.html" title="45.5. 信頼されたPL/Perlおよび信頼されないPL/Perl">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PLPERL-GLOBAL"><div class="titlepage"><div><div><h2 class="title" style="clear: both">45.4. PL/Perlにおけるグローバルな値</h2></div></div></div><span class="original">
+  &lt;title&gt;Global Values in PL/Perl&lt;/title&gt;
+</span><p>
+<span class="original">
+    You can use the global hash &lt;varname&gt;%_SHARED&lt;/varname&gt; to store
+    data, including code references, between function calls for the
+    lifetime of the current session.
+</span>
+現在のセッションの有効期間中の関数呼び出し間でデータ（コード参照を含む）を受け渡しするためにグローバルな<code class="varname">%_SHARED</code>ハッシュを使用することができます。
+  </p><p>
+<span class="original">
+    Here is a simple example for shared data:
+</span>
+データの共有について簡単な例を以下に示します。
+</p><pre class="programlisting">
+CREATE OR REPLACE FUNCTION set_var(name text, val text) RETURNS text AS $$
+    if ($_SHARED{$_[0]} = $_[1]) {
+        return 'ok';
+    } else {
+        return "cannot set shared variable $_[0] to $_[1]";
+    }
+$$ LANGUAGE plperl;
+
+CREATE OR REPLACE FUNCTION get_var(name text) RETURNS text AS $$
+    return $_SHARED{$_[0]};
+$$ LANGUAGE plperl;
+
+SELECT set_var('sample', 'Hello, PL/Perl!  How''s tricks?');
+SELECT get_var('sample');
+</pre><p>
+  </p><p>
+<span class="original">
+   Here is a slightly more complicated example using a code reference:
+</span>
+以下は、コード参照を使用した、多少複雑な例です。
+
+</p><pre class="programlisting">
+CREATE OR REPLACE FUNCTION myfuncs() RETURNS void AS $$
+    $_SHARED{myquote} = sub {
+        my $arg = shift;
+        $arg =~ s/(['\\])/\\$1/g;
+        return "'$arg'";
+    };
+$$ LANGUAGE plperl;
+
+<span class="original">
+SELECT myfuncs(); /* initializes the function */
+</span>
+SELECT myfuncs(); /* 関数の初期化 */
+
+<span class="original">
+/* Set up a function that uses the quote function */
+</span>
+/* 引用符関数を使用する関数を作成 */
+
+CREATE OR REPLACE FUNCTION use_quote(TEXT) RETURNS text AS $$
+    my $text_to_quote = shift;
+    my $qfunc = $_SHARED{myquote};
+    return &amp;$qfunc($text_to_quote);
+$$ LANGUAGE plperl;
+</pre><p>
+
+<span class="original">
+   (You could have replaced the above with the one-liner
+   &lt;literal&gt;return $_SHARED{myquote}-&amp;gt;($_[0]);&lt;/literal&gt;
+   at the expense of readability.)
+</span>
+（可読性を犠牲にすると、上は<code class="literal">return $_SHARED{myquote}-&gt;($_[0]);</code>という1行のみで置き換えることができます。）
+  </p><p>
+<span class="original">
+   For security reasons, PL/Perl executes functions called by any one SQL role
+   in a separate Perl interpreter for that role.  This prevents accidental or
+   malicious interference by one user with the behavior of another user's
+   PL/Perl functions.  Each such interpreter has its own value of the
+   &lt;varname&gt;%_SHARED&lt;/varname&gt; variable and other global state.  Thus, two
+   PL/Perl functions will share the same value of &lt;varname&gt;%_SHARED&lt;/varname&gt;
+   if and only if they are executed by the same SQL role.  In an application
+   wherein a single session executes code under multiple SQL roles (via
+   &lt;literal&gt;SECURITY DEFINER&lt;/literal&gt; functions, use of &lt;command&gt;SET ROLE&lt;/command&gt;, etc)
+   you may need to take explicit steps to ensure that PL/Perl functions can
+   share data via &lt;varname&gt;%_SHARED&lt;/varname&gt;.  To do that, make sure that
+   functions that should communicate are owned by the same user, and mark
+   them &lt;literal&gt;SECURITY DEFINER&lt;/literal&gt;.  You must of course take care that
+   such functions can't be used to do anything unintended.
+</span>
+セキュリティ上の理由により、PL/Perlは、あるロールで呼び出された関数をそのロール用に独立したPerlインタプリタ内で実行します。
+これにより、あるユーザの事故または悪意によって他のユーザのPL/Perl関数の動作が干渉されてしまうことを防ぎます。
+こうしたインタプリタはそれぞれ独自の<code class="varname">%_SHARED</code>などのグローバル状態を持ちます。
+したがって、同一のSQLロールによって実行された場合のみ、２つのPL/Perl関数は同じ<code class="varname">%_SHARED</code>値を共有します。
+１つのセッション内で複数のSQLロールの元でコードを（<code class="literal">SECURITY DEFINER</code>経由、<code class="command">SET ROLE</code>の使用など）実行するアプリケーションでは、確実にPL/Perl関数が<code class="varname">%_SHARED</code>を介してデータを共有することができるように、明示的な処理を行う必要があります。
+このためには、通信しなければならない関数が同じユーザによって所有されること、および<code class="literal">SECURITY DEFINER</code>と印付けられていることを確実にしなければなりません。
+当然ながらこうした関数が意図していないことを行うために使用することができないように注意しなければなりません。
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="plperl-builtins.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="plperl.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="plperl-trusted.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">45.3. 組み込み関数 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 45.5. 信頼されたPL/Perlおよび信頼されないPL/Perl</td></tr></table></div></body></html>
