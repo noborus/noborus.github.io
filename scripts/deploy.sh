@@ -5,7 +5,7 @@ chmod 600 ~/.ssh/id_rsa
 echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
 git config --global user.email "noborusai@gmail.com"
 git config --global user.name "noborus"
-git clone --depth=50 git@github.com/noborus/noborus.github.io.git
+git clone --depth=50 git@github.com:noborus/noborus.github.io.git
 
 cp -aR travis/jpug-doc/doc/src/sgml/html current/
 git add -A current
