@@ -9,4 +9,4 @@ git remote set-url origin git@github.com:noborus/noborus.github.io.git
 
 git add -A current
 git commit --allow-empty -m "by Travis CI (JOB $TRAVIS_JOB_NUMBER)"
-git push origin master
+git push origin git@github.com:noborus/noborus.github.io.git master:master
