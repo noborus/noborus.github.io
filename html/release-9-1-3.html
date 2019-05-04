@@ -1,0 +1,654 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>E.131. リリース9.1.3</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="prev" href="release-9-1-4.html" title="E.130. リリース9.1.4" /><link rel="next" href="release-9-1-2.html" title="E.132. リリース9.1.2" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="release.html" title="付録E リリースノート">付録E リリースノート</a></td><td width="20%" align="right"></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="release-9-1-4.html" title="E.130. リリース9.1.4">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="release.html" title="付録E リリースノート">上へ</a></td><td width="60%" align="center">E.131. リリース9.1.3</td><td width="20%" align="right"> <a accesskey="n" href="release-9-1-2.html" title="E.132. リリース9.1.2">次へ</a></td></tr></table><hr /></div><div class="sect1" id="RELEASE-9-1-3"><div class="titlepage"><div><div><h2 class="title" style="clear: both">E.131. リリース9.1.3</h2></div></div></div><!--
+  <title>Release 9.1.3</title>
+--><p><!--
+  <title>Release date:</title>
+--><strong>リリース日: </strong>2012-02-27</p><p>
+<!--
+   This release contains a variety of fixes from 9.1.2.
+   For information about new features in the 9.1 major release, see
+   <xref linkend="release-9-1"/>.
+-->
+このリリースは9.1.2に対し、各種不具合を修正したものです。
+9.1メジャーリリースにおける新機能については<a class="xref" href="release-9-1.html" title="E.134. リリース9.1">E.134</a>を参照してください。
+  </p><div class="sect2" id="id-1.11.6.135.4"><div class="titlepage"><div><div><h3 class="title">E.131.1. バージョン9.1.3への移行</h3></div></div></div><!--
+   <title>Migration to Version 9.1.3</title>
+--><p>
+<!--
+    A dump/restore is not required for those running 9.1.X.
+-->
+9.1.Xからの移行ではダンプ/リストアは不要です。
+   </p><p>
+<!--
+    However, if you are upgrading from a version earlier than 9.1.2,
+    see <xref linkend="release-9-1-2"/>.
+-->
+しかしながら、9.1.2より前のバージョンからアップグレードする場合は、<a class="xref" href="release-9-1-2.html" title="E.132. リリース9.1.2">E.132</a>を参照してください。
+   </p></div><div class="sect2" id="id-1.11.6.135.5"><div class="titlepage"><div><div><h3 class="title">E.131.2. 変更点</h3></div></div></div><!--
+   <title>Changes</title>
+--><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<!--
+      Require execute permission on the trigger function for
+      <command>CREATE TRIGGER</command> (Robert Haas)
+-->
+<code class="command">CREATE TRIGGER</code>においてトリガ関数に対する実行権限が必要になりました。(Robert Haas)
+     </p><p>
+<!--
+      This missing check could allow another user to execute a trigger
+      function with forged input data, by installing it on a table he owns.
+      This is only of significance for trigger functions marked
+      <literal>SECURITY DEFINER</literal>, since otherwise trigger functions run
+      as the table owner anyway.  (CVE-2012-0866)
+-->
+この検査が無かったため、別のユーザが自身が所有するテーブルにその関数をインストールすることで、偽造した入力データでトリガ関数を実行することができました。
+<code class="literal">SECURITY DEFINER</code>が付いたトリガ関数でのみ重大です。
+その他のトリガ関数ではとにかくテーブル所有者として実行されるためです。(CVE-2012-0866)
+     </p></li><li class="listitem"><p>
+<!--
+      Remove arbitrary limitation on length of common name in SSL
+      certificates (Heikki Linnakangas)
+-->
+SSL証明書内のコモンネームにおける独断的な長さ制限を取り除きました。(Heikki Linnakangas)
+     </p><p>
+<!--
+      Both <application>libpq</application> and the server truncated the common name
+      extracted from an SSL certificate at 32 bytes.  Normally this would
+      cause nothing worse than an unexpected verification failure, but there
+      are some rather-implausible scenarios in which it might allow one
+      certificate holder to impersonate another.  The victim would have to
+      have a common name exactly 32 bytes long, and the attacker would have
+      to persuade a trusted CA to issue a certificate in which the common
+      name has that string as a prefix.  Impersonating a server would also
+      require some additional exploit to redirect client connections.
+      (CVE-2012-0867)
+-->
+<span class="application">libpq</span>とサーバの両方ともSSL証明書から取り出したコモンネームを32バイトで切り詰めていました。
+通常想定外の検証エラー以上のことを引き起こしませんが、ある証明書の所有者が他者になりすますことができるという、多少怪しいシナリオがあります。
+被害を受けるにはコモンネームが正確に32バイト長でなければならず、また、攻撃者は信頼されたCAに対してコモンネームが接頭辞としてその文字列を持つ証明書を発行するように説得しなければなりません。
+またサーバになりすますには、さらにクライアントからの接続を中継するための攻撃が必要です。(CVE-2012-0867)
+     </p></li><li class="listitem"><p>
+<!--
+      Convert newlines to spaces in names written in <application>pg_dump</application>
+      comments (Robert Haas)
+-->
+<span class="application">pg_dump</span>のコメントに記述された名前の中の改行を空白に変換します。(Robert Haas)
+     </p><p>
+<!--
+      <application>pg_dump</application> was incautious about sanitizing object names
+      that are emitted within SQL comments in its output script.  A name
+      containing a newline would at least render the script syntactically
+      incorrect.  Maliciously crafted object names could present a SQL
+      injection risk when the script is reloaded.  (CVE-2012-0868)
+-->
+<span class="application">pg_dump</span>は、その出力スクリプトにおけるSQLコメント内で発行されるオブジェクト名のサニタイズに関して注意を払っていませんでした。
+改行を含む名前は少なくともそのスクリプトを構文的に不正にさせます。
+悪意をもって組み立てられたオブジェクト名によって、スクリプトがリロードする時にSQLインジェクションの危険性があり得ました。(CVE-2012-0868)
+     </p></li><li class="listitem"><p>
+<!--
+      Fix btree index corruption from insertions concurrent with vacuuming
+      (Tom Lane)
+-->
+バキューム処理と同時に挿入を行った場合のbtreeインデックス破損を修正しました。(Tom Lane)
+     </p><p>
+<!--
+      An index page split caused by an insertion could sometimes cause a
+      concurrently-running <command>VACUUM</command> to miss removing index entries
+      that it should remove.  After the corresponding table rows are removed,
+      the dangling index entries would cause errors (such as <quote>could not
+      read block N in file ...</quote>) or worse, silently wrong query results
+      after unrelated rows are re-inserted at the now-free table locations.
+      This bug has been present since release 8.2, but occurs so infrequently
+      that it was not diagnosed until now.  If you have reason to suspect
+      that it has happened in your database, reindexing the affected index
+      will fix things.
+-->
+挿入によって発生するインデックスページ分割によって、同時実行中の<code class="command">VACUUM</code>が削除すべきインデックス項目を削除し損なうことが時々発生することがありました。
+対応するテーブル行が削除された後、対応先が無いインデックス項目によってエラー（<span class="quote">「<span class="quote">could not read block N in file ...</span>」</span>など）、最悪は、解放されたテーブル位置に再挿入された関係がない行にちなんだ、警告のない間違った問い合わせ結果が引き起こされます。
+この不具合は8.2から存在していましたが、あまり頻発に発生しませんでしたので、これまで究明されませんでした。
+使用中のデータベースで発生していたのではと疑わしければ、対象のインデックスを再インデックス付けすることで修正されます。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix transient zeroing of shared buffers during WAL replay (Tom Lane)
+-->
+WAL再生中の一時的な共有バッファのゼロ化を修正しました。(Tom Lane)
+     </p><p>
+<!--
+      The replay logic would sometimes zero and refill a shared buffer, so
+      that the contents were transiently invalid.  In hot standby mode this
+      can result in a query that's executing in parallel seeing garbage data.
+      Various symptoms could result from that, but the most common one seems
+      to be <quote>invalid memory alloc request size</quote>.
+-->
+再生ロジックでは時々共有バッファをゼロ化し再度書き込んでいました。
+このためその内容は一時的に無効になります。
+ホットスタンバイモードではこの結果、並行して実行される問い合わせがゴミデータを参照することになり得ました。
+いろいろな兆候が現れますが、もっとも良くある兆候は<span class="quote">「<span class="quote">invalid memory alloc request size</span>」</span>です。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix handling of data-modifying <literal>WITH</literal> subplans in
+      <literal>READ COMMITTED</literal> rechecking (Tom Lane)
+-->
+<code class="literal">READ COMMITTED</code>再検査において、データを変更する<code class="literal">WITH</code>副計画の取り扱いを修正しました。(Tom Lane)
+     </p><p>
+<!--
+      A <literal>WITH</literal> clause containing
+      <command>INSERT</command>/<command>UPDATE</command>/<command>DELETE</command> would crash
+      if the parent <command>UPDATE</command> or <command>DELETE</command> command needed
+      to be re-evaluated at one or more rows due to concurrent updates
+      in <literal>READ COMMITTED</literal> mode.
+-->
+<code class="command">INSERT</code>/<code class="command">UPDATE</code>/<code class="command">DELETE</code>を含む<code class="literal">WITH</code>は、<code class="literal">READ COMMITTED</code>モードにおける同時更新のために、親の<code class="command">UPDATE</code>または<code class="command">DELETE</code>コマンドが１つ以上の行を再評価しなければならない場合に、クラッシュしました。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix corner case in SSI transaction cleanup
+      (Dan Ports)
+-->
+SSIトランザクションの整理における境界問題を修正しました。(Dan Ports)
+     </p><p>
+<!--
+      When finishing up a read-write serializable transaction,
+      a crash could occur if all remaining active serializable transactions
+      are read-only.
+-->
+読み書きのあるシリアライザブルトランザクションを完了させるときに、残存する有効なシリアライザブルトランザクションがすべて読み取り専用であった場合にクラッシュすることがありました。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix postmaster to attempt restart after a hot-standby crash (Tom Lane)
+-->
+ホットスタンバイのクラッシュの後、postmasterの再起動を試みるように修正しました。(Tom Lane)
+     </p><p>
+<!--
+      A logic error caused the postmaster to terminate, rather than attempt
+      to restart the cluster, if any backend process crashed while operating
+      in hot standby mode.
+-->
+ホットスタンバイモードで操作している時に任意のバックエンドプロセスがクラッシュした場合、ロジックエラーのため、クラスタを再起動させようとはせずにpostmasterを終了させました。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix <command>CLUSTER</command>/<command>VACUUM FULL</command> handling of toast
+      values owned by recently-updated rows (Tom Lane)
+-->
+最近更新された行によって所有されるTOAST値に対する<code class="command">CLUSTER</code>/<code class="command">VACUUM FULL</code>の取り扱いを修正しました。(Tom Lane)
+     </p><p>
+<!--
+      This oversight could lead to <quote>duplicate key value violates unique
+      constraint</quote> errors being reported against the toast table's index
+      during one of these commands.
+-->
+この見落としにより、これらのコマンドのいずれかを実行している時に、TOASTテーブルのインデックスに対して<span class="quote">「<span class="quote">duplicate key value violates unique constraint</span>」</span>エラーが報告されることがあり得ました。
+     </p></li><li class="listitem"><p>
+<!--
+      Update per-column permissions, not only per-table permissions, when
+      changing table owner (Tom Lane)
+-->
+テーブル所有者を変更する時に、テーブル単位の権限だけではなく列単位の権限も更新します。(Tom Lane)
+     </p><p>
+<!--
+      Failure to do this meant that any previously granted column permissions
+      were still shown as having been granted by the old owner.  This meant
+      that neither the new owner nor a superuser could revoke the
+      now-untraceable-to-table-owner permissions.
+-->
+この失敗は、事前に付与された列権限が古い所有者により付与されたものとして表示されることを意味します。
+つまり新しい所有者またはスーパーユーザであってもテーブル所有者を追跡できなくなった権限を取り除くことができないことを意味します。
+     </p></li><li class="listitem"><p>
+<!--
+      Support foreign data wrappers and foreign servers in
+      <command>REASSIGN OWNED</command> (Alvaro Herrera)
+-->
+<code class="command">REASSIGN OWNED</code>において外部データラッパおよび外部サーバをサポートします。(Alvaro Herrera)
+     </p><p>
+<!--
+      This command failed with <quote>unexpected classid</quote> errors if
+      it needed to change the ownership of any such objects.
+-->
+これらのオブジェクトの所有権を変更しなければならなかった場合に、このコマンドは<span class="quote">「<span class="quote">unexpected classid</span>」</span>エラーで失敗しました。
+     </p></li><li class="listitem"><p>
+<!--
+      Allow non-existent values for some settings in <command>ALTER
+      USER/DATABASE SET</command> (Heikki Linnakangas)
+-->
+<code class="command">ALTER USER/DATABASE SET</code>における一部の設定で存在しない値を許可します。 (Heikki Linnakangas)
+     </p><p>
+<!--
+      Allow <varname>default_text_search_config</varname>,
+      <varname>default_tablespace</varname>, and <varname>temp_tablespaces</varname> to be
+      set to names that are not known.  This is because they might be known
+      in another database where the setting is intended to be used, or for the
+      tablespace cases because the tablespace might not be created yet.  The
+      same issue was previously recognized for <varname>search_path</varname>, and
+      these settings now act like that one.
+-->
+<code class="varname">default_text_search_config</code>、<code class="varname">default_tablespace</code>、<code class="varname">temp_tablespaces</code>を未知の名前に設定することができます。
+これらが実際に使用されている別のデータベースでは既知であるかもしれませんし、またテーブル空間の場合はまだテーブル空間が作成されていないかもしれないからです。
+過去<code class="varname">search_path</code>においても同じ問題がありましたが、これらの設定も同様に動作するようにしました。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix <quote>unsupported node type</quote> error caused by <literal>COLLATE</literal>
+      in an <command>INSERT</command> expression (Tom Lane)
+-->
+<code class="command">INSERT</code>式内の<code class="literal">COLLATE</code>により引き起こる<span class="quote">「<span class="quote">unsupported node type</span>」</span>エラーを修正しました。(Tom Lane)
+     </p></li><li class="listitem"><p>
+<!--
+      Avoid crashing when we have problems deleting table files post-commit
+      (Tom Lane)
+-->
+コミット後のテーブルファイルの削除に問題があった場合のクラッシュを防止します。(Tom Lane)
+     </p><p>
+<!--
+      Dropping a table should lead to deleting the underlying disk files only
+      after the transaction commits.  In event of failure then (for instance,
+      because of wrong file permissions) the code is supposed to just emit a
+      warning message and go on, since it's too late to abort the
+      transaction.  This logic got broken as of release 8.4, causing such
+      situations to result in a PANIC and an unrestartable database.
+-->
+テーブル削除は、そのトランザクションがコミットした後にのみ背後のディスク上のファイルを削除しなければなりません。
+（例えばファイルの権限の誤設定のため）失敗した場合、トランザクションをアボートするには遅すぎますので、コードは単に警告メッセージを出力し継続するものと考えられます。
+リリース8.4においてこのロジックが壊れ、こうした状況でPANICが発生し、再起動できないデータベースとなりました。
+     </p></li><li class="listitem"><p>
+<!--
+      Recover from errors occurring during WAL replay of <command>DROP
+      TABLESPACE</command> (Tom Lane)
+-->
+<code class="command">DROP TABLESPACE</code>のWAL再生中に発生したエラーから修復します。(Tom Lane)
+     </p><p>
+<!--
+      Replay will attempt to remove the tablespace's directories, but there
+      are various reasons why this might fail (for example, incorrect
+      ownership or permissions on those directories).  Formerly the replay
+      code would panic, rendering the database unrestartable without manual
+      intervention.  It seems better to log the problem and continue, since
+      the only consequence of failure to remove the directories is some
+      wasted disk space.
+-->
+再生はテーブル空間ディレクトリの削除を試みますが、（対象ディレクトリの所有者や権限が不正であったなど）失敗する可能性は多々あります。
+これまでは再生コードはパニックし、手作業を介さなければ再起動できないデータベースになりました。
+ディレクトリの削除に失敗したところで多少ディスク領域が無駄に使われるだけですので、問題を記録し、継続する方がより良いと考えました。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix race condition in logging AccessExclusiveLocks for hot standby
+      (Simon Riggs)
+-->
+ホットスタンバイのAccessExclusiveLocksのログ記録における競合問題を修正しました。(Simon Riggs)
+     </p><p>
+<!--
+      Sometimes a lock would be logged as being held by <quote>transaction
+      zero</quote>.  This is at least known to produce assertion failures on
+      slave servers, and might be the cause of more serious problems.
+-->
+ロックが<span class="quote">「<span class="quote">transaction zero</span>」</span>によって保持されていると記録されることが時々ありました。
+少なくともスレーブサーバでアサーションエラーが発生することが分かっていますが、もっと深刻な問題が起こる可能性があります。
+     </p></li><li class="listitem"><p>
+<!--
+      Track the OID counter correctly during WAL replay, even when it wraps
+      around (Tom Lane)
+-->
+WAL再生中にOIDカウンタを、たとえ周回していたとしても、正しく追跡します。(Tom Lane)
+     </p><p>
+<!--
+      Previously the OID counter would remain stuck at a high value until the
+      system exited replay mode.  The practical consequences of that are
+      usually nil, but there are scenarios wherein a standby server that's
+      been promoted to master might take a long time to advance the OID
+      counter to a reasonable value once values are needed.
+-->
+これまでは、OIDカウンタはシステムが再生モードを抜けるまで高値のままになりました。
+実際にはほとんどnilという結果になりますが、マスタに昇格されるスタンバイサーバでは、値が必要になってから、OIDカウンタを合理的な値まで進めるために長時間かかる可能性がありました。
+     </p></li><li class="listitem"><p>
+<!--
+      Prevent emitting misleading <quote>consistent recovery state reached</quote>
+      log message at the beginning of crash recovery (Heikki Linnakangas)
+-->
+クラッシュリカバリの最初の、誤解を招く<span class="quote">「<span class="quote">consistent recovery state reached</span>」</span>ログメッセージの発行を抑制します。(Heikki Linnakangas)
+     </p></li><li class="listitem"><p>
+<!--
+      Fix initial value of
+      <structname>pg_stat_replication</structname>.<structfield>replay_location</structfield>
+      (Fujii Masao)
+-->
+<code class="structname">pg_stat_replication</code>.<code class="structfield">replay_location</code>の初期値を修正しました。(Fujii Masao)
+     </p><p>
+<!--
+      Previously, the value shown would be wrong until at least one WAL
+      record had been replayed.
+-->
+これまでは、少なくとも1つのWALレコードが再生されるまで、表示される値は間違っていました。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix regular expression back-references with <literal>*</literal> attached
+      (Tom Lane)
+-->
+<code class="literal">*</code>が付いた正規表現の後方参照を修正しました。(Tom Lane)
+     </p><p>
+<!--
+      Rather than enforcing an exact string match, the code would effectively
+      accept any string that satisfies the pattern sub-expression referenced
+      by the back-reference symbol.
+-->
+コードでは、正確な文字列一致を強制せずに、実質後方参照シンボルで参照されるパターン副式を満たす任意の文字列を受け付けました。
+     </p><p>
+<!--
+      A similar problem still afflicts back-references that are embedded in a
+      larger quantified expression, rather than being the immediate subject
+      of the quantifier.  This will be addressed in a future
+      <productname>PostgreSQL</productname> release.
+-->
+同様の問題はまだ、直接量指定子のサブジェクトとならない、より大きく量化された式に埋め込まれた後方参照でも残っています。
+こちらは将来のリリースの<span class="productname">PostgreSQL</span>で対応予定です。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix recently-introduced memory leak in processing of
+      <type>inet</type>/<type>cidr</type> values (Heikki Linnakangas)
+-->
+<code class="type">inet</code>/<code class="type">cidr</code>値の処理に最近入ったメモリリークを修正しました。(Heikki Linnakangas)
+     </p><p>
+<!--
+      A patch in the December 2011 releases of <productname>PostgreSQL</productname>
+      caused memory leakage in these operations, which could be significant
+      in scenarios such as building a btree index on such a column.
+-->
+2011年12月の<span class="productname">PostgreSQL</span>リリース内のパッチによって、これらの操作にメモリリークが発生しました。
+これらの列に対するbtreeインデックス等で重大な問題になる可能性がありました。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix planner's ability to push down index-expression restrictions
+      through <literal>UNION ALL</literal> (Tom Lane)
+-->
+<code class="literal">UNION ALL</code>を通してインデックス式制限をプッシュダウンするプランナの機能を修正しました。(Tom Lane)
+     </p><p>
+<!--
+      This type of optimization was inadvertently disabled by a fix for
+      another problem in 9.1.2.
+-->
+9.1.2において別の問題を修正する際に、この種の最適化が意図せず無効になりました。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix planning of <literal>WITH</literal> clauses referenced in
+      <command>UPDATE</command>/<command>DELETE</command> on an inherited table
+      (Tom Lane)
+-->
+継承テーブルに対する<code class="command">UPDATE</code>/<code class="command">DELETE</code>において参照される<code class="literal">WITH</code>句の計画作成を修正しました。(Tom Lane)
+     </p><p>
+<!--
+      This bug led to <quote>could not find plan for CTE</quote> failures.
+-->
+この不具合により<span class="quote">「<span class="quote">could not find plan for CTE</span>」</span>失敗が発生しました。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix GIN cost estimation to handle <literal>column IN (...)</literal>
+      index conditions (Marti Raudsepp)
+-->
+<code class="literal">column IN (...)</code>インデックス条件を扱うためのGINコスト推定を修正しました。(Marti Raudsepp)
+     </p><p>
+<!--
+      This oversight would usually lead to crashes if such a condition could
+      be used with a GIN index.
+-->
+この見落としにより、こうした条件がGINインデックスを用いて使用される場合によくクラッシュするようになりました。
+     </p></li><li class="listitem"><p>
+<!--
+      Prevent assertion failure when exiting a session with an open, failed
+      transaction (Tom Lane)
+-->
+既存のセッションが開いたままの失敗トランザクションを持つ場合のアサーション失敗を防止します。
+     </p><p>
+<!--
+      This bug has no impact on normal builds with asserts not enabled.
+-->
+この不具合は、アサートが有効ではない通常の構築では影響はありません。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix dangling pointer after <command>CREATE TABLE AS</command>/<command>SELECT
+      INTO</command> in a SQL-language function (Tom Lane)
+-->
+SQL言語関数内の<code class="command">CREATE TABLE AS</code>/<code class="command">SELECT INTO</code>の後に対応先がなくなったポインタを修正しました。(Tom Lane)
+     </p><p>
+<!--
+      In most cases this only led to an assertion failure in assert-enabled
+      builds, but worse consequences seem possible.
+-->
+ほとんどの場合、これはアサートが有効な構築におけるアサーション失敗という結果になるだけですが、もっと悪い結果になる可能性がありました。
+     </p></li><li class="listitem"><p>
+<!--
+      Avoid double close of file handle in syslogger on Windows (MauMau)
+-->
+Windowsのsysloggerにおけるファイルハンドルの二重クローズを防ぎます。(MauMau）
+     </p><p>
+<!--
+      Ordinarily this error was invisible, but it would cause an exception
+      when running on a debug version of Windows.
+-->
+通常はこのエラーは表面化しませんが、Windowsのデバッグ版を実行している場合は例外が引き起こります。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix I/O-conversion-related memory leaks in plpgsql
+      (Andres Freund, Jan Urbanski, Tom Lane)
+-->
+plpgsqlにおけるI/O変換関連のメモリリークを修正しました。(Andres Freund、Jan Urbanski、Tom Lane)
+     </p><p>
+<!--
+      Certain operations would leak memory until the end of the current
+      function.
+-->
+現在の関数が終わるまで、特定の操作がメモリリークしました。
+     </p></li><li class="listitem"><p>
+<!--
+      Work around bug in perl's SvPVutf8() function (Andrew Dunstan)
+-->
+perlのSvPVutf8()関数の不具合を回避しました。(Andrew Dunstan)
+     </p><p>
+<!--
+      This function crashes when handed a typeglob or certain read-only
+      objects such as <literal>$^V</literal>.  Make plperl avoid passing those to
+      it.
+-->
+この関数はtypeglobまたは特定の読み取り専用のオブジェクトが渡された場合にクラッシュします。
+plperlでこれらを渡さないようにしました。
+     </p></li><li class="listitem"><p>
+<!--
+      In <application>pg_dump</application>, don't dump contents of an extension's
+      configuration tables if the extension itself is not being dumped
+      (Tom Lane)
+-->
+<span class="application">pg_dump</span>において、拡張自体がダンプ対象でない場合に拡張の設定テーブルの内容をダンプしません。(Tom Lane)
+     </p></li><li class="listitem"><p>
+<!--
+      Improve <application>pg_dump</application>'s handling of inherited table columns
+      (Tom Lane)
+-->
+継承されたテーブル列に対する<span class="application">pg_dump</span>の取り扱いを改良しました。(Tom Lane)
+     </p><p>
+<!--
+      <application>pg_dump</application> mishandled situations where a child column has
+      a different default expression than its parent column.  If the default
+      is textually identical to the parent's default, but not actually the
+      same (for instance, because of schema search path differences) it would
+      not be recognized as different, so that after dump and restore the
+      child would be allowed to inherit the parent's default.  Child columns
+      that are <literal>NOT NULL</literal> where their parent is not could also be
+      restored subtly incorrectly.
+-->
+<span class="application">pg_dump</span>は、子の列が親の列と異なるデフォルト式を持つという状況を間違って扱いました。
+デフォルトがテキストとして親のデフォルトと同一であるが、実際は同一ではない場合（例えば、スキーマ検索パスの違いのため）、異なるものとして認識せず、そのため、ダンプしリストアした後、子は親のデフォルトを継承することができました。
+子の列が<code class="literal">NOT NULL</code>であり親がそうではなかった場合も、微妙に間違ってリストアされました。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix <application>pg_restore</application>'s direct-to-database mode for
+      INSERT-style table data (Tom Lane)
+-->
+INSERT形式のテーブルデータに対する<span class="application">pg_restore</span>の直接データベースにリストアするモードを修正しました。(Tom Lane)
+     </p><p>
+<!--
+      Direct-to-database restores from archive files made with
+      <option>&#045;-inserts</option> or <option>&#045;-column-inserts</option> options fail when
+      using <application>pg_restore</application> from a release dated September or
+      December 2011, as a result of an oversight in a fix for another
+      problem.  The archive file itself is not at fault, and text-mode
+      output is okay.
+-->
+他の問題に対する修正における見落としの結果、2011年9月または12月付けのリリースに含まれる<span class="application">pg_restore</span>では、<code class="option">--inserts</code>または<code class="option">--column-inserts</code>オプションを付けて作成されたアーカイブファイルを直接データベースにリストアすることができませんでした。
+アーカイブファイル自体には失敗はなく、テキストモード出力では問題ありませんでした。
+     </p></li><li class="listitem"><p>
+<!--
+      Teach <application>pg_upgrade</application> to handle renaming of
+      <application>plpython</application>'s shared library (Bruce Momjian)
+-->
+<span class="application">plpython</span>の共有ライブラリの名称変更を扱うよう<span class="application">pg_upgrade</span>を変更しました。(Bruce Momjian)
+     </p><p>
+<!--
+      Upgrading a pre-9.1 database that included plpython would fail because
+      of this oversight.
+-->
+この見落としのため、plpythonを含む9.1より前のデータベースをアップグレードすることができませんでした。
+     </p></li><li class="listitem"><p>
+<!--
+      Allow <application>pg_upgrade</application> to process tables containing
+      <type>regclass</type> columns (Bruce Momjian)
+-->
+<span class="application">pg_upgrade</span>が<code class="type">regclass</code>列を含むテーブルを処理できるようにしました。(Bruce Momjian)
+     </p><p>
+<!--
+      Since <application>pg_upgrade</application> now takes care to preserve
+      <structname>pg_class</structname> OIDs, there was no longer any reason for this
+      restriction.
+-->
+<span class="application">pg_upgrade</span>が<code class="structname">pg_class</code> OIDの保護に注意を払うようになりましたので、この制限を続ける理由はなくなりました。
+     </p></li><li class="listitem"><p>
+<!--
+      Make <application>libpq</application> ignore <literal>ENOTDIR</literal> errors
+      when looking for an SSL client certificate file
+      (Magnus Hagander)
+-->
+SSLクライアント証明書ファイルを検索するときに、<span class="application">libpq</span>が<code class="literal">ENOTDIR</code>エラーを無視するようにしました。(Magnus Hagander)
+     </p><p>
+<!--
+      This allows SSL connections to be established, though without a
+      certificate, even when the user's home directory is set to something
+      like <literal>/dev/null</literal>.
+-->
+これによりユーザのホームディレクトリが<code class="literal">/dev/null</code>のようなものに設定されていたとしても、証明書なしですが、SSL接続を確立できます。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix some more field alignment issues in <application>ecpg</application>'s SQLDA area
+      (Zoltan Boszormenyi)
+-->
+<span class="application">ecpg</span>のSQLDA領域におけるフィールド整列問題を修正しました。 (Zoltan Boszormenyi)
+     </p></li><li class="listitem"><p>
+<!--
+      Allow <literal>AT</literal> option in <application>ecpg</application>
+      <literal>DEALLOCATE</literal> statements (Michael Meskes)
+-->
+<span class="application">ecpg</span>の<code class="literal">DEALLOCATE</code>文において<code class="literal">AT</code>オプションを可能にしました。(Michael Meskes)
+     </p><p>
+<!--
+      The infrastructure to support this has been there for awhile, but
+      through an oversight there was still an error check rejecting the case.
+-->
+これをサポートする基盤は少し前から存在しましたが、見落としのため、エラー検査でこの状況を拒絶していました。
+     </p></li><li class="listitem"><p>
+<!--
+      Do not use the variable name when defining a varchar structure in ecpg
+      (Michael Meskes)
+-->
+ecpgにおいてvarchar構造体を定義するときに変数名を使用しません。(Michael Meskes)
+     </p></li><li class="listitem"><p>
+<!--
+      Fix <filename>contrib/auto_explain</filename>'s JSON output mode to produce
+      valid JSON (Andrew Dunstan)
+-->
+<code class="filename">contrib/auto_explain</code>のJSON出力モードが有効なJSONを生成するように修正しました。(Andrew Dunstan)
+     </p><p>
+<!--
+      The output used brackets at the top level, when it should have used
+      braces.
+-->
+この出力では、本来括弧を使用しなければならない最上位で、角括弧を使用していました。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix error in <filename>contrib/intarray</filename>'s <literal>int[] &amp;
+      int[]</literal> operator (Guillaume Lelarge)
+-->
+<code class="filename">contrib/intarray</code>の<code class="literal">int[] &amp; int[]</code>演算子のエラーを修正しました。 (Guillaume Lelarge)
+     </p><p>
+<!--
+      If the smallest integer the two input arrays have in common is 1,
+      and there are smaller values in either array, then 1 would be
+      incorrectly omitted from the result.
+-->
+２つの入力配列が共通して持つ最小の整数が１であり、どちらかの配列により小さな値があった場合、１が結果から間違って省かれました。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix error detection in <filename>contrib/pgcrypto</filename>'s
+      <function>encrypt_iv()</function> and <function>decrypt_iv()</function>
+      (Marko Kreen)
+-->
+<code class="filename">contrib/pgcrypto</code>の<code class="function">encrypt_iv()</code>および<code class="function">decrypt_iv()</code>の誤判定を修正しました。(Marko Kreen)
+     </p><p>
+<!--
+      These functions failed to report certain types of invalid-input errors,
+      and would instead return random garbage values for incorrect input.
+-->
+これらの関数は特定の種類の無効入力エラーの通知に失敗し、不正な入力に対してランダムなゴミの値を代わりに返しました。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix one-byte buffer overrun in <filename>contrib/test_parser</filename>
+      (Paul Guyot)
+-->
+<code class="filename">contrib/test_parser</code>における1バイトのバッファオーバーランを修正しました。(Paul Guyot)
+     </p><p>
+<!--
+      The code would try to read one more byte than it should, which would
+      crash in corner cases.
+      Since <filename>contrib/test_parser</filename> is only example code, this is
+      not a security issue in itself, but bad example code is still bad.
+-->
+コードでは必要より1バイト多く読み取ろうとし、境界条件ではクラッシュします。
+<code class="filename">contrib/test_parser</code>は単なるサンプルコードであり、これ自体はセキュリティ問題ではありませんが、例のコードとしては良くありません。
+     </p></li><li class="listitem"><p>
+<!--
+      Use <function>__sync_lock_test_and_set()</function> for spinlocks on ARM, if
+      available (Martin Pitt)
+-->
+ARMにおいて可能ならばスピンロックに<code class="function">__sync_lock_test_and_set()</code>を使用します。(Martin Pitt)
+     </p><p>
+<!--
+      This function replaces our previous use of the <literal>SWPB</literal>
+      instruction, which is deprecated and not available on ARMv6 and later.
+      Reports suggest that the old code doesn't fail in an obvious way on
+      recent ARM boards, but simply doesn't interlock concurrent accesses,
+      leading to bizarre failures in multiprocess operation.
+-->
+この関数は、以前の廃止予定でARMv6以降では使用できなくなった<code class="literal">SWPB</code>命令の使用を置き換えるものです。
+最近のARMボードでも古いコードは明白な方法で失敗することはありませんが、単に同時アクセスのインターロックを行わず、マルチプロセス操作において奇妙な失敗をもたらすと報告されています。
+     </p></li><li class="listitem"><p>
+<!--
+      Use <option>-fexcess-precision=standard</option> option when building with
+      gcc versions that accept it (Andrew Dunstan)
+-->
+受け付け可能なバージョンのgccを用いて構築する場合に<code class="option">-fexcess-precision=standard</code>オプションを使用します。(Andrew Dunstan)
+     </p><p>
+<!--
+      This prevents assorted scenarios wherein recent versions of gcc will
+      produce creative results.
+-->
+最近のバージョンのgccは独創的な結果を生成するというさまざまなシナリオを防ぎます。
+     </p></li><li class="listitem"><p>
+<!--
+      Allow use of threaded Python on FreeBSD (Chris Rees)
+-->
+FreeBSDにおいてスレッド化されたPythonを使用できるようにしました。(Chris Rees)
+     </p><p>
+<!--
+      Our configure script previously believed that this combination wouldn't
+      work; but FreeBSD fixed the problem, so remove that error check.
+-->
+configureスクリプトはこれまで、この組み合わせは動作しないと前提していました。
+しかしFreeBSDではこの問題が修正されましたので、エラー検査を取り除きました。
+     </p></li><li class="listitem"><p>
+<!--
+      Allow MinGW builds to use standardly-named OpenSSL libraries
+      (Tomasz Ostrowski)
+-->
+MinGWが標準的な名前のOpenSSLライブラリを使用して構築できるようにしました。(Tomasz Ostrowski)
+     </p></li></ul></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="release-9-1-4.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="release.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="release-9-1-2.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">E.130. リリース9.1.4 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> E.132. リリース9.1.2</td></tr></table></div></body></html>

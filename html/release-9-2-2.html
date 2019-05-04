@@ -1,0 +1,729 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>E.107. リリース9.2.2</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="prev" href="release-9-2-3.html" title="E.106. リリース9.2.3" /><link rel="next" href="release-9-2-1.html" title="E.108. リリース9.2.1" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="release.html" title="付録E リリースノート">付録E リリースノート</a></td><td width="20%" align="right"></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="release-9-2-3.html" title="E.106. リリース9.2.3">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="release.html" title="付録E リリースノート">上へ</a></td><td width="60%" align="center">E.107. リリース9.2.2</td><td width="20%" align="right"> <a accesskey="n" href="release-9-2-1.html" title="E.108. リリース9.2.1">次へ</a></td></tr></table><hr /></div><div class="sect1" id="RELEASE-9-2-2"><div class="titlepage"><div><div><h2 class="title" style="clear: both">E.107. リリース9.2.2</h2></div></div></div><!--
+  <title>Release 9.2.2</title>
+--><p><!--
+  <title>Release date:</title>
+--><strong>リリース日: </strong>2012-12-06</p><p>
+<!--
+   This release contains a variety of fixes from 9.2.1.
+   For information about new features in the 9.2 major release, see
+   <xref linkend="release-9-2"/>.
+-->
+このリリースは9.2.1に対し、各種不具合を修正したものです。
+9.2メジャーリリースにおける新機能については、<a class="xref" href="release-9-2.html" title="E.109. リリース9.2">E.109</a>を参照してください。
+  </p><div class="sect2" id="id-1.11.6.111.4"><div class="titlepage"><div><div><h3 class="title">E.107.1. バージョン9.2.2への移行</h3></div></div></div><!--
+   <title>Migration to Version 9.2.2</title>
+--><p>
+<!--
+    A dump/restore is not required for those running 9.2.X.
+-->
+9.2.Xからの移行ではダンプ/リストアは不要です。
+   </p><p>
+<!--
+    However, you may need to perform <command>REINDEX</command> operations to
+    correct problems in concurrently-built indexes, as described in the first
+    changelog item below.
+-->
+しかしながら、以下の変更履歴の最初の項目に記述されている通り、CONCURRENTLYで作成されたインデックスの問題を修正するために<code class="command">REINDEX</code>の操作を行う必要があるかもしれません。
+   </p><p>
+<!--
+    Also, if you are upgrading from version 9.2.0,
+    see <xref linkend="release-9-2-1"/>.
+-->
+また、バージョン9.2.0からアップグレードする場合は、<a class="xref" href="release-9-2-1.html" title="E.108. リリース9.2.1">E.108</a>を参照してください。
+   </p></div><div class="sect2" id="id-1.11.6.111.5"><div class="titlepage"><div><div><h3 class="title">E.107.2. 変更点</h3></div></div></div><!--
+   <title>Changes</title>
+--><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<!--
+      Fix multiple bugs associated with <command>CREATE/DROP INDEX
+      CONCURRENTLY</command> (Andres Freund, Tom Lane, Simon Riggs, Pavan Deolasee)
+-->
+<code class="command">CREATE/DROP INDEX CONCURRENTLY</code>に関連する複数の不具合を修正しました。(Andres Freund、Tom Lane、Simon Riggs、Pavan Deolasee)
+     </p><p>
+<!--
+      An error introduced while adding <command>DROP INDEX CONCURRENTLY</command>
+      allowed incorrect indexing decisions to be made during the initial
+      phase of <command>CREATE INDEX CONCURRENTLY</command>; so that indexes built
+      by that command could be corrupt.  It is recommended that indexes
+      built in 9.2.X with <command>CREATE INDEX CONCURRENTLY</command> be rebuilt
+      after applying this update.
+-->
+<code class="command">DROP INDEX CONCURRENTLY</code>の追加によって引き起こされたエラーにより、<code class="command">CREATE INDEX CONCURRENTLY</code>の最初の段階で索引作成について誤った決定がされる場合がありました。
+そのため、このコマンドによって作成されたインデックスが破損していることがあります。
+9.2.Xにおいて<code class="command">CREATE INDEX CONCURRENTLY</code>で作成されたインデックスについては、このアップデートを適用した後で再作成することが推奨されます。
+     </p><p>
+<!--
+      In addition, fix <command>CREATE/DROP INDEX CONCURRENTLY</command> to use
+      in-place updates when changing the state of an index's
+      <structname>pg_index</structname> row.  This prevents race conditions that could
+      cause concurrent sessions to miss updating the target index, thus
+      again resulting in corrupt concurrently-created indexes.
+-->
+さらに、<code class="command">CREATE/DROP INDEX CONCURRENTLY</code>がインデックスの<code class="structname">pg_index</code>の行の状態を変更するときに、その場にある更新を使うように修正しました。
+これにより、同時実行中のセッションが対象のインデックスを更新できず、それによりCONCURRENTLYで作成されるインデックスを破損させることになる競合条件を防ぐことができます。
+     </p><p>
+<!--
+      Also, fix various other operations to ensure that they ignore
+      invalid indexes resulting from a failed <command>CREATE INDEX
+      CONCURRENTLY</command> command.  The most important of these is
+      <command>VACUUM</command>, because an auto-vacuum could easily be launched
+      on the table before corrective action can be taken to fix or remove
+      the invalid index.
+-->
+また、<code class="command">CREATE INDEX CONCURRENTLY</code>コマンドのエラーの結果として作られる不正なインデックスについて、他の様々な操作が確実に無視するように修正しました。
+この中で最も重要なのは<code class="command">VACUUM</code>です。
+なぜなら、この不正なインデックスを修正あるいは削除するための修正の処理が実行される前に、自動バキュームが実行されることがあり得るからです。
+     </p><p>
+<!--
+      Also fix <command>DROP INDEX CONCURRENTLY</command> to not disable
+      insertions into the target index until all queries using it are done.
+-->
+また、<code class="command">DROP INDEX CONCURRENTLY</code>について、対象のインデックスを利用するすべての問い合わせが終了しなくても、挿入が可能になるように修正しました。
+     </p><p>
+<!--
+      Also fix misbehavior if <command>DROP INDEX CONCURRENTLY</command> is
+      canceled: the previous coding could leave an un-droppable index behind.
+-->
+また、<code class="command">DROP INDEX CONCURRENTLY</code>が取り消された時の不正な動作を修正しました。
+以前のプログラムでは、削除できないインデックスが残る可能性がありました。
+     </p></li><li class="listitem"><p>
+<!--
+      Correct predicate locking for <command>DROP INDEX CONCURRENTLY</command>
+      (Kevin Grittner)
+-->
+<code class="command">DROP INDEX CONCURRENTLY</code>の述部ロックを修正しました。(Kevin Grittner)
+     </p><p>
+<!--
+      Previously, SSI predicate locks were processed at the wrong time,
+      possibly leading to incorrect behavior of serializable transactions
+      executing in parallel with the <command>DROP</command>.
+-->
+これまでは、SSI述部ロックは間違ったタイミングで処理されており、シリアライザブルのトランザクションが<code class="command">DROP</code>と並行して実行されるという誤った動作をする可能性がありました。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix buffer locking during WAL replay (Tom Lane)
+-->
+WAL再生中のバッファロックを修正しました。(Tom Lane)
+     </p><p>
+<!--
+      The WAL replay code was insufficiently careful about locking buffers
+      when replaying WAL records that affect more than one page.  This could
+      result in hot standby queries transiently seeing inconsistent states,
+      resulting in wrong answers or unexpected failures.
+-->
+複数ページにまたがるWALレコードを再生する場合のバッファロックについて、WAL再生のプログラムに完全でない部分がありました。
+これにより、ホットスタンバイの問い合わせが一時的に一貫性のない状態になることがあり、その結果、誤った結果や不正なエラーを起こすことがありました。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix an error in WAL generation logic for GIN indexes (Tom Lane)
+-->
+GINインデックスについてのWAL生成のロジックの誤りを修正しました。(Tom Lane)
+     </p><p>
+<!--
+      This could result in index corruption, if a torn-page failure occurred.
+-->
+分裂ページのエラーが発生すると、これによりインデックスが破損することがありました。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix an error in WAL replay logic for SP-GiST indexes (Tom Lane)
+-->
+SP-GiSTインデックスについてのWAL再生のロジックの誤りを修正しました。(Tom Lane)
+     </p><p>
+<!--
+      This could result in index corruption after a crash, or on a standby
+      server.
+-->
+クラッシュの後、あるいはスタンバイサーバにおいて、これによりインデックスが破損することがありました。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix incorrect detection of end-of-base-backup location during WAL
+      recovery (Heikki Linnakangas)
+-->
+WAL再生中にベースバックアップの終了位置を誤検知するのを修正しました。(Heikki Linnakangas)
+     </p><p>
+<!--
+      This mistake allowed hot standby mode to start up before the database
+      reaches a consistent state.
+-->
+この誤りにより、データベースが一貫性のある状態になるより前にホットスタンバイモードが起動してしまうことがありました。
+     </p></li><li class="listitem"><p>
+<!--
+      Properly remove startup process's virtual XID lock when promoting a
+      hot standby server to normal running (Simon Riggs)
+-->
+ホットスタンバイのサーバを通常の実行にプロモートする時、起動プロセスの仮想XIDロックを正しく削除するようにしました。(Simon Riggs)
+     </p><p>
+<!--
+      This oversight could prevent subsequent execution of certain
+      operations such as <command>CREATE INDEX CONCURRENTLY</command>.
+-->
+この誤りにより、<code class="command">CREATE INDEX CONCURRENTLY</code>などいくつかの操作をこの後で実行できない場合がありました。
+     </p></li><li class="listitem"><p>
+<!--
+      Avoid bogus <quote>out-of-sequence timeline ID</quote> errors in standby
+      mode (Heikki Linnakangas)
+-->
+スタンバイモードにおいて偽物の<span class="quote">「<span class="quote">out-of-sequence timeline ID</span>」</span>エラーが出ないようにしました。(Heikki Linnakangas)
+     </p></li><li class="listitem"><p>
+<!--
+      Prevent the postmaster from launching new child processes after it's
+      received a shutdown signal (Tom Lane)
+-->
+postmasterがシャットダウンのシグナルを受け取った後は、新しい子プロセスを起動しないようにしました。(Tom Lane)
+     </p><p>
+<!--
+      This mistake could result in shutdown taking longer than it should, or
+      even never completing at all without additional user action.
+-->
+この誤りにより、シャットダウンが必要以上に長く時間がかかる、あるいはユーザによる追加の操作がなければ終了しない、ということがありました。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix the syslogger process to not fail when
+      <varname>log_rotation_age</varname> exceeds 2^31 milliseconds (about 25 days)
+      (Tom Lane)
+-->
+<code class="varname">log_rotation_age</code>が2^31ミリ秒(約25日)を超えていても、sysloggerがエラーを起こさないように修正しました。(Tom Lane)
+     </p></li><li class="listitem"><p>
+<!--
+      Fix <function>WaitLatch()</function> to return promptly when the requested
+      timeout expires (Jeff Janes, Tom Lane)
+-->
+<code class="function">WaitLatch()</code>について、要求されたタイムアウトの期限が切れたら、すぐに戻るように修正しました。(Jeff Janes、Tom Lane)
+     </p><p>
+<!--
+      With the previous coding, a steady stream of non-wait-terminating
+      interrupts could delay return from <function>WaitLatch()</function>
+      indefinitely.  This has been shown to be a problem for the autovacuum
+      launcher process, and might cause trouble elsewhere as well.
+-->
+以前のプログラムでは、ウェイトを終了させない割り込みが定常的に発生すると、<code class="function">WaitLatch()</code>からの戻りが無期限に遅れることがありました。
+これはautovacuum launcherプロセスにおいて問題であることがわかりました。
+他の部分でも同じように問題となる可能性がありました。
+     </p></li><li class="listitem"><p>
+<!--
+      Avoid corruption of internal hash tables when out of memory
+      (Hitoshi Harada)
+-->
+メモリが不足した時でも、内部ハッシュテーブルが破損しないようにしました。(Hitoshi Harada)
+     </p></li><li class="listitem"><p>
+<!--
+      Prevent file descriptors for dropped tables from being held open past
+      transaction end (Tom Lane)
+-->
+削除したテーブルのファイルデスクリプタをトランザクションが終了した後もオープンのまま保持し続ける問題を修正しました。(Tom Lane)
+     </p><p>
+<!--
+      This should reduce problems with long-since-dropped tables continuing
+      to occupy disk space.
+-->
+これにより、削除してから時間が経っているテーブルがディスクスペースを占め続けるという問題の発生が減るはずです。
+     </p></li><li class="listitem"><p>
+<!--
+      Prevent database-wide crash and restart when a new child process is
+      unable to create a pipe for its latch (Tom Lane)
+-->
+新しい子プロセスがラッチへのパイプを作成できないとき、データベース全体がクラッシュして再起動する問題を修正しました。(Tom Lane)
+     </p><p>
+<!--
+      Although the new process must fail, there is no good reason to force a
+      database-wide restart, so avoid that.  This improves robustness when
+      the kernel is nearly out of file descriptors.
+-->
+新しいプロセスはエラーにするしかありませんが、データベース全体を強制的に再起動させるべき理由はありませんから、再起動しないようにしました。
+これによりカーネルのファイルディスクリプタが足りなくなりそうな場合の堅牢性が向上します。
+     </p></li><li class="listitem"><p>
+<!--
+      Avoid planner crash with joins to unflattened subqueries (Tom Lane)
+-->
+平坦化されていない副問い合わせとの結合でプランナがクラッシュする問題を修正しました。(Tom Lane)
+     </p></li><li class="listitem"><p>
+<!--
+      Fix planning of non-strict equivalence clauses above outer joins
+      (Tom Lane)
+-->
+外部結合上の厳格でない等価な句についての計画作成を修正しました。(Tom Lane)
+     </p><p>
+<!--
+      The planner could derive incorrect constraints from a clause equating
+      a non-strict construct to something else, for example
+      <literal>WHERE COALESCE(foo, 0) = 0</literal>
+      when <literal>foo</literal> is coming from the nullable side of an outer join.
+      9.2 showed this type of error in more cases than previous releases,
+      but the basic bug has been there for a long time.
+-->
+厳格でない構造を他のものと等号で結ぶ句について、プランナが誤った制約を導出する場合がありました。
+例えば、<code class="literal">WHERE COALESCE(foo, 0) = 0</code>で<code class="literal">foo</code>が外部結合のNULLになるかもしれない側のもののときです。
+9.2では以前のリリースに比べてこの種のエラーが起こる場合が多いことがわかりましたが、基本的な不具合はずっと以前からありました。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix <command>SELECT DISTINCT</command> with index-optimized
+      <function>MIN</function>/<function>MAX</function> on an inheritance tree (Tom Lane)
+-->
+継承ツリー上でインデックスにより最適化される<code class="function">MIN</code>/<code class="function">MAX</code>がある場合の<code class="command">SELECT DISTINCT</code>について修正しました。(Tom Lane)
+     </p><p>
+<!--
+      The planner would fail with <quote>failed to re-find MinMaxAggInfo
+      record</quote> given this combination of factors.
+-->
+これらの要素の組み合わせに対して、プランナは<span class="quote">「<span class="quote">failed to re-find MinMaxAggInfo record</span>」</span>というエラーを起こしていました。
+     </p></li><li class="listitem"><p>
+<!--
+      Make sure the planner sees implicit and explicit casts as equivalent
+      for all purposes, except in the minority of cases where there's
+      actually a semantic difference (Tom Lane)
+-->
+それらに実際に意味的な違いがあるという少数の場合を除き、プランナはすべての目的において、暗示的なキャストと明示的なキャストを等価なものとして扱うようにしました。(Tom Lane)
+     </p></li><li class="listitem"><p>
+<!--
+      Include join clauses when considering whether partial indexes can be
+      used for a query (Tom Lane)
+-->
+問い合わせに対して部分インデックスが使えるかどうかを考慮する際に、JOIN句を含めるようにしました。(Tom Lane)
+     </p><p>
+<!--
+      A strict join clause can be sufficient to establish an
+      <replaceable>x</replaceable> <literal>IS NOT NULL</literal> predicate, for example.
+      This fixes a planner regression in 9.2, since previous versions could
+      make comparable deductions.
+-->
+例えば、<em class="replaceable"><code>x</code></em> <code class="literal">IS NOT NULL</code>という述部を確立するには、厳格なJOIN句があれば十分です。
+これにより、9.2でのプランナの機能低下が修正されます、というのは、以前のバージョンでは同等の導出が可能でした。
+     </p></li><li class="listitem"><p>
+<!--
+      Limit growth of planning time when there are many indexable join
+      clauses for the same index (Tom Lane)
+-->
+同一のインデックスについて多数のインデックス利用可能なJOIN句がある場合について、計画作成の時間の増大を制限しました。(Tom Lane)
+     </p></li><li class="listitem"><p>
+<!--
+      Improve planner's ability to prove exclusion constraints from
+      equivalence classes (Tom Lane)
+-->
+プランナについて、等価なクラスから排他制約を証明する能力を向上しました。(Tom Lane)
+     </p></li><li class="listitem"><p>
+<!--
+      Fix partial-row matching in hashed subplans to handle cross-type cases
+      correctly (Tom Lane)
+-->
+ハッシュされた副計画の部分行のマッチングについて、型をまたがる場合を正しく処理できるよう修正しました。(Tom Lane)
+     </p><p>
+<!--
+      This affects multicolumn <literal>NOT IN</literal> subplans, such as
+      <literal>WHERE (a, b) NOT IN (SELECT x, y FROM ...)</literal>
+      when for instance <literal>b</literal> and <literal>y</literal> are <type>int4</type>
+      and <type>int8</type> respectively.  This mistake led to wrong answers
+      or crashes depending on the specific datatypes involved.
+-->
+これは<code class="literal">WHERE (a, b) NOT IN (SELECT x, y FROM ...)</code>のような複数の列についての<code class="literal">NOT IN</code>の副計画で、例えば<code class="literal">b</code>と<code class="literal">y</code>がそれぞれ<code class="type">int4</code>型と<code class="type">int8</code>型である、というような場合に影響します。
+この処理の誤りにより、そこで使われているデータ型によって、誤った結果が得られたり、あるいはクラッシュする、ということが起きていました。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix btree mark/restore functions to handle array keys (Tom Lane)
+-->
+Bツリーのマーク/リストアの機能で、配列のキーを正しく処理できるように修正しました。(Tom Lane)
+     </p><p>
+<!--
+      This oversight could result in wrong answers from merge joins whose
+      inner side is an index scan using an
+      <literal><replaceable>indexed_column</replaceable> =
+      ANY(<replaceable>array</replaceable>)</literal> condition.
+-->
+この誤りにより、マージ結合の内側が<code class="literal"><em class="replaceable"><code>indexed_column</code></em> = ANY(<em class="replaceable"><code>array</code></em>)</code>の条件を使うインデックススキャンのときに、誤った結果を返すことがありました。
+     </p></li><li class="listitem"><p>
+<!--
+      Revert patch for taking fewer snapshots (Tom Lane)
+-->
+スナップショットの回数を減らすパッチを元に戻しました。(Tom Lane)
+     </p><p>
+<!--
+      The 9.2 change to reduce the number of snapshots taken during query
+      execution led to some anomalous behaviors not seen in previous
+      releases, because execution would proceed with a snapshot acquired
+      before locking the tables used by the query.  Thus, for example,
+      a query would not be guaranteed to see updates committed by a
+      preceding transaction even if that transaction had exclusive lock.
+      We'll probably revisit this in future releases, but meanwhile put it
+      back the way it was before 9.2.
+-->
+問い合わせ実行中のスナップショットの回数を減らすという9.2の変更により、以前のリリースでは見られなかったいくつかの異常な動作が発生しました。
+これは、問い合わせで使われる表をロックするより前に取得したスナップショットを使って問い合わせの実行が進められるからです。
+このため、例えば、ある問い合わせより前に実行されているトランザクションが排他ロックを取得している場合であっても、その問い合わせは、トランザクションによる更新を参照できるとは限らないようになっていました。
+この件については将来のリリースで再検討することになると思いますが、当面は9.2以前と同じ状態に戻すことにします。
+     </p></li><li class="listitem"><p>
+<!--
+      Acquire buffer lock when re-fetching the old tuple for an
+      <literal>AFTER ROW UPDATE/DELETE</literal> trigger (Andres Freund)
+-->
+<code class="literal">AFTER ROW UPDATE/DELETE</code>トリガーで古いタプルを再フェッチする時、バッファロックを取得するようにしました。(Andres Freund)
+     </p><p>
+<!--
+      In very unusual circumstances, this oversight could result in passing
+      incorrect data to a trigger <literal>WHEN</literal> condition, or to the
+      precheck logic for a foreign-key enforcement trigger.  That could
+      result in a crash, or in an incorrect decision about whether to
+      fire the trigger.
+-->
+この誤りにより、非常に特異な状況において、トリガーの<code class="literal">WHEN</code>条件、あるいは外部キーを強制するトリガーの事前チェックのロジックに対して誤ったデータを渡すことがありました。
+その結果として、クラッシュを起こしたり、あるいはトリガーを実行するかどうかについて誤った判断をすることがありました。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix <command>ALTER COLUMN TYPE</command> to handle inherited check
+      constraints properly (Pavan Deolasee)
+-->
+<code class="command">ALTER COLUMN TYPE</code>について、継承されたチェック制約を正しく処理できるように修正しました。(Pavan Deolasee)
+     </p><p>
+<!--
+      This worked correctly in pre-8.4 releases, and now works correctly
+      in 8.4 and later.
+-->
+これは8.4より前のリリースでは正しく動作していました。
+この修正により8.4およびそれ以降のリリースでも正しく動作するようになりました。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix <command>ALTER EXTENSION SET SCHEMA</command>'s failure  to move some
+      subsidiary objects into the new schema (&Aacute;lvaro Herrera, Dimitri
+      Fontaine)
+-->
+<code class="command">ALTER EXTENSION SET SCHEMA</code>について、いくつかの付随するオブジェクトを新しいスキーマに移動するのに失敗することがあるのを修正しました。(Álvaro Herrera、Dimitri Fontaine)
+     </p></li><li class="listitem"><p>
+<!--
+      Handle <command>CREATE TABLE AS EXECUTE</command> correctly in extended query
+      protocol (Tom Lane)
+-->
+拡張問い合わせプロトコルで<code class="command">CREATE TABLE AS EXECUTE</code>を正しく処理できるようにしました。(Tom Lane)
+     </p></li><li class="listitem"><p>
+<!--
+      Don't modify the input parse tree in <command>DROP RULE IF NOT
+      EXISTS</command> and <command>DROP TRIGGER IF NOT EXISTS</command> (Tom Lane)
+-->
+<code class="command">DROP RULE IF NOT EXISTS</code>および<code class="command">DROP TRIGGER IF NOT EXISTS</code>において、入力の構文解析ツリーを変更しないようにしました。(Tom Lane)
+     </p><p>
+<!--
+      This mistake would cause errors if a cached statement of one of these
+      types was re-executed.
+-->
+この誤りにより、これらの型の一つのキャッシュされた命令が再実行されると、エラーが起こることがありました。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix <command>REASSIGN OWNED</command> to handle grants on tablespaces
+      (&Aacute;lvaro Herrera)
+-->
+<code class="command">REASSIGN OWNED</code>について、表領域のGRANTが正しく処理できるように修正しました。(Álvaro Herrera)
+     </p></li><li class="listitem"><p>
+<!--
+      Ignore incorrect <structname>pg_attribute</structname> entries for system
+      columns for views (Tom Lane)
+-->
+ビューのシステム列についての<code class="structname">pg_attribute</code>の誤ったエントリを無視するようにしました。(Tom Lane)
+     </p><p>
+<!--
+      Views do not have any system columns.  However, we forgot to
+      remove such entries when converting a table to a view.  That's fixed
+      properly for 9.3 and later, but in previous branches we need to defend
+      against existing mis-converted views.
+-->
+ビューにはシステム列はありません。
+しかし、表をビューに変換するとき、そのようなエントリを取り除くことを忘れていました。
+これは9.3およびそれ以降のリリースでは適切に修正されますが、それ以前のブランチにおいても、誤って変換されたビューが存在しないようにする必要があります。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix rule printing to dump <literal>INSERT INTO <replaceable>table</replaceable>
+      DEFAULT VALUES</literal> correctly (Tom Lane)
+-->
+ルールの出力について、<code class="literal">INSERT INTO <em class="replaceable"><code>table</code></em> DEFAULT VALUES</code>を正しくダンプできるよう修正しました。(Tom Lane)
+     </p></li><li class="listitem"><p>
+<!--
+      Guard against stack overflow when there are too many
+      <literal>UNION</literal>/<literal>INTERSECT</literal>/<literal>EXCEPT</literal> clauses
+      in a query (Tom Lane)
+-->
+問い合わせが非常に多くの<code class="literal">UNION</code>/<code class="literal">INTERSECT</code>/<code class="literal">EXCEPT</code>を含むときでもスタックオーバーフローが発生しないようにしました。(Tom Lane)
+     </p></li><li class="listitem"><p>
+<!--
+      Prevent platform-dependent failures when dividing the minimum possible
+      integer value by -1 (Xi Wang, Tom Lane)
+-->
+もっとも小さな整数値を-1で割り算した時に、プラットフォームによってはエラーとなるのを修正しました。(Xi Wang、Tom Lane)
+     </p></li><li class="listitem"><p>
+<!--
+      Fix possible access past end of string in date parsing
+      (Hitoshi Harada)
+-->
+日付文字列の解析で、文字列の終わりを越えてアクセスすることがあるのを修正しました。(Hitoshi Harada)
+     </p></li><li class="listitem"><p>
+<!--
+      Fix failure to advance XID epoch if XID wraparound happens during a
+      checkpoint and <varname>wal_level</varname> is <literal>hot_standby</literal>
+      (Tom Lane, Andres Freund)
+-->
+チェックポイント中にXID周回が発生し、かつ<code class="varname">wal_level</code>が<code class="literal">hot_standby</code>である場合にXIDエポックを進めるのに失敗するのを修正しました。(Tom Lane、Andres Freund)
+     </p><p>
+<!--
+      While this mistake had no particular impact on
+      <productname>PostgreSQL</productname> itself, it was bad for
+      applications that rely on <function>txid_current()</function> and related
+      functions: the TXID value would appear to go backwards.
+-->
+この誤りは<span class="productname">PostgreSQL</span>自体には特に影響がありませんでしたが、TXID値が後戻りしているように見えるため、<code class="function">txid_current()</code>およびそれに関連した関数に依存するアプリケーションにとっては問題でした。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix <function>pg_terminate_backend()</function> and
+      <function>pg_cancel_backend()</function> to not throw error for a non-existent
+      target process (Josh Kupershmidt)
+-->
+<code class="function">pg_terminate_backend()</code>と<code class="function">pg_cancel_backend()</code>について、対象のプロセスが存在しない場合に、エラーを発生させないようにしました。(Josh Kupershmidt)
+     </p><p>
+<!--
+      This case already worked as intended when called by a superuser,
+      but not so much when called by ordinary users.
+-->
+以前からスーパーユーザーによって呼び出された場合は意図した通りの動作をしていましたが、一般ユーザに呼び出されたときはそうではありませんでした。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix display of
+      <structname>pg_stat_replication</structname>.<structfield>sync_state</structfield> at a
+      page boundary (Kyotaro Horiguchi)
+-->
+ページ境界における<code class="structname">pg_stat_replication</code>.<code class="structfield">sync_state</code>の表示を修正しました。(Kyotaro Horiguchi)
+     </p></li><li class="listitem"><p>
+<!--
+      Produce an understandable error message if the length of the path name
+      for a Unix-domain socket exceeds the platform-specific limit
+      (Tom Lane, Andrew Dunstan)
+-->
+Unixドメインソケットのパス名がプラットフォーム依存の最大長を超えていた場合に、理解可能なエラーメッセージを生成するようにしました。(Tom Lane、Andrew Dunstan)
+     </p><p>
+<!--
+      Formerly, this would result in something quite unhelpful, such as
+      <quote>Non-recoverable failure in name resolution</quote>.
+-->
+以前は<span class="quote">「<span class="quote">Non-recoverable failure in name resolution</span>」</span>(名前解決で解決不能なエラーが発生しました)といった非常に不親切なエラーを起こしていました。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix memory leaks when sending composite column values to the client
+      (Tom Lane)
+-->
+複合列の値をクライアントに送るときのメモリリークを修正しました。(Tom Lane)
+     </p></li><li class="listitem"><p>
+<!--
+      Save some cycles by not searching for subtransaction locks at commit
+      (Simon Riggs)
+-->
+コミット時に副トランザクションのロックを検索しないようにすることで、いくつかのサイクルを節約しました。(Simon Riggs)
+     </p><p>
+<!--
+      In a transaction holding many exclusive locks, this useless activity
+      could be quite costly.
+-->
+多くの排他ロックを保持するトランザクションにおいて、この不要な動作は極めて高価なものとなる場合がありました。
+     </p></li><li class="listitem"><p>
+<!--
+      Make <application>pg_ctl</application> more robust about reading the
+      <filename>postmaster.pid</filename> file (Heikki Linnakangas)
+-->
+<code class="filename">postmaster.pid</code>ファイルの読み込みについて、<span class="application">pg_ctl</span>をより堅牢にしました。(Heikki Linnakangas)
+     </p><p>
+<!--
+      This fixes race conditions and possible file descriptor leakage.
+-->
+これは競合条件、およびファイルデスクリプタのリークを解決します。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix possible crash in <application>psql</application> if incorrectly-encoded data
+      is presented and the <varname>client_encoding</varname> setting is a
+      client-only encoding, such as SJIS (Jiang Guiqing)
+-->
+<span class="application">psql</span>において、不正にエンコードされたデータが入力され、かつ<code class="varname">client_encoding</code>の設定がSJISのようにクライアントでしか利用できない文字セットである場合にクラッシュする場合があるのを修正しました。(Jiang Guiqing)
+     </p></li><li class="listitem"><p>
+<!--
+      Make <application>pg_dump</application> dump <literal>SEQUENCE SET</literal> items in
+      the data not pre-data section of the archive (Tom Lane)
+-->
+<span class="application">pg_dump</span>について<code class="literal">SEQUENCE SET</code>の要素をアーカイブ内のデータ部(データの前ではない)にダンプするようにしました。(Tom Lane)
+     </p><p>
+<!--
+      This fixes an undesirable inconsistency between the meanings of
+      <option>&#045;-data-only</option> and <option>&#045;-section=data</option>, and also fixes
+      dumping of sequences that are marked as extension configuration tables.
+-->
+これにより<code class="option">--data-only</code>と<code class="option">--section=data</code>の意味に一貫性がないという望ましくない問題が解決されます。
+また、拡張設定テーブルとして印付けられたシーケンスのダンプについても修正されます。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix <application>pg_dump</application>'s handling of <command>DROP DATABASE</command>
+      commands in <option>&#045;-clean</option> mode (Guillaume Lelarge)
+-->
+<span class="application">pg_dump</span>の<code class="option">--clean</code>モードにおける<code class="command">DROP DATABASE</code>コマンドの処理を修正しました。(Guillaume Lelarge)
+     </p><p>
+<!--
+      Beginning in 9.2.0, <literal>pg_dump &#045;-clean</literal> would issue a
+      <command>DROP DATABASE</command> command, which was either useless or
+      dangerous depending on the usage scenario.  It no longer does that.
+      This change also fixes the combination of <option>&#045;-clean</option> and
+      <option>&#045;-create</option> to work sensibly, i.e., emit <command>DROP
+      DATABASE</command> then <command>CREATE DATABASE</command> before reconnecting to the
+      target database.
+-->
+9.2.0から<code class="literal">pg_dump --clean</code>は<code class="command">DROP DATABASE</code>コマンドを発行するようになりましたが、これは使い方によって不要であるかあるいは危険であるかのどちらかでした。
+以後はこれをしないようになります。
+この修正により、<code class="option">--clean</code>と<code class="option">--create</code>を組み合わせた場合も適切に動作するようになります。
+つまり<code class="command">DROP DATABASE</code>と<code class="command">CREATE DATABASE</code>を実行し、その後で対象のデータベースに接続します。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix <application>pg_dump</application> for views with circular dependencies and
+      no relation options (Tom Lane)
+-->
+循環的な依存があり、かつリレーションのオプションがないビューについて、<span class="application">pg_dump</span>を修正しました。(Tom Lane)
+     </p><p>
+<!--
+      The previous fix to dump relation options when a view is
+      involved in a circular dependency didn't work right for the case
+      that the view has no options; it emitted <literal>ALTER VIEW foo
+      SET ()</literal> which is invalid syntax.
+-->
+循環的な依存のあるビューについてリレーションのオプションをダンプするという以前の修正では、ビューにオプションがないという場合に正しく動作せず、<code class="literal">ALTER VIEW foo SET ()</code>という不正な構文を出力していました。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix bugs in the <filename>restore.sql</filename> script emitted by
+      <application>pg_dump</application> in <literal>tar</literal> output format (Tom Lane)
+-->
+<span class="application">pg_dump</span>が<code class="literal">tar</code>出力形式で生成する<code class="filename">restore.sql</code>スクリプトの不具合を修正しました。(Tom Lane)
+     </p><p>
+<!--
+      The script would fail outright on tables whose names include
+      upper-case characters.  Also, make the script capable of restoring
+      data in <option>&#045;-inserts</option> mode as well as the regular COPY mode.
+-->
+このスクリプトはテーブル名が大文字を含む場合に全く動作しませんでした。
+また、このスクリプトで通常のCOPYモードだけでなく<code class="option">--inserts</code>モードの場合もデータをリストアできるようにしました。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix <application>pg_restore</application> to accept POSIX-conformant
+      <literal>tar</literal> files (Brian Weaver, Tom Lane)
+-->
+<span class="application">pg_restore</span>でPOSIX準拠の<code class="literal">tar</code>ファイルを処理できるよう修正しました。(Brian Weaver、Tom Lane)
+     </p><p>
+<!--
+      The original coding of <application>pg_dump</application>'s <literal>tar</literal>
+      output mode produced files that are not fully conformant with the
+      POSIX standard.  This has been corrected for version 9.3.  This
+      patch updates previous branches so that they will accept both the
+      incorrect and the corrected formats, in hopes of avoiding
+      compatibility problems when 9.3 comes out.
+-->
+<span class="application">pg_dump</span>の<code class="literal">tar</code>出力モードの元々のプログラムは、POSIX標準に完全には準拠していないファイルを生成していました。
+この問題はバージョン9.3で修正されます。
+このパッチは9.3より前のブランチを修正するもので、正しくないフォーマットと正しいフォーマットの両方を処理できるようにします。
+これにより、9.3がリリースされた時に互換性の問題を防ぐことができます。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix <literal>tar</literal> files emitted by <application>pg_basebackup</application> to
+      be POSIX conformant (Brian Weaver, Tom Lane)
+-->
+<span class="application">pg_basebackup</span>が生成する<code class="literal">tar</code>ファイルがPOSIX準拠になるように修正しました。(Brian Weaver、Tom Lane)
+     </p></li><li class="listitem"><p>
+<!--
+      Fix <application>pg_resetxlog</application> to locate <filename>postmaster.pid</filename>
+      correctly when given a relative path to the data directory (Tom Lane)
+-->
+<span class="application">pg_resetxlog</span>について、データディレクトリへの相対パスが与えられた時に、<code class="filename">postmaster.pid</code>の場所を正しく特定できるよう修正しました。(Tom Lane)
+     </p><p>
+<!--
+      This mistake could lead to <application>pg_resetxlog</application> not noticing
+      that there is an active postmaster using the data directory.
+-->
+この誤りにより、データディレクトリを使用している動作中のpostmasterがあることに<span class="application">pg_resetxlog</span>が気が付かないことがありました。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix <application>libpq</application>'s <function>lo_import()</function> and
+      <function>lo_export()</function> functions to report file I/O errors properly
+      (Tom Lane)
+-->
+<span class="application">libpq</span>の<code class="function">lo_import()</code>関数および<code class="function">lo_export()</code>関数が、ファイルI/Oのエラーを適切に報告するよう修正しました。(Tom Lane)
+     </p></li><li class="listitem"><p>
+<!--
+      Fix <application>ecpg</application>'s processing of nested structure pointer
+      variables (Muhammad Usama)
+-->
+<span class="application">ecpg</span>について、ネストした構造体のポインタ変数の処理を修正しました。(Muhammad Usama)
+     </p></li><li class="listitem"><p>
+<!--
+      Fix <application>ecpg</application>'s <function>ecpg_get_data</function> function to
+      handle arrays properly (Michael Meskes)
+-->
+<span class="application">ecpg</span>の<code class="function">ecpg_get_data</code>関数について、配列を正しく処理するよう修正しました。(Michael Meskes)
+     </p></li><li class="listitem"><p>
+<!--
+      Prevent <application>pg_upgrade</application> from trying to process TOAST tables
+      for system catalogs (Bruce Momjian)
+-->
+<span class="application">pg_upgrade</span>がシステムカタログについてTOASTテーブルの処理をしようとしないようにしました。(Bruce Momjian)
+     </p><p>
+<!--
+      This fixes an error seen when the <literal>information_schema</literal> has
+      been dropped and recreated.  Other failures were also possible.
+-->
+これにより、<code class="literal">information_schema</code>が削除され、再作成された場合に発生していたエラーが修正されます。
+これ以外のエラーが起こる場合もありました。
+     </p></li><li class="listitem"><p>
+<!--
+      Improve <application>pg_upgrade</application> performance by setting
+      <varname>synchronous_commit</varname> to <literal>off</literal> in the new cluster
+      (Bruce Momjian)
+-->
+新しいクラスタにおいて<code class="varname">synchronous_commit</code>を<code class="literal">off</code>にすることで、<span class="application">pg_upgrade</span>のパフォーマンスを向上しました。(Bruce Momjian)
+     </p></li><li class="listitem"><p>
+<!--
+      Make <filename>contrib/pageinspect</filename>'s btree page inspection
+      functions take buffer locks while examining pages (Tom Lane)
+-->
+<code class="filename">contrib/pageinspect</code>のBツリーページ検査関数で、ページの検査中はバッファロックを取得するようにしました。(Tom Lane)
+     </p></li><li class="listitem"><p>
+<!--
+      Work around unportable behavior of <literal>malloc(0)</literal> and
+      <literal>realloc(NULL, 0)</literal> (Tom Lane)
+-->
+<code class="literal">malloc(0)</code>および<code class="literal">realloc(NULL, 0)</code>の移植性のない動作について回避策を適用しました。(Tom Lane)
+     </p><p>
+<!--
+      On platforms where these calls return <literal>NULL</literal>, some code
+      mistakenly thought that meant out-of-memory.
+      This is known to have broken <application>pg_dump</application> for databases
+      containing no user-defined aggregates.  There might be other cases
+      as well.
+-->
+これらの呼び出しが<code class="literal">NULL</code>を返すプラットフォームにおいて、これが誤ってout-of-memory(メモリ不足)であると解釈されるようなコードがいくつかありました。
+既知のケースでは、ユーザ定義の集約が含まれないデータベースについて<span class="application">pg_dump</span>が正しく動作しないというものがありました。
+他にも正しく動作しないケースがあったかもしれません。
+     </p></li><li class="listitem"><p>
+<!--
+      Ensure that <literal>make install</literal> for an extension creates the
+      <filename>extension</filename> installation directory (C&eacute;dric Villemain)
+-->
+拡張について<code class="literal">make install</code>を実行した時に<code class="filename">extension</code>というインストールディレクトリが確実に作成されるようにしました。(Cédric Villemain)
+     </p><p>
+<!--
+      Previously, this step was missed if <varname>MODULEDIR</varname> was set in
+      the extension's Makefile.
+-->
+以前は、拡張のMakefileで<code class="varname">MODULEDIR</code>が定義されていると、このステップが実行されませんでした。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix <application>pgxs</application> support for building loadable modules on AIX
+      (Tom Lane)
+-->
+AIX上でのロード可能モジュールのビルドについて<span class="application">pgxs</span>のサポートを修正しました。(Tom Lane)
+     </p><p>
+<!--
+      Building modules outside the original source tree didn't work on AIX.
+-->
+元々のソースツリーの外側でモジュールをビルドしてもAIXでは正しく動作しませんでした。
+     </p></li><li class="listitem"><p>
+<!--
+      Update time zone data files to <application>tzdata</application> release 2012j
+      for DST law changes in Cuba, Israel, Jordan, Libya, Palestine, Western
+      Samoa, and portions of Brazil.
+-->
+時間帯データファイルを<span class="application">tzdata</span>リリース2012jに更新しました。
+キューバ、イスラエル、ヨルダン、リビア、パレスチナ、西サモア、およびブラジルの一部での夏時間の変更が含まれます。
+     </p></li></ul></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="release-9-2-3.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="release.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="release-9-2-1.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">E.106. リリース9.2.3 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> E.108. リリース9.2.1</td></tr></table></div></body></html>

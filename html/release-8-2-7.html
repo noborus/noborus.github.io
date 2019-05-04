@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>E.222. リリース8.2.7</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="prev" href="release-8-2-8.html" title="E.221. リリース8.2.8" /><link rel="next" href="release-8-2-6.html" title="E.223. リリース8.2.6" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="release.html" title="付録E リリースノート">付録E リリースノート</a></td><td width="20%" align="right"></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="release-8-2-8.html" title="E.221. リリース8.2.8">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="release.html" title="付録E リリースノート">上へ</a></td><td width="60%" align="center">E.222. リリース8.2.7</td><td width="20%" align="right"> <a accesskey="n" href="release-8-2-6.html" title="E.223. リリース8.2.6">次へ</a></td></tr></table><hr /></div><div class="sect1" id="RELEASE-8-2-7"><div class="titlepage"><div><div><h2 class="title" style="clear: both">E.222. リリース8.2.7</h2></div></div></div><!--
+  <title>Release 8.2.7</title>
+--><p><!--
+  <title>Release date:</title>
+--><strong>リリース日: </strong>2008-03-17</p><p>
+<!--
+   This release contains a variety of fixes from 8.2.6.
+   For information about new features in the 8.2 major release, see
+   <xref linkend="release-8-2"/>.
+-->
+このリリースは8.2.6の各種不具合を修正したものです。
+8.2メジャーリリースにおける新機能については<a class="xref" href="release-8-2.html" title="E.229. リリース8.2">E.229</a>を参照してください。
+  </p><div class="sect2" id="id-1.11.6.226.4"><div class="titlepage"><div><div><h3 class="title">E.222.1. バージョン8.2.7への移行</h3></div></div></div><!--
+   <title>Migration to Version 8.2.7</title>
+--><p>
+<!--
+    A dump/restore is not required for those running 8.2.X.
+    However, you might need to <command>REINDEX</command> indexes on textual
+    columns after updating, if you are affected by the Windows locale
+    issue described below.
+-->
+8.2.Xからの移行ではダンプ/リストアは不要です。
+しかしながら、後述のWindowsロケール問題の影響がある場合、移行後にテキスト型の列上のインデックスに対し<code class="command">REINDEX</code>を行わなければならないかもしれません。
+   </p></div><div class="sect2" id="id-1.11.6.226.5"><div class="titlepage"><div><div><h3 class="title">E.222.2. 変更点</h3></div></div></div><!--
+   <title>Changes</title>
+--><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<!--
+      Fix character string comparison for Windows locales that consider
+      different character combinations as equal (Tom)
+-->
+異なる文字の組み合わせを等価とみなすWindowsロケールにおける文字列比較を修正しました。(Tom)
+     </p><p>
+<!--
+      This fix applies only on Windows and only when using UTF-8
+      database encoding.  The same fix was made for all other cases
+      over two years ago, but Windows with UTF-8 uses a separate code
+      path that was not updated.  If you are using a locale that
+      considers some non-identical strings as equal, you may need to
+      <command>REINDEX</command> to fix existing indexes on textual columns.
+-->
+この修正はWindowsのみ、かつ、UTF-8データベース符号化方式を使用している場合にのみ当てはまります。
+他の状況に対する同じ修正が2年前になされましたが、UTF-8を使用するWindowsでは変更されなかった経路のコードを使用しました。
+同一ではない一部の文字列を等価とみなすロケールを使用している場合、既存のテキスト型列上のインデックスを修正するために<code class="command">REINDEX</code>を行う必要があるかもしれません。
+     </p></li><li class="listitem"><p>
+<!--
+      Repair potential deadlock between concurrent <command>VACUUM FULL</command>
+      operations on different system catalogs (Tom)
+-->
+異なるシステムカタログに対する同時実行<code class="command">VACUUM FULL</code>の間でのデッドロックの可能性を修正しました。(Tom)
+     </p></li><li class="listitem"><p>
+<!--
+      Fix longstanding <command>LISTEN</command>/<command>NOTIFY</command>
+      race condition (Tom)
+-->
+長く存在した<code class="command">LISTEN</code>/<code class="command">NOTIFY</code>競合条件を修正しました。(Tom)
+     </p><p>
+<!--
+      In rare cases a session that had just executed a
+      <command>LISTEN</command> might not get a notification, even though
+      one would be expected because the concurrent transaction executing
+      <command>NOTIFY</command> was observed to commit later.
+-->
+まれな場合ですが、<code class="command">NOTIFY</code>を実行した同時実行中のトランザクションが後でコミットされたことが確認できたため、受け取ることが期待できる場合であっても、<code class="command">LISTEN</code>を実行したばかりのセッションが注意を受け取らない可能性がありました。
+     </p><p>
+<!--
+      A side effect of the fix is that a transaction that has executed
+      a not-yet-committed <command>LISTEN</command> command will not see any
+      row in <structname>pg_listener</structname> for the <command>LISTEN</command>,
+      should it choose to look; formerly it would have.  This behavior
+      was never documented one way or the other, but it is possible that
+      some applications depend on the old behavior.
+-->
+この修正の副作用として、
+まだコミットされていない<code class="command">LISTEN</code>コマンドを実行したトランザクションが、<code class="command">LISTEN</code>で検索するために選ばなければならない<code class="structname">pg_listener</code>内の行にまったく現れなくなりました。
+これまでは現れていました。
+この動作についてはどちらの方式も文書化されていませんでしたが、過去の動作に依存するアプリケーションがあるかもしれません。
+     </p></li><li class="listitem"><p>
+<!--
+      Disallow <command>LISTEN</command> and <command>UNLISTEN</command> within a
+      prepared transaction (Tom)
+-->
+準備されたトランザクションでは<code class="command">LISTEN</code>と<code class="command">UNLISTEN</code>は使用できません。(Tom)
+     </p><p>
+<!--
+      This was formerly allowed but trying to do it had various unpleasant
+      consequences, notably that the originating backend could not exit
+      as long as an <command>UNLISTEN</command> remained uncommitted.
+-->
+これまでは許されていましたが、これを行うと様々な悪影響が発生しました。
+特に構成したバックエンドは<code class="command">UNLISTEN</code>が未コミットである間終了することができませんでした。
+     </p></li><li class="listitem"><p>
+<!--
+      Disallow dropping a temporary table within a
+      prepared transaction (Heikki)
+-->
+準備されたトランザクションでは一時テーブルの削除を行うことはできません。(Heikki)
+     </p><p>
+<!--
+      This was correctly disallowed by 8.1, but the check was inadvertently
+      broken in 8.2.
+-->
+これは正確には8.1で禁止されていたのですが、8.2では不注意にこの検査が壊れていました。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix rare crash when an error occurs during a query using a hash index
+-->
+ハッシュインデックスを使用する問い合わせの間にエラーが発生した場合のまれなクラッシュを修正しました。
+      (Heikki)
+     </p></li><li class="listitem"><p>
+<!--
+      Fix memory leaks in certain usages of set-returning functions (Neil)
+-->
+ある方法で集合を返す関数を使用した場合のメモリリークを修正しました。(Neil)
+     </p></li><li class="listitem"><p>
+<!--
+      Fix input of datetime values for February 29 in years BC (Tom)
+-->
+紀元前の2月29日に関する日付時刻値の入力を修正しました。(Tom)
+     </p><p>
+<!--
+      The former coding was mistaken about which years were leap years.
+-->
+これまでのコードでは、うるう年の判定に間違いがありました。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix <quote>unrecognized node type</quote> error in some variants of
+      <command>ALTER OWNER</command> (Tom)
+-->
+<code class="command">ALTER OWNER</code>の一部の構文で発生した<span class="quote">「<span class="quote">未知のノード型</span>」</span>エラーを修正しました。(Tom)
+     </p></li><li class="listitem"><p>
+<!--
+      Ensure <structname>pg_stat_activity</structname>.<structfield>waiting</structfield> flag
+      is cleared when a lock wait is aborted (Tom)
+-->
+ロック待ちが中断した時に<code class="structname">pg_stat_activity</code>.<code class="structfield">waiting</code>フラグを確実に初期化します。(Tom)
+     </p></li><li class="listitem"><p>
+<!--
+      Fix handling of process permissions on Windows Vista (Dave, Magnus)
+-->
+Windows Vistaにおいてプロセス処理の取扱いを修正しました。(Dave, Magnus)
+     </p><p>
+<!--
+      In particular, this fix allows starting the server as the Administrator
+      user.
+-->
+具体的には、この修正により管理者ユーザとしてサーバを起動できるようになります。
+     </p></li><li class="listitem"><p>
+<!--
+      Update time zone data files to <application>tzdata</application> release 2008a
+      (in particular, recent Chile changes); adjust timezone abbreviation
+      <literal>VET</literal> (Venezuela) to mean UTC-4:30, not UTC-4:00 (Tom)
+-->
+時間帯データファイルを<span class="application">tzdata</span>リリース2008aに更新しました（具体的には、最近のチリの変更です）。
+時間帯省略形<code class="literal">VET</code> (ベネズエラ)がUTC-4:00ではなくUTC-4:30を意味するように調整しました。(Tom)
+     </p></li><li class="listitem"><p>
+<!--
+      Fix <application>pg_ctl</application> to correctly extract the postmaster's port
+      number from command-line options (Itagaki Takahiro, Tom)
+-->
+<span class="application">pg_ctl</span>が正しくコマンドラインオプションからpostmasterのポート番号を取り出すように修正しました。(Itagaki Takahiro, Tom)
+     </p><p>
+<!--
+      Previously, <literal>pg_ctl start -w</literal> could try to contact the
+      postmaster on the wrong port, leading to bogus reports of startup
+      failure.
+-->
+これまでは、<code class="literal">pg_ctl start -w</code>は間違ったポート上のpostmasterに接続しようとし、おかしな起動失敗の報告をもたらしていました。
+     </p></li><li class="listitem"><p>
+<!--
+      Use <option>-fwrapv</option> to defend against possible misoptimization
+      in recent <application>gcc</application> versions (Tom)
+-->
+最近のバージョンの<span class="application">gcc</span>における、最適化ミスの可能性を防止するために<code class="option">-fwrapv</code>を使用します。(Tom)
+     </p><p>
+<!--
+      This is known to be necessary when building <productname>PostgreSQL</productname>
+      with <application>gcc</application> 4.3 or later.
+-->
+これは<span class="application">gcc</span> 4.3以降で<span class="productname">PostgreSQL</span>を構築する場合に必須であることは分かっていました。
+     </p></li><li class="listitem"><p>
+<!--
+      Correctly enforce <varname>statement_timeout</varname> values longer
+      than <literal>INT_MAX</literal> microseconds (about 35 minutes) (Tom)
+-->
+<code class="literal">INT_MAX</code>マイクロ秒（約35分）より大きい<code class="varname">statement_timeout</code>値を正しく強制します。(Tom)
+     </p><p>
+<!--
+      This bug affects only builds with <option>&#045;-enable-integer-datetimes</option>.
+-->
+この不具合は<code class="option">--enable-integer-datetimes</code>で構築した場合にのみ影響します。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix <quote>unexpected PARAM_SUBLINK ID</quote> planner error when
+      constant-folding simplifies a sub-select (Tom)
+-->
+一定の折りたたみが副問い合わせを単純化する時の<span class="quote">「<span class="quote">想定外のPARAM_SUBLINK ID</span>」</span>というプランナエラーを修正しました。(Tom)
+     </p></li><li class="listitem"><p>
+<!--
+      Fix logical errors in constraint-exclusion handling of <literal>IS
+      NULL</literal> and <literal>NOT</literal> expressions (Tom)
+-->
+<code class="literal">IS NULL</code>および<code class="literal">NOT</code>式の、制約による除外の取扱いにおける論理エラーを修正しました。(Tom)
+     </p><p>
+<!--
+      The planner would sometimes exclude partitions that should not
+      have been excluded because of the possibility of NULL results.
+-->
+プランナは時々、NULL結果の可能性のために除外すべきでないパーティションを除外しました。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix another cause of <quote>failed to build any N-way joins</quote>
+      planner errors (Tom)
+-->
+<span class="quote">「<span class="quote">failed to build any N-way joins</span>」</span>というプランナエラーの別の原因を修正しました。(Tom)
+     </p><p>
+<!--
+      This could happen in cases where a clauseless join needed to be
+      forced before a join clause could be exploited.
+-->
+これは、結合句が見つかる前に句のない結合を強制しなければならない場合に発生しました。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix incorrect constant propagation in outer-join planning (Tom)
+-->
+外部結合の計画作成における間違った定数の伝搬を修正しました。(Tom)
+     </p><p>
+<!--
+      The planner could sometimes incorrectly conclude that a variable
+      could be constrained to be equal to a constant, leading
+      to wrong query results.
+-->
+プランナは時々、間違った問い合わせ結果をもたらす、変数が定数と同じであると制約されていると間違った判断を行いました。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix display of constant expressions in <literal>ORDER BY</literal>
+      and <literal>GROUP BY</literal> (Tom)
+-->
+<code class="literal">ORDER BY</code>および<code class="literal">GROUP BY</code>における定数式の表示を修正しました。(Tom)
+     </p><p>
+<!--
+      An explicitly casted constant would be shown incorrectly.  This could
+      for example lead to corruption of a view definition during
+      dump and reload.
+-->
+明示的にキャストされた定数が間違って表示されていました。
+これは例えば、ダンプ/再ロード時のビュー定義の破壊をもたらします。
+     </p></li><li class="listitem"><p>
+<!--
+      Fix <application>libpq</application> to handle NOTICE messages correctly
+      during COPY OUT (Tom)
+-->
+COPY OUT時にNOTICEメッセージを正しく扱うように<span class="application">libpq</span>を修正しました。(Tom)
+     </p><p>
+<!--
+      This failure has only been observed to occur when a user-defined
+      datatype's output routine issues a NOTICE, but there is no
+      guarantee it couldn't happen due to other causes.
+-->
+この失敗は、ユーザ定義データ型の出力関数がNOTICEを発行する時にのみ発生することが観察されました。
+しかし、他の原因により発生しないことは保証しません。
+     </p></li></ul></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="release-8-2-8.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="release.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="release-8-2-6.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">E.221. リリース8.2.8 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> E.223. リリース8.2.6</td></tr></table></div></body></html>
