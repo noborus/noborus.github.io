@@ -9,4 +9,4 @@ git remote add origin-pages git@github.com:noborus/noborus.github.io.git
 
 git add -A current
 git commit -m "by Travis CI (JOB $TRAVIS_JOB_NUMBER)"
-git push origin-pages master
+git push --set-upstream-to=origin-pages/master master
