@@ -7,5 +7,5 @@ git config --global user.email "noborusai@gmail.com"
 git config --global user.name "noborus"
 
 mkdir travis
-git clone --depth=1 -b doc_ja_11 https://github.com/pgsql-jp/jpug-doc.git travis/jpug-doc
+git clone --depth=1 -b doc_ja_11 git@github.com/pgsql-jp/jpug-doc.git travis/jpug-doc
 
