@@ -9,6 +9,6 @@ git remote set-url origin git@github.com:noborus/noborus.github.io.git
 git checkout master
 
 git add -A current
-git commit --allow-empty -m "by Travis CI (JOB $TRAVIS_JOB_NUMBER)"
+git commit --allow-empty -m "by Travis CI (JOB $TRAVIS_JOB_NUMBER) [skip ci]"
 git branch
 git push ssh://git@github.com/noborus/noborus.github.io.git master:master
