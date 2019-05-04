@@ -7,8 +7,6 @@ git config --global user.email "noborusai@gmail.com"
 git config --global user.name "noborus"
 git remote add origin-pages git@github.com:noborus/noborus.github.io.git
 
-cp -aR travis/jpug-doc/doc/src/sgml/html current/
-cd current
 git add -A current
 git commit -m "by Travis CI (JOB $TRAVIS_JOB_NUMBER)"
 git push origin-pages master
