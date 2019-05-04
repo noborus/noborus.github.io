@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>24.3. ログファイルの保守</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="routine-reindex.html" title="24.2. 定常的なインデックスの再作成" /><link rel="next" href="backup.html" title="第25章 バックアップとリストア" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="maintenance.html" title="第24章 定常的なデータベース保守作業">第24章 定常的なデータベース保守作業</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      logfile-maintenance.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="routine-reindex.html" title="24.2. 定常的なインデックスの再作成">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="maintenance.html" title="第24章 定常的なデータベース保守作業">上へ</a></td><td width="60%" align="center">24.3. ログファイルの保守</td><td width="20%" align="right"> <a accesskey="n" href="backup.html" title="第25章 バックアップとリストア">次へ</a></td></tr></table><hr /></div><div class="sect1" id="LOGFILE-MAINTENANCE"><div class="titlepage"><div><div><h2 class="title" style="clear: both">24.3. ログファイルの保守</h2></div></div></div><span class="original">
+  &lt;title&gt;Log File Maintenance&lt;/title&gt;
+</span><a id="id-1.6.11.12.2" class="indexterm"></a><p>
+<span class="original">
+   It is a good idea to save the database server's log output
+   somewhere, rather than just discarding it via &lt;filename&gt;/dev/null&lt;/filename&gt;.
+   The log output is invaluable when diagnosing
+   problems.  However, the log output tends to be voluminous
+   (especially at higher debug levels) so you won't want to save it
+   indefinitely.  You need to &lt;emphasis&gt;rotate&lt;/emphasis&gt; the log files so that
+   new log files are started and old ones removed after a reasonable
+   period of time.
+</span>
+データベースサーバのログ出力を<code class="filename">/dev/null</code>に渡して単に破棄するのではなく、どこかに保存しておくことを推奨します。
+問題の原因を究明する時にログ出力は貴重です。
+しかし、ログ出力は（特により高いデバッグレベルの時に）巨大になりがちですので、際限なく保存したくはないでしょう。
+新しいログファイルを開始させ、適切な期間を経過した古いログファイルを捨てるために、ログファイルを<span class="quote">「<span class="quote">回転</span>」</span>させる必要があります。
+  </p><p>
+<span class="original">
+   If you simply direct the &lt;systemitem&gt;stderr&lt;/systemitem&gt; of
+   &lt;command&gt;postgres&lt;/command&gt; into a
+   file, you will have log output, but
+   the only way to truncate the log file is to stop and restart
+   the server. This might be acceptable if you are using
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; in a development environment,
+   but few production servers would find this behavior acceptable.
+</span>
+単に<code class="command">postgres</code>の<span class="systemitem">stderr</span>をファイルに渡している場合、ログ出力を保持できますが、そのログファイルを切り詰めるためにはサーバを停止させ、再度起動させるしか方法がありません。
+開発環境で<span class="productname">PostgreSQL</span>を使用しているのであればこれで構いませんが、実運用サーバでこの振舞いが適切となることはほぼありません。
+  </p><p>
+<span class="original">
+   A better approach is to send the server's
+   &lt;systemitem&gt;stderr&lt;/systemitem&gt; output to some type of log rotation program.
+   There is a built-in log rotation facility, which you can use by
+   setting the configuration parameter &lt;varname&gt;logging_collector&lt;/varname&gt; to
+   &lt;literal&gt;true&lt;/literal&gt; in &lt;filename&gt;postgresql.conf&lt;/filename&gt;.  The control
+   parameters for this program are described in &lt;xref
+   linkend="runtime-config-logging-where"/&gt;. You can also use this approach
+   to capture the log data in machine readable &lt;acronym&gt;CSV&lt;/acronym&gt;
+   (comma-separated values) format.
+</span>
+サーバの<span class="systemitem">stderr</span>を何らかのログ回転プログラムに送信する方が良いでしょう。
+組み込みのログ回転機能があり、<code class="filename">postgresql.conf</code>の<code class="varname">logging_collector</code>設定パラメータを<code class="literal">true</code>に設定することでこれを使用することができます。
+このプログラムを制御するパラメータについては<a class="xref" href="runtime-config-logging.html#RUNTIME-CONFIG-LOGGING-WHERE" title="19.8.1. ログの出力先">19.8.1</a>で説明します。
+また、この方法を使用して、機械読み取りしやすい<acronym class="acronym">CSV</acronym>(カンマ区分値)書式でログデータを取り込むことができます。
+  </p><p>
+<span class="original">
+   Alternatively, you might prefer to use an external log rotation
+   program if you have one that you are already using with other
+   server software. For example, the &lt;application&gt;rotatelogs&lt;/application&gt;
+   tool included in the &lt;productname&gt;Apache&lt;/productname&gt; distribution
+   can be used with &lt;productname&gt;PostgreSQL&lt;/productname&gt;.  To do this,
+   just pipe the server's
+   &lt;systemitem&gt;stderr&lt;/systemitem&gt; output to the desired program.
+   If you start the server with
+   &lt;command&gt;pg_ctl&lt;/command&gt;, then &lt;systemitem&gt;stderr&lt;/systemitem&gt;
+   is already redirected to &lt;systemitem&gt;stdout&lt;/systemitem&gt;, so you just need a
+   pipe command, for example:
+</span>
+また、既に他のサーバソフトウェアで使用している外部のログ回転プログラムがあるのであれば、それを使用したいと考えるでしょう。
+例えば、<span class="productname">Apache</span>配布物に含まれる<span class="application">rotatelogs</span>を<span class="productname">PostgreSQL</span>で使用することができます。
+これを行うには、単にサーバの<span class="systemitem">stderr</span>を目的のプログラムにパイプで渡してください。
+<code class="command">pg_ctl</code>を使用してサーバを起動している場合は<span class="systemitem">stderr</span>は既に<span class="systemitem">stdout</span>にリダイレクトされていますので、以下の例のようにコマンドをパイプする必要があるだけです。
+
+</p><pre class="programlisting">
+pg_ctl start | rotatelogs /var/log/pgsql_log 86400
+</pre><p>
+  </p><p>
+<span class="original">
+   Another production-grade approach to managing log output is to
+   send it to &lt;application&gt;syslog&lt;/application&gt; and let
+   &lt;application&gt;syslog&lt;/application&gt; deal with file rotation. To do this, set the
+   configuration parameter &lt;varname&gt;log_destination&lt;/varname&gt; to &lt;literal&gt;syslog&lt;/literal&gt;
+   (to log to &lt;application&gt;syslog&lt;/application&gt; only) in
+   &lt;filename&gt;postgresql.conf&lt;/filename&gt;. Then you can send a &lt;literal&gt;SIGHUP&lt;/literal&gt;
+   signal to the &lt;application&gt;syslog&lt;/application&gt; daemon whenever you want to force it
+   to start writing a new log file.  If you want to automate log
+   rotation, the &lt;application&gt;logrotate&lt;/application&gt; program can be
+   configured to work with log files from
+   &lt;application&gt;syslog&lt;/application&gt;.
+</span>
+この他の実運用レベルのログ出力の管理方法は、<span class="application">syslog</span>に送信し、<span class="application">syslog</span>にファイルの回転を行わせることです。
+このためには、<code class="filename">postgresql.conf</code>の<code class="varname">log_destination</code>設定パラメータを<code class="literal">syslog</code>（<span class="application">syslog</span>のみにログを出力）に設定してください。
+そして、新しいログファイルへの書き込みを始めたい時に、<span class="application">syslog</span>デーモンに<code class="literal">SIGHUP</code>シグナルを送信してください。
+ログ回転を自動化させたい場合は、<span class="application">logrotate</span>プログラムを設定することで、<span class="application">syslog</span>からのログファイルを扱うことができます。
+  </p><p>
+<span class="original">
+   On many systems, however, &lt;application&gt;syslog&lt;/application&gt; is not very reliable,
+   particularly with large log messages; it might truncate or drop messages
+   just when you need them the most.  Also, on &lt;productname&gt;Linux&lt;/productname&gt;,
+   &lt;application&gt;syslog&lt;/application&gt; will flush each message to disk, yielding poor
+   performance.  (You can use a &lt;quote&gt;&lt;literal&gt;-&lt;/literal&gt;&lt;/quote&gt; at the start of the file name
+   in the &lt;application&gt;syslog&lt;/application&gt; configuration file to disable syncing.)
+</span>
+しかし、多くのシステムでは<span class="application">syslog</span>は特に巨大なログメッセージに関してあまり信頼できません。
+必要なメッセージを切り詰めてしまったり、破棄してしまったりする可能性があります。
+また、<span class="productname">Linux</span>では、<span class="application">syslog</span>はメッセージごとにディスクに書き出すため、性能が良くありません。
+（同期化を無効にするため、<span class="application">syslog</span>設定ファイル内のファイル名の先頭に<code class="literal">-</code>を使うことができます。）
+  </p><p>
+<span class="original">
+   Note that all the solutions described above take care of starting new
+   log files at configurable intervals, but they do not handle deletion
+   of old, no-longer-useful log files.  You will probably want to set
+   up a batch job to periodically delete old log files.  Another possibility
+   is to configure the rotation program so that old log files are overwritten
+   cyclically.
+</span>
+上述の手法は全て、新しいログファイルを開始する周期を設定することができますが、古い、既に役に立たなくなったログファイルの削除は扱わないことに注意してください。
+おそらく定期的に古いログファイルを削除するバッチジョブを設定することになるでしょう。
+他に、回転用プログラムを設定して古いログファイルを周期的に上書きさせるという方法もあります。
+  </p><p>
+<span class="original">
+   &lt;ulink url="http://dalibo.github.io/pgbadger/"&gt;&lt;productname&gt;pgBadger&lt;/productname&gt;&lt;/ulink&gt;
+   is an external project that does sophisticated log file analysis.
+   &lt;ulink
+   url="https://bucardo.org/check_postgres/"&gt;&lt;productname&gt;check_postgres&lt;/productname&gt;&lt;/ulink&gt;
+   provides Nagios alerts when important messages appear in the log
+   files, as well as detection of many other extraordinary conditions.
+</span>
+<a class="ulink" href="http://dalibo.github.io/pgbadger/" target="_top"><span class="productname">pgBadger</span></a>という外部プロジェクトは洗練されたログファイルの解析を行います。
+<a class="ulink" href="https://bucardo.org/check_postgres/" target="_top"><span class="productname">check_postgres</span></a>は、通常ではない多くの状態の検出を行うのと同時にログファイルに重要なメッセージが現れた時にNagiosで警告する機構を提供します。
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="routine-reindex.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="maintenance.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="backup.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">24.2. 定常的なインデックスの再作成 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 第25章 バックアップとリストア</td></tr></table></div></body></html>

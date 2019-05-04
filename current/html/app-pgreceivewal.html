@@ -1,0 +1,372 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>pg_receivewal</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="app-pg-isready.html" title="pg_isready" /><link rel="next" href="app-pgrecvlogical.html" title="pg_recvlogical" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="reference-client.html" title="PostgreSQLクライアントアプリケーション">PostgreSQLクライアントアプリケーション</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      app-pgreceivewal.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="app-pg-isready.html" title="pg_isready">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="reference-client.html" title="PostgreSQLクライアントアプリケーション">上へ</a></td><td width="60%" align="center">pg_receivewal</td><td width="20%" align="right"> <a accesskey="n" href="app-pgrecvlogical.html" title="pg_recvlogical">次へ</a></td></tr></table><hr /></div><div class="refentry" id="APP-PGRECEIVEWAL"><div class="titlepage"></div><a id="id-1.9.4.15.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">pg_receivewal</span></h2><p>pg_receivewal<span class="original">
+  &lt;refpurpose&gt;stream write-ahead logs from a &lt;productname&gt;PostgreSQL&lt;/productname&gt; server&lt;/refpurpose&gt;
+</span> — <span class="productname">PostgreSQL</span>サーバから先行書き込みログをストリームする</p></div><div class="refsynopsisdiv"><h2>概要</h2><div class="cmdsynopsis"><p id="id-1.9.4.15.4.1"><code class="command">pg_receivewal</code> [<em class="replaceable"><code>option</code></em>...]</p></div></div><div class="refsect1" id="id-1.9.4.15.5"><h2>
+<span class="original">
+   Description
+</span>
+説明
+  </h2><p>
+<span class="original">
+   &lt;application&gt;pg_receivewal&lt;/application&gt; is used to stream the write-ahead log
+   from a running &lt;productname&gt;PostgreSQL&lt;/productname&gt; cluster. The write-ahead
+   log is streamed using the streaming replication protocol, and is written
+   to a local directory of files. This directory can be used as the archive
+   location for doing a restore using point-in-time recovery (see
+   &lt;xref linkend="continuous-archiving"/&gt;).
+</span>
+<span class="application">pg_receivewal</span>は実行中の<span class="productname">PostgreSQL</span>クラスタから先行書き込みログをストリームするために使用されます。
+先行書き込みログはストリーミングレプリケーションプロトコルを使用してストリームされ、ローカルディレクトリのファイルとして書き出されます。
+このディレクトリはポイントインタイムリカバリ（<a class="xref" href="continuous-archiving.html" title="25.3. 継続的アーカイブとポイントインタイムリカバリ（PITR）">25.3</a>参照）を用いてリストアする際のアーカイブ場所として使用することができます。
+  </p><p>
+<span class="original">
+   &lt;application&gt;pg_receivewal&lt;/application&gt; streams the write-ahead
+   log in real time as it's being generated on the server, and does not wait
+   for segments to complete like &lt;xref linkend="guc-archive-command"/&gt; does.
+   For this reason, it is not necessary to set
+   &lt;xref linkend="guc-archive-timeout"/&gt; when using
+    &lt;application&gt;pg_receivewal&lt;/application&gt;.
+</span>
+<span class="application">pg_receivewal</span>は先行書き込みログをサーバで生成に合わせてリアルタイムでストリームし、<a class="xref" href="runtime-config-wal.html#GUC-ARCHIVE-COMMAND">archive_command</a>とは異なり、セグメントが完了するまで待機することはありません。
+このため、<span class="application">pg_receivewal</span>を使用する場合には<a class="xref" href="runtime-config-wal.html#GUC-ARCHIVE-TIMEOUT">archive_timeout</a>を設定する必要はありません。
+  </p><p>
+<span class="original">
+   Unlike the WAL receiver of a PostgreSQL standby server, &lt;application&gt;pg_receivewal&lt;/application&gt;
+   by default flushes WAL data only when a WAL file is closed.
+   The option &lt;option&gt;&amp;#045;&amp;#045;synchronous&lt;/option&gt; must be specified to flush WAL data
+   in real time.
+</span>
+PostgreSQLのスタンバイサーバのWALレシーバと異なり、<span class="application">pg_receivewal</span>はデフォルトでは、WALファイルがクローズされた時にのみ、WALデータをフラッシュします。
+WALデータをリアルタイムでフラッシュするには<code class="option">--synchronous</code>オプションを指定する必要があります。
+  </p><p>
+<span class="original">
+   The write-ahead log is streamed over a regular
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; connection and uses the replication
+   protocol. The connection must be made with a superuser or a user
+   having &lt;literal&gt;REPLICATION&lt;/literal&gt; permissions (see
+   &lt;xref linkend="role-attributes"/&gt;), and &lt;filename&gt;pg_hba.conf&lt;/filename&gt;
+   must permit the replication connection. The server must also be
+   configured with &lt;xref linkend="guc-max-wal-senders"/&gt; set high enough to
+   leave at least one session available for the stream.
+</span>
+先行書き込みログは通常の<span class="productname">PostgreSQL</span>接続を経由して、そしてレプリケーションプロトコルを使用して、ストリームされます。
+この接続はスーパーユーザまたは<code class="literal">REPLICATION</code>権限（<a class="xref" href="role-attributes.html" title="21.2. ロールの属性">21.2</a>参照）を持つユーザで確立されなければなりません。
+そして<code class="filename">pg_hba.conf</code>でレプリケーション用の接続を許可しなければなりません。
+またサーバではストリーム用に利用できるセッションが少なくとも１つ存在できるために<a class="xref" href="runtime-config-replication.html#GUC-MAX-WAL-SENDERS">max_wal_senders</a>を十分大きく設定しなければなりません。
+  </p><p>
+<span class="original">
+   If the connection is lost, or if it cannot be initially established,
+   with a non-fatal error, &lt;application&gt;pg_receivewal&lt;/application&gt; will
+   retry the connection indefinitely, and reestablish streaming as soon
+   as possible. To avoid this behavior, use the &lt;literal&gt;-n&lt;/literal&gt;
+   parameter.
+</span>
+接続が失われた場合、または、致命的ではないエラーで初期確立ができなかった場合、<span class="application">pg_receivewal</span>は無期限に接続を再試行しできるだけ早くストリーミングを再確立します。
+この動作を止めるためには<code class="literal">-n</code>パラメータを使用してください。
+  </p><p>
+<span class="original">
+   In the absence of fatal errors, &lt;application&gt;pg_receivewal&lt;/application&gt;
+   will run until terminated by the &lt;systemitem&gt;SIGINT&lt;/systemitem&gt; signal
+   (&lt;keycombo action="simul"&gt;&lt;keycap&gt;Control&lt;/keycap&gt;&lt;keycap&gt;C&lt;/keycap&gt;&lt;/keycombo&gt;).
+</span>
+致命的なエラーが無い場合、<span class="application">pg_receivewal</span>は<span class="systemitem">SIGINT</span>シグナル（<span class="keycap"><strong>Control</strong></span>+<span class="keycap"><strong>C</strong></span>）で停止されるまで実行を続けます。
+  </p></div><div class="refsect1" id="id-1.9.4.15.6"><h2>オプション</h2><span class="original">
+  &lt;title&gt;Options&lt;/title&gt;
+</span><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="option">-D <em class="replaceable"><code>directory</code></em></code><br /></span><span class="term"><code class="option">--directory=<em class="replaceable"><code>directory</code></em></code></span></dt><dd><p>
+<span class="original">
+        Directory to write the output to.
+</span>
+出力を書き出すディレクトリです。
+       </p><p>
+<span class="original">
+        This parameter is required.
+</span>
+このパラメータは必須です。
+       </p></dd><dt><span class="term"><code class="option">-E <em class="replaceable"><code>lsn</code></em></code><br /></span><span class="term"><code class="option">--endpos=<em class="replaceable"><code>lsn</code></em></code></span></dt><dd><p>
+<span class="original">
+        Automatically stop replication and exit with normal exit status 0 when
+        receiving reaches the specified LSN.
+</span>
+受信が指定したLSNに達したなら、自動的にレプリケーションを停止して、通常の終了ステータス0で終了します。
+       </p><p>
+<span class="original">
+        If there is a record with LSN exactly equal to &lt;replaceable&gt;lsn&lt;/replaceable&gt;,
+        the record will be processed.
+</span>
+<em class="replaceable"><code>lsn</code></em>とちょうど等しいLSNのレコードがある場合、そのレコードは処理されます。
+       </p></dd><dt><span class="term"><code class="option">--if-not-exists</code></span></dt><dd><p>
+<span class="original">
+        Do not error out when &lt;option&gt;&amp;#045;-create-slot&lt;/option&gt; is specified
+        and a slot with the specified name already exists.
+</span>
+<code class="option">--create-slot</code>が指定され、指定された名前のスロットが既に存在していた場合に、エラーを発生させません。
+       </p></dd><dt><span class="term"><code class="option">-n</code><br /></span><span class="term"><code class="option">--no-loop</code></span></dt><dd><p>
+<span class="original">
+        Don't loop on connection errors. Instead, exit right away with
+        an error.
+</span>
+接続エラー時に繰り返しません。
+代わりにエラーですぐに終了します。
+       </p></dd><dt><span class="term"><code class="option">--no-sync</code></span></dt><dd><p>
+<span class="original">
+        This option causes &lt;command&gt;pg_receivewal&lt;/command&gt; to not force WAL
+        data to be flushed to disk.  This is faster, but means that a
+        subsequent operating system crash can leave the WAL segments corrupt.
+        Generally, this option is useful for testing but should not be used
+        when doing WAL archiving on a production deployment.
+</span>
+このオプションは<code class="command">pg_receivewal</code>がWALデータをディスクに強制的にフラッシュさせないようにします。
+これはより高速ですが、オペレーションシステムのクラッシュ後にWALセグメントが破損している可能性があります。
+一般に、このオプションはテストには有益ですが、本番配備でWALのアーカイビングを行うときに使うべきではありません。
+       </p><p>
+<span class="original">
+        This option is incompatible with &lt;literal&gt;-&amp;#045;synchronous&lt;/literal&gt;.
+</span>
+このオプションは<code class="literal">--synchronous</code>と両立しません。
+       </p></dd><dt><span class="term"><code class="option">-s <em class="replaceable"><code>interval</code></em></code><br /></span><span class="term"><code class="option">--status-interval=<em class="replaceable"><code>interval</code></em></code></span></dt><dd><p>
+<span class="original">
+        Specifies the number of seconds between status packets sent back to the
+        server. This allows for easier monitoring of the progress from server.
+        A value of zero disables the periodic status updates completely,
+        although an update will still be sent when requested by the server, to
+        avoid timeout disconnect. The default value is 10 seconds.
+</span>
+サーバに状態パケットを返答する間隔を秒単位で指定します。
+これによりサーバからより簡単に進行状況を監視することができます。
+ゼロという値は状態の定期的な更新を完全に無効にします。
+しかしタイムアウトによる切断を防ぐために、サーバから要求された時には更新を送信します。
+デフォルト値は１０秒です。
+       </p></dd><dt><span class="term"><code class="option">-S <em class="replaceable"><code>slotname</code></em></code><br /></span><span class="term"><code class="option">--slot=<em class="replaceable"><code>slotname</code></em></code></span></dt><dd><p>
+<span class="original">
+         Require &lt;application&gt;pg_receivewal&lt;/application&gt; to use an existing
+         replication slot (see &lt;xref linkend="streaming-replication-slots"/&gt;).
+         When this option is used, &lt;application&gt;pg_receivewal&lt;/application&gt; will report
+         a flush position to the server, indicating when each segment has been
+         synchronized to disk so that the server can remove that segment if it
+         is not otherwise needed.
+</span>
+<span class="application">pg_receivewal</span>が既存のレプリケーションスロットを使うようにします(<a class="xref" href="warm-standby.html#STREAMING-REPLICATION-SLOTS" title="26.2.6. レプリケーションスロット">26.2.6</a>を参照してください)。
+このオプションが使われると、<span class="application">pg_receivewal</span>はフラッシュ位置をサーバに報告します。
+これは、各セグメントがいつディスクに同期されたかを示し、それによりサーバが必要のなくなったセグメントを削除できるようになります。
+        </p><p>
+<span class="original">
+         When the replication client
+         of &lt;application&gt;pg_receivewal&lt;/application&gt; is configured on the
+         server as a synchronous standby, then using a replication slot will
+         report the flush position to the server, but only when a WAL file is
+         closed.  Therefore, that configuration will cause transactions on the
+         primary to wait for a long time and effectively not work
+         satisfactorily.  The option &lt;literal&gt;&amp;#045;-synchronous&lt;/literal&gt; (see
+         below) must be specified in addition to make this work correctly.
+</span>
+<span class="application">pg_receivewal</span>のレプリケーションクライアントが同期スタンバイとしてサーバ上で構成されている場合、レプリケーションスロットを利用するとフラッシュ位置がサーバに報告されますが、それはWALファイルがクローズされる時のみです。
+したがって、その構成ではプライマリ上のトランザクションが長時間待たされることになり、結果的に満足する動作を得られません。
+これを正しく動作させるには、追加で<code class="literal">--synchronous</code>オプション（以下を参照）を指定する必要があります。
+        </p></dd><dt><span class="term"><code class="option">--synchronous</code></span></dt><dd><p>
+<span class="original">
+        Flush the WAL data to disk immediately after it has been received. Also
+        send a status packet back to the server immediately after flushing,
+        regardless of &lt;literal&gt;&amp;#045;&amp;#045;status-interval&lt;/literal&gt;.
+</span>
+WALデータを受け取ると即座にディスクにフラッシュします。
+またフラッシュした直後に、<code class="literal">--status-interval</code>の値が何であれ、ステータスパケットをサーバに送り返します。
+       </p><p>
+<span class="original">
+        This option should be specified if the replication client
+        of &lt;application&gt;pg_receivewal&lt;/application&gt; is configured on the
+        server as a synchronous standby, to ensure that timely feedback is
+        sent to the server.
+</span>
+<span class="application">pg_receivewal</span>のレプリケーションクライアントが同期スタンバイとしてサーバ上で構成されている場合、フィードバックが遅延なくサーバに送り返されることを確実にするため、このオプションを指定すべきです。
+       </p></dd><dt><span class="term"><code class="option">-v</code><br /></span><span class="term"><code class="option">--verbose</code></span></dt><dd><p>
+<span class="original">
+        Enables verbose mode.
+</span>
+冗長モードを有効にします。
+       </p></dd><dt><span class="term"><code class="option">-Z <em class="replaceable"><code>level</code></em></code><br /></span><span class="term"><code class="option">--compress=<em class="replaceable"><code>level</code></em></code></span></dt><dd><p>
+<span class="original">
+        Enables gzip compression of write-ahead logs, and specifies the
+        compression level (0 through 9, 0 being no compression and 9 being best
+        compression).  The suffix &lt;filename&gt;.gz&lt;/filename&gt; will
+        automatically be added to all filenames.
+</span>
+先行書き込みログのgzip圧縮を有効にし、圧縮レベルを指定します（0から9まで、0は圧縮なし、9が最大圧縮）。
+すべてのファイル名に、拡張子<code class="filename">.gz</code>が自動的に追加されます。
+       </p></dd></dl></div><p>
+<span class="original">
+    The following command-line options control the database connection parameters.
+</span>
+以下のコマンドラインオプションはデータベース接続パラメータを制御します。
+
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="option">-d <em class="replaceable"><code>connstr</code></em></code><br /></span><span class="term"><code class="option">--dbname=<em class="replaceable"><code>connstr</code></em></code></span></dt><dd><p>
+<span class="original">
+        Specifies parameters used to connect to the server, as a connection
+        string. See &lt;xref linkend="libpq-connstring"/&gt; for more information.
+</span>
+サーバに接続するために使用するパラメータを、接続文字列として指定します。
+詳細については<a class="xref" href="libpq-connect.html#LIBPQ-CONNSTRING" title="34.1.1. 接続文字列">34.1.1</a>を参照してください。
+       </p><p>
+<span class="original">
+        The option is called &lt;literal&gt;&amp;#045;&amp;#045;dbname&lt;/literal&gt; for consistency with other
+        client applications, but because &lt;application&gt;pg_receivewal&lt;/application&gt;
+        doesn't connect to any particular database in the cluster, database
+        name in the connection string will be ignored.
+</span>
+このオプションは他のクライアントアプリケーションとの整合性のために<code class="literal">--dbname</code>と呼ばれます。
+しかし、<span class="application">pg_receivewal</span>はクラスタ内のどの特定のデータベースにも接続しませんので、接続文字列内のデータベース名は無視されます。
+       </p></dd><dt><span class="term"><code class="option">-h <em class="replaceable"><code>host</code></em></code><br /></span><span class="term"><code class="option">--host=<em class="replaceable"><code>host</code></em></code></span></dt><dd><p>
+<span class="original">
+        Specifies the host name of the machine on which the server is
+        running.  If the value begins with a slash, it is used as the
+        directory for the Unix domain socket. The default is taken
+        from the &lt;envar&gt;PGHOST&lt;/envar&gt; environment variable, if set,
+        else a Unix domain socket connection is attempted.
+</span>
+サーバが稼働しているマシンのホスト名を指定します。
+名前がスラッシュから始まる場合、Unixドメインソケット用のディレクトリとして使用されます。
+デフォルトは環境変数<code class="envar">PGHOST</code>が設定されていればその値から取られ、設定されていない場合はUnixドメインソケット接続が試行されます。
+       </p></dd><dt><span class="term"><code class="option">-p <em class="replaceable"><code>port</code></em></code><br /></span><span class="term"><code class="option">--port=<em class="replaceable"><code>port</code></em></code></span></dt><dd><p>
+<span class="original">
+        Specifies the TCP port or local Unix domain socket file
+        extension on which the server is listening for connections.
+        Defaults to the &lt;envar&gt;PGPORT&lt;/envar&gt; environment variable, if
+        set, or a compiled-in default.
+</span>
+サーバが接続を待ち受けるTCPポートまたはUnixドメインソケットファイルの拡張子を指定します
+デフォルトは環境変数<code class="envar">PGPORT</code>が指定されていればその値から取られ、設定されていない場合はコンパイル時のデフォルト値から取られます。
+       </p></dd><dt><span class="term"><code class="option">-U <em class="replaceable"><code>username</code></em></code><br /></span><span class="term"><code class="option">--username=<em class="replaceable"><code>username</code></em></code></span></dt><dd><p>
+<span class="original">
+        User name to connect as.
+</span>
+接続するユーザ名です。
+       </p></dd><dt><span class="term"><code class="option">-w</code><br /></span><span class="term"><code class="option">--no-password</code></span></dt><dd><p>
+<span class="original">
+        Never issue a password prompt.  If the server requires
+        password authentication and a password is not available by
+        other means such as a &lt;filename&gt;.pgpass&lt;/filename&gt; file, the
+        connection attempt will fail.  This option can be useful in
+        batch jobs and scripts where no user is present to enter a
+        password.
+</span>
+パスワード入力を促しません。
+サーバがパスワード認証を必要とし、かつ、<code class="filename">.pgpass</code>ファイルなど他の手段でパスワードが入手できない場合、接続試行は失敗します。
+このオプションは、パスワードを入力するユーザが存在しないバッチジョブやスクリプトで有用になります。
+       </p></dd><dt><span class="term"><code class="option">-W</code><br /></span><span class="term"><code class="option">--password</code></span></dt><dd><p>
+<span class="original">
+        Force &lt;application&gt;pg_receivewal&lt;/application&gt; to prompt for a
+        password before connecting to a database.
+</span>
+<span class="application">pg_receivewal</span>はデータベースに接続する前にパスワード入力を強制的に促します。
+       </p><p>
+<span class="original">
+        This option is never essential, since
+        &lt;application&gt;pg_receivewal&lt;/application&gt; will automatically prompt
+        for a password if the server demands password authentication.
+        However, &lt;application&gt;pg_receivewal&lt;/application&gt; will waste a
+        connection attempt finding out that the server wants a password.
+        In some cases it is worth typing &lt;option&gt;-W&lt;/option&gt; to avoid the extra
+        connection attempt.
+</span>
+このオプションは重要ではありません。
+<span class="application">pg_receivewal</span>は、サーバがパスワード認証を要求した場合に自動的にパスワードを促すためです。
+しかし<span class="application">pg_receivewal</span>は、サーバがパスワードを要求するかどうかを確認するために接続試行を浪費します。
+<code class="option">-W</code>と入力して無駄な接続試行を防止することが有意である場合があります。
+       </p></dd></dl></div><p>
+   </p><p>
+<span class="original">
+    &lt;application&gt;pg_receivewal&lt;/application&gt; can perform one of the two
+    following actions in order to control physical replication slots:
+</span>
+<span class="application">pg_receivewal</span>は物理的なレプリケーションスロットを制御するため、以下の2つの動作のうちの1つを実行できます。
+
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="option">--create-slot</code></span></dt><dd><p>
+<span class="original">
+        Create a new physical replication slot with the name specified in
+        &lt;option&gt;&amp;#045;-slot&lt;/option&gt;, then exit.
+</span>
+<code class="option">--slot</code>で指定された名前の新しい物理的なレプリケーションスロットを作成して終了します。
+       </p></dd><dt><span class="term"><code class="option">--drop-slot</code></span></dt><dd><p>
+<span class="original">
+        Drop the replication slot with the name specified in
+        &lt;option&gt;&amp;#045;-slot&lt;/option&gt;, then exit.
+</span>
+<code class="option">--slot</code>で指定された名前の物理的なレプリケーションスロットを削除して終了します。
+       </p></dd></dl></div><p>
+   </p><p>
+<span class="original">
+    Other options are also available:
+</span>
+この他に以下のオプションも使用することができます。
+
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="option">-V</code><br /></span><span class="term"><code class="option">--version</code></span></dt><dd><p>
+<span class="original">
+       Print the &lt;application&gt;pg_receivewal&lt;/application&gt; version and exit.
+</span>
+<span class="application">pg_receivewal</span>のバージョンを表示し、終了します。
+       </p></dd><dt><span class="term"><code class="option">-?</code><br /></span><span class="term"><code class="option">--help</code></span></dt><dd><p>
+<span class="original">
+       Show help about &lt;application&gt;pg_receivewal&lt;/application&gt; command line
+       arguments, and exit.
+</span>
+<span class="application">pg_receivewal</span>コマンドライン引数についてのヘルプを表示し、終了します。
+       </p></dd></dl></div><p>
+   </p></div><div class="refsect1" id="id-1.9.4.15.7"><h2>終了ステータス</h2><span class="original">
+  &lt;title&gt;Exit Status&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;application&gt;pg_receivewal&lt;/application&gt; will exit with status 0 when
+   terminated by the &lt;systemitem&gt;SIGINT&lt;/systemitem&gt; signal.  (That is the
+   normal way to end it.  Hence it is not an error.)  For fatal errors or
+   other signals, the exit status will be nonzero.
+</span>
+<span class="application">pg_receivewal</span>は<span class="systemitem">SIGINT</span>シグナルで終了されたとき、ステータス0で終了します。
+（これは止めるための通常の方法です。そのためエラーではありません。）
+致命的エラーや他のシグナルに対しては、終了ステータスは非ゼロになります。
+  </p></div><div class="refsect1" id="id-1.9.4.15.8"><h2>環境</h2><span class="original">
+  &lt;title&gt;Environment&lt;/title&gt;
+</span><p>
+<span class="original">
+   This utility, like most other &lt;productname&gt;PostgreSQL&lt;/productname&gt; utilities,
+   uses the environment variables supported by &lt;application&gt;libpq&lt;/application&gt;
+   (see &lt;xref linkend="libpq-envars"/&gt;).
+</span>
+他のほとんどの<span class="productname">PostgreSQL</span>ユーティリティと同様、このユーティリティは<span class="application">libpq</span>でサポートされる環境変数（<a class="xref" href="libpq-envars.html" title="34.14. 環境変数">34.14</a>参照）を使用します。
+  </p></div><div class="refsect1" id="id-1.9.4.15.9"><h2>注釈</h2><span class="original">
+  &lt;title&gt;Notes&lt;/title&gt;
+</span><p>
+<span class="original">
+   When using &lt;application&gt;pg_receivewal&lt;/application&gt; instead of
+   &lt;xref linkend="guc-archive-command"/&gt; as the main WAL backup method, it is
+   strongly recommended to use replication slots.  Otherwise, the server is
+   free to recycle or remove write-ahead log files before they are backed up,
+   because it does not have any information, either
+   from &lt;xref linkend="guc-archive-command"/&gt; or the replication slots, about
+   how far the WAL stream has been archived.  Note, however, that a
+   replication slot will fill up the server's disk space if the receiver does
+   not keep up with fetching the WAL data.
+</span>
+<a class="xref" href="runtime-config-wal.html#GUC-ARCHIVE-COMMAND">archive_command</a>の代わりに<span class="application">pg_receivewal</span>をWALのバックアップのメインの方法として使用する場合、レプリケーションスロットを使用することを強く推奨します。
+そうしなければ、サーバは<a class="xref" href="runtime-config-wal.html#GUC-ARCHIVE-COMMAND">archive_command</a>とレプリケーションスロットのいずれからもWALのストリームがどこまでアーカイブされているかの情報を得られないため、先行書き込みログファイルがバックアップされる前にそれを再利用または削除するかもしれないのです。
+しかし、WALデータを受け取る側がそのフェッチに追いつけない場合、レプリケーションスロットがサーバのディスクスペースを一杯にしてしまうかもしれないことに注意してください。
+  </p><p>
+<span class="original">
+   &lt;application&gt;pg_receivewal&lt;/application&gt; will preserve group permissions on
+   the received WAL files if group permissions are enabled on the source
+   cluster.
+</span>
+<span class="application">pg_receivewal</span>は、ソースクラスタでグループパーミッションが有効である場合、受け取ったWALファイルのグループパーミッションを維持します。
+  </p></div><div class="refsect1" id="id-1.9.4.15.10"><h2>例</h2><span class="original">
+  &lt;title&gt;Examples&lt;/title&gt;
+</span><p>
+<span class="original">
+   To stream the write-ahead log from the server at
+   &lt;literal&gt;mydbserver&lt;/literal&gt; and store it in the local directory
+   &lt;filename&gt;/usr/local/pgsql/archive&lt;/filename&gt;:
+</span>
+先行書き込みログを<code class="literal">mydbserver</code>にあるサーバからストリームし、それをローカルディレクトリ<code class="filename">/usr/local/pgsql/archive</code>に格納します。
+</p><pre class="screen">
+<code class="prompt">$</code> <strong class="userinput"><code>pg_receivewal -h mydbserver -D /usr/local/pgsql/archive</code></strong>
+</pre></div><div class="refsect1" id="id-1.9.4.15.11"><h2>関連項目</h2><span class="original">
+  &lt;title&gt;See Also&lt;/title&gt;
+</span><span class="simplelist"><a class="xref" href="app-pgbasebackup.html" title="pg_basebackup"><span class="refentrytitle">pg_basebackup</span></a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="app-pg-isready.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="reference-client.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="app-pgrecvlogical.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top"><span class="application">pg_isready</span> </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> <span class="application">pg_recvlogical</span></td></tr></table></div></body></html>

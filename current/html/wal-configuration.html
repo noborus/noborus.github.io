@@ -1,0 +1,396 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>30.4. WALの設定</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="wal-async-commit.html" title="30.3. 非同期コミット" /><link rel="next" href="wal-internals.html" title="30.5. WALの内部" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="wal.html" title="第30章 信頼性とログ先行書き込み">第30章 信頼性とログ先行書き込み</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      wal-configuration.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="wal-async-commit.html" title="30.3. 非同期コミット">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="wal.html" title="第30章 信頼性とログ先行書き込み">上へ</a></td><td width="60%" align="center">30.4. <acronym class="acronym">WAL</acronym>の設定</td><td width="20%" align="right"> <a accesskey="n" href="wal-internals.html" title="30.5. WALの内部">次へ</a></td></tr></table><hr /></div><div class="sect1" id="WAL-CONFIGURATION"><div class="titlepage"><div><div><h2 class="title" style="clear: both">30.4. <acronym class="acronym">WAL</acronym>の設定</h2></div></div></div><span class="original">
+  &lt;title&gt;&lt;acronym&gt;WAL&lt;/acronym&gt; Configuration&lt;/title&gt;
+</span><p>
+<span class="original">
+   There are several &lt;acronym&gt;WAL&lt;/acronym&gt;-related configuration parameters that
+   affect database performance. This section explains their use.
+   Consult &lt;xref linkend="runtime-config"/&gt; for general information about
+   setting server configuration parameters.
+</span>
+データベースの性能に影響するような<acronym class="acronym">WAL</acronym>に関連した設定パラメータが複数あります。
+本節では、その使い方を説明します。
+サーバ設定パラメータの設定方法についての詳細は<a class="xref" href="runtime-config.html" title="第19章 サーバの設定">第19章</a>を参照してください。
+  </p><p>
+<span class="original">
+   &lt;firstterm&gt;Checkpoints&lt;/firstterm&gt;&lt;indexterm&gt;&lt;primary&gt;checkpoint&lt;/primary&gt;&lt;/indexterm&gt;
+   are points in the sequence of transactions at which it is guaranteed
+   that the heap and index data files have been updated with all
+   information written before that checkpoint.  At checkpoint time, all
+   dirty data pages are flushed to disk and a special checkpoint record is
+   written to the log file.  (The change records were previously flushed
+   to the &lt;acronym&gt;WAL&lt;/acronym&gt; files.)
+   In the event of a crash, the crash recovery procedure looks at the latest
+   checkpoint record to determine the point in the log (known as the redo
+   record) from which it should start the REDO operation.  Any changes made to
+   data files before that point are guaranteed to be already on disk.
+   Hence, after a checkpoint, log segments preceding the one containing
+   the redo record are no longer needed and can be recycled or removed. (When
+   &lt;acronym&gt;WAL&lt;/acronym&gt; archiving is being done, the log segments must be
+   archived before being recycled or removed.)
+</span>
+<em class="firstterm">チェックポイント</em><a id="id-1.6.17.6.3.2" class="indexterm"></a>は、一連のトランザクションにおいて、そのチェックポイント以前に書かれた全ての情報によりヒープとインデックスファイルがすでに更新されていることを保証する場所です。
+チェックポイントの時刻において、全てのダーティページデータはディスクにフラッシュされ、特殊なチェックポイントレコードがログファイルに書き込まれます。
+(変更されたレコードは以前に<acronym class="acronym">WAL</acronym>フラッシュされています。)
+クラッシュした時、クラッシュからの復旧処理は最後のチェックポイントレコードを見つけ、ログの中でどのレコード（これはredoレコードと呼ばれています）から復旧処理がREDOログ操作を開始すべきかを決定します。
+このチェックポイント以前になされたデータの変更は、すでにディスク上にあることが保証されています。
+従って、チェックポイント後、redoレコード内のそのチェックポイント以前のログセグメントは不要となり、再利用または削除することができます
+（<acronym class="acronym">WAL</acronym>アーカイブが行われる場合、このログセグメントは削除もしくは再利用される前に保存されなければなりません）。
+  </p><p>
+<span class="original">
+   The checkpoint requirement of flushing all dirty data pages to disk
+   can cause a significant I/O load.  For this reason, checkpoint
+   activity is throttled so that I/O begins at checkpoint start and completes
+   before the next checkpoint is due to start; this minimizes performance
+   degradation during checkpoints.
+</span>
+チェックポイント処理は、全てのダーティデータページをディスクへ書き出すため、大きなI/O負荷を発生させます。
+チェックポイント処理においては、I/Oはチェックポイント開始時に始まり、次のチェックポイントが開始する前に完了するように調節されます。
+これは、チェックポイント処理中の性能劣化を極力抑える効果があります。
+  </p><p>
+<span class="original">
+   The server's checkpointer process automatically performs
+   a checkpoint every so often.  A checkpoint is begun every &lt;xref
+   linkend="guc-checkpoint-timeout"/&gt; seconds, or if
+   &lt;xref linkend="guc-max-wal-size"/&gt; is about to be exceeded,
+   whichever comes first.
+   The default settings are 5 minutes and 1 GB, respectively.
+   If no WAL has been written since the previous checkpoint, new checkpoints
+   will be skipped even if &lt;varname&gt;checkpoint_timeout&lt;/varname&gt; has passed.
+   (If WAL archiving is being used and you want to put a lower limit on how
+   often files are archived in order to bound potential data loss, you should
+   adjust the &lt;xref linkend="guc-archive-timeout"/&gt; parameter rather than the
+   checkpoint parameters.)
+   It is also possible to force a checkpoint by using the SQL
+   command &lt;command&gt;CHECKPOINT&lt;/command&gt;.
+</span>
+サーバのチェックポインタプロセスは、自動的にチェックポイントを時々実行します。
+<a class="xref" href="runtime-config-wal.html#GUC-CHECKPOINT-TIMEOUT">checkpoint_timeout</a>秒が経過するか、または<a class="xref" href="runtime-config-wal.html#GUC-MAX-WAL-SIZE">max_wal_size</a>に達するか、どちらかの条件が最初に満たされるとチェックポイントが開始されます。
+デフォルトの設定では、それぞれ5分と1GBとなっています。
+前回のチェックポイント以降書き出すWALがない場合、<code class="varname">checkpoint_timeout</code>が経過したとしても新しいチェックポイントが飛ばされます。
+(WALアーカイブ処理を使用しており、かつ、データ損失の可能性を限定するためにファイルのアーカイブ頻度に対する下限を設定したい場合、チェックポイント関連のパラメータよりも、<a class="xref" href="runtime-config-wal.html#GUC-ARCHIVE-TIMEOUT">archive_timeout</a>パラメータを調節するべきです。)
+また、<code class="command">CHECKPOINT</code> SQLコマンドで強制的にチェックポイントを作成することもできます。
+  </p><p>
+<span class="original">
+   Reducing &lt;varname&gt;checkpoint_timeout&lt;/varname&gt; and/or
+   &lt;varname&gt;max_wal_size&lt;/varname&gt; causes checkpoints to occur
+   more often. This allows faster after-crash recovery, since less work
+   will need to be redone. However, one must balance this against the
+   increased cost of flushing dirty data pages more often. If
+   &lt;xref linkend="guc-full-page-writes"/&gt; is set (as is the default), there is
+   another factor to consider. To ensure data page consistency,
+   the first modification of a data page after each checkpoint results in
+   logging the entire page content. In that case,
+   a smaller checkpoint interval increases the volume of output to the WAL log,
+   partially negating the goal of using a smaller interval,
+   and in any case causing more disk I/O.
+</span>
+<code class="varname">checkpoint_timeout</code>または<code class="varname">max_wal_size</code>、あるいはその両者を減少させると、チェックポイントはより頻繁に行われます。
+これにより、やり直しに要する処理量が少なくなるので、クラッシュ後の修復は高速になります。
+しかし、変更されたデータページの吐き出しがより頻繁に行われることにより増大するコストとバランスを考えなければなりません。
+<a class="xref" href="runtime-config-wal.html#GUC-FULL-PAGE-WRITES">full_page_writes</a>が設定されている（デフォルトです）場合、他に考慮しなければならない点があります。
+データページの一貫性を保証するために、各チェックポイント後の最初に変更されるデータページは、そのページ全体の内容がログに保存されることになります。
+このような場合、チェックポイントの間隔を少なくすることは、WALログへの出力を増加させ、間隔を短くする目的の一部を無意味にします。
+また、確実により多くのディスクI/Oが発生します。
+  </p><p>
+<span class="original">
+   Checkpoints are fairly expensive, first because they require writing
+   out all currently dirty buffers, and second because they result in
+   extra subsequent WAL traffic as discussed above.  It is therefore
+   wise to set the checkpointing parameters high enough so that checkpoints
+   don't happen too often.  As a simple sanity check on your checkpointing
+   parameters, you can set the &lt;xref linkend="guc-checkpoint-warning"/&gt;
+   parameter.  If checkpoints happen closer together than
+   &lt;varname&gt;checkpoint_warning&lt;/varname&gt; seconds,
+   a message will be output to the server log recommending increasing
+   &lt;varname&gt;max_wal_size&lt;/varname&gt;.  Occasional appearance of such
+   a message is not cause for alarm, but if it appears often then the
+   checkpoint control parameters should be increased. Bulk operations such
+   as large &lt;command&gt;COPY&lt;/command&gt; transfers might cause a number of such warnings
+   to appear if you have not set &lt;varname&gt;max_wal_size&lt;/varname&gt; high
+   enough.
+</span>
+チェックポイントはかなり高価なものです。
+1番の理由は、この処理は現時点の全てのダーティバッファを書き出す必要があること、2番目の理由は、上記のようにその後に余計なWALの書き込みが発生することです。
+そのため、チェックポイント用のパラメータを高くし、チェックポイントがあまりにも頻発することがないようにすることを勧めます。
+簡単なチェックポイント用のパラメータの健全性検査として、<a class="xref" href="runtime-config-wal.html#GUC-CHECKPOINT-WARNING">checkpoint_warning</a>パラメータを設定することができます。
+チェックポイントの発生間隔が<code class="varname">checkpoint_warning</code>秒未満の場合、<code class="varname">max_wal_size</code>の増加を勧めるメッセージがサーバのログに出力されます。
+このメッセージが稀に現れたとしても問題にはなりませんが、頻出するようであれば、チェックポイントの制御パラメータを増加させるべきです。
+<code class="varname">max_wal_size</code>を十分高く設定していないと、大規模な<code class="command">COPY</code>転送などのまとまった操作でこうした警告が多く発生するかもしれません。
+  </p><p>
+<span class="original">
+   To avoid flooding the I/O system with a burst of page writes,
+   writing dirty buffers during a checkpoint is spread over a period of time.
+   That period is controlled by
+   &lt;xref linkend="guc-checkpoint-completion-target"/&gt;, which is
+   given as a fraction of the checkpoint interval.
+   The I/O rate is adjusted so that the checkpoint finishes when the
+   given fraction of
+   &lt;varname&gt;checkpoint_timeout&lt;/varname&gt; seconds have elapsed, or before
+   &lt;varname&gt;max_wal_size&lt;/varname&gt; is exceeded, whichever is sooner.
+   With the default value of 0.5,
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; can be expected to complete each checkpoint
+   in about half the time before the next checkpoint starts.  On a system
+   that's very close to maximum I/O throughput during normal operation,
+   you might want to increase &lt;varname&gt;checkpoint_completion_target&lt;/varname&gt;
+   to reduce the I/O load from checkpoints.  The disadvantage of this is that
+   prolonging checkpoints affects recovery time, because more WAL segments
+   will need to be kept around for possible use in recovery.  Although
+   &lt;varname&gt;checkpoint_completion_target&lt;/varname&gt; can be set as high as 1.0,
+   it is best to keep it less than that (perhaps 0.9 at most) since
+   checkpoints include some other activities besides writing dirty buffers.
+   A setting of 1.0 is quite likely to result in checkpoints not being
+   completed on time, which would result in performance loss due to
+   unexpected variation in the number of WAL segments needed.
+</span>
+ページ書き出しの集中による入出力システムの溢れを防ぐために、チェックポイント期間のダーティバッファの書き出しは一定の期間に分散されます。
+この期間は<a class="xref" href="runtime-config-wal.html#GUC-CHECKPOINT-COMPLETION-TARGET">checkpoint_completion_target</a>により制御され、チェックポイント間隔の割合として指定されます。
+I/Oの割合は、チェックポイントの起動時から<code class="varname">checkpoint_timeout</code>秒が経過した時、あるいは<code class="varname">max_wal_size</code>を超えた時、このどちらかが発生するとすぐに、チェックポイントが完了するように調整されます。
+デフォルトの0.5という値では、<span class="productname">PostgreSQL</span>は、次のチェックポイントが始まるまでのおよそ半分の時間で各チェックポイントが完了するものと想定できることになります。
+通常の操作においてほぼ最大のI/Oスループットに近いようなシステムでは、チェックポイントにおけるI/O負荷を減らすために<code class="varname">checkpoint_completion_target</code>を増やすことを勧めます。
+この欠点は、延長されたチェックポイントがリカバリ時に影響をあたえることです。
+リカバリ時に使用できるように、より多くのWALセグメントを保持する必要があるためです。
+<code class="varname">checkpoint_completion_target</code>を最大の1.0に設定することもできますが、より低く抑えること（おそらく最大で0.9）が最善です。
+チェックポイントには、ダーティバッファを書き出す以外の活動も含まれているからです。
+1.0という設定は、ある時点でチェックポイントが完了しなくなるという結果に陥ります。
+これは必要なWALセグメント数が想定以上に変動することになり、性能の劣化が発生することになります。
+  </p><p>
+<span class="original">
+   On Linux and POSIX platforms &lt;xref linkend="guc-checkpoint-flush-after"/&gt;
+   allows to force the OS that pages written by the checkpoint should be
+   flushed to disk after a configurable number of bytes.  Otherwise, these
+   pages may be kept in the OS's page cache, inducing a stall when
+   &lt;literal&gt;fsync&lt;/literal&gt; is issued at the end of a checkpoint.  This setting will
+   often help to reduce transaction latency, but it also can have an adverse
+   effect on performance; particularly for workloads that are bigger than
+   &lt;xref linkend="guc-shared-buffers"/&gt;, but smaller than the OS's page cache.
+</span>
+LinuxおよびPOSIXプラットフォームでは、チェックポイントによって書かれたページを、設定したバイト数の後にディスクに吐き出すように<a class="xref" href="runtime-config-wal.html#GUC-CHECKPOINT-FLUSH-AFTER">checkpoint_flush_after</a>を使ってOSに強制させることができます。
+この設定がない場合はこのページはOSのページキャッシュに保持されるかもしれず、チェックポイントの最後に<code class="literal">fsync</code>が発行された際の速度低下を招きます。
+この設定は、しばしばトランザクションの遅延を減少させるのに役立ちます。
+しかし、とりわけワークロードが<a class="xref" href="runtime-config-resource.html#GUC-SHARED-BUFFERS">shared_buffers</a>よりも大きく、かつOSのページキャッシュよりも小さい場合には性能上不利になることもあります。
+  </p><p>
+<span class="original">
+   The number of WAL segment files in &lt;filename&gt;pg_wal&lt;/filename&gt; directory depends on
+   &lt;varname&gt;min_wal_size&lt;/varname&gt;, &lt;varname&gt;max_wal_size&lt;/varname&gt; and
+   the amount of WAL generated in previous checkpoint cycles. When old log
+   segment files are no longer needed, they are removed or recycled (that is,
+   renamed to become future segments in the numbered sequence). If, due to a
+   short-term peak of log output rate, &lt;varname&gt;max_wal_size&lt;/varname&gt; is
+   exceeded, the unneeded segment files will be removed until the system
+   gets back under this limit. Below that limit, the system recycles enough
+   WAL files to cover the estimated need until the next checkpoint, and
+   removes the rest. The estimate is based on a moving average of the number
+   of WAL files used in previous checkpoint cycles. The moving average
+   is increased immediately if the actual usage exceeds the estimate, so it
+   accommodates peak usage rather than average usage to some extent.
+   &lt;varname&gt;min_wal_size&lt;/varname&gt; puts a minimum on the amount of WAL files
+   recycled for future usage; that much WAL is always recycled for future use,
+   even if the system is idle and the WAL usage estimate suggests that little
+   WAL is needed.
+</span>
+<code class="filename">pg_wal</code>ディレクトリ内のWALセグメントファイルの数は、<code class="varname">min_wal_size</code>、<code class="varname">max_wal_size</code>、それに前回のチェックポイントで生成されたWALの量に依存します。
+古いログセグメントファイルが不要になると、削除または再利用(連番のうち、今後利用される予定の番号に名前が変更されます)されます。
+ログの出力レートが短期間にピークを迎えたために<code class="varname">max_wal_size</code>を超えた場合、この制限以下になるまで不要なセグメントファイルが削除されます。
+この制限以下になると、次のチェックポイントまでは、システムは見積もりを満たすだけのWALファイルを再利用します。
+この見積は、前回のチェックポイントの際に使用されたWALファイルの移動平均に基づいています。
+もし実際の使用量が見積もりを上回ると、移動平均は直ちに増加します。
+これにより、平均需要というよりは、ピーク時の需要をある程度満たすことができるわけです。
+<code class="varname">min_wal_size</code>は、今後のために再利用されるWALファイル数の最小値を設定します。
+システムがアイドル状態にあり、WALの使用量を見積った結果、少ないWALしか必要ないとなったとしても、こうした量のWALファイルは必ず再利用されます。
+  </p><p>
+<span class="original">
+   Independently of &lt;varname&gt;max_wal_size&lt;/varname&gt;,
+   &lt;xref linkend="guc-wal-keep-segments"/&gt; + 1 most recent WAL files are
+   kept at all times. Also, if WAL archiving is used, old segments can not be
+   removed or recycled until they are archived. If WAL archiving cannot keep up
+   with the pace that WAL is generated, or if &lt;varname&gt;archive_command&lt;/varname&gt;
+   fails repeatedly, old WAL files will accumulate in &lt;filename&gt;pg_wal&lt;/filename&gt;
+   until the situation is resolved. A slow or failed standby server that
+   uses a replication slot will have the same effect (see
+   &lt;xref linkend="streaming-replication-slots"/&gt;).
+</span>
+<code class="varname">max_wal_size</code>とは無関係に、WALファイルのうち、常に最新の(<a class="xref" href="runtime-config-replication.html#GUC-WAL-KEEP-SEGMENTS">wal_keep_segments</a> + 1)個が維持されます。
+また、WALアーカイブを利用している場合は、古いセグメントは、アーカイブされるまでは削除も再利用もされません。
+WALが生成されるペースにWALのアーカイブ処理が追いつかなかったり、<code class="varname">archive_command</code>が連続して失敗すると、事態が解決するまでWALファイルは<code class="filename">pg_wal</code>の下に蓄積されていきます。
+レプリケーションスロットを使用しているスタンバイサーバが低速だったり、失敗すると、同じ現象が起きます(<a class="xref" href="warm-standby.html#STREAMING-REPLICATION-SLOTS" title="26.2.6. レプリケーションスロット">26.2.6</a>を参照のこと)
+  </p><p>
+<span class="original">
+   In archive recovery or standby mode, the server periodically performs
+   &lt;firstterm&gt;restartpoints&lt;/firstterm&gt;,&lt;indexterm&gt;&lt;primary&gt;restartpoint&lt;/primary&gt;&lt;/indexterm&gt;
+   which are similar to checkpoints in normal operation: the server forces
+   all its state to disk, updates the &lt;filename&gt;pg_control&lt;/filename&gt; file to
+   indicate that the already-processed WAL data need not be scanned again,
+   and then recycles any old log segment files in the &lt;filename&gt;pg_wal&lt;/filename&gt;
+   directory.
+   Restartpoints can't be performed more frequently than checkpoints in the
+   master because restartpoints can only be performed at checkpoint records.
+   A restartpoint is triggered when a checkpoint record is reached if at
+   least &lt;varname&gt;checkpoint_timeout&lt;/varname&gt; seconds have passed since the last
+   restartpoint, or if WAL size is about to exceed
+   &lt;varname&gt;max_wal_size&lt;/varname&gt;. However, because of limitations on when a
+   restartpoint can be performed, &lt;varname&gt;max_wal_size&lt;/varname&gt; is often exceeded
+   during recovery, by up to one checkpoint cycle's worth of WAL.
+   (&lt;varname&gt;max_wal_size&lt;/varname&gt; is never a hard limit anyway, so you should
+   always leave plenty of headroom to avoid running out of disk space.)
+</span>
+アーカイブからのリカバリもしくはスタンバイモードにおいて、サーバでは定期的に通常運用でのチェックポイント処理と似た<em class="firstterm">再開始点</em><a id="id-1.6.17.6.12.2" class="indexterm"></a>処理を行います。これは、すでに再生されたWALを再度読み込む必要がないよう、ディスクに現在の状態を強制的に書き込み、<code class="filename">pg_control</code>ファイルを更新します。また<code class="filename">pg_wal</code>ディレクトリの中の古いログセグメントを再利用できるようにします。
+再開始点処理はチェックポイントレコードに対してしか実施されないので、マスタ側のチェックポイント処理よりも発生頻度が多いということはありません。
+再開始点は、最後の再開始点より少なくとも<code class="varname">checkpoint_timeout</code>秒が経過しているか、あるいは<code class="varname">max_wal_size</code>を超えそうな場合に起動されます。
+しかし、再開始点が実施できるための制約事項により、リカバリの際には1回のチェックポイント分のWALを上限に、<code class="varname">max_wal_size</code>を超えてしまいがちです。
+(どのみち<code class="varname">max_wal_size</code>はハードリミットではないので、ディスクスペースを使い尽くしてしまわないように、常に十分な余裕を持っておくべきです)
+  </p><p>
+<span class="original">
+   There are two commonly used internal &lt;acronym&gt;WAL&lt;/acronym&gt; functions:
+   &lt;function&gt;XLogInsertRecord&lt;/function&gt; and &lt;function&gt;XLogFlush&lt;/function&gt;.
+   &lt;function&gt;XLogInsertRecord&lt;/function&gt; is used to place a new record into
+   the &lt;acronym&gt;WAL&lt;/acronym&gt; buffers in shared memory. If there is no
+   space for the new record, &lt;function&gt;XLogInsertRecord&lt;/function&gt; will have
+   to write (move to kernel cache) a few filled &lt;acronym&gt;WAL&lt;/acronym&gt;
+   buffers. This is undesirable because &lt;function&gt;XLogInsertRecord&lt;/function&gt;
+   is used on every database low level modification (for example, row
+   insertion) at a time when an exclusive lock is held on affected
+   data pages, so the operation needs to be as fast as possible.  What
+   is worse, writing &lt;acronym&gt;WAL&lt;/acronym&gt; buffers might also force the
+   creation of a new log segment, which takes even more
+   time. Normally, &lt;acronym&gt;WAL&lt;/acronym&gt; buffers should be written
+   and flushed by an &lt;function&gt;XLogFlush&lt;/function&gt; request, which is
+   made, for the most part, at transaction commit time to ensure that
+   transaction records are flushed to permanent storage. On systems
+   with high log output, &lt;function&gt;XLogFlush&lt;/function&gt; requests might
+   not occur often enough to prevent &lt;function&gt;XLogInsertRecord&lt;/function&gt;
+   from having to do writes.  On such systems
+   one should increase the number of &lt;acronym&gt;WAL&lt;/acronym&gt; buffers by
+   modifying the &lt;xref linkend="guc-wal-buffers"/&gt; parameter.  When
+   &lt;xref linkend="guc-full-page-writes"/&gt; is set and the system is very busy,
+   setting &lt;varname&gt;wal_buffers&lt;/varname&gt; higher will help smooth response times
+   during the period immediately following each checkpoint.
+</span>
+よく使われる2つの内部用<acronym class="acronym">WAL</acronym>関数があります。
+<code class="function">XLogInsertRecord</code>と<code class="function">XLogFlush</code>です。
+<code class="function">XLogInsertRecord</code>は共有メモリ上の<acronym class="acronym">WAL</acronym>バッファに新しいレコードを挿入します。
+新しいレコードを挿入する余地がない時は、<code class="function">XLogInsertRecord</code>は、満杯になった<acronym class="acronym">WAL</acronym>バッファを書き込み（カーネルキャッシュに移動）しなければいけません。
+これは望ましいことではありません。
+なぜなら、データベースへの低レベルの変更（例えば行の挿入）の度に<code class="function">XLogInsertRecord</code>が呼ばれますが、そのような場合には変更を受けたページに対して排他ロックがかかっており、それゆえこの操作は可能な限り高速に実行されなければなりません。
+さらに悪いことには、<acronym class="acronym">WAL</acronym>バッファへの書き込みの際に、さらに時間がかかる、強制的な新しいログセグメントの生成が必要となるかもしれません。
+通常、<acronym class="acronym">WAL</acronym>の書き込み、吐き出しは<code class="function">XLogFlush</code>要求で実施されます。
+これはたいていの場合、トランザクションコミットの際に永続的な記憶領域にトランザクションレコードが吐き出されることを保証するために行われます。
+ログ出力が大量に行われるシステムでは、<code class="function">XLogInsertRecord</code>によって必要となる書き込みを防ぐほどには<code class="function">XLogFlush</code>要求が頻繁に起こらないかもしれません。
+そういうシステムでは、<a class="xref" href="runtime-config-wal.html#GUC-WAL-BUFFERS">wal_buffers</a>パラメータを変更して<acronym class="acronym">WAL</acronym>バッファの数を増やしてください。
+<a class="xref" href="runtime-config-wal.html#GUC-FULL-PAGE-WRITES">full_page_writes</a>が設定され、かつ、システムが高負荷状態である場合、<code class="varname">wal_buffers</code>を高くすることで、各チェックポイントの直後の応答時間を滑らかにすることができます。
+  </p><p>
+<span class="original">
+   The &lt;xref linkend="guc-commit-delay"/&gt; parameter defines for how many
+   microseconds a group commit leader process will sleep after acquiring a
+   lock within &lt;function&gt;XLogFlush&lt;/function&gt;, while group commit
+   followers queue up behind the leader.  This delay allows other server
+   processes to add their commit records to the WAL buffers so that all of
+   them will be flushed by the leader's eventual sync operation.  No sleep
+   will occur if &lt;xref linkend="guc-fsync"/&gt; is not enabled, or if fewer
+   than &lt;xref linkend="guc-commit-siblings"/&gt; other sessions are currently
+   in active transactions; this avoids sleeping when it's unlikely that
+   any other session will commit soon.  Note that on some platforms, the
+   resolution of a sleep request is ten milliseconds, so that any nonzero
+   &lt;varname&gt;commit_delay&lt;/varname&gt; setting between 1 and 10000
+   microseconds would have the same effect.  Note also that on some
+   platforms, sleep operations may take slightly longer than requested by
+   the parameter.
+</span>
+<a class="xref" href="runtime-config-wal.html#GUC-COMMIT-DELAY">commit_delay</a>パラメータは、<code class="function">XLogFlush</code>内でロックを取得してからグループコミット上位者が何マイクロ秒休止するかを定義します。一方、グループコミット追従者は上位者の後に並びます。
+すべてが上位者の結果として生ずる同期操作によりフラッシュされるように、この遅延は他のサーバプロセスがそれらのコミットレコードをWALバッファに追加することを許容します。
+<a class="xref" href="runtime-config-wal.html#GUC-FSYNC">fsync</a>が有効でないか、または<a class="xref" href="runtime-config-wal.html#GUC-COMMIT-SIBLINGS">commit_siblings</a>より少ない他のセッションがその時点で活動しているトランザクションであれば休止は行われません。
+他の何らかのセッションが直ぐにでもコミットするという起こりそうにない時の休止を避けるものです。
+いくつかのプラットフォームにおいて、休止要求の分解能は10ミリ秒で、１から10000マイクロ秒の間の<code class="varname">commit_delay</code>の設定は、どの値でも同じ効果となることを覚えておいてください。
+いくつかのプラットフォームで、休止操作はパラメータによって要求された時間よりわずかに長くなることも覚えておいてください。
+  </p><p>
+<span class="original">
+   Since the purpose of &lt;varname&gt;commit_delay&lt;/varname&gt; is to allow the
+   cost of each flush operation to be amortized across concurrently
+   committing transactions (potentially at the expense of transaction
+   latency), it is necessary to quantify that cost before the setting can
+   be chosen intelligently.  The higher that cost is, the more effective
+   &lt;varname&gt;commit_delay&lt;/varname&gt; is expected to be in increasing
+   transaction throughput, up to a point.  The &lt;xref
+   linkend="pgtestfsync"/&gt; program can be used to measure the average time
+   in microseconds that a single WAL flush operation takes.  A value of
+   half of the average time the program reports it takes to flush after a
+   single 8kB write operation is often the most effective setting for
+   &lt;varname&gt;commit_delay&lt;/varname&gt;, so this value is recommended as the
+   starting point to use when optimizing for a particular workload.  While
+   tuning &lt;varname&gt;commit_delay&lt;/varname&gt; is particularly useful when the
+   WAL log is stored on high-latency rotating disks, benefits can be
+   significant even on storage media with very fast sync times, such as
+   solid-state drives or RAID arrays with a battery-backed write cache;
+   but this should definitely be tested against a representative workload.
+   Higher values of &lt;varname&gt;commit_siblings&lt;/varname&gt; should be used in
+   such cases, whereas smaller &lt;varname&gt;commit_siblings&lt;/varname&gt; values
+   are often helpful on higher latency media.  Note that it is quite
+   possible that a setting of &lt;varname&gt;commit_delay&lt;/varname&gt; that is too
+   high can increase transaction latency by so much that total transaction
+   throughput suffers.
+</span>
+<code class="varname">commit_delay</code>の目的は、それぞれのフラッシュ操作のコストを並列にコミット中のトランザクションに（潜在的にはトランザクションの待ち時間と引き換えに）分散させることにあり、うまく設定を行うためには、まずそのコストを測る必要があります。
+そのコストが高ければ高いほど、トランザクションのスループットがある程度向上するという意味において、<code class="varname">commit_delay</code>の効果がより増すことが期待できます。
+<a class="xref" href="pgtestfsync.html" title="pg_test_fsync"><span class="refentrytitle"><span class="application">pg_test_fsync</span></span></a>プログラムは、一つのWALフラッシュが必要とするマイクロ秒単位の平均時間を計測するために使用可能です。
+プログラムが報告する単一の8kB書き込み操作のあとのフラッシュ平均時間の２分の１の値は、しばしば<code class="varname">commit_delay</code>の最も効果的な設定です。
+従って、この値は特定の作業負荷のための最適化を行うときに使用するための手始めとして推奨されます。
+WALログが高遅延の回転ディスクに格納されているときは、<code class="varname">commit_delay</code>のチューニングは特に有効ですが、半導体ドライブまたはバッテリー・バックアップされている書き込みキャッシュ付きのRAIDアレーのような、特に同期時間が高速な格納メディア上であっても大きなメリットがある場合があります。
+しかし、このことは、代表的作業負荷に対してきちんと検証しておくべきです。
+<code class="varname">commit_siblings</code>の高い値は、これらの状況で使用すべきで、一方より小さな<code class="varname">commit_siblings</code>の値は高遅延メディア上でしばしば有用です。
+余りにも高い値の<code class="varname">commit_delay</code>を設定すると、トランザクション遅延を増加させかねないことになり、トランザクションの総スループットが低下します。
+  </p><p>
+<span class="original">
+   When &lt;varname&gt;commit_delay&lt;/varname&gt; is set to zero (the default), it
+   is still possible for a form of group commit to occur, but each group
+   will consist only of sessions that reach the point where they need to
+   flush their commit records during the window in which the previous
+   flush operation (if any) is occurring.  At higher client counts a
+   &lt;quote&gt;gangway effect&lt;/quote&gt; tends to occur, so that the effects of group
+   commit become significant even when &lt;varname&gt;commit_delay&lt;/varname&gt; is
+   zero, and thus explicitly setting &lt;varname&gt;commit_delay&lt;/varname&gt; tends
+   to help less.  Setting &lt;varname&gt;commit_delay&lt;/varname&gt; can only help
+   when (1) there are some concurrently committing transactions, and (2)
+   throughput is limited to some degree by commit rate; but with high
+   rotational latency this setting can be effective in increasing
+   transaction throughput with as few as two clients (that is, a single
+   committing client with one sibling transaction).
+</span>
+<code class="varname">commit_delay</code>が(デフォルトの）ゼロに設定されても、グループコミットが起こることがあります。
+しかし、それぞれのグループは前回のフラッシュ操作（あった場合）が発生していた期間中に、それぞれのコミットレコードをフラッシュする必要に至ったセッションのみから成ります。
+クライアントが多い状況では、<span class="quote">「<span class="quote">gangway effect</span>」</span>が起こる傾向があり、そのため<code class="varname">commit_delay</code>がゼロであってもグループコミットの効果が著しく、従って、<code class="varname">commit_delay</code>を明示的に設定しても役立ちません。
+<code class="varname">commit_delay</code>の設定は（１）複数の同時にコミット中のトランザクションが存在すること、そして（２）コミット頻度によりある程度までスループットが制限されている場合に役立ちます。
+しかし、回転待ち時間が長い場合、この設定はわずか二つのクライアントにおいてさえトランザクションスループットを向上させる効果があるかもしれません（言いかえれば、一つの兄弟（sibling）トランザクションを所有する単一のコミット中のクライアントです）。
+  </p><p>
+<span class="original">
+   The &lt;xref linkend="guc-wal-sync-method"/&gt; parameter determines how
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; will ask the kernel to force
+   &lt;acronym&gt;WAL&lt;/acronym&gt; updates out to disk.
+   All the options should be the same in terms of reliability, with
+   the exception of &lt;literal&gt;fsync_writethrough&lt;/literal&gt;, which can sometimes
+   force a flush of the disk cache even when other options do not do so.
+   However, it's quite platform-specific which one will be the fastest.
+   You can test the speeds of different options using the &lt;xref
+   linkend="pgtestfsync"/&gt; program.
+   Note that this parameter is irrelevant if &lt;varname&gt;fsync&lt;/varname&gt;
+   has been turned off.
+</span>
+<a class="xref" href="runtime-config-wal.html#GUC-WAL-SYNC-METHOD">wal_sync_method</a>パラメータは<span class="productname">PostgreSQL</span>がカーネルに対して<acronym class="acronym">WAL</acronym>更新のディスクへの書き込みを要求する方法を決定します。
+<code class="literal">fsync_writethrough</code>を除き、どういう設定でも信頼性は同じはずです。<code class="literal">fsync_writethrough</code>は他のオプションがそうしないときでも、時々ディスクキャッシュの書き出しを強制することができます。
+しかしながら、プラットフォームによってどれが一番速いのかがまったく違います。
+<a class="xref" href="pgtestfsync.html" title="pg_test_fsync"><span class="refentrytitle"><span class="application">pg_test_fsync</span></span></a>プログラムを使って異なるオプションの速度テストを行うことができます。
+ちなみに、このパラメータは<code class="varname">fsync</code>が無効になっている場合は役に立ちません。
+
+  </p><p>
+<span class="original">
+   Enabling the &lt;xref linkend="guc-wal-debug"/&gt; configuration parameter
+   (provided that &lt;productname&gt;PostgreSQL&lt;/productname&gt; has been
+   compiled with support for it) will result in each
+   &lt;function&gt;XLogInsertRecord&lt;/function&gt; and &lt;function&gt;XLogFlush&lt;/function&gt;
+   &lt;acronym&gt;WAL&lt;/acronym&gt; call being logged to the server log. This
+   option might be replaced by a more general mechanism in the future.
+</span>
+<a class="xref" href="runtime-config-developer.html#GUC-WAL-DEBUG">wal_debug</a>設定パラメータを有効にすることで、<code class="function">XLogInsertRecord</code>と<code class="function">XLogFlush</code>という<acronym class="acronym">WAL</acronym>呼び出しは毎回サーバログにログが残ります
+（このパラメータをサポートするように<span class="productname">PostgreSQL</span>をコンパイルする必要があります）。
+将来このオプションはより一般的な機構に置き換わる可能性があります。
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="wal-async-commit.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="wal.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="wal-internals.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">30.3. 非同期コミット </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 30.5. WALの内部</td></tr></table></div></body></html>

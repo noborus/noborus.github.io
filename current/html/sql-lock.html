@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>LOCK</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-load.html" title="LOAD" /><link rel="next" href="sql-move.html" title="MOVE" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      sql-lock.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-load.html" title="LOAD">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">LOCK</td><td width="20%" align="right"> <a accesskey="n" href="sql-move.html" title="MOVE">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-LOCK"><div class="titlepage"></div><a id="id-1.9.3.155.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">LOCK</span></h2><p>LOCK<span class="original">
+  &lt;refpurpose&gt;lock a table&lt;/refpurpose&gt;
+</span> — テーブルをロックする</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
+LOCK [ TABLE ] [ ONLY ] <em class="replaceable"><code>name</code></em> [ * ] [, ...] [ IN <em class="replaceable"><code>lockmode</code></em> MODE ] [ NOWAIT ]
+
+<span class="original">
+&lt;phrase&gt;where &lt;replaceable class="parameter"&gt;lockmode&lt;/replaceable&gt; is one of:&lt;/phrase&gt;
+</span>
+<span class="phrase">ここで<em class="replaceable"><code>lockmode</code></em>には以下のいずれかが入ります。</span>
+
+    ACCESS SHARE | ROW SHARE | ROW EXCLUSIVE | SHARE UPDATE EXCLUSIVE
+    | SHARE | SHARE ROW EXCLUSIVE | EXCLUSIVE | ACCESS EXCLUSIVE
+</pre></div><div class="refsect1" id="id-1.9.3.155.5"><h2>説明</h2><span class="original">
+  &lt;title&gt;Description&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;command&gt;LOCK TABLE&lt;/command&gt; obtains a table-level lock, waiting
+   if necessary for any conflicting locks to be released.  If
+   &lt;literal&gt;NOWAIT&lt;/literal&gt; is specified, &lt;command&gt;LOCK
+   TABLE&lt;/command&gt; does not wait to acquire the desired lock: if it
+   cannot be acquired immediately, the command is aborted and an
+   error is emitted.  Once obtained, the lock is held for the
+   remainder of the current transaction.  (There is no &lt;command&gt;UNLOCK
+   TABLE&lt;/command&gt; command; locks are always released at transaction
+   end.)
+</span>
+<code class="command">LOCK TABLE</code>はテーブルレベルのロックを取得します。必要であれば競合するロックが解除されるまで待機します。
+<code class="literal">NOWAIT</code>が指定された場合は、対象のロックを取得できるまで待機せず、すぐにロックが取得できなければ、このコマンドを中止し、エラーを出力します。
+ロックは、一度取得されると現行のトランザクションが完了するまで保持されます
+（<code class="command">UNLOCK TABLE</code>といったコマンドはありません。
+ロックが解除されるのは常にトランザクションの終了時です）。
+  </p><p>
+<span class="original">
+   When a view is locked, all relations appearing in the view definition
+   query are also locked recursively with the same lock mode.
+</span>
+ビューがロックされると、ビューを定義する問い合わせに現れるテーブルもすべて同じロックモードで再帰的にロックされます。
+  </p><p>
+<span class="original">
+   When acquiring locks automatically for commands that reference
+   tables, &lt;productname&gt;PostgreSQL&lt;/productname&gt; always uses the least
+   restrictive lock mode possible. &lt;command&gt;LOCK TABLE&lt;/command&gt;
+   provides for cases when you might need more restrictive locking.
+   For example, suppose an application runs a transaction at the
+   &lt;literal&gt;READ COMMITTED&lt;/literal&gt; isolation level and needs to ensure that
+   data in a table remains stable for the duration of the transaction.
+   To achieve this you could obtain &lt;literal&gt;SHARE&lt;/literal&gt; lock mode over the
+   table before querying. This will prevent concurrent data changes
+   and ensure subsequent reads of the table see a stable view of
+   committed data, because &lt;literal&gt;SHARE&lt;/literal&gt; lock mode conflicts with
+   the &lt;literal&gt;ROW EXCLUSIVE&lt;/literal&gt; lock acquired by writers, and your
+   &lt;command&gt;LOCK TABLE &lt;replaceable
+   class="parameter"&gt;name&lt;/replaceable&gt; IN SHARE MODE&lt;/command&gt;
+   statement will wait until any concurrent holders of &lt;literal&gt;ROW
+   EXCLUSIVE&lt;/literal&gt; mode locks commit or roll back. Thus, once you
+   obtain the lock, there are no uncommitted writes outstanding;
+   furthermore none can begin until you release the lock.
+</span>
+テーブルを参照するコマンドのために自動的にロックを取得する場合、<span class="productname">PostgreSQL</span>は使用可能な一番弱いロックモードを常に使用します。
+<code class="command">LOCK TABLE</code>はより制限の強いロックが必要な場合のために用意されています。
+例えば、隔離レベル<code class="literal">READ COMMITTED</code>でトランザクションを実行するアプリケーションで、トランザクションの間中、テーブルのデータを確実に安定させる必要がある場合を考えます。
+この場合、問い合わせ実行前にテーブル全体に<code class="literal">SHARE</code>ロックモードを使用します。
+これにより、データが同時に変更されるのを防ぎ、それ以降のテーブルの読み取りは、コミット済みの安定したデータが見えるようになります。
+なぜなら<code class="literal">SHARE</code>ロックモードは書き込み側が取得する<code class="literal">ROW EXCLUSIVE</code>ロックと競合するので、<code class="command">LOCK TABLE <em class="replaceable"><code>name</code></em> IN SHARE MODE</code>文は、<code class="literal">ROW EXCLUSIVE</code>を保持しているトランザクションがコミットまたはロールバックされるのを待つからです。
+したがって、一度ロックを取得してしまえば、コミットされていない状態の書き込みは存在しないことになります。さらに、ロックを解除するまで他のアプリケーションは書き込みを開始することができません。
+
+  </p><p>
+<span class="original">
+   To achieve a similar effect when running a transaction at the
+   &lt;literal&gt;REPEATABLE READ&lt;/literal&gt; or &lt;literal&gt;SERIALIZABLE&lt;/literal&gt;
+   isolation level, you have to execute the &lt;command&gt;LOCK TABLE&lt;/command&gt; statement
+   before executing any &lt;command&gt;SELECT&lt;/command&gt; or data modification statement.
+   A &lt;literal&gt;REPEATABLE READ&lt;/literal&gt; or &lt;literal&gt;SERIALIZABLE&lt;/literal&gt; transaction's
+   view of data will be frozen when its first
+   &lt;command&gt;SELECT&lt;/command&gt; or data modification statement begins.  A &lt;command&gt;LOCK
+   TABLE&lt;/command&gt; later in the transaction will still prevent concurrent writes
+   &amp;mdash; but it won't ensure that what the transaction reads corresponds to
+   the latest committed values.
+</span>
+<code class="literal">REPEATABLE READ</code>または<code class="literal">SERIALIZABLE</code>隔離レベルで実行しているトランザクションで同様の効果を得るには、全ての<code class="command">SELECT</code>文とデータを更新する文を実行する前に<code class="command">LOCK TABLE</code>文を実行する必要があります。
+<code class="literal">REPEATABLE READ</code>または<code class="literal">SERIALIZABLE</code>トランザクション側から参照するデータの状態は、最初に<code class="command">SELECT</code>文またはデータ更新用文が開始された時点で固定されます。
+後からトランザクション内で<code class="command">LOCK TABLE</code>を実行した場合も同時書き込みを防ぐことはできますが、トランザクションの読み込み対象データの値がコミットされた最新の値であることは保証されません。
+  </p><p>
+<span class="original">
+   If a transaction of this sort is going to change the data in the
+   table, then it should use &lt;literal&gt;SHARE ROW EXCLUSIVE&lt;/literal&gt; lock mode
+   instead of &lt;literal&gt;SHARE&lt;/literal&gt; mode.  This ensures that only one
+   transaction of this type runs at a time.  Without this, a deadlock
+   is possible: two transactions might both acquire &lt;literal&gt;SHARE&lt;/literal&gt;
+   mode, and then be unable to also acquire &lt;literal&gt;ROW EXCLUSIVE&lt;/literal&gt;
+   mode to actually perform their updates.  (Note that a transaction's
+   own locks never conflict, so a transaction can acquire &lt;literal&gt;ROW
+   EXCLUSIVE&lt;/literal&gt; mode when it holds &lt;literal&gt;SHARE&lt;/literal&gt; mode &amp;mdash; but not
+   if anyone else holds &lt;literal&gt;SHARE&lt;/literal&gt; mode.)  To avoid deadlocks,
+   make sure all transactions acquire locks on the same objects in the
+   same order, and if multiple lock modes are involved for a single
+   object, then transactions should always acquire the most
+   restrictive mode first.
+</span>
+このようなトランザクションでテーブルのデータを変更する場合は、<code class="literal">SHARE</code>モードではなく<code class="literal">SHARE ROW EXCLUSIVE</code>ロックモードを使用する必要があります。
+これによって、この種のトランザクションが同時に複数実行されることがなくなります。
+<code class="literal">SHARE ROW EXCLUSIVE</code>を使用しないと、デッドロックが発生する可能性があります。
+2つのトランザクションの両方が、<code class="literal">SHARE</code>モードを取得していながら、実際の更新に必要な<code class="literal">ROW EXCLUSIVE</code>モードを取得できない状態になる可能性があるためです
+（トランザクション自身が所有しているロック間は競合しないので、トランザクションは<code class="literal">SHARE</code>モードを保持している間も<code class="literal">ROW EXCLUSIVE</code>を獲得することができます。
+しかし、他のトランザクションが<code class="literal">SHARE</code>モードを保持している時には<code class="literal">ROW EXCLUSIVE</code>を獲得することはできません）。
+デッドロックを回避するには、全てのトランザクションが、必ず同一オブジェクトに対して同一の順番でロックを取得するようにしてください。
+また、1つのオブジェクトに対して複数のロックモードを呼び出す場合、トランザクションは常に最も制限の強いモードを最初に取得するべきです。
+  </p><p>
+<span class="original">
+   More information about the lock modes and locking strategies can be
+   found in &lt;xref linkend="explicit-locking"/&gt;.
+</span>
+ロックモードとロック取得方針についてのより詳細については<a class="xref" href="explicit-locking.html" title="13.3. 明示的ロック">13.3</a>を参照してください。
+  </p></div><div class="refsect1" id="id-1.9.3.155.6"><h2>パラメータ</h2><span class="original">
+  &lt;title&gt;Parameters&lt;/title&gt;
+</span><div class="variablelist"><dl class="variablelist"><dt><span class="term"><em class="replaceable"><code>name</code></em></span></dt><dd><p>
+<span class="original">
+      The name (optionally schema-qualified) of an existing table to
+      lock. If &lt;literal&gt;ONLY&lt;/literal&gt; is specified before the table name, only that
+      table is locked. If &lt;literal&gt;ONLY&lt;/literal&gt; is not specified, the table and all
+      its descendant tables (if any) are locked.  Optionally, &lt;literal&gt;*&lt;/literal&gt;
+      can be specified after the table name to explicitly indicate that
+      descendant tables are included.
+</span>
+ロックする既存のテーブルの名前です（スキーマ修飾名も可）。
+テーブル名の前に<code class="literal">ONLY</code>が指定された場合、そのテーブルのみをロックします。
+<code class="literal">ONLY</code>が指定されない場合、そのテーブルとすべての子テーブル（もしあれば）をロックします。
+オプションで、テーブル名の後に<code class="literal">*</code>を指定することで、明示的に継承するテーブルも含まれることを示すことができます。
+     </p><p>
+<span class="original">
+      The command &lt;literal&gt;LOCK TABLE a, b;&lt;/literal&gt; is equivalent to
+      &lt;literal&gt;LOCK TABLE a; LOCK TABLE b;&lt;/literal&gt;. The tables are locked
+      one-by-one in the order specified in the &lt;command&gt;LOCK
+      TABLE&lt;/command&gt; command.
+</span>
+<code class="literal">LOCK a, b;</code>というコマンドは<code class="literal">LOCK TABLE a; LOCK TABLE b;</code>と同じです。
+テーブルは1つひとつ<code class="command">LOCK</code>で指定された順番でロックされます。
+     </p></dd><dt><span class="term"><em class="replaceable"><code>lockmode</code></em></span></dt><dd><p>
+<span class="original">
+      The lock mode specifies which locks this lock conflicts with.
+      Lock modes are described in &lt;xref linkend="explicit-locking"/&gt;.
+</span>
+ロックモードには、取得するロックと競合するロックを指定します。
+ロックモードについては、<a class="xref" href="explicit-locking.html" title="13.3. 明示的ロック">13.3</a>で説明します。
+     </p><p>
+<span class="original">
+      If no lock mode is specified, then &lt;literal&gt;ACCESS
+      EXCLUSIVE&lt;/literal&gt;, the most restrictive mode, is used.
+</span>
+ロックモードを指定しない場合、最も制限が強い<code class="literal">ACCESS EXCLUSIVE</code>が使用されます。
+     </p></dd><dt><span class="term"><code class="literal">NOWAIT</code></span></dt><dd><p>
+<span class="original">
+      Specifies that &lt;command&gt;LOCK TABLE&lt;/command&gt; should not wait for
+      any conflicting locks to be released: if the specified lock(s)
+      cannot be acquired immediately without waiting, the transaction
+      is aborted.
+</span>
+<code class="command">LOCK TABLE</code>が競合するロックの解放まで待機しないことを指定します。
+指定したロックがすぐに取得できない場合、トランザクションはアボートされます。
+     </p></dd></dl></div></div><div class="refsect1" id="id-1.9.3.155.7"><h2>注釈</h2><span class="original">
+  &lt;title&gt;Notes&lt;/title&gt;
+</span><p>
+<span class="original">
+    &lt;literal&gt;LOCK TABLE ... IN ACCESS SHARE MODE&lt;/literal&gt; requires &lt;literal&gt;SELECT&lt;/literal&gt;
+    privileges on the target table.  &lt;literal&gt;LOCK TABLE ... IN ROW EXCLUSIVE
+    MODE&lt;/literal&gt; requires &lt;literal&gt;INSERT&lt;/literal&gt;, &lt;literal&gt;UPDATE&lt;/literal&gt;, &lt;literal&gt;DELETE&lt;/literal&gt;,
+    or &lt;literal&gt;TRUNCATE&lt;/literal&gt; privileges on the target table. All other forms of
+    &lt;command&gt;LOCK&lt;/command&gt; require table-level &lt;literal&gt;UPDATE&lt;/literal&gt;, &lt;literal&gt;DELETE&lt;/literal&gt;,
+    or &lt;literal&gt;TRUNCATE&lt;/literal&gt; privileges.
+</span>
+<code class="literal">LOCK TABLE ... IN ACCESS SHARE MODE</code>には、対象テーブルの<code class="literal">SELECT</code>権限が必要です。
+<code class="literal">LOCK TABLE ... IN ROW EXCLUSIVE MODE</code>には、対象テーブルの<code class="literal">INSERT</code>、<code class="literal">UPDATE</code>、<code class="literal">DELETE</code>または<code class="literal">TRUNCATE</code>権限が必要です。
+他の形式の<code class="command">LOCK</code>には、テーブルレベルの<code class="literal">UPDATE</code>、<code class="literal">DELETE</code>あるいは<code class="literal">TRUNCATE</code>権限を持たなければなりません。
+   </p><p>
+<span class="original">
+    The user performing the lock on the view must have the corresponding privilege
+    on the view.  In addition the view's owner must have the relevant privileges on
+    the underlying base relations, but the user performing the lock does
+    not need any permissions on the underlying base relations.
+</span>
+ビューに対するロックを実行するユーザはビューに対して対応する権限を持っていなければなりません。
+さらに、ビューの所有者は被参照テーブルに対して関連する権限を持っていなければなりませんが、ロックを実行するユーザは被参照テーブルに対する権限は必要ありません。
+   </p><p>
+<span class="original">
+    &lt;command&gt;LOCK TABLE&lt;/command&gt; is useless outside a transaction block: the lock
+    would remain held only to the completion of the statement.  Therefore
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; reports an error if &lt;command&gt;LOCK&lt;/command&gt;
+    is used outside a transaction block.
+    Use
+    &lt;xref linkend="sql-begin"/&gt; and
+    &lt;xref linkend="sql-commit"/&gt;
+    (or &lt;xref linkend="sql-rollback"/&gt;)
+    to define a transaction block.
+</span>
+<code class="command">LOCK TABLE</code>はトランザクションブロックの外側では意味がありません。
+文が完了するまでしかロックは保持されません。
+したがって<span class="productname">PostgreSQL</span>は<code class="command">LOCK</code>がトランザクションブロックの外側で使用された場合にエラーを報告します。
+トランザクションブロックを定義するためには<a class="xref" href="sql-begin.html" title="BEGIN"><span class="refentrytitle">BEGIN</span></a>および<a class="xref" href="sql-commit.html" title="COMMIT"><span class="refentrytitle">COMMIT</span></a>（または<a class="xref" href="sql-rollback.html" title="ROLLBACK"><span class="refentrytitle">ROLLBACK</span></a>）を使用してください。
+   </p><p>
+<span class="original">
+   &lt;command&gt;LOCK TABLE&lt;/command&gt; only deals with table-level locks, and so
+   the mode names involving &lt;literal&gt;ROW&lt;/literal&gt; are all misnomers.  These
+   mode names should generally be read as indicating the intention of
+   the user to acquire row-level locks within the locked table.  Also,
+   &lt;literal&gt;ROW EXCLUSIVE&lt;/literal&gt; mode is a shareable table lock.  Keep in
+   mind that all the lock modes have identical semantics so far as
+   &lt;command&gt;LOCK TABLE&lt;/command&gt; is concerned, differing only in the rules
+   about which modes conflict with which. For information on how to
+   acquire an actual row-level lock, see &lt;xref linkend="locking-rows"/&gt;
+   and the &lt;xref linkend="sql-for-update-share"
+   endterm="sql-for-update-share-title"/&gt; in the &lt;command&gt;SELECT&lt;/command&gt;
+   reference documentation.
+</span>
+<code class="command">LOCK</code>が扱うのはテーブルレベルのロックのみです。
+そのため、モード名に<code class="literal">ROW</code>が含まれるのは適切ではありません。
+これらのモード名は、普通は、ロックされたテーブル内で行レベルのロックを取得する意図と解釈されるでしょう。
+また、<code class="literal">ROW EXCLUSIVE</code>モードは共有可能なテーブルロックです。
+<code class="command">LOCK TABLE</code>に関しては、全てのロックモードが同じ意味を持っており、違うのは、どのモードがどのモードと競合するかという規則だけであることに注意して下さい。
+行レベルでのロックを獲得する方法については<code class="command">SELECT</code>参照マニュアルの<a class="xref" href="explicit-locking.html#LOCKING-ROWS" title="13.3.2. 行レベルロック">13.3.2</a>と<a class="xref" href="sql-select.html#SQL-FOR-UPDATE-SHARE" title="ロック処理句">ロック処理句</a>を参照してください。
+  </p></div><div class="refsect1" id="id-1.9.3.155.8"><h2>例</h2><span class="original">
+  &lt;title&gt;Examples&lt;/title&gt;
+</span><p>
+<span class="original">
+   Obtain a &lt;literal&gt;SHARE&lt;/literal&gt; lock on a primary key table when going to perform
+   inserts into a foreign key table:
+</span>
+外部キーテーブルへの挿入を行う際に、主キーテーブルへの<code class="literal">SHARE</code>ロックを獲得します。
+
+</p><pre class="programlisting">
+BEGIN WORK;
+LOCK TABLE films IN SHARE MODE;
+SELECT id FROM films
+    WHERE name = 'Star Wars: Episode I - The Phantom Menace';
+<span class="original">
+&amp;#045;&amp;#045; Do ROLLBACK if record was not returned
+</span>
+-- レコードがなければROLLBACKしてください。
+INSERT INTO films_user_comments VALUES
+    (_id_, 'GREAT! I was waiting for it for so long!');
+COMMIT WORK;
+</pre><p>
+  </p><p>
+<span class="original">
+   Take a &lt;literal&gt;SHARE ROW EXCLUSIVE&lt;/literal&gt; lock on a primary key table when going to perform
+   a delete operation:
+</span>
+削除操作を行う際に主キーテーブルの<code class="literal">SHARE ROW EXCLUSIVE</code>ロックを取得します。
+
+</p><pre class="programlisting">
+BEGIN WORK;
+LOCK TABLE films IN SHARE ROW EXCLUSIVE MODE;
+DELETE FROM films_user_comments WHERE id IN
+    (SELECT id FROM films WHERE rating &lt; 5);
+DELETE FROM films WHERE rating &lt; 5;
+COMMIT WORK;
+</pre></div><div class="refsect1" id="id-1.9.3.155.9"><h2>互換性</h2><span class="original">
+  &lt;title&gt;Compatibility&lt;/title&gt;
+</span><p>
+<span class="original">
+   There is no &lt;command&gt;LOCK TABLE&lt;/command&gt; in the SQL standard,
+   which instead uses &lt;command&gt;SET TRANSACTION&lt;/command&gt; to specify
+   concurrency levels on transactions.  &lt;productname&gt;PostgreSQL&lt;/productname&gt; supports that too;
+   see &lt;xref linkend="sql-set-transaction"/&gt; for details.
+</span>
+標準SQLには<code class="command">LOCK TABLE</code>はありません。
+その代わりにトランザクションの同時性レベルを指定する<code class="command">SET TRANSACTION</code>が使用されます。
+<span class="productname">PostgreSQL</span>はこのコマンドもサポートしています。詳細は<a class="xref" href="sql-set-transaction.html" title="SET TRANSACTION"><span class="refentrytitle">SET TRANSACTION</span></a>を参照してください。
+  </p><p>
+<span class="original">
+   Except for &lt;literal&gt;ACCESS SHARE&lt;/literal&gt;, &lt;literal&gt;ACCESS EXCLUSIVE&lt;/literal&gt;,
+   and &lt;literal&gt;SHARE UPDATE EXCLUSIVE&lt;/literal&gt; lock modes, the
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; lock modes and the
+   &lt;command&gt;LOCK TABLE&lt;/command&gt; syntax are compatible with those
+   present in &lt;productname&gt;Oracle&lt;/productname&gt;.
+</span>
+<code class="literal">ACCESS SHARE</code>、<code class="literal">ACCESS EXCLUSIVE</code>、<code class="literal">SHARE UPDATE EXCLUSIVE</code>ロックモードを除き、<span class="productname">PostgreSQL</span>のロックモードと<code class="command">LOCK TABLE</code>構文は<span class="productname">Oracle</span>のものと互換性があります。
+  </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-load.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-move.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">LOAD </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> MOVE</td></tr></table></div></body></html>

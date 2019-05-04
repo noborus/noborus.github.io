@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>F.36. spi</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sepgsql.html" title="F.35. sepgsql" /><link rel="next" href="sslinfo.html" title="F.37. sslinfo" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="contrib.html" title="付録F 追加で提供されるモジュール">付録F 追加で提供されるモジュール</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      contrib-spi.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sepgsql.html" title="F.35. sepgsql">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュール">上へ</a></td><td width="60%" align="center">F.36. spi</td><td width="20%" align="right"> <a accesskey="n" href="sslinfo.html" title="F.37. sslinfo">次へ</a></td></tr></table><hr /></div><div class="sect1" id="CONTRIB-SPI"><div class="titlepage"><div><div><h2 class="title" style="clear: both">F.36. spi</h2></div></div></div><a id="id-1.11.7.45.2" class="indexterm"></a><p>
+<span class="original">
+  The &lt;application&gt;spi&lt;/application&gt; module provides several workable examples
+  of using the &lt;link linkend="spi"&gt;Server Programming Interface&lt;/link&gt;
+  (&lt;acronym&gt;SPI&lt;/acronym&gt;) and triggers.  While these functions are of
+  some value in
+  their own right, they are even more useful as examples to modify for
+  your own purposes.  The functions are general enough to be used
+  with any table, but you have to specify table and field names (as described
+  below) while creating a trigger.
+</span>
+<span class="application">spi</span>モジュールは、<a class="link" href="spi.html" title="第47章 サーバプログラミングインタフェース">サーバプログラミングインタフェース</a>(<acronym class="acronym">SPI</acronym>)およびトリガを使用した、動作可能な例を複数提供します。
+これらの関数は独自の何らかの価値を持つものですが、目的に応じて変更するための例としてより有用です。
+関数は任意のテーブルと使用できるほど一般的なものですが、トリガを作成する場合は（後述のように）テーブル名とフィールド名を指定する必要があります。
+ </p><p>
+<span class="original">
+  Each of the groups of functions described below is provided as a
+  separately-installable extension.
+</span>
+以下で説明する関数グループのそれぞれは、別々にインストールすることができる拡張として提供されます。
+ </p><div class="sect2" id="id-1.11.7.45.5"><div class="titlepage"><div><div><h3 class="title">F.36.1. refint — 参照整合性を実装する関数</h3></div></div></div><span class="original">
+  &lt;title&gt;refint &amp;mdash; Functions for Implementing Referential Integrity&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;function&gt;check_primary_key()&lt;/function&gt; and
+   &lt;function&gt;check_foreign_key()&lt;/function&gt; are used to check foreign key constraints.
+   (This functionality is long since superseded by the built-in foreign
+   key mechanism, of course, but the module is still useful as an example.)
+</span>
+<code class="function">check_primary_key()</code>および<code class="function">check_foreign_key()</code>は、外部キー制約を検査するために使用されます。
+（当然ながら、この機能はかなり前に組み込みの外部キー機能に取って代わりました。しかし例としてはまだ有用です。）
+  </p><p>
+<span class="original">
+   &lt;function&gt;check_primary_key()&lt;/function&gt; checks the referencing table.
+   To use, create a &lt;literal&gt;BEFORE INSERT OR UPDATE&lt;/literal&gt; trigger using this
+   function on a table referencing another table. Specify as the trigger
+   arguments: the referencing table's column name(s) which form the foreign
+   key, the referenced table name, and the column names in the referenced table
+   which form the primary/unique key.  To handle multiple foreign
+   keys, create a trigger for each reference.
+</span>
+<code class="function">check_primary_key()</code>は参照テーブルを検査します。
+使用方法は、この関数を使用する<code class="literal">BEFORE INSERT OR UPDATE</code>トリガを他のテーブルを参照するテーブルに作成することです。
+トリガ引数は、外部キーを形成する参照テーブルの列名、被参照テーブル名、プライマリ/一意キーを形成する被参照テーブルの列名です。
+複数の外部キーを扱うためには、各参照に対してトリガを作成してください。
+  </p><p>
+<span class="original">
+   &lt;function&gt;check_foreign_key()&lt;/function&gt; checks the referenced table.
+   To use, create a &lt;literal&gt;BEFORE DELETE OR UPDATE&lt;/literal&gt; trigger using this
+   function on a table referenced by other table(s).  Specify as the trigger
+   arguments: the number of referencing tables for which the function has to
+   perform checking, the action if a referencing key is found
+   (&lt;literal&gt;cascade&lt;/literal&gt; &amp;mdash; to delete the referencing row,
+   &lt;literal&gt;restrict&lt;/literal&gt; &amp;mdash; to abort transaction if referencing keys
+   exist, &lt;literal&gt;setnull&lt;/literal&gt; &amp;mdash; to set referencing key fields to null),
+   the triggered table's column names which form the primary/unique key, then
+   the referencing table name and column names (repeated for as many
+   referencing tables as were specified by first argument).  Note that the
+   primary/unique key columns should be marked NOT NULL and should have a
+   unique index.
+</span>
+<code class="function">check_foreign_key()</code>は被参照テーブルを検査します。
+使用方法は、この関数を使用する<code class="literal">BEFORE DELETE OR UPDATE</code>トリガを他のテーブルで参照されるテーブルに作成することです。
+トリガ引数は、この関数が検査を実行しなければならない参照テーブル数、参照キーが見つかった場合の動作（<code class="literal">cascade</code> — 参照行を削除、<code class="literal">restrict</code> — 参照キーが存在する場合トランザクションをアボート、<code class="literal">setnull</code> —参照キーフィールドをNULLに設定）、プライマリ/一意キーを形成するトリガを発行したテーブルの列名、参照テーブルの名前と列名（最初の引数で指定された数のテーブル分繰り返す）です。
+プライマリ/一意キー列はNOT NULLと指定されていなければならず、また、一意性インデックスを持つべきであることに注意してください。
+  </p><p>
+<span class="original">
+   There are examples in &lt;filename&gt;refint.example&lt;/filename&gt;.
+</span>
+<code class="filename">refint.example</code>に例があります。
+  </p></div><div class="sect2" id="id-1.11.7.45.6"><div class="titlepage"><div><div><h3 class="title">F.36.2. timetravel — 時間旅行を実装する関数</h3></div></div></div><span class="original">
+  &lt;title&gt;timetravel &amp;mdash; Functions for Implementing Time Travel&lt;/title&gt;
+</span><p>
+<span class="original">
+   Long ago, &lt;productname&gt;PostgreSQL&lt;/productname&gt; had a built-in time travel feature
+   that kept the insert and delete times for each tuple.  This can be
+   emulated using these functions.  To use these functions,
+   you must add to a table two columns of &lt;type&gt;abstime&lt;/type&gt; type to store
+   the date when a tuple was inserted (start_date) and changed/deleted
+   (stop_date):
+</span>
+かなり前に<span class="productname">PostgreSQL</span>は各タプルで挿入時間、削除時間を保持する時間旅行機能が組み込まれました。
+これをこれらの関数を使用して模擬することができます。
+これらの関数を使用するためには、<code class="type">abstime</code>型の、タプルの挿入日付（start_date）および変更/削除日付（stop_date）を格納するために2つの列をテーブルに追加しなければなりません。
+
+</p><pre class="programlisting">
+CREATE TABLE mytab (
+        ...             ...
+        start_date      abstime,
+        stop_date       abstime
+        ...             ...
+);
+</pre><p>
+
+<span class="original">
+   The columns can be named whatever you like, but in this discussion
+   we'll call them start_date and stop_date.
+</span>
+この列には好みの名前を付けることができますが、以下の説明ではstart_date、stop_dateを使用します。
+  </p><p>
+<span class="original">
+   When a new row is inserted, start_date should normally be set to
+   current time, and stop_date to &lt;literal&gt;infinity&lt;/literal&gt;.  The trigger
+   will automatically substitute these values if the inserted data
+   contains nulls in these columns.  Generally, inserting explicit
+   non-null data in these columns should only be done when re-loading
+   dumped data.
+</span>
+新しく行が挿入される時、start_dateは通常現在時刻に、stop_dateは<code class="literal">infinity</code>に設定されるはずです。
+挿入されるデータにおけるこれらの列がNULLの場合、トリガは自動的にこれらの値を置き換えます。
+一般的には、これらの列に非NULLのデータを明示的に挿入することは、ダンプデータの再ロードを行う時にしかないはずです。
+  </p><p>
+<span class="original">
+   Tuples with stop_date equal to &lt;literal&gt;infinity&lt;/literal&gt; are &lt;quote&gt;valid
+   now&lt;/quote&gt;, and can be modified.  Tuples with a finite stop_date cannot
+   be modified anymore &amp;mdash; the trigger will prevent it.  (If you need
+   to do that, you can turn off time travel as shown below.)
+</span>
+stop_dateが<code class="literal">infinity</code>のstop_dateを持つタプルは<span class="quote">「<span class="quote">現在有効</span>」</span>で、変更可能です。
+トリガが防止するため、有限のstop_dateを持つタプルを変更することはできません。
+（変更する必要がある場合は、以下のように時間旅行を無効にすることができます。）
+  </p><p>
+<span class="original">
+   For a modifiable row, on update only the stop_date in the tuple being
+   updated will be changed (to current time) and a new tuple with the modified
+   data will be inserted.  Start_date in this new tuple will be set to current
+   time and stop_date to &lt;literal&gt;infinity&lt;/literal&gt;.
+</span>
+変更可能な行では、更新時、更新されようとしているタプルのstop_dateのみが（現在時刻に）変更され、変更されたデータを持った新しいタプルが挿入されます。
+この新しいタプルのstart_dateは現在時刻となり、stop_dateは<code class="literal">infinity</code>になります。
+  </p><p>
+<span class="original">
+   A delete does not actually remove the tuple but only sets its stop_date
+   to current time.
+</span>
+削除では実際にタプルの削除は行われず、そのstop_dateが現在時刻になります。
+  </p><p>
+<span class="original">
+   To query for tuples &lt;quote&gt;valid now&lt;/quote&gt;, include
+   &lt;literal&gt;stop_date = 'infinity'&lt;/literal&gt; in the query's WHERE condition.
+   (You might wish to incorporate that in a view.)  Similarly, you can
+   query for tuples valid at any past time with suitable conditions on
+   start_date and stop_date.
+</span>
+<span class="quote">「<span class="quote">現在有効</span>」</span>なタプルを問い合わせるには、問い合わせのWHERE条件に<code class="literal">stop_date = 'infinity'</code>を含めてください。
+（これをビューに組み込もうと考えるかもしれません。）
+同様に、start_dateとstop_dateに適切な条件を付けることで任意の時点で有効だったタプルを問い合わせることもできます。
+  </p><p>
+<span class="original">
+   &lt;function&gt;timetravel()&lt;/function&gt; is the general trigger function that supports
+   this behavior.  Create a &lt;literal&gt;BEFORE INSERT OR UPDATE OR DELETE&lt;/literal&gt;
+   trigger using this function on each time-traveled table. Specify two
+   trigger arguments: the actual
+   names of the start_date and stop_date columns.
+   Optionally, you can specify one to three more arguments, which must refer
+   to columns of type &lt;type&gt;text&lt;/type&gt;.  The trigger will store the name of
+   the current user into the first of these columns during INSERT, the
+   second column during UPDATE, and the third during DELETE.
+</span>
+<code class="function">timetravel()</code>は、こうした動作をサポートする、一般的なトリガ関数です。
+時間旅行を行うテーブル毎にこの関数を使用した<code class="literal">BEFORE INSERT OR UPDATE OR DELETE</code>トリガを作成してください。
+2つのトリガ引数で、start_dateとstop_date列の実際の名前を指定してください。
+省略可能ですが、1から3つの引数を追加して指定することもできます。
+これらは<code class="type">text</code>型の列を参照しなければなりません。
+トリガは現在のユーザ名を、INSERT時に最初の列、UPDATE時に2番目の列、DELETE時に3番目の列に格納します。
+  </p><p>
+<span class="original">
+   &lt;function&gt;set_timetravel()&lt;/function&gt; allows you to turn time-travel on or off for
+   a table.
+   &lt;literal&gt;set_timetravel('mytab', 1)&lt;/literal&gt; will turn TT ON for table &lt;literal&gt;mytab&lt;/literal&gt;.
+   &lt;literal&gt;set_timetravel('mytab', 0)&lt;/literal&gt; will turn TT OFF for table &lt;literal&gt;mytab&lt;/literal&gt;.
+   In both cases the old status is reported.  While TT is off, you can modify
+   the start_date and stop_date columns freely.  Note that the on/off status
+   is local to the current database session &amp;mdash; fresh sessions will
+   always start out with TT ON for all tables.
+</span>
+<code class="function">set_timetravel()</code>により、テーブル単位で時間旅行を有効または無効にすることができます。
+<code class="literal">set_timetravel('mytab', 1)</code>は<code class="literal">mytab</code>テーブルの時間旅行を有効にします。
+<code class="literal">set_timetravel('mytab', 0)</code>は<code class="literal">mytab</code>テーブルの時間旅行を無効にします。
+時間旅行が無効な時、start_dateとstop_date列を自由に変更することができます。
+有効状態は現在のデータベースセッション内で局所的な状態であることに注意してください。
+新規セッションでは常に、すべてのテーブルの時間旅行は有効状態で始まります。
+  </p><p>
+<span class="original">
+   &lt;function&gt;get_timetravel()&lt;/function&gt; returns the TT state for a table without
+   changing it.
+</span>
+<code class="function">get_timetravel()</code>は、状態変更を行うことなく、時間旅行の状態を返します。
+  </p><p>
+<span class="original">
+   There is an example in &lt;filename&gt;timetravel.example&lt;/filename&gt;.
+</span>
+<code class="filename">timetravel.example</code>に例が存在します。
+  </p></div><div class="sect2" id="id-1.11.7.45.7"><div class="titlepage"><div><div><h3 class="title">F.36.3. autoinc — フィールド自動増分用の関数</h3></div></div></div><span class="original">
+  &lt;title&gt;autoinc &amp;mdash; Functions for Autoincrementing Fields&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;function&gt;autoinc()&lt;/function&gt; is a trigger that stores the next value of
+   a sequence into an integer field.  This has some overlap with the
+   built-in &lt;quote&gt;serial column&lt;/quote&gt; feature, but it is not the same:
+   &lt;function&gt;autoinc()&lt;/function&gt; will override attempts to substitute a
+   different field value during inserts, and optionally it can be
+   used to increment the field during updates, too.
+</span>
+<code class="function">autoinc()</code>は、整数型フィールドにシーケンスの次の値を格納するトリガです。
+これは、組み込みの<span class="quote">「<span class="quote">連番列</span>」</span>機能と一部重複しますが、同一ではありません。
+<code class="function">autoinc()</code>は挿入時に別のフィールド値に置き換える試みを上書きし、さらに省略可能ですが、更新時にフィールドを増加させるために使用することもできます。
+  </p><p>
+<span class="original">
+   To use, create a &lt;literal&gt;BEFORE INSERT&lt;/literal&gt; (or optionally &lt;literal&gt;BEFORE
+   INSERT OR UPDATE&lt;/literal&gt;) trigger using this function.  Specify two
+   trigger arguments: the name of the integer column to be modified,
+   and the name of the sequence object that will supply values.
+   (Actually, you can specify any number of pairs of such names, if
+   you'd like to update more than one autoincrementing column.)
+</span>
+使用方法は、この関数を使用する<code class="literal">BEFORE INSERT</code>（または <code class="literal">BEFORE INSERT OR UPDATE</code>）トリガを作成することです。
+2つのトリガ引数、変更する整数型列の名前と値を生み出すシーケンスオブジェクトの名前を指定します。
+（実際、自動増分列を複数更新したい場合、これらの名前の組み合わせを任意の数指定することができます。）
+  </p><p>
+<span class="original">
+   There is an example in &lt;filename&gt;autoinc.example&lt;/filename&gt;.
+</span>
+<code class="filename">autoinc.example</code>に例があります。
+  </p></div><div class="sect2" id="id-1.11.7.45.8"><div class="titlepage"><div><div><h3 class="title">F.36.4. insert_username — 誰がテーブルを変更したかを追跡する関数</h3></div></div></div><span class="original">
+  &lt;title&gt;insert_username &amp;mdash; Functions for Tracking Who Changed a Table&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;function&gt;insert_username()&lt;/function&gt; is a trigger that stores the current
+   user's name into a text field.  This can be useful for tracking
+   who last modified a particular row within a table.
+</span>
+<code class="function">insert_username()</code>は現在のユーザ名をテキスト型のフィールドに格納するトリガです。
+これはテーブル内のある行を最後に変更したユーザを追跡する際に有用です。
+  </p><p>
+<span class="original">
+   To use, create a &lt;literal&gt;BEFORE INSERT&lt;/literal&gt; and/or &lt;literal&gt;UPDATE&lt;/literal&gt;
+   trigger using this function.  Specify a single trigger
+   argument: the name of the text column to be modified.
+</span>
+使用方法は、この関数を使用する<code class="literal">BEFORE INSERT</code>、<code class="literal">UPDATE</code>またはその両方のトリガを作成することです。
+1つのトリガ引数、変更するテキスト型の列の名前を指定してください。
+  </p><p>
+<span class="original">
+   There is an example in &lt;filename&gt;insert_username.example&lt;/filename&gt;.
+</span>
+<code class="filename">insert_username.example</code>に例があります。
+  </p></div><div class="sect2" id="id-1.11.7.45.9"><div class="titlepage"><div><div><h3 class="title">F.36.5. moddatetime — 最終更新時刻を追跡する関数</h3></div></div></div><span class="original">
+  &lt;title&gt;moddatetime &amp;mdash; Functions for Tracking Last Modification Time&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;function&gt;moddatetime()&lt;/function&gt; is a trigger that stores the current
+   time into a &lt;type&gt;timestamp&lt;/type&gt; field.  This can be useful for tracking
+   the last modification time of a particular row within a table.
+</span>
+<code class="function">moddatetime()</code>は現在時刻を<code class="type">timestamp</code>型のフィールドに格納するトリガです。
+これは、テーブル内のある行の最終更新時刻を追跡する際に有用です。
+  </p><p>
+<span class="original">
+   To use, create a &lt;literal&gt;BEFORE UPDATE&lt;/literal&gt;
+   trigger using this function.  Specify a single trigger
+   argument: the name of the column to be modified.
+   The column must be of type &lt;type&gt;timestamp&lt;/type&gt; or &lt;type&gt;timestamp with
+   time zone&lt;/type&gt;.
+</span>
+使用方法は、この関数を使用する<code class="literal">BEFORE UPDATE</code>トリガを作成することです。
+1つのトリガ引数、変更する列名を指定してください。
+この列は<code class="type">timestamp</code>型または<code class="type">timestamp with time zone</code>型でなければなりません。
+  </p><p>
+<span class="original">
+   There is an example in &lt;filename&gt;moddatetime.example&lt;/filename&gt;.
+</span>
+<code class="filename">moddatetime.example</code>に例があります。
+  </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sepgsql.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="contrib.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sslinfo.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">F.35. sepgsql </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> F.37. sslinfo</td></tr></table></div></body></html>

@@ -1,0 +1,551 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>34.4. 非同期コマンドの処理</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="libpq-exec.html" title="34.3. コマンド実行関数" /><link rel="next" href="libpq-single-row-mode.html" title="34.5. １行１行問い合わせ結果を受け取る" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="libpq.html" title="第34章 libpq - C ライブラリ">第34章 <span class="application">libpq</span> - C ライブラリ</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      libpq-async.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="libpq-exec.html" title="34.3. コマンド実行関数">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="libpq.html" title="第34章 libpq - C ライブラリ">上へ</a></td><td width="60%" align="center">34.4. 非同期コマンドの処理</td><td width="20%" align="right"> <a accesskey="n" href="libpq-single-row-mode.html" title="34.5. １行１行問い合わせ結果を受け取る">次へ</a></td></tr></table><hr /></div><div class="sect1" id="LIBPQ-ASYNC"><div class="titlepage"><div><div><h2 class="title" style="clear: both">34.4. 非同期コマンドの処理</h2></div></div></div><span class="original">
+  &lt;title&gt;Asynchronous Command Processing&lt;/title&gt;
+</span><a id="id-1.7.3.11.2" class="indexterm"></a><p>
+<span class="original">
+   The &lt;function&gt;PQexec&lt;/function&gt; function is adequate for submitting
+   commands in normal, synchronous applications.  It has a few
+   deficiencies, however, that can be of importance to some users:
+</span>
+<code class="function">PQexec</code>関数は普通の同期処理のアプリケーションにおけるコマンドの送信に適したものです。
+しかし、一部のユーザにとって重要な問題となり得る、数個の問題があります。
+
+   </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+      &lt;function&gt;PQexec&lt;/function&gt; waits for the command to be completed.
+      The application might have other work to do (such as maintaining a
+      user interface), in which case it won't want to block waiting for
+      the response.
+</span>
+<code class="function">PQexec</code> はコマンドが完了するまで待機します。
+アプリケーションによっては(例えばユーザインタフェースの調整処理など)他に行うべき作業があります。
+この場合は応答待ちでブロックさせたくはありません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Since the execution of the client application is suspended while it
+      waits for the result, it is hard for the application to decide that
+      it would like to try to cancel the ongoing command.  (It can be done
+      from a signal handler, but not otherwise.)
+</span>
+クライアントアプリケーションの実行が結果を待っている間停止されるため、アプリケーションで送信したコマンドをキャンセルさせる指示を行うことは困難です。
+(シグナルハンドラを使って達成することができますが、他の方法はありません。)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      &lt;function&gt;PQexec&lt;/function&gt; can return only one
+      &lt;structname&gt;PGresult&lt;/structname&gt; structure.  If the submitted command
+      string contains multiple &lt;acronym&gt;SQL&lt;/acronym&gt; commands, all but
+      the last &lt;structname&gt;PGresult&lt;/structname&gt; are discarded by
+      &lt;function&gt;PQexec&lt;/function&gt;.
+</span>
+<code class="function">PQexec</code>が返すことができる<code class="structname">PGresult</code>構造体は1つだけです。
+もし送信した問い合わせ文字列が複数の<acronym class="acronym">SQL</acronym>コマンドを含んでいる場合、<code class="function">PQexec</code>は最後のものだけを除いて、残りすべての<code class="structname">PGresult</code>を破棄してしまいます。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      &lt;function&gt;PQexec&lt;/function&gt; always collects the command's entire result,
+      buffering it in a single &lt;structname&gt;PGresult&lt;/structname&gt;.  While
+      this simplifies error-handling logic for the application, it can be
+      impractical for results containing many rows.
+</span>
+<code class="function">PQexec</code>は常にコマンドの結果全体を収集し、１つの<code class="structname">PGresult</code>内に保管します。
+アプリケーションにおけるエラー処理を簡単にしますが、多くの行になる結果では非現実的になるかもしれません。
+     </p></li></ul></div><p>
+  </p><p>
+<span class="original">
+   Applications that do not like these limitations can instead use the
+   underlying functions that &lt;function&gt;PQexec&lt;/function&gt; is built from:
+   &lt;function&gt;PQsendQuery&lt;/function&gt; and &lt;function&gt;PQgetResult&lt;/function&gt;.
+   There are also
+   &lt;function&gt;PQsendQueryParams&lt;/function&gt;,
+   &lt;function&gt;PQsendPrepare&lt;/function&gt;,
+   &lt;function&gt;PQsendQueryPrepared&lt;/function&gt;,
+   &lt;function&gt;PQsendDescribePrepared&lt;/function&gt;, and
+   &lt;function&gt;PQsendDescribePortal&lt;/function&gt;,
+   which can be used with &lt;function&gt;PQgetResult&lt;/function&gt; to duplicate
+   the functionality of
+   &lt;function&gt;PQexecParams&lt;/function&gt;,
+   &lt;function&gt;PQprepare&lt;/function&gt;,
+   &lt;function&gt;PQexecPrepared&lt;/function&gt;,
+   &lt;function&gt;PQdescribePrepared&lt;/function&gt;, and
+   &lt;function&gt;PQdescribePortal&lt;/function&gt;
+   respectively.
+</span>
+アプリケーションにとってこのような制限が望ましくない場合は、代わりに<code class="function">PQexec</code>を構成する関数<code class="function">PQsendQuery</code>と<code class="function">PQgetResult</code>を使用してください。
+また、<code class="function">PQsendQueryParams</code>と<code class="function">PQsendPrepare</code>、<code class="function">PQsendQueryPrepared</code>、<code class="function">PQsendDescribePrepared</code>、<code class="function">PQsendDescribePortal</code>もあり、<code class="function">PQgetResult</code>を使用して、それぞれ<code class="function">PQexecParams</code>と<code class="function">PQprepare</code>、<code class="function">PQexecPrepared</code>、<code class="function">PQdescribePrepared</code>、<code class="function">PQdescribePortal</code>と同等の機能を行うことができます。
+
+   </p><div class="variablelist"><dl class="variablelist"><dt id="LIBPQ-PQSENDQUERY"><span class="term">
+      <code class="function">PQsendQuery</code>
+      <a id="id-1.7.3.11.4.15.1.1.2" class="indexterm"></a>
+     </span></dt><dd><p>
+<span class="original">
+       Submits a command to the server without waiting for the result(s).
+       1 is returned if the command was successfully dispatched and 0 if
+       not (in which case, use &lt;function&gt;PQerrorMessage&lt;/function&gt; to get more
+       information about the failure).
+</span>
+結果を待つことなく、サーバにコマンドを発行します。
+コマンドの登録に成功した場合1が、失敗した場合0が返されます。
+(後者の場合、<code class="function">PQerrorMessage</code>を使用して失敗についてのより多くの情報を取り出してください。)
+</p><pre class="synopsis">
+int PQsendQuery(PGconn *conn, const char *command);
+</pre><p>
+
+<span class="original">
+       After successfully calling &lt;function&gt;PQsendQuery&lt;/function&gt;, call
+       &lt;function&gt;PQgetResult&lt;/function&gt; one or more times to obtain the
+       results.  &lt;function&gt;PQsendQuery&lt;/function&gt; cannot be called again
+       (on the same connection) until &lt;function&gt;PQgetResult&lt;/function&gt;
+       has returned a null pointer, indicating that the command is done.
+</span>
+<code class="function">PQsendQuery</code>呼び出しが成功したら、<code class="function">PQgetResult</code>を繰り返し呼び出して、実行結果を取得します。
+<code class="function">PQgetResult</code>がヌルポインタを返し、コマンドが完了したことを示すまでは、(同じ接続で)<code class="function">PQsendQuery</code>を再度呼び出すことはできません。
+      </p></dd><dt id="LIBPQ-PQSENDQUERYPARAMS"><span class="term">
+      <code class="function">PQsendQueryParams</code>
+      <a id="id-1.7.3.11.4.15.2.1.2" class="indexterm"></a>
+     </span></dt><dd><p>
+<span class="original">
+       Submits a command and separate parameters to the server without
+       waiting for the result(s).
+</span>
+結果を待つことなく、サーバにコマンドとパラメータとを分けて発行します。
+</p><pre class="synopsis">
+int PQsendQueryParams(PGconn *conn,
+                      const char *command,
+                      int nParams,
+                      const Oid *paramTypes,
+                      const char * const *paramValues,
+                      const int *paramLengths,
+                      const int *paramFormats,
+                      int resultFormat);
+</pre><p>
+
+<span class="original">
+       This is equivalent to &lt;function&gt;PQsendQuery&lt;/function&gt; except that
+       query parameters can be specified separately from the query string.
+       The function's parameters are handled identically to
+       &lt;function&gt;PQexecParams&lt;/function&gt;.  Like
+       &lt;function&gt;PQexecParams&lt;/function&gt;, it will not work on 2.0-protocol
+       connections, and it allows only one command in the query string.
+</span>
+これは、問い合わせのパラメータが問い合わせ文字列と分けて指定できる点を除き、<code class="function">PQsendQuery</code>と同じです。
+この関数のパラメータは<code class="function">PQexecParams</code>と同様に扱われます。
+<code class="function">PQexecParams</code>同様、これは2.0プロトコルでは動作しませんし、問い合わせ文字列には1つのコマンドしか指定できません。
+      </p></dd><dt id="LIBPQ-PQSENDPREPARE"><span class="term">
+      <code class="function">PQsendPrepare</code>
+      <a id="id-1.7.3.11.4.15.3.1.2" class="indexterm"></a>
+     </span></dt><dd><p>
+<span class="original">
+       Sends a request to create a prepared statement with the given
+       parameters, without waiting for completion.
+</span>
+指定パラメータを持つプリペアド文の作成要求を送信します。
+その完了を待ちません。
+</p><pre class="synopsis">
+int PQsendPrepare(PGconn *conn,
+                  const char *stmtName,
+                  const char *query,
+                  int nParams,
+                  const Oid *paramTypes);
+</pre><p>
+
+<span class="original">
+       This is an asynchronous version of &lt;function&gt;PQprepare&lt;/function&gt;: it
+       returns 1 if it was able to dispatch the request, and 0 if not.
+       After a successful call, call &lt;function&gt;PQgetResult&lt;/function&gt; to
+       determine whether the server successfully created the prepared
+       statement.  The function's parameters are handled identically to
+       &lt;function&gt;PQprepare&lt;/function&gt;.  Like
+       &lt;function&gt;PQprepare&lt;/function&gt;, it will not work on 2.0-protocol
+       connections.
+</span>
+これは<code class="function">PQprepare</code>の非同期版です。
+要求の登録に成功した場合1が、失敗した場合0が返されます。
+呼び出しの成功の後、サーバがプリペアド文の生成に成功したかを確認するためには<code class="function">PQgetResult</code>を呼び出してください。
+この関数のパラメータは<code class="function">PQprepare</code>と同様に扱われます。
+<code class="function">PQprepare</code>同様、これは2.0プロトコルの接続では動作しません。
+      </p></dd><dt id="LIBPQ-PQSENDQUERYPREPARED"><span class="term">
+      <code class="function">PQsendQueryPrepared</code>
+      <a id="id-1.7.3.11.4.15.4.1.2" class="indexterm"></a>
+     </span></dt><dd><p>
+<span class="original">
+       Sends a request to execute a prepared statement with given
+       parameters, without waiting for the result(s).
+</span>
+結果を待つことなく、指定したパラメータでプリペアド文の実行要求を送信します。
+</p><pre class="synopsis">
+int PQsendQueryPrepared(PGconn *conn,
+                        const char *stmtName,
+                        int nParams,
+                        const char * const *paramValues,
+                        const int *paramLengths,
+                        const int *paramFormats,
+                        int resultFormat);
+</pre><p>
+
+<span class="original">
+       This is similar to &lt;function&gt;PQsendQueryParams&lt;/function&gt;, but
+       the command to be executed is specified by naming a
+       previously-prepared statement, instead of giving a query string.
+       The function's parameters are handled identically to
+       &lt;function&gt;PQexecPrepared&lt;/function&gt;.  Like
+       &lt;function&gt;PQexecPrepared&lt;/function&gt;, it will not work on
+       2.0-protocol connections.
+</span>
+これは<code class="function">PQsendQueryParams</code>と似ていますが、実行されるコマンドは問い合わせ文字列ではなく、事前に準備された文の名前で指定されます。
+この関数のパラメータは<code class="function">PQexecPrepared</code>と同様に扱われます。
+<code class="function">PQexecPrepared</code>同様、これは2.0プロトコルでは動作しません。
+      </p></dd><dt id="LIBPQ-PQSENDDESCRIBEPREPARED"><span class="term">
+      <code class="function">PQsendDescribePrepared</code>
+      <a id="id-1.7.3.11.4.15.5.1.2" class="indexterm"></a>
+     </span></dt><dd><p>
+<span class="original">
+       Submits a request to obtain information about the specified
+       prepared statement, without waiting for completion.
+</span>
+指定したプリペアド文に関する情報入手要求を送ります。
+入手完了まで待機しません。
+</p><pre class="synopsis">
+int PQsendDescribePrepared(PGconn *conn, const char *stmtName);
+</pre><p>
+
+<span class="original">
+       This is an asynchronous version of &lt;function&gt;PQdescribePrepared&lt;/function&gt;:
+       it returns 1 if it was able to dispatch the request, and 0 if not.
+       After a successful call, call &lt;function&gt;PQgetResult&lt;/function&gt; to
+       obtain the results.  The function's parameters are handled
+       identically to &lt;function&gt;PQdescribePrepared&lt;/function&gt;.  Like
+       &lt;function&gt;PQdescribePrepared&lt;/function&gt;, it will not work on
+       2.0-protocol connections.
+</span>
+これは<code class="function">PQdescribePrepared</code>の非同期版です。
+要求の受付けが可能であれば1が返されます。不可能であれば0が返されます。
+呼び出しに成功した後、<code class="function">PQgetResult</code>を呼び出して結果を入手してください。
+この関数のパラメータは<code class="function">PQdescribePrepared</code>と同じように扱われます。
+<code class="function">PQdescribePrepared</code>同様、2.0プロトコル接続では動作しません。
+      </p></dd><dt id="LIBPQ-PQSENDDESCRIBEPORTAL"><span class="term">
+      <code class="function">PQsendDescribePortal</code>
+      <a id="id-1.7.3.11.4.15.6.1.2" class="indexterm"></a>
+     </span></dt><dd><p>
+<span class="original">
+       Submits a request to obtain information about the specified
+       portal, without waiting for completion.
+</span>
+指定したポータルに関する情報入手要求を送信します。
+完了まで待機しません。
+</p><pre class="synopsis">
+int PQsendDescribePortal(PGconn *conn, const char *portalName);
+</pre><p>
+
+<span class="original">
+       This is an asynchronous version of &lt;function&gt;PQdescribePortal&lt;/function&gt;:
+       it returns 1 if it was able to dispatch the request, and 0 if not.
+       After a successful call, call &lt;function&gt;PQgetResult&lt;/function&gt; to
+       obtain the results.  The function's parameters are handled
+       identically to &lt;function&gt;PQdescribePortal&lt;/function&gt;.  Like
+       &lt;function&gt;PQdescribePortal&lt;/function&gt;, it will not work on
+       2.0-protocol connections.
+</span>
+これは<code class="function">PQdescribePortal</code>の非同期版です。
+要求の受付けが可能であれば1が返されます。不可能であれば0が返されます。
+呼び出しに成功した後、<code class="function">PQgetResult</code>を呼び出して結果を入手してください。
+この関数のパラメータは<code class="function">PQdescribePortal</code>と同じように扱われます。
+<code class="function">PQdescribePortal</code>同様、2.0プロトコル接続では動作しません。
+      </p></dd><dt id="LIBPQ-PQGETRESULT"><span class="term">
+      <code class="function">PQgetResult</code>
+      <a id="id-1.7.3.11.4.15.7.1.2" class="indexterm"></a>
+     </span></dt><dd><p>
+<span class="original">
+       Waits for the next result from a prior
+       &lt;function&gt;PQsendQuery&lt;/function&gt;,
+       &lt;function&gt;PQsendQueryParams&lt;/function&gt;,
+       &lt;function&gt;PQsendPrepare&lt;/function&gt;,
+       &lt;function&gt;PQsendQueryPrepared&lt;/function&gt;,
+       &lt;function&gt;PQsendDescribePrepared&lt;/function&gt;, or
+       &lt;function&gt;PQsendDescribePortal&lt;/function&gt;
+       call, and returns it.
+       A null pointer is returned when the command is complete and there
+       will be no more results.
+</span>
+以前に呼び出した<code class="function">PQsendQuery</code>、<code class="function">PQsendQueryParams</code>、<code class="function">PQsendPrepare</code>、<code class="function">PQsendQueryPrepared</code>、<code class="function">PQsendDescribePrepared</code>、<code class="function">PQsendDescribePortal</code>から次の結果を待ち、その結果を返します。
+コマンドが完了し、これ以上結果がない場合は、ヌルポインタが返されます。
+</p><pre class="synopsis">
+PGresult *PQgetResult(PGconn *conn);
+</pre><p>
+      </p><p>
+<span class="original">
+       &lt;function&gt;PQgetResult&lt;/function&gt; must be called repeatedly until
+       it returns a null pointer, indicating that the command is done.
+       (If called when no command is active,
+       &lt;function&gt;PQgetResult&lt;/function&gt; will just return a null pointer
+       at once.) Each non-null result from
+       &lt;function&gt;PQgetResult&lt;/function&gt; should be processed using the
+       same &lt;structname&gt;PGresult&lt;/structname&gt; accessor functions previously
+       described.  Don't forget to free each result object with
+       &lt;function&gt;PQclear&lt;/function&gt; when done with it.  Note that
+       &lt;function&gt;PQgetResult&lt;/function&gt; will block only if a command is
+       active and the necessary response data has not yet been read by
+       &lt;function&gt;PQconsumeInput&lt;/function&gt;.
+</span>
+<code class="function">PQgetResult</code>は、コマンドの完了を示すヌルポインタが返るまで、繰り返し呼び出さなければなりません。
+(コマンド実行中以外での呼び出しでは、<code class="function">PQgetResult</code>は単にヌルポインタを返します。)
+<code class="function">PQgetResult</code>の非ヌルの結果はそれぞれ前述と同じ<code class="structname">PGresult</code>アクセス用関数を使用して処理されなければなりません。
+各結果オブジェクトに対する処理が終わったら、そのオブジェクトを<code class="function">PQclear</code>を使用して解放することを忘れないでください。
+コマンドが活動中、かつ、必要な応答データがまだ<code class="function">PQconsumeInput</code>で読み込まれていない場合にのみ、<code class="function">PQgetResult</code>がブロックすることに注意してください。
+      </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+        Even when &lt;function&gt;PQresultStatus&lt;/function&gt; indicates a fatal
+        error, &lt;function&gt;PQgetResult&lt;/function&gt; should be called until it
+        returns a null pointer, to allow &lt;application&gt;libpq&lt;/application&gt; to
+        process the error information completely.
+</span>
+<code class="function">PQresultStatus</code>が致命的なエラーを示した場合であっても、<span class="application">libpq</span>がエラー情報を完全に処理できるようにヌルポインタが返されるまで<code class="function">PQgetResult</code>を呼び出さなければなりません。
+       </p></div></dd></dl></div><p>
+  </p><p>
+<span class="original">
+   Using &lt;function&gt;PQsendQuery&lt;/function&gt; and
+   &lt;function&gt;PQgetResult&lt;/function&gt; solves one of
+   &lt;function&gt;PQexec&lt;/function&gt;'s problems:  If a command string contains
+   multiple &lt;acronym&gt;SQL&lt;/acronym&gt; commands, the results of those commands
+   can be obtained individually.  (This allows a simple form of overlapped
+   processing, by the way: the client can be handling the results of one
+   command while the server is still working on later queries in the same
+   command string.)
+</span>
+<code class="function">PQsendQuery</code>と<code class="function">PQgetResult</code>を使うことで<code class="function">PQexec</code>の問題は1つ解決します。
+つまり、コマンドが複数の<acronym class="acronym">SQL</acronym>コマンドを含んでいる場合でも、これらのコマンドの結果を個々に得ることができるわけです
+（これは多重処理を単純な形で実現します。
+単一のコマンド文字列に含まれる複数の問い合わせの内、後ろのものが処理中でもフロントエンドは先に完了した結果から扱うことができるからです）。
+  </p><p>
+<span class="original">
+   Another frequently-desired feature that can be obtained with
+   &lt;function&gt;PQsendQuery&lt;/function&gt; and &lt;function&gt;PQgetResult&lt;/function&gt;
+   is retrieving large query results a row at a time.  This is discussed
+   in &lt;xref linkend="libpq-single-row-mode"/&gt;.
+</span>
+<code class="function">PQsendQuery</code>および<code class="function">PQgetResult</code>で得られる、その他のよく望まれる機能は多くの問い合わせ結果を一度に1行受け取ることです。
+これについては<a class="xref" href="libpq-single-row-mode.html" title="34.5. １行１行問い合わせ結果を受け取る">34.5</a>で説明します。
+  </p><p>
+<span class="original">
+   By itself, calling &lt;function&gt;PQgetResult&lt;/function&gt;
+   will still cause the client to block until the server completes the
+   next &lt;acronym&gt;SQL&lt;/acronym&gt; command.  This can be avoided by proper
+   use of two more functions:
+</span>
+サーバが次の<acronym class="acronym">SQL</acronym>コマンドの処理に入ると、それが完了するまでやはり<code class="function">PQgetResult</code>の呼び出しがフロントエンドをブロックしてしまいます。
+さらに以下の2つの関数をうまく使用してこれを防ぐことができます。
+
+   </p><div class="variablelist"><dl class="variablelist"><dt id="LIBPQ-PQCONSUMEINPUT"><span class="term">
+      <code class="function">PQconsumeInput</code>
+      <a id="id-1.7.3.11.7.3.1.1.2" class="indexterm"></a>
+     </span></dt><dd><p>
+<span class="original">
+       If input is available from the server, consume it.
+</span>
+サーバからの入力が可能になった場合、それを吸い取ります。
+</p><pre class="synopsis">
+int PQconsumeInput(PGconn *conn);
+</pre><p>
+      </p><p>
+<span class="original">
+       &lt;function&gt;PQconsumeInput&lt;/function&gt; normally returns 1 indicating
+       &lt;quote&gt;no error&lt;/quote&gt;, but returns 0 if there was some kind of
+       trouble (in which case &lt;function&gt;PQerrorMessage&lt;/function&gt; can be
+       consulted).  Note that the result does not say whether any input
+       data was actually collected. After calling
+       &lt;function&gt;PQconsumeInput&lt;/function&gt;, the application can check
+       &lt;function&gt;PQisBusy&lt;/function&gt; and/or
+       &lt;function&gt;PQnotifies&lt;/function&gt; to see if their state has changed.
+</span>
+<code class="function">PQconsumeInput</code>は通常、<span class="quote">「<span class="quote">エラーなし</span>」</span>を示す1を返しますが、何らかの障害があると0を返します（この場合は、<code class="function">PQerrorMessage</code>を参考にしてください）。
+この結果は、何らかの入力データが実際に収集されたかどうかを示しているのではないことに注意してください。
+<code class="function">PQconsumeInput</code>の呼び出し後、アプリケーションは<code class="function">PQisBusy</code>、または必要があれば<code class="function">PQnotifies</code>を呼び出して状態に変化がないか調べることができます。
+      </p><p>
+<span class="original">
+       &lt;function&gt;PQconsumeInput&lt;/function&gt; can be called even if the
+       application is not prepared to deal with a result or notification
+       just yet.  The function will read available data and save it in
+       a buffer, thereby causing a &lt;function&gt;select()&lt;/function&gt;
+       read-ready indication to go away.  The application can thus use
+       &lt;function&gt;PQconsumeInput&lt;/function&gt; to clear the
+       &lt;function&gt;select()&lt;/function&gt; condition immediately, and then
+       examine the results at leisure.
+</span>
+<code class="function">PQconsumeInput</code>は、結果や通知を扱うようにまだ準備していないアプリケーションからでも呼び出すことができます。
+この関数は有効なデータを読み込んでバッファに保存し、結果として<code class="function">select</code>による読み込み準備完了の通知をリセットします。
+従ってアプリケーションは<code class="function">PQconsumeInput</code>を使うと<code class="function">select()</code>の検査条件をただちに満たすことができますから、あとはゆっくりと結果を調べてやればいいわけです。
+      </p></dd><dt id="LIBPQ-PQISBUSY"><span class="term">
+      <code class="function">PQisBusy</code>
+      <a id="id-1.7.3.11.7.3.2.1.2" class="indexterm"></a>
+     </span></dt><dd><p>
+<span class="original">
+       Returns 1 if a command is busy, that is,
+       &lt;function&gt;PQgetResult&lt;/function&gt; would block waiting for input.
+       A 0 return indicates that &lt;function&gt;PQgetResult&lt;/function&gt; can be
+       called with assurance of not blocking.
+</span>
+この関数が1を返したのであれば、問い合わせは処理の最中で、<code class="function">PQgetResult</code>も入力を待ったままブロック状態になってしまうでしょう。
+0が返ったのであれば、<code class="function">PQgetResult</code>を呼び出してもブロックされないことが保証されます。
+</p><pre class="synopsis">
+int PQisBusy(PGconn *conn);
+</pre><p>
+      </p><p>
+<span class="original">
+       &lt;function&gt;PQisBusy&lt;/function&gt; will not itself attempt to read data
+       from the server; therefore &lt;function&gt;PQconsumeInput&lt;/function&gt;
+       must be invoked first, or the busy state will never end.
+</span>
+<code class="function">PQisBusy</code>自身はサーバからデータを読み込む操作をしません。
+ですから、まず最初に<code class="function">PQconsumeInput</code>を呼び出す必要があります。
+そうしないとビジー状態がいつまでも続きます。
+      </p></dd></dl></div><p>
+  </p><p>
+<span class="original">
+   A typical application using these functions will have a main loop that
+   uses &lt;function&gt;select()&lt;/function&gt; or &lt;function&gt;poll()&lt;/function&gt; to wait for
+   all the conditions that it must respond to.  One of the conditions
+   will be input available from the server, which in terms of
+   &lt;function&gt;select()&lt;/function&gt; means readable data on the file
+   descriptor identified by &lt;function&gt;PQsocket&lt;/function&gt;.  When the main
+   loop detects input ready, it should call
+   &lt;function&gt;PQconsumeInput&lt;/function&gt; to read the input.  It can then
+   call &lt;function&gt;PQisBusy&lt;/function&gt;, followed by
+   &lt;function&gt;PQgetResult&lt;/function&gt; if &lt;function&gt;PQisBusy&lt;/function&gt;
+   returns false (0).  It can also call &lt;function&gt;PQnotifies&lt;/function&gt;
+   to detect &lt;command&gt;NOTIFY&lt;/command&gt; messages (see &lt;xref
+   linkend="libpq-notify"/&gt;).
+</span>
+これら3関数を使用するアプリケーションは通常、<code class="function">select()</code>もしくは<code class="function">poll()</code>を使用するメインループを持ち、対応しなければならないすべての状態を待機しています。
+その内の1つの条件は、サーバからの利用可能な入力となるでしょう。
+これは、<code class="function">select()</code>の見地からは、<code class="function">PQsocket</code>で識別されるファイル記述子上で読み込み可能なデータがあることを意味します。
+メインループが入力準備完了を検出すると、その入力を読み込むために<code class="function">PQconsumeInput</code>を呼び出さなければなりません。
+そして、<code class="function">PQisBusy</code>を、更に<code class="function">PQisBusy</code>が偽(0)を返す場合に<code class="function">PQgetResult</code>も呼び出すことができます。
+また、<code class="function">PQnotifies</code>を呼び出して、<code class="command">NOTIFY</code>メッセージ( <a class="xref" href="libpq-notify.html" title="34.8. 非同期通知">34.8</a>を参照)を検出することもできます。
+  </p><p>
+<span class="original">
+   A client that uses
+   &lt;function&gt;PQsendQuery&lt;/function&gt;/&lt;function&gt;PQgetResult&lt;/function&gt;
+   can also attempt to cancel a command that is still being processed
+   by the server; see &lt;xref linkend="libpq-cancel"/&gt;.  But regardless of
+   the return value of &lt;function&gt;PQcancel&lt;/function&gt;, the application
+   must continue with the normal result-reading sequence using
+   &lt;function&gt;PQgetResult&lt;/function&gt;.  A successful cancellation will
+   simply cause the command to terminate sooner than it would have
+   otherwise.
+</span>
+また、<code class="function">PQsendQuery</code>/<code class="function">PQgetResult</code>を使用するクライアントは、サーバで処理中のコマンドに対してキャンセルを試行することができます。
+<a class="xref" href="libpq-cancel.html" title="34.6. 処理中の問い合わせのキャンセル">34.6</a>を参照してください。
+しかし、<code class="function">PQcancel</code>の戻り値と関係なく、アプリケーションは<code class="function">PQgetResult</code>を使用した通常の結果読み取り手順を続けなければなりません。
+キャンセル手続きの成功は単に、そのコマンドを通常よりも早めに終わらせるだけです。
+  </p><p>
+<span class="original">
+   By using the functions described above, it is possible to avoid
+   blocking while waiting for input from the database server.  However,
+   it is still possible that the application will block waiting to send
+   output to the server.  This is relatively uncommon but can happen if
+   very long SQL commands or data values are sent.  (It is much more
+   probable if the application sends data via &lt;command&gt;COPY IN&lt;/command&gt;,
+   however.)  To prevent this possibility and achieve completely
+   nonblocking database operation, the following additional functions
+   can be used.
+</span>
+上述の関数を使用して、データベースサーバからの入力待ちのためのブロックを行わずに済みます。
+しかしまだ、サーバへの出力送信を待つためにアプリケーションはブロックする可能性があります。
+これは比較的あまり発生しませんが、非常に長いSQLコマンドやデータ値が送信される場合に発生することがあります。
+(しかし、アプリケーションが<code class="command">COPY IN</code>経由でデータを送信する場合よく発生します。)
+この発生を防ぎ、完全な非ブロックのデータベース操作を行うためには、さらに以下の関数を使用してください。
+
+   </p><div class="variablelist"><dl class="variablelist"><dt id="LIBPQ-PQSETNONBLOCKING"><span class="term">
+      <code class="function">PQsetnonblocking</code>
+      <a id="id-1.7.3.11.10.2.1.1.2" class="indexterm"></a>
+     </span></dt><dd><p>
+<span class="original">
+       Sets the nonblocking status of the connection.
+</span>
+接続の非ブロック状態を設定します。
+</p><pre class="synopsis">
+int PQsetnonblocking(PGconn *conn, int arg);
+</pre><p>
+      </p><p>
+<span class="original">
+       Sets the state of the connection to nonblocking if
+       &lt;parameter&gt;arg&lt;/parameter&gt; is 1, or blocking if
+       &lt;parameter&gt;arg&lt;/parameter&gt; is 0.  Returns 0 if OK, -1 if error.
+</span>
+<em class="parameter"><code>arg</code></em>が1の場合、接続状態を非ブロックに設定します。
+<em class="parameter"><code>arg</code></em>が0の場合はブロックに設定します。
+問題がなければ0が、エラー時は-1が返ります。
+      </p><p>
+<span class="original">
+       In the nonblocking state, calls to
+       &lt;function&gt;PQsendQuery&lt;/function&gt;, &lt;function&gt;PQputline&lt;/function&gt;,
+       &lt;function&gt;PQputnbytes&lt;/function&gt;, &lt;function&gt;PQputCopyData&lt;/function&gt;,
+       and &lt;function&gt;PQendcopy&lt;/function&gt; will not block but instead return
+       an error if they need to be called again.
+</span>
+非ブロック状態では<code class="function">PQsendQuery</code>、<code class="function">PQputline</code>、<code class="function">PQputnbytes</code>、<code class="function">PQputCopyData</code>および<code class="function">PQendcopy</code>の呼び出しはブロックされませんが、再度呼び出さなければならない場合、エラーが返ります。
+      </p><p>
+<span class="original">
+       Note that &lt;function&gt;PQexec&lt;/function&gt; does not honor nonblocking
+       mode; if it is called, it will act in blocking fashion anyway.
+</span>
+<code class="function">PQexec</code>は非ブロックモードにはしたがわないことに注意してください。
+この関数の呼び出しは、必ずブロック方式で動作します。
+      </p></dd><dt id="LIBPQ-PQISNONBLOCKING"><span class="term">
+      <code class="function">PQisnonblocking</code>
+      <a id="id-1.7.3.11.10.2.2.1.2" class="indexterm"></a>
+     </span></dt><dd><p>
+<span class="original">
+       Returns the blocking status of the database connection.
+</span>
+データベース接続のブロック状態を返します。
+</p><pre class="synopsis">
+int PQisnonblocking(const PGconn *conn);
+</pre><p>
+      </p><p>
+<span class="original">
+       Returns 1 if the connection is set to nonblocking mode and 0 if
+       blocking.
+</span>
+接続が非ブロック状態の場合は1が、ブロック状態の場合は0が返ります。
+      </p></dd><dt id="LIBPQ-PQFLUSH"><span class="term">
+      <code class="function">PQflush</code>
+       <a id="id-1.7.3.11.10.2.3.1.2" class="indexterm"></a>
+      </span></dt><dd><p>
+<span class="original">
+       Attempts to flush any queued output data to the server.  Returns
+       0 if successful (or if the send queue is empty), -1 if it failed
+       for some reason, or 1 if it was unable to send all the data in
+       the send queue yet (this case can only occur if the connection
+       is nonblocking).
+</span>
+キューに蓄えられたサーバへの出力データの吐き出しを行います。
+成功時(および送信キューが空の場合)は0が返ります。
+何らかの原因で失敗した場合は-1が、送信キュー内のデータをすべて送信できなかった場合は1が返ります。
+(これは接続が非ブロックの場合にのみ発生します。)
+</p><pre class="synopsis">
+int PQflush(PGconn *conn);
+</pre><p>
+      </p></dd></dl></div><p>
+  </p><p>
+<span class="original">
+   After sending any command or data on a nonblocking connection, call
+   &lt;function&gt;PQflush&lt;/function&gt;.  If it returns 1, wait for the socket
+   to become read- or write-ready.  If it becomes write-ready, call
+   &lt;function&gt;PQflush&lt;/function&gt; again.  If it becomes read-ready, call
+   &lt;function&gt;PQconsumeInput&lt;/function&gt;, then call
+   &lt;function&gt;PQflush&lt;/function&gt; again.  Repeat until
+   &lt;function&gt;PQflush&lt;/function&gt; returns 0.  (It is necessary to check for
+   read-ready and drain the input with &lt;function&gt;PQconsumeInput&lt;/function&gt;,
+   because the server can block trying to send us data, e.g. NOTICE
+   messages, and won't read our data until we read its.)  Once
+   &lt;function&gt;PQflush&lt;/function&gt; returns 0, wait for the socket to be
+   read-ready and then read the response as described above.
+</span>
+非ブロック接続時にはコマンドやデータを送信した後に、<code class="function">PQflush</code>を呼び出してください。
+1が返った場合、ソケットの読み込みまたは書き込み準備ができるまで待ってください。
+書き込み準備ができたら、<code class="function">PQflush</code>を再度呼び出してください。
+読み込み準備ができたら、<code class="function">PQconsumeInput</code>を呼び出してから、<code class="function">PQflush</code>を再度呼び出してください。
+これを<code class="function">PQflush</code>が0を返すまで繰り返してください。
+(例えばNOTICEメッセージのように、こちらがそのデータを読むまで、サーバがデータを送ろうとするのを妨げ、こちらのデータを読もうとしないことがありますので、読み込み準備ができたことを確認して<code class="function">PQconsumeInput</code>で入力をすべて抜き取ることが必要です。)
+<code class="function">PQflush</code>が0を返した後は、ソケットの読み込み準備が整うまで待ち、上述のように応答を読み取ってください。
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="libpq-exec.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="libpq.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="libpq-single-row-mode.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">34.3. コマンド実行関数 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 34.5. １行１行問い合わせ結果を受け取る</td></tr></table></div></body></html>

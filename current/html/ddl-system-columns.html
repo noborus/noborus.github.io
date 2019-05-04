@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>5.4. システム列</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="ddl-constraints.html" title="5.3. 制約" /><link rel="next" href="ddl-alter.html" title="5.5. テーブルの変更" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="ddl.html" title="第5章 データ定義">第5章 データ定義</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      ddl-system-columns.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="ddl-constraints.html" title="5.3. 制約">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="ddl.html" title="第5章 データ定義">上へ</a></td><td width="60%" align="center">5.4. システム列</td><td width="20%" align="right"> <a accesskey="n" href="ddl-alter.html" title="5.5. テーブルの変更">次へ</a></td></tr></table><hr /></div><div class="sect1" id="DDL-SYSTEM-COLUMNS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">5.4. システム列</h2></div></div></div><span class="original">
+  &lt;title&gt;System Columns&lt;/title&gt;
+</span><p>
+<span class="original">
+   Every table has several &lt;firstterm&gt;system columns&lt;/firstterm&gt; that are
+   implicitly defined by the system.  Therefore, these names cannot be
+   used as names of user-defined columns.  (Note that these
+   restrictions are separate from whether the name is a key word or
+   not; quoting a name will not allow you to escape these
+   restrictions.)  You do not really need to be concerned about these
+   columns; just know they exist.
+</span>
+全てのテーブルには、システムによって暗黙的に定義された<em class="firstterm">システム列</em>がいくつかあります。
+そのため、システム列の名前はユーザ定義列の名前として使うことはできません。
+（これらの制約は名前がキーワードであるかどうかとは関係ありません。
+つまり、名前を引用符で囲んでもこの制約を回避することはできません。）
+システム列については、あまり意識する必要はありません。
+これらが存在することを知っていれば十分です。
+  </p><a id="id-1.5.4.6.3" class="indexterm"></a><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="structfield">oid</code></span></dt><dd><p>
+      <a id="id-1.5.4.6.4.1.2.1.1" class="indexterm"></a>
+<span class="original">
+      The object identifier (object ID) of a row. This column is only
+      present if the table was created using &lt;literal&gt;WITH
+      OIDS&lt;/literal&gt;, or if the &lt;xref linkend="guc-default-with-oids"/&gt;
+      configuration variable was set at the time. This column is of type
+      &lt;type&gt;oid&lt;/type&gt; (same name as the column); see &lt;xref
+      linkend="datatype-oid"/&gt; for more information about the type.
+</span>
+行のオブジェクト識別子（オブジェクトID）です。
+この列は<code class="literal">WITH OIDS</code>を付けてテーブルが作成された場合、あるいはテーブル作成時に<a class="xref" href="runtime-config-compatible.html#GUC-DEFAULT-WITH-OIDS">default_with_oids</a>設定変数が設定されていた場合にのみ存在します。
+この列の型は<code class="literal">oid</code>（列名と同じ）です。この型についての詳細は<a class="xref" href="datatype-oid.html" title="8.19. オブジェクト識別子データ型">8.19</a>を参照してください。
+     </p></dd><dt><span class="term"><code class="structfield">tableoid</code></span></dt><dd><a id="id-1.5.4.6.4.2.2.1" class="indexterm"></a><p>
+<span class="original">
+      The OID of the table containing this row.  This column is
+      particularly handy for queries that select from inheritance
+      hierarchies (see &lt;xref linkend="ddl-inherit"/&gt;), since without it,
+      it's difficult to tell which individual table a row came from.  The
+      &lt;structfield&gt;tableoid&lt;/structfield&gt; can be joined against the
+      &lt;structfield&gt;oid&lt;/structfield&gt; column of
+      &lt;structname&gt;pg_class&lt;/structname&gt; to obtain the table name.
+</span>
+この行を含むテーブルのOIDです。
+この列は特に、継承階層からの選択問い合わせでは便利です（<a class="xref" href="ddl-inherit.html" title="5.9. 継承">5.9</a>を参照してください）。
+この列がないと、どのテーブルからその行が来たのかわかりにくいからです。
+<code class="structfield">tableoid</code>を<code class="classname">pg_class</code>の<code class="structfield">oid</code>列に結合することでテーブル名を得ることができます。
+     </p></dd><dt><span class="term"><code class="structfield">xmin</code></span></dt><dd><a id="id-1.5.4.6.4.3.2.1" class="indexterm"></a><p>
+<span class="original">
+      The identity (transaction ID) of the inserting transaction for
+      this row version.  (A row version is an individual state of a
+      row; each update of a row creates a new row version for the same
+      logical row.)
+</span>
+この行バージョンの挿入トランザクションの識別情報（トランザクションID）です。
+（行バージョンとは、行の個別の状態です。
+行が更新される度に、同一の論理的な行に対する新しい行バージョンが作成されます。）
+     </p></dd><dt><span class="term"><code class="structfield">cmin</code></span></dt><dd><a id="id-1.5.4.6.4.4.2.1" class="indexterm"></a><p>
+<span class="original">
+      The command identifier (starting at zero) within the inserting
+      transaction.
+</span>
+挿入トランザクション内の（0から始まる）コマンド識別子です。
+     </p></dd><dt><span class="term"><code class="structfield">xmax</code></span></dt><dd><a id="id-1.5.4.6.4.5.2.1" class="indexterm"></a><p>
+<span class="original">
+      The identity (transaction ID) of the deleting transaction, or
+      zero for an undeleted row version.  It is possible for this column to
+      be nonzero in a visible row version. That usually indicates that the
+      deleting transaction hasn't committed yet, or that an attempted
+      deletion was rolled back.
+</span>
+削除トランザクションの識別情報（トランザクションID）です。
+削除されていない行バージョンではゼロです。
+可視の行バージョンでこの列が非ゼロの場合があります。
+これは通常、削除トランザクションがまだコミットされていないこと、または、削除の試行がロールバックされたことを意味しています。
+     </p></dd><dt><span class="term"><code class="structfield">cmax</code></span></dt><dd><a id="id-1.5.4.6.4.6.2.1" class="indexterm"></a><p>
+<span class="original">
+      The command identifier within the deleting transaction, or zero.
+</span>
+削除トランザクション内のコマンド識別子、もしくはゼロです。
+     </p></dd><dt><span class="term"><code class="structfield">ctid</code></span></dt><dd><a id="id-1.5.4.6.4.7.2.1" class="indexterm"></a><p>
+<span class="original">
+      The physical location of the row version within its table.  Note that
+      although the &lt;structfield&gt;ctid&lt;/structfield&gt; can be used to
+      locate the row version very quickly, a row's
+      &lt;structfield&gt;ctid&lt;/structfield&gt; will change if it is
+      updated or moved by &lt;command&gt;VACUUM FULL&lt;/command&gt;.  Therefore
+      &lt;structfield&gt;ctid&lt;/structfield&gt; is useless as a long-term row
+      identifier.  The OID, or even better a user-defined serial
+      number, should be used to identify logical rows.
+</span>
+テーブル内における、行バージョンの物理的位置を表します。
+<code class="structfield">ctid</code>は行バージョンを素早く見つけるために使うことができますが、行の<code class="structfield">ctid</code>は<code class="command">VACUUM FULL</code>により更新あるいは移動させられると変わります。
+したがって、<code class="structfield">ctid</code>は長期の行識別子としては使えません。
+論理行を識別するためには、OID、あるいはさらに良いのはユーザ定義の通番数を使うべきです。
+     </p></dd></dl></div><p>
+<span class="original">
+    OIDs are 32-bit quantities and are assigned from a single
+    cluster-wide counter.  In a large or long-lived database, it is
+    possible for the counter to wrap around.  Hence, it is bad
+    practice to assume that OIDs are unique, unless you take steps to
+    ensure that this is the case.  If you need to identify the rows in
+    a table, using a sequence generator is strongly recommended.
+    However, OIDs can be used as well, provided that a few additional
+    precautions are taken:
+</span>
+OIDは32ビット数であり、クラスタ全体で1つのカウンタです。
+大規模、もしくは長期間使用するデータベースでは、カウンタが一周してしまう可能性があります。
+そのため、一意性を確保するための手順を踏んでいない限り、OIDが一意であると仮定してはなりません。
+もしテーブル内の行を同定する必要がある場合は、シーケンスジェネレータを使用することを強く推奨します。
+しかし、OIDはいくつかの注意を払うことによりシーケンスと同様に使用することができます。
+
+    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+       A unique constraint should be created on the OID column of each
+       table for which the OID will be used to identify rows.  When such
+       a unique constraint (or unique index) exists, the system takes
+       care not to generate an OID matching an already-existing row.
+       (Of course, this is only possible if the table contains fewer
+       than 2&lt;superscript&gt;32&lt;/superscript&gt; (4 billion) rows, and in practice the
+       table size had better be much less than that, or performance
+       might suffer.)
+</span>
+OIDを行の特定のために使用するテーブルについては、OID列に一意性制約を作成するべきです。
+このような一意性制約（もしくは一意インデックス）が存在する場合は、システムは既存の行に一致するようなOIDを生成しません。
+（もちろん、これはテーブルの行数が2<sup>32</sup>（40億）より少ない場合に可能となります。性能を考慮すると、実際には行数はそれよりずっと少ない方がよいでしょう。）
+      </p></li><li class="listitem"><p>
+<span class="original">
+       OIDs should never be assumed to be unique across tables; use
+       the combination of &lt;structfield&gt;tableoid&lt;/structfield&gt; and row OID if you
+       need a database-wide identifier.
+</span>
+OIDは複数のテーブルをまたがって一意であると仮定してはなりません。
+データベース全体での識別子が必要な場合は<code class="structfield">tableoid</code>と行OIDを組み合わせて使用してください。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       Of course, the tables in question must be created &lt;literal&gt;WITH
+       OIDS&lt;/literal&gt;.  As of &lt;productname&gt;PostgreSQL&lt;/productname&gt; 8.1,
+       &lt;literal&gt;WITHOUT OIDS&lt;/literal&gt; is the default.
+</span>
+もちろん、問題にしているテーブルは、<code class="literal">WITH OIDS</code>を使用して作成されなくてはいけません。
+<span class="productname">PostgreSQL</span> 8.1から<code class="literal">WITHOUT OIDS</code>がデフォルトです。
+      </p></li></ul></div><p>
+   </p><p>
+<span class="original">
+    Transaction identifiers are also 32-bit quantities.  In a
+    long-lived database it is possible for transaction IDs to wrap
+    around.  This is not a fatal problem given appropriate maintenance
+    procedures; see &lt;xref linkend="maintenance"/&gt; for details.  It is
+    unwise, however, to depend on the uniqueness of transaction IDs
+    over the long term (more than one billion transactions).
+</span>
+トランザクション識別子も32ビット量です。
+長期間使用するデータベースでは、トランザクションIDが一周してしまう可能性があります。
+これは、適切な保守作業を行うことで、致命的な問題にはなりません。
+詳細は<a class="xref" href="maintenance.html" title="第24章 定常的なデータベース保守作業">第24章</a>を参照してください。
+しかし、長期（10億トランザクション以上）にわたってトランザクションIDの一意性に依存することは賢明ではありません。
+   </p><p>
+<span class="original">
+    Command identifiers are also 32-bit quantities.  This creates a hard limit
+    of 2&lt;superscript&gt;32&lt;/superscript&gt; (4 billion) &lt;acronym&gt;SQL&lt;/acronym&gt; commands
+    within a single transaction.  In practice this limit is not a
+    problem &amp;mdash; note that the limit is on the number of
+    &lt;acronym&gt;SQL&lt;/acronym&gt; commands, not the number of rows processed.
+    Also, only commands that actually modify the database contents will
+    consume a command identifier.
+</span>
+コマンド識別子もまた、32ビット量です。
+このため、単一トランザクション内のコマンド数には2<sup>32</sup>（40億）個までという制限が発生します。
+実際、この制限は問題にはなりません。
+これは<acronym class="acronym">SQL</acronym>コマンド数に対する制限であり、処理される行数に対する制限ではないことに注意してください。
+また、データベースの内容を実際に変更するコマンドのみがコマンド識別子を消費します。
+   </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ddl-constraints.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="ddl.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="ddl-alter.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">5.3. 制約 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 5.5. テーブルの変更</td></tr></table></div></body></html>

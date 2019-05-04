@@ -1,0 +1,409 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>34.11. 雑多な関数</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="libpq-control.html" title="34.10. 制御関数" /><link rel="next" href="libpq-notice-processing.html" title="34.12. 警告処理" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="libpq.html" title="第34章 libpq - C ライブラリ">第34章 <span class="application">libpq</span> - C ライブラリ</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      libpq-misc.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="libpq-control.html" title="34.10. 制御関数">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="libpq.html" title="第34章 libpq - C ライブラリ">上へ</a></td><td width="60%" align="center">34.11. 雑多な関数</td><td width="20%" align="right"> <a accesskey="n" href="libpq-notice-processing.html" title="34.12. 警告処理">次へ</a></td></tr></table><hr /></div><div class="sect1" id="LIBPQ-MISC"><div class="titlepage"><div><div><h2 class="title" style="clear: both">34.11. 雑多な関数</h2></div></div></div><span class="original">
+  &lt;title&gt;Miscellaneous Functions&lt;/title&gt;
+</span><p>
+<span class="original">
+   As always, there are some functions that just don't fit anywhere.
+</span>
+よくあることですが、うまく分類できない関数がいくつか存在します。
+  </p><div class="variablelist"><dl class="variablelist"><dt id="LIBPQ-PQFREEMEM"><span class="term">
+     <code class="function">PQfreemem</code>
+     <a id="id-1.7.3.18.3.1.1.2" class="indexterm"></a>
+    </span></dt><dd><p>
+<span class="original">
+      Frees memory allocated by &lt;application&gt;libpq&lt;/application&gt;.
+</span>
+<span class="application">libpq</span>が割り当てたメモリを解放します。
+</p><pre class="synopsis">
+void PQfreemem(void *ptr);
+</pre><p>
+     </p><p>
+<span class="original">
+      Frees memory allocated by &lt;application&gt;libpq&lt;/application&gt;, particularly
+      &lt;function&gt;PQescapeByteaConn&lt;/function&gt;,
+      &lt;function&gt;PQescapeBytea&lt;/function&gt;,
+      &lt;function&gt;PQunescapeBytea&lt;/function&gt;,
+      and &lt;function&gt;PQnotifies&lt;/function&gt;.
+      It is particularly important that this function, rather than
+      &lt;function&gt;free()&lt;/function&gt;, be used on Microsoft Windows.  This is because
+      allocating memory in a DLL and releasing it in the application works
+      only if multithreaded/single-threaded, release/debug, and static/dynamic
+      flags are the same for the DLL and the application.  On non-Microsoft
+      Windows platforms, this function is the same as the standard library
+      function &lt;function&gt;free()&lt;/function&gt;.
+</span>
+具体的には<code class="function">PQescapeByteaConn</code>、<code class="function">PQescapeBytea</code>、<code class="function">PQunescapeBytea</code>および<code class="function">PQnotifies</code>により<span class="application">libpq</span>が割り当てたメモリを解放します。
+Microsoft Windowsにおいて<code class="function">free()</code>ではなく、この関数を使用することが特に重要です。
+DLLにおけるメモリ割り当てとアプリケーションにおけるその解放が、DLLとアプリケーションとでマルチスレッド/シングルスレッド、リリース用/デバッグ用、静的/動的フラグが同じ場合でのみ動作するためです。
+Microsoft Windowsプラットフォーム以外では、この関数は標準ライブラリの<code class="function">free()</code>関数と同じです。
+     </p></dd><dt id="LIBPQ-PQCONNINFOFREE"><span class="term">
+     <code class="function">PQconninfoFree</code>
+     <a id="id-1.7.3.18.3.2.1.2" class="indexterm"></a>
+    </span></dt><dd><p>
+<span class="original">
+      Frees the data structures allocated by
+      &lt;function&gt;PQconndefaults&lt;/function&gt; or &lt;function&gt;PQconninfoParse&lt;/function&gt;.
+</span>
+<code class="function">PQconndefaults</code>もしくは<code class="function">PQconninfoParse</code>が割り当てたデータ構造を解放します。
+</p><pre class="synopsis">
+void PQconninfoFree(PQconninfoOption *connOptions);
+</pre><p>
+     </p><p>
+<span class="original">
+      A simple &lt;function&gt;PQfreemem&lt;/function&gt; will not do for this, since
+      the array contains references to subsidiary strings.
+</span>
+単純な<code class="function">PQfreemem</code>は、配列が補助文字列への参照を含んでいることから、このためには作業しません。
+     </p></dd><dt id="LIBPQ-PQENCRYPTPASSWORDCONN"><span class="term">
+     <code class="function">PQencryptPasswordConn</code>
+     <a id="id-1.7.3.18.3.3.1.2" class="indexterm"></a>
+    </span></dt><dd><p>
+<span class="original">
+      Prepares the encrypted form of a &lt;productname&gt;PostgreSQL&lt;/productname&gt; password.
+</span>
+<span class="productname">PostgreSQL</span>パスワードの暗号化された形式を準備します。
+</p><pre class="synopsis">
+char *PQencryptPasswordConn(PGconn *conn, const char *passwd, const char *user, const char *algorithm);
+</pre><p>
+<span class="original">
+      This function is intended to be used by client applications that
+      wish to send commands like &lt;literal&gt;ALTER USER joe PASSWORD
+      'pwd'&lt;/literal&gt;.  It is good practice not to send the original cleartext
+      password in such a command, because it might be exposed in command
+      logs, activity displays, and so on.  Instead, use this function to
+      convert the password to encrypted form before it is sent.
+</span>
+この関数は、<code class="literal">ALTER USER joe PASSWORD 'pwd'</code>のようなコマンドを送信したいクライアントアプリケーションで使用されることを意図したものです。
+こうしたコマンドでは、コマンドログが活動の監視などで晒されてしまうため、元々の平文テキストでパスワードを送信しないことが推奨されています。
+その代わりに、この関数を使用して送信前にパスワードを暗号化形式に変換してください。
+     </p><p>
+<span class="original">
+      The &lt;parameter&gt;passwd&lt;/parameter&gt; and &lt;parameter&gt;user&lt;/parameter&gt; arguments
+      are the cleartext password, and the SQL name of the user it is for.
+      &lt;parameter&gt;algorithm&lt;/parameter&gt; specifies the encryption algorithm
+      to use to encrypt the password. Currently supported algorithms are
+      &lt;literal&gt;md5&lt;/literal&gt; and &lt;literal&gt;scram-sha-256&lt;/literal&gt; (&lt;literal&gt;on&lt;/literal&gt; and
+      &lt;literal&gt;off&lt;/literal&gt; are also accepted as aliases for &lt;literal&gt;md5&lt;/literal&gt;, for
+      compatibility with older server versions). Note that support for
+      &lt;literal&gt;scram-sha-256&lt;/literal&gt; was introduced in &lt;productname&gt;PostgreSQL&lt;/productname&gt;
+      version 10, and will not work correctly with older server versions. If
+      &lt;parameter&gt;algorithm&lt;/parameter&gt; is &lt;symbol&gt;NULL&lt;/symbol&gt;, this function will query
+      the server for the current value of the
+      &lt;xref linkend="guc-password-encryption"/&gt; setting. That can block, and
+      will fail if the current transaction is aborted, or if the connection
+      is busy executing another query. If you wish to use the default
+      algorithm for the server but want to avoid blocking, query
+      &lt;varname&gt;password_encryption&lt;/varname&gt; yourself before calling
+      &lt;function&gt;PQencryptPasswordConn&lt;/function&gt;, and pass that value as the
+      &lt;parameter&gt;algorithm&lt;/parameter&gt;.
+</span>
+<em class="parameter"><code>passwd</code></em>と<em class="parameter"><code>user</code></em>引数は、関数が使用する平文のパスワードとそのSQL上のユーザ名です。
+<em class="parameter"><code>algorithm</code></em>は、パスワードを暗号化するために使用する暗号化アルゴリズムを指定します。
+現在サポートされているアルゴリズムは、<code class="literal">md5</code>と<code class="literal">scram-sha-256</code>です。
+(古いサーババージョンとの互換性のために、<code class="literal">md5</code>の別名として、<code class="literal">on</code>と<code class="literal">off</code>も受け付けます。）
+<code class="literal">scram-sha-256</code>のサポートは、<span class="productname">PostgreSQL</span>バージョン10で導入されたので、古いサーババージョンでは正しく動作しないことに注意してください。
+<em class="parameter"><code>algorithm</code></em>がNULLなら、この関数はサーバに問合せて現在の<a class="xref" href="runtime-config-connection.html#GUC-PASSWORD-ENCRYPTION">password_encryption</a>設定を返します。
+これは、ブロックする可能性があり、また現在のトランザクションがアボートしているか、あるいは他の問合せを実行中でビジーなら失敗します。
+サーバのデフォルトアルゴリズムを使用したいが、ブロックは避けたい、という場合は、<code class="function">PQencryptPasswordConn</code>を呼び出す前に<code class="function">PQencryptPasswordConn</code>を自分で調べ、その値を<em class="parameter"><code>algorithm</code></em>に渡してください。
+     </p><p>
+<span class="original">
+      The return value is a string allocated by &lt;function&gt;malloc&lt;/function&gt;.
+      The caller can assume the string doesn't contain any special characters
+      that would require escaping.  Use &lt;function&gt;PQfreemem&lt;/function&gt; to free the
+      result when done with it. On error, returns &lt;symbol&gt;NULL&lt;/symbol&gt;, and
+      a suitable message is stored in the connection object.
+</span>
+戻り値は<code class="function">malloc</code>で割り当てられた文字列です。
+呼び出し元は、その文字列にエスケープしなければならない特殊な文字列が含まれていないことを仮定することができます。
+処理が終わった時に<code class="function">PQfreemem</code>を使用して結果を解放してください。
+エラーの場合に<code class="symbol">NULL</code>が返され、接続オブジェクトに対応するメッセージが格納されます。
+     </p></dd><dt id="LIBPQ-PQENCRYPTPASSWORD"><span class="term">
+     <code class="function">PQencryptPassword</code>
+     <a id="id-1.7.3.18.3.4.1.2" class="indexterm"></a>
+    </span></dt><dd><p>
+<span class="original">
+      Prepares the md5-encrypted form of a &lt;productname&gt;PostgreSQL&lt;/productname&gt; password.
+</span>
+md5暗号化形式の<span class="productname">PostgreSQL</span>パスワードを準備します。
+</p><pre class="synopsis">
+char *PQencryptPassword(const char *passwd, const char *user);
+</pre><p>
+<span class="original">
+      &lt;function&gt;PQencryptPassword&lt;/function&gt; is an older, deprecated version of
+      &lt;function&gt;PQencryptPasswodConn&lt;/function&gt;. The difference is that
+      &lt;function&gt;PQencryptPassword&lt;/function&gt; does not
+      require a connection object, and &lt;literal&gt;md5&lt;/literal&gt; is always used as the
+      encryption algorithm.
+</span>
+<code class="function">PQencryptPassword</code>は、古くて非推奨のバージョンの<code class="function">PQencryptPasswodConn</code>です。
+違いは、<code class="function">PQencryptPassword</code>はコネクションオブジェクトを必要とせず、<code class="literal">md5</code>が常に暗号化アルゴリズムに使用されることです。
+     </p></dd><dt id="LIBPQ-PQMAKEEMPTYPGRESULT"><span class="term">
+     <code class="function">PQmakeEmptyPGresult</code>
+     <a id="id-1.7.3.18.3.5.1.2" class="indexterm"></a>
+    </span></dt><dd><p>
+<span class="original">
+      Constructs an empty &lt;structname&gt;PGresult&lt;/structname&gt; object with the given status.
+</span>
+与えられたステータスで空の<code class="structname">PGresult</code>オブジェクトを構築します。
+</p><pre class="synopsis">
+PGresult *PQmakeEmptyPGresult(PGconn *conn, ExecStatusType status);
+</pre><p>
+     </p><p>
+<span class="original">
+      This is &lt;application&gt;libpq&lt;/application&gt;'s internal function to allocate and
+      initialize an empty &lt;structname&gt;PGresult&lt;/structname&gt; object.  This
+      function returns &lt;symbol&gt;NULL&lt;/symbol&gt; if memory could not be allocated. It is
+      exported because some applications find it useful to generate result
+      objects (particularly objects with error status) themselves.  If
+      &lt;parameter&gt;conn&lt;/parameter&gt; is not null and &lt;parameter&gt;status&lt;/parameter&gt;
+      indicates an error, the current error message of the specified
+      connection is copied into the &lt;structname&gt;PGresult&lt;/structname&gt;.
+      Also, if &lt;parameter&gt;conn&lt;/parameter&gt; is not null, any event procedures
+      registered in the connection are copied into the
+      &lt;structname&gt;PGresult&lt;/structname&gt;.  (They do not get
+      &lt;literal&gt;PGEVT_RESULTCREATE&lt;/literal&gt; calls, but see
+      &lt;function&gt;PQfireResultCreateEvents&lt;/function&gt;.)
+      Note that &lt;function&gt;PQclear&lt;/function&gt; should eventually be called
+      on the object, just as with a &lt;structname&gt;PGresult&lt;/structname&gt;
+      returned by &lt;application&gt;libpq&lt;/application&gt; itself.
+</span>
+これは空の<code class="structname">PGresult</code>オブジェクトを割り当てて、初期化する<span class="application">libpq</span>の内部関数です。
+メモリが割り当てられなかった場合、この関数は<code class="symbol">NULL</code>を返します。
+一部のアプリケーションで結果オブジェクト（特にエラーステータスを伴ったオブジェクト）それ自身を生成することが便利であることが分かりましたので、外部公開されました。
+<em class="parameter"><code>conn</code></em>が非ヌルで、<em class="parameter"><code>status</code></em>がエラーを示唆している場合、特定された接続の現在のエラーメッセージは<code class="structname">PGresult</code>にコピーされます。
+同時に、<em class="parameter"><code>conn</code></em>が非ヌルの場合、接続で登録された任意のイベントプロシージャは<code class="structname">PGresult</code>にコピーされます。
+（それらは<code class="literal">PGEVT_RESULTCREATE</code>呼び出しを受けませんが、<code class="function">PQfireResultCreateEvents</code>を理解します。）
+<span class="application">libpq</span>自身で返された<code class="structname">PGresult</code>と同様に、最終的にはこのオブジェクトに対して<code class="function">PQclear</code>を呼び出さなければならないことに注意してください。
+     </p></dd><dt id="LIBPQ-PQFIRERESULTCREATEEVENTS"><span class="term">
+     <code class="function">PQfireResultCreateEvents</code>
+     <a id="id-1.7.3.18.3.6.1.2" class="indexterm"></a>
+    </span></dt><dd><p>
+<span class="original">
+      Fires a &lt;literal&gt;PGEVT_RESULTCREATE&lt;/literal&gt; event (see &lt;xref
+      linkend="libpq-events"/&gt;) for each event procedure registered in the
+      &lt;structname&gt;PGresult&lt;/structname&gt; object.  Returns non-zero for success,
+      zero if any event procedure fails.
+</span>
+<code class="structname">PGresult</code>オブジェクトに登録されたそれぞれのイベントプロシージャに対し、<code class="literal">PGEVT_RESULTCREATE</code>イベント（<a class="xref" href="libpq-events.html" title="34.13. イベントシステム">34.13</a>を参照）を発行します。
+イベントプロシージャが成功の場合は非ゼロ、失敗の場合はゼロを返します。
+
+</p><pre class="synopsis">
+int PQfireResultCreateEvents(PGconn *conn, PGresult *res);
+</pre><p>
+     </p><p>
+<span class="original">
+      The &lt;literal&gt;conn&lt;/literal&gt; argument is passed through to event procedures
+      but not used directly.  It can be &lt;symbol&gt;NULL&lt;/symbol&gt; if the event
+      procedures won't use it.
+</span>
+<code class="literal">conn</code>引数はイベントプロシージャに渡されますが、直接には使用されません。
+イベントプロシージャが使用しない場合は<code class="symbol">NULL</code>で構いません。
+     </p><p>
+<span class="original">
+      Event procedures that have already received a
+      &lt;literal&gt;PGEVT_RESULTCREATE&lt;/literal&gt; or &lt;literal&gt;PGEVT_RESULTCOPY&lt;/literal&gt; event
+      for this object are not fired again.
+</span>
+このオブジェクトに対し、<code class="literal">PGEVT_RESULTCREATE</code>もしくは<code class="literal">PGEVT_RESULTCOPY</code>イベントを過去に受け取ったイベントプロシージャは再び発行されません。
+     </p><p>
+<span class="original">
+      The main reason that this function is separate from
+      &lt;function&gt;PQmakeEmptyPGresult&lt;/function&gt; is that it is often appropriate
+      to create a &lt;structname&gt;PGresult&lt;/structname&gt; and fill it with data
+      before invoking the event procedures.
+</span>
+この関数が<code class="function">PQmakeEmptyPGresult</code>と分離されている主たる理由は、多くの場合イベントプロシージャを呼び出す前に<code class="structname">PGresult</code>を作成し、データを挿入するのが適切であることによります。
+     </p></dd><dt id="LIBPQ-PQCOPYRESULT"><span class="term">
+     <code class="function">PQcopyResult</code>
+     <a id="id-1.7.3.18.3.7.1.2" class="indexterm"></a>
+    </span></dt><dd><p>
+<span class="original">
+      Makes a copy of a &lt;structname&gt;PGresult&lt;/structname&gt; object.  The copy is
+      not linked to the source result in any way and
+      &lt;function&gt;PQclear&lt;/function&gt; must be called when the copy is no longer
+      needed.  If the function fails, &lt;symbol&gt;NULL&lt;/symbol&gt; is returned.
+</span>
+<code class="structname">PGresult</code>オブジェクトのコピーを作ります。
+コピーは元の結果にいかなる方法でもリンクされず、コピーが不要になった時に<code class="function">PQclear</code>を呼び出されなければなりません。
+関数が失敗すると<code class="symbol">NULL</code>が返されます。
+
+</p><pre class="synopsis">
+PGresult *PQcopyResult(const PGresult *src, int flags);
+</pre><p>
+     </p><p>
+<span class="original">
+      This is not intended to make an exact copy.  The returned result is
+      always put into &lt;literal&gt;PGRES_TUPLES_OK&lt;/literal&gt; status, and does not
+      copy any error message in the source.  (It does copy the command status
+      string, however.)  The &lt;parameter&gt;flags&lt;/parameter&gt; argument determines
+      what else is copied.  It is a bitwise OR of several flags.
+      &lt;literal&gt;PG_COPYRES_ATTRS&lt;/literal&gt; specifies copying the source
+      result's attributes (column definitions).
+      &lt;literal&gt;PG_COPYRES_TUPLES&lt;/literal&gt; specifies copying the source
+      result's tuples.  (This implies copying the attributes, too.)
+      &lt;literal&gt;PG_COPYRES_NOTICEHOOKS&lt;/literal&gt; specifies
+      copying the source result's notify hooks.
+      &lt;literal&gt;PG_COPYRES_EVENTS&lt;/literal&gt; specifies copying the source
+      result's events.  (But any instance data associated with the source
+      is not copied.)
+</span>
+これは正確なコピーの作成を目的としたものではありません。
+返された結果は常に<code class="literal">PGRES_TUPLES_OK</code>状態の中に置かれ、元の結果におけるエラーメッセージはまったくコピーされません。
+（しかしコマンド状態文字列をコピーします。）
+<em class="parameter"><code>flags</code></em>引数はその他にコピーするものがないかを決定します。
+それはいくつかのフラグのビット単位のORです。
+<code class="literal">PG_COPYRES_ATTRS</code>は元の結果の属性（列定義）のコピーを指定します。
+<code class="literal">PG_COPYRES_TUPLES</code>は元の結果のタプルのコピーを指定します。
+（これは属性もコピーされることを意味しています。）
+<code class="literal">PG_COPYRES_NOTICEHOOKS</code>は元の結果の警告フックのコピーを指定します。
+<code class="literal">PG_COPYRES_EVENTS</code>は元の結果イベントのコピーを指定します。
+（しかし、元の結果に関連したインスタンスデータはまったくコピーされません。）
+     </p></dd><dt id="LIBPQ-PQSETRESULTATTRS"><span class="term">
+     <code class="function">PQsetResultAttrs</code>
+     <a id="id-1.7.3.18.3.8.1.2" class="indexterm"></a>
+    </span></dt><dd><p>
+<span class="original">
+      Sets the attributes of a &lt;structname&gt;PGresult&lt;/structname&gt; object.
+</span>
+<code class="structname">PGresult</code>オブジェクトの属性を設定します。
+</p><pre class="synopsis">
+int PQsetResultAttrs(PGresult *res, int numAttributes, PGresAttDesc *attDescs);
+</pre><p>
+     </p><p>
+<span class="original">
+      The provided &lt;parameter&gt;attDescs&lt;/parameter&gt; are copied into the result.
+      If the &lt;parameter&gt;attDescs&lt;/parameter&gt; pointer is &lt;symbol&gt;NULL&lt;/symbol&gt; or
+      &lt;parameter&gt;numAttributes&lt;/parameter&gt; is less than one, the request is
+      ignored and the function succeeds.  If &lt;parameter&gt;res&lt;/parameter&gt;
+      already contains attributes, the function will fail.  If the function
+      fails, the return value is zero.  If the function succeeds, the return
+      value is non-zero.
+</span>
+提供された<em class="parameter"><code>attDescs</code></em>は結果にコピーされます。
+もし<em class="parameter"><code>attDescs</code></em>ポインタが<code class="symbol">NULL</code>、または<em class="parameter"><code>numAttributes</code></em>が１未満の場合、要求は無視され、関数は成功します。
+<em class="parameter"><code>res</code></em>が既に属性を所有している場合、関数は失敗に終わります。
+関数が失敗すると、戻り値はゼロです。
+関数が成功すると戻り値は非ゼロになります。
+     </p></dd><dt id="LIBPQ-PQSETVALUE"><span class="term">
+     <code class="function">PQsetvalue</code>
+     <a id="id-1.7.3.18.3.9.1.2" class="indexterm"></a>
+    </span></dt><dd><p>
+<span class="original">
+      Sets a tuple field value of a &lt;structname&gt;PGresult&lt;/structname&gt; object.
+</span>
+<code class="structname">PGresult</code>オブジェクトのタプルフィールド値を設定します。
+</p><pre class="synopsis">
+int PQsetvalue(PGresult *res, int tup_num, int field_num, char *value, int len);
+</pre><p>
+     </p><p>
+<span class="original">
+      The function will automatically grow the result's internal tuples array
+      as needed.  However, the &lt;parameter&gt;tup_num&lt;/parameter&gt; argument must be
+      less than or equal to &lt;function&gt;PQntuples&lt;/function&gt;, meaning this
+      function can only grow the tuples array one tuple at a time.  But any
+      field of any existing tuple can be modified in any order.  If a value at
+      &lt;parameter&gt;field_num&lt;/parameter&gt; already exists, it will be overwritten.
+      If &lt;parameter&gt;len&lt;/parameter&gt; is -1 or
+      &lt;parameter&gt;value&lt;/parameter&gt; is &lt;symbol&gt;NULL&lt;/symbol&gt;, the field value
+      will be set to an SQL null value.  The
+      &lt;parameter&gt;value&lt;/parameter&gt; is copied into the result's private storage,
+      thus is no longer needed after the function
+      returns.  If the function fails, the return value is zero.  If the
+      function succeeds, the return value is non-zero.
+</span>
+必要に応じて関数は自動的に結果の内部タプル配列を肥大化させます。
+しかし、<em class="parameter"><code>tup_num</code></em>引数は<code class="function">PQntuples</code>と同じか、もしくは小さくなければなりません。
+その意味は、この関数は一回にタプル配列を１タプル大きくさせるだけだからです。
+とは言っても、存在するいかなるタプルの任意のフィールドも、順序を問わず変更できます。
+もし<em class="parameter"><code>field_num</code></em>に値が既に存在すれば、書き換えられます。
+<em class="parameter"><code>len</code></em>が-1、または<em class="parameter"><code>value</code></em>が<code class="symbol">NULL</code>であれば、フィールドの値はSQLのNULLに設定されます。
+<em class="parameter"><code>value</code></em>は結果のプライベート格納領域にコピーされるため、関数が返った後ではもう必要がなくなります。
+関数が失敗すると、戻り値はゼロです。
+関数が成功すると戻り値は非ゼロになります。
+     </p></dd><dt id="LIBPQ-PQRESULTALLOC"><span class="term">
+     <code class="function">PQresultAlloc</code>
+     <a id="id-1.7.3.18.3.10.1.2" class="indexterm"></a>
+    </span></dt><dd><p>
+<span class="original">
+      Allocate subsidiary storage for a &lt;structname&gt;PGresult&lt;/structname&gt; object.
+</span>
+<code class="structname">PGresult</code>オブジェクトに補助ストレージを割り当てます。
+</p><pre class="synopsis">
+void *PQresultAlloc(PGresult *res, size_t nBytes);
+</pre><p>
+     </p><p>
+<span class="original">
+      Any memory allocated with this function will be freed when
+      &lt;parameter&gt;res&lt;/parameter&gt; is cleared.  If the function fails,
+      the return value is &lt;symbol&gt;NULL&lt;/symbol&gt;.  The result is
+      guaranteed to be adequately aligned for any type of data,
+      just as for &lt;function&gt;malloc&lt;/function&gt;.
+</span>
+<em class="parameter"><code>res</code></em>が消去された時、この関数で割り付けられたメモリは解放されます。
+関数が失敗すると戻り値は<code class="symbol">NULL</code>です。
+<code class="function">malloc</code>と同じように、どのような種類のデータでも結果は適切に整列されることが保証されています。
+     </p></dd><dt id="LIBPQ-PQLIBVERSION"><span class="term">
+     <code class="function">PQlibVersion</code>
+     <a id="id-1.7.3.18.3.11.1.2" class="indexterm"></a>
+    </span></dt><dd><p>
+<span class="original">
+      Return the version of &lt;productname&gt;libpq&lt;/productname&gt; that is being used.
+</span>
+使用中の<span class="productname">libpq</span>のバージョンを返します。
+</p><pre class="synopsis">
+int PQlibVersion(void);
+</pre><p>
+     </p><p>
+<span class="original">
+      The result of this function can be used to determine, at
+      run time, whether specific functionality is available in the currently
+      loaded version of libpq. The function can be used, for example,
+      to determine which connection options are available in
+      &lt;function&gt;PQconnectdb&lt;/function&gt;.
+</span>
+この関数の結果を使用して、現在読み込まれているバージョンのlibpqで特定の機能が利用可能かどうかを実行時に決定することができます。
+例えばこの関数を使用して、<code class="function">PQconnectdb</code>でどの接続オプションが利用できるかを確認することができます。
+     </p><p>
+<span class="original">
+      The result is formed by multiplying the library's major version
+      number by 10000 and adding the minor version number.  For example,
+      version 10.1 will be returned as 100001, and version 11.0 will be
+      returned as 110000.
+</span>
+返却値の形式は、メジャーバージョン番号に10000を掛け、マイナーバージョン番号を加えたものです。
+例えば、バージョン10.1では100001を返し、バージョン11.0では110000を返します。
+     </p><p>
+<span class="original">
+      Prior to major version 10, &lt;productname&gt;PostgreSQL&lt;/productname&gt; used
+      three-part version numbers in which the first two parts together
+      represented the major version.  For those
+      versions, &lt;function&gt;PQlibVersion&lt;/function&gt; uses two digits for each
+      part; for example version 9.1.5 will be returned as 90105, and
+      version 9.2.0 will be returned as 90200.
+</span>
+バージョン10よりも前では、<span class="productname">PostgreSQL</span>では、最初の2つの部分がメジャーバージョンを表す、3つの部分からなるバージョン番号が使われていました。
+これらのバージョンでは、<code class="function">PQserverVersion</code>はそれぞれの部分に2桁の数字を使います。
+たとえば、バージョン9.1.5では90105が返され、バージョン9.2.0では90200が返されます。
+     </p><p>
+<span class="original">
+      Therefore, for purposes of determining feature compatibility,
+      applications should divide the result of &lt;function&gt;PQlibVersion&lt;/function&gt;
+      by 100 not 10000 to determine a logical major version number.
+      In all release series, only the last two digits differ between
+      minor releases (bug-fix releases).
+</span>
+ですから、機能の互換性を見極めるのが目的なら、アプリケーションは<code class="function">PQserverVersion</code>の結果を10000ではなく、100で割り、論理的なメジャーバージョンを求めるべきです。
+すべてのリリースで、最後の2桁だけがマイナーリリースで異なります。
+（バグ修正リリースです。）
+     </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+       This function appeared in &lt;productname&gt;PostgreSQL&lt;/productname&gt; version 9.1, so
+       it cannot be used to detect required functionality in earlier
+       versions, since calling it will create a link dependency
+       on version 9.1 or later.
+</span>
+この関数は<span class="productname">PostgreSQL</span>バージョン9.1で追加されました。
+このため以前のバージョンにおいて要求される機能を検知するために使用することができません。
+この関数の呼び出しがバージョン9.1以降とのリンク依存性を作成するためです。
+      </p></div></dd></dl></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="libpq-control.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="libpq.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="libpq-notice-processing.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">34.10. 制御関数 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 34.12. 警告処理</td></tr></table></div></body></html>

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>13.6. ロックとインデックス</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="mvcc-caveats.html" title="13.5. 警告" /><link rel="next" href="performance-tips.html" title="第14章 性能に関するヒント" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="mvcc.html" title="第13章 同時実行制御">第13章 同時実行制御</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      locking-indexes.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="mvcc-caveats.html" title="13.5. 警告">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="mvcc.html" title="第13章 同時実行制御">上へ</a></td><td width="60%" align="center">13.6. ロックとインデックス</td><td width="20%" align="right"> <a accesskey="n" href="performance-tips.html" title="第14章 性能に関するヒント">次へ</a></td></tr></table><hr /></div><div class="sect1" id="LOCKING-INDEXES"><div class="titlepage"><div><div><h2 class="title" style="clear: both">13.6. ロックとインデックス</h2></div></div></div><span class="original">
+   &lt;title&gt;Locking and Indexes&lt;/title&gt;
+</span><a id="id-1.5.12.9.2" class="indexterm"></a><p>
+<span class="original">
+    Though &lt;productname&gt;PostgreSQL&lt;/productname&gt;
+    provides nonblocking read/write access to table
+    data, nonblocking read/write access is not currently offered for every
+    index access method implemented
+    in &lt;productname&gt;PostgreSQL&lt;/productname&gt;.
+    The various index types are handled as follows:
+</span>
+<span class="productname">PostgreSQL</span>は、テーブルデータへのノンブロック読み込み/書き込みアクセスを備えています。しかし現在、この機能は<span class="productname">PostgreSQL</span>で実装されている全てのインデックスアクセスメソッドに対して実装されているわけではありません。
+各種のインデックスでは下記のように扱われます。
+
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<span class="original">
+       B-tree, &lt;acronym&gt;GiST&lt;/acronym&gt; and &lt;acronym&gt;SP-GiST&lt;/acronym&gt; indexes
+</span>
+B-treeインデックス、<acronym class="acronym">GiST</acronym>および<acronym class="acronym">SP-GiST</acronym>インデックス
+      </span></dt><dd><p>
+<span class="original">
+        Short-term share/exclusive page-level locks are used for
+        read/write access. Locks are released immediately after each
+        index row is fetched or inserted.  These index types provide
+        the highest concurrency without deadlock conditions.
+</span>
+読み込み/書き込みアクセスに短期の共有/排他モードのページレベルロックを使います。
+ロックは、インデックス行が挿入または取り出されるとただちに解放されます。
+これらのインデックス種類は、デッドロック状態になることなく、最も高い同時実行性を提供します。
+       </p></dd><dt><span class="term">
+<span class="original">
+       Hash indexes
+</span>
+       ハッシュインデックス
+      </span></dt><dd><p>
+<span class="original">
+        Share/exclusive hash-bucket-level locks are used for read/write
+        access.  Locks are released after the whole bucket is processed.
+        Bucket-level locks provide better concurrency than index-level
+        ones, but deadlock is possible since the locks are held longer
+        than one index operation.
+</span>
+読み込み/書き込みアクセスに共有/排他モードのハッシュバケットレベルロックを使います。
+ロックは、バケット全体が処理された後に解放されます。
+バケットレベルロックは、インデックスレベルのロックよりも同時実行性に優れていますが、1つのインデックス操作よりも長くロックが保持されますので、デッドロックに陥りやすくなります。
+       </p></dd><dt><span class="term">
+<span class="original">
+       &lt;acronym&gt;GIN&lt;/acronym&gt; indexes
+</span>
+       <acronym class="acronym">GIN</acronym>インデックス
+      </span></dt><dd><p>
+<span class="original">
+        Short-term share/exclusive page-level locks are used for
+        read/write access. Locks are released immediately after each
+        index row is fetched or inserted. But note that insertion of a
+        GIN-indexed value usually produces several index key insertions
+        per row, so GIN might do substantial work for a single value's
+        insertion.
+</span>
+読み込み/書き込みアクセスに短期の共有/排他モードのページレベルロックを使います。
+ロックは、インデックス行が挿入または取り出されるとただちに解放されます。
+しかし、GINによりインデックス付けされた値の挿入は、通常1行当たり複数のインデックスキーの挿入をもたらすことに注意してください。
+そのため、GINは単一の値を挿入する時に更に多くの作業を行います。
+       </p></dd></dl></div><p>
+   </p><p>
+<span class="original">
+    Currently, B-tree indexes offer the best performance for concurrent
+    applications; since they also have more features than hash
+    indexes, they are the recommended index type for concurrent
+    applications that need to index scalar data. When dealing with
+    non-scalar data, B-trees are not useful, and GiST, SP-GiST or GIN
+    indexes should be used instead.
+</span>
+現時点では、B-treeインデックスは同時実行アプリケーションにおいて最善の性能を提供します。
+これはまた、ハッシュインデックスよりも多くの機能を持つため、スカラデータのインデックスが必要な同時実行アプリケーションで推奨するインデックス型です。
+非スカラデータを扱う場合、B-treeを使用することができないことは明確です。
+この場合は代わりにGiST、SP-GiSTもしくはGINインデックスを使用すべきです。
+   </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="mvcc-caveats.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="mvcc.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="performance-tips.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">13.5. 警告 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 第14章 性能に関するヒント</td></tr></table></div></body></html>

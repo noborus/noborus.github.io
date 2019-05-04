@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>11.2. インデックスの種類</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="indexes-intro.html" title="11.1. 序文" /><link rel="next" href="indexes-multicolumn.html" title="11.3. 複数列インデックス" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="indexes.html" title="第11章 インデックス">第11章 インデックス</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      indexes-types.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="indexes-intro.html" title="11.1. 序文">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="indexes.html" title="第11章 インデックス">上へ</a></td><td width="60%" align="center">11.2. インデックスの種類</td><td width="20%" align="right"> <a accesskey="n" href="indexes-multicolumn.html" title="11.3. 複数列インデックス">次へ</a></td></tr></table><hr /></div><div class="sect1" id="INDEXES-TYPES"><div class="titlepage"><div><div><h2 class="title" style="clear: both">11.2. インデックスの種類</h2></div></div></div><span class="original">
+  &lt;title&gt;Index Types&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; provides several index types:
+   B-tree, Hash, GiST, SP-GiST, GIN and BRIN.
+   Each index type uses a different
+   algorithm that is best suited to different types of queries.
+   By default, the &lt;command&gt;CREATE INDEX&lt;/command&gt; command creates
+   B-tree indexes, which fit the most common situations.
+</span>
+<span class="productname">PostgreSQL</span>では、B-tree、Hash、GiST、SP-GiST、GIN、BRINといった複数の種類のインデックスを使用可能です。
+インデックスの各種類は、異なる種類の問い合わせに最も適した、異なるアルゴリズムを使用します。
+デフォルトで<code class="command">CREATE INDEX</code>コマンドは、B-treeインデックスを作成し、それは最も一般的な状況に適合します。
+  </p><p>
+   <a id="id-1.5.10.5.3.1" class="indexterm"></a>
+   <a id="id-1.5.10.5.3.2" class="indexterm"></a>
+<span class="original">
+   B-trees can handle equality and range queries on data that can be sorted
+   into some ordering.
+   In particular, the &lt;productname&gt;PostgreSQL&lt;/productname&gt; query planner
+   will consider using a B-tree index whenever an indexed column is
+   involved in a comparison using one of these operators:
+</span>
+B-treeインデックスは、ある順番でソート可能なデータに対する等価性や範囲を問い合わせることを扱うことができます。
+具体的には、<span class="productname">PostgreSQL</span>の問い合わせプランナは、インデックスの付いた列を次の演算子を使用して比較する場合に、B-treeインデックスの使用を検討します。
+
+   </p><table border="0" summary="Simple list" class="simplelist"><tr><td><code class="literal">&lt;</code></td></tr><tr><td><code class="literal">&lt;=</code></td></tr><tr><td><code class="literal">=</code></td></tr><tr><td><code class="literal">&gt;=</code></td></tr><tr><td><code class="literal">&gt;</code></td></tr></table><p>
+
+<span class="original">
+   Constructs equivalent to combinations of these operators, such as
+   &lt;literal&gt;BETWEEN&lt;/literal&gt; and &lt;literal&gt;IN&lt;/literal&gt;, can also be implemented with
+   a B-tree index search.  Also, an &lt;literal&gt;IS NULL&lt;/literal&gt; or &lt;literal&gt;IS NOT
+   NULL&lt;/literal&gt; condition on an index column can be used with a B-tree index.
+</span>
+また、<code class="literal">BETWEEN</code>や<code class="literal">IN</code>などのこれらの演算子の組み合わせと等価な式もB-treeインデックス検索で実装することができます。
+インデックスの付いた列に対する<code class="literal">IS NULL</code>や<code class="literal">IS NOT NULL</code>でもB-treeインデックスを使用することができます。
+  </p><p>
+<span class="original">
+   The optimizer can also use a B-tree index for queries involving the
+   pattern matching operators &lt;literal&gt;LIKE&lt;/literal&gt; and &lt;literal&gt;~&lt;/literal&gt;
+   &lt;emphasis&gt;if&lt;/emphasis&gt; the pattern is a constant and is anchored to
+   the beginning of the string &amp;mdash; for example, &lt;literal&gt;col LIKE
+   'foo%'&lt;/literal&gt; or &lt;literal&gt;col ~ '^foo'&lt;/literal&gt;, but not
+   &lt;literal&gt;col LIKE '%bar'&lt;/literal&gt;. However, if your database does not
+   use the C locale you will need to create the index with a special
+   operator class to support indexing of pattern-matching queries; see
+   &lt;xref linkend="indexes-opclass"/&gt; below. It is also possible to use
+   B-tree indexes for &lt;literal&gt;ILIKE&lt;/literal&gt; and
+   &lt;literal&gt;~*&lt;/literal&gt;, but only if the pattern starts with
+   non-alphabetic characters, i.e., characters that are not affected by
+   upper/lower case conversion.
+</span>
+オプティマイザは、パターンマッチ演算子<code class="literal">LIKE</code>、<code class="literal">~</code>を含む問い合わせでも、そのパターンが定数であり、先頭文字列を指定している<span class="emphasis"><em>のであれば</em></span>B-treeインデックスを使用することができます。
+例えば、<code class="literal">col LIKE 'foo%'</code>または<code class="literal">col ~ '^foo'</code>では使用されますが、<code class="literal">col LIKE '%bar'</code>では使用されません。
+しかし、データベースがCロケールを使用していない場合、パターンマッチ問い合わせのインデックス付けをサポートする特別な演算子クラスでインデックスを作成しなければなりません。
+後述の<a class="xref" href="indexes-opclass.html" title="11.9. 演算子クラスと演算子族">11.9</a>を参照してください。
+なお、<code class="literal">ILIKE</code>と<code class="literal">~*</code>でもB-treeインデックスを使用することができますが、パターンが英字以外の文字、つまり、大文字小文字の違いの影響がない文字で始まる場合のみです。
+  </p><p>
+<span class="original">
+   B-tree indexes can also be used to retrieve data in sorted order.
+   This is not always faster than a simple scan and sort, but it is
+   often helpful.
+</span>
+B-treeインデックスをソートされた順序でデータを受けとるために使用することもできます。
+これは常に単純なスキャンとソート処理より高速になるものではありませんが、よく役に立つことがあります。
+  </p><p>
+   <a id="id-1.5.10.5.6.1" class="indexterm"></a>
+   <a id="id-1.5.10.5.6.2" class="indexterm"></a>
+<span class="original">
+   Hash indexes can only handle simple equality comparisons.
+   The query planner will consider using a hash index whenever an
+   indexed column is involved in a comparison using the
+   &lt;literal&gt;=&lt;/literal&gt; operator.
+   The following command is used to create a hash index:
+</span>
+ハッシュインデックスは単純な等価性比較のみを扱うことができます。
+問い合わせプランナでは、インデックスの付いた列を<code class="literal">=</code>演算子を使用して比較する場合に、ハッシュインデックスの使用を検討します。
+ハッシュインデックスを作成するには、以下のようなコマンドを使用してください。
+</p><pre class="synopsis">
+CREATE INDEX <em class="replaceable"><code>name</code></em> ON <em class="replaceable"><code>table</code></em> USING HASH (<em class="replaceable"><code>column</code></em>);
+</pre><p>
+  </p><p>
+   <a id="id-1.5.10.5.7.1" class="indexterm"></a>
+   <a id="id-1.5.10.5.7.2" class="indexterm"></a>
+<span class="original">
+   GiST indexes are not a single kind of index, but rather an infrastructure
+   within which many different indexing strategies can be implemented.
+   Accordingly, the particular operators with which a GiST index can be
+   used vary depending on the indexing strategy (the &lt;firstterm&gt;operator
+   class&lt;/firstterm&gt;).  As an example, the standard distribution of
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; includes GiST operator classes
+   for several two-dimensional geometric data types, which support indexed
+   queries using these operators:
+</span>
+GiSTインデックスは単一種類のインデックスではなく、多くの異なるインデックス戦略を実装することができる基盤です。
+したがって、具体的なGiSTインデックスで使用できる演算子はインデックス戦略（<em class="firstterm">演算子クラス</em>）によって異なります。
+例えば、<span class="productname">PostgreSQL</span>の標準配布物には、複数の二次元幾何データ型用のGiST演算子クラスが含まれており、以下の演算子を使用してインデックス付けされた問い合わせをサポートします。
+
+   </p><table border="0" summary="Simple list" class="simplelist"><tr><td><code class="literal">&lt;&lt;</code></td></tr><tr><td><code class="literal">&amp;&lt;</code></td></tr><tr><td><code class="literal">&amp;&gt;</code></td></tr><tr><td><code class="literal">&gt;&gt;</code></td></tr><tr><td><code class="literal">&lt;&lt;|</code></td></tr><tr><td><code class="literal">&amp;&lt;|</code></td></tr><tr><td><code class="literal">|&amp;&gt;</code></td></tr><tr><td><code class="literal">|&gt;&gt;</code></td></tr><tr><td><code class="literal">@&gt;</code></td></tr><tr><td><code class="literal">&lt;@</code></td></tr><tr><td><code class="literal">~=</code></td></tr><tr><td><code class="literal">&amp;&amp;</code></td></tr></table><p>
+
+<span class="original">
+   (See &lt;xref linkend="functions-geometry"/&gt; for the meaning of
+   these operators.)
+   The GiST operator classes included in the standard distribution are
+   documented in &lt;xref linkend="gist-builtin-opclasses-table"/&gt;.
+   Many other GiST operator
+   classes are available in the &lt;literal&gt;contrib&lt;/literal&gt; collection or as separate
+   projects.  For more information see &lt;xref linkend="gist"/&gt;.
+</span>
+（これらの演算子の意味については<a class="xref" href="functions-geometry.html" title="9.11. 幾何関数と演算子">9.11</a>を参照してください。）
+標準配布物に含まれるGiST演算子クラスは<a class="xref" href="gist-builtin-opclasses.html#GIST-BUILTIN-OPCLASSES-TABLE" title="表64.1 組み込みGiST演算子クラス">表 64.1</a>に記載されています。
+他の多くのGiST演算子クラスが<code class="literal">contrib</code>群や別のプロジェクトとして利用可能です。
+詳細は<a class="xref" href="gist.html" title="第64章 GiSTインデックス">第64章</a>を参照してください。
+  </p><p>
+<span class="original">
+   GiST indexes are also capable of optimizing &lt;quote&gt;nearest-neighbor&lt;/quote&gt;
+   searches, such as
+</span>
+GiSTインデックスは以下のような<span class="quote">「<span class="quote">最近傍</span>」</span>検索を最適化する機能も持ちます。
+</p><pre class="programlisting">
+SELECT * FROM places ORDER BY location &lt;-&gt; point '(101,456)' LIMIT 10;
+
+</pre><p>
+<span class="original">
+   which finds the ten places closest to a given target point.  The ability
+   to do this is again dependent on the particular operator class being used.
+   In &lt;xref linkend="gist-builtin-opclasses-table"/&gt;, operators that can be
+   used in this way are listed in the column &lt;quote&gt;Ordering Operators&lt;/quote&gt;.
+</span>
+これは指定された対象地点に最も近い１０箇所を見つけ出します。
+この場合も、これができるかどうかは使用される特定の演算子クラスに依存します。
+このように利用できる演算子は<a class="xref" href="gist-builtin-opclasses.html#GIST-BUILTIN-OPCLASSES-TABLE" title="表64.1 組み込みGiST演算子クラス">表 64.1</a>の<span class="quote">「<span class="quote">順序付け演算子</span>」</span>列に表示されています。
+  </p><p>
+   <a id="id-1.5.10.5.9.1" class="indexterm"></a>
+   <a id="id-1.5.10.5.9.2" class="indexterm"></a>
+<span class="original">
+   SP-GiST indexes, like GiST indexes, offer an infrastructure that supports
+   various kinds of searches.  SP-GiST permits implementation of a wide range
+   of different non-balanced disk-based data structures, such as quadtrees,
+   k-d trees, and radix trees (tries).  As an example, the standard distribution of
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; includes SP-GiST operator classes
+   for two-dimensional points, which support indexed
+   queries using these operators:
+</span>
+SP-GiSTインデックスは、GiSTインデックスと同様に様々な種類の検索を支援する基盤を提供します。
+SP-GiSTインデックスは広域な異なる不均衡でディスクベースのデータ構造、つまり、四分木,kd木、基数木のような実装を認めます。
+例えば、<span class="productname">PostgreSQL</span>標準配布物には、以下の演算子を使用する問い合わせに対するインデックスをサポートする2次元の点用のSP-GiST用の演算子クラスが含まれています。
+
+   </p><table border="0" summary="Simple list" class="simplelist"><tr><td><code class="literal">&lt;&lt;</code></td></tr><tr><td><code class="literal">&gt;&gt;</code></td></tr><tr><td><code class="literal">~=</code></td></tr><tr><td><code class="literal">&lt;@</code></td></tr><tr><td><code class="literal">&lt;^</code></td></tr><tr><td><code class="literal">&gt;^</code></td></tr></table><p>
+
+<span class="original">
+   (See &lt;xref linkend="functions-geometry"/&gt; for the meaning of
+   these operators.)
+   The SP-GiST operator classes included in the standard distribution are
+   documented in &lt;xref linkend="spgist-builtin-opclasses-table"/&gt;.
+   For more information see &lt;xref linkend="spgist"/&gt;.
+</span>
+(演算子の意味は以下を参照してください<a class="xref" href="functions-geometry.html" title="9.11. 幾何関数と演算子">9.11</a> )
+標準配布物に含まれるSP-GiSTクラスは<a class="xref" href="spgist-builtin-opclasses.html#SPGIST-BUILTIN-OPCLASSES-TABLE" title="表65.1 組み込みSP-GiST演算子クラス">表 65.1</a>に記載されています。
+詳細は <a class="xref" href="spgist.html" title="第65章 SP-GiSTインデックス">第65章</a>を参照してください。
+  </p><p>
+   <a id="id-1.5.10.5.10.1" class="indexterm"></a>
+   <a id="id-1.5.10.5.10.2" class="indexterm"></a>
+<span class="original">
+   GIN indexes are &lt;quote&gt;inverted indexes&lt;/quote&gt; which are appropriate for
+   data values that contain multiple component values, such as arrays.  An
+   inverted index contains a separate entry for each component value, and
+   can efficiently handle queries that test for the presence of specific
+   component values.
+</span>
+GINは<span class="quote">「<span class="quote">転置インデックス</span>」</span>であり、配列などのように複数の要素を持つデータ値に適しています。
+転置インデックスは各要素値に対して別々のエントリを持っており、特定の要素値の存在について検査する問い合わせを効率的に処理できます。
+  </p><p>
+<span class="original">
+   Like GiST and SP-GiST, GIN can support
+   many different user-defined indexing strategies, and the particular
+   operators with which a GIN index can be used vary depending on the
+   indexing strategy.
+   As an example, the standard distribution of
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; includes a GIN operator class
+   for arrays, which supports indexed queries using these operators:
+</span>
+GiSTやSP-GiST同様、GINも多くの異なるユーザ定義のインデックス戦略を持つことができ、GINが使用できる具体的な演算子はインデックス戦略によって変化します。
+例えば、<span class="productname">PostgreSQL</span>標準配布物には、配列用のGIN演算子クラスが含まれており、これらは、以下の演算子を使用するインデックスによる問い合わせをサポートします。
+
+   </p><table border="0" summary="Simple list" class="simplelist"><tr><td><code class="literal">&lt;@</code></td></tr><tr><td><code class="literal">@&gt;</code></td></tr><tr><td><code class="literal">=</code></td></tr><tr><td><code class="literal">&amp;&amp;</code></td></tr></table><p>
+
+<span class="original">
+   (See &lt;xref linkend="functions-array"/&gt; for the meaning of
+   these operators.)
+   The GIN operator classes included in the standard distribution are
+   documented in &lt;xref linkend="gin-builtin-opclasses-table"/&gt;.
+   Many other GIN operator
+   classes are available in the &lt;literal&gt;contrib&lt;/literal&gt; collection or as separate
+   projects.  For more information see &lt;xref linkend="gin"/&gt;.
+</span>
+（これらの演算子の意味については<a class="xref" href="functions-array.html" title="9.18. 配列関数と演算子">9.18</a>を参照してください。）
+標準配布物に含まれるGIN演算子クラスは<a class="xref" href="gin-builtin-opclasses.html#GIN-BUILTIN-OPCLASSES-TABLE" title="表66.1 組み込みGIN演算子クラス">表 66.1</a>に記載されています。
+他の多くのGIN演算子クラスは<code class="literal">contrib</code>群または別のプロジェクトで利用可能です。
+詳細は<a class="xref" href="gin.html" title="第66章 GINインデックス">第66章</a>を参照してください。
+  </p><p>
+   <a id="id-1.5.10.5.12.1" class="indexterm"></a>
+   <a id="id-1.5.10.5.12.2" class="indexterm"></a>
+<span class="original">
+   BRIN indexes (a shorthand for Block Range INdexes) store summaries about
+   the values stored in consecutive physical block ranges of a table.
+   Like GiST, SP-GiST and GIN,
+   BRIN can support many different indexing strategies,
+   and the particular operators with which a BRIN index can be used
+   vary depending on the indexing strategy.
+   For data types that have a linear sort order, the indexed data
+   corresponds to the minimum and maximum values of the
+   values in the column for each block range.  This supports indexed queries
+   using these operators:
+</span>
+BRINインデックス(ブロックレンジインデックス(Block Range INdex)を縮めたものです)はテーブルの連続的な物理ブロックの範囲に格納された値についての要約を格納します。
+GiST、SP-GiST、GINと同じように、BRINは多くの異なるインデックス戦略をサポートし、BRINインデックスが使用できる具体的な演算子はインデックス戦略によって変化します。
+線形のソート順を持つデータ型では、インデックス付けされたデータは各ブロックレンジの列の中の値の最小値と最大値に対応しています。
+これは以下の演算子を使用したインデックスによる問い合わせをサポートします。
+
+   </p><table border="0" summary="Simple list" class="simplelist"><tr><td><code class="literal">&lt;</code></td></tr><tr><td><code class="literal">&lt;=</code></td></tr><tr><td><code class="literal">=</code></td></tr><tr><td><code class="literal">&gt;=</code></td></tr><tr><td><code class="literal">&gt;</code></td></tr></table><p>
+
+<span class="original">
+   The BRIN operator classes included in the standard distribution are
+   documented in &lt;xref linkend="brin-builtin-opclasses-table"/&gt;.
+   For more information see &lt;xref linkend="brin"/&gt;.
+</span>
+標準配布物に含まれるBRIN演算子クラスは<a class="xref" href="brin-builtin-opclasses.html#BRIN-BUILTIN-OPCLASSES-TABLE" title="表67.1 組み込みBRIN演算子クラス">表 67.1</a>.に記載されています。
+詳細は<a class="xref" href="brin.html" title="第67章 BRINインデックス">第67章</a>を参照してください。
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="indexes-intro.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="indexes.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="indexes-multicolumn.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">11.1. 序文 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 11.3. 複数列インデックス</td></tr></table></div></body></html>

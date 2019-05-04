@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>SET TRANSACTION</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-set-session-authorization.html" title="SET SESSION AUTHORIZATION" /><link rel="next" href="sql-show.html" title="SHOW" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      sql-set-transaction.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-set-session-authorization.html" title="SET SESSION AUTHORIZATION">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">SET TRANSACTION</td><td width="20%" align="right"> <a accesskey="n" href="sql-show.html" title="SHOW">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-SET-TRANSACTION"><div class="titlepage"></div><a id="id-1.9.3.177.1" class="indexterm"></a><a id="id-1.9.3.177.2" class="indexterm"></a><a id="id-1.9.3.177.3" class="indexterm"></a><a id="id-1.9.3.177.4" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">SET TRANSACTION</span></h2><p>SET TRANSACTION<span class="original">
+  &lt;refpurpose&gt;set the characteristics of the current transaction&lt;/refpurpose&gt;
+</span> — 現在のトランザクションの特性を設定する</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
+SET TRANSACTION <em class="replaceable"><code>transaction_mode</code></em> [, ...]
+SET TRANSACTION SNAPSHOT <em class="replaceable"><code>snapshot_id</code></em>
+SET SESSION CHARACTERISTICS AS TRANSACTION <em class="replaceable"><code>transaction_mode</code></em> [, ...]
+
+<span class="original">
+&lt;phrase&gt;where &lt;replaceable class="parameter"&gt;transaction_mode&lt;/replaceable&gt; is one of:&lt;/phrase&gt;
+</span>
+<span class="phrase">ここで<em class="replaceable"><code>transaction_mode</code></em>は以下のいずれかです。</span>
+
+    ISOLATION LEVEL { SERIALIZABLE | REPEATABLE READ | READ COMMITTED | READ UNCOMMITTED }
+    READ WRITE | READ ONLY
+    [ NOT ] DEFERRABLE
+</pre></div><div class="refsect1" id="id-1.9.3.177.8"><h2>説明</h2><span class="original">
+  &lt;title&gt;Description&lt;/title&gt;
+</span><p>
+<span class="original">
+   The &lt;command&gt;SET TRANSACTION&lt;/command&gt; command sets the
+   characteristics of the current transaction. It has no effect on any
+   subsequent transactions.  &lt;command&gt;SET SESSION
+   CHARACTERISTICS&lt;/command&gt; sets the default transaction
+   characteristics for subsequent transactions of a session.  These
+   defaults can be overridden by &lt;command&gt;SET TRANSACTION&lt;/command&gt;
+   for an individual transaction.
+</span>
+<code class="command">SET TRANSACTION</code>は現在のトランザクションの特性を設定します。
+これはそれより後のトランザクションには影響を及ぼしません。
+<code class="command">SET SESSION CHARACTERISTICS</code>は、セッションにおけるそれ以後のトランザクションのデフォルトのトランザクション特性を設定します。
+個々のトランザクションについて<code class="command">SET TRANSACTION</code>によりデフォルト特性を上書きすることができます。
+  </p><p>
+<span class="original">
+   The available transaction characteristics are the transaction
+   isolation level, the transaction access mode (read/write or
+   read-only), and the deferrable mode.
+   In addition, a snapshot can be selected, though only for the current
+   transaction, not as a session default.
+</span>
+利用可能なトランザクション特性はトランザクションの隔離レベル、トランザクションのアクセスモード（読み書きモードもしくは読み取りのみモード）、遅延モードです。
+さらに、セッションのデフォルトとしてではなく、現在のトランザクションのみに対してスナップショットを選択することができます。
+  </p><p>
+<span class="original">
+   The isolation level of a transaction determines what data the
+   transaction can see when other transactions are running concurrently:
+</span>
+トランザクションの隔離レベルは、並行して実行中の他のトランザクションが存在する場合、そのトランザクションが見ることができるデータを決定するものです。
+
+   </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">READ COMMITTED</code></span></dt><dd><p>
+<span class="original">
+       A statement can only see rows committed before it began. This
+       is the default.
+</span>
+1つひとつの文から見ることができるのは、その文が開始される前にコミットされた行のみです。
+これがデフォルトです。
+      </p></dd><dt><span class="term"><code class="literal">REPEATABLE READ</code></span></dt><dd><p>
+<span class="original">
+       All statements of the current transaction can only see rows committed
+       before the first query or data-modification statement was executed in
+       this transaction.
+</span>
+現在のトランザクションにおける全ての文は、トランザクションで最初の問い合わせ文またはデータを変更する文が実行される前にコミットされた行だけを見ることができます。
+      </p></dd><dt><span class="term"><code class="literal">SERIALIZABLE</code></span></dt><dd><p>
+<span class="original">
+       All statements of the current transaction can only see rows committed
+       before the first query or data-modification statement was executed in
+       this transaction.  If a pattern of reads and writes among concurrent
+       serializable transactions would create a situation which could not
+       have occurred for any serial (one-at-a-time) execution of those
+       transactions, one of them will be rolled back with a
+       &lt;literal&gt;serialization_failure&lt;/literal&gt; error.
+</span>
+現在のトランザクションにおける全ての文は、トランザクションで最初の問い合わせ文またはデータを変更する文が実行される前にコミットされた行だけを見ることができます。
+同時実行のシリアライザブルトランザクションの中で読み取りと書き込みのパターンによって、これらのトランザクションの実行を直列に(同時に一度)行うことができない状況になる場合、その内１つのトランザクションは<code class="literal">serialization_failure</code>というエラーでロールバックされます。
+      </p></dd></dl></div><p>
+
+<span class="original">
+   The SQL standard defines one additional level, &lt;literal&gt;READ
+   UNCOMMITTED&lt;/literal&gt;.
+   In &lt;productname&gt;PostgreSQL&lt;/productname&gt; &lt;literal&gt;READ
+   UNCOMMITTED&lt;/literal&gt; is treated as &lt;literal&gt;READ COMMITTED&lt;/literal&gt;.
+</span>
+標準SQLでは、<code class="literal">READ UNCOMMITTED</code>というもう1つのレベルを定義しています。
+<span class="productname">PostgreSQL</span>では<code class="literal">READ UNCOMMITTED</code>は<code class="literal">READ COMMITTED</code>として扱われます。
+  </p><p>
+<span class="original">
+   The transaction isolation level cannot be changed after the first query or
+   data-modification statement (&lt;command&gt;SELECT&lt;/command&gt;,
+   &lt;command&gt;INSERT&lt;/command&gt;, &lt;command&gt;DELETE&lt;/command&gt;,
+   &lt;command&gt;UPDATE&lt;/command&gt;, &lt;command&gt;FETCH&lt;/command&gt;, or
+   &lt;command&gt;COPY&lt;/command&gt;) of a transaction has been executed.  See
+   &lt;xref linkend="mvcc"/&gt; for more information about transaction
+   isolation and concurrency control.
+</span>
+トランザクション隔離レベルは、そのトランザクションにおける最初の問い合わせ文やデータ更新文（<code class="command">SELECT</code>、<code class="command">INSERT</code>、<code class="command">DELETE</code>、<code class="command">UPDATE</code>、<code class="command">FETCH</code>、<code class="command">COPY</code>）が実行された後では変更することができません。
+トランザクションの隔離や同時実行制御についての詳細情報は<a class="xref" href="mvcc.html" title="第13章 同時実行制御">第13章</a>を参照してください。
+  </p><p>
+<span class="original">
+   The transaction access mode determines whether the transaction is
+   read/write or read-only.  Read/write is the default.  When a
+   transaction is read-only, the following SQL commands are
+   disallowed: &lt;literal&gt;INSERT&lt;/literal&gt;, &lt;literal&gt;UPDATE&lt;/literal&gt;,
+   &lt;literal&gt;DELETE&lt;/literal&gt;, and &lt;literal&gt;COPY FROM&lt;/literal&gt; if the
+   table they would write to is not a temporary table; all
+   &lt;literal&gt;CREATE&lt;/literal&gt;, &lt;literal&gt;ALTER&lt;/literal&gt;, and
+   &lt;literal&gt;DROP&lt;/literal&gt; commands; &lt;literal&gt;COMMENT&lt;/literal&gt;,
+   &lt;literal&gt;GRANT&lt;/literal&gt;, &lt;literal&gt;REVOKE&lt;/literal&gt;,
+   &lt;literal&gt;TRUNCATE&lt;/literal&gt;; and &lt;literal&gt;EXPLAIN ANALYZE&lt;/literal&gt;
+   and &lt;literal&gt;EXECUTE&lt;/literal&gt; if the command they would execute is
+   among those listed.  This is a high-level notion of read-only that
+   does not prevent all writes to disk.
+</span>
+トランザクションのアクセスモードは、そのトランザクションが読み書き可能か読み取りのみかを決定します。
+デフォルトは読み書き可能です。
+読み取りのみのトランザクションでは、以下のSQLコマンドの実行が制限されます。
+書き込み対象のテーブルが一時テーブルでない場合、<code class="literal">INSERT</code>、<code class="literal">UPDATE</code>、<code class="literal">DELETE</code>、<code class="literal">COPY FROM</code>などのSQLコマンドを実行できません。
+すべての<code class="literal">CREATE</code>、<code class="literal">ALTER</code>、<code class="literal">DROP</code>系のSQLコマンド、<code class="literal">COMMENT</code>、<code class="literal">GRANT</code>、<code class="literal">REVOKE</code>、<code class="literal">TRUNCATE</code>は、実行できません。
+さらに、上述のコマンドが含まれる<code class="literal">EXPLAIN ANALYZE</code>と<code class="literal">EXECUTE</code>コマンドも実行できません。
+この方法ではディスクへの書き込みをすべて防ぐわけではないので、読み取り専用の高レベルの概念です。
+  </p><p>
+<span class="original">
+   The &lt;literal&gt;DEFERRABLE&lt;/literal&gt; transaction property has no effect
+   unless the transaction is also &lt;literal&gt;SERIALIZABLE&lt;/literal&gt; and
+   &lt;literal&gt;READ ONLY&lt;/literal&gt;.  When all three of these properties are
+   selected for a
+   transaction, the transaction may block when first acquiring its snapshot,
+   after which it is able to run without the normal overhead of a
+   &lt;literal&gt;SERIALIZABLE&lt;/literal&gt; transaction and without any risk of
+   contributing to or being canceled by a serialization failure.  This mode
+   is well suited for long-running reports or backups.
+</span>
+<code class="literal">DEFERRABLE</code>トランザクション属性は、トランザクションが<code class="literal">SERIALIZABLE</code>かつ<code class="literal">READ ONLY</code>である場合のみ効果があります。
+あるトランザクションでこれら３つの属性がすべて選択されている場合、最初にスナップショットを獲得する時にブロックされる可能性があります。
+その後、そのトランザクションを<code class="literal">SERIALIZABLE</code>トランザクションの通常のオーバーヘッドを伴わず、またシリアライズ処理の失敗を引き起こす恐れやシリアライズ処理の失敗によりキャンセルされる恐れもなく実行することができます。
+これは時間がかかるレポート処理やバックアップによく適しています。
+  </p><p>
+<span class="original">
+   The &lt;literal&gt;SET TRANSACTION SNAPSHOT&lt;/literal&gt; command allows a new
+   transaction to run with the same &lt;firstterm&gt;snapshot&lt;/firstterm&gt; as an existing
+   transaction.  The pre-existing transaction must have exported its snapshot
+   with the &lt;literal&gt;pg_export_snapshot&lt;/literal&gt; function (see &lt;xref
+   linkend="functions-snapshot-synchronization"/&gt;).  That function returns a
+   snapshot identifier, which must be given to &lt;literal&gt;SET TRANSACTION
+   SNAPSHOT&lt;/literal&gt; to specify which snapshot is to be imported.  The
+   identifier must be written as a string literal in this command, for example
+   &lt;literal&gt;'000003A1-1'&lt;/literal&gt;.
+   &lt;literal&gt;SET TRANSACTION SNAPSHOT&lt;/literal&gt; can only be executed at the
+   start of a transaction, before the first query or
+   data-modification statement (&lt;command&gt;SELECT&lt;/command&gt;,
+   &lt;command&gt;INSERT&lt;/command&gt;, &lt;command&gt;DELETE&lt;/command&gt;,
+   &lt;command&gt;UPDATE&lt;/command&gt;, &lt;command&gt;FETCH&lt;/command&gt;, or
+   &lt;command&gt;COPY&lt;/command&gt;) of the transaction.  Furthermore, the transaction
+   must already be set to &lt;literal&gt;SERIALIZABLE&lt;/literal&gt; or
+   &lt;literal&gt;REPEATABLE READ&lt;/literal&gt; isolation level (otherwise, the snapshot
+   would be discarded immediately, since &lt;literal&gt;READ COMMITTED&lt;/literal&gt; mode takes
+   a new snapshot for each command).  If the importing transaction uses
+   &lt;literal&gt;SERIALIZABLE&lt;/literal&gt; isolation level, then the transaction that
+   exported the snapshot must also use that isolation level.  Also, a
+   non-read-only serializable transaction cannot import a snapshot from a
+   read-only transaction.
+</span>
+<code class="literal">SET TRANSACTION SNAPSHOT</code>コマンドにより、
+既存のトランザクションと同じ<em class="firstterm">スナップショット</em>を持つ新しいトランザクションを実行することができます。
+既存のトランザクションは<code class="literal">pg_export_snapshot</code>関数(<a class="xref" href="functions-admin.html#FUNCTIONS-SNAPSHOT-SYNCHRONIZATION" title="9.26.5. スナップショット同期関数">9.26.5</a>参照)を使用してそのスナップショットを公開していなければなりません。
+この関数はスナップショット識別子を返します。
+どのスナップショットを取り込むかを指定するために、この識別子を<code class="literal">SET TRANSACTION SNAPSHOT</code>に渡さなければなりません。
+このコマンドでは、この識別子を例えば<code class="literal">'000003A1-1'</code>のようにリテラル文字列として記述しなければなりません。
+<code class="literal">SET TRANSACTION SNAPSHOT</code>はトランザクションの開始時、つまり、トランザクションの最初の問い合わせまたはデータ変更文(<code class="command">SELECT</code>、<code class="command">INSERT</code>、<code class="command">DELETE</code>、<code class="command">UPDATE</code>、<code class="command">FETCH</code>、<code class="command">COPY</code>)の前でのみ実行できます。
+さらに、そのトランザクションを前もって<code class="literal">SERIALIZABLE</code>または<code class="literal">REPEATABLE READ</code>隔離レベルに設定していなければなりません。
+(さもないと、<code class="literal">READ COMMITTED</code>ではコマンドそれぞれに対して新しいスナップショットを取りますので、このスナップショットは即座に破棄されます。)
+取り込むトランザクションが<code class="literal">SERIALIZABLE</code>隔離レベルを使用している場合、スナップショットを公開したトランザクションもこの隔離レベルを使用しなければなりません。
+また、読み取り専用ではないシリアライザブルトランザクションは、読み取り専用トランザクションから公開されたスナップショットを取り込むことができません。
+  </p></div><div class="refsect1" id="id-1.9.3.177.9"><h2>注釈</h2><span class="original">
+  &lt;title&gt;Notes&lt;/title&gt;
+</span><p>
+<span class="original">
+   If &lt;command&gt;SET TRANSACTION&lt;/command&gt; is executed without a prior
+   &lt;command&gt;START TRANSACTION&lt;/command&gt; or &lt;command&gt;BEGIN&lt;/command&gt;,
+   it emits a warning and otherwise has no effect.
+</span>
+<code class="command">SET TRANSACTION</code>を、その前に<code class="command">START TRANSACTION</code>や<code class="command">BEGIN</code>を発行することなく実行した場合、警告が発生しますが、それ以外は何の効果もありません。
+  </p><p>
+<span class="original">
+   It is possible to dispense with &lt;command&gt;SET TRANSACTION&lt;/command&gt;
+   by instead specifying the desired &lt;replaceable
+   class="parameter"&gt;transaction_modes&lt;/replaceable&gt; in
+   &lt;command&gt;BEGIN&lt;/command&gt; or &lt;command&gt;START TRANSACTION&lt;/command&gt;.
+   But that option is not available for &lt;command&gt;SET TRANSACTION
+   SNAPSHOT&lt;/command&gt;.
+</span>
+<code class="command">BEGIN</code>あるいは<code class="command">START TRANSACTION</code>で目的の<em class="replaceable"><code>transaction_modes</code></em>を指定すれば、<code class="command">SET TRANSACTION</code>を使わずに済ませることができます。
+しかし<code class="command">SET TRANSACTION SNAPSHOT</code>に対応するオプションはありません。
+  </p><p>
+<span class="original">
+   The session default transaction modes can also be set by setting the
+   configuration parameters &lt;xref linkend="guc-default-transaction-isolation"/&gt;,
+   &lt;xref linkend="guc-default-transaction-read-only"/&gt;, and
+   &lt;xref linkend="guc-default-transaction-deferrable"/&gt;.
+   (In fact &lt;command&gt;SET SESSION CHARACTERISTICS&lt;/command&gt; is just a
+   verbose equivalent for setting these variables with &lt;command&gt;SET&lt;/command&gt;.)
+   This means the defaults can be set in the configuration file, via
+   &lt;command&gt;ALTER DATABASE&lt;/command&gt;, etc.  Consult &lt;xref linkend="runtime-config"/&gt;
+   for more information.
+</span>
+セッションのデフォルトのトランザクションモードは、設定パラメータ<a class="xref" href="runtime-config-client.html#GUC-DEFAULT-TRANSACTION-ISOLATION">default_transaction_isolation</a>、<a class="xref" href="runtime-config-client.html#GUC-DEFAULT-TRANSACTION-READ-ONLY">default_transaction_read_only</a>、<a class="xref" href="runtime-config-client.html#GUC-DEFAULT-TRANSACTION-DEFERRABLE">default_transaction_deferrable</a>で設定することができます
+（実際、<code class="command">SET SESSION CHARACTERISTICS</code>はこれらの変数を<code class="command">SET</code>で設定することと同等の冗長な記述に過ぎません。）。
+したがって、トランザクションモードのデフォルトは設定ファイルや<code class="command">ALTER DATABASE</code>などで設定可能です。
+詳細は<a class="xref" href="runtime-config.html" title="第19章 サーバの設定">第19章</a>を参照してください。
+  </p></div><div class="refsect1" id="id-1.9.3.177.10"><h2>例</h2><span class="original">
+  &lt;title&gt;Examples&lt;/title&gt;
+</span><p>
+<span class="original">
+   To begin a new transaction with the same snapshot as an already
+   existing transaction, first export the snapshot from the existing
+   transaction. That will return the snapshot identifier, for example:
+</span>
+既存のトランザクションと同じスナップショットを持つトランザクションを新しく開始するためには、まず既存のトランザクションからスナップショットを公開します。
+以下の例に示すように、これはスナップショット識別子を返します。
+
+</p><pre class="programlisting">
+BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+SELECT pg_export_snapshot();
+ pg_export_snapshot
+---------------------
+ 00000003-0000001B-1
+(1 row)
+</pre><p>
+
+<span class="original">
+   Then give the snapshot identifier in a &lt;command&gt;SET TRANSACTION
+   SNAPSHOT&lt;/command&gt; command at the beginning of the newly opened
+   transaction:
+</span>
+そして、新規に開始したトランザクションの先頭の<code class="command">SET TRANSACTION SNAPSHOT</code>でこのスナップショット識別子を渡します。
+
+</p><pre class="programlisting">
+BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+SET TRANSACTION SNAPSHOT '00000003-0000001B-1';
+</pre></div><div class="refsect1" id="R1-SQL-SET-TRANSACTION-3"><h2>互換性</h2><span class="original">
+  &lt;title&gt;Compatibility&lt;/title&gt;
+</span><p>
+<span class="original">
+   These commands are defined in the &lt;acronym&gt;SQL&lt;/acronym&gt; standard,
+   except for the &lt;literal&gt;DEFERRABLE&lt;/literal&gt; transaction mode
+   and the &lt;command&gt;SET TRANSACTION SNAPSHOT&lt;/command&gt; form, which are
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; extensions.
+</span>
+このコマンドは標準<acronym class="acronym">SQL</acronym>で定義されています。
+<code class="literal">DEFERRABLE</code>トランザクションモードと<code class="command">SET TRANSACTION SNAPSHOT</code>構文は例外であり、<span class="productname">PostgreSQL</span>の拡張です。
+  </p><p>
+<span class="original">
+   &lt;literal&gt;SERIALIZABLE&lt;/literal&gt; is the default transaction
+   isolation level in the standard.  In
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; the default is ordinarily
+   &lt;literal&gt;READ COMMITTED&lt;/literal&gt;, but you can change it as
+   mentioned above.
+</span>
+標準<acronym class="acronym">SQL</acronym>ではデフォルトのトランザクションは<code class="literal">SERIALIZABLE</code>です。
+<span class="productname">PostgreSQL</span>では、通常、<code class="literal">READ COMMITTED</code>がデフォルトですが、これは上述の通り変更可能です。
+  </p><p>
+<span class="original">
+   In the SQL standard, there is one other transaction characteristic
+   that can be set with these commands: the size of the diagnostics
+   area.  This concept is specific to embedded SQL, and therefore is
+   not implemented in the &lt;productname&gt;PostgreSQL&lt;/productname&gt; server.
+</span>
+標準SQLでは、もう1つ、診断領域の大きさというトランザクション特性があり、このコマンドで設定可能です。
+この概念は組み込みSQL固有のものなので、<span class="productname">PostgreSQL</span>サーバには実装されていません。
+  </p><p>
+<span class="original">
+   The SQL standard requires commas between successive &lt;replaceable
+   class="parameter"&gt;transaction_modes&lt;/replaceable&gt;, but for historical
+   reasons &lt;productname&gt;PostgreSQL&lt;/productname&gt; allows the commas to be
+   omitted.
+</span>
+標準SQLでは、連続する<em class="replaceable"><code>transaction_modes</code></em>の間にはカンマが必要です。
+歴史的な理由より<span class="productname">PostgreSQL</span>ではカンマを省略することができます。
+  </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-set-session-authorization.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-show.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">SET SESSION AUTHORIZATION </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> SHOW</td></tr></table></div></body></html>

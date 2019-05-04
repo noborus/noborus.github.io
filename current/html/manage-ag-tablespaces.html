@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>22.6. テーブル空間</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="manage-ag-dropdb.html" title="22.5. データベースの削除" /><link rel="next" href="charset.html" title="第23章 多言語対応" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="managing-databases.html" title="第22章 データベース管理">第22章 データベース管理</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      manage-ag-tablespaces.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="manage-ag-dropdb.html" title="22.5. データベースの削除">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="managing-databases.html" title="第22章 データベース管理">上へ</a></td><td width="60%" align="center">22.6. テーブル空間</td><td width="20%" align="right"> <a accesskey="n" href="charset.html" title="第23章 多言語対応">次へ</a></td></tr></table><hr /></div><div class="sect1" id="MANAGE-AG-TABLESPACES"><div class="titlepage"><div><div><h2 class="title" style="clear: both">22.6. テーブル空間</h2></div></div></div><span class="original">
+  &lt;title&gt;Tablespaces&lt;/title&gt;
+</span><a id="id-1.6.9.9.2" class="indexterm"></a><p>
+<span class="original">
+   Tablespaces in &lt;productname&gt;PostgreSQL&lt;/productname&gt; allow database administrators to
+   define locations in the file system where the files representing
+   database objects can be stored. Once created, a tablespace can be referred
+   to by name when creating database objects.
+</span>
+<span class="productname">PostgreSQL</span>のテーブル空間により、データベース管理者はデータベースオブジェクトを表すファイルを格納できるファイルシステム上の場所を定義することができます。
+テーブル空間を一度作成すると、データベースオブジェクトを作成する時に名前により参照することができます。
+  </p><p>
+<span class="original">
+   By using tablespaces, an administrator can control the disk layout
+   of a &lt;productname&gt;PostgreSQL&lt;/productname&gt; installation. This is useful in at
+   least two ways. First, if the partition or volume on which the
+   cluster was initialized runs out of space and cannot be extended,
+   a tablespace can be created on a different partition and used
+   until the system can be reconfigured.
+</span>
+テーブル空間を使用することで、管理者は<span class="productname">PostgreSQL</span>インストレーションのディスクレイアウトを制御することができます。
+これは、少なくとも2つの点で有用です。
+1つは、クラスタを初期化したパーティションもしくはボリュームの容量が不足し、拡張を行うことができない場合、システムを再構成するまで、別のパーティションにテーブル空間を作成して、このテーブル空間を使用することができます。
+  </p><p>
+<span class="original">
+   Second, tablespaces allow an administrator to use knowledge of the
+   usage pattern of database objects to optimize performance. For
+   example, an index which is very heavily used can be placed on a
+   very fast, highly available disk, such as an expensive solid state
+   device. At the same time a table storing archived data which is
+   rarely used or not performance critical could be stored on a less
+   expensive, slower disk system.
+</span>
+もう1つは、テーブル空間により、管理者はデータベースオブジェクトの使用パターンに基づいてデータ格納場所を調整することができることです。
+例えば、非常によく使用されるインデックスを、例えば、高価なソリッドステートディスクなどの高速・高可用性ディスクに格納することができます。
+同時に、めったに使用されない保存用のデータや性能が求められていない保存用のデータを格納するテーブルを低価格・低速ディスクシステムに格納することもできます。
+  </p><div class="warning"><h3 class="title">警告</h3><p>
+<span class="original">
+     Even though located outside the main PostgreSQL data directory,
+     tablespaces are an integral part of the database cluster and
+     &lt;emphasis&gt;cannot&lt;/emphasis&gt; be treated as an autonomous collection
+     of data files. They are dependent on metadata contained in the main
+     data directory, and therefore cannot be attached to a different
+     database cluster or backed up individually.  Similarly, if you lose
+     a tablespace (file deletion, disk failure, etc), the database cluster
+     might become unreadable or unable to start.  Placing a tablespace
+     on a temporary file system like a RAM disk risks the reliability of
+     the entire cluster.
+</span>
+主PostgreSQLデータディレクトリの外に位置していたとしても、テーブル空間はデータベースクラスタの不可欠な部分であり、データファイルの自律的な集合として扱うことは<span class="emphasis"><em>できません</em></span>。
+それらは主データディレクトリに含まれるメタデータに依存しますので、異なるデータベースクラスタに所属させたり、個別にバックアップしたりすることはできません。
+同様に、テーブル空間を失えば(ファイル削除、ディスクの破損など)、データベースクラスタは読み取れなくなったり、開始できなくなったりするかもしれません。
+テーブル空間をRAMディスクのような一時ファイルシステムに置くことは、クラスタ全体の信頼性を危険にさらします。
+   </p></div><p>
+<span class="original">
+   To define a tablespace, use the &lt;xref
+   linkend="sql-createtablespace"/&gt;
+   command, for example:&lt;indexterm&gt;&lt;primary&gt;CREATE TABLESPACE&lt;/primary&gt;&lt;/indexterm&gt;:
+</span>
+テーブル空間を定義するには<a class="xref" href="sql-createtablespace.html" title="CREATE TABLESPACE"><span class="refentrytitle">CREATE TABLESPACE</span></a>コマンドを使用してください。
+以下に例を示します。
+<a id="id-1.6.9.9.7.2" class="indexterm"></a>
+</p><pre class="programlisting">
+CREATE TABLESPACE fastspace LOCATION '/ssd1/postgresql/data';
+</pre><p>
+<span class="original">
+   The location must be an existing, empty directory that is owned by
+   the &lt;productname&gt;PostgreSQL&lt;/productname&gt; operating system user.  All objects subsequently
+   created within the tablespace will be stored in files underneath this
+   directory.  The location must not be on removable or transient storage,
+   as the cluster might fail to function if the tablespace is missing
+   or lost.
+</span>
+この場所は、既存かつ空のディレクトリでなければならず、また、<span class="productname">PostgreSQL</span>オペレーティングシステムユーザが所有していなければなりません。
+その後に、テーブル空間内に作成されるオブジェクトはすべてこのディレクトリ以下のファイルに格納されます。
+テーブル空間が見つからなかったり失われたりするとクラスタは機能しませんので、この場所は取り外し可能な記憶装置や一時的な記憶装置上にあってはいけません。
+  </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+    There is usually not much point in making more than one
+    tablespace per logical file system, since you cannot control the location
+    of individual files within a logical file system.  However,
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; does not enforce any such limitation, and
+    indeed it is not directly aware of the file system boundaries on your
+    system.  It just stores files in the directories you tell it to use.
+</span>
+通常、論理ファイルシステム内の個々のファイルの場所を制御することができませんので、1つの論理ファイルシステムに複数のテーブル空間を作成することは意味がありません。
+しかし、<span class="productname">PostgreSQL</span>にはこうした制限はありません。
+実際、システムのファイルシステムの境を直接意識しません。
+単に使用することを宣言したディレクトリにファイルを格納します。
+   </p></div><p>
+<span class="original">
+   Creation of the tablespace itself must be done as a database superuser,
+   but after that you can allow ordinary database users to use it.
+   To do that, grant them the &lt;literal&gt;CREATE&lt;/literal&gt; privilege on it.
+</span>
+テーブル空間自体の生成はデータベーススーパーユーザが行う必要があります。
+しかし、その後に、データベース一般ユーザにそのテーブル空間を使用させることができます。
+これを行うには、ユーザにテーブル空間に対する<code class="literal">CREATE</code>権限を与えてください。
+  </p><p>
+<span class="original">
+   Tables, indexes, and entire databases can be assigned to
+   particular tablespaces. To do so, a user with the &lt;literal&gt;CREATE&lt;/literal&gt;
+   privilege on a given tablespace must pass the tablespace name as a
+   parameter to the relevant command. For example, the following creates
+   a table in the tablespace &lt;literal&gt;space1&lt;/literal&gt;:
+</span>
+テーブル、インデックス、およびデータベース全体は特定のテーブル空間に割り当て可能です。
+これを行うには、指定テーブル空間に<code class="literal">CREATE</code>権限を持つユーザが関連するコマンドにテーブル空間をパラメータとして渡す必要があります。
+例えば、以下は<code class="literal">space1</code>テーブル空間にあるテーブルを作成しています。
+</p><pre class="programlisting">
+CREATE TABLE foo(i int) TABLESPACE space1;
+</pre><p>
+  </p><p>
+<span class="original">
+   Alternatively, use the &lt;xref linkend="guc-default-tablespace"/&gt; parameter:
+</span>
+他の方法として、以下のように<a class="xref" href="runtime-config-client.html#GUC-DEFAULT-TABLESPACE">default_tablespace</a>パラメータの使用があります。
+</p><pre class="programlisting">
+SET default_tablespace = space1;
+CREATE TABLE foo(i int);
+</pre><p>
+<span class="original">
+   When &lt;varname&gt;default_tablespace&lt;/varname&gt; is set to anything but an empty
+   string, it supplies an implicit &lt;literal&gt;TABLESPACE&lt;/literal&gt; clause for
+   &lt;command&gt;CREATE TABLE&lt;/command&gt; and &lt;command&gt;CREATE INDEX&lt;/command&gt; commands that
+   do not have an explicit one.
+</span>
+<code class="varname">default_tablespace</code>が空文字以外の何かに設定された場合、この値が、明示的なテーブル空間の指定がない<code class="command">CREATE TABLE</code>コマンドや<code class="command">CREATE INDEX</code>コマンドの暗黙的な <code class="literal">TABLESPACE</code>句として適用されます。
+  </p><p>
+<span class="original">
+   There is also a &lt;xref linkend="guc-temp-tablespaces"/&gt; parameter, which
+   determines the placement of temporary tables and indexes, as well as
+   temporary files that are used for purposes such as sorting large data
+   sets.  This can be a list of tablespace names, rather than only one,
+   so that the load associated with temporary objects can be spread over
+   multiple tablespaces.  A random member of the list is picked each time
+   a temporary object is to be created.
+</span>
+<a class="xref" href="runtime-config-client.html#GUC-TEMP-TABLESPACES">temp_tablespaces</a>というパラメータも存在します。
+これは、一時テーブルとそのインデックス、大規模データ集合のソートなどを目的に使用される一時ファイルの場所を決定するものです。
+これは、テーブル空間名を1つだけ指定するものではなく、テーブル空間名のリストを取ることができます。
+このため、一時的なオブジェクトに関連する負荷を、複数のテーブル空間にわたって分散することができます。
+一時的なオブジェクトを作成する度に、このリストから無作為に要素が選択されます。
+  </p><p>
+<span class="original">
+   The tablespace associated with a database is used to store the system
+   catalogs of that database.  Furthermore, it is the default tablespace
+   used for tables, indexes, and temporary files created within the database,
+   if no &lt;literal&gt;TABLESPACE&lt;/literal&gt; clause is given and no other selection is
+   specified by &lt;varname&gt;default_tablespace&lt;/varname&gt; or
+   &lt;varname&gt;temp_tablespaces&lt;/varname&gt; (as appropriate).
+   If a database is created without specifying a tablespace for it,
+   it uses the same tablespace as the template database it is copied from.
+</span>
+データベースに関連付けされたテーブル空間は、そのデータベースのシステムカタログを格納するために使用されます。
+さらに、<code class="literal">TABLESPACE</code>句を付けずに、または、（適切な）<code class="varname">default_tablespace</code>や<code class="varname">temp_tablespaces</code>で指定された選択肢がなければ、データベース内に作成されたテーブルやインデックスのデフォルトのテーブル空間としても使用されます。
+テーブル空間の指定なしで作成されたデータベースは、コピー元のテンプレートデータベースのテーブル空間と同じものを使用します。
+  </p><p>
+<span class="original">
+   Two tablespaces are automatically created when the database cluster
+   is initialized.  The
+   &lt;literal&gt;pg_global&lt;/literal&gt; tablespace is used for shared system catalogs. The
+   &lt;literal&gt;pg_default&lt;/literal&gt; tablespace is the default tablespace of the
+   &lt;literal&gt;template1&lt;/literal&gt; and &lt;literal&gt;template0&lt;/literal&gt; databases (and, therefore,
+   will be the default tablespace for other databases as well, unless
+   overridden by a &lt;literal&gt;TABLESPACE&lt;/literal&gt; clause in &lt;command&gt;CREATE
+   DATABASE&lt;/command&gt;).
+</span>
+データベースクラスタが初期化される時に2つのテーブル空間が自動的に作成されます。
+<code class="literal">pg_global</code>テーブル空間は共有システムカタログ用に使用されます。
+<code class="literal">pg_default</code>テーブル空間は<code class="literal">template1</code>と<code class="literal">template0</code>データベースのデフォルトテーブル空間です
+（したがって、<code class="command">CREATE DATABASE</code>の<code class="literal">TABLESPACE</code>句で変更されない限り、このテーブル空間が同様に他のデータベースに対するデフォルトのテーブル空間になります）。
+  </p><p>
+<span class="original">
+   Once created, a tablespace can be used from any database, provided
+   the requesting user has sufficient privilege. This means that a tablespace
+   cannot be dropped until all objects in all databases using the tablespace
+   have been removed.
+</span>
+テーブル空間は、一度作成すると、要求しているユーザが十分な権限を持っていればすべてのデータベースから使用することができます。
+これは、テーブル空間を使用するすべてのデータベースのすべてのオブジェクトが削除されるまで、そのテーブル空間を削除できないことを意味します。
+  </p><p>
+<span class="original">
+   To remove an empty tablespace, use the &lt;xref
+   linkend="sql-droptablespace"/&gt;
+   command.
+</span>
+空のテーブル空間を削除するには、<a class="xref" href="sql-droptablespace.html" title="DROP TABLESPACE"><span class="refentrytitle">DROP TABLESPACE</span></a>コマンドを使用してください。
+  </p><p>
+<span class="original">
+   To determine the set of existing tablespaces, examine the
+   &lt;link linkend="catalog-pg-tablespace"&gt;&lt;structname&gt;pg_tablespace&lt;/structname&gt;
+   &lt;/link&gt; system catalog, for example
+</span>
+既存のテーブル空間群を求めるには、以下の例のように<a class="link" href="catalog-pg-tablespace.html" title="52.54. pg_tablespace"><code class="structname">pg_tablespace</code></a>を確認してください。
+</p><pre class="synopsis">
+SELECT spcname FROM pg_tablespace;
+</pre><p>
+<span class="original">
+   The &lt;xref linkend="app-psql"/&gt; program's &lt;literal&gt;\db&lt;/literal&gt; meta-command
+   is also useful for listing the existing tablespaces.
+</span>
+また、<a class="xref" href="app-psql.html" title="psql"><span class="refentrytitle"><span class="application">psql</span></span></a>プログラムの<code class="literal">\db</code>メタコマンドも既存のテーブル空間を列挙する際に役に立ちます。
+  </p><p>
+<span class="original">
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; makes use of symbolic links
+   to simplify the implementation of tablespaces. This
+   means that tablespaces can be used &lt;emphasis&gt;only&lt;/emphasis&gt; on systems
+   that support symbolic links.
+</span>
+テーブル空間の実装を単純化するために、<span class="productname">PostgreSQL</span>はシンボリックリンクを使用します。
+これは、テーブル空間はシンボリックリンクをサポートするシステムで<span class="emphasis"><em>のみ</em></span>使用することができるということを意味します。
+  </p><p>
+<span class="original">
+   The directory &lt;filename&gt;$PGDATA/pg_tblspc&lt;/filename&gt; contains symbolic links that
+   point to each of the non-built-in tablespaces defined in the cluster.
+   Although not recommended, it is possible to adjust the tablespace
+   layout by hand by redefining these links. Under no circumstances perform
+   this operation while the server is running. Note that in PostgreSQL 9.1
+   and earlier you will also need to update the &lt;structname&gt;pg_tablespace&lt;/structname&gt;
+   catalog with the new locations. (If you do not, &lt;literal&gt;pg_dump&lt;/literal&gt; will
+   continue to output the old tablespace locations.)
+</span>
+<code class="filename">$PGDATA/pg_tblspc</code>ディレクトリには、そのクラスタで定義された非組み込みテーブル空間1つひとつを指し示すシンボリックリンクがあります。
+推奨はしませんが、こうしたリンクを手作業で再定義してテーブル空間のレイアウトを調整することができます。
+2点警告します。
+これをサーバが実行している時に行わないでください。
+PostgreSQL 9.1およびそれ以前の場合、<code class="structname">pg_tablespace</code>カタログを新規の場所に更新してください。
+（これを行わないと、<code class="literal">pg_dump</code>は古いテーブル空間の場所に出力し続けます。）
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="manage-ag-dropdb.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="managing-databases.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="charset.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">22.5. データベースの削除 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 第23章 多言語対応</td></tr></table></div></body></html>

@@ -1,0 +1,555 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>F.31. pg_trgm</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="pgstattuple.html" title="F.30. pgstattuple" /><link rel="next" href="pgvisibility.html" title="F.32. pg_visibility" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="contrib.html" title="付録F 追加で提供されるモジュール">付録F 追加で提供されるモジュール</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      pgtrgm.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="pgstattuple.html" title="F.30. pgstattuple">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュール">上へ</a></td><td width="60%" align="center">F.31. pg_trgm</td><td width="20%" align="right"> <a accesskey="n" href="pgvisibility.html" title="F.32. pg_visibility">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PGTRGM"><div class="titlepage"><div><div><h2 class="title" style="clear: both">F.31. pg_trgm</h2></div></div></div><a id="id-1.11.7.40.2" class="indexterm"></a><p>
+<span class="original">
+  The &lt;filename&gt;pg_trgm&lt;/filename&gt; module provides functions and operators
+  for determining the similarity of
+  alphanumeric text based on trigram matching, as
+  well as index operator classes that support fast searching for similar
+  strings.
+</span>
+<code class="filename">pg_trgm</code>モジュールは、類似文字列の高速検索をサポートするインデックス演算子クラスだけではなく、トライグラム一致に基づく英数字の類似度の決定に関する関数と演算子も提供します。
+ </p><div class="sect2" id="id-1.11.7.40.4"><div class="titlepage"><div><div><h3 class="title">F.31.1. トライグラム（またはトリグラフ）の概念</h3></div></div></div><span class="original">
+  &lt;title&gt;Trigram (or Trigraph) Concepts&lt;/title&gt;
+</span><p>
+<span class="original">
+   A trigram is a group of three consecutive characters taken
+   from a string.  We can measure the similarity of two strings by
+   counting the number of trigrams they share.  This simple idea
+   turns out to be very effective for measuring the similarity of
+   words in many natural languages.
+</span>
+トライグラムは文字列から3つの連続する文字を取り出したグループです。
+共有するトライグラムの個数を数えることで、２つの文字列の類似度を測定することができます。
+この単純な考えが、多くの自然言語における単語の類似度を測定する際に非常に効率的であることが判明しています。
+  </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+    &lt;filename&gt;pg_trgm&lt;/filename&gt; ignores non-word characters
+    (non-alphanumerics) when extracting trigrams from a string.
+    Each word is considered to have two spaces
+    prefixed and one space suffixed when determining the set
+    of trigrams contained in the string.
+    For example, the set of trigrams in the string
+    &lt;quote&gt;&lt;literal&gt;cat&lt;/literal&gt;&lt;/quote&gt; is
+    &lt;quote&gt;&lt;literal&gt;  c&lt;/literal&gt;&lt;/quote&gt;,
+    &lt;quote&gt;&lt;literal&gt; ca&lt;/literal&gt;&lt;/quote&gt;,
+    &lt;quote&gt;&lt;literal&gt;cat&lt;/literal&gt;&lt;/quote&gt;, and
+    &lt;quote&gt;&lt;literal&gt;at &lt;/literal&gt;&lt;/quote&gt;.
+    The set of trigrams in the string
+    &lt;quote&gt;&lt;literal&gt;foo|bar&lt;/literal&gt;&lt;/quote&gt; is
+    &lt;quote&gt;&lt;literal&gt;  f&lt;/literal&gt;&lt;/quote&gt;,
+    &lt;quote&gt;&lt;literal&gt; fo&lt;/literal&gt;&lt;/quote&gt;,
+    &lt;quote&gt;&lt;literal&gt;foo&lt;/literal&gt;&lt;/quote&gt;,
+    &lt;quote&gt;&lt;literal&gt;oo &lt;/literal&gt;&lt;/quote&gt;,
+    &lt;quote&gt;&lt;literal&gt;  b&lt;/literal&gt;&lt;/quote&gt;,
+    &lt;quote&gt;&lt;literal&gt; ba&lt;/literal&gt;&lt;/quote&gt;,
+    &lt;quote&gt;&lt;literal&gt;bar&lt;/literal&gt;&lt;/quote&gt;, and
+    &lt;quote&gt;&lt;literal&gt;ar &lt;/literal&gt;&lt;/quote&gt;.
+</span>
+<code class="filename">pg_trgm</code>は、文字列からトライグラムを抽出する時に単語以外の文字（英数字以外）を無視します。
+文字列内に含まれるトライグラム集合を決める際、文字列の前に２つの空白、後に1つの空白が付いているものとみなされます。
+例えば、<span class="quote">「<span class="quote"><code class="literal">cat</code></span>」</span>という文字列のトライグラム集合は、<span class="quote">「<span class="quote"><code class="literal">  c</code></span>」</span>、<span class="quote">「<span class="quote"><code class="literal"> ca</code></span>」</span>、<span class="quote">「<span class="quote"><code class="literal">cat</code></span>」</span>、<span class="quote">「<span class="quote"><code class="literal">at </code></span>」</span>です。
+<span class="quote">「<span class="quote"><code class="literal">foo|bar</code></span>」</span>という文字列のトライグラム集合は、<span class="quote">「<span class="quote"><code class="literal">  f</code></span>」</span>、<span class="quote">「<span class="quote"><code class="literal"> fo</code></span>」</span>、<span class="quote">「<span class="quote"><code class="literal">foo</code></span>」</span>、<span class="quote">「<span class="quote"><code class="literal">oo </code></span>」</span>、<span class="quote">「<span class="quote"><code class="literal">  b</code></span>」</span>、<span class="quote">「<span class="quote"><code class="literal"> ba</code></span>」</span>、<span class="quote">「<span class="quote"><code class="literal">bar</code></span>」</span>、<span class="quote">「<span class="quote"><code class="literal">ar </code></span>」</span>です。
+   </p></div></div><div class="sect2" id="id-1.11.7.40.5"><div class="titlepage"><div><div><h3 class="title">F.31.2. 関数と演算子</h3></div></div></div><span class="original">
+  &lt;title&gt;Functions and Operators&lt;/title&gt;
+</span><p>
+<span class="original">
+   The functions provided by the &lt;filename&gt;pg_trgm&lt;/filename&gt; module
+   are shown in &lt;xref linkend="pgtrgm-func-table"/&gt;, the operators
+   in &lt;xref linkend="pgtrgm-op-table"/&gt;.
+</span>
+<code class="filename">pg_trgm</code>モジュールで提供される関数を<a class="xref" href="pgtrgm.html#PGTRGM-FUNC-TABLE" title="表F.24 pg_trgm関数">表 F.24</a>に、演算子を<a class="xref" href="pgtrgm.html#PGTRGM-OP-TABLE" title="表F.25 pg_trgm演算子">表 F.25</a>に示します。
+  </p><div class="table" id="PGTRGM-FUNC-TABLE"><p class="title"><strong>表F.24 <code class="filename">pg_trgm</code>関数</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;&lt;filename&gt;pg_trgm&lt;/filename&gt; Functions&lt;/title&gt;
+</span><table class="table" summary="pg_trgm関数" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>関数</th><th>戻り値</th><th>説明</th></tr></thead><tbody><tr><td><code class="function">similarity(text, text)</code><a id="id-1.11.7.40.5.3.2.2.1.1.2" class="indexterm"></a></td><td><code class="type">real</code></td><td>
+<span class="original">
+       Returns a number that indicates how similar the two arguments are.
+       The range of the result is zero (indicating that the two strings are
+       completely dissimilar) to one (indicating that the two strings are
+       identical).
+</span>
+２つの引数がどの程度似ているかを示す数値を返します。
+結果はゼロ（２つの文字列がまったく類似していないことを示す）から1（２つの文字列が同一であることを示す）までの範囲です。
+      </td></tr><tr><td><code class="function">show_trgm(text)</code><a id="id-1.11.7.40.5.3.2.2.2.1.2" class="indexterm"></a></td><td><code class="type">text[]</code></td><td>
+<span class="original">
+       Returns an array of all the trigrams in the given string.
+       (In practice this is seldom useful except for debugging.)
+</span>
+与えられた文字列内のすべてのトライグラムからなる配列を返します。
+（実際これはデバッグ時を除いて役に立つことはほぼありません。）
+      </td></tr><tr><td>
+       <code class="function">word_similarity(text, text)</code>
+       <a id="id-1.11.7.40.5.3.2.2.3.1.2" class="indexterm"></a>
+      </td><td><code class="type">real</code></td><td>
+<span class="original">
+       Returns a number that indicates the greatest similarity between
+       the set of trigrams in the first string and any continuous extent
+       of an ordered set of trigrams in the second string.  For details, see
+       the explanation below.
+</span>
+最初の引数文字列中のトライグラムの集合と、二番目の引数文字列中の順序付きトライグラム集合の中で最も類似度の高い連続した範囲の類似度を表す数字を返します。
+詳細は以下の説明をご覧ください。
+      </td></tr><tr><td>
+       <code class="function">strict_word_similarity(text, text)</code>
+       <a id="id-1.11.7.40.5.3.2.2.4.1.2" class="indexterm"></a>
+      </td><td><code class="type">real</code></td><td>
+<span class="original">
+       Same as &lt;function&gt;word_similarity(text, text)&lt;/function&gt;, but forces
+       extent boundaries to match word boundaries.  Since we don't have
+       cross-word trigrams, this function actually returns greatest similarity
+       between first string and any continuous extent of words of the second
+       string.
+</span>
+<code class="function">word_similarity(text, text)</code>と同様ですが、境界の範囲を単語の境界に一致させます。
+単語間にまたがるトライグラムは無いため、この関数は実際のところ最初の文字列と二番目の文字列の単語の任意の連続した範囲との間での最大類似度を返します。
+      </td></tr><tr><td><code class="function">show_limit()</code><a id="id-1.11.7.40.5.3.2.2.5.1.2" class="indexterm"></a></td><td><code class="type">real</code></td><td>
+<span class="original">
+       Returns the current similarity threshold used by the &lt;literal&gt;%&lt;/literal&gt;
+       operator.  This sets the minimum similarity between
+       two words for them to be considered similar enough to
+       be misspellings of each other, for example
+       (&lt;emphasis&gt;deprecated&lt;/emphasis&gt;).
+</span>
+<code class="literal">%</code>演算子で使用される現在の類似度閾値を返します。
+これは、例えば２つの単語それぞれでミススペルがあったとしても類似しているものとみなす、その2つの単語間の最低の類似度を設定します。（<span class="emphasis"><em>廃止予定</em></span>）
+      </td></tr><tr><td><code class="function">set_limit(real)</code><a id="id-1.11.7.40.5.3.2.2.6.1.2" class="indexterm"></a></td><td><code class="type">real</code></td><td>
+<span class="original">
+       Sets the current similarity threshold that is used by the &lt;literal&gt;%&lt;/literal&gt;
+       operator.  The threshold must be between 0 and 1 (default is 0.3).
+       Returns the same value passed in (&lt;emphasis&gt;deprecated&lt;/emphasis&gt;).
+</span>
+<code class="literal">%</code>演算子で使用される現在の類似度閾値を設定します。
+閾値は0から1までの値でなければなりません（デフォルトは0.3です）。
+渡された値と同じ値が返ります。（<span class="emphasis"><em>廃止予定</em></span>）
+      </td></tr></tbody></table></div></div><br class="table-break" /><p>
+<span class="original">
+   Consider the following example:
+</span>
+以下の例を考えます。
+
+</p><pre class="programlisting">
+# SELECT word_similarity('word', 'two words');
+ word_similarity
+-----------------
+             0.8
+(1 row)
+</pre><p>
+
+<span class="original">
+   In the first string, the set of trigrams is
+   &lt;literal&gt;{"  w"," wo","wor","ord","rd "}&lt;/literal&gt;.
+   In the second string, the ordered set of trigrams is
+   &lt;literal&gt;{"  t"," tw","two","wo ","  w"," wo","wor","ord","rds","ds "}&lt;/literal&gt;.
+   The most similar extent of an ordered set of trigrams in the second string
+   is &lt;literal&gt;{"  w"," wo","wor","ord"}&lt;/literal&gt;, and the similarity is
+   &lt;literal&gt;0.8&lt;/literal&gt;.
+</span>
+最初の文字列では、トライグラムの集合は<code class="literal">{"  w"," wo","wor","ord","rd "}</code>です。
+二番目の文字列では、順序付きトライグラムの集合は<code class="literal">{"  t"," tw",two,"wo ","  w"," wo","wor","ord","rds", "ds "}</code>です。
+二番目の文字列中の順序付きトライグラムの集合の中で最も類似度の高い範囲は、<code class="literal">{"  w"," wo","wor","ord"}</code>で、類似度は<code class="literal">0.8</code>となります。
+  </p><p>
+<span class="original">
+   This function returns a value that can be approximately understood as the
+   greatest similarity between the first string and any substring of the second
+   string.  However, this function does not add padding to the boundaries of
+   the extent.  Thus, the number of additional characters present in the
+   second string is not considered, except for the mismatched word boundaries.
+</span>
+この関数が返す値は、最初の文字列と、二番目の文字列の部分文字列の間の最大の類似度を表す値であると、概ね解釈できます。
+しかし、この関数は範囲の境界に対してパディングを行いません。
+ですから、一致しない語の境界を除くと、二番目の文字列中に存在する追加文字数は考慮されません。
+  </p><p>
+<span class="original">
+   At the same time, &lt;function&gt;strict_word_similarity(text, text)&lt;/function&gt;
+   selects an extent of words in the second string.  In the example above,
+   &lt;function&gt;strict_word_similarity(text, text)&lt;/function&gt; would select the
+   extent of a single word &lt;literal&gt;'words'&lt;/literal&gt;, whose set of trigrams is
+   &lt;literal&gt;{"  w"," wo","wor","ord","rds","ds "}&lt;/literal&gt;.
+</span>
+一方で、<code class="function">strict_word_similarity(text, text)</code>は二番目の文字列の単語の範囲を選択します。
+上記の例で<code class="function">strict_word_similarity(text, text)</code>は単語<code class="literal">'words'</code>の範囲を選択して、そのトライグラム集合は<code class="literal">{"  w"," wo","wor","ord","rds","ds "}</code>になるでしょう。
+</p><pre class="programlisting">
+# SELECT strict_word_similarity('word', 'two words'), similarity('word', 'words');
+ strict_word_similarity | similarity
+------------------------+------------
+               0.571429 |   0.571429
+(1 row)
+</pre><p>
+  </p><p>
+<span class="original">
+   Thus, the &lt;function&gt;strict_word_similarity(text, text)&lt;/function&gt; function
+   is useful for finding the similarity to whole words, while
+   &lt;function&gt;word_similarity(text, text)&lt;/function&gt; is more suitable for
+   finding the similarity for parts of words.
+</span>
+このように<code class="function">strict_word_similarity(text, text)</code>関数は単語の並び全体の類似度を求めるのに有益で、対して、<code class="function">word_similarity(text, text)</code>は単語の並びの一部の類似度を求めるのにより適しています。
+  </p><div class="table" id="PGTRGM-OP-TABLE"><p class="title"><strong>表F.25 <code class="filename">pg_trgm</code>演算子</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;&lt;filename&gt;pg_trgm&lt;/filename&gt; Operators&lt;/title&gt;
+</span><table class="table" summary="pg_trgm演算子" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>演算子</th><th>戻り値</th><th>説明</th></tr></thead><tbody><tr><td><code class="type">text</code> <code class="literal">%</code> <code class="type">text</code></td><td><code class="type">boolean</code></td><td>
+<span class="original">
+       Returns &lt;literal&gt;true&lt;/literal&gt; if its arguments have a similarity that is
+       greater than the current similarity threshold set by
+       &lt;varname&gt;pg_trgm.similarity_threshold&lt;/varname&gt;.
+</span>
+２つの引数が<code class="varname">pg_trgm.similarity_threshold</code>で設定された類似度閾値以上の類似度を持つ場合<code class="literal">true</code>を返します。
+      </td></tr><tr><td><code class="type">text</code> <code class="literal">&lt;%</code> <code class="type">text</code></td><td><code class="type">boolean</code></td><td>
+<span class="original">
+       Returns &lt;literal&gt;true&lt;/literal&gt; if the similarity between the trigram
+       set in the first argument and a continuous extent of an ordered trigram
+       set in the second argument is greater than the current word similarity
+       threshold set by &lt;varname&gt;pg_trgm.word_similarity_threshold&lt;/varname&gt;
+       parameter.
+</span>
+最初の引数中のトライグラムの集合と、二番目の引数中の順序付きトライグラム集合の中の範囲の類似度が、<code class="varname">pg_trgm.word_similarity_threshold</code>引数で設定した現在の語類似度の閾値よりも高い場合に<code class="literal">true</code>を返します。
+      </td></tr><tr><td><code class="type">text</code> <code class="literal">%&gt;</code> <code class="type">text</code></td><td><code class="type">boolean</code></td><td>
+<span class="original">
+       Commutator of the &lt;literal&gt;&amp;lt;%&lt;/literal&gt; operator.
+</span>
+<code class="literal">&lt;%</code>演算子の交代演算子です。
+      </td></tr><tr><td><code class="type">text</code> <code class="literal">&lt;&lt;%</code> <code class="type">text</code></td><td><code class="type">boolean</code></td><td>
+<span class="original">
+       Returns &lt;literal&gt;true&lt;/literal&gt; if its second argument has a continuous
+       extent of an ordered trigram set that matches word boundaries,
+       and its similarity to the trigram set of the first argument is greater
+       than the current strict word similarity threshold set by the
+       &lt;varname&gt;pg_trgm.strict_word_similarity_threshold&lt;/varname&gt; parameter.
+</span>
+二番目の引数が単語の境界と一致する順序付きトライグラム集合の連続した範囲を持っていて、かつ、最初の引数のトライグラム集合に対する類似度が<code class="varname">pg_trgm.strict_word_similarity_threshold</code>で設定される現在の厳密な単語類似度の閾値より大きい場合、<code class="literal">true</code>を返します。
+      </td></tr><tr><td><code class="type">text</code> <code class="literal">%&gt;&gt;</code> <code class="type">text</code></td><td><code class="type">boolean</code></td><td>
+<span class="original">
+       Commutator of the &lt;literal&gt;&amp;lt;&amp;lt;%&lt;/literal&gt; operator.
+</span>
+<code class="literal">&lt;&lt;%</code>演算子の交代演算子です。
+      </td></tr><tr><td><code class="type">text</code> <code class="literal">&lt;-&gt;</code> <code class="type">text</code></td><td><code class="type">real</code></td><td>
+<span class="original">
+       Returns the &lt;quote&gt;distance&lt;/quote&gt; between the arguments, that is
+       one minus the &lt;function&gt;similarity()&lt;/function&gt; value.
+</span>
+引数間の<span class="quote">「<span class="quote">距離</span>」</span>、この場合は1 - <code class="function">similarity()</code>の値を返します。
+      </td></tr><tr><td>
+       <code class="type">text</code> <code class="literal">&lt;&lt;-&gt;</code> <code class="type">text</code>
+      </td><td><code class="type">real</code></td><td>
+<span class="original">
+       Returns the &lt;quote&gt;distance&lt;/quote&gt; between the arguments, that is
+       one minus the &lt;function&gt;word_similarity()&lt;/function&gt; value.
+</span>
+引数間の<span class="quote">「<span class="quote">距離</span>」</span>、この場合は1 - <code class="function">word_similarity()</code>の値を返します。
+      </td></tr><tr><td>
+       <code class="type">text</code> <code class="literal">&lt;-&gt;&gt;</code> <code class="type">text</code>
+      </td><td><code class="type">real</code></td><td>
+<span class="original">
+       Commutator of the &lt;literal&gt;&amp;lt;&amp;lt;-&amp;gt;&lt;/literal&gt; operator.
+</span>
+<code class="literal">&lt;&lt;-&gt;</code>演算子の交代演算子です。
+      </td></tr><tr><td>
+       <code class="type">text</code> <code class="literal">&lt;&lt;&lt;-&gt;</code> <code class="type">text</code>
+      </td><td><code class="type">real</code></td><td>
+<span class="original">
+       Returns the &lt;quote&gt;distance&lt;/quote&gt; between the arguments, that is
+       one minus the &lt;function&gt;strict_word_similarity()&lt;/function&gt; value.
+</span>
+引数間の<span class="quote">「<span class="quote">距離</span>」</span>、この場合は1 - <code class="function">strict_word_similarity()</code>の値を返します。
+      </td></tr><tr><td>
+       <code class="type">text</code> <code class="literal">&lt;-&gt;&gt;&gt;</code> <code class="type">text</code>
+      </td><td><code class="type">real</code></td><td>
+<span class="original">
+       Commutator of the &lt;literal&gt;&amp;lt;&amp;lt;&amp;lt;-&amp;gt;&lt;/literal&gt; operator.
+</span>
+<code class="literal">&lt;&lt;&lt;-&gt;</code>演算子の交代演算子です。
+      </td></tr></tbody></table></div></div><br class="table-break" /></div><div class="sect2" id="id-1.11.7.40.6"><div class="titlepage"><div><div><h3 class="title">F.31.3. GUCパラメータ</h3></div></div></div><span class="original">
+  &lt;title&gt;GUC Parameters&lt;/title&gt;
+</span><div class="variablelist"><dl class="variablelist"><dt id="GUC-PGTRGM-SIMILARITY-THRESHOLD"><span class="term">
+     <code class="varname">pg_trgm.similarity_threshold</code> (<code class="type">real</code>)
+     <a id="id-1.11.7.40.6.2.1.1.3" class="indexterm"></a>
+    </span></dt><dd><p>
+<span class="original">
+      Sets the current similarity threshold that is used by the &lt;literal&gt;%&lt;/literal&gt;
+      operator.  The threshold must be between 0 and 1 (default is 0.3).
+</span>
+<code class="literal">%</code>演算子が使用する現在の類似度閾値を設定します。
+閾値は0から1の間でなければなりません。（デフォルトは0.3です）
+     </p></dd><dt id="GUC-PGTRGM-WORD-SIMILARITY-THRESHOLD"><span class="term">
+      <code class="varname">pg_trgm.word_similarity_threshold</code> (<code class="type">real</code>)
+      <a id="id-1.11.7.40.6.2.2.1.3" class="indexterm"></a>
+     </span></dt><dd><p>
+<span class="original">
+       Sets the current word similarity threshold that is used by
+       &lt;literal&gt;&amp;lt;%&lt;/literal&gt; and &lt;literal&gt;%&amp;gt;&lt;/literal&gt; operators.  The threshold
+       must be between 0 and 1 (default is 0.6).
+</span>
+<code class="literal">&lt;%</code>と<code class="literal">%&gt;</code><code class="literal">%</code>演算子が使用する現在の語類似度閾値を設定します。
+閾値は0から1の間でなければなりません。（デフォルトは0.6です）
+      </p></dd></dl></div></div><div class="sect2" id="id-1.11.7.40.7"><div class="titlepage"><div><div><h3 class="title">F.31.4. インデックスサポート</h3></div></div></div><span class="original">
+  &lt;title&gt;Index Support&lt;/title&gt;
+</span><p>
+<span class="original">
+   The &lt;filename&gt;pg_trgm&lt;/filename&gt; module provides GiST and GIN index
+   operator classes that allow you to create an index over a text column for
+   the purpose of very fast similarity searches.  These index types support
+   the above-described similarity operators, and additionally support
+   trigram-based index searches for &lt;literal&gt;LIKE&lt;/literal&gt;, &lt;literal&gt;ILIKE&lt;/literal&gt;,
+   &lt;literal&gt;~&lt;/literal&gt; and &lt;literal&gt;~*&lt;/literal&gt; queries.  (These indexes do not
+   support equality nor simple comparison operators, so you may need a
+   regular B-tree index too.)
+</span>
+<code class="literal">pg_trgm</code>モジュールは、テキスト列全体に非常に高速な類似度検索を行うためのインデックスを作成することができるように、GiSTおよびGINインデックス演算子クラスを提供します。
+これらのインデックス種類は上記類似度演算子をサポートし、さらに<code class="literal">LIKE</code>、<code class="literal">ILIKE</code>、<code class="literal">~</code>および<code class="literal">~*</code>問い合わせにおけるトライグラムを基にしたインデックス検索をサポートします。
+（これらのインデックスは等価性や単純な比較演算子をサポートしません。ですので通常のB-treeインデックスも必要になるかもしれません。）
+  </p><p>
+<span class="original">
+   Example:
+</span>
+例：
+
+</p><pre class="programlisting">
+CREATE TABLE test_trgm (t text);
+CREATE INDEX trgm_idx ON test_trgm USING GIST (t gist_trgm_ops);
+</pre><p>
+<span class="original">
+or
+</span>
+または
+</p><pre class="programlisting">
+CREATE INDEX trgm_idx ON test_trgm USING GIN (t gin_trgm_ops);
+</pre><p>
+  </p><p>
+<span class="original">
+   At this point, you will have an index on the &lt;structfield&gt;t&lt;/structfield&gt; column that
+   you can use for similarity searching.  A typical query is
+</span>
+この段階で、テキスト列<code class="structfield">t</code>に類似度検索で使用可能なインデックスがあります。
+典型的な問い合わせを以下に示します。
+</p><pre class="programlisting">
+SELECT t, similarity(t, '<em class="replaceable"><code>word</code></em>') AS sml
+  FROM test_trgm
+  WHERE t % '<em class="replaceable"><code>word</code></em>'
+  ORDER BY sml DESC, t;
+</pre><p>
+<span class="original">
+   This will return all values in the text column that are sufficiently
+   similar to &lt;replaceable&gt;word&lt;/replaceable&gt;, sorted from best match to worst.  The
+   index will be used to make this a fast operation even over very large data
+   sets.
+</span>
+これは、<em class="replaceable"><code>word</code></em>に十分似たテキスト列の値をすべて、類似度の高い順番に返します。
+インデックスは非常に大規模なデータ群に対する高速操作を行うために使用されます。
+  </p><p>
+<span class="original">
+   A variant of the above query is
+</span>
+以下は上の問い合わせを変形させたものです。
+</p><pre class="programlisting">
+SELECT t, t &lt;-&gt; '<em class="replaceable"><code>word</code></em>' AS dist
+  FROM test_trgm
+  ORDER BY dist LIMIT 10;
+</pre><p>
+<span class="original">
+   This can be implemented quite efficiently by GiST indexes, but not
+   by GIN indexes.  It will usually beat the first formulation when only
+   a small number of the closest matches is wanted.
+</span>
+これはGINインデックスではなくGiSTインデックスにより非常に効率的に実装することができます。
+通常、類似度が高いものの中から少ない個数のみを必要とする場合、1番目の式よりも効率的です。
+  </p><p>
+<span class="original">
+   Also you can use an index on the &lt;structfield&gt;t&lt;/structfield&gt; column for word
+   similarity or strict word similarity.  Typical queries are:
+</span>
+また、単語の類似度あるいは厳密な単語の類似度に対して<code class="structfield">t</code>列のインデックスを使うことができます。
+典型的な問い合わせは、
+</p><pre class="programlisting">
+SELECT t, word_similarity('<em class="replaceable"><code>word</code></em>', t) AS sml
+  FROM test_trgm
+  WHERE '<em class="replaceable"><code>word</code></em>' &lt;% t
+  ORDER BY sml DESC, t;
+</pre><p>
+<span class="original">
+   and
+</span>
+および
+</p><pre class="programlisting">
+SELECT t, strict_word_similarity('<em class="replaceable"><code>word</code></em>', t) AS sml
+  FROM test_trgm
+  WHERE '<em class="replaceable"><code>word</code></em>' &lt;&lt;% t
+  ORDER BY sml DESC, t;
+</pre><p>
+です。
+<span class="original">
+   This will return all values in the text column for which there is a
+   continuous extent in the corresponding ordered trigram set that is
+   sufficiently similar to the trigram set of &lt;replaceable&gt;word&lt;/replaceable&gt;,
+   sorted from best match to worst.  The index will be used to make this
+   a fast operation even over very large data sets.
+</span>
+これは、<em class="replaceable"><code>word</code></em>のトライグラム集合に十分似ている順序付きトライグラム集合に対応する連続した領域が存在するテキスト列中のすべての値を返します。
+結果は、最も似ているものから、最も似ていないものへの順にソートされます。
+インデックスは、非常に大きなデータ集合に対しても高速な操作ができるようにするために使われます。
+  </p><p>
+<span class="original">
+   Possible variants of the above queries are:
+</span>
+いくつか例を示します。
+</p><pre class="programlisting">
+SELECT t, '<em class="replaceable"><code>word</code></em>' &lt;&lt;-&gt; t AS dist
+  FROM test_trgm
+  ORDER BY dist LIMIT 10;
+</pre><p>
+<span class="original">
+   and
+</span>
+</p><pre class="programlisting">
+SELECT t, '<em class="replaceable"><code>word</code></em>' &lt;&lt;&lt;-&gt; t AS dist
+  FROM test_trgm
+  ORDER BY dist LIMIT 10;
+</pre><p>
+<span class="original">
+   This can be implemented quite efficiently by GiST indexes, but not
+   by GIN indexes.
+</span>
+これはGINインデックスではなく、GiSTインデックスによって極めて効率的に実装できます。
+  </p><p>
+<span class="original">
+   Beginning in &lt;productname&gt;PostgreSQL&lt;/productname&gt; 9.1, these index types also support
+   index searches for &lt;literal&gt;LIKE&lt;/literal&gt; and &lt;literal&gt;ILIKE&lt;/literal&gt;, for example
+</span>
+<span class="productname">PostgreSQL</span> 9.1から、これらのインデックス種類は<code class="literal">LIKE</code>および<code class="literal">ILIKE</code>におけるインデックス検索をサポートします。
+以下に例を示します。
+</p><pre class="programlisting">
+SELECT * FROM test_trgm WHERE t LIKE '%foo%bar';
+</pre><p>
+<span class="original">
+   The index search works by extracting trigrams from the search string
+   and then looking these up in the index.  The more trigrams in the search
+   string, the more effective the index search is.  Unlike B-tree based
+   searches, the search string need not be left-anchored.
+</span>
+インデックス検索は、検索文字列からトライグラムを抽出し、それらをインデックスから検索することによって動作します。
+検索文字列内のトライグラムが多ければ、よりインデックス検索が効率的になります。
+B-treeを基にした検索とは異なり、検索文字列の左側が固定されている必要はありません。
+  </p><p>
+<span class="original">
+   Beginning in &lt;productname&gt;PostgreSQL&lt;/productname&gt; 9.3, these index types also support
+   index searches for regular-expression matches
+   (&lt;literal&gt;~&lt;/literal&gt; and &lt;literal&gt;~*&lt;/literal&gt; operators), for example
+</span>
+<span class="productname">PostgreSQL</span> 9.3から、これらの種類のインデックスは正規表現一致（<code class="literal">~</code>および<code class="literal">~*</code>演算子）に対するインデックス検索もサポートします。
+以下に例を示します。
+</p><pre class="programlisting">
+SELECT * FROM test_trgm WHERE t ~ '(foo|bar)';
+</pre><p>
+<span class="original">
+   The index search works by extracting trigrams from the regular expression
+   and then looking these up in the index.  The more trigrams that can be
+   extracted from the regular expression, the more effective the index search
+   is.  Unlike B-tree based searches, the search string need not be
+   left-anchored.
+</span>
+インデックス検索は、正規表現からトライグラムを抽出し、それらをインデックスから検索することで動作します。
+より多くのトライグラムが正規表現から抽出される場合、インデックス検索はより効率的になります。
+B-treeを基にした検索と異なり、検索文字列は先頭一致である必要はありません。
+  </p><p>
+<span class="original">
+   For both &lt;literal&gt;LIKE&lt;/literal&gt; and regular-expression searches, keep in mind
+   that a pattern with no extractable trigrams will degenerate to a full-index
+   scan.
+</span>
+<code class="literal">LIKE</code>および正規表現検索の両方で、トライグラムが抽出されないパターンでは完全インデックススキャンより性能が落ちることに注意してください。
+  </p><p>
+<span class="original">
+   The choice between GiST and GIN indexing depends on the relative
+   performance characteristics of GiST and GIN, which are discussed elsewhere.
+</span>
+GiSTまたはGINインデックスの選択は、他で説明されるGiSTとGINの相対的な性能特性に依存します。
+これについては、別途議論されています。
+  </p></div><div class="sect2" id="id-1.11.7.40.8"><div class="titlepage"><div><div><h3 class="title">F.31.5. テキスト検索の統合</h3></div></div></div><span class="original">
+  &lt;title&gt;Text Search Integration&lt;/title&gt;
+</span><p>
+<span class="original">
+   Trigram matching is a very useful tool when used in conjunction
+   with a full text index.  In particular it can help to recognize
+   misspelled input words that will not be matched directly by the
+   full text search mechanism.
+</span>
+トライグラム一致は全文テキストインデックスと一緒に使用する時、非常に有用なツールです。
+特に、全文検索機構では直接一致しない、ミススペルがある入力単語の認識を行うために役に立ちます。
+  </p><p>
+<span class="original">
+   The first step is to generate an auxiliary table containing all
+   the unique words in the documents:
+</span>
+第一段階は文書内で一意な単語からなる補助テーブルを生成することです。
+
+</p><pre class="programlisting">
+CREATE TABLE words AS SELECT word FROM
+        ts_stat('SELECT to_tsvector(''simple'', bodytext) FROM documents');
+</pre><p>
+
+<span class="original">
+   where &lt;structname&gt;documents&lt;/structname&gt; is a table that has a text field
+   &lt;structfield&gt;bodytext&lt;/structfield&gt; that we wish to search.  The reason for using
+   the &lt;literal&gt;simple&lt;/literal&gt; configuration with the &lt;function&gt;to_tsvector&lt;/function&gt;
+   function, instead of using a language-specific configuration,
+   is that we want a list of the original (unstemmed) words.
+</span>
+ここで<code class="structname">documents</code>は、検索対象の<code class="structfield">bodytext</code>テキストフィールドを持つテーブルです。
+言語固有の設定を使用するのではなく、<code class="function">to_tsvector</code>関数で<code class="literal">simple</code>設定を使用する理由は、元の（語幹抽出されていない）単語のリストが欲しいためです。
+  </p><p>
+<span class="original">
+   Next, create a trigram index on the word column:
+</span>
+次にword列にトライグラムインデックスを作成します。
+
+</p><pre class="programlisting">
+CREATE INDEX words_idx ON words USING GIN (word gin_trgm_ops);
+</pre><p>
+
+<span class="original">
+   Now, a &lt;command&gt;SELECT&lt;/command&gt; query similar to the previous example can
+   be used to suggest spellings for misspelled words in user search terms.
+   A useful extra test is to require that the selected words are also of
+   similar length to the misspelled word.
+</span>
+これで、上の例に似た<code class="literal">SELECT</code>問い合わせを使用して、ユーザの検索語内でミススペルのある単語を提示できるようになります。
+有用な追加された試験は、選択された単語の長さがミススペルのある単語の長さとほぼ同じになることを要求するものです。
+  </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+    Since the &lt;structname&gt;words&lt;/structname&gt; table has been generated as a separate,
+    static table, it will need to be periodically regenerated so that
+    it remains reasonably up-to-date with the document collection.
+    Keeping it exactly current is usually unnecessary.
+</span>
+<code class="structname">words</code>テーブルは別に生成された静的なテーブルですので、文書群の更新に合理的に追従できるよう定期的に再生成する必要があります。
+正確に最新状態を維持する必要性は通常ありません。
+   </p></div></div><div class="sect2" id="id-1.11.7.40.9"><div class="titlepage"><div><div><h3 class="title">F.31.6. 参考</h3></div></div></div><span class="original">
+  &lt;title&gt;References&lt;/title&gt;
+</span><p>
+<span class="original">
+   GiST Development Site
+</span>
+GiST開発サイト
+   <a class="ulink" href="http://www.sai.msu.su/~megera/postgres/gist/" target="_top">http://www.sai.msu.su/~megera/postgres/gist/</a>
+  </p><p>
+<span class="original">
+   Tsearch2 Development Site
+</span>
+Tsearch2開発サイト
+   <a class="ulink" href="http://www.sai.msu.su/~megera/postgres/gist/tsearch/V2/" target="_top">http://www.sai.msu.su/~megera/postgres/gist/tsearch/V2/</a>
+  </p></div><div class="sect2" id="id-1.11.7.40.10"><div class="titlepage"><div><div><h3 class="title">F.31.7. 作者</h3></div></div></div><span class="original">
+  &lt;title&gt;Authors&lt;/title&gt;
+</span><p>
+   Oleg Bartunov <code class="email">&lt;<a class="email" href="mailto:oleg@sai.msu.su">oleg@sai.msu.su</a>&gt;</code>, Moscow, Moscow University, Russia
+  </p><p>
+   Teodor Sigaev <code class="email">&lt;<a class="email" href="mailto:teodor@sigaev.ru">teodor@sigaev.ru</a>&gt;</code>, Moscow, Delta-Soft Ltd.,Russia
+  </p><p>
+   Alexander Korotkov <code class="email">&lt;<a class="email" href="mailto:a.korotkov@postgrespro.ru">a.korotkov@postgrespro.ru</a>&gt;</code>, Moscow, Postgres Professional, Russia
+  </p><p>
+<span class="original">
+   Documentation: Christopher Kings-Lynne
+</span>
+文書作成: Christopher Kings-Lynne
+  </p><p>
+<span class="original">
+   This module is sponsored by Delta-Soft Ltd., Moscow, Russia.
+</span>
+本モジュールはロシアモスクワのDelta-Soft Ltd.による後援です。
+  </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="pgstattuple.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="contrib.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="pgvisibility.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">F.30. pgstattuple </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> F.32. pg_visibility</td></tr></table></div></body></html>

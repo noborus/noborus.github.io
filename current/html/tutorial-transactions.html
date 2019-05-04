@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>3.4. トランザクション</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="tutorial-fk.html" title="3.3. 外部キー" /><link rel="next" href="tutorial-window.html" title="3.5. ウィンドウ関数" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="tutorial-advanced.html" title="第3章 高度な諸機能">第3章 高度な諸機能</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      tutorial-transactions.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="tutorial-fk.html" title="3.3. 外部キー">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="tutorial-advanced.html" title="第3章 高度な諸機能">上へ</a></td><td width="60%" align="center">3.4. トランザクション</td><td width="20%" align="right"> <a accesskey="n" href="tutorial-window.html" title="3.5. ウィンドウ関数">次へ</a></td></tr></table><hr /></div><div class="sect1" id="TUTORIAL-TRANSACTIONS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">3.4. トランザクション</h2></div></div></div><span class="original">
+   &lt;title&gt;Transactions&lt;/title&gt;
+</span><a id="id-1.4.5.5.2" class="indexterm"></a><p>
+<span class="original">
+    &lt;firstterm&gt;Transactions&lt;/firstterm&gt; are a fundamental concept of all database
+    systems.  The essential point of a transaction is that it bundles
+    multiple steps into a single, all-or-nothing operation.  The intermediate
+    states between the steps are not visible to other concurrent transactions,
+    and if some failure occurs that prevents the transaction from completing,
+    then none of the steps affect the database at all.
+</span>
+<em class="firstterm">トランザクション</em>は全てのデータベースシステムで基礎となる概念です。
+トランザクションの基本的要点は複数の手順を単一の「全てかなしか」の操作にまとめ上げることです。
+手順の進行途中の状態は他の同時実行中のトランザクションからは見えません。
+トランザクションの完結の障害となる何らかのエラーが起こると、それらの手順はどれもデータベースにまったく影響を与えません。
+   </p><p>
+<span class="original">
+    For example, consider a bank database that contains balances for various
+    customer accounts, as well as total deposit balances for branches.
+    Suppose that we want to record a payment of $100.00 from Alice's account
+    to Bob's account.  Simplifying outrageously, the SQL commands for this
+    might look like:
+</span>
+例を挙げましょう。ある銀行のデータベースでそこに多数の顧客の口座の残高と支店の総預金残高が記録されているとします。
+アリスの口座からボブの口座に$100.00の送金があったことを記録したいとします。
+ちょっと乱暴に単純化すると、このSQLは次のようになります。
+
+</p><pre class="programlisting">
+UPDATE accounts SET balance = balance - 100.00
+    WHERE name = 'Alice';
+UPDATE branches SET balance = balance - 100.00
+    WHERE name = (SELECT branch_name FROM accounts WHERE name = 'Alice');
+UPDATE accounts SET balance = balance + 100.00
+    WHERE name = 'Bob';
+UPDATE branches SET balance = balance + 100.00
+    WHERE name = (SELECT branch_name FROM accounts WHERE name = 'Bob');
+</pre><p>
+   </p><p>
+<span class="original">
+    The details of these commands are not important here; the important
+    point is that there are several separate updates involved to accomplish
+    this rather simple operation.  Our bank's officers will want to be
+    assured that either all these updates happen, or none of them happen.
+    It would certainly not do for a system failure to result in Bob
+    receiving $100.00 that was not debited from Alice.  Nor would Alice long
+    remain a happy customer if she was debited without Bob being credited.
+    We need a guarantee that if something goes wrong partway through the
+    operation, none of the steps executed so far will take effect.  Grouping
+    the updates into a &lt;firstterm&gt;transaction&lt;/firstterm&gt; gives us this guarantee.
+    A transaction is said to be &lt;firstterm&gt;atomic&lt;/firstterm&gt;: from the point of
+    view of other transactions, it either happens completely or not at all.
+</span>
+書かれているSQLコマンドの詳しいことについて、ここでは重要でありません。
+重要な点は、この単純な操作の目的を果たすため、複数の独立した更新手続きが関わっていることです。
+銀行職員としてはこれら全ての更新が行われるかもしくはまったく行われないのかいずれかの確証が必要です。
+$100.00がアリスの口座から引き落とされずにボブの口座に振り込まれるようなシステムの不備があってはなりません。
+一方、$100.00がボブに振り込まれないでアリスの口座から引き落とされたとしたら、アリスはこの銀行のお得意様ではなくなるでしょうね。
+操作の途中で一部不都合が発生した場合、結果に影響を与えるいかなる手続きも実行されないという確証が必要です。
+更新手続きを<em class="firstterm">トランザクション</em>にグループ化すると、その確証が得られます。
+あるトランザクションは他のトランザクションから見て完結するかまったく起こらなかったかという見方から<em class="firstterm">原子的</em>と呼ばれます。
+   </p><p>
+<span class="original">
+    We also want a
+    guarantee that once a transaction is completed and acknowledged by
+    the database system, it has indeed been permanently recorded
+    and won't be lost even if a crash ensues shortly thereafter.
+    For example, if we are recording a cash withdrawal by Bob,
+    we do not want any chance that the debit to his account will
+    disappear in a crash just after he walks out the bank door.
+    A transactional database guarantees that all the updates made by
+    a transaction are logged in permanent storage (i.e., on disk) before
+    the transaction is reported complete.
+</span>
+もう一方で、いったんトランザクションが完結しデータベースシステムに承認された場合は、確実に恒久的に保存され、たとえ直後にクラッシュが起こったとしても記録は失われないという確証も必要です。
+例えばボブが自分の口座から現金を引き落として店舗から立ち去った直後にボブの口座からの引き落とし記録がシステムのクラッシュで消えてしまうことは受け入れられません。
+トランザクションが実装されているデータベースでは、あるトランザクションによる全ての更新がそのトランザクションを完結したと通知を行う前に永続的記録装置（すなわちディスク上）にログを書き込むことで保証しています。
+   </p><p>
+<span class="original">
+    Another important property of transactional databases is closely
+    related to the notion of atomic updates: when multiple transactions
+    are running concurrently, each one should not be able to see the
+    incomplete changes made by others.  For example, if one transaction
+    is busy totalling all the branch balances, it would not do for it
+    to include the debit from Alice's branch but not the credit to
+    Bob's branch, nor vice versa.  So transactions must be all-or-nothing
+    not only in terms of their permanent effect on the database, but
+    also in terms of their visibility as they happen.  The updates made
+    so far by an open transaction are invisible to other transactions
+    until the transaction completes, whereupon all the updates become
+    visible simultaneously.
+</span>
+トランザクション実装のデータベースの別の重要な特性は、原子的更新という概念に深く関係しています。
+複数のトランザクションが同時に動作している時、それぞれのトランザクションは別のトランザクションが行っている未完了の変更を見ることができてはなりません。
+例えば、あるトランザクションがすべての支店の残高を集計する作業を行なっているとき、アリスの口座がある支店からの引き落としを勘定に入れるけれども、ボブの口座がある支店への振り込みを勘定に入れないというのは受け入れられませんし、その逆も駄目です。
+つまり、データベース上での恒久的効果という意味のみならず、一連の操作の過程で可視性ということにおいてもトランザクションは「すべて」か「なし」かでなければなりません。
+作業中のトランザクションによる更新は、他のトランザクションからはトランザクションが完結するまで不可視です。
+そのトランザクションが完結したその時点で、トランザクションが行った更新の全てが見えるようになります。
+   </p><p>
+<span class="original">
+    In &lt;productname&gt;PostgreSQL&lt;/productname&gt;, a transaction is set up by surrounding
+    the SQL commands of the transaction with
+    &lt;command&gt;BEGIN&lt;/command&gt; and &lt;command&gt;COMMIT&lt;/command&gt; commands.  So our banking
+    transaction would actually look like:
+</span>
+<span class="productname">PostgreSQL</span>ではトランザクションを構成するSQLコマンドを<code class="command">BEGIN</code>と<code class="command">COMMIT</code>で囲んで設定します。
+従って、この銀行取り引きのトランザクションの実際は次のようになります。
+
+</p><pre class="programlisting">
+BEGIN;
+UPDATE accounts SET balance = balance - 100.00
+    WHERE name = 'Alice';
+<span class="original">
+&amp;#045;- etc etc
+</span>
+-- 等々
+COMMIT;
+</pre><p>
+   </p><p>
+<span class="original">
+    If, partway through the transaction, we decide we do not want to
+    commit (perhaps we just noticed that Alice's balance went negative),
+    we can issue the command &lt;command&gt;ROLLBACK&lt;/command&gt; instead of
+    &lt;command&gt;COMMIT&lt;/command&gt;, and all our updates so far will be canceled.
+</span>
+トランザクション処理の途中でコミットを行わない（アリスの口座残高が足りなかったような場合）と判断した場合は、<code class="command">COMMIT</code>ではなく<code class="command">ROLLBACK</code>を使用して行った全ての更新を破棄します。
+   </p><p>
+<span class="original">
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; actually treats every SQL statement as being
+    executed within a transaction.  If you do not issue a &lt;command&gt;BEGIN&lt;/command&gt;
+    command,
+    then each individual statement has an implicit &lt;command&gt;BEGIN&lt;/command&gt; and
+    (if successful) &lt;command&gt;COMMIT&lt;/command&gt; wrapped around it.  A group of
+    statements surrounded by &lt;command&gt;BEGIN&lt;/command&gt; and &lt;command&gt;COMMIT&lt;/command&gt;
+    is sometimes called a &lt;firstterm&gt;transaction block&lt;/firstterm&gt;.
+</span>
+<span class="productname">PostgreSQL</span>は実際全てのSQL文をトランザクション内で実行するようになっています。
+<code class="command">BEGIN</code>を発行しない場合、それぞれの文は暗黙的に<code class="command">BEGIN</code>が付いているとみなし、（成功すれば）<code class="command">COMMIT</code>で囲まれているものとします。
+<code class="command">BEGIN</code>と<code class="command">COMMIT</code>で囲まれた文のグループは<em class="firstterm">トランザクションブロック</em>と呼ばれることもあります。
+   </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+     Some client libraries issue &lt;command&gt;BEGIN&lt;/command&gt; and &lt;command&gt;COMMIT&lt;/command&gt;
+     commands automatically, so that you might get the effect of transaction
+     blocks without asking.  Check the documentation for the interface
+     you are using.
+</span>
+いくつかのクライアントライブラリは自動的に<code class="command">BEGIN</code>と<code class="command">COMMIT</code>コマンドを発行し、ユーザに尋ねることなくトランザクションブロックが有効になります。
+使用しているインタフェースのドキュメントで確認してください。
+    </p></div><p>
+<span class="original">
+    It's possible to control the statements in a transaction in a more
+    granular fashion through the use of &lt;firstterm&gt;savepoints&lt;/firstterm&gt;.  Savepoints
+    allow you to selectively discard parts of the transaction, while
+    committing the rest.  After defining a savepoint with
+    &lt;command&gt;SAVEPOINT&lt;/command&gt;, you can if needed roll back to the savepoint
+    with &lt;command&gt;ROLLBACK TO&lt;/command&gt;.  All the transaction's database changes
+    between defining the savepoint and rolling back to it are discarded, but
+    changes earlier than the savepoint are kept.
+</span>
+<em class="firstterm">セーブポイント</em>を使用することで、トランザクション内で文を、より粒度を細かく制御することが可能になります。
+セーブポイントは、トランザクションを構成するある部分を選択的に破棄する一方、破棄されない残りの部分をコミットします。
+<code class="command">SAVEPOINT</code>コマンドでセーブポイントを定義した後、必要であれば<code class="command">ROLLBACK TO</code>コマンドによりセーブポイントまでロールバックできます。
+定義されたセーブポイントとロールバックするポイントとの間の全てのトランザクションのデータベースの変更は破棄されますが、セーブポイント以前の変更は保持されます。
+   </p><p>
+<span class="original">
+    After rolling back to a savepoint, it continues to be defined, so you can
+    roll back to it several times.  Conversely, if you are sure you won't need
+    to roll back to a particular savepoint again, it can be released, so the
+    system can free some resources.  Keep in mind that either releasing or
+    rolling back to a savepoint
+    will automatically release all savepoints that were defined after it.
+</span>
+セーブポイントまでロールバックした後でもセーブポイントは定義されたままです。このため何度でもそこにロールバックできます。
+逆に再度特定のセーブポイントにロールバックする必要がないのであれば、それを解除しシステムリソースを多少とも解放することができます。
+あるセーブポイントを解除したりセーブポイントにロールバックすることにより、自動的にその後に定義されたすべてのセーブポイントが解除されることに注意してください。
+   </p><p>
+<span class="original">
+    All this is happening within the transaction block, so none of it
+    is visible to other database sessions.  When and if you commit the
+    transaction block, the committed actions become visible as a unit
+    to other sessions, while the rolled-back actions never become visible
+    at all.
+</span>
+これら全てはトランザクションブロック内で起こるので、他のデータベースセッションからは何も見えません。
+トランザクションブロックをコミットした場合、他のセッションからはコミットされた行為が1つの単位として見えるようになりますが、ロールバックの行為は決して可視になりません。
+   </p><p>
+<span class="original">
+    Remembering the bank database, suppose we debit $100.00 from Alice's
+    account, and credit Bob's account, only to find later that we should
+    have credited Wally's account.  We could do it using savepoints like
+    this:
+</span>
+銀行のデータベースを思い出してください。アリスの口座から$100.00を引き出してボブの口座に振り込むとします。後になってボブではなくウィリーの口座に振り込むべきだったと気が付きました。この場合セーブポイントを次のように使います。
+
+</p><pre class="programlisting">
+BEGIN;
+UPDATE accounts SET balance = balance - 100.00
+    WHERE name = 'Alice';
+SAVEPOINT my_savepoint;
+UPDATE accounts SET balance = balance + 100.00
+    WHERE name = 'Bob';
+<span class="original">
+&amp;#045;- oops ... forget that and use Wally's account
+</span>
+-- おっと、忘れるところだった。ウィリーの口座を使わなければ。
+ROLLBACK TO my_savepoint;
+UPDATE accounts SET balance = balance + 100.00
+    WHERE name = 'Wally';
+COMMIT;
+</pre><p>
+   </p><p>
+<span class="original">
+    This example is, of course, oversimplified, but there's a lot of control
+    possible in a transaction block through the use of savepoints.
+    Moreover, &lt;command&gt;ROLLBACK TO&lt;/command&gt; is the only way to regain control of a
+    transaction block that was put in aborted state by the
+    system due to an error, short of rolling it back completely and starting
+    again.
+</span>
+この例はもちろん極端に単純化していますが、セーブポイントの使用を通じてトランザクションブロック内で多くの制御を行えることがわかります。
+さらには何らかのエラーでシステムがトランザクションブロックを中断状態にした場合、完全にロールバックして再び開始するのを別とすれば、<code class="command">ROLLBACK TO</code>コマンドがトランザクションブロックの制御を取り戻す唯一の手段です。
+   </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="tutorial-fk.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="tutorial-advanced.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="tutorial-window.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">3.3. 外部キー </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 3.5. ウィンドウ関数</td></tr></table></div></body></html>

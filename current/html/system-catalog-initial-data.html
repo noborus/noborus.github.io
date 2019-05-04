@@ -1,0 +1,521 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>69.2. システムカタログ初期データ</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="system-catalog-declarations.html" title="69.1. システムカタログの宣言ルール" /><link rel="next" href="bki-format.html" title="69.3. BKIファイル形式" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="bki.html" title="第69章 システムカタログの宣言と初期内容">第69章 システムカタログの宣言と初期内容</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      system-catalog-initial-data.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="system-catalog-declarations.html" title="69.1. システムカタログの宣言ルール">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="bki.html" title="第69章 システムカタログの宣言と初期内容">上へ</a></td><td width="60%" align="center">69.2. システムカタログ初期データ</td><td width="20%" align="right"> <a accesskey="n" href="bki-format.html" title="69.3. BKIファイル形式">次へ</a></td></tr></table><hr /></div><div class="sect1" id="SYSTEM-CATALOG-INITIAL-DATA"><div class="titlepage"><div><div><h2 class="title" style="clear: both">69.2. システムカタログ初期データ</h2></div></div></div><span class="original">
+  &lt;title&gt;System Catalog Initial Data&lt;/title&gt;
+</span><p>
+<span class="original">
+   Each catalog that has any manually-created initial data (some do not)
+   has a corresponding &lt;literal&gt;.dat&lt;/literal&gt; file that contains its
+   initial data in an editable format.
+</span>
+手動で生成した初期データを持つ（いくつかのものは持っていません）各々のカタログには、編集可能なデータ形式の初期データを含み、対応する<code class="literal">.dat</code>ファイルがあります。
+  </p><div class="sect2" id="SYSTEM-CATALOG-INITIAL-DATA-FORMAT"><div class="titlepage"><div><div><h3 class="title">69.2.1. データファイル形式</h3></div></div></div><span class="original">
+   &lt;title&gt;Data File Format&lt;/title&gt;
+</span><p>
+<span class="original">
+    Each &lt;literal&gt;.dat&lt;/literal&gt; file contains Perl data structure literals
+    that are simply eval'd to produce an in-memory data structure consisting
+    of an array of hash references, one per catalog row.
+    A slightly modified excerpt from &lt;filename&gt;pg_database.dat&lt;/filename&gt;
+    will demonstrate the key features:
+</span>
+個々の<code class="literal">.dat</code>ファイルにはPerlのデータ構造文字列が含まれます。
+それらは単に評価されることによって1個がカタログの1行に対応するハッシュ参照の配列を含むメモリ上のデータ構造を生成します。
+<code class="filename">pg_database.dat</code>から抜きだしたものに些細な変更を加えたものを使って、鍵となる機能を示します。
+   </p><pre class="programlisting">
+[
+
+# A comment could appear here.
+{ oid =&gt; '1', oid_symbol =&gt; 'TemplateDbOid',
+  descr =&gt; 'database\'s default template',
+  datname =&gt; 'template1', datdba =&gt; 'PGUID', encoding =&gt; 'ENCODING',
+  datcollate =&gt; 'LC_COLLATE', datctype =&gt; 'LC_CTYPE', datistemplate =&gt; 't',
+  datallowconn =&gt; 't', datconnlimit =&gt; '-1', datlastsysoid =&gt; '0',
+  datfrozenxid =&gt; '0', datminmxid =&gt; '1', dattablespace =&gt; '1663',
+  datacl =&gt; '_null_' },
+
+]
+</pre><p>
+<span class="original">
+    Points to note:
+</span>
+特筆すべきポイント：
+   </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+      The overall file layout is: open square bracket, one or more sets of
+      curly braces each of which represents a catalog row, close square
+      bracket.  Write a comma after each closing curly brace.
+</span>
+全体的なファイルレイアウトは次のようになります。
+開き大括弧、カタログの行を表現する一つ以上の中括弧、閉じ大括弧。
+各々の閉じ中括弧の後にはカンマを書きます。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Within each catalog row, write comma-separated
+      &lt;replaceable&gt;key&lt;/replaceable&gt; &lt;literal&gt;=&amp;gt;&lt;/literal&gt;
+      &lt;replaceable&gt;value&lt;/replaceable&gt; pairs.  The
+      allowed &lt;replaceable&gt;key&lt;/replaceable&gt;s are the names of the catalog's
+      columns, plus the metadata keys &lt;literal&gt;oid&lt;/literal&gt;,
+      &lt;literal&gt;oid_symbol&lt;/literal&gt;, and &lt;literal&gt;descr&lt;/literal&gt;.
+      (The use of &lt;literal&gt;oid&lt;/literal&gt; and &lt;literal&gt;oid_symbol&lt;/literal&gt;
+      is described in &lt;xref linkend="system-catalog-oid-assignment"/&gt;
+      below.  &lt;literal&gt;descr&lt;/literal&gt; supplies a description string for
+      the object, which will be inserted
+      into &lt;structname&gt;pg_description&lt;/structname&gt;
+      or &lt;structname&gt;pg_shdescription&lt;/structname&gt; as appropriate.)
+      While the metadata keys are optional, the catalog's defined columns
+      must all be provided, except when the catalog's &lt;literal&gt;.h&lt;/literal&gt;
+      file specifies a default value for the column.
+</span>
+各々のカタログ行にカンマ区切りで<em class="replaceable"><code>key</code></em><code class="literal">=&gt;</code><em class="replaceable"><code>value</code></em>ペアを書きます。
+記述可能な<em class="replaceable"><code>key</code></em>は、カタログのカラムに加えてメタデータキーである<code class="literal">oid</code>、<code class="literal">oid_symbol</code>、<code class="literal">descr</code>です。
+（<code class="literal">oid</code>と<code class="literal">oid_symbol</code>の使い方は後述の<a class="xref" href="system-catalog-initial-data.html#SYSTEM-CATALOG-OID-ASSIGNMENT" title="69.2.2. OIDの割当">69.2.2</a>に説明されています。
+<code class="literal">descr</code>はオブジェクトの説明文字列に使用し、<code class="structname">pg_description</code>か<code class="structname">pg_shdescription</code>の適切な方に挿入されます。）
+メタデータキーは省略可能であるのに対し、カタログの<code class="literal">.h</code>ファイルがカラムのデフォルト値を指定する場合を除いてカタログの定義済みカラムはすべて提供されなければなりません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      All values must be single-quoted.  Escape single quotes used within a
+      value with a backslash.  Backslashes meant as data can, but need not,
+      be doubled; this follows Perl's rules for simple quoted literals.
+      Note that backslashes appearing as data will be treated as escapes by
+      the bootstrap scanner, according to the same rules as for escape string
+      constants (see &lt;xref linkend="sql-syntax-strings-escape"/&gt;); for
+      example &lt;literal&gt;\t&lt;/literal&gt; converts to a tab character.  If you
+      actually want a backslash in the final value, you will need to write
+      four of them: Perl strips two, leaving &lt;literal&gt;\\&lt;/literal&gt; for the
+      bootstrap scanner to see.
+</span>
+すべての値は単一引用符で囲まなければなりません。
+値中の単一引用符はバックスラッシュでエスケープします。
+データを意味するバックスラッシュは二重にできますが、必須ではありません。
+これはPerlの単純な単一引用符で引用されたリテラルに関するルールに基づいています。
+データとして使われるバックスラッシュは、エスケープ文字列定数（<a class="xref" href="sql-syntax-lexical.html#SQL-SYNTAX-STRINGS-ESCAPE" title="4.1.2.2. C形式エスケープでの文字列定数">4.1.2.2</a>参照）と同じルールに基づき、ブートストラップスキャナーはエスケープと解釈することに注意してください。
+たとえば<code class="literal">\t</code>はタブへと変換されます。
+最終的な値としてバックスラッシュを使用したい場合は、4つ書く必要があります。
+Perlが２つ削除し、ブートストラップスキャナーが認識するために<code class="literal">\\</code>が残ります。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Null values are represented by &lt;literal&gt;_null_&lt;/literal&gt;.
+      (Note that there is no way to create a value that is just that
+      string.)
+</span>
+NULL値は<code class="literal">_null_</code>で表します。
+（それと同じ文字列を作る方法はないことに注意してください。）
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Comments are preceded by &lt;literal&gt;#&lt;/literal&gt;, and must be on their
+      own lines.
+</span>
+コメントは<code class="literal">#</code>を前に置いてください。また同じ行上に置かなければなりません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      To aid readability, field values that are OIDs of other catalog
+      entries can be represented by names rather than numeric OIDs.
+      This is described in &lt;xref linkend="system-catalog-oid-references"/&gt;
+      below.
+</span>
+読みやすくするために、他のカタログエントリのOIDであるフィールド値は数字のOIDではなく、名前で表すことができます。
+これは後述の<a class="xref" href="system-catalog-initial-data.html#SYSTEM-CATALOG-OID-REFERENCES" title="69.2.3. OID参照検索">69.2.3</a>で説明します。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Since hashes are unordered data structures, field order and line
+      layout aren't semantically significant.  However, to maintain a
+      consistent appearance, we set a few rules that are applied by the
+      formatting script &lt;filename&gt;reformat_dat_file.pl&lt;/filename&gt;:
+</span>
+ハッシュは順序付けられないデータ構造なので、フィールドの順や行の配置には重要な意味はありません。
+しかし、見た目を統一するために、フォーマットスクリプト<code class="filename">reformat_dat_file.pl</code>が適用される少数のルールを設定しました。
+
+      </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: circle; "><li class="listitem"><p>
+<span class="original">
+         Within each pair of curly braces, the metadata
+         fields &lt;literal&gt;oid&lt;/literal&gt;, &lt;literal&gt;oid_symbol&lt;/literal&gt;,
+         and &lt;literal&gt;descr&lt;/literal&gt; (if present) come first, in that
+         order, then the catalog's own fields appear in their defined order.
+</span>
+中括弧のペアの中で、メタデータフィールドの<code class="literal">oid</code>、<code class="literal">oid_symbol</code>、（もし存在するなら）<code class="literal">descr</code>がこの順で最初に来ます。
+そして、定義された順にカタログ自身のフィールドが表れます。
+        </p></li><li class="listitem"><p>
+<span class="original">
+         Newlines are inserted between fields as needed to limit line length
+         to 80 characters, if possible.  A newline is also inserted between
+         the metadata fields and the regular fields.
+</span>
+可能ならば、行の長さを80文字に制限するために、必要に応じてフィールドの間に改行を挿入します。
+改行はメタデータフィールドと通常のフィールドの間にも挿入します。
+        </p></li><li class="listitem"><p>
+<span class="original">
+         If the catalog's &lt;literal&gt;.h&lt;/literal&gt; file specifies a default
+         value for a column, and a data entry has that same
+         value, &lt;filename&gt;reformat_dat_file.pl&lt;/filename&gt; will omit it from
+         the data file.  This keeps the data representation compact.
+</span>
+カタログの<code class="literal">.h</code>ファイルがカラムのデフォルト値を指定していて、データエントリが同じ値なら、<code class="filename">reformat_dat_file.pl</code>はデータファイルからデータエントリを省略します。
+これでデータ表現が小さくなります。
+        </p></li><li class="listitem"><p>
+<span class="original">
+         &lt;filename&gt;reformat_dat_file.pl&lt;/filename&gt; preserves blank lines
+         and comment lines as-is.
+        &lt;/para&gt;
+</span>
+<code class="filename">reformat_dat_file.pl</code>は空白行とコメント行をそのまま維持します。
+        </p></li></ul></div><p>
+
+<span class="original">
+      It's recommended to run &lt;filename&gt;reformat_dat_file.pl&lt;/filename&gt;
+      before submitting catalog data patches.  For convenience, you can
+      simply change to &lt;filename&gt;src/include/catalog/&lt;/filename&gt; and
+      run &lt;literal&gt;make reformat-dat-files&lt;/literal&gt;.
+</span>
+カタログデータパッチを投稿する前に、<code class="filename">reformat_dat_file.pl</code>を実行することをお勧めします。
+便利さのために、単に<code class="filename">src/include/catalog/</code>に変更を加えて<code class="literal">make reformat-dat-files</code>を実行することができます。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      If you want to add a new method of making the data representation
+      smaller, you must implement it
+      in &lt;filename&gt;reformat_dat_file.pl&lt;/filename&gt; and also
+      teach &lt;function&gt;Catalog::ParseData()&lt;/function&gt; how to expand the
+      data back into the full representation.
+</span>
+データ表現をより小さくする新しい方法を付け加えたいのであれば、<code class="filename">reformat_dat_file.pl</code>で実装し、また
+データを完全な表現に戻す方法を<code class="function">Catalog::ParseData()</code>に指示しなければなりません。
+     </p></li></ul></div></div><div class="sect2" id="SYSTEM-CATALOG-OID-ASSIGNMENT"><div class="titlepage"><div><div><h3 class="title">69.2.2. OIDの割当</h3></div></div></div><span class="original">
+   &lt;title&gt;OID Assignment&lt;/title&gt;
+</span><p>
+<span class="original">
+    A catalog row appearing in the initial data can be given a
+    manually-assigned OID by writing an &lt;literal&gt;oid
+    =&amp;gt; &lt;replaceable&gt;nnnn&lt;/replaceable&gt;&lt;/literal&gt; metadata field.
+    Furthermore, if an OID is assigned, a C macro for that OID can be
+    created by writing an &lt;literal&gt;oid_symbol
+    =&amp;gt; &lt;replaceable&gt;name&lt;/replaceable&gt;&lt;/literal&gt; metadata field.
+</span>
+初期データに現れるカタログ行には<code class="literal">oid=&gt; <em class="replaceable"><code>nnnn</code></em></code>メタデータフィールドを書くことで手動で割り当てたOIDを与えることができます。
+それだけでなく、OIDを割り当てられたならば、<code class="literal">oid_symbol =&gt; <em class="replaceable"><code>name</code></em></code>メタデータフィールドを書くことでそのOID用のCマクロを作ることができます。
+   </p><p>
+<span class="original">
+    Pre-loaded catalog rows must have preassigned OIDs if there are OID
+    references to them in other pre-loaded rows.  A preassigned OID is
+    also needed if the row's OID must be referenced from C code.
+    If neither case applies, the &lt;literal&gt;oid&lt;/literal&gt; metadata field can
+    be omitted, in which case the bootstrap code assigns an OID
+    automatically, or leaves it zero in a catalog that has no OIDs.
+    In practice we usually preassign OIDs for all or none of the pre-loaded
+    rows in a given catalog, even if only some of them are actually
+    cross-referenced.
+</span>
+他のプリロードカタログ行の中にそのOIDへの参照がある場合には、プリロードカタログ行は割当済みのOIDを持たなければなりません。
+Cコードから行OIDが参照されるときにも割当済みのOIDは必要です。
+どちらも当てはまらない場合は、<code class="literal">oid</code>メタデータフィールドは省略可能です。
+その場合、ブートストラップコードが自動的にOIDを割り当てるか、OIDを持たないカタログでは0のままになります。
+実用的には、カタログの一部のみが実際に相互参照されている場合でも、与えられたプリロードカタログ行のOIDをすべて割当済みにするか、一つも割当済みにしないかのどちらかに通常します。
+   </p><p>
+<span class="original">
+    Writing the actual numeric value of any OID in C code is considered
+    very bad form; always use a macro, instead.  Direct references
+    to &lt;structname&gt;pg_proc&lt;/structname&gt; OIDs are common enough that there's
+    a special mechanism to create the necessary macros automatically;
+    see &lt;filename&gt;src/backend/utils/Gen_fmgrtab.pl&lt;/filename&gt;.  Similarly
+    &amp;mdash; but, for historical reasons, not done the same way &amp;mdash;
+    there's an automatic method for creating macros
+    for &lt;structname&gt;pg_type&lt;/structname&gt;
+    OIDs.  &lt;literal&gt;oid_symbol&lt;/literal&gt; entries are therefore not
+    necessary in those two catalogs.  Likewise, macros for
+    the &lt;structname&gt;pg_class&lt;/structname&gt; OIDs of system catalogs and
+    indexes are set up automatically.  For all other system catalogs, you
+    have to manually specify any macros you need
+    via &lt;literal&gt;oid_symbol&lt;/literal&gt; entries.
+</span>
+Cコード中でOIDの実際の数値を書くのは非常に良くないと考えられます。
+<code class="structname">pg_proc</code>を直接参照するのは普通のことなので、自動的に必要なマクロを生成する特別な仕掛けがあります。
+<code class="filename">src/backend/utils/Gen_fmgrtab.pl</code>を見てください。
+歴史的理由により、似ていはいますが同じではない方法による<code class="structname">pg_type</code> OID用のマクロを自動生成する仕組みがあります。
+ですから、<code class="literal">oid_symbol</code>エントリはこれらの２つのカタログに必ずしも存在しなければならないというわけではありません。
+同様に、<code class="structname">pg_class</code>システムカタログのOIDとインデックスマクロは自動的に設定されます。
+他のすべてのシステムカタログでは、<code class="literal">oid_symbol</code>を使って必要なマクロを手動で指定しなければなりません。
+   </p><p>
+<span class="original">
+    To find an available OID for a new pre-loaded row, run the
+    script &lt;filename&gt;src/include/catalog/unused_oids&lt;/filename&gt;.
+    It prints inclusive ranges of unused OIDs (e.g., the output
+    line &lt;quote&gt;45-900&lt;/quote&gt; means OIDs 45 through 900 have not been
+    allocated yet).  Currently, OIDs 1-9999 are reserved for manual
+    assignment; the &lt;filename&gt;unused_oids&lt;/filename&gt; script simply looks
+    through the catalog headers and &lt;filename&gt;.dat&lt;/filename&gt; files
+    to see which ones do not appear.  You can also use
+    the &lt;filename&gt;duplicate_oids&lt;/filename&gt; script to check for mistakes.
+    (&lt;filename&gt;genbki.pl&lt;/filename&gt; will also detect duplicate OIDs
+    at compile time.)
+</span>
+新しいプリロード行のために利用可能なOIDを見つけるには、<code class="filename">src/include/catalog/unused_oids</code>スクリプトを実行してください。
+未使用のOIDの範囲が表示されます。
+（たとえば、<span class="quote">「<span class="quote">45-900</span>」</span>はOIDs 45から900が利用されていないことを示します。）
+今の所OID 1-9999 は手動での割当のために予約されています。
+<code class="filename">unused_oids</code>スクリプトは、単にカタログヘッダーと<code class="filename">.dat</code>を見てそこに出現していないOIDを探しているだけです。
+間違い見つけるために<code class="filename">duplicate_oids</code>を利用することもできます。
+（<code class="filename">genbki.pl</code>もコンパイル時に重複OIDを検出します。）
+   </p><p>
+<span class="original">
+    The OID counter starts at 10000 at the beginning of a bootstrap run.
+    If a catalog row is in a table that requires OIDs, but no OID was
+    preassigned by an &lt;literal&gt;oid&lt;/literal&gt; field, then it will
+    receive an OID of 10000 or above.
+</span>
+ブートストラップ実行時の最初にOIDカウンタは1000から始まります。
+テーブル中のカタログ行がOIDを必要としており、<code class="literal">oid</code>フィールドにOIDが予め割り当てられていない場合は、1000以上のOIDを受け取ります。
+   </p></div><div class="sect2" id="SYSTEM-CATALOG-OID-REFERENCES"><div class="titlepage"><div><div><h3 class="title">69.2.3. OID参照検索</h3></div></div></div><span class="original">
+   &lt;title&gt;OID Reference Lookup&lt;/title&gt;
+</span><p>
+<span class="original">
+    Cross-references from one initial catalog row to another can be written
+    by just writing the preassigned OID of the referenced row.  But
+    that's error-prone and hard to understand, so for frequently-referenced
+    catalogs, &lt;filename&gt;genbki.pl&lt;/filename&gt; provides mechanisms to write
+    symbolic references instead.  Currently this is possible for references
+    to access methods, functions, operators, opclasses, opfamilies, and
+    types.  The rules are as follows:
+</span>
+初期カタログ行間の相互参照は、参照する行の割当済みOIDを記述するだけで可能です。
+しかしこれは間違いやすく、また読みにくくなります。
+そのため、頻繁に参照されるカタログでは、<code class="filename">genbki.pl</code>が代わりにシンボル参照を記述する機構を提供しています。
+今の所、アクセスメソッド、関数、演算子、演算子クラス、演算子ファミリー、型で参照アクセスが可能です。
+そのルールは以下のとおりです。
+   </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+      Use of symbolic references is enabled in a particular catalog column
+      by attaching &lt;literal&gt;BKI_LOOKUP(&lt;replaceable&gt;lookuprule&lt;/replaceable&gt;)&lt;/literal&gt;
+      to the column's definition, where &lt;replaceable&gt;lookuprule&lt;/replaceable&gt;
+      is &lt;literal&gt;pg_am&lt;/literal&gt;, &lt;literal&gt;pg_proc&lt;/literal&gt;,
+      &lt;literal&gt;pg_operator&lt;/literal&gt;, &lt;literal&gt;pg_opclass&lt;/literal&gt;,
+      &lt;literal&gt;pg_opfamily&lt;/literal&gt;, or &lt;literal&gt;pg_type&lt;/literal&gt;.
+      &lt;literal&gt;BKI_LOOKUP&lt;/literal&gt; can be attached to columns of
+      type &lt;type&gt;Oid&lt;/type&gt;, &lt;type&gt;regproc&lt;/type&gt;, &lt;type&gt;oidvector&lt;/type&gt;,
+      or &lt;type&gt;Oid[]&lt;/type&gt;; in the latter two cases it implies performing a
+      lookup on each element of the array.
+</span>
+<code class="literal">BKI_LOOKUP(<em class="replaceable"><code>lookuprule</code></em>)</code>をカラム定義に加えることで、特定のカタログカラムでのシンボル参照が利用可能になります。
+ここで<em class="replaceable"><code>lookuprule</code></em>は、<code class="literal">pg_am</code>、<code class="literal">pg_proc</code>、<code class="literal">pg_operator</code>、<code class="literal">pg_opclass</code>、<code class="literal">pg_opfamily</code>、<code class="literal">pg_type</code>のどれかです。
+<code class="literal">BKI_LOOKUP</code>を、<code class="type">Oid</code>、<code class="type">regproc</code>、<code class="type">oidvector</code>、<code class="type">Oid[]</code>のカラムに加えることができます。
+最後の２つにおいては、配列の個々の要素を検索することを暗に意味します。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      In such a column, all entries must use the symbolic format except
+      when writing &lt;literal&gt;0&lt;/literal&gt; for InvalidOid.  (If the column is
+      declared &lt;type&gt;regproc&lt;/type&gt;, you can optionally
+      write &lt;literal&gt;-&lt;/literal&gt; instead of &lt;literal&gt;0&lt;/literal&gt;.)
+      &lt;filename&gt;genbki.pl&lt;/filename&gt; will warn about unrecognized names.
+</span>
+そうしたカラムでは、InvalidOidの意味で<code class="literal">0</code>を用いる以外には、すべてのエントリでシンボル参照を使用しなければなりません。
+（カラムが<code class="type">regproc</code>と宣言されている場合は、<code class="literal">0</code>の代わりに<code class="literal">-</code>と書くことができます。)
+<code class="filename">genbki.pl</code>は認識できない名前には警告を出します。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Access methods are just represented by their names, as are types.
+      Type names must match the referenced &lt;structname&gt;pg_type&lt;/structname&gt;
+      entry's &lt;structfield&gt;typname&lt;/structfield&gt;; you do not get to use any
+      aliases such as &lt;literal&gt;integer&lt;/literal&gt;
+      for &lt;literal&gt;int4&lt;/literal&gt;.
+</span>
+アクセスメソッドは単にその名前で表現されます。型も同様です。
+型名は<code class="structname">pg_type</code>エントリの<code class="structfield">typname</code>に一致しなければなりません。
+<code class="literal">int4</code>に対する<code class="literal">integer</code>のような別名は利用できません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      A function can be represented by
+      its &lt;structfield&gt;proname&lt;/structfield&gt;, if that is unique among
+      the &lt;filename&gt;pg_proc.dat&lt;/filename&gt; entries (this works like regproc
+      input).  Otherwise, write it
+      as &lt;replaceable&gt;proname(argtypename,argtypename,...)&lt;/replaceable&gt;,
+      like regprocedure.  The argument type names must be spelled exactly as
+      they are in the &lt;filename&gt;pg_proc.dat&lt;/filename&gt; entry's
+      &lt;structfield&gt;proargtypes&lt;/structfield&gt; field.  Do not insert any
+      spaces.
+</span>
+それが<code class="filename">pg_proc.dat</code>内でユニークなら、関数は<code class="structfield">proname</code>で表現できます。
+（regprocの入力はこのように働きます。）
+そうでなければ、regprocedureのように、<em class="replaceable"><code>proname(argtypename,argtypename,...)</code></em>と書いてください。
+引数型名は正確に<code class="filename">pg_proc.dat</code>エントリの<code class="structfield">proargtypes</code>で指定しなければなりません。
+空白は挿入しないでください。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Operators are represented
+      by &lt;replaceable&gt;oprname(lefttype,righttype)&lt;/replaceable&gt;,
+      writing the type names exactly as they appear in
+      the &lt;filename&gt;pg_operator.dat&lt;/filename&gt;
+      entry's &lt;structfield&gt;oprleft&lt;/structfield&gt;
+      and &lt;structfield&gt;oprright&lt;/structfield&gt; fields.
+      (Write &lt;literal&gt;0&lt;/literal&gt; for the omitted operand of a unary
+      operator.)
+</span>
+演算子は<em class="replaceable"><code>oprname(lefttype,righttype)</code></em>で表現します。
+型名は正確に<code class="filename">pg_operator.dat</code>エントリの<code class="structfield">oprleft</code>フィールドと<code class="structfield">oprright</code>フィールドで記述します。
+（省略された単項演算子のオペランドは<code class="literal">0</code>と書きます。）
+     </p></li><li class="listitem"><p>
+<span class="original">
+      The names of opclasses and opfamilies are only unique within an
+      access method, so they are represented
+      by &lt;replaceable&gt;access_method_name&lt;/replaceable&gt;&lt;literal&gt;/&lt;/literal&gt;&lt;replaceable&gt;object_name&lt;/replaceable&gt;.
+</span>
+opclassesとopfamiliesの名前はアクセスメソッド内でのみユニークなので、<em class="replaceable"><code>access_method_name</code></em><code class="literal">/</code><em class="replaceable"><code>object_name</code></em>で表します。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      In none of these cases is there any provision for
+      schema-qualification; all objects created during bootstrap are
+      expected to be in the pg_catalog schema.
+</span>
+以上のいずれの場合にもスキーマ修飾の規定はありません。
+ブートストラップ中に作成されるすべてのオブジェクトは、pg_catalogスキーマにあると期待されます。
+     </p></li></ul></div><p>
+<span class="original">
+    &lt;filename&gt;genbki.pl&lt;/filename&gt; resolves all symbolic references while it
+    runs, and puts simple numeric OIDs into the emitted BKI file.  There is
+    therefore no need for the bootstrap backend to deal with symbolic
+    references.
+</span>
+<code class="filename">genbki.pl</code>は実行中にすべてのシンボル参照を解決し、生成したBKIファイルの中に単純な数字のOIDを設定します。
+ですから、ブートストラップバックエンドはシンボル参照にかかわる必要はありません。
+   </p></div><div class="sect2" id="SYSTEM-CATALOG-RECIPES"><div class="titlepage"><div><div><h3 class="title">69.2.4. データファイルの編集方法</h3></div></div></div><span class="original">
+   &lt;title&gt;Recipes for Editing Data Files&lt;/title&gt;
+</span><p>
+<span class="original">
+    Here are some suggestions about the easiest ways to perform common tasks
+    when updating catalog data files.
+</span>
+カタログデータファイルを更新する共通の作業を実施するためのもっとも簡単な方法の提案を示します。
+   </p><p><span class="original">
+    &lt;title&gt;Add a new column with a default to a catalog:&lt;/title&gt;
+</span><strong>カタログにデフォルト付きの新しいカラムを追加する. </strong>
+<span class="original">
+     Add the column to the header file with
+     a &lt;literal&gt;BKI_DEFAULT(&lt;replaceable&gt;value&lt;/replaceable&gt;)&lt;/literal&gt;
+     annotation.  The data file need only be adjusted by adding the field
+     in existing rows where a non-default value is needed.
+</span>
+
+<code class="literal">BKI_DEFAULT(<em class="replaceable"><code>value</code></em>)</code>注釈付きでヘッダーファイルにカラムを追加します。
+非デフォルト値が必要な既存の行に対してのみフィールドを追加によるデータファイルの調整が必要です。
+    </p><p><span class="original">
+    &lt;title&gt;Add a default value to an existing column that doesn't have
+     one:&lt;/title&gt;
+</span><strong>デフォルト値を持たない既存のカラムにデフォルト値を追加する. </strong>
+<span class="original">
+     Add a &lt;literal&gt;BKI_DEFAULT&lt;/literal&gt; annotation to the header file,
+     then run &lt;literal&gt;make reformat-dat-files&lt;/literal&gt; to remove
+     now-redundant field entries.
+</span>
+<code class="literal">BKI_DEFAULT</code>注釈をヘッダーファイルに追加し、冗長になったフィールドエントリを削除するために<code class="literal">make reformat-dat-files</code>を実行します。
+    </p><p><span class="original">
+    &lt;title&gt;Remove a column, whether it has a default or not:&lt;/title&gt;
+</span><strong>デフォルト値の有無にかかわらず、カラムを削除する. </strong>
+<span class="original">
+     Remove the column from the header, then run &lt;literal&gt;make
+     reformat-dat-files&lt;/literal&gt; to remove now-useless field entries.
+</span>
+ヘッダーからカラムを削除し、<code class="literal">make reformat-dat-files</code>を実行して不要になったフィールドエントリを削除します。
+    </p><p><span class="original">
+    &lt;title&gt;Change or remove an existing default value:&lt;/title&gt;
+</span><strong>既存のデフォルト値を変更もしくは削除する. </strong>
+<span class="original">
+     You cannot simply change the header file, since that will cause the
+     current data to be interpreted incorrectly.  First run &lt;literal&gt;make
+     expand-dat-files&lt;/literal&gt; to rewrite the data files with all
+     default values inserted explicitly, then change or remove
+     the &lt;literal&gt;BKI_DEFAULT&lt;/literal&gt; annotation, then run &lt;literal&gt;make
+     reformat-dat-files&lt;/literal&gt; to remove superfluous fields again.
+</span>
+現在のデータが正しく解釈されなくなるため、単にヘッダーファイルを変更することはできません。
+まず<code class="literal">make expand-dat-files</code>を実行し、すべてのデフォルト値が明示的に挿入されるようにデータファイルを書き換えます。
+次に<code class="literal">BKI_DEFAULT</code>注釈を変更もしくは削除し、<code class="literal">make reformat-dat-files</code>を実行して余分のフィールドを再び削除します。
+    </p><p><span class="original">
+    &lt;title&gt;Ad-hoc bulk editing:&lt;/title&gt;
+</span><strong>特定の目的のための大量の編集: </strong>
+<span class="original">
+     &lt;filename&gt;reformat_dat_file.pl&lt;/filename&gt; can be adapted to perform
+     many kinds of bulk changes.  Look for its block comments showing where
+     one-off code can be inserted.  In the following example, we are going
+     to consolidate two boolean fields in &lt;structname&gt;pg_proc&lt;/structname&gt;
+     into a char field:
+</span>
+<code class="filename">reformat_dat_file.pl</code>を使って色々な大量の変更を実施できます。
+一度限りのコードを挿入できることを示すブロックコメントを見つけます。
+次の例では、<code class="structname">pg_proc</code>中の２つの論理値型フィールドを一つの文字フィールドに統合します。
+
+     </p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p>
+<span class="original">
+        Add the new column, with a default,
+        to &lt;filename&gt;pg_proc.h&lt;/filename&gt;:
+</span>
+デフォルトがある新しいカラムを<code class="filename">pg_proc.h</code>に追加します。
+</p><pre class="programlisting">
++    /* see PROKIND_ categories below */
++    char        prokind BKI_DEFAULT(f);
+</pre><p>
+       </p></li><li class="listitem"><p>
+<span class="original">
+        Create a new script based on &lt;filename&gt;reformat_dat_file.pl&lt;/filename&gt;
+        to insert appropriate values on-the-fly:
+</span>
+臨機応変に適当な値を挿入するために、<code class="filename">reformat_dat_file.pl</code>を元に新しいスクリプトを作ります。
+</p><pre class="programlisting">
+-           # At this point we have the full row in memory as a hash
+-           # and can do any operations we want. As written, it only
+-           # removes default values, but this script can be adapted to
+-           # do one-off bulk-editing.
++           # One-off change to migrate to prokind
++           # Default has already been filled in by now, so change to other
++           # values as appropriate
++           if ($values{proisagg} eq 't')
++           {
++               $values{prokind} = 'a';
++           }
++           elsif ($values{proiswindow} eq 't')
++           {
++               $values{prokind} = 'w';
++           }
+</pre><p>
+       </p></li><li class="listitem"><p>
+<span class="original">
+        Run the new script:
+</span>
+スクリプトを実行します。
+</p><pre class="programlisting">
+$ cd src/include/catalog
+$ perl  rewrite_dat_with_prokind.pl  pg_proc.dat
+</pre><p>
+<span class="original">
+        At this point &lt;filename&gt;pg_proc.dat&lt;/filename&gt; has all three
+        columns, &lt;structfield&gt;prokind&lt;/structfield&gt;,
+        &lt;structfield&gt;proisagg&lt;/structfield&gt;,
+        and &lt;structfield&gt;proiswindow&lt;/structfield&gt;, though they will appear
+        only in rows where they have non-default values.
+</span>
+この時点で<code class="filename">pg_proc.dat</code>には<code class="structfield">prokind</code>、<code class="structfield">proisagg</code>、<code class="structfield">proiswindow</code>のすべての3つのカラムがありますが、非デフォルト値を持つ行だけに表れます。
+       </p></li><li class="listitem"><p>
+<span class="original">
+        Remove the old columns from &lt;filename&gt;pg_proc.h&lt;/filename&gt;:
+</span>
+<code class="filename">pg_proc.h</code>から古いカラムを削除します。
+</p><pre class="programlisting">
+-    /* is it an aggregate? */
+-    bool        proisagg BKI_DEFAULT(f);
+-
+-    /* is it a window function? */
+-    bool        proiswindow BKI_DEFAULT(f);
+</pre><p>
+       </p></li><li class="listitem"><p>
+<span class="original">
+        Finally, run &lt;literal&gt;make reformat-dat-files&lt;/literal&gt; to remove
+        the useless old entries from &lt;filename&gt;pg_proc.dat&lt;/filename&gt;.
+</span>
+最後に、<code class="literal">make reformat-dat-files</code>を実行して<code class="filename">pg_proc.dat</code>から不要になった古いエントリを削除します。
+       </p></li></ol></div><p>
+
+<span class="original">
+     For further examples of scripts used for bulk editing, see
+     &lt;filename&gt;convert_oid2name.pl&lt;/filename&gt;
+     and &lt;filename&gt;remove_pg_type_oid_symbols.pl&lt;/filename&gt; attached to this
+     message:
+     &lt;ulink url="https://www.postgresql.org/message-id/CAJVSVGVX8gXnPm+Xa=DxR7kFYprcQ1tNcCT5D0O3ShfnM6jehA@mail.gmail.com"&gt;&lt;/ulink&gt;
+</span>
+さらなる大量編集スクリプトの例については、<a class="ulink" href="https://www.postgresql.org/message-id/CAJVSVGVX8gXnPm+Xa=DxR7kFYprcQ1tNcCT5D0O3ShfnM6jehA@mail.gmail.com" target="_top">https://www.postgresql.org/message-id/CAJVSVGVX8gXnPm+Xa=DxR7kFYprcQ1tNcCT5D0O3ShfnM6jehA@mail.gmail.com</a>に付随する<code class="filename">convert_oid2name.pl</code>と<code class="filename">remove_pg_type_oid_symbols.pl</code>を見てください。
+    </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="system-catalog-declarations.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="bki.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="bki-format.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">69.1. システムカタログの宣言ルール </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 69.3. <acronym class="acronym">BKI</acronym>ファイル形式</td></tr></table></div></body></html>

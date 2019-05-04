@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>第57章 外部データラッパの作成</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="plhandler.html" title="第56章 手続き言語ハンドラの作成" /><link rel="next" href="fdw-functions.html" title="57.1. 外部データラッパ関数" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="internals.html" title="パート VII. 内部情報">パート VII. 内部情報</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      fdwhandler.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="plhandler.html" title="第56章 手続き言語ハンドラの作成">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="internals.html" title="パート VII. 内部情報">上へ</a></td><td width="60%" align="center">第57章 外部データラッパの作成</td><td width="20%" align="right"> <a accesskey="n" href="fdw-functions.html" title="57.1. 外部データラッパ関数">次へ</a></td></tr></table><hr /></div><div class="chapter" id="FDWHANDLER"><div class="titlepage"><div><div><h2 class="title">第57章 外部データラッパの作成</h2></div></div></div><div class="toc"><p><strong>目次</strong></p><dl class="toc"><dt><span class="sect1"><a href="fdw-functions.html">57.1. 外部データラッパ関数</a></span></dt><dt><span class="sect1"><a href="fdw-callbacks.html">57.2. 外部データラッパのコールバックルーチン</a></span></dt><dd><dl><dt><span class="sect2"><a href="fdw-callbacks.html#FDW-CALLBACKS-SCAN">57.2.1. 外部テーブルスキャンのためのFDWルーチン</a></span></dt><dt><span class="sect2"><a href="fdw-callbacks.html#FDW-CALLBACKS-JOIN-SCAN">57.2.2. 外部テーブルの結合をスキャンするためのFDWルーチン</a></span></dt><dt><span class="sect2"><a href="fdw-callbacks.html#FDW-CALLBACKS-UPPER-PLANNING">57.2.3. スキャン/結合後の処理をプラン生成するためのFDWルーチン</a></span></dt><dt><span class="sect2"><a href="fdw-callbacks.html#FDW-CALLBACKS-UPDATE">57.2.4. 外部テーブル更新のためのFDWルーチン</a></span></dt><dt><span class="sect2"><a href="fdw-callbacks.html#FDW-CALLBACKS-ROW-LOCKING">57.2.5. 行ロックのためのFDWルーチン</a></span></dt><dt><span class="sect2"><a href="fdw-callbacks.html#FDW-CALLBACKS-EXPLAIN">57.2.6. <code class="command">EXPLAIN</code>のためのFDWルーチン</a></span></dt><dt><span class="sect2"><a href="fdw-callbacks.html#FDW-CALLBACKS-ANALYZE">57.2.7. <code class="command">ANALYZE</code>のためのFDWルーチン</a></span></dt><dt><span class="sect2"><a href="fdw-callbacks.html#FDW-CALLBACKS-IMPORT">57.2.8. <code class="command">IMPORT FOREIGN SCHEMA</code>のためのFDWルーチン</a></span></dt><dt><span class="sect2"><a href="fdw-callbacks.html#FDW-CALLBACKS-PARALLEL">57.2.9. パラレル実行のためのFDWルーチン</a></span></dt><dt><span class="sect2"><a href="fdw-callbacks.html#FDW-CALLBACKS-REPARAMETERIZE-PATHS">57.2.10. パスの再パラメータ化のためのFDWルーチン</a></span></dt></dl></dd><dt><span class="sect1"><a href="fdw-helpers.html">57.3. 外部データラッパヘルパ関数</a></span></dt><dt><span class="sect1"><a href="fdw-planning.html">57.4. 外部データラッパのクエリプラン作成</a></span></dt><dt><span class="sect1"><a href="fdw-row-locking.html">57.5. 外部データラッパでの行ロック</a></span></dt></dl></div><span class="original">
+   &lt;title&gt;Writing A Foreign Data Wrapper&lt;/title&gt;
+</span><a id="id-1.10.9.2" class="indexterm"></a><p>
+<span class="original">
+    All operations on a foreign table are handled through its foreign data
+    wrapper, which consists of a set of functions that the core server
+    calls.  The foreign data wrapper is responsible for fetching
+    data from the remote data source and returning it to the
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; executor.  If updating foreign
+    tables is to be supported, the wrapper must handle that, too.
+    This chapter outlines how to write a new foreign data wrapper.
+</span>
+外部テーブルへの全ての操作は、コアサーバから呼び出される関数のセットで構成される、外部データラッパで処理されます。
+外部データラッパは、リモートデータソースからデータを取り出し、そのデータを<span class="productname">PostgreSQL</span>エグゼキュータに返却することを担当します。
+外部テーブルの更新をサポートする場合、ラッパはそれも扱わなければなりません。
+本章では、新しい外部データラッパを作成する方法の概要を示します。
+   </p><p>
+<span class="original">
+    The foreign data wrappers included in the standard distribution are good
+    references when trying to write your own.  Look into the
+    &lt;filename&gt;contrib&lt;/filename&gt; subdirectory of the source tree.
+    The &lt;xref linkend="sql-createforeigndatawrapper"/&gt; reference page also has
+    some useful details.
+</span>
+独自の外部データラッパを作成する際、標準配布物に含まれているものは優れたリファレンスです。
+ソースツリーの<code class="filename">contrib</code>サブディレクトリを調べてください。
+<a class="xref" href="sql-createforeigndatawrapper.html" title="CREATE FOREIGN DATA WRAPPER"><span class="refentrytitle">CREATE FOREIGN DATA WRAPPER</span></a>マニュアルページにも有用な情報があります。
+   </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+     The SQL standard specifies an interface for writing foreign data wrappers.
+     However, PostgreSQL does not implement that API, because the effort to
+     accommodate it into PostgreSQL would be large, and the standard API hasn't
+     gained wide adoption anyway.
+</span>
+標準SQLでは外部データラッパを作成するインタフェースを定義しています。
+しかしながら、PostgreSQLに適応させる労力が大きく、また標準のAPIが広く採用されているわけでもないので、PostgreSQLはそのAPIを実装していません。
+    </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="plhandler.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="internals.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="fdw-functions.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第56章 手続き言語ハンドラの作成 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 57.1. 外部データラッパ関数</td></tr></table></div></body></html>

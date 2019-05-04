@@ -1,0 +1,664 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>E.132. リリース9.1.2</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="release-9-1-3.html" title="E.131. リリース9.1.3" /><link rel="next" href="release-9-1-1.html" title="E.133. リリース9.1.1" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="release.html" title="付録E リリースノート">付録E リリースノート</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      release-9-1-2.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="release-9-1-3.html" title="E.131. リリース9.1.3">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="release.html" title="付録E リリースノート">上へ</a></td><td width="60%" align="center">E.132. リリース9.1.2</td><td width="20%" align="right"> <a accesskey="n" href="release-9-1-1.html" title="E.133. リリース9.1.1">次へ</a></td></tr></table><hr /></div><div class="sect1" id="RELEASE-9-1-2"><div class="titlepage"><div><div><h2 class="title" style="clear: both">E.132. リリース9.1.2</h2></div></div></div><span class="original">
+  &lt;title&gt;Release 9.1.2&lt;/title&gt;
+</span><p><span class="original">
+  &lt;title&gt;Release date:&lt;/title&gt;
+</span><strong>リリース日: </strong>2011-12-05</p><p>
+<span class="original">
+   This release contains a variety of fixes from 9.1.1.
+   For information about new features in the 9.1 major release, see
+   &lt;xref linkend="release-9-1"/&gt;.
+</span>
+このリリースは9.1.1に対し、各種不具合を修正したものです。
+9.1メジャーリリースにおける新機能については<a class="xref" href="release-9-1.html" title="E.134. リリース9.1">E.134</a>を参照してください。
+  </p><div class="sect2" id="id-1.11.6.136.4"><div class="titlepage"><div><div><h3 class="title">E.132.1. バージョン9.1.2への移行</h3></div></div></div><span class="original">
+   &lt;title&gt;Migration to Version 9.1.2&lt;/title&gt;
+</span><p>
+<span class="original">
+    A dump/restore is not required for those running 9.1.X.
+</span>
+9.1.Xからの移行ではダンプ/リストアは不要です。
+   </p><p>
+<span class="original">
+    However, a longstanding error was discovered in the definition of the
+    &lt;literal&gt;information_schema.referential_constraints&lt;/literal&gt; view.  If you
+    rely on correct results from that view, you should replace its
+    definition as explained in the first changelog item below.
+</span>
+しかしながら、<code class="literal">information_schema.referential_constraints</code>ビュー定義において長期に渡って潜在したエラーが見つかりました。
+このビューからの正確な結果に依存している場合、後述の変更点の最初で説明する通りその定義を置き換えなければなりません。
+   </p><p>
+<span class="original">
+    Also, if you use the &lt;type&gt;citext&lt;/type&gt; data type, and you upgraded
+    from a previous major release by running &lt;application&gt;pg_upgrade&lt;/application&gt;,
+    you should run &lt;literal&gt;CREATE EXTENSION citext FROM unpackaged&lt;/literal&gt;
+    to avoid collation-related failures in &lt;type&gt;citext&lt;/type&gt; operations.
+    The same is necessary if you restore a dump from a pre-9.1 database
+    that contains an instance of the &lt;type&gt;citext&lt;/type&gt; data type.
+    If you've already run the &lt;command&gt;CREATE EXTENSION&lt;/command&gt; command before
+    upgrading to 9.1.2, you will instead need to do manual catalog updates
+    as explained in the second changelog item.
+</span>
+また、<code class="type">citext</code>データ型を使用し、かつ、<span class="application">pg_upgrade</span>を実行して過去のメジャーリリースからアップグレードした場合、<code class="literal">CREATE EXTENSION citext FROM unpackaged</code>を実行して、<code class="type">citext</code>操作における照合順序に関連した失敗を防止しなければなりません。
+<code class="type">citext</code>データ型のインスタンスを含む、9.1より前のダンプからリストアする場合も、同じことが必要です。
+もし9.1.2にアップグレードする前にすでに<code class="command">CREATE EXTENSION</code>を実行していた場合は、代わりに変更点の２番目で説明する通りに手作業でカタログを更新しなければなりません。
+   </p></div><div class="sect2" id="id-1.11.6.136.5"><div class="titlepage"><div><div><h3 class="title">E.132.2. 変更点</h3></div></div></div><span class="original">
+   &lt;title&gt;Changes&lt;/title&gt;
+</span><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+      Fix bugs in &lt;literal&gt;information_schema.referential_constraints&lt;/literal&gt; view
+      (Tom Lane)
+</span>
+<code class="literal">information_schema.referential_constraints</code>ビューの不具合を修正しました。(Tom Lane)
+     </p><p>
+<span class="original">
+      This view was being insufficiently careful about matching the
+      foreign-key constraint to the depended-on primary or unique key
+      constraint.  That could result in failure to show a foreign key
+      constraint at all, or showing it multiple times, or claiming that it
+      depends on a different constraint than the one it really does.
+</span>
+このビューでは、外部キーと依存する主キーまたは一意キー制約との対応付けについて十分な注意を行っていませんでした。
+このため、外部キー制約がまったく表示されない、何回も表示される、あるいは、実際の依存する制約とは異なる制約に依存するものと言い張るという結果になることがありました。
+     </p><p>
+<span class="original">
+      Since the view definition is installed by &lt;application&gt;initdb&lt;/application&gt;,
+      merely upgrading will not fix the problem.  If you need to fix this
+      in an existing installation, you can (as a superuser) drop the
+      &lt;literal&gt;information_schema&lt;/literal&gt; schema then re-create it by sourcing
+      &lt;filename&gt;&lt;replaceable&gt;SHAREDIR&lt;/replaceable&gt;/information_schema.sql&lt;/filename&gt;.
+      (Run &lt;literal&gt;pg_config &amp;#045;-sharedir&lt;/literal&gt; if you're uncertain where
+      &lt;replaceable&gt;SHAREDIR&lt;/replaceable&gt; is.)  This must be repeated in each database
+      to be fixed.
+</span>
+このビュー定義は<span class="application">initdb</span>によってインストールされますので、ただアップグレードしただけでは問題は解消されません。
+既存のインストレーションでこの問題を解消させなければならない場合、（スーパーユーザとして）<code class="literal">information_schema</code>スキーマを削除して、<code class="filename"><em class="replaceable"><code>SHAREDIR</code></em>/information_schema.sql</code>を元に再作成することができます。
+（<em class="replaceable"><code>SHAREDIR</code></em>の場所が分からない場合は<code class="literal">pg_config --sharedir</code>を実行してください。）
+これは修正対象のデータベースそれぞれで繰り返さなければなりません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Make &lt;filename&gt;contrib/citext&lt;/filename&gt;'s upgrade script fix collations of
+      &lt;type&gt;citext&lt;/type&gt; columns and indexes (Tom Lane)
+</span>
+<code class="filename">contrib/citext</code>のアップグレードスクリプトで<code class="type">citext</code>列とインデックスの照合順序を修正するようにしました。(Tom Lane)
+     </p><p>
+<span class="original">
+      Existing &lt;type&gt;citext&lt;/type&gt; columns and indexes aren't correctly marked as
+      being of a collatable data type during &lt;application&gt;pg_upgrade&lt;/application&gt; from
+      a pre-9.1 server, or when a pre-9.1 dump containing the &lt;type&gt;citext&lt;/type&gt;
+      type is loaded into a 9.1 server.
+      That leads to operations on these columns failing with errors
+      such as &lt;quote&gt;could not determine which collation to use for string
+      comparison&lt;/quote&gt;.  This change allows them to be fixed by the same
+      script that upgrades the &lt;type&gt;citext&lt;/type&gt; module into a proper 9.1
+      extension during &lt;literal&gt;CREATE EXTENSION citext FROM unpackaged&lt;/literal&gt;.
+</span>
+9.1以前のサーバから<span class="application">pg_upgrade</span>を行う時および<code class="type">citext</code>型を含む9.1より前のダンプを9.1サーバにロードする時、既存の<code class="type">citext</code>列とインデックスは正しく照合順序の設定可能なデータ型として印付けられません。
+このためこれらに対する操作が<span class="quote">「<span class="quote">could not determine which collation to use for string comparison</span>」</span>などのエラーで失敗してしまいます。
+この変更により、<code class="literal">CREATE EXTENSION citext FROM unpackaged</code>時に<code class="type">citext</code>モジュールを適切な9.1の拡張としてアップグレードするものと同じスクリプトでこれらの問題は修正されます。
+     </p><p>
+<span class="original">
+      If you have a previously-upgraded database that is suffering from this
+      problem, and you already ran the &lt;command&gt;CREATE EXTENSION&lt;/command&gt; command,
+      you can manually run (as superuser) the &lt;command&gt;UPDATE&lt;/command&gt; commands
+      found at the end of
+      &lt;filename&gt;&lt;replaceable&gt;SHAREDIR&lt;/replaceable&gt;/extension/citext&amp;#045;-unpackaged&amp;#045;-1.0.sql&lt;/filename&gt;.
+      (Run &lt;literal&gt;pg_config &amp;#045;-sharedir&lt;/literal&gt; if you're uncertain where
+      &lt;replaceable&gt;SHAREDIR&lt;/replaceable&gt; is.)
+      There is no harm in doing this again if unsure.
+</span>
+この問題の被害を受けるデータベースにすでにアップグレードしており、かつ、すでに<code class="command">CREATE EXTENSION</code>コマンドを実行している場合は、<code class="filename"><em class="replaceable"><code>SHAREDIR</code></em>/extension/citext--unpackaged--1.0.sql</code>の最後にある<code class="command">UPDATE</code>コマンドを（スーパーユーザとして）手作業で実行することができます。
+（<em class="replaceable"><code>SHAREDIR</code></em>の場所が分からない場合は<code class="literal">pg_config --sharedir</code>を実行してください。）
+確かに行ったかどうか不明な場合、これを繰り返し行っても危険はありません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix possible crash during &lt;command&gt;UPDATE&lt;/command&gt; or &lt;command&gt;DELETE&lt;/command&gt; that
+      joins to the output of a scalar-returning function (Tom Lane)
+</span>
+スカラを返す関数の出力を結合する<code class="command">UPDATE</code>または<code class="command">DELETE</code>実行時にクラッシュする可能性を修正しました。(Tom Lane)
+     </p><p>
+<span class="original">
+      A crash could only occur if the target row had been concurrently
+      updated, so this problem surfaced only intermittently.
+</span>
+クラッシュは対象の行が同時に更新された場合にのみ起こり得ました。
+このためこの問題は間欠的にのみ表面化しました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix incorrect replay of WAL records for GIN index updates
+      (Tom Lane)
+</span>
+GINインデックス更新に関するWALレコードの不正確な再生を修正しました。(Tom Lane)
+     </p><p>
+<span class="original">
+      This could result in transiently failing to find index entries after
+      a crash, or on a hot-standby server.  The problem would be repaired
+      by the next &lt;command&gt;VACUUM&lt;/command&gt; of the index, however.
+</span>
+このためクラッシュ後またはホットスタンバイサーバにおいて、インデックス項目の検索に過渡的に失敗する結果になり得ました。
+しかし、この問題はインデックスに対する次回の<code class="command">VACUUM</code>で修復されます。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix TOAST-related data corruption during &lt;literal&gt;CREATE TABLE dest AS
+      SELECT * FROM src&lt;/literal&gt; or &lt;literal&gt;INSERT INTO dest SELECT * FROM src&lt;/literal&gt;
+      (Tom Lane)
+</span>
+<code class="literal">CREATE TABLE dest AS SELECT * FROM src</code>または<code class="literal">INSERT INTO dest SELECT * FROM src</code>時のTOAST関連のデータの破損を修正しました。(Tom Lane)
+     </p><p>
+<span class="original">
+      If a table has been modified by &lt;command&gt;ALTER TABLE ADD COLUMN&lt;/command&gt;,
+      attempts to copy its data verbatim to another table could produce
+      corrupt results in certain corner cases.
+      The problem can only manifest in this precise form in 8.4 and later,
+      but we patched earlier versions as well in case there are other code
+      paths that could trigger the same bug.
+</span>
+テーブルが<code class="command">ALTER TABLE ADD COLUMN</code>によって変更された場合、データを逐語的に別のテーブルにコピーしようとした時に特定の境界条件で破損した結果になることがありました。
+この問題は、8.4以降において、この構文においてのみ明確に発生し得たものですが、同じ不具合を引き起こす他のコードパスがある場合に備えて、より過去のバージョンにおいてもパッチを適用しました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix possible failures during hot standby startup (Simon Riggs)
+</span>
+ホットスタンバイの起動時に失敗する可能性を修正しました。(Simon Riggs)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Start hot standby faster when initial snapshot is incomplete
+      (Simon Riggs)
+</span>
+初期スナップショットが不完全である場合のホットスタンバイの起動を高速にしました。(Simon Riggs)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix race condition during toast table access from stale syscache entries
+      (Tom Lane)
+</span>
+無効なsyscache項目からTOASTテーブルにアクセスする時の競合条件を修正しました。(Tom Lane)
+     </p><p>
+<span class="original">
+      The typical symptom was transient errors like &lt;quote&gt;missing chunk
+      number 0 for toast value NNNNN in pg_toast_2619&lt;/quote&gt;, where the cited
+      toast table would always belong to a system catalog.
+</span>
+典型的な兆候は、<span class="quote">「<span class="quote">missing chunk number 0 for toast value NNNNN in pg_toast_2619</span>」</span>のような一時的なエラーです。
+ここで挙げられるTOASTテーブルは常にシステムカタログに属します。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Track dependencies of functions on items used in parameter default
+      expressions (Tom Lane)
+</span>
+パラメータのデフォルト式で使用される項目について関数の依存関係を追跡します。(Tom Lane)
+     </p><p>
+<span class="original">
+      Previously, a referenced object could be dropped without having dropped
+      or modified the function, leading to misbehavior when the function was
+      used.  Note that merely installing this update will not fix the missing
+      dependency entries; to do that, you'd need to &lt;command&gt;CREATE OR
+      REPLACE&lt;/command&gt; each such function afterwards.  If you have functions whose
+      defaults depend on non-built-in objects, doing so is recommended.
+</span>
+これまでは、参照されるオブジェクトが、参照する関数を削除または変更することなく、削除されることがあり得ました。
+このため関数が使用される時に誤動作することになりました。
+単にこの更新をインストールするだけでは依存関係が消失した項目が修正されないことに注意してください。
+修正するためには、その後にこうした関数それぞれに<code class="command">CREATE OR REPLACE</code>を行う必要があります。
+デフォルト値が組み込み以外のオブジェクトに依存する関数があれば、これを行うことを勧めます。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix incorrect management of placeholder variables in nestloop joins
+      (Tom Lane)
+</span>
+ネステッドループ結合におけるプレースホルダ変数の不正確な管理を修正しました。(Tom Lane)
+     </p><p>
+<span class="original">
+      This bug is known to lead to &lt;quote&gt;variable not found in subplan target
+      list&lt;/quote&gt; planner errors, and could possibly result in wrong query output
+      when outer joins are involved.
+</span>
+この不具合は<span class="quote">「<span class="quote">variable not found in subplan target list</span>」</span>というプランナエラーをもたらすことが分かっています。
+さらに、外部結合が含まれる場合に間違った問い合わせ結果になる可能性もあります。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix window functions that sort by expressions involving aggregates
+      (Tom Lane)
+</span>
+集約を含む式でソートされたウィンドウ関数を修正しました。(Tom Lane)
+     </p><p>
+<span class="original">
+      Previously these could fail with &lt;quote&gt;could not find pathkey item to
+      sort&lt;/quote&gt; planner errors.
+</span>
+これまでは<span class="quote">「<span class="quote">could not find pathkey item to sort</span>」</span>というプランナエラーで失敗することがあり得ました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix &lt;quote&gt;MergeAppend child's targetlist doesn't match MergeAppend&lt;/quote&gt;
+      planner errors (Tom Lane)
+</span>
+<span class="quote">「<span class="quote">MergeAppend child's targetlist doesn't match MergeAppend</span>」</span>というプランナエラーを修正しました。(Tom Lane)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix index matching for operators with both collatable and noncollatable
+      inputs (Tom Lane)
+</span>
+照合順序設定可能な入力と不可能な入力の両方を持つ演算子に対するインデックス対応付けを修正しました。(Tom Lane)
+     </p><p>
+<span class="original">
+      In 9.1.0, an indexable operator that has a non-collatable left-hand
+      input type and a collatable right-hand input type would not be
+      recognized as matching the left-hand column's index.  An example is
+      the &lt;type&gt;hstore&lt;/type&gt; &lt;literal&gt;?&lt;/literal&gt; &lt;type&gt;text&lt;/type&gt; operator.
+</span>
+9.1.0では、照合順序の設定ができない入力型の左辺と設定ができる入力型の右辺を持つインデックス付け可能な演算子では、左辺の列のインデックスに対応しないものと認識されました。
+例えば<code class="type">hstore</code> <code class="literal">?</code> <code class="type">text</code>です。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Allow inlining of set-returning SQL functions with multiple OUT
+      parameters (Tom Lane)
+</span>
+複数のOUTパラメータを持つ、集合を返すSQL関数をインライン化することができます。(Tom Lane)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Don't trust deferred-unique indexes for join removal (Tom Lane and Marti
+      Raudsepp)
+</span>
+結合除去において遅延された一意性制約を信用しません。(Tom Lane、Marti Raudsepp)
+     </p><p>
+<span class="original">
+      A deferred uniqueness constraint might not hold intra-transaction,
+      so assuming that it does could give incorrect query results.
+</span>
+遅延された一意性制約はトランザクション内部で保持されないかもしれません。
+このため、間違った問い合わせ結果をもたらすかもしれないとみなします。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Make &lt;function&gt;DatumGetInetP()&lt;/function&gt; unpack inet datums that have a 1-byte
+      header, and add a new macro, &lt;function&gt;DatumGetInetPP()&lt;/function&gt;, that does
+      not (Heikki Linnakangas)
+</span>
+<code class="function">DatumGetInetP()</code>が１バイトヘッダを持つinetデータを展開するようにしました。
+さらに展開を行わない、新しいマクロ<code class="function">DatumGetInetPP()</code>を追加しました。(Heikki Linnakangas)
+     </p><p>
+<span class="original">
+      This change affects no core code, but might prevent crashes in add-on
+      code that expects &lt;function&gt;DatumGetInetP()&lt;/function&gt; to produce an unpacked
+      datum as per usual convention.
+</span>
+この変更がコアコードに影響することはありませんが、<code class="function">DatumGetInetP()</code>が通常の規約の通りに展開したデータを生成することを想定しているアドオンのコードにおけるクラッシュを防止できるかもしれません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Improve locale support in &lt;type&gt;money&lt;/type&gt; type's input and output
+      (Tom Lane)
+</span>
+<code class="type">money</code>型の入出力におけるロケールのサポートを改良しました。(Tom Lane)
+     </p><p>
+<span class="original">
+      Aside from not supporting all standard
+      &lt;link linkend="guc-lc-monetary"&gt;&lt;varname&gt;lc_monetary&lt;/varname&gt;&lt;/link&gt;
+      formatting options, the input and output functions were inconsistent,
+      meaning there were locales in which dumped &lt;type&gt;money&lt;/type&gt; values could
+      not be re-read.
+</span>
+すべての標準<a class="link" href="runtime-config-client.html#GUC-LC-MONETARY"><code class="varname">lc_monetary</code></a>書式付けオプションをサポートしていないという点以外にも、入力関数と出力関数に一貫性がなかったため、ダンプされた<code class="type">money</code>値では再度読み取ることができないロケールがありました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Don't let &lt;link
+      linkend="guc-transform-null-equals"&gt;&lt;varname&gt;transform_null_equals&lt;/varname&gt;&lt;/link&gt;
+      affect &lt;literal&gt;CASE foo WHEN NULL ...&lt;/literal&gt; constructs
+      (Heikki Linnakangas)
+</span>
+<a class="link" href="runtime-config-compatible.html#GUC-TRANSFORM-NULL-EQUALS"><code class="varname">transform_null_equals</code></a>が<code class="literal">CASE foo WHEN NULL ...</code>式に影響を与えないようにしました。(Heikki Linnakangas)
+     </p><p>
+<span class="original">
+      &lt;varname&gt;transform_null_equals&lt;/varname&gt; is only supposed to affect
+      &lt;literal&gt;foo = NULL&lt;/literal&gt; expressions written directly by the user, not
+      equality checks generated internally by this form of &lt;literal&gt;CASE&lt;/literal&gt;.
+</span>
+<code class="varname">transform_null_equals</code>は、<code class="literal">CASE</code>構文によって内部的に生成された等価な検査ではなく、直接ユーザによって書かれた<code class="literal">foo = NULL</code>に影響を与えることのみを前提としています。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Change foreign-key trigger creation order to better support
+      self-referential foreign keys (Tom Lane)
+</span>
+自己参照外部キーをより良くサポートするために、外部キートリガの生成順序を変更しました。(Tom Lane)
+     </p><p>
+<span class="original">
+      For a cascading foreign key that references its own table, a row update
+      will fire both the &lt;literal&gt;ON UPDATE&lt;/literal&gt; trigger and the
+      &lt;literal&gt;CHECK&lt;/literal&gt; trigger as one event.  The &lt;literal&gt;ON UPDATE&lt;/literal&gt;
+      trigger must execute first, else the &lt;literal&gt;CHECK&lt;/literal&gt; will check a
+      non-final state of the row and possibly throw an inappropriate error.
+      However, the firing order of these triggers is determined by their
+      names, which generally sort in creation order since the triggers have
+      auto-generated names following the convention
+      &lt;quote&gt;RI_ConstraintTrigger_NNNN&lt;/quote&gt;.  A proper fix would require
+      modifying that convention, which we will do in 9.2, but it seems risky
+      to change it in existing releases.  So this patch just changes the
+      creation order of the triggers.  Users encountering this type of error
+      should drop and re-create the foreign key constraint to get its
+      triggers into the right order.
+</span>
+カスケードしている外部キーが自身のテーブルを参照する場合、１行の更新が１つのイベントで<code class="literal">ON UPDATE</code>トリガと<code class="literal">CHECK</code>トリガの両方を発行します。
+<code class="literal">ON UPDATE</code>トリガを最初に実行しなければなりません。
+そうしないと、<code class="literal">CHECK</code>は最終的ではない行の状態を検査することになり、不適切なエラーが発生する可能性があります。
+しかしこれらのトリガの発行順序はその名前によって決まります。
+トリガは<span class="quote">「<span class="quote">RI_ConstraintTrigger_NNNN</span>」</span>という規約に従った名前で自動生成されますので、一般的には作成順序によって決まります。
+適切な修正にはこの規約の変更が必要です。
+9.2で変更する予定ですが、既存のリリースで変更することには危険があるように思われます。
+このため、このパッチはトリガの作成順序を変更するだけです。
+この種のエラーが起きたユーザは、トリガを正しい順序にするために、外部キー制約を削除し再作成しなければなりません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix &lt;literal&gt;IF EXISTS&lt;/literal&gt; to work correctly in &lt;command&gt;DROP OPERATOR
+      FAMILY&lt;/command&gt; (Robert Haas)
+</span>
+<code class="command">DROP OPERATOR FAMILY</code>内で<code class="literal">IF EXISTS</code>が正しく動作するように修正しました。(Robert Haas)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Disallow dropping of an extension from within its own script
+      (Tom Lane)
+</span>
+拡張自身のスクリプトの中から拡張を削除することを禁じました。(Tom Lane)
+     </p><p>
+<span class="original">
+      This prevents odd behavior in case of incorrect management of extension
+      dependencies.
+</span>
+これにより、拡張依存関係が不正確に管理された場合のおかしな動作を防止します。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Don't mark auto-generated types as extension members (Robert Haas)
+</span>
+自動生成される型を拡張のメンバと印付けません。(Robert Haas)
+     </p><p>
+<span class="original">
+      Relation rowtypes and automatically-generated array types do not need to
+      have their own extension membership entries in &lt;structname&gt;pg_depend&lt;/structname&gt;,
+      and creating such entries complicates matters for extension upgrades.
+</span>
+リレーション行型と自動生成される配列型を<code class="structname">pg_depend</code>内の拡張自身のメンバ関係項目に持たせる必要はありません。
+またこうした項目を作成すると、拡張の更新が複雑になります。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Cope with invalid pre-existing &lt;varname&gt;search_path&lt;/varname&gt; settings during
+      &lt;command&gt;CREATE EXTENSION&lt;/command&gt; (Tom Lane)
+</span>
+<code class="command">CREATE EXTENSION</code>時の、事前に存在する無効な<code class="varname">search_path</code>設定をうまく対処します。(Tom Lane)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Avoid floating-point underflow while tracking buffer allocation rate
+      (Greg Matthews)
+</span>
+バッファ割当率を追跡する際の浮動小数アンダーフローを防止します。(Greg Matthews)
+     </p><p>
+<span class="original">
+      While harmless in itself, on certain platforms this would result in
+      annoying kernel log messages.
+</span>
+これ自体は害がないものですが、特定のプラットフォームではこれにより煩わしいカーネルログメッセージが現れます。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Prevent autovacuum transactions from running in serializable mode
+      (Tom Lane)
+</span>
+自動バキュームトランザクションがシリアライザブルモードで実行しないようにしました。(Tom Lane)
+     </p><p>
+<span class="original">
+      Autovacuum formerly used the cluster-wide default transaction isolation
+      level, but there is no need for it to use anything higher than READ
+      COMMITTED, and using SERIALIZABLE could result in unnecessary delays
+      for other processes.
+</span>
+これまでの自動バキュームはクラスタ全体のデフォルトトランザクション隔離レベルを使用していましたが、READ COMMITTED以上のレベルを使用する必要はありません。
+またSERIALIZABLEを使用すると他のプロセスで不要な遅延が発生し得ました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Ensure walsender processes respond promptly to &lt;systemitem&gt;SIGTERM&lt;/systemitem&gt;
+      (Magnus Hagander)
+</span>
+walsenderプロセスが<span class="systemitem">SIGTERM</span>に適切に反応することを確実にしました。(Magnus Hagander)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Exclude &lt;filename&gt;postmaster.opts&lt;/filename&gt; from base backups
+      (Magnus Hagander)
+</span>
+ベースバックアップから<code class="filename">postmaster.opts</code>を除外しました。(Magnus Hagander)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Preserve configuration file name and line number values when starting
+      child processes under Windows (Tom Lane)
+</span>
+Windowsにおける子プロセス起動時設定ファイルの名前と行番号を保持します。(Tom Lane)
+     </p><p>
+<span class="original">
+      Formerly, these would not be displayed correctly in the
+      &lt;structname&gt;pg_settings&lt;/structname&gt; view.
+</span>
+これまでこれらは<code class="structname">pg_settings</code>ビューで正しく表示されませんでした。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix incorrect field alignment in &lt;application&gt;ecpg&lt;/application&gt;'s SQLDA area
+      (Zoltan Boszormenyi)
+</span>
+<span class="application">ecpg</span>のSQLDA領域における不正確なフィールドの整列を修正しました。(Zoltan Boszormenyi)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Preserve blank lines within commands in &lt;application&gt;psql&lt;/application&gt;'s command
+      history (Robert Haas)
+</span>
+<span class="application">psql</span>のコマンド履歴内で空行を含むコマンドを保持します。(Robert Haas)
+     </p><p>
+<span class="original">
+      The former behavior could cause problems if an empty line was removed
+      from within a string literal, for example.
+</span>
+これまでの動作では、例えば文字列リテラル内の空行が削除された場合に問題が起きました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Avoid platform-specific infinite loop in &lt;application&gt;pg_dump&lt;/application&gt;
+      (Steve Singer)
+</span>
+<span class="application">pg_dump</span>における、プラットフォーム固有の無限ループを防止します。(Steve Singer)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix compression of plain-text output format in &lt;application&gt;pg_dump&lt;/application&gt;
+      (Adrian Klaver and Tom Lane)
+</span>
+<span class="application">pg_dump</span>における平文テキスト出力書式の圧縮を修正しました。(Adrian Klaver、Tom Lane)
+     </p><p>
+<span class="original">
+      &lt;application&gt;pg_dump&lt;/application&gt; has historically understood &lt;literal&gt;-Z&lt;/literal&gt; with
+      no &lt;literal&gt;-F&lt;/literal&gt; switch to mean that it should emit a gzip-compressed
+      version of its plain text output.  Restore that behavior.
+</span>
+<span class="application">pg_dump</span>は歴史的に、<code class="literal">-F</code>がない<code class="literal">-Z</code>を平文テキスト出力をgzipで圧縮した形で出力しなければならないことを意味すると解釈していました。
+この動作に戻しました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix &lt;application&gt;pg_dump&lt;/application&gt; to dump user-defined casts between
+      auto-generated types, such as table rowtypes (Tom Lane)
+</span>
+テーブルの行型など自動生成された型の間でユーザが定義したキャストをダンプするように<span class="application">pg_dump</span>を修正しました。(Tom Lane)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix missed quoting of foreign server names in &lt;application&gt;pg_dump&lt;/application&gt;
+      (Tom Lane)
+</span>
+<span class="application">pg_dump</span>において外部サーバ名の引用符付けの失敗を修正しました。(Tom Lane)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Assorted fixes for &lt;application&gt;pg_upgrade&lt;/application&gt; (Bruce Momjian)
+</span>
+<span class="application">pg_upgrade</span>について様々な修正を行いました。(Bruce Momjian)
+     </p><p>
+<span class="original">
+      Handle exclusion constraints correctly, avoid failures on Windows,
+      don't complain about mismatched toast table names in 8.4 databases.
+</span>
+排他制約の正確な取り扱い、Windowsにおける失敗の防止、8.4データベースにおける対応しないTOASTテーブル名に関する警告の抑制。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      In PL/pgSQL, allow foreign tables to define row types
+      (Alexander Soudakov)
+</span>
+PL/pgSQLにおいて行型を定義するための外部テーブルを許可します。(Alexander Soudakov)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix up conversions of PL/Perl functions' results
+      (Alex Hunsaker and Tom Lane)
+</span>
+PL/Perl関数の結果の変換を取り決めました。(Alex Hunsaker、Tom Lane)
+     </p><p>
+<span class="original">
+      Restore the pre-9.1 behavior that PL/Perl functions returning
+      &lt;type&gt;void&lt;/type&gt; ignore the result value of their last Perl statement;
+      9.1.0 would throw an error if that statement returned a reference.
+      Also, make sure it works to return a string value for a composite type,
+      so long as the string meets the type's input format.
+      In addition, throw errors for attempts to return Perl arrays or hashes
+      when the function's declared result type is not an array or composite
+      type, respectively.  (Pre-9.1 versions rather uselessly returned
+      strings like &lt;literal&gt;ARRAY(0x221a9a0)&lt;/literal&gt; or
+      &lt;literal&gt;HASH(0x221aa90)&lt;/literal&gt; in such cases.)
+</span>
+<code class="type">void</code>を返すPL/Perl関数がその最後のPerl文の結果値を無視するという9.1より前の動作に戻しました。
+9.1.0では、最後の文が参照を返す場合にエラーになりました。
+また、複合型に対して文字列値を返す場合も、文字列が型の入力書式に合う限り、確実に動作するようにしました。
+さらに、関数の宣言された結果型が配列または複合型ではない場合、それぞれPerlの配列またはハッシュを返そうとするとエラーになります。
+（こうした場合、9.1より前のバージョンでは、ほとんど役に立たない<code class="literal">ARRAY(0x221a9a0)</code>や<code class="literal">HASH(0x221aa90)</code>といった文字列が返されました。）
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Ensure PL/Perl strings are always correctly UTF8-encoded
+      (Amit Khandekar and Alex Hunsaker)
+</span>
+PL/Perlの文字列が常に正しくUTF8で符号化されることを確実にしました。(Amit Khandekar、Alex Hunsaker)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Use the preferred version of &lt;application&gt;xsubpp&lt;/application&gt; to build PL/Perl,
+      not necessarily the operating system's main copy
+      (David Wheeler and Alex Hunsaker)
+</span>
+PL/Perlの構築時に好みのバージョンの<span class="application">xsubpp</span>を使用します。
+オペレーティングシステムのメインコピーである必要はありません。(David Wheeler、Alex Hunsaker)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Correctly propagate SQLSTATE in PL/Python exceptions
+      (Mika Eloranta and Jan Urbanski)
+</span>
+PL/Pythonの例外においてSQLSTATEを正しく伝搬します。(Mika Eloranta、Jan Urbanski)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Do not install PL/Python extension files for Python major versions
+      other than the one built against (Peter Eisentraut)
+</span>
+構築対象メジャーバージョン以外のバージョンのPython用のPL/Python拡張ファイルをインストールしません。(Peter Eisentraut)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Change all the &lt;filename&gt;contrib&lt;/filename&gt; extension script files to report
+      a useful error message if they are fed to &lt;application&gt;psql&lt;/application&gt;
+      (Andrew Dunstan and Tom Lane)
+</span>
+スクリプトファイルが<span class="application">psql</span>に渡される場合に有用なエラーメッセージを出力するように、すべての<code class="filename">contrib</code>拡張スクリプトファイルを変更しました。(Andrew Dunstan、Tom Lane)
+     </p><p>
+<span class="original">
+      This should help teach people about the new method of using
+      &lt;command&gt;CREATE EXTENSION&lt;/command&gt; to load these files.  In most cases,
+      sourcing the scripts directly would fail anyway, but with
+      harder-to-interpret messages.
+</span>
+これは、これらのファイルをロードするために<code class="command">CREATE EXTENSION</code>という新しい方法をユーザに知らせる助けになるはずです。
+ほとんどの場合、スクリプトファイルを直接読み込んでも失敗しますが、解釈し難いメッセージが出力されました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix incorrect coding in &lt;filename&gt;contrib/dict_int&lt;/filename&gt; and
+      &lt;filename&gt;contrib/dict_xsyn&lt;/filename&gt; (Tom Lane)
+</span>
+<code class="filename">contrib/dict_int</code>および<code class="filename">contrib/dict_xsyn</code>内の間違ったコードを修正しました。(Tom Lane)
+     </p><p>
+<span class="original">
+      Some functions incorrectly assumed that memory returned by
+      &lt;function&gt;palloc()&lt;/function&gt; is guaranteed zeroed.
+</span>
+一部の関数で、<code class="function">palloc()</code>で返されるメモリはゼロ埋めされていることが保証されていると間違った前提をしていました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Remove &lt;filename&gt;contrib/sepgsql&lt;/filename&gt; tests from the regular regression
+      test mechanism (Tom Lane)
+</span>
+通常のリグレッションテストから<code class="filename">contrib/sepgsql</code>を取り除きました。(Tom Lane)
+     </p><p>
+<span class="original">
+      Since these tests require root privileges for setup, they're impractical
+      to run automatically.  Switch over to a manual approach instead, and
+      provide a testing script to help with that.
+</span>
+これらの試験の設定にはroot権限が必要ですので、自動的に実行させるのは実用的ではありません。
+代わりに手作業による方法に切替え、その試験を補助する試験スクリプトを用意しました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix assorted errors in &lt;filename&gt;contrib/unaccent&lt;/filename&gt;'s configuration
+      file parsing (Tom Lane)
+</span>
+<code class="filename">contrib/unaccent</code>の設定ファイル解析において様々なエラーを修正しました。(Tom Lane)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Honor query cancel interrupts promptly in &lt;function&gt;pgstatindex()&lt;/function&gt;
+      (Robert Haas)
+</span>
+<code class="function">pgstatindex()</code>において問い合わせキャンセル割込みを適切に受け付けます。(Robert Haas)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix incorrect quoting of log file name in macOS start script
+      (Sidar Lopez)
+</span>
+macOS起動スクリプトにおける間違ったログファイル名の引用符付けを修正しました。(Sidar Lopez)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Revert unintentional enabling of &lt;literal&gt;WAL_DEBUG&lt;/literal&gt; (Robert Haas)
+</span>
+意図せずに有効になっていた<code class="literal">WAL_DEBUG</code>を元に戻しました。(Robert Haas)
+     </p><p>
+<span class="original">
+      Fortunately, as debugging tools go, this one is pretty cheap;
+      but it's not intended to be enabled by default, so revert.
+</span>
+幸いなことにデバッグ用ツールが作動する時でもこれは非常に安価なものです。
+しかしデフォルトで有効にすることは意図していませんので、元に戻しました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Ensure VPATH builds properly install all server header files
+      (Peter Eisentraut)
+</span>
+VPATH構築ですべてのサーバヘッダファイルが適切にインストールされることを確実にしました。(Peter Eisentraut)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Shorten file names reported in verbose error messages (Peter Eisentraut)
+</span>
+冗長エラーメッセージ内で報告されるファイル名を短くしました。(Peter Eisentraut)
+     </p><p>
+<span class="original">
+      Regular builds have always reported just the name of the C file
+      containing the error message call, but VPATH builds formerly
+      reported an absolute path name.
+</span>
+通常の構築では常にCファイルの名前だけがエラーメッセージ呼び出しの中で報告されました。
+しかしこれまでVPATH構築では絶対パス名が報告されました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix interpretation of Windows timezone names for Central America
+      (Tom Lane)
+</span>
+中央アメリカ用のWindowsの時間帯名の解釈を修正しました。(Tom Lane)
+     </p><p>
+<span class="original">
+      Map &lt;quote&gt;Central America Standard Time&lt;/quote&gt; to &lt;literal&gt;CST6&lt;/literal&gt;, not
+      &lt;literal&gt;CST6CDT&lt;/literal&gt;, because DST is generally not observed anywhere in
+      Central America.
+</span>
+通常中央アメリカではまったく夏時間が認められませんので、<span class="quote">「<span class="quote">Central America Standard Time</span>」</span>を<code class="literal">CST6CDT</code>ではなく<code class="literal">CST6</code>に対応付けしました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Update time zone data files to &lt;application&gt;tzdata&lt;/application&gt; release 2011n
+      for DST law changes in Brazil, Cuba, Fiji, Palestine, Russia, and Samoa;
+      also historical corrections for Alaska and British East Africa.
+</span>
+時間帯データファイルを<span class="application">tzdata</span> release 2011nに更新しました。
+ブラジル、キューバ、フィジー、パレスチナ、ロシア、サモアにおける夏時間規則の変更、アラスカ、イギリス領東アフリカの歴史的な修正が含まれています。
+     </p></li></ul></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="release-9-1-3.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="release.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="release-9-1-1.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">E.131. リリース9.1.3 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> E.133. リリース9.1.1</td></tr></table></div></body></html>

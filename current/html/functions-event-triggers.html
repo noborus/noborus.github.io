@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>9.28. イベントトリガ関数</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="functions-trigger.html" title="9.27. トリガ関数" /><link rel="next" href="typeconv.html" title="第10章 型変換" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="functions.html" title="第9章 関数と演算子">第9章 関数と演算子</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      functions-event-triggers.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="functions-trigger.html" title="9.27. トリガ関数">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="functions.html" title="第9章 関数と演算子">上へ</a></td><td width="60%" align="center">9.28. イベントトリガ関数</td><td width="20%" align="right"> <a accesskey="n" href="typeconv.html" title="第10章 型変換">次へ</a></td></tr></table><hr /></div><div class="sect1" id="FUNCTIONS-EVENT-TRIGGERS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">9.28. イベントトリガ関数</h2></div></div></div><span class="original">
+   &lt;title&gt;Event Trigger Functions&lt;/title&gt;
+</span><p>
+<span class="original">
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; provides these helper functions
+    to retrieve information from event triggers.
+</span>
+<span class="productname">PostgreSQL</span>はイベントトリガについての情報を取得するために以下のヘルパ関数を提供しています。
+   </p><p>
+<span class="original">
+    For more information about event triggers,
+    see &lt;xref linkend="event-triggers"/&gt;.
+</span>
+イベントトリガについての詳細は<a class="xref" href="event-triggers.html" title="第40章 イベントトリガ">第40章</a>を参照して下さい。
+   </p><div class="sect2" id="PG-EVENT-TRIGGER-DDL-COMMAND-END-FUNCTIONS"><div class="titlepage"><div><div><h3 class="title">9.28.1. コマンド側での変更を捕らえる</h3></div></div></div><span class="original">
+   &lt;title&gt;Capturing Changes at Command End&lt;/title&gt;
+</span><a id="id-1.5.8.33.4.2" class="indexterm"></a><p>
+<span class="original">
+    &lt;function&gt;pg_event_trigger_ddl_commands&lt;/function&gt; returns a list of
+    &lt;acronym&gt;DDL&lt;/acronym&gt; commands executed by each user action,
+    when invoked in a function attached to a
+    &lt;literal&gt;ddl_command_end&lt;/literal&gt; event trigger.  If called in any other
+    context, an error is raised.
+    &lt;function&gt;pg_event_trigger_ddl_commands&lt;/function&gt; returns one row for each
+    base command executed; some commands that are a single SQL sentence
+    may return more than one row.  This function returns the following
+    columns:
+</span>
+<code class="function">pg_event_trigger_ddl_commands</code>が<code class="literal">ddl_command_end</code>イベントトリガーに付与された関数から起動されると、各ユーザの操作によって実行された<acronym class="acronym">DDL</acronym>コマンドの一覧を返します。
+それ以外の環境から呼び出された場合はエラーが発生します。
+<code class="function">pg_event_trigger_ddl_commands</code>は、実行された基となるコマンドのそれぞれについて1行を返します。
+1つのSQL文として実行されるいくつかのコマンドに対して、複数の行が返されることもあります。
+この関数は以下の列を返します。
+
+    </p><div class="informaltable"><table class="informaltable" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>名前</th><th>型</th><th>説明</th></tr></thead><tbody><tr><td><code class="literal">classid</code></td><td>OID of catalog the object belongs in</td><td>オブジェクトが属するカタログのOID</td></tr><tr><td><code class="literal">objid</code></td><td><code class="type">oid</code></td><td>カタログ内のオブジェクトのOID</td></tr><tr><td><code class="literal">objsubid</code></td><td><code class="type">integer</code></td><td>オブジェクトのサブID（例：列の属性番号）</td></tr><tr><td><code class="literal">command_tag</code></td><td><code class="type">text</code></td><td>コマンドのタグ</td></tr><tr><td><code class="literal">object_type</code></td><td><code class="type">text</code></td><td>オブジェクトの型</td></tr><tr><td><code class="literal">schema_name</code></td><td><code class="type">text</code></td><td>
+<span class="original">
+         Name of the schema the object belongs in, if any; otherwise &lt;literal&gt;NULL&lt;/literal&gt;.
+         No quoting is applied.
+</span>
+オブジェクトが属するスキーマの名前（あれば）。
+なければ<code class="literal">NULL</code>。
+引用符づけされない。
+        </td></tr><tr><td><code class="literal">object_identity</code></td><td><code class="type">text</code></td><td>
+<span class="original">
+         Text rendering of the object identity, schema-qualified. Each
+         identifier included in the identity is quoted if necessary.
+</span>
+オブジェクトの識別をテキスト表現したもので、スキーマ修飾される。
+識別内に存在する各識別子は、必要なら引用符で括られる。
+        </td></tr><tr><td><code class="literal">in_extension</code></td><td><code class="type">bool</code></td><td>コマンドが拡張のスクリプトの一部なら真</td></tr><tr><td><code class="literal">command</code></td><td><code class="type">pg_ddl_command</code></td><td>
+<span class="original">
+         A complete representation of the command, in internal format.
+         This cannot be output directly, but it can be passed to other
+         functions to obtain different pieces of information about the
+         command.
+</span>
+コマンドを内部形式で完全に表現したもの。
+これを直接出力することはできないが、コマンドについて他の情報を得るために、他の関数に渡すことができる。
+        </td></tr></tbody></table></div><p>
+   </p></div><div class="sect2" id="PG-EVENT-TRIGGER-SQL-DROP-FUNCTIONS"><div class="titlepage"><div><div><h3 class="title">9.28.2. DDLコマンドで削除されたオブジェクトの処理</h3></div></div></div><span class="original">
+   &lt;title&gt;Processing Objects Dropped by a DDL Command&lt;/title&gt;
+</span><a id="id-1.5.8.33.5.2" class="indexterm"></a><p>
+<span class="original">
+    &lt;function&gt;pg_event_trigger_dropped_objects&lt;/function&gt; returns a list of all objects
+    dropped by the command in whose &lt;literal&gt;sql_drop&lt;/literal&gt; event it is called.
+    If called in any other context,
+    &lt;function&gt;pg_event_trigger_dropped_objects&lt;/function&gt; raises an error.
+    &lt;function&gt;pg_event_trigger_dropped_objects&lt;/function&gt; returns the following columns:
+</span>
+関数<code class="function">pg_event_trigger_dropped_objects</code>は、それが呼ばれた<code class="literal">sql_drop</code>イベントのコマンドにより削除された全てのオブジェクトのリストを返します。
+その他いかなる状況で呼ばれた場合、<code class="function">pg_event_trigger_dropped_objects</code>はエラーを生じさせます。
+<code class="function">pg_event_trigger_dropped_objects</code>は以下の列を返します。
+
+    </p><div class="informaltable"><table class="informaltable" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>名前</th><th>型</th><th>説明</th></tr></thead><tbody><tr><td><code class="literal">classid</code></td><td>オブジェクトが所属するカタログのOID</td><td class="auto-generated"> </td></tr><tr><td><code class="literal">objid</code></td><td><code class="type">oid</code></td><td>カタログ内に所有するオブジェクトのOID</td></tr><tr><td><code class="literal">objsubid</code></td><td><code class="type">integer</code></td><td> (列の属性番号のような)オブジェクトの副id</td></tr><tr><td><code class="literal">original</code></td><td><code class="type">bool</code></td><td>これが削除のルートオブジェクトの一つなら真</td></tr><tr><td><code class="literal">normal</code></td><td><code class="type">bool</code></td><td>
+<span class="original">
+         True if there was a normal dependency relationship
+         in the dependency graph leading to this object
+</span>
+このオブジェクトへと至る依存関係グラフで、通常の依存があるなら真
+        </td></tr><tr><td><code class="literal">is_temporary</code></td><td><code class="type">bool</code></td><td>
+<span class="original">
+         True if this was a temporary object
+</span>
+オブジェクトが一時オブジェクトであったなら真
+        </td></tr><tr><td><code class="literal">object_type</code></td><td><code class="type">text</code></td><td>オブジェクトの型</td></tr><tr><td><code class="literal">schema_name</code></td><td><code class="type">text</code></td><td>
+<span class="original">
+         Name of the schema the object belonged in, if any; otherwise &lt;literal&gt;NULL&lt;/literal&gt;.
+         No quoting is applied.
+</span>
+オブジェクトが所属しているスキーマの名前（あれば）。
+なければ<code class="literal">NULL</code>。
+引用符づけされない。
+        </td></tr><tr><td><code class="literal">object_name</code></td><td><code class="type">text</code></td><td>
+<span class="original">
+         Name of the object, if the combination of schema and name can be
+         used as a unique identifier for the object; otherwise &lt;literal&gt;NULL&lt;/literal&gt;.
+         No quoting is applied, and name is never schema-qualified.
+</span>
+スキーマと名前の組み合わせがオブジェクトに対する一意の識別子として使用可能な場合はオブジェクトの名前。そうでないときは<code class="literal">NULL</code>。
+引用符は適用されず、名前は決してスキーマで修飾されない。
+        </td></tr><tr><td><code class="literal">object_identity</code></td><td><code class="type">text</code></td><td>
+<span class="original">
+         Text rendering of the object identity, schema-qualified. Each
+         identifier included in the identity is quoted if necessary.
+</span>
+オブジェクト識別のテキスト表現で、スキーマ修飾される。
+識別内に存在する各識別子は必要であれば引用符で括られる。
+        </td></tr><tr><td><code class="literal">address_names</code></td><td><code class="type">text[]</code></td><td>
+<span class="original">
+         An array that, together with &lt;literal&gt;object_type&lt;/literal&gt; and
+         &lt;literal&gt;address_args&lt;/literal&gt;, can be used by
+         the &lt;function&gt;pg_get_object_address()&lt;/function&gt; function to
+         recreate the object address in a remote server containing an
+         identically named object of the same kind
+</span>
+<code class="literal">object_type</code>および<code class="literal">address_args</code>と一緒に<code class="function">pg_get_object_address()</code>で使うことで、同じ種類で全く同じ名前のオブジェクトを含むリモートサーバ内のオブジェクトアドレスを再作成できる配列。
+        </td></tr><tr><td><code class="literal">address_args</code></td><td><code class="type">text[]</code></td><td>
+<span class="original">
+         Complement for &lt;literal&gt;address_names&lt;/literal&gt;
+</span>
+<code class="literal">address_names</code>の補足。
+        </td></tr></tbody></table></div><p>
+   </p><p>
+<span class="original">
+    The &lt;function&gt;pg_event_trigger_dropped_objects&lt;/function&gt; function can be used
+    in an event trigger like this:
+</span>
+関数<code class="function">pg_event_trigger_dropped_objects</code>は以下のようにイベントトリガとして使用可能です。
+</p><pre class="programlisting">
+CREATE FUNCTION test_event_trigger_for_drops()
+        RETURNS event_trigger LANGUAGE plpgsql AS $$
+DECLARE
+    obj record;
+BEGIN
+    FOR obj IN SELECT * FROM pg_event_trigger_dropped_objects()
+    LOOP
+        RAISE NOTICE '% dropped object: % %.% %',
+                     tg_tag,
+                     obj.object_type,
+                     obj.schema_name,
+                     obj.object_name,
+                     obj.object_identity;
+    END LOOP;
+END
+$$;
+CREATE EVENT TRIGGER test_event_trigger_for_drops
+   ON sql_drop
+   EXECUTE FUNCTION test_event_trigger_for_drops();
+</pre><p>
+    </p></div><div class="sect2" id="PG-EVENT-TRIGGER-TABLE-REWRITE-FUNCTIONS"><div class="titlepage"><div><div><h3 class="title">9.28.3. テーブル書き換えイベントの処理</h3></div></div></div><span class="original">
+   &lt;title&gt;Handling a Table Rewrite Event&lt;/title&gt;
+</span><p>
+<span class="original">
+    The functions shown in
+    &lt;xref linkend="functions-event-trigger-table-rewrite"/&gt;
+    provide information about a table for which a
+    &lt;literal&gt;table_rewrite&lt;/literal&gt; event has just been called.
+    If called in any other context, an error is raised.
+</span>
+<a class="xref" href="functions-event-triggers.html#FUNCTIONS-EVENT-TRIGGER-TABLE-REWRITE" title="表9.90 テーブル書き換え情報">表 9.90</a>に示す関数は、<code class="literal">table_rewrite</code>イベントが呼び出されたばかりのテーブルについての情報を提供します。
+それ以外の状況で呼び出された場合はエラーが発生します。
+   </p><div class="table" id="FUNCTIONS-EVENT-TRIGGER-TABLE-REWRITE"><p class="title"><strong>表9.90 テーブル書き換え情報</strong></p><div class="table-contents"><span class="original">
+    &lt;title&gt;Table Rewrite information&lt;/title&gt;
+</span><table class="table" summary="テーブル書き換え情報" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>名前</th><th>戻り型</th><th>説明</th></tr></thead><tbody><tr><td>
+        <a id="id-1.5.8.33.6.3.2.2.1.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">pg_event_trigger_table_rewrite_oid()</code></code>
+       </td><td><code class="type">Oid</code></td><td>書き換えようとされているテーブルのOID</td></tr><tr><td>
+        <a id="id-1.5.8.33.6.3.2.2.2.1.1" class="indexterm"></a>
+        <code class="literal"><code class="function">pg_event_trigger_table_rewrite_reason()</code></code>
+       </td><td><code class="type">int</code></td><td>
+<span class="original">
+        The reason code(s) explaining the reason for rewriting. The exact
+        meaning of the codes is release dependent.
+</span>
+書き換えの理由を説明する理由コード。
+コードの正確な意味はリリースに依存する。
+       </td></tr></tbody></table></div></div><br class="table-break" /><p>
+<span class="original">
+    The &lt;function&gt;pg_event_trigger_table_rewrite_oid&lt;/function&gt; function can be used
+    in an event trigger like this:
+</span>
+<code class="function">pg_event_trigger_table_rewrite_oid</code>関数はイベントトリガ内で以下のように使うことができます。
+</p><pre class="programlisting">
+CREATE FUNCTION test_event_trigger_table_rewrite_oid()
+ RETURNS event_trigger
+ LANGUAGE plpgsql AS
+$$
+BEGIN
+  RAISE NOTICE 'rewriting table % for reason %',
+                pg_event_trigger_table_rewrite_oid()::regclass,
+                pg_event_trigger_table_rewrite_reason();
+END;
+$$;
+
+CREATE EVENT TRIGGER test_table_rewrite_oid
+                  ON table_rewrite
+   EXECUTE FUNCTION test_event_trigger_table_rewrite_oid();
+</pre><p>
+    </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="functions-trigger.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="functions.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="typeconv.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">9.27. トリガ関数 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 第10章 型変換</td></tr></table></div></body></html>

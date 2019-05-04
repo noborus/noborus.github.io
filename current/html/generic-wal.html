@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>第62章 汎用WALレコード</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="index-cost-estimation.html" title="61.6. インデックスコスト推定関数" /><link rel="next" href="btree.html" title="第63章 B-Treeインデックス" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="internals.html" title="パート VII. 内部情報">パート VII. 内部情報</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      generic-wal.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="index-cost-estimation.html" title="61.6. インデックスコスト推定関数">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="internals.html" title="パート VII. 内部情報">上へ</a></td><td width="60%" align="center">第62章 汎用WALレコード</td><td width="20%" align="right"> <a accesskey="n" href="btree.html" title="第63章 B-Treeインデックス">次へ</a></td></tr></table><hr /></div><div class="chapter" id="GENERIC-WAL"><div class="titlepage"><div><div><h2 class="title">第62章 汎用WALレコード</h2></div></div></div><span class="original">
+ &lt;title&gt;Generic WAL Records&lt;/title&gt;
+</span><p>
+<span class="original">
+   Although all built-in WAL-logged modules have their own types of WAL
+   records, there is also a generic WAL record type, which describes changes
+   to pages in a generic way.  This is useful for extensions that provide
+   custom access methods, because they cannot register their own WAL redo
+   routines.
+</span>
+組み込みのWALにログを書き込むすべてのモジュールは、それぞれに独自の型のWALレコードがありますが、ページへの変更を汎用的な方法で記述する汎用WALレコード型もあります。
+カスタムアクセスメソッドを提供する拡張では、独自のWALの再実行(redo)ルーチンを登録できないため、汎用WALレコードが役立ちます。
+  </p><p>
+<span class="original">
+   The API for constructing generic WAL records is defined in
+   &lt;filename&gt;access/generic_xlog.h&lt;/filename&gt; and implemented
+   in &lt;filename&gt;access/transam/generic_xlog.c&lt;/filename&gt;.
+</span>
+汎用WALレコードを構築するためのAPIは<code class="filename">access/generic_xlog.h</code>に定義されており、<code class="filename">access/transam/generic_xlog.c</code>で実装されています。
+  </p><p>
+<span class="original">
+   To perform a WAL-logged data update using the generic WAL record
+   facility, follow these steps:
+</span>
+汎用WALレコードの機能を使ってWAL書き込みを伴うデータ更新を行うには、以下の手順に従ってください。
+
+   </p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p>
+<span class="original">
+      &lt;function&gt;state = GenericXLogStart(relation)&lt;/function&gt; &amp;mdash; start
+      construction of a generic WAL record for the given relation.
+</span>
+<code class="function">state = GenericXLogStart(relation)</code> により、指定のリレーションについての汎用WALレコードの構築を開始します。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      &lt;function&gt;page = GenericXLogRegisterBuffer(state, buffer, flags)&lt;/function&gt;
+      &amp;mdash; register a buffer to be modified within the current generic WAL
+      record.  This function returns a pointer to a temporary copy of the
+      buffer's page, where modifications should be made.  (Do not modify the
+      buffer's contents directly.)  The third argument is a bit mask of flags
+      applicable to the operation.  Currently the only such flag is
+      &lt;literal&gt;GENERIC_XLOG_FULL_IMAGE&lt;/literal&gt;, which indicates that a full-page
+      image rather than a delta update should be included in the WAL record.
+      Typically this flag would be set if the page is new or has been
+      rewritten completely.
+      &lt;function&gt;GenericXLogRegisterBuffer&lt;/function&gt; can be repeated if the
+      WAL-logged action needs to modify multiple pages.
+</span>
+<code class="function">page = GenericXLogRegisterBuffer(state, buffer, flags)</code> により、現在の汎用WALレコード内で更新されるバッファを登録します。
+この関数はバッファページの一時コピーへのポインタを返すので、更新はそれに対して行ってください。
+（バッファの内容は直接更新しないでください。）
+3番目の引数は、操作についてのフラグのビットマスクです。
+現在のところ、使用できるフラグは<code class="literal">GENERIC_XLOG_FULL_IMAGE</code>のみで、これはWALレコードには変更の差分ではなく、ページ全体のイメージが含まれることを示します。
+典型的には、このフラグはページが新しいか、あるいは完全に書き換えられるときにセットされます。
+WAL書き込み対象の動作が複数のページを更新する必要がある場合は、<code class="function">GenericXLogRegisterBuffer</code>を繰り返すことができます。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Apply modifications to the page images obtained in the previous step.
+</span>
+前の手順で取得したページのイメージに更新を適用する。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      &lt;function&gt;GenericXLogFinish(state)&lt;/function&gt; &amp;mdash; apply the changes to
+      the buffers and emit the generic WAL record.
+</span>
+<code class="function">GenericXLogFinish(state)</code>により、バッファの変更を適用し、汎用WALレコードを送出する。
+     </p></li></ol></div><p>
+  </p><p>
+<span class="original">
+   WAL record construction can be canceled between any of the above steps by
+   calling &lt;function&gt;GenericXLogAbort(state)&lt;/function&gt;.  This will discard all
+   changes to the page image copies.
+</span>
+WALレコードの構築は、上記の手順内の間のどこででも、<code class="function">GenericXLogAbort(state)</code>を呼び出すことで中止できます。
+これによりページイメージのコピーに対する変更はすべて廃棄されます。
+  </p><p>
+<span class="original">
+   Please note the following points when using the generic WAL record
+   facility:
+</span>
+汎用WALレコードの機能を使うときは、以下の点に注意してください。
+
+   </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+      No direct modifications of buffers are allowed!  All modifications must
+      be done in copies acquired from &lt;function&gt;GenericXLogRegisterBuffer()&lt;/function&gt;.
+      In other words, code that makes generic WAL records should never call
+      &lt;function&gt;BufferGetPage()&lt;/function&gt; for itself.  However, it remains the
+      caller's responsibility to pin/unpin and lock/unlock the buffers at
+      appropriate times.  Exclusive lock must be held on each target buffer
+      from before &lt;function&gt;GenericXLogRegisterBuffer()&lt;/function&gt; until after
+      &lt;function&gt;GenericXLogFinish()&lt;/function&gt;.
+</span>
+バッファの直接更新は許されません！
+すべての更新は<code class="function">GenericXLogRegisterBuffer()</code>で取得したコピーに対して行わなければなりません。
+言い換えれば、汎用WALレコードを使うコードでは<code class="function">BufferGetPage()</code>を呼び出してはいけません。
+しかし、適切なときにバッファにピンを立てる、外す、そしてロックする、解除するのが呼び出し側の責任であることに変わりはありません。
+各ターゲットバッファの排他的ロックを<code class="function">GenericXLogRegisterBuffer()</code>の前から<code class="function">GenericXLogFinish()</code>の後まで保持していなければなりません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Registrations of buffers (step 2) and modifications of page images
+      (step 3) can be mixed freely, i.e., both steps may be repeated in any
+      sequence.  Keep in mind that buffers should be registered in the same
+      order in which locks are to be obtained on them during replay.
+</span>
+手順2のバッファの登録と、手順3のページイメージの更新は自由に混在させることができます。
+つまり、両方の手順を任意の順序で繰り返すことができます。
+バッファの登録は、再生時にロックを取得する順序と同じにすべきであることを覚えていてください。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      The maximum number of buffers that can be registered for a generic WAL
+      record is &lt;literal&gt;MAX_GENERIC_XLOG_PAGES&lt;/literal&gt;.  An error will be thrown
+      if this limit is exceeded.
+</span>
+汎用WALレコードに登録できるバッファの最大数は<code class="literal">MAX_GENERIC_XLOG_PAGES</code>です。
+この制限を超えるとエラーが発生します。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Generic WAL assumes that the pages to be modified have standard
+      layout, and in particular that there is no useful data between
+      &lt;structfield&gt;pd_lower&lt;/structfield&gt; and &lt;structfield&gt;pd_upper&lt;/structfield&gt;.
+</span>
+汎用WALでは、更新対象のページが標準的なレイアウトになっている、特に<code class="structfield">pd_lower</code>と<code class="structfield">pd_upper</code>の間には意味のあるデータがないということを想定しています。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Since you are modifying copies of buffer
+      pages, &lt;function&gt;GenericXLogStart()&lt;/function&gt; does not start a critical
+      section.  Thus, you can safely do memory allocation, error throwing,
+      etc. between &lt;function&gt;GenericXLogStart()&lt;/function&gt; and
+      &lt;function&gt;GenericXLogFinish()&lt;/function&gt;.  The only actual critical section is
+      present inside &lt;function&gt;GenericXLogFinish()&lt;/function&gt;.  There is no need to
+      worry about calling  &lt;function&gt;GenericXLogAbort()&lt;/function&gt; during an error
+      exit, either.
+</span>
+ここではバッファページのコピーを更新するため、<code class="function">GenericXLogStart()</code>はクリティカルセクションを開始しません。
+従って、<code class="function">GenericXLogStart()</code>と<code class="function">GenericXLogFinish()</code>の間では、メモリの割り当て、エラーの発生などを安全に実行できます。
+唯一の本当のクリティカルセクションは<code class="function">GenericXLogFinish()</code>の内部にあります。
+エラー終了の中で<code class="function">GenericXLogAbort()</code>を呼び出すことについても心配する必要はありません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      &lt;function&gt;GenericXLogFinish()&lt;/function&gt; takes care of marking buffers dirty
+      and setting their LSNs.  You do not need to do this explicitly.
+</span>
+<code class="function">GenericXLogFinish()</code>はバッファをダーティにして、LSNの設定をすることの処理をします。
+これについて明示的な処理をする必要はありません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      For unlogged relations, everything works the same except that no
+      actual WAL record is emitted.  Thus, you typically do not need to do
+      any explicit checks for unlogged relations.
+</span>
+ログを取らないリレーションは、実際のWALレコードが送出されないことを除けば、すべてが同じように動作します。
+従って、通常は、ログを取らないリレーションについて明示的な検査をする必要はありません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      The generic WAL redo function will acquire exclusive locks to buffers
+      in the same order as they were registered.  After redoing all changes,
+      the locks will be released in the same order.
+</span>
+汎用WALを再生する機能は、バッファの排他的ロックを、バッファが登録されたのと同じ順序で取得します。
+すべての変更を再生した後で、ロックは同じ順序で解放されます。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      If &lt;literal&gt;GENERIC_XLOG_FULL_IMAGE&lt;/literal&gt; is not specified for a
+      registered buffer, the generic WAL record contains a delta between
+      the old and the new page images.  This delta is based on byte-by-byte
+      comparison.  This is not very compact for the case of moving data
+      within a page, and might be improved in the future.
+</span>
+登録バッファに<code class="literal">GENERIC_XLOG_FULL_IMAGE</code>が指定されない場合、汎用WALレコードは古いページイメージと新しいページイメージの間の差分を含むものとされます。
+この差分はバイト毎の比較に基づくものです。
+これはデータをページ内で移動する場合、あまり小さくなりませんが、将来は改善されるかもしれません。
+     </p></li></ul></div><p>
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="index-cost-estimation.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="internals.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="btree.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">61.6. インデックスコスト推定関数 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 第63章 B-Treeインデックス</td></tr></table></div></body></html>

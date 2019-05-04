@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>18.2. データベースクラスタの作成</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="postgres-user.html" title="18.1. PostgreSQLユーザアカウント" /><link rel="next" href="server-start.html" title="18.3. データベースサーバの起動" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="runtime.html" title="第18章 サーバの準備と運用">第18章 サーバの準備と運用</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      creating-cluster.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="postgres-user.html" title="18.1. PostgreSQLユーザアカウント">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="runtime.html" title="第18章 サーバの準備と運用">上へ</a></td><td width="60%" align="center">18.2. データベースクラスタの作成</td><td width="20%" align="right"> <a accesskey="n" href="server-start.html" title="18.3. データベースサーバの起動">次へ</a></td></tr></table><hr /></div><div class="sect1" id="CREATING-CLUSTER"><div class="titlepage"><div><div><h2 class="title" style="clear: both">18.2. データベースクラスタの作成</h2></div></div></div><span class="original">
+  &lt;title&gt;Creating a Database Cluster&lt;/title&gt;
+</span><a id="id-1.6.5.4.2" class="indexterm"></a><a id="id-1.6.5.4.3" class="indexterm"></a><p>
+<span class="original">
+   Before you can do anything, you must initialize a database storage
+   area on disk. We call this a &lt;firstterm&gt;database cluster&lt;/firstterm&gt;.
+   (The &lt;acronym&gt;SQL&lt;/acronym&gt; standard uses the term catalog cluster.) A
+   database cluster is a collection of databases that is managed by a
+   single instance of a running database server. After initialization, a
+   database cluster will contain a database named &lt;literal&gt;postgres&lt;/literal&gt;,
+   which is meant as a default database for use by utilities, users and third
+   party applications.  The database server itself does not require the
+   &lt;literal&gt;postgres&lt;/literal&gt; database to exist, but many external utility
+   programs assume it exists.  Another database created within each cluster
+   during initialization is called
+   &lt;literal&gt;template1&lt;/literal&gt;.  As the name suggests, this will be used
+   as a template for subsequently created databases; it should not be
+   used for actual work.  (See &lt;xref linkend="managing-databases"/&gt; for
+   information about creating new databases within a cluster.)
+</span>
+まず最初に、ディスク上にデータベース格納領域を初期化する必要があります。
+この格納領域を<em class="firstterm">データベースクラスタ</em>と呼びます。（標準<acronym class="acronym">SQL</acronym>ではカタログクラスタという用語が使用されています）。
+データベースクラスタはデータベースの集合で、稼働しているデータベースサーバのただ一つのインスタンスを通して管理されます。
+初期化が終わると、データベースクラスタには<code class="literal">postgres</code>という名前のデータベースが含まれています。
+このデータベースは、ユーティリティ、ユーザ、サードパーティ製アプリケーションが使用するデフォルトデータベースになります。
+データベースサーバ自身はこの<code class="literal">postgres</code>データベースの存在を必要としていませんが、多くの外部ユーティリティはその存在を想定しています。
+初期化中に他にも<code class="literal">template1</code>というデータベースが各クラスタ内に作成されます。
+その名前から推測できるように、これはその後に作成されるデータベースのテンプレートとして使われます。
+したがって、実際の作業に使用しない方がよいです。
+（クラスタ内における新しいデータベースの作成については<a class="xref" href="managing-databases.html" title="第22章 データベース管理">第22章</a>を参照してください。）
+  </p><p>
+<span class="original">
+   In file system terms, a database cluster is a single directory
+   under which all data will be stored. We call this the &lt;firstterm&gt;data
+   directory&lt;/firstterm&gt; or &lt;firstterm&gt;data area&lt;/firstterm&gt;. It is
+   completely up to you where you choose to store your data.  There is no
+   default, although locations such as
+   &lt;filename&gt;/usr/local/pgsql/data&lt;/filename&gt; or
+   &lt;filename&gt;/var/lib/pgsql/data&lt;/filename&gt; are popular. To initialize a
+   database cluster, use the command &lt;xref
+   linkend="app-initdb"/&gt;,&lt;indexterm&gt;&lt;primary&gt;initdb&lt;/primary&gt;&lt;/indexterm&gt; which is
+   installed with &lt;productname&gt;PostgreSQL&lt;/productname&gt;. The desired
+   file system location of your database cluster is indicated by the
+   &lt;option&gt;-D&lt;/option&gt; option, for example:
+</span>
+ファイルシステムの観点から見ると、データベースクラスタというのは、すべてのデータが格納される1つのディレクトリということになります。
+これは<em class="firstterm">データディレクトリ</em>もしくは<em class="firstterm">データ領域</em>と呼ばれます。
+どこにデータを格納するかは完全にユーザの自由です。
+特にデフォルトの領域はありませんが、一般的によく使われるのは<code class="filename">/usr/local/pgsql/data</code>か<code class="filename">/var/lib/pgsql/data</code>です。
+データベースクラスタを初期化するためには、<span class="productname">PostgreSQL</span>と一緒にインストールされるコマンド<a class="xref" href="app-initdb.html" title="initdb"><span class="refentrytitle">initdb</span></a><a id="id-1.6.5.4.5.7" class="indexterm"></a>を使用してください。
+データベースクラスタのファイルシステム上の場所は<code class="option">-D</code>オプションで示します。
+例えば次のようにします。
+</p><pre class="screen">
+<code class="prompt">$</code> <strong class="userinput"><code>initdb -D /usr/local/pgsql/data</code></strong>
+</pre><p>
+<span class="original">
+   Note that you must execute this command while logged into the
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; user account, which is
+   described in the previous section.
+</span>
+このコマンドは、前節で説明した<span class="productname">PostgreSQL</span>ユーザアカウントでログインして実行する必要があります。
+  </p><div class="tip"><h3 class="title">ヒント</h3><p>
+<span class="original">
+    As an alternative to the &lt;option&gt;-D&lt;/option&gt; option, you can set
+    the environment variable &lt;envar&gt;PGDATA&lt;/envar&gt;.
+</span>
+<code class="option">-D</code>オプションを使う代わりに<code class="envar">PGDATA</code>環境変数を設定することもできます。
+    <a id="id-1.6.5.4.6.1.3" class="indexterm"></a>
+   </p></div><p>
+<span class="original">
+   Alternatively, you can run &lt;command&gt;initdb&lt;/command&gt; via
+   the &lt;xref linkend="app-pg-ctl"/&gt;
+   program&lt;indexterm&gt;&lt;primary&gt;pg_ctl&lt;/primary&gt;&lt;/indexterm&gt; like so:
+</span>
+他にも以下のように<a class="xref" href="app-pg-ctl.html" title="pg_ctl"><span class="refentrytitle"><span class="application">pg_ctl</span></span></a><a id="id-1.6.5.4.7.2" class="indexterm"></a>プログラム経由で<code class="command">initdb</code>を実行することができます。
+</p><pre class="screen">
+<code class="prompt">$</code> <strong class="userinput"><code>pg_ctl -D /usr/local/pgsql/data initdb</code></strong>
+</pre><p>
+<span class="original">
+   This may be more intuitive if you are
+   using &lt;command&gt;pg_ctl&lt;/command&gt; for starting and stopping the
+   server (see &lt;xref linkend="server-start"/&gt;), so
+   that &lt;command&gt;pg_ctl&lt;/command&gt; would be the sole command you use
+   for managing the database server instance.
+</span>
+<code class="command">pg_ctl</code>がデータベースサーバインスタンスの管理に使用する単一のコマンドになりますので、サーバの起動や停止に<code class="command">pg_ctl</code>を使用している場合(<a class="xref" href="server-start.html" title="18.3. データベースサーバの起動">18.3</a>参照)はこちらの方がより直感的かもしれません。
+  </p><p>
+<span class="original">
+   &lt;command&gt;initdb&lt;/command&gt; will attempt to create the directory you
+   specify if it does not already exist.  Of course, this will fail if
+   &lt;command&gt;initdb&lt;/command&gt; does not have permissions to write in the
+   parent directory.  It's generally recommendable that the
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; user own not just the data
+   directory but its parent directory as well, so that this should not
+   be a problem.  If the desired parent directory doesn't exist either,
+   you will need to create it first, using root privileges if the
+   grandparent directory isn't writable.  So the process might look
+   like this:
+</span>
+もし指定したディレクトリが存在しない場合は、<code class="command">initdb</code>はその新しいディレクトリを作成しようとします。
+もちろん、その親ディレクトリに書き込み権限がない場合<code class="command">initdb</code>は失敗します。
+<span class="productname">PostgreSQL</span>ユーザがデータディレクトリだけでなく、親ディレクトリも所有することを一般的に推奨します。
+このようにすると問題になることはありません。
+目的の親ディレクトリが存在しない場合は、まずそのディレクトリを作成する必要があります。
+親の親ディレクトリが書き込み可能でない場合は、root権限を使用して作成します。
+そのため、手順は下記のようになります。
+</p><pre class="screen">
+root# <strong class="userinput"><code>mkdir /usr/local/pgsql</code></strong>
+root# <strong class="userinput"><code>chown postgres /usr/local/pgsql</code></strong>
+root# <strong class="userinput"><code>su postgres</code></strong>
+postgres$ <strong class="userinput"><code>initdb -D /usr/local/pgsql/data</code></strong>
+</pre><p>
+  </p><p>
+<span class="original">
+   &lt;command&gt;initdb&lt;/command&gt; will refuse to run if the data directory
+   exists and already contains files; this is to prevent accidentally
+   overwriting an existing installation.
+</span>
+データディレクトリが存在し、すでにファイルが含まれている場合は、<code class="command">initdb</code>は実行を拒否します。これは、誤って既存のインストールを上書きしないようにするためです。
+  </p><p>
+<span class="original">
+   Because the data directory contains all the data stored in the
+   database, it is essential that it be secured from unauthorized
+   access. &lt;command&gt;initdb&lt;/command&gt; therefore revokes access
+   permissions from everyone but the
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; user, and optionally, group.
+   Group access, when enabled, is read-only.  This allows an unprivileged
+   user in the same group as the cluster owner to take a backup of the
+   cluster data or perform other operations that only require read access.
+</span>
+データディレクトリにはデータベースの中のすべてのデータが保持されるため、権限を持たない人からのアクセスを確実に制限することが不可欠です。
+ですから、<code class="command">initdb</code>は<span class="productname">PostgreSQL</span>ユーザ、更にオプションでグループ以外からのアクセス権を剥奪します。
+許可されている場合には、グループアクセスは読み出し専用になります。
+これにより、クラスタの所有者と同じグループに所属する非特権ユーザが、そのクラスタのデータをバックアップすることや、読み出し権限だけが必要なその他の操作を実行することが可能になります。
+  </p><p>
+<span class="original">
+   Note that enabling or disabling group access on an existing cluster requires
+   the cluster to be shut down and the appropriate mode to be set on all
+   directories and files before restarting
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt;.  Otherwise, a mix of modes might
+   exist in the data directory.  For clusters that allow access only by the
+   owner, the appropriate modes are &lt;literal&gt;0700&lt;/literal&gt; for directories
+   and &lt;literal&gt;0600&lt;/literal&gt; for files.  For clusters that also allow
+   reads by the group, the appropriate modes are &lt;literal&gt;0750&lt;/literal&gt;
+   for directories and &lt;literal&gt;0640&lt;/literal&gt; for files.
+</span>
+既存のクラスタに対してグループアクセスを有効にする、あるいは無効にするには、<span class="productname">PostgreSQL</span>を再起動する前に、クラスタが停止済みの状態で、すべてのディレクトリとファイルに適切なモードが設定されている必要があることに注意してください。
+そうでないと、データディレクトリ内に異なるモードが混在してしまうかもしれません。
+所有者のみにアクセスを許可するクラスタでは、適切なディレクトリのモードは<code class="literal">0700</code>で、ファイルモードは<code class="literal">0600</code>です。
+加えてグループに対して読み出しを許可するクラスタでは、適切なディレクトリのモードは<code class="literal">0750</code>で、ファイルモードは<code class="literal">0640</code>です。
+  </p><p>
+<span class="original">
+   However, while the directory contents are secure, the default
+   client authentication setup allows any local user to connect to the
+   database and even become the database superuser. If you do not
+   trust other local users, we recommend you use one of
+   &lt;command&gt;initdb&lt;/command&gt;'s &lt;option&gt;-W&lt;/option&gt;, &lt;option&gt;&amp;#045;&amp;#045;pwprompt&lt;/option&gt;
+   or &lt;option&gt;&amp;#045;&amp;#045;pwfile&lt;/option&gt; options to assign a password to the
+   database superuser.&lt;indexterm&gt;
+     &lt;primary&gt;password&lt;/primary&gt;
+     &lt;secondary&gt;of the superuser&lt;/secondary&gt;
+   &lt;/indexterm&gt;
+   Also, specify &lt;option&gt;-A md5&lt;/option&gt; or
+   &lt;option&gt;-A password&lt;/option&gt; so that the default &lt;literal&gt;trust&lt;/literal&gt; authentication
+   mode is not used; or modify the generated &lt;filename&gt;pg_hba.conf&lt;/filename&gt;
+   file after running &lt;command&gt;initdb&lt;/command&gt;, but
+   &lt;emphasis&gt;before&lt;/emphasis&gt; you start the server for the first time. (Other
+   reasonable approaches include using &lt;literal&gt;peer&lt;/literal&gt; authentication
+   or file system permissions to restrict connections. See &lt;xref
+   linkend="client-authentication"/&gt; for more information.)
+</span>
+しかし、ディレクトリの内容は安全ですが、デフォルトのクライアント認証の設定では、すべてのローカルユーザはデータベースに接続でき、データベーススーパーユーザになることさえ可能です。
+他のローカルユーザを信用しない場合、<code class="command">initdb</code>の<code class="option">-W</code>、<code class="option">--pwprompt</code>、<code class="option">--pwfile</code>オプションのいずれか1つを使用して、データベーススーパーユーザにパスワードを付与することを推奨します。
+   <a id="id-1.6.5.4.12.5" class="indexterm"></a>
+また、デフォルトの<code class="literal">trust</code>認証モードを使用しないように、<code class="option">-A md5</code>もしくは<code class="option">-A password</code>を指定してください。
+もしくは、<code class="command">initdb</code>の後、初回のサーバの起動の<span class="emphasis"><em>前</em></span>に、生成済みの<code class="filename">pg_hba.conf</code>ファイルを変更してください。
+（他の穏当な方法として、<code class="literal">peer</code>認証やファイルシステムの権限を使用して、接続を制限することもできます。
+詳細については<a class="xref" href="client-authentication.html" title="第20章 クライアント認証">第20章</a>を参照してください。）
+  </p><p>
+<span class="original">
+   &lt;command&gt;initdb&lt;/command&gt; also initializes the default
+   locale&lt;indexterm&gt;&lt;primary&gt;locale&lt;/primary&gt;&lt;/indexterm&gt; for the database cluster.
+   Normally, it will just take the locale settings in the environment
+   and apply them to the initialized database.  It is possible to
+   specify a different locale for the database; more information about
+   that can be found in &lt;xref linkend="locale"/&gt;.  The default sort order used
+   within the particular database cluster is set by
+   &lt;command&gt;initdb&lt;/command&gt;, and while you can create new databases using
+   different sort order, the order used in the template databases that initdb
+   creates cannot be changed without dropping and recreating them.
+   There is also a performance impact for using locales
+   other than &lt;literal&gt;C&lt;/literal&gt; or &lt;literal&gt;POSIX&lt;/literal&gt;. Therefore, it is
+   important to make this choice correctly the first time.
+</span>
+<code class="command">initdb</code>はまた、データベースクラスタのデフォルトのロケール<a id="id-1.6.5.4.13.2" class="indexterm"></a>を初期化します。
+通常は、環境のロケール設定を初期化されたデータベースにそのまま適用します。
+データベースに異なるロケールを指定することも可能です。
+詳細については<a class="xref" href="locale.html" title="23.1. ロケールのサポート">23.1</a>を参照してください。
+特定のデータベースクラスタ内で使用されるデフォルトのソート順は<code class="command">initdb</code>で設定されます。
+異なるソート順を使用する新しいデータベースを作成することもできますが、initdbが作成するテンプレートデータベースで使用される順は削除して再作成しない限り変更することができません。
+また、<code class="literal">C</code>や<code class="literal">POSIX</code>以外のロケールを使用する場合には性能上の影響もあります。
+ですので初回にこれを正しく選択することが重要です。
+  </p><p>
+<span class="original">
+   &lt;command&gt;initdb&lt;/command&gt; also sets the default character set encoding
+   for the database cluster.  Normally this should be chosen to match the
+   locale setting.  For details see &lt;xref linkend="multibyte"/&gt;.
+</span>
+また<code class="command">initdb</code>は、データベースクラスタのデフォルトの文字セット符号化方式も設定します。
+通常これは、ロケールの設定と合うものが選ばれなければなりません。
+詳細は<a class="xref" href="multibyte.html" title="23.3. 文字セットサポート">23.3</a>を参照してください。
+  </p><p>
+<span class="original">
+   Non-&lt;literal&gt;C&lt;/literal&gt; and non-&lt;literal&gt;POSIX&lt;/literal&gt; locales rely on the
+   operating system's collation library for character set ordering.
+   This controls the ordering of keys stored in indexes.  For this reason,
+   a cluster cannot switch to an incompatible collation library version,
+   either through snapshot restore, binary streaming replication, a
+   different operating system, or an operating system upgrade.
+</span>
+非<code class="literal">C</code>および非<code class="literal">POSIX</code>のロケールでは、文字セットのソート順はオペレーティングシステムの照合ライブラリに依存しています。
+これは、インデックスに格納されているキーの順序を制御します。
+このためにクラスタは、スナップショットのリストア、バイナリストリーミングレプリケーション、異なるオペレーティングシステム、またはオペレーティングシステムのアップグレードのいずれでも互換性のない照合ライブラリバージョンに切り替えることは出来ません。
+  </p><div class="sect2" id="CREATING-CLUSTER-MOUNT-POINTS"><div class="titlepage"><div><div><h3 class="title">18.2.1. セカンダリファイルシステムの使用</h3></div></div></div><span class="original">
+   &lt;title&gt;Use of Secondary File Systems&lt;/title&gt;
+</span><a id="id-1.6.5.4.16.2" class="indexterm"></a><p>
+<span class="original">
+    Many installations create their database clusters on file systems
+    (volumes) other than the machine's &lt;quote&gt;root&lt;/quote&gt; volume.  If you
+    choose to do this, it is not advisable to try to use the secondary
+    volume's topmost directory (mount point) as the data directory.
+    Best practice is to create a directory within the mount-point
+    directory that is owned by the &lt;productname&gt;PostgreSQL&lt;/productname&gt;
+    user, and then create the data directory within that.  This avoids
+    permissions problems, particularly for operations such
+    as &lt;application&gt;pg_upgrade&lt;/application&gt;, and it also ensures clean failures if
+    the secondary volume is taken offline.
+</span>
+多くのインストールでは、マシンの<span class="quote">「<span class="quote">ルート</span>」</span>ボリューム以外のファイルシステム（ボリューム）上にデータベースクラスタを作成します。
+この選択をした場合、セカンダリボリュームの最上位ディレクトリ（マウントポイント）をデータディレクトリとして使用することはお勧めできません。
+最善の方法はマウントポイントディレクトリ内に<span class="productname">PostgreSQL</span>ユーザが所有するディレクトリを作成し、その中にデータディレクトリを作成することです。
+これにより、権限の問題、特に<span class="application">pg_upgrade</span>などの操作での問題を避けることができ、またセカンダリボリュームがオフラインになったときに、確実にきれいなエラーを起こすようになります。
+   </p></div><div class="sect2" id="CREATING-CLUSTER-NFS"><div class="titlepage"><div><div><h3 class="title">18.2.2. ネットワークファイルシステムの使用</h3></div></div></div><span class="original">
+   &lt;title&gt;Use of Network File Systems&lt;/title&gt;
+</span><a id="id-1.6.5.4.17.2" class="indexterm"></a><span class="original">
+   &lt;indexterm&gt;&lt;primary&gt;&lt;acronym&gt;NFS&lt;/acronym&gt;&lt;/primary&gt;&lt;see&gt;Network File Systems&lt;/see&gt;&lt;/indexterm&gt;
+</span><a id="id-1.6.5.4.17.3" class="indexterm"></a><span class="original">
+   &lt;indexterm&gt;&lt;primary&gt;Network Attached Storage (&lt;acronym&gt;NAS&lt;/acronym&gt;)&lt;/primary&gt;&lt;see&gt;Network File Systems&lt;/see&gt;&lt;/indexterm&gt;
+</span><a id="id-1.6.5.4.17.4" class="indexterm"></a><p>
+<span class="original">
+    Many installations create their database clusters on network file
+    systems.  Sometimes this is done via &lt;acronym&gt;NFS&lt;/acronym&gt;, or by using a
+    Network Attached Storage (&lt;acronym&gt;NAS&lt;/acronym&gt;) device that uses
+    &lt;acronym&gt;NFS&lt;/acronym&gt; internally.  &lt;productname&gt;PostgreSQL&lt;/productname&gt; does nothing
+    special for &lt;acronym&gt;NFS&lt;/acronym&gt; file systems, meaning it assumes
+    &lt;acronym&gt;NFS&lt;/acronym&gt; behaves exactly like locally-connected drives.
+    If the client or server &lt;acronym&gt;NFS&lt;/acronym&gt; implementation does not
+    provide standard file system semantics, this can
+    cause reliability problems (see &lt;ulink
+    url="https://www.time-travellers.org/shane/papers/NFS_considered_harmful.html"&gt;&lt;/ulink&gt;).
+    Specifically, delayed (asynchronous) writes to the &lt;acronym&gt;NFS&lt;/acronym&gt;
+    server can cause data corruption problems.  If possible, mount the
+    &lt;acronym&gt;NFS&lt;/acronym&gt; file system synchronously (without caching) to avoid
+    this hazard.  Also, soft-mounting the &lt;acronym&gt;NFS&lt;/acronym&gt; file system is
+    not recommended.
+</span>
+多くのインストレーションはネットワークファイルシステム上にデータベースクラスタを作成します。
+直接<acronym class="acronym">NFS</acronym>を介して行うこともありますし、<acronym class="acronym">NFS</acronym>を内部的に使うネットワークアタッチドストレージ（<acronym class="acronym">NAS</acronym>）デバイスを使用することもあります。
+<span class="productname">PostgreSQL</span>は<acronym class="acronym">NFS</acronym>ファイルシステムに特別なことを何も行いません。
+つまり<acronym class="acronym">NFS</acronym>はローカル接続のドライブとまったく同様に振る舞うという前提です。
+クライアントとサーバの<acronym class="acronym">NFS</acronym>実装が標準ファイルシステム・セマンティックスを持たないならば、信頼性の問題を引き起こす可能性があります。
+（<a class="ulink" href="https://www.time-travellers.org/shane/papers/NFS_considered_harmful.html" target="_top">https://www.time-travellers.org/shane/papers/NFS_considered_harmful.html</a>参照）。
+具体的には、<acronym class="acronym">NFS</acronym>サーバへの遅延（非同期）書きこみがデータ破損の問題を引き起こす可能性があります。
+可能ならば<acronym class="acronym">NFS</acronym>ファイルシステムを（キャッシュ無しで）同期マウントし、この危険を防止してください。更に、<acronym class="acronym">NFS</acronym>をソフトマウントすることは薦められません。
+   </p><p>
+<span class="original">
+    Storage Area Networks (&lt;acronym&gt;SAN&lt;/acronym&gt;) typically use communication
+    protocols other than &lt;acronym&gt;NFS&lt;/acronym&gt;, and may or may not be subject
+    to hazards of this sort.  It's advisable to consult the vendor's
+    documentation concerning data consistency guarantees.
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; cannot be more reliable than
+    the file system it's using.
+</span>
+ストレージエリアネットワーク（<acronym class="acronym">SAN</acronym>）は通常<acronym class="acronym">NFS</acronym>とは異なる通信プロトコルを使用し、この種の危険がある場合と無い場合があります。
+これは、データの整合性の保証に関するベンダのドキュメントを参照することをお勧めします。
+<span class="productname">PostgreSQL</span>は、使用しているファイルシステム以上に信頼性が高くなることはありません。
+   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="postgres-user.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="runtime.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="server-start.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">18.1. <span class="productname">PostgreSQL</span>ユーザアカウント </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 18.3. データベースサーバの起動</td></tr></table></div></body></html>

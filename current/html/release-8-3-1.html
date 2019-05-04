@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>E.204. リリース8.3.1</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="release-8-3-2.html" title="E.203. リリース8.3.2" /><link rel="next" href="release-8-3.html" title="E.205. リリース8.3" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="release.html" title="付録E リリースノート">付録E リリースノート</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      release-8-3-1.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="release-8-3-2.html" title="E.203. リリース8.3.2">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="release.html" title="付録E リリースノート">上へ</a></td><td width="60%" align="center">E.204. リリース8.3.1</td><td width="20%" align="right"> <a accesskey="n" href="release-8-3.html" title="E.205. リリース8.3">次へ</a></td></tr></table><hr /></div><div class="sect1" id="RELEASE-8-3-1"><div class="titlepage"><div><div><h2 class="title" style="clear: both">E.204. リリース8.3.1</h2></div></div></div><span class="original">
+  &lt;title&gt;Release 8.3.1&lt;/title&gt;
+</span><p><span class="original">
+  &lt;title&gt;Release date:&lt;/title&gt;
+</span><strong>リリース日: </strong>2008-03-17</p><p>
+<span class="original">
+   This release contains a variety of fixes from 8.3.0.
+   For information about new features in the 8.3 major release, see
+   &lt;xref linkend="release-8-3"/&gt;.
+</span>
+このリリースは8.3.0の各種不具合を修正したものです。
+8.3メジャーリリースにおける新機能については<a class="xref" href="release-8-3.html" title="E.205. リリース8.3">E.205</a>を参照してください。
+  </p><div class="sect2" id="id-1.11.6.208.4"><div class="titlepage"><div><div><h3 class="title">E.204.1. バージョン8.3.1への移行</h3></div></div></div><span class="original">
+   &lt;title&gt;Migration to Version 8.3.1&lt;/title&gt;
+</span><p>
+<span class="original">
+    A dump/restore is not required for those running 8.3.X.
+    However, you might need to &lt;command&gt;REINDEX&lt;/command&gt; indexes on textual
+    columns after updating, if you are affected by the Windows locale
+    issue described below.
+</span>
+8.3.Xからの移行ではダンプ/リストアは不要です。
+しかしながら、後述のWindowsロケール問題の影響がある場合、移行後にテキスト型の列上のインデックスに対し<code class="command">REINDEX</code>を行わなければならないかもしれません。
+   </p></div><div class="sect2" id="id-1.11.6.208.5"><div class="titlepage"><div><div><h3 class="title">E.204.2. 変更点</h3></div></div></div><span class="original">
+   &lt;title&gt;Changes&lt;/title&gt;
+</span><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+      Fix character string comparison for Windows locales that consider
+      different character combinations as equal (Tom)
+</span>
+異なる文字の組み合わせを等価とみなすWindowsロケールにおける文字列比較を修正しました。(Tom)
+     </p><p>
+<span class="original">
+      This fix applies only on Windows and only when using UTF-8
+      database encoding.  The same fix was made for all other cases
+      over two years ago, but Windows with UTF-8 uses a separate code
+      path that was not updated.  If you are using a locale that
+      considers some non-identical strings as equal, you may need to
+      &lt;command&gt;REINDEX&lt;/command&gt; to fix existing indexes on textual columns.
+</span>
+この修正はWindowsのみ、かつ、UTF-8データベース符号化方式を使用している場合にのみ当てはまります。
+他の状況に対する同じ修正が2年前になされましたが、UTF-8を使用するWindowsでは変更されなかった経路のコードを使用しました。
+同一ではない一部の文字列を等価とみなすロケールを使用している場合、既存のテキスト型列上のインデックスを修正するために<code class="command">REINDEX</code>を行う必要があるかもしれません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Repair corner-case bugs in &lt;command&gt;VACUUM FULL&lt;/command&gt; (Tom)
+</span>
+<code class="command">VACUUM FULL</code>における境界不具合を修正しました。(Tom)
+     </p><p>
+<span class="original">
+      A potential deadlock between concurrent &lt;command&gt;VACUUM FULL&lt;/command&gt;
+      operations on different system catalogs was introduced in 8.2.
+      This has now been corrected.  8.3 made this worse because the
+      deadlock could occur within a critical code section, making it
+      a PANIC rather than just ERROR condition.
+</span>
+異なるシステムカタログに対する同時実行<code class="command">VACUUM FULL</code>の間でのデッドロックの可能性が8.2で発生していました。
+これを修正しました。
+デッドロックが致命的なコード部分で発生し得たため、8.3ではこれが悪化し、ただのERROR条件ではなくPANICとなりました。
+     </p><p>
+<span class="original">
+      Also, a &lt;command&gt;VACUUM FULL&lt;/command&gt; that failed partway through
+      vacuuming a system catalog could result in cache corruption in
+      concurrent database sessions.
+</span>
+また、システムカタログのバキューム中に途中で失敗した<code class="command">VACUUM FULL</code>により、同時実行中のデータベースセッションのキャッシュを破壊する結果になります。
+     </p><p>
+<span class="original">
+      Another &lt;command&gt;VACUUM FULL&lt;/command&gt; bug introduced in 8.3 could
+      result in a crash or out-of-memory report when dealing with
+      pages containing no live tuples.
+</span>
+他にも8.3で発生した<code class="command">VACUUM FULL</code>の不具合により、有効なタプルを含まないページの処理中にクラッシュまたはメモリ不足報告が発生する結果になります。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix misbehavior of foreign key checks involving &lt;type&gt;character&lt;/type&gt;
+      or &lt;type&gt;bit&lt;/type&gt; columns (Tom)
+</span>
+<code class="type">character</code>または<code class="type">bit</code>列を含む外部キー検査の誤動作を修正しました。(Tom)
+     </p><p>
+<span class="original">
+      If the referencing column were of a different but compatible type
+      (for instance &lt;type&gt;varchar&lt;/type&gt;), the constraint was enforced incorrectly.
+</span>
+参照列が異なる型だが型互換がある場合（例えば<code class="type">varchar</code>）、制約が間違って強制されました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Avoid needless deadlock failures in no-op foreign-key checks (Stephan
+      Szabo, Tom)
+</span>
+不要となった外部キー検査における不必要なデッドロック失敗を防ぎます。(Stephan Szabo, Tom)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix possible core dump when re-planning a prepared query (Tom)
+</span>
+準備済文の再計画時のコアダンプの可能性を修正しました。(Tom)
+     </p><p>
+<span class="original">
+      This bug affected only protocol-level prepare operations, not
+      SQL &lt;command&gt;PREPARE&lt;/command&gt;, and so tended to be seen only with
+      JDBC, DBI, and other client-side drivers that use prepared
+      statements heavily.
+</span>
+この不具合は、SQL <code class="command">PREPARE</code>ではなく、プロトコルレベルの準備操作にのみ影響しました。
+このため、準備済文を非常に多く使用するJDBC、DBIなどクライアントサイドのドライバでのみ現れる傾向がありました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix possible failure when re-planning a query that calls an SPI-using
+      function (Tom)
+</span>
+SPIを使用する関数を呼び出す問い合わせの再計画時に失敗する可能性を修正しました。(Tom)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix failure in row-wise comparisons involving columns of different
+      datatypes (Tom)
+</span>
+異なるデータ型を含む行全体の比較における失敗を修正しました。(Tom)
+<span class="original"> wise??? </span>
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix longstanding &lt;command&gt;LISTEN&lt;/command&gt;/&lt;command&gt;NOTIFY&lt;/command&gt;
+      race condition (Tom)
+</span>
+長く存在した<code class="command">LISTEN</code>/<code class="command">NOTIFY</code>競合条件を修正しました。(Tom)
+     </p><p>
+<span class="original">
+      In rare cases a session that had just executed a
+      &lt;command&gt;LISTEN&lt;/command&gt; might not get a notification, even though
+      one would be expected because the concurrent transaction executing
+      &lt;command&gt;NOTIFY&lt;/command&gt; was observed to commit later.
+</span>
+まれな場合ですが、<code class="command">NOTIFY</code>を実行した同時実行中のトランザクションが後でコミットされたことが確認できたため、受け取ることが期待できる場合であっても、<code class="command">LISTEN</code>を実行したばかりのセッションが注意を受け取らない可能性がありました。
+     </p><p>
+<span class="original">
+      A side effect of the fix is that a transaction that has executed
+      a not-yet-committed &lt;command&gt;LISTEN&lt;/command&gt; command will not see any
+      row in &lt;structname&gt;pg_listener&lt;/structname&gt; for the &lt;command&gt;LISTEN&lt;/command&gt;,
+      should it choose to look; formerly it would have.  This behavior
+      was never documented one way or the other, but it is possible that
+      some applications depend on the old behavior.
+</span>
+この修正の副作用として、
+まだコミットされていない<code class="command">LISTEN</code>コマンドを実行したトランザクションが、<code class="command">LISTEN</code>で検索するために選ばなければならない<code class="structname">pg_listener</code>内の行にまったく現れなくなりました。
+これまでは現れていました。
+この動作についてはどちらの方式も文書化されていませんでしたが、過去の動作に依存するアプリケーションがあるかもしれません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Disallow &lt;command&gt;LISTEN&lt;/command&gt; and &lt;command&gt;UNLISTEN&lt;/command&gt; within a
+      prepared transaction (Tom)
+</span>
+準備されたトランザクションでは<code class="command">LISTEN</code>と<code class="command">UNLISTEN</code>は使用できません。(Tom)
+     </p><p>
+<span class="original">
+      This was formerly allowed but trying to do it had various unpleasant
+      consequences, notably that the originating backend could not exit
+      as long as an &lt;command&gt;UNLISTEN&lt;/command&gt; remained uncommitted.
+</span>
+これまでは許されていましたが、これを行うと様々な悪影響が発生しました。
+特に構成したバックエンドは<code class="command">UNLISTEN</code>が未コミットである間終了することができませんでした。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Disallow dropping a temporary table within a
+      prepared transaction (Heikki)
+</span>
+準備されたトランザクションでは一時テーブルの削除を行うことはできません。(Heikki)
+     </p><p>
+<span class="original">
+      This was correctly disallowed by 8.1, but the check was inadvertently
+      broken in 8.2 and 8.3.
+</span>
+これは正確には8.1で禁止されていたのですが、8.2と8.3では不注意にこの検査が壊れていました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix rare crash when an error occurs during a query using a hash index
+</span>
+ハッシュインデックスを使用する問い合わせの間にエラーが発生した場合のまれなクラッシュを修正しました。
+      (Heikki)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix incorrect comparison of &lt;type&gt;tsquery&lt;/type&gt; values (Teodor)
+</span>
+<code class="type">tsquery</code>値の間違った比較を修正しました。(Teodor)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix incorrect behavior of &lt;literal&gt;LIKE&lt;/literal&gt; with non-ASCII characters
+      in single-byte encodings (Rolf Jentsch)
+</span>
+単一バイト符号化方式における非ASCII文字の<code class="literal">LIKE</code>の間違った動作を修正しました。(Rolf Jentsch)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Disable &lt;function&gt;xmlvalidate&lt;/function&gt; (Tom)
+</span>
+<code class="function">xmlvalidate</code>を無効にしました。(Tom)
+     </p><p>
+<span class="original">
+      This function should have been removed before 8.3 release, but
+      was inadvertently left in the source code.  It poses a small
+      security risk since unprivileged users could use it to read the
+      first few characters of any file accessible to the server.
+</span>
+この関数は8.3リリース以前に削除すべきでしたが、不注意にソースコード内に残っていました。
+非特権ユーザがサーバでアクセス可能な任意のファイルの先頭数文字を読み取ることができますので、これは小さなセキュリティ上の危険性があります。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix memory leaks in certain usages of set-returning functions (Neil)
+</span>
+ある方法で集合を返す関数を使用した場合のメモリリークを修正しました。(Neil)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Make &lt;function&gt;encode(&lt;replaceable&gt;bytea&lt;/replaceable&gt;, 'escape')&lt;/function&gt; convert all
+      high-bit-set byte values into &lt;literal&gt;\&lt;/literal&gt;&lt;replaceable&gt;nnn&lt;/replaceable&gt; octal
+      escape sequences (Tom)
+</span>
+<code class="function">encode(<em class="replaceable"><code>bytea</code></em>, 'escape')</code>がすべての上位ビット群を<code class="literal">\</code><em class="replaceable"><code>nnn</code></em>8進エスケープ列に変換するようにしました。(Tom)
+     </p><p>
+<span class="original">
+      This is necessary to avoid encoding problems when the database
+      encoding is multi-byte.  This change could pose compatibility issues
+      for applications that are expecting specific results from
+      &lt;function&gt;encode&lt;/function&gt;.
+</span>
+データベース符号化方式がマルチバイトの場合に符号化問題を防ぐために必要です。
+<code class="function">encode</code>の特定の結果を想定するアプリケーションでは、この変更は互換性に関する問題が発生します。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix input of datetime values for February 29 in years BC (Tom)
+</span>
+紀元前の2月29日に関する日付時刻値の入力を修正しました。(Tom)
+     </p><p>
+<span class="original">
+      The former coding was mistaken about which years were leap years.
+</span>
+これまでのコードでは、うるう年の判定に間違いがありました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix &lt;quote&gt;unrecognized node type&lt;/quote&gt; error in some variants of
+      &lt;command&gt;ALTER OWNER&lt;/command&gt; (Tom)
+</span>
+<code class="command">ALTER OWNER</code>の一部の構文で発生した<span class="quote">「<span class="quote">未知のノード型</span>」</span>エラーを修正しました。(Tom)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Avoid tablespace permissions errors in &lt;command&gt;CREATE TABLE LIKE
+      INCLUDING INDEXES&lt;/command&gt; (Tom)
+</span>
+<code class="command">CREATE TABLE LIKE INCLUDING INDEXES</code>におけるテーブル空間権限エラーを防止しました。(Tom)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Ensure &lt;structname&gt;pg_stat_activity&lt;/structname&gt;.&lt;structfield&gt;waiting&lt;/structfield&gt; flag
+      is cleared when a lock wait is aborted (Tom)
+</span>
+ロック待ちが中断した時に<code class="structname">pg_stat_activity</code>.<code class="structfield">waiting</code>フラグを確実に初期化します。(Tom)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix handling of process permissions on Windows Vista (Dave, Magnus)
+</span>
+Windows Vistaにおいてプロセス処理の取扱いを修正しました。(Dave, Magnus)
+     </p><p>
+<span class="original">
+      In particular, this fix allows starting the server as the Administrator
+      user.
+</span>
+具体的には、この修正により管理者ユーザとしてサーバを起動できるようになります。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Update time zone data files to &lt;application&gt;tzdata&lt;/application&gt; release 2008a
+      (in particular, recent Chile changes); adjust timezone abbreviation
+      &lt;literal&gt;VET&lt;/literal&gt; (Venezuela) to mean UTC-4:30, not UTC-4:00 (Tom)
+</span>
+時間帯データファイルを<span class="application">tzdata</span>リリース2008aに更新しました（具体的には、最近のチリの変更です）。
+時間帯省略形<code class="literal">VET</code> (ベネズエラ)がUTC-4:00ではなくUTC-4:30を意味するように調整しました。(Tom)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix &lt;application&gt;ecpg&lt;/application&gt; problems with arrays (Michael)
+</span>
+配列に関する<span class="application">ecpg</span>の問題を修正しました。(Michael)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix &lt;application&gt;pg_ctl&lt;/application&gt; to correctly extract the postmaster's port
+      number from command-line options (Itagaki Takahiro, Tom)
+</span>
+<span class="application">pg_ctl</span>が正しくコマンドラインオプションからpostmasterのポート番号を取り出すように修正しました。(Itagaki Takahiro, Tom)
+     </p><p>
+<span class="original">
+      Previously, &lt;literal&gt;pg_ctl start -w&lt;/literal&gt; could try to contact the
+      postmaster on the wrong port, leading to bogus reports of startup
+      failure.
+</span>
+これまでは、<code class="literal">pg_ctl start -w</code>は間違ったポート上のpostmasterに接続しようとし、おかしな起動失敗の報告をもたらしていました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Use &lt;option&gt;-fwrapv&lt;/option&gt; to defend against possible misoptimization
+      in recent &lt;application&gt;gcc&lt;/application&gt; versions (Tom)
+</span>
+最近のバージョンの<span class="application">gcc</span>における、最適化ミスの可能性を防止するために<code class="option">-fwrapv</code>を使用します。(Tom)
+     </p><p>
+<span class="original">
+      This is known to be necessary when building &lt;productname&gt;PostgreSQL&lt;/productname&gt;
+      with &lt;application&gt;gcc&lt;/application&gt; 4.3 or later.
+</span>
+これは<span class="application">gcc</span> 4.3以降で<span class="productname">PostgreSQL</span>を構築する場合に必須であることは分かっていました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Enable building &lt;filename&gt;contrib/uuid-ossp&lt;/filename&gt; with MSVC (Hiroshi Saito)
+</span>
+MSVCを使用した<code class="filename">contrib/uuid-ossp</code>の構築が可能になりました。(Hiroshi Saito)
+     </p></li></ul></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="release-8-3-2.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="release.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="release-8-3.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">E.203. リリース8.3.2 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> E.205. リリース8.3</td></tr></table></div></body></html>

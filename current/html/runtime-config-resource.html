@@ -1,0 +1,913 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>19.4. 資源の消費</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="runtime-config-connection.html" title="19.3. 接続と認証" /><link rel="next" href="runtime-config-wal.html" title="19.5. ログ先行書き込み（WAL）" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="runtime-config.html" title="第19章 サーバの設定">第19章 サーバの設定</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      runtime-config-resource.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="runtime-config-connection.html" title="19.3. 接続と認証">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="runtime-config.html" title="第19章 サーバの設定">上へ</a></td><td width="60%" align="center">19.4. 資源の消費</td><td width="20%" align="right"> <a accesskey="n" href="runtime-config-wal.html" title="19.5. ログ先行書き込み（WAL）">次へ</a></td></tr></table><hr /></div><div class="sect1" id="RUNTIME-CONFIG-RESOURCE"><div class="titlepage"><div><div><h2 class="title" style="clear: both">19.4. 資源の消費</h2></div></div></div><span class="original">
+    &lt;title&gt;Resource Consumption&lt;/title&gt;
+    </span><div class="sect2" id="RUNTIME-CONFIG-RESOURCE-MEMORY"><div class="titlepage"><div><div><h3 class="title">19.4.1. メモリ</h3></div></div></div><span class="original">
+     &lt;title&gt;Memory&lt;/title&gt;
+     </span><div class="variablelist"><dl class="variablelist"><dt id="GUC-SHARED-BUFFERS"><span class="term"><code class="varname">shared_buffers</code> (<code class="type">integer</code>)
+      <a id="id-1.6.6.7.2.2.1.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+       <span class="original">
+        Sets the amount of memory the database server uses for shared
+        memory buffers.  The default is typically 128 megabytes
+        (&lt;literal&gt;128MB&lt;/literal&gt;), but might be less if your kernel settings will
+        not support it (as determined during &lt;application&gt;initdb&lt;/application&gt;).
+        This setting must be at least 128 kilobytes.  (Non-default
+        values of &lt;symbol&gt;BLCKSZ&lt;/symbol&gt; change the minimum.)  However,
+        settings significantly higher than the minimum are usually needed
+        for good performance.  This parameter can only be set at server start.
+       </span>
+データベースサーバが共有メモリバッファのために使用するメモリ量を設定します。
+デフォルトは一般的に128メガバイト(<code class="literal">128MB</code>)です。
+しかし、稼働中のカーネルの設定がこの値をサポートしていない場合、より少なくなることがあります（<span class="application">initdb</span>の過程で決定されます）。
+この設定は最低限128キロバイトなければなりません。
+（<code class="symbol">BLCKSZ</code>がデフォルト値と異なる場合、この最小値も異なる値になります。）
+しかし、良い性能を引き出すためには、最小値よりかなり高い値の設定が通例必要です。
+このパラメータはサーバ起動時にのみ設定可能です。
+       </p><p>
+       <span class="original">
+        If you have a dedicated database server with 1GB or more of RAM, a
+        reasonable starting value for &lt;varname&gt;shared_buffers&lt;/varname&gt; is 25%
+        of the memory in your system.  There are some workloads where even
+        larger settings for &lt;varname&gt;shared_buffers&lt;/varname&gt; are effective, but
+        because &lt;productname&gt;PostgreSQL&lt;/productname&gt; also relies on the
+        operating system cache, it is unlikely that an allocation of more than
+        40% of RAM to &lt;varname&gt;shared_buffers&lt;/varname&gt; will work better than a
+        smaller amount.  Larger settings for &lt;varname&gt;shared_buffers&lt;/varname&gt;
+        usually require a corresponding increase in
+        &lt;varname&gt;max_wal_size&lt;/varname&gt;, in order to spread out the
+        process of writing large quantities of new or changed data over a
+        longer period of time.
+       </span>
+1GB以上のRAMを載せた専用データベースサーバを使用している場合、<code class="varname">shared_buffers</code>に対する妥当な初期値はシステムメモリの25%です。
+<code class="varname">shared_buffers</code>をこれよりも大きな値に設定することが有効なワークロードもあります。
+しかし、<span class="productname">PostgreSQL</span>はオペレーティングシステムキャッシュにも依存するため、<code class="varname">shared_buffers</code>にRAMの40%以上を割り当てても、それより小さい値の時より動作が良くなる見込みはありません。
+<code class="varname">shared_buffers</code>をより大きく設定する場合は、大抵<code class="varname">max_wal_size</code>も合わせて増やす必要があります。これは、新規または変更された多量のデータを書き出す処理をより長い時間に渡って分散させるためです。
+       </p><p>
+       <span class="original">
+        On systems with less than 1GB of RAM, a smaller percentage of RAM is
+        appropriate, so as to leave adequate space for the operating system.
+       </span>
+1GB未満のRAMのシステムでは、オペレーティングシステムに十分な余裕を残すために、RAMに対してより小さい割合を設定することが適切です。
+       </p></dd><dt id="GUC-HUGE-PAGES"><span class="term"><code class="varname">huge_pages</code> (<code class="type">enum</code>)
+      <a id="id-1.6.6.7.2.2.2.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+<span class="original">
+        Controls whether huge pages are requested for the main shared memory
+        area. Valid values are &lt;literal&gt;try&lt;/literal&gt; (the default),
+        &lt;literal&gt;on&lt;/literal&gt;, and &lt;literal&gt;off&lt;/literal&gt;.  With
+        &lt;varname&gt;huge_pages&lt;/varname&gt; set to &lt;literal&gt;try&lt;/literal&gt;, the
+        server will try to request huge pages, but fall back to the default if
+        that fails. With &lt;literal&gt;on&lt;/literal&gt;, failure to request huge pages
+        will prevent the server from starting up. With &lt;literal&gt;off&lt;/literal&gt;,
+        huge pages will not be requested.
+</span>
+主共有メモリ領域に対してhuge pageを要求するかどうかを管理します。
+可能な値は<code class="literal">try</code> (デフォルト)、<code class="literal">on</code>、<code class="literal">off</code>です。
+<code class="varname">huge_pages</code>を<code class="literal">try</code>に設定すると、サーバはhuge pageの要求を試み、失敗したらデフォルトに戻します。
+<code class="literal">on</code>にすると、要求に失敗した場合にサーバの起動ができなくなることになります。
+<code class="literal">off</code>ならhuge pageの要求は行いません。
+       </p><p>
+<span class="original">
+        At present, this setting is supported only on Linux and Windows. The
+        setting is ignored on other systems when set to
+        &lt;literal&gt;try&lt;/literal&gt;.
+</span>
+        今のところこの機能はLinuxとWindowsでのみサポートされています。
+        他のシステムでは<code class="literal">try</code>と設定しても無視されます。
+       </p><p>
+<span class="original">
+        The use of huge pages results in smaller page tables and less CPU time
+        spent on memory management, increasing performance. For more details about
+        using huge pages on Linux, see &lt;xref linkend="linux-huge-pages"/&gt;.
+</span>
+huge pageを使うと、ページテーブルが小さくなり、メモリ管理に使用されるCPU時間が少なくなり、性能が向上します。
+詳細は、<a class="xref" href="kernel-resources.html#LINUX-HUGE-PAGES" title="18.4.5. LinuxのHugePages">18.4.5</a>を見てください。
+       </p><p>
+<span class="original">
+        Huge pages are known as large pages on Windows.  To use them, you need to
+        assign the user right Lock Pages in Memory to the Windows user account
+        that runs &lt;productname&gt;PostgreSQL&lt;/productname&gt;.
+        You can use Windows Group Policy tool (gpedit.msc) to assign the user right
+        Lock Pages in Memory.
+        To start the database server on the command prompt as a standalone process,
+        not as a Windows service, the command prompt must be run as an administrator or
+        User Access Control (UAC) must be disabled. When the UAC is enabled, the normal
+        command prompt revokes the user right Lock Pages in Memory when started.
+</span>
+huge pageはWindowsではlarge pageとして知られています。
+それを使用するには、<span class="productname">PostgreSQL</span>を実行するWindowsユーザアカウントにメモリ中のロックページ権限を与える必要があります。
+ユーザにメモリ中のロックページ権限を与えるには、Windowsのグループポリシーツール(gedit.msc)を利用できます。
+Windowsサービスとしてではなく、スタンドアロンプロセスとしてデータベースサーバをコマンドプロンプトで起動するには、コマンドプロンプトを管理者として実行するか、ユーザアクセス管理(UAC)を無効にしておかなければなりません。
+UACが無効だと、通常のコマンドプロンプトは起動時にユーザのメモリ中のロックページ権限を剥奪します。
+       </p><p>
+<span class="original">
+        Note that this setting only affects the main shared memory area.
+        Operating systems such as Linux, FreeBSD, and Illumos can also use
+        huge pages (also known as &lt;quote&gt;super&lt;/quote&gt; pages or
+        &lt;quote&gt;large&lt;/quote&gt; pages) automatically for normal memory
+        allocation, without an explicit request from
+        &lt;productname&gt;PostgreSQL&lt;/productname&gt;. On Linux, this is called
+        &lt;quote&gt;transparent huge pages&lt;/quote&gt;&lt;indexterm&gt;&lt;primary&gt;transparent
+        huge pages&lt;/primary&gt;&lt;/indexterm&gt; (THP). That feature has been known to
+        cause performance degradation with
+        &lt;productname&gt;PostgreSQL&lt;/productname&gt; for some users on some Linux
+        versions, so its use is currently discouraged (unlike explicit use of
+        &lt;varname&gt;huge_pages&lt;/varname&gt;).
+</span>
+この設定は主共有メモリ領域にのみ影響することに注意してください。
+Lunux、FreeBSD、Illumosのようなオペレーティングシステムでは、<span class="productname">PostgreSQL</span>からの明示的な要求なしにhuge page（<span class="quote">「<span class="quote">super</span>」</span> pageあるいは<span class="quote">「<span class="quote">large</span>」</span>pageとしての知られています）が通常のメモリ獲得の際に使用できます。
+Linuxでは、これは<span class="quote">「<span class="quote">transparent huge pages</span>」</span><a id="id-1.6.6.7.2.2.2.2.5.5" class="indexterm"></a> (THP)と呼ばれています。
+この機能は、あるLiunuxバージョンのあるユーザにおいて<span class="productname">PostgreSQL</span>の性能低下をもたらすことが知られています。
+ですから、この機能の利用は（<code class="varname">huge_pages</code>の明示的な利用と違って）今の所推奨されていません。
+       </p></dd><dt id="GUC-TEMP-BUFFERS"><span class="term"><code class="varname">temp_buffers</code> (<code class="type">integer</code>)
+      <a id="id-1.6.6.7.2.2.3.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+       <span class="original">
+        Sets the maximum number of temporary buffers used by each database
+        session.  These are session-local buffers used only for access to
+        temporary tables.  The default is eight megabytes
+        (&lt;literal&gt;8MB&lt;/literal&gt;).  The setting can be changed within individual
+        sessions, but only before the first use of temporary tables
+        within the session; subsequent attempts to change the value will
+        have no effect on that session.
+       </span>
+それぞれのデータベースセッションが使用する一時バッファの最大数を設定します。
+一時バッファは、一時テーブルにアクセスする時にのみ使用されるセッションローカルのバッファです。
+デフォルトは8メガバイト（<code class="literal">8MB</code>）です。
+設定はそれぞれのセッション内で変更できますが、そのセッション内で一時テーブルが最初に使用されるまでになります。それより後に値の変更を試みても、そのセッションでは効果がありません。
+       </p><p>
+       <span class="original">
+        A session will allocate temporary buffers as needed up to the limit
+        given by &lt;varname&gt;temp_buffers&lt;/varname&gt;.  The cost of setting a large
+        value in sessions that do not actually need many temporary
+        buffers is only a buffer descriptor, or about 64 bytes, per
+        increment in &lt;varname&gt;temp_buffers&lt;/varname&gt;.  However if a buffer is
+        actually used an additional 8192 bytes will be consumed for it
+        (or in general, &lt;symbol&gt;BLCKSZ&lt;/symbol&gt; bytes).
+       </span>
+セッションは、<code class="varname">temp_buffers</code>を上限として、必要に応じて一時バッファを確保します。
+多くの一時バッファを実際に必要としないセッションで大きな値を設定するコストとは、<code class="varname">temp_buffers</code>の増分毎に、1つのバッファ記述子、約64バイトだけです。
+しかし、バッファが実際に使用されると、それに対して追加の8192バイト（汎用的に言えば<code class="symbol">BLCKSZ</code>バイト）が消費されます。
+       </p></dd><dt id="GUC-MAX-PREPARED-TRANSACTIONS"><span class="term"><code class="varname">max_prepared_transactions</code> (<code class="type">integer</code>)
+      <a id="id-1.6.6.7.2.2.4.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+       <span class="original">
+        Sets the maximum number of transactions that can be in the
+        &lt;quote&gt;prepared&lt;/quote&gt; state simultaneously (see &lt;xref
+        linkend="sql-prepare-transaction"/&gt;).
+        Setting this parameter to zero (which is the default)
+        disables the prepared-transaction feature.
+        This parameter can only be set at server start.
+       </span>
+同時に<span class="quote">「<span class="quote">プリペアド</span>」</span>状態にできるトランザクションの最大数を設定します（<a class="xref" href="sql-prepare-transaction.html" title="PREPARE TRANSACTION"><span class="refentrytitle">PREPARE TRANSACTION</span></a>を参照してください）。
+このパラメータをゼロ（これがデフォルトです）に設定すると、プリペアドトランザクション機能が無効になります。
+このパラメータはサーバ起動時にのみ設定可能です。
+       </p><p>
+       <span class="original">
+        If you are not planning to use prepared transactions, this parameter
+        should be set to zero to prevent accidental creation of prepared
+        transactions.  If you are using prepared transactions, you will
+        probably want &lt;varname&gt;max_prepared_transactions&lt;/varname&gt; to be at
+        least as large as &lt;xref linkend="guc-max-connections"/&gt;, so that every
+        session can have a prepared transaction pending.
+       </span>
+プリペアドトランザクションの使用を意図しないのであれば、このパラメータはプリペアドトランザクションが偶然に作成されないようゼロに設定すべきです。
+プリペアドトランザクションを使用する場合、全てのセッションがプリペアドトランザクションを保留できるように、<code class="varname">max_prepared_transactions</code>を少なくとも<a class="xref" href="runtime-config-connection.html#GUC-MAX-CONNECTIONS">max_connections</a>と同じ大きさに設定するのが良いでしょう。
+       </p><p>
+       <span class="original">
+        When running a standby server, you must set this parameter to the
+        same or higher value than on the master server. Otherwise, queries
+        will not be allowed in the standby server.
+       </span>
+       スタンバイサーバを運用している場合、このパラメータはマスターサーバ上の設定よりも同等かもしくはより高水準に設定しなければなりません。そうしないと問い合わせがスタンバイサーバ内で受け入れられません。
+       </p></dd><dt id="GUC-WORK-MEM"><span class="term"><code class="varname">work_mem</code> (<code class="type">integer</code>)
+      <a id="id-1.6.6.7.2.2.5.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+       <span class="original">
+        Specifies the amount of memory to be used by internal sort operations
+        and hash tables before writing to temporary disk files. The value
+        defaults to four megabytes (&lt;literal&gt;4MB&lt;/literal&gt;).
+        Note that for a complex query, several sort or hash operations might be
+        running in parallel; each operation will be allowed to use as much memory
+        as this value specifies before it starts to write data into temporary
+        files. Also, several running sessions could be doing such operations
+        concurrently.  Therefore, the total memory used could be many
+        times the value of &lt;varname&gt;work_mem&lt;/varname&gt;; it is necessary to
+        keep this fact in mind when choosing the value. Sort operations are
+        used for &lt;literal&gt;ORDER BY&lt;/literal&gt;, &lt;literal&gt;DISTINCT&lt;/literal&gt;, and
+        merge joins.
+        Hash tables are used in hash joins, hash-based aggregation, and
+        hash-based processing of &lt;literal&gt;IN&lt;/literal&gt; subqueries.
+       </span>
+       一時ディスクファイルに書き込む前に、内部並べ替えとハッシュテーブル操作が使用するメモリ容量を指定します。
+デフォルト値は4メガバイト（<code class="literal">4MB</code>）です。
+        複雑な問い合わせの場合、いくつかの並び替えもしくはハッシュ操作が並行して実行されることに注意してください。
+        それぞれの操作による一時メモリへの書き込み開始の前に、この値が指定するのと同じメモリ容量の使用をそれらの操作に許容します。さらに、いくつかの実行中のセッションはこれらの動作を同時に行います。したがって、使用されるメモリの合計は、<code class="varname">work_mem</code>の数倍になります。値を選択する時には、この事実に留意することが必要です。並び替え操作は<code class="literal">ORDER BY</code>、<code class="literal">DISTINCT</code>、およびマージ結合に対して使われます。ハッシュテーブルはハッシュ結合、ハッシュに基づいた集約、および<code class="literal">IN</code>副問い合わせのハッシュに基づいた処理で使用されます。
+       </p></dd><dt id="GUC-MAINTENANCE-WORK-MEM"><span class="term"><code class="varname">maintenance_work_mem</code> (<code class="type">integer</code>)
+      <a id="id-1.6.6.7.2.2.6.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+       <span class="original">
+        Specifies the maximum amount of memory to be used by maintenance
+        operations, such as &lt;command&gt;VACUUM&lt;/command&gt;, &lt;command&gt;CREATE
+        INDEX&lt;/command&gt;, and &lt;command&gt;ALTER TABLE ADD FOREIGN KEY&lt;/command&gt;.  It defaults
+        to 64 megabytes (&lt;literal&gt;64MB&lt;/literal&gt;).  Since only one of these
+        operations can be executed at a time by a database session, and
+        an installation normally doesn't have many of them running
+        concurrently, it's safe to set this value significantly larger
+        than &lt;varname&gt;work_mem&lt;/varname&gt;.  Larger settings might improve
+        performance for vacuuming and for restoring database dumps.
+       </span>
+       <code class="command">VACUUM</code>、<code class="command">CREATE INDEX</code>、および<code class="command">ALTER TABLE ADD FOREIGN KEY</code>の様な保守操作で使用されるメモリの最大容量を指定します。
+デフォルト値は64メガバイト（<code class="literal">64MB</code>）です。
+1つのデータベースセッションでは、一度に1つしか上記操作はできませんし、通常インストレーションでこうした操作が同時に非常に多く発生することはありませんので、これを<code class="varname">work_mem</code>よりもかなり多めの値にしても安全です。
+大きい値を設定することでvacuum処理と、ダンプしたデータベースのリストア性能が向上します。
+       </p><p>
+       <span class="original">
+        Note that when autovacuum runs, up to
+        &lt;xref linkend="guc-autovacuum-max-workers"/&gt; times this memory
+        may be allocated, so be careful not to set the default value
+        too high.  It may be useful to control for this by separately
+        setting &lt;xref linkend="guc-autovacuum-work-mem"/&gt;.
+</span>
+自動バキュームが稼動すると、最大でこのメモリの<a class="xref" href="runtime-config-autovacuum.html#GUC-AUTOVACUUM-MAX-WORKERS">autovacuum_max_workers</a>倍が配分されるので、デフォルトの値をあまり高く設定しないよう注意してください。
+別の設定項目<a class="xref" href="runtime-config-resource.html#GUC-AUTOVACUUM-WORK-MEM">autovacuum_work_mem</a>で制御するのが良いかもしれません。
+       </p></dd><dt id="GUC-AUTOVACUUM-WORK-MEM"><span class="term"><code class="varname">autovacuum_work_mem</code> (<code class="type">integer</code>)
+      <a id="id-1.6.6.7.2.2.7.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+<span class="original">
+        Specifies the maximum amount of memory to be used by each
+        autovacuum worker process.  It defaults to -1, indicating that
+        the value of &lt;xref linkend="guc-maintenance-work-mem"/&gt; should
+        be used instead.  The setting has no effect on the behavior of
+        &lt;command&gt;VACUUM&lt;/command&gt; when run in other contexts.
+       </span>
+        個々の自動バキュームワーカプロセスが使用する最大のメモリ量を指定します。
+デフォルトは-1で、<a class="xref" href="runtime-config-resource.html#GUC-MAINTENANCE-WORK-MEM">maintenance_work_mem</a>が代わりに使われる設定になります。
+       別の文脈で実行される<code class="command">VACUUM</code>にはこの設定は影響しません。
+       </p></dd><dt id="GUC-MAX-STACK-DEPTH"><span class="term"><code class="varname">max_stack_depth</code> (<code class="type">integer</code>)
+      <a id="id-1.6.6.7.2.2.8.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+       <span class="original">
+        Specifies the maximum safe depth of the server's execution stack.
+        The ideal setting for this parameter is the actual stack size limit
+        enforced by the kernel (as set by &lt;literal&gt;ulimit -s&lt;/literal&gt; or local
+        equivalent), less a safety margin of a megabyte or so.  The safety
+        margin is needed because the stack depth is not checked in every
+        routine in the server, but only in key potentially-recursive routines
+        such as expression evaluation.  The default setting is two
+        megabytes (&lt;literal&gt;2MB&lt;/literal&gt;), which is conservatively small and
+        unlikely to risk crashes.  However, it might be too small to allow
+        execution of complex functions.  Only superusers can change this
+        setting.
+       </span>
+サーバの実行スタックの最大安全深度を指定します。
+このパラメータの理想的な設定はカーネルにより強要される実際のスタック容量の（<code class="literal">ulimit -s</code>もしくはそれと同等の機能で設定された）限界から、1メガバイト程度の安全余地を差し引いたものです。
+安全余地は、サーバがすべてのルーチンではスタック深度を検査をせず、式評価などの主要な潜在的に再帰的なルーチンでのみ検査をするために必要となるものです。
+デフォルト設定は2メガバイト（<code class="literal">2MB</code>）で、かなり控え目で、クラッシュの危険はなさそうです。
+しかし、複雑な関数の実行を許容するには小さ過ぎるかも知れません。
+スーパーユーザのみがこの設定を変更することができます。
+       </p><p>
+       <span class="original">
+        Setting &lt;varname&gt;max_stack_depth&lt;/varname&gt; higher than
+        the actual kernel limit will mean that a runaway recursive function
+        can crash an individual backend process.  On platforms where
+        &lt;productname&gt;PostgreSQL&lt;/productname&gt; can determine the kernel limit,
+        the server will not allow this variable to be set to an unsafe
+        value.  However, not all platforms provide the information,
+        so caution is recommended in selecting a value.
+       </span>
+       <code class="varname">max_stack_depth</code>を実際のカーネルの制限よりも高い値に設定した場合、暴走した再帰関数により、個々のバックエンドプロセスがクラッシュするかもしれません。
+<span class="productname">PostgreSQL</span>がカーネルの制限を決定することができるプラットフォームでは、この変数を危険な値に設定させません。
+しかし、すべてのプラットフォームがこの情報を提供できるわけではありません。
+このため、値を選ぶ時には注意が必要です。
+       </p></dd><dt id="GUC-DYNAMIC-SHARED-MEMORY-TYPE"><span class="term"><code class="varname">dynamic_shared_memory_type</code> (<code class="type">enum</code>)
+      <a id="id-1.6.6.7.2.2.9.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+<span class="original">
+        Specifies the dynamic shared memory implementation that the server
+        should use.  Possible values are &lt;literal&gt;posix&lt;/literal&gt; (for POSIX shared
+        memory allocated using &lt;literal&gt;shm_open&lt;/literal&gt;), &lt;literal&gt;sysv&lt;/literal&gt;
+        (for System V shared memory allocated via &lt;literal&gt;shmget&lt;/literal&gt;),
+        &lt;literal&gt;windows&lt;/literal&gt; (for Windows shared memory), &lt;literal&gt;mmap&lt;/literal&gt;
+        (to simulate shared memory using memory-mapped files stored in the
+        data directory), and &lt;literal&gt;none&lt;/literal&gt; (to disable this feature).
+        Not all values are supported on all platforms; the first supported
+        option is the default for that platform.  The use of the
+        &lt;literal&gt;mmap&lt;/literal&gt; option, which is not the default on any platform,
+        is generally discouraged because the operating system may write
+        modified pages back to disk repeatedly, increasing system I/O load;
+        however, it may be useful for debugging, when the
+        &lt;literal&gt;pg_dynshmem&lt;/literal&gt; directory is stored on a RAM disk, or when
+        other shared memory facilities are not available.
+</span>
+        サーバが使う動的共有メモリの実装を指定します。可能な値は
+        <code class="literal">posix</code> (<code class="literal">shm_open</code>で獲得するPOSIX共有メモリ)、
+         <code class="literal">sysv</code>
+        (<code class="literal">shmget</code>で獲得するSystem V共有メモリ)、
+        <code class="literal">windows</code> (Windows共有メモリ)、 <code class="literal">mmap</code>
+        (データディレクトリ内のメモリマップファイルを使ってシミュレートする共有メモリ)、
+<code class="literal">none</code> (この機能を使用しない)です。
+       すべての値がすべてのプラットフォームでサポートされているわけではありません。
+       そのプラットフォームでの推奨実装がデフォルトになります。
+       どのプラットフォームでもデフォルトになっていない<code class="literal">mmap</code>は、オペレーティングシステムが変更されたページをディスクに継続的に書き込み、I/O負荷を増加させるので一般的には利用が推奨されていません。
+       しかし、デバッグ目的のために<code class="literal">pg_dynshmem</code>ディスクがRAMディスク上にある場合や、他の共有メモリ機能が使えない場合は有用かもしれません。
+       </p></dd></dl></div></div><div class="sect2" id="RUNTIME-CONFIG-RESOURCE-DISK"><div class="titlepage"><div><div><h3 class="title">19.4.2. ディスク</h3></div></div></div><span class="original">
+     &lt;title&gt;Disk&lt;/title&gt;
+     </span><div class="variablelist"><dl class="variablelist"><dt id="GUC-TEMP-FILE-LIMIT"><span class="term"><code class="varname">temp_file_limit</code> (<code class="type">integer</code>)
+      <a id="id-1.6.6.7.3.2.1.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+       <span class="original">
+        Specifies the maximum amount of disk space that a process can use
+        for temporary files, such as sort and hash temporary files, or the
+        storage file for a held cursor.  A transaction attempting to exceed
+        this limit will be canceled.
+        The value is specified in kilobytes, and &lt;literal&gt;-1&lt;/literal&gt; (the
+        default) means no limit.
+        Only superusers can change this setting.
+       </span>
+あるプロセスが一時ファイルとして使用できるディスクの最大容量を設定します。
+例えば、ソートやハッシュの一時ファイルであったり、カーソルを保持する格納ファイルです。
+この制限値を超えようとするトランザクションはキャンセルされます。
+値はキロバイト単位で指定され、（デフォルトである） <code class="literal">-1</code> の場合は制限がありません。
+この設定はスーパーユーザのみ変更可能です。
+       </p><p>
+       <span class="original">
+        This setting constrains the total space used at any instant by all
+        temporary files used by a given &lt;productname&gt;PostgreSQL&lt;/productname&gt; process.
+        It should be noted that disk space used for explicit temporary
+        tables, as opposed to temporary files used behind-the-scenes in query
+        execution, does &lt;emphasis&gt;not&lt;/emphasis&gt; count against this limit.
+       </span>
+       この設定により、ある <span class="productname">PostgreSQL</span> セッションによって使用される一時ファイルの合計の容量が常に制約されることになります。
+       なお、問い合わせの実行において暗黙的に使用される一時ファイルとは異なり、一時テーブルとして明示的に使用されるディスク容量は、この制限には<span class="emphasis"><em>含まれません</em></span>。
+       </p></dd></dl></div></div><div class="sect2" id="RUNTIME-CONFIG-RESOURCE-KERNEL"><div class="titlepage"><div><div><h3 class="title">19.4.3. カーネル資源使用</h3></div></div></div><span class="original">
+     &lt;title&gt;Kernel Resource Usage&lt;/title&gt;
+     </span><div class="variablelist"><dl class="variablelist"><dt id="GUC-MAX-FILES-PER-PROCESS"><span class="term"><code class="varname">max_files_per_process</code> (<code class="type">integer</code>)
+      <a id="id-1.6.6.7.4.2.1.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+       <span class="original">
+        Sets the maximum number of simultaneously open files allowed to each
+        server subprocess. The default is one thousand files. If the kernel is enforcing
+        a safe per-process limit, you don't need to worry about this setting.
+        But on some platforms (notably, most BSD systems), the kernel will
+        allow individual processes to open many more files than the system
+        can actually support if many processes all try to open
+        that many files. If you find yourself seeing &lt;quote&gt;Too many open
+        files&lt;/quote&gt; failures, try reducing this setting.
+        This parameter can only be set at server start.
+       </span>
+       それぞれのサーバ子プロセスが同時にオープンできるファイル数の最大値をセットします。
+デフォルトは1000ファイルです。
+もしもカーネルがプロセス毎の安全制限を強要している場合、この設定を気にかける必要はありません。
+しかし、いくつかのプラットフォーム（特にほとんどのBSDシステム）では、もし多くのプロセス全てがそれだけ多くのファイルを開くことを試みたとした場合、実際にサポートできるファイル数より多くのファイルを開くことを許しています。もしも<span class="quote">「<span class="quote">Too many open files</span>」</span>エラーが発生した場合、この設定を削減してみてください。
+このパラメータはサーバ起動時にのみ設定可能です。
+       </p></dd></dl></div></div><div class="sect2" id="RUNTIME-CONFIG-RESOURCE-VACUUM-COST"><div class="titlepage"><div><div><h3 class="title">19.4.4. コストに基づくVacuum遅延</h3></div></div></div><span class="original">
+     &lt;title&gt;Cost-based Vacuum Delay&lt;/title&gt;
+     </span><p>
+     <span class="original">
+      During the execution of &lt;xref linkend="sql-vacuum"/&gt;
+      and &lt;xref linkend="sql-analyze"/&gt;
+      commands, the system maintains an
+      internal counter that keeps track of the estimated cost of the
+      various I/O operations that are performed.  When the accumulated
+      cost reaches a limit (specified by
+      &lt;varname&gt;vacuum_cost_limit&lt;/varname&gt;), the process performing
+      the operation will sleep for a short period of time, as specified by
+      &lt;varname&gt;vacuum_cost_delay&lt;/varname&gt;. Then it will reset the
+      counter and continue execution.
+      </span>
+      <a class="xref" href="sql-vacuum.html" title="VACUUM"><span class="refentrytitle">VACUUM</span></a> および <a class="xref" href="sql-analyze.html" title="ANALYZE"><span class="refentrytitle">ANALYZE</span></a> コマンドの実行中、実行される各種I/O操作の予測コストを追跡し続ける内部カウンタをシステムが保守します。
+      累積されたコストが（<code class="varname">vacuum_cost_limit</code>で指定された）限度に達すると、操作を実行しているプロセスは<code class="varname">vacuum_cost_delay</code>で指定されたちょっとの間スリープします。その後、カウンタをリセットし、実行を継続します。
+     </p><p>
+     <span class="original">
+      The intent of this feature is to allow administrators to reduce
+      the I/O impact of these commands on concurrent database
+      activity. There are many situations where it is not
+      important that maintenance commands like
+      &lt;command&gt;VACUUM&lt;/command&gt; and &lt;command&gt;ANALYZE&lt;/command&gt; finish
+      quickly; however, it is usually very important that these
+      commands do not significantly interfere with the ability of the
+      system to perform other database operations. Cost-based vacuum
+      delay provides a way for administrators to achieve this.
+      </span>
+この機能の目的は、同時に実行されているデータベースの活動に対するこれらコマンドによるI/Oへの影響を、管理者が軽減できるようにすることです。
+<code class="command">VACUUM</code> および <code class="command">ANALYZE</code>の様な保守用コマンドが即座に終了することが重要ではない事態が数多くあります。
+しかし、他のデータベースの操作を行うに当たって、これらのコマンドがシステムの能力に多大な阻害を与えないことは通常とても重要です。
+コストに基づいたvacuum遅延はこれを実現するための方法を管理者に提供します。
+     </p><p>
+     <span class="original">
+      This feature is disabled by default for manually issued
+      &lt;command&gt;VACUUM&lt;/command&gt; commands. To enable it, set the
+      &lt;varname&gt;vacuum_cost_delay&lt;/varname&gt; variable to a nonzero
+      value.
+      </span>
+手動で実行した<code class="command">VACUUM</code>コマンドについては、デフォルトでこの機能は無効になっています。
+有効にするには、<code class="varname">vacuum_cost_delay</code>変数をゼロでない値に設定します。
+     </p><div class="variablelist"><dl class="variablelist"><dt id="GUC-VACUUM-COST-DELAY"><span class="term"><code class="varname">vacuum_cost_delay</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.7.5.5.1.1.3" class="indexterm"></a>
+       </span></dt><dd><p>
+       <span class="original">
+         The length of time, in milliseconds, that the process will sleep
+         when the cost limit has been exceeded.
+         The default value is zero, which disables the cost-based vacuum
+         delay feature.  Positive values enable cost-based vacuuming.
+         Note that on many systems, the effective resolution
+         of sleep delays is 10 milliseconds; setting
+         &lt;varname&gt;vacuum_cost_delay&lt;/varname&gt; to a value that is
+         not a multiple of 10 might have the same results as setting it
+         to the next higher multiple of 10.
+        </span>
+        コストの限度を越えた場合、プロセスがスリープするミリ秒単位の時間の長さです。
+デフォルトの値は0で、コストに基づいたvacuum遅延機能を無効にします。
+正の整数はコストに基づいたvacuumを有効にします。
+多くのシステムで、スリープ遅延の有効な分解能は10ミリ秒です。
+<code class="varname">vacuum_cost_delay</code>の値の設定を10の倍数としない場合、次に大きい10の倍数に設定した結果と同一になるかもしれないことを覚えておいてください。
+        </p><p>
+       <span class="original">
+         When using cost-based vacuuming, appropriate values for
+         &lt;varname&gt;vacuum_cost_delay&lt;/varname&gt; are usually quite small, perhaps
+         10 or 20 milliseconds.  Adjusting vacuum's resource consumption
+         is best done by changing the other vacuum cost parameters.
+        </span>
+        コストに基づいたバキューム処理を使用する場合、<code class="varname">vacuum_cost_delay</code>の適切な値は通常かなり小さくなり、たいていは10または20ミリ秒になります。
+        バキュームによるリソース消費の調整は、他のバキュームのコストパラメータを変更して行うことが最善です。
+        </p></dd><dt id="GUC-VACUUM-COST-PAGE-HIT"><span class="term"><code class="varname">vacuum_cost_page_hit</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.7.5.5.2.1.3" class="indexterm"></a>
+       </span></dt><dd><p>
+       <span class="original">
+         The estimated cost for vacuuming a buffer found in the shared buffer
+         cache. It represents the cost to lock the buffer pool, lookup
+         the shared hash table and scan the content of the page. The
+         default value is one.
+        </span>
+        共有バッファキャッシュの中のバッファにvacuumを掛ける予測コストです。バッファプールのロック、共有ハッシュテーブルの検索、およびページ内容走査のコストを示します。デフォルトの値は1です。
+        </p></dd><dt id="GUC-VACUUM-COST-PAGE-MISS"><span class="term"><code class="varname">vacuum_cost_page_miss</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.7.5.5.3.1.3" class="indexterm"></a>
+       </span></dt><dd><p>
+       <span class="original">
+         The estimated cost for vacuuming a buffer that has to be read from
+         disk.  This represents the effort to lock the buffer pool,
+         lookup the shared hash table, read the desired block in from
+         the disk and scan its content. The default value is 10.
+        </span>
+        ディスクから読み込まれなければならないバッファにvacuumを掛ける予測コストです。これが示すものは、バッファプールロックの試み、共有ハッシュテーブルの参照、ディスクから目的ブロックの読み込み、そしてその内容走査です。デフォルトの値は10です。
+        </p></dd><dt id="GUC-VACUUM-COST-PAGE-DIRTY"><span class="term"><code class="varname">vacuum_cost_page_dirty</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.7.5.5.4.1.3" class="indexterm"></a>
+       </span></dt><dd><p>
+       <span class="original">
+         The estimated cost charged when vacuum modifies a block that was
+         previously clean. It represents the extra I/O required to
+         flush the dirty block out to disk again. The default value is
+         20.
+        </span>
+        vacuumが、先だって掃除したブロックを変更する時に果たされた予測コストです。
+        ダーティブロックを再度ディスクに吐き出すのに必要な余分なI/Oを表します。デフォルトの値は20です。
+        </p></dd><dt id="GUC-VACUUM-COST-LIMIT"><span class="term"><code class="varname">vacuum_cost_limit</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.7.5.5.5.1.3" class="indexterm"></a>
+       </span></dt><dd><p>
+       <span class="original">
+         The accumulated cost that will cause the vacuuming process to sleep.
+         The default value is 200.
+        </span>
+        vacuumを掛けるプロセスをスリープさせることになる累計されたコストです。
+        デフォルトの値は200です。
+        </p></dd></dl></div><div class="note"><h3 class="title">注記</h3><p>
+      <span class="original">
+       There are certain operations that hold critical locks and should
+       therefore complete as quickly as possible.  Cost-based vacuum
+       delays do not occur during such operations.  Therefore it is
+       possible that the cost accumulates far higher than the specified
+       limit.  To avoid uselessly long delays in such cases, the actual
+       delay is calculated as &lt;varname&gt;vacuum_cost_delay&lt;/varname&gt; *
+       &lt;varname&gt;accumulated_balance&lt;/varname&gt; /
+       &lt;varname&gt;vacuum_cost_limit&lt;/varname&gt; with a maximum of
+       &lt;varname&gt;vacuum_cost_delay&lt;/varname&gt; * 4.
+       </span>
+重要なロックを保有し可能なかぎり早急に完了しなければならないある種の操作があります。コストに基づいたvacuum遅延はこの様な操作では起こりません。
+したがって、コストの累計が指定された限度をかなり高く越える可能性があります。
+このような場合無駄な長い遅延を防止するため、実際の遅延は<code class="varname">vacuum_cost_delay</code> * 4 を上限として、以下のように計算されます。
+       <code class="varname">vacuum_cost_delay</code> * <code class="varname">accumulated_balance</code> / <code class="varname">vacuum_cost_limit</code>
+      </p></div></div><div class="sect2" id="RUNTIME-CONFIG-RESOURCE-BACKGROUND-WRITER"><div class="titlepage"><div><div><h3 class="title">19.4.5. バックグラウンドライタ</h3></div></div></div><span class="original">
+     &lt;title&gt;Background Writer&lt;/title&gt;
+     </span><p>
+     <span class="original">
+      There is a separate server
+      process called the &lt;firstterm&gt;background writer&lt;/firstterm&gt;, whose function
+      is to issue writes of &lt;quote&gt;dirty&lt;/quote&gt; (new or modified) shared
+      buffers.  It writes shared buffers so server processes handling
+      user queries seldom or never need to wait for a write to occur.
+      However, the background writer does cause a net overall
+      increase in I/O load, because while a repeatedly-dirtied page might
+      otherwise be written only once per checkpoint interval, the
+      background writer might write it several times as it is dirtied
+      in the same interval.  The parameters discussed in this subsection
+      can be used to tune the behavior for local needs.
+      </span>
+<em class="firstterm">バックグラウンドライタ</em>と呼ばれる個別のサーバプロセスがあり、その機能は（新規または更新された）<span class="quote">「<span class="quote">ダーティ</span>」</span>な共有バッファの書き込みを行うことです。
+ユーザの問い合わせを処理するサーバプロセスが、書き込みが起きるまで滅多に待つ必要がない、あるいは決して待つ必要がないように、共有バッファの書き込みを行います。
+しかし、バックグラウンドライタは正味の全体的I/O負荷の増加を引き起こします。
+その理由は、繰り返しダーティ化されるページは、バックグラウンドライタを使わなければチェックポイント間隔で一度だけ書き出されれば十分なのに対し、バックグラウンドライタは同じ間隔内で何度もダーティ化されると、それを複数回書き出すかもしれないからです。
+本節で説明する各パラメータは、サイト独自の必要に応じて動作を調整することに使用できます。
+     </p><div class="variablelist"><dl class="variablelist"><dt id="GUC-BGWRITER-DELAY"><span class="term"><code class="varname">bgwriter_delay</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.7.6.3.1.1.3" class="indexterm"></a>
+       </span></dt><dd><p>
+       <span class="original">
+         Specifies the delay between activity rounds for the
+         background writer.  In each round the writer issues writes
+         for some number of dirty buffers (controllable by the
+         following parameters).  It then sleeps for &lt;varname&gt;bgwriter_delay&lt;/varname&gt;
+         milliseconds, and repeats.  When there are no dirty buffers in the
+         buffer pool, though, it goes into a longer sleep regardless of
+         &lt;varname&gt;bgwriter_delay&lt;/varname&gt;.  The default value is 200
+         milliseconds (&lt;literal&gt;200ms&lt;/literal&gt;). Note that on many systems, the
+         effective resolution of sleep delays is 10 milliseconds; setting
+         &lt;varname&gt;bgwriter_delay&lt;/varname&gt; to a value that is not a multiple of 10
+         might have the same results as setting it to the next higher multiple
+         of 10.  This parameter can only be set in the
+         &lt;filename&gt;postgresql.conf&lt;/filename&gt; file or on the server command line.
+        </span>
+        バックグラウンドライタの動作周期間の遅延を指定します。
+それぞれの周期でライタは、（以下のパラメータで管理される）一部のダーティバッファの書き込みを行います。
+そして<code class="varname">bgwriter_delay</code>ミリ秒スリープした後、これを繰りかえします。
+しかし、バッファプールにダーティバッファが存在しない場合、<code class="varname">bgwriter_delay</code>に係わらずより長くスリープします。
+デフォルトの値は200ミリ秒（<code class="literal">200ms</code>）です。
+多くのシステムで、スリープ遅延の実精度は10ミリ秒です。
+<code class="varname">bgwriter_delay</code>の値の設定を10の倍数としない場合、次に大きい10の倍数に設定した結果と同一になるかもしれないことを覚えておいてください。
+このパラメータは<code class="filename">postgresql.conf</code>ファイル、または、サーバのコマンドラインで設定可能です。
+        </p></dd><dt id="GUC-BGWRITER-LRU-MAXPAGES"><span class="term"><code class="varname">bgwriter_lru_maxpages</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.7.6.3.2.1.3" class="indexterm"></a>
+       </span></dt><dd><p>
+       <span class="original">
+         In each round, no more than this many buffers will be written
+         by the background writer.  Setting this to zero disables
+         background writing.  (Note that checkpoints, which are managed by
+         a separate, dedicated auxiliary process, are unaffected.)
+         The default value is 100 buffers.
+         This parameter can only be set in the &lt;filename&gt;postgresql.conf&lt;/filename&gt;
+         file or on the server command line.
+        </span>
+        それぞれの周期で、この数以上のバッファはバックグラウンドライタにより書き込まれません。
+         ゼロに設定することでバックグラウンド書き込みは無効になります。
+        （分離し、そして専用の補助プロセスにより管理されるチェックポイントは影響を受けません。）
+         デフォルト値は100バッファです。
+         このパラメータは<code class="filename">postgresql.conf</code>ファイル内、または、サーバのコマンドラインでのみで設定可能です。
+        </p></dd><dt id="GUC-BGWRITER-LRU-MULTIPLIER"><span class="term"><code class="varname">bgwriter_lru_multiplier</code> (<code class="type">floating point</code>)
+       <a id="id-1.6.6.7.6.3.3.1.3" class="indexterm"></a>
+       </span></dt><dd><p>
+       <span class="original">
+         The number of dirty buffers written in each round is based on the
+         number of new buffers that have been needed by server processes
+         during recent rounds.  The average recent need is multiplied by
+         &lt;varname&gt;bgwriter_lru_multiplier&lt;/varname&gt; to arrive at an estimate of the
+         number of buffers that will be needed during the next round.  Dirty
+         buffers are written until there are that many clean, reusable buffers
+         available.  (However, no more than &lt;varname&gt;bgwriter_lru_maxpages&lt;/varname&gt;
+         buffers will be written per round.)
+         Thus, a setting of 1.0 represents a &lt;quote&gt;just in time&lt;/quote&gt; policy
+         of writing exactly the number of buffers predicted to be needed.
+         Larger values provide some cushion against spikes in demand,
+         while smaller values intentionally leave writes to be done by
+         server processes.
+         The default is 2.0.
+         This parameter can only be set in the &lt;filename&gt;postgresql.conf&lt;/filename&gt;
+         file or on the server command line.
+        </span>
+        各周期で書き出されるダーティバッファ数は、最近の周期でサーバプロセスが必要とした新しいバッファ数を基にします。
+次の周期で必要となるバッファ数を推定するために、最近必要とされた平均が<code class="varname">bgwriter_lru_multiplier</code>と掛け合わせられます。
+ダーティバッファの書き出しは、同数の整理済み、再利用可能なバッファが利用できるようになるまで行われます。
+（しかし1周期に<code class="varname">bgwriter_lru_maxpages</code>を越えるバッファ数を書き出しません。）
+したがって、1.0と設定することは、必要と予想されるバッファ数の書き込みについて<span class="quote">「<span class="quote">必要なときに必要なだけ</span>」</span>というポリシーを表します。
+より大きな値は突発的な要求に対する多少の緩衝材を提供します。
+より小さな値はサーバプロセスでなされる書き込みを意図的に残します。
+デフォルトは2.0です。
+このパラメータは<code class="filename">postgresql.conf</code>ファイル、または、サーバのコマンドラインでのみで設定可能です。
+        </p></dd><dt id="GUC-BGWRITER-FLUSH-AFTER"><span class="term"><code class="varname">bgwriter_flush_after</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.7.6.3.4.1.3" class="indexterm"></a>
+       </span></dt><dd><p>
+<span class="original">
+         Whenever more than &lt;varname&gt;bgwriter_flush_after&lt;/varname&gt; bytes have
+         been written by the background writer, attempt to force the OS to issue these
+         writes to the underlying storage.  Doing so will limit the amount of
+         dirty data in the kernel's page cache, reducing the likelihood of
+         stalls when an &lt;function&gt;fsync&lt;/function&gt; is issued at the end of a checkpoint, or when
+         the OS writes data back in larger batches in the background.  Often
+         that will result in greatly reduced transaction latency, but there
+         also are some cases, especially with workloads that are bigger than
+         &lt;xref linkend="guc-shared-buffers"/&gt;, but smaller than the OS's page
+         cache, where performance might degrade.  This setting may have no
+         effect on some platforms.  The valid range is between
+         &lt;literal&gt;0&lt;/literal&gt;, which disables forced writeback, and
+         &lt;literal&gt;2MB&lt;/literal&gt;.  The default is &lt;literal&gt;512kB&lt;/literal&gt; on Linux,
+         &lt;literal&gt;0&lt;/literal&gt; elsewhere.  (If &lt;symbol&gt;BLCKSZ&lt;/symbol&gt; is not 8kB,
+         the default and maximum values scale proportionally to it.)
+         This parameter can only be set in the &lt;filename&gt;postgresql.conf&lt;/filename&gt;
+         file or on the server command line.
+</span>
+バックグラウンドライターが<code class="varname">bgwriter_flush_after</code>バイトより多く書く度に、OSが記憶装置に書き込むことを強制しようとします。
+このことにより、カーネルのページキャッシュが持つダーティデータの量を一定量に制限し、チェックポイントの最後に<code class="function">fsync</code>が実行される際、あるいはOSがバックグラウンドでデータを大きな塊で書き出す際に性能の急激な低下を招く可能性を減らします。
+多くの場合これによってトランザクションの遅延が大幅に少なくなりますが、あるケース、特にワークロードが<a class="xref" href="runtime-config-resource.html#GUC-SHARED-BUFFERS">shared_buffers</a>よりも大きく、OSのページキャッシュよりも小さい時には性能が低下するかもしれません。
+この設定が無効なプラットフォームがあります。
+有効な設定値は、この強制書き込み機能が無効になる<code class="literal">0</code>から、<code class="literal">2MB</code>までです。
+デフォルト値は、Linuxでは<code class="literal">512kB</code>で、それ以外は<code class="literal">0</code>です。
+(<code class="symbol">BLCKSZ</code>が8kBでなければ、この設定のデフォルト値と最大値が<code class="symbol">BLCKSZ</code>に比例して変更されます。)
+このパラメータは<code class="filename">postgresql.conf</code>ファイル、または、サーバのコマンドラインでのみで設定可能です。
+        </p></dd></dl></div><p>
+     <span class="original">
+      Smaller values of &lt;varname&gt;bgwriter_lru_maxpages&lt;/varname&gt; and
+      &lt;varname&gt;bgwriter_lru_multiplier&lt;/varname&gt; reduce the extra I/O load
+      caused by the background writer, but make it more likely that server
+      processes will have to issue writes for themselves, delaying interactive
+      queries.
+      </span>
+      <code class="varname">bgwriter_lru_maxpages</code>および<code class="varname">bgwriter_lru_multiplier</code>の値がより少ないと、バックグラウンドライタで引き起こされる追加のI/O負荷を軽減しますが、サーバプロセスが自分自身で行わなければならない書き込みが増加することになり、会話型問い合わせを遅らせることになります。
+     </p></div><div class="sect2" id="RUNTIME-CONFIG-RESOURCE-ASYNC-BEHAVIOR"><div class="titlepage"><div><div><h3 class="title">19.4.6. 非同期動作</h3></div></div></div><span class="original">
+     &lt;title&gt;Asynchronous Behavior&lt;/title&gt;
+     </span><div class="variablelist"><dl class="variablelist"><dt id="GUC-EFFECTIVE-IO-CONCURRENCY"><span class="term"><code class="varname">effective_io_concurrency</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.7.7.2.1.1.3" class="indexterm"></a>
+       </span></dt><dd><p>
+       <span class="original">
+         Sets the number of concurrent disk I/O operations that
+         &lt;productname&gt;PostgreSQL&lt;/productname&gt; expects can be executed
+         simultaneously.  Raising this value will increase the number of I/O
+         operations that any individual &lt;productname&gt;PostgreSQL&lt;/productname&gt; session
+         attempts to initiate in parallel.  The allowed range is 1 to 1000,
+         or zero to disable issuance of asynchronous I/O requests. Currently,
+         this setting only affects bitmap heap scans.
+        </span>
+<span class="productname">PostgreSQL</span>が同時実行可能であると想定する同時ディスクI/O操作の数を設定します。
+この値を大きくすると、あらゆる個別の<span class="productname">PostgreSQL</span>セッションが並行して開始を試みるI/O操作の数が増加します。
+設定可能な範囲は1から1000まで、または非同期I/Oリクエストの発行を無効にするゼロです。
+現在、この設定はビットマップヒープスキャンのみに影響します。
+        </p><p>
+       <span class="original">
+         For magnetic drives, a good starting point for this setting is the
+         number of separate
+         drives comprising a RAID 0 stripe or RAID 1 mirror being used for the
+         database.  (For RAID 5 the parity drive should not be counted.)
+         However, if the database is often busy with multiple queries issued in
+         concurrent sessions, lower values may be sufficient to keep the disk
+         array busy.  A value higher than needed to keep the disks busy will
+         only result in extra CPU overhead.
+         SSDs and other memory-based storage can often process many
+         concurrent requests, so the best value might be in the hundreds.
+</span>
+磁気ディスクドライブにおいては、データベースに使用されるRAID 0ストライプ、RAID 1ミラーを構成する個々のドライブ数から始めると良いでしょう。（RAID 5ではパリティ用のドライブを数に含めません）
+しかし、同時実行セッションで発行される複数の問い合わせでデータベースが頻繁にビジーとなる場合、小さめの値で十分ディスクアレイがビジーになるかもしれません。
+ディスクをビジーにするのに必要な値より大きな値を設定しても、余計なCPUオーバーヘッドを発生させるだけです。
+SSDやそれ以外のメモリーベースの記憶装置は、多くの同時リクエストをこなすことができるので、最適な値は数百になるかもしれません。
+        </p><p>
+       <span class="original">
+         Asynchronous I/O depends on an effective &lt;function&gt;posix_fadvise&lt;/function&gt;
+         function, which some operating systems lack.  If the function is not
+         present then setting this parameter to anything but zero will result
+         in an error.  On some operating systems (e.g., Solaris), the function
+         is present but does not actually do anything.
+        </span>
+        非同期I/Oは実質的に<code class="function">posix_fadvise</code>関数に依存します。
+        これは一部のオペレーティングシステムには存在しません。
+        この関数が存在しない場合、この値をゼロ以外に設定するとエラーとなります。
+        一部のオペレーティングシステム（例えばSolaris）では存在するけれども、実際何も行わないものもあります。
+        </p><p>
+<span class="original">
+         The default is 1 on supported systems, otherwise 0.  This value can
+         be overridden for tables in a particular tablespace by setting the
+         tablespace parameter of the same name (see
+         &lt;xref linkend="sql-altertablespace"/&gt;).
+</span>
+デフォルトは、サポートされているシステムでは1、そうでなければ0です。
+この値は、テーブルスペースパラメータの同じ名前のパラメータを設定することで、特定のテーブルスペース内のテーブルに対して上書きできます。
+(<a class="xref" href="sql-altertablespace.html" title="ALTER TABLESPACE"><span class="refentrytitle">ALTER TABLESPACE</span></a>を参照ください)。
+        </p></dd><dt id="GUC-MAX-WORKER-PROCESSES"><span class="term"><code class="varname">max_worker_processes</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.7.7.2.2.1.3" class="indexterm"></a>
+       </span></dt><dd><p>
+<span class="original">
+         Sets the maximum number of background processes that the system
+         can support.  This parameter can only be set at server start.  The
+         default is 8.
+</span>
+システムがサポートするバックグラウンドプロセスの最大数を指定します。
+このパラメータはサーバ起動時にのみ設定できます。
+デフォルトは8です。
+        </p><p>
+<span class="original">
+         When running a standby server, you must set this parameter to the
+         same or higher value than on the master server. Otherwise, queries
+         will not be allowed in the standby server.
+</span>
+         スタンバイサーバを起動しているときは、このパラメータを、マスタサーバの設定値と同じかそれ以上にしなければなりません。さもなければ、スタンバイサーバで問い合わせの実行ができなくなります。
+        </p><p>
+<span class="original">
+         When changing this value, consider also adjusting
+         &lt;xref linkend="guc-max-parallel-workers"/&gt;,
+         &lt;xref linkend="guc-max-parallel-workers-maintenance"/&gt;, and
+         &lt;xref linkend="guc-max-parallel-workers-per-gather"/&gt;.
+</span>
+この値を変更する際は、<a class="xref" href="runtime-config-resource.html#GUC-MAX-PARALLEL-WORKERS">max_parallel_workers</a>と<a class="xref" href="runtime-config-resource.html#GUC-MAX-PARALLEL-WORKERS-PER-GATHER">max_parallel_workers_per_gather</a>を変更することも考慮してください。
+
+        </p></dd><dt id="GUC-MAX-PARALLEL-WORKERS-PER-GATHER"><span class="term"><code class="varname">max_parallel_workers_per_gather</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.7.7.2.3.1.3" class="indexterm"></a>
+       </span></dt><dd><p>
+<span class="original">
+         Sets the maximum number of workers that can be started by a single
+         &lt;literal&gt;Gather&lt;/literal&gt; or &lt;literal&gt;Gather Merge&lt;/literal&gt; node.
+         Parallel workers are taken from the pool of processes established by
+         &lt;xref linkend="guc-max-worker-processes"/&gt;, limited by
+         &lt;xref linkend="guc-max-parallel-workers"/&gt;.  Note that the requested
+         number of workers may not actually be available at run time.  If this
+         occurs, the plan will run with fewer workers than expected, which may
+         be inefficient.  The default value is 2.  Setting this value to 0
+         disables parallel query execution.
+</span>
+一つの<code class="literal">Gather</code>または<code class="literal">Gather Merge</code>ノードに対して起動できるワーカー数の最大値を設定します。
+パラレルワーカーは、<a class="xref" href="runtime-config-resource.html#GUC-MAX-PARALLEL-WORKERS">max_parallel_workers</a>で上限が決まる<a class="xref" href="runtime-config-resource.html#GUC-MAX-WORKER-PROCESSES">max_worker_processes</a>で確立されたプロセスのプールから取得されます。
+実行時には、要求された数のワーカーは取得できないかもしれないことに注意してください。
+そうなると、実行プランは期待していたよりも少ない数のワーカーで実行されることになり、効率は悪化するかもしれません。
+デフォルト値は2です。
+この設定値を0にすると、パラレルクエリの実行は行われません。
+        </p><p>
+<span class="original">
+         Note that parallel queries may consume very substantially more
+         resources than non-parallel queries, because each worker process is
+         a completely separate process which has roughly the same impact on the
+         system as an additional user session.  This should be taken into
+         account when choosing a value for this setting, as well as when
+         configuring other settings that control resource utilization, such
+         as &lt;xref linkend="guc-work-mem"/&gt;.  Resource limits such as
+         &lt;varname&gt;work_mem&lt;/varname&gt; are applied individually to each worker,
+         which means the total utilization may be much higher across all
+         processes than it would normally be for any single process.
+         For example, a parallel query using 4 workers may use up to 5 times
+         as much CPU time, memory, I/O bandwidth, and so forth as a query which
+         uses no workers at all.
+</span>
+パラレルクエリの実行により、パラレルクエリではない場合に比べて非常に多くのリソースが使用されるかもしれないことに注意してください。
+これは、個々のワーカープロセスは完全に別個のプロセスであり、システムに対してユーザセッションが追加されたのと大体同じくらいの影響があるからです。
+この設定値を選択する際には、他のリソースの消費量を制御する他の設定値、たとえば<a class="xref" href="runtime-config-resource.html#GUC-WORK-MEM">work_mem</a>を設定するときと同様に、この点を考慮しておく必要があります。
+<code class="varname">work_mem</code>のような設定値によるリソース制限は、個々のワーカーに対して個別に適用されます。
+つまり、ひとつのプロセス対するよりも、すべてのプロセスの全体のリソース消費はずっと多いかもしれないということです。
+たとえば、あるパラレルクエリが4つのワーカーを使っているとすると、ワーカーを使わない場合に比べて、最大5倍のCPU時間、メモリ、I/Oバンド幅、その他を使うかもしれません。
+        </p><p>
+<span class="original">
+         For more information on parallel query, see
+         &lt;xref linkend="parallel-query"/&gt;.
+</span>
+         パラレルクエリに関する更なる情報については、<a class="xref" href="parallel-query.html" title="第15章 パラレルクエリ">第15章</a>をご覧ください。
+        </p></dd><dt id="GUC-MAX-PARALLEL-WORKERS-MAINTENANCE"><span class="term"><code class="varname">max_parallel_maintenance_workers</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.7.7.2.4.1.3" class="indexterm"></a>
+       </span></dt><dd><p>
+<span class="original">
+         Sets the maximum number of parallel workers that can be
+         started by a single utility command.  Currently, the only
+         parallel utility command that supports the use of parallel
+         workers is &lt;command&gt;CREATE INDEX&lt;/command&gt;, and only when
+         building a B-tree index.  Parallel workers are taken from the
+         pool of processes established by &lt;xref
+         linkend="guc-max-worker-processes"/&gt;, limited by &lt;xref
+         linkend="guc-max-parallel-workers"/&gt;.  Note that the requested
+         number of workers may not actually be available at run time.
+         If this occurs, the utility operation will run with fewer
+         workers than expected.  The default value is 2.  Setting this
+         value to 0 disables the use of parallel workers by utility
+         commands.
+</span>
+単一のユーティリティコマンドで使用されるパラレルワーカーの最大数を設定します。
+今の所、パラレルワーカーの利用をサポートしているパラレルユーティリティコマンドは<code class="command">CREATE INDEX</code>だけで、しかもB-treeインデックスを構築するときだけです。
+パラレルワーカーは、<a class="xref" href="runtime-config-resource.html#GUC-MAX-WORKER-PROCESSES">max_worker_processes</a>で確立したプロセスのプールから取得され、<a class="xref" href="runtime-config-resource.html#GUC-MAX-PARALLEL-WORKERS">max_parallel_workers</a>によって制限されます。
+要求したワーカー数は、実行時に実際には利用可能でないかも知れないことに注意してください。
+この場合は、ユーティリティ操作は期待したよりも少ない数のワーカーにより実行されます。
+デフォルト値は2です。
+0に設定すると、ユーティリティコマンドはパラレルワーカーを使用しません。
+        </p><p>
+<span class="original">
+         Note that parallel utility commands should not consume
+         substantially more memory than equivalent non-parallel
+         operations.  This strategy differs from that of parallel
+         query, where resource limits generally apply per worker
+         process.  Parallel utility commands treat the resource limit
+         &lt;varname&gt;maintenance_work_mem&lt;/varname&gt; as a limit to be applied to
+         the entire utility command, regardless of the number of
+         parallel worker processes.  However, parallel utility
+         commands may still consume substantially more CPU resources
+         and I/O bandwidth.
+</span>
+パラレルユーティリティコマンドは同等の非パラレル操作よりもかなり多くのメモリを消費すべきでないことに留意してください。
+この戦略は、一般的にワーカー毎にリソース制限を適用するパラレルクエリとは異なります。
+パラレルワーカープロセスの数にかかわらず、パラレルユーティリティコマンドは、その全体でリソース制限<code class="varname">maintenance_work_mem</code>が適用されるとみなします。
+しかし、パラレルユーティリティコマンドは、依然としてかなり多くのCPUリソースとI/Oバンド幅を消費するかも知れません。
+        </p></dd><dt id="GUC-MAX-PARALLEL-WORKERS"><span class="term"><code class="varname">max_parallel_workers</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.7.7.2.5.1.3" class="indexterm"></a>
+       </span></dt><dd><p>
+<span class="original">
+         Sets the maximum number of workers that the system can support for
+         parallel operations.  The default value is 8.  When increasing or
+         decreasing this value, consider also adjusting
+         &lt;xref linkend="guc-max-parallel-workers-maintenance"/&gt; and
+         &lt;xref linkend="guc-max-parallel-workers-per-gather"/&gt;.
+         Also, note that a setting for this value which is higher than
+         &lt;xref linkend="guc-max-worker-processes"/&gt; will have no effect,
+         since parallel workers are taken from the pool of worker processes
+         established by that setting.
+</span>
+パラレルクエリ操作用にシステムがサポートできる最大のワーカー数を設定します。
+デフォルト値は8です。
+この値を増減するときは、<a class="xref" href="runtime-config-resource.html#GUC-MAX-PARALLEL-WORKERS-MAINTENANCE">max_parallel_maintenance_workers</a>と<a class="xref" href="runtime-config-resource.html#GUC-MAX-PARALLEL-WORKERS-PER-GATHER">max_parallel_workers_per_gather</a>を調整することを考慮してください。
+また、この設定値を<a class="xref" href="runtime-config-resource.html#GUC-MAX-WORKER-PROCESSES">max_worker_processes</a>よりも高い値にしても効果がないことに注意してください。
+<a class="xref" href="runtime-config-resource.html#GUC-MAX-WORKER-PROCESSES">max_worker_processes</a>で決まるワーカープロセスのプールから、パラレルワーカーが使われるからです。
+        </p></dd><dt id="GUC-BACKEND-FLUSH-AFTER"><span class="term"><code class="varname">backend_flush_after</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.7.7.2.6.1.3" class="indexterm"></a>
+       </span></dt><dd><p>
+<span class="original">
+         Whenever more than &lt;varname&gt;backend_flush_after&lt;/varname&gt; bytes have
+         been written by a single backend, attempt to force the OS to issue
+         these writes to the underlying storage.  Doing so will limit the
+         amount of dirty data in the kernel's page cache, reducing the
+         likelihood of stalls when an &lt;function&gt;fsync&lt;/function&gt; is issued at the end of a
+         checkpoint, or when the OS writes data back in larger batches in the
+         background.  Often that will result in greatly reduced transaction
+         latency, but there also are some cases, especially with workloads
+         that are bigger than &lt;xref linkend="guc-shared-buffers"/&gt;, but smaller
+         than the OS's page cache, where performance might degrade.  This
+         setting may have no effect on some platforms.  The valid range is
+         between &lt;literal&gt;0&lt;/literal&gt;, which disables forced writeback,
+         and &lt;literal&gt;2MB&lt;/literal&gt;.  The default is &lt;literal&gt;0&lt;/literal&gt;, i.e., no
+         forced writeback.  (If &lt;symbol&gt;BLCKSZ&lt;/symbol&gt; is not 8kB,
+         the maximum value scales proportionally to it.)
+</span>
+<code class="varname">backend_flush_after</code>バイトが単一のバックエンドによって書き込まれる度に、OSが記憶装置に書き込むことを強制します。
+このことにより、カーネルのページキャッシュが持つダーティデータの量を一定量に制限し、チェックポイントの最後に<code class="function">fsync</code>が実行される際、あるいはバックグラウンドで実行される大きなバッチの中でOSがデータを書き出す際に性能の急激な低下を招く可能性を減らします。
+多くの場合これによってトランザクションの遅延を大幅に少なくなりますが、あるケース、特にワークロードが<a class="xref" href="runtime-config-resource.html#GUC-SHARED-BUFFERS">shared_buffers</a>よりも大きく、OSのページキャッシュよりも小さい時には性能が低下するかもしれません。
+この設定が無効なプラットフォームがあります。
+有効な設定値は、この強制書き込み機能が無効になる<code class="literal">0</code>から、<code class="literal">2MB</code>までです。
+デフォルト値は<code class="literal">0</code>です(すなわち書き出し制御を行いません)。
+(<code class="symbol">BLCKSZ</code>が8kbでなければ、最大値が<code class="symbol">BLCKSZ</code>に比例して変更されます。)
+        </p></dd><span class="original"> split-config0-end </span><span class="original"> split-config1-start </span><dt id="GUC-OLD-SNAPSHOT-THRESHOLD"><span class="term"><code class="varname">old_snapshot_threshold</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.7.7.2.7.1.3" class="indexterm"></a>
+       </span></dt><dd><p>
+<span class="original">
+         Sets the minimum time that a snapshot can be used without risk of a
+         &lt;literal&gt;snapshot too old&lt;/literal&gt; error occurring when using the snapshot.
+         This parameter can only be set at server start.
+</span>
+スナップショットが使用されるときに、<code class="literal">snapshot too old</code>エラーを引き起こす危険性なしにスナップショットを利用できる最小時間を設定します。
+このパラメータはサーバ起動時にのみ設定できます。
+        </p><p>
+<span class="original">
+         Beyond the threshold, old data may be vacuumed away.  This can help
+         prevent bloat in the face of snapshots which remain in use for a
+         long time.  To prevent incorrect results due to cleanup of data which
+         would otherwise be visible to the snapshot, an error is generated
+         when the snapshot is older than this threshold and the snapshot is
+         used to read a page which has been modified since the snapshot was
+         built.
+</span>
+この制限値を越えると、古いデータはバキュームされます。
+これにより、長い間残っていたスナップショットによりデータが溢れてしまうのを防ぐことができます。
+スナップショットから見えるデータが消えることによる不正な結果を防ぐため、スナップショットがこの制限値よりも古く、かつこのスナップショットが作られた以降に変更されたページを読むためにスナップショットが使用されるときはエラーが発生します。
+        </p><p>
+<span class="original">
+         A value of &lt;literal&gt;-1&lt;/literal&gt; disables this feature, and is the default.
+         Useful values for production work probably range from a small number
+         of hours to a few days.  The setting will be coerced to a granularity
+         of minutes, and small numbers (such as &lt;literal&gt;0&lt;/literal&gt; or
+         &lt;literal&gt;1min&lt;/literal&gt;) are only allowed because they may sometimes be
+         useful for testing.  While a setting as high as &lt;literal&gt;60d&lt;/literal&gt; is
+         allowed, please note that in many workloads extreme bloat or
+         transaction ID wraparound may occur in much shorter time frames.
+</span>
+<code class="literal">-1</code>を設定するとこの機能が無効になります。
+これがデフォルトです。
+実際の環境でのおすすめの値はおそらく数時間から2, 3日の間となるでしょう。
+設定値は、分の粒度に書き換えられます。
+小さな値(たとえば<code class="literal">0</code>や<code class="literal">1min</code>)は、テストの際に有用だということで許可されています。
+<code class="literal">60d</code>のような大きな値の設定もできますが、多くのワークロードにおいて、大きなデータ溢れやトランザクションIDの周回がそれよりはずっと短い期間で起こる可能性があることに注意してください。
+        </p><p>
+<span class="original">
+         When this feature is enabled, freed space at the end of a relation
+         cannot be released to the operating system, since that could remove
+         information needed to detect the &lt;literal&gt;snapshot too old&lt;/literal&gt;
+         condition.  All space allocated to a relation remains associated with
+         that relation for reuse only within that relation unless explicitly
+         freed (for example, with &lt;command&gt;VACUUM FULL&lt;/command&gt;).
+</span>
+この機能が有効であると、リレーションの終端部にあるフリースペースはオペレーティングシステムには返却されません。
+そうしないと、<code class="literal">snapshot too old</code>の条件の検出に必要な情報を削除してしまうことになるからです。
+明示的に解放されない限り（たとえば<code class="command">VACUUM FULL</code>によって）、リレーションに割り当てられた領域は、そのリレーションの中での再利用に限定して紐付けられます。
+        </p><p>
+<span class="original">
+         This setting does not attempt to guarantee that an error will be
+         generated under any particular circumstances.  In fact, if the
+         correct results can be generated from (for example) a cursor which
+         has materialized a result set, no error will be generated even if the
+         underlying rows in the referenced table have been vacuumed away.
+         Some tables cannot safely be vacuumed early, and so will not be
+         affected by this setting, such as system catalogs.  For such tables
+         this setting will neither reduce bloat nor create a possibility
+         of a &lt;literal&gt;snapshot too old&lt;/literal&gt; error on scanning.
+</span>
+この設定は、どのような状況でもエラーが検出されることを保証するものではありません。
+（たとえば）マテリアライズされた結果集合を持つカーソルから正しい結果を得ることができるのであれば、たとえ参照している元のテーブルからVACUUMによって行が削除されたとしてもエラーにはなりません。
+ある種のテーブルでは、早期にVACUUMできないので、この設定の影響を受けません。
+例としては、システムカタログが挙げられます。
+このようなテーブルにおいては、この設定によってデータ溢れを防ぐことも、スキャンの際に<code class="literal">snapshot too old</code>エラーを起こす可能性を作り出すこともできません。
+        </p></dd></dl></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="runtime-config-connection.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="runtime-config.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="runtime-config-wal.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">19.3. 接続と認証 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 19.5. ログ先行書き込み（WAL）</td></tr></table></div></body></html>

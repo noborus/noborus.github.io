@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>68.6. データベースページのレイアウト</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="storage-init.html" title="68.5. 初期化フォーク" /><link rel="next" href="bki.html" title="第69章 システムカタログの宣言と初期内容" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="storage.html" title="第68章 データベースの物理的な格納">第68章 データベースの物理的な格納</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      storage-page-layout.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="storage-init.html" title="68.5. 初期化フォーク">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="storage.html" title="第68章 データベースの物理的な格納">上へ</a></td><td width="60%" align="center">68.6. データベースページのレイアウト</td><td width="20%" align="right"> <a accesskey="n" href="bki.html" title="第69章 システムカタログの宣言と初期内容">次へ</a></td></tr></table><hr /></div><div class="sect1" id="STORAGE-PAGE-LAYOUT"><div class="titlepage"><div><div><h2 class="title" style="clear: both">68.6. データベースページのレイアウト</h2></div></div></div><span class="original">
+&lt;title&gt;Database Page Layout&lt;/title&gt;
+</span><p>
+<span class="original">
+This section provides an overview of the page format used within
+&lt;productname&gt;PostgreSQL&lt;/productname&gt; tables and indexes.&lt;footnote&gt;
+  &lt;para&gt;
+    Actually, index access methods need not use this page format.
+    All the existing index methods do use this basic format,
+    but the data kept on index metapages usually doesn't follow
+    the item layout rules.
+  &lt;/para&gt;
+&lt;/footnote&gt;
+Sequences and &lt;acronym&gt;TOAST&lt;/acronym&gt; tables are formatted just like a regular table.
+</span>
+本節では<span class="productname">PostgreSQL</span>のテーブルおよびインデックスで使われるページ書式の概略について説明します。
+<a href="#ftn.id-1.10.20.8.2.2" class="footnote"><sup class="footnote" id="id-1.10.20.8.2.2">[14]</sup></a>
+<acronym class="acronym">TOAST</acronym>のテーブルとシーケンスは、通常のテーブルと同様に整形されています。
+</p><p>
+<span class="original">
+In the following explanation, a
+&lt;firstterm&gt;byte&lt;/firstterm&gt;
+is assumed to contain 8 bits.  In addition, the term
+&lt;firstterm&gt;item&lt;/firstterm&gt;
+refers to an individual data value that is stored on a page.  In a table,
+an item is a row; in an index, an item is an index entry.
+</span>
+以下の説明では1<em class="firstterm">バイト</em>は8ビットからなることを前提としています。
+さらに、<em class="firstterm">アイテム</em>という単語は、ページに格納される個別のデータ値のことを指しています。
+テーブル内ではアイテムは行であり、インデックス内ではアイテムはインデックスのエントリです。
+</p><p>
+<span class="original">
+Every table and index is stored as an array of &lt;firstterm&gt;pages&lt;/firstterm&gt; of a
+fixed size (usually 8 kB, although a different page size can be selected
+when compiling the server).  In a table, all the pages are logically
+equivalent, so a particular item (row) can be stored in any page.  In
+indexes, the first page is generally reserved as a &lt;firstterm&gt;metapage&lt;/firstterm&gt;
+holding control information, and there can be different types of pages
+within the index, depending on the index access method.
+</span>
+テーブルとインデックスはすべて、固定サイズ（通常8キロバイト。サーバのコンパイル時に異なるサイズを設定可能）の<em class="firstterm">ページ</em>の集まりとして格納されます。
+テーブルでは、すべてのページは論理上等価です。
+したがって、あるアイテム（行）はどのページにでも格納することができます。
+インデックスでは、初めのページは通常、制御用の情報を保持する<em class="firstterm">メタページ</em>として予約されます。
+また、インデックスではインデックスアクセスメソッドに依存した様々なページ種類があります。
+</p><p>
+<span class="original">
+&lt;xref linkend="page-table"/&gt; shows the overall layout of a page.
+There are five parts to each page.
+</span>
+<a class="xref" href="storage-page-layout.html#PAGE-TABLE" title="表68.2 ページレイアウト全体">表 68.2</a>はページの全体的なレイアウトを示しています。
+各ページには5つの部分があります。
+</p><div class="table" id="PAGE-TABLE"><p class="title"><strong>表68.2 ページレイアウト全体</strong></p><div class="table-contents"><span class="original">
+&lt;title&gt;Overall Page Layout&lt;/title&gt;
+&lt;titleabbrev&gt;Page Layout&lt;/titleabbrev&gt;
+</span><table class="table" summary="ページレイアウト全体" border="1"><colgroup><col /><col /></colgroup><thead><tr><th>
+<span class="original">
+Item
+</span>
+アイテム
+</th><th>説明</th></tr></thead><tbody><tr><td>PageHeaderData</td><td>長さは24バイト。空き領域ポインタを含む、ページについての一般情報です。</td></tr><tr><td>ItemIdData</td><td>実際のアイテムを指す（オフセットと長さの）ペアの配列です。
+1アイテムにつき4バイトです。</td></tr><tr><td>空き領域</td><td>割り当てられていない空間です。
+新規のアイテムポインタはこの領域の先頭から、新規のアイテムは最後から割り当てられます。
+</td></tr><tr><td>アイテム</td><td>実際のアイテムそのものです。</td></tr><tr><td>特別な空間</td><td>インデックスアクセスメソッド特有のデータです。異なるメソッドは異なるデータを格納します。通常のテーブルでは空です。</td></tr></tbody></table></div></div><br class="table-break" /><p>
+
+<span class="original">
+  The first 24 bytes of each page consists of a page header
+  (&lt;structname&gt;PageHeaderData&lt;/structname&gt;). Its format is detailed in &lt;xref
+  linkend="pageheaderdata-table"/&gt;. The first field tracks the most
+  recent WAL entry related to this page. The second field contains
+  the page checksum if &lt;xref linkend="app-initdb-data-checksums"/&gt; are
+  enabled.  Next is a 2-byte field containing flag bits. This is followed
+  by three 2-byte integer fields (&lt;structfield&gt;pd_lower&lt;/structfield&gt;,
+  &lt;structfield&gt;pd_upper&lt;/structfield&gt;, and
+  &lt;structfield&gt;pd_special&lt;/structfield&gt;).  These contain byte offsets
+  from the page start to the start of unallocated space, to the end of
+  unallocated space, and to the start of the special space.  The next 2
+  bytes of the page header, &lt;structfield&gt;pd_pagesize_version&lt;/structfield&gt;,
+  store both the page size and a version indicator.  Beginning with
+  &lt;productname&gt;PostgreSQL&lt;/productname&gt; 8.3 the version number is 4;
+  &lt;productname&gt;PostgreSQL&lt;/productname&gt; 8.1 and 8.2 used version number 3;
+  &lt;productname&gt;PostgreSQL&lt;/productname&gt; 8.0 used version number 2;
+  &lt;productname&gt;PostgreSQL&lt;/productname&gt; 7.3 and 7.4 used version number 1;
+  prior releases used version number 0.
+  (The basic page layout and header format has not changed in most of these
+  versions, but the layout of heap row headers has.)  The page size
+  is basically only present as a cross-check; there is no support for having
+  more than one page size in an installation.
+  The last field is a hint that shows whether pruning the page is likely
+  to be profitable: it tracks the oldest un-pruned XMAX on the page.
+</span>
+それぞれのページの最初の24バイトはページヘッダ(<code class="structname">PageHeaderData</code>)から構成されています。
+その書式を<a class="xref" href="storage-page-layout.html#PAGEHEADERDATA-TABLE" title="表68.3 PageHeaderDataのレイアウト">表 68.3</a>にて説明します。
+最初のフィールドは、このページに関連する最も最近のWAL項目を表しています。
+2番目のフィールドには<a class="xref" href="app-initdb.html#APP-INITDB-DATA-CHECKSUMS">data checksums</a>が有効な場合にページチェックサムが格納されています。
+次にフラグビットを含む2バイトのフィールドがあります。
+その後に2バイトの整数フィールドが3つ続きます（<code class="structfield">pd_lower</code>、<code class="structfield">pd_upper</code>、<code class="structfield">pd_special</code>）。
+これらには、割り当てられていない空間の始まり、割り当てられていない空間の終わり、そして特別な空間の始まりのバイトオフセットが格納されています。
+ページヘッダの次の2バイトである<code class="structfield">pd_pagesize_version</code>は、ページサイズとバージョン指示子の両方を格納します。
+<span class="productname">PostgreSQL</span> 8.3以降のバージョン番号は4、<span class="productname">PostgreSQL</span> 8.1と8.2のバージョン番号は3、<span class="productname">PostgreSQL</span> 8.0のバージョン番号は2、<span class="productname">PostgreSQL</span> 7.3と7.4のバージョン番号は1です。
+それより前のリリースのバージョン番号は0です
+（ほとんどのバージョン間で基本的なページレイアウトやヘッダの書式は変更されていませんが、ヒープ行ヘッダのレイアウトが変更されました）。
+ページサイズは基本的に照合用としてのみ存在しています。
+同一インストレーションでの複数のページサイズはサポートされていません。
+最後のフィールドはそのページの切り詰めが有益かどうかを示すヒントです。
+これはページ上で切り詰められていないもっとも古いXMAXが追跡するものです。
+
+ </p><div class="table" id="PAGEHEADERDATA-TABLE"><p class="title"><strong>表68.3 PageHeaderDataのレイアウト</strong></p><div class="table-contents"><span class="original">
+ &lt;title&gt;PageHeaderData Layout&lt;/title&gt;
+ &lt;titleabbrev&gt;PageHeaderData Layout&lt;/titleabbrev&gt;
+</span><table class="table" summary="PageHeaderDataのレイアウト" border="1"><colgroup><col /><col /><col /><col /></colgroup><thead><tr><th>フィールド</th><th>型</th><th>長さ</th><th>説明</th></tr></thead><tbody><tr><td>pd_lsn</td><td>PageXLogRecPtr</td><td>8バイト</td><td>LSN: このページへの最終変更に対応するWALレコードの最後のバイトの次のバイト</td></tr><tr><td>pd_checksum</td><td>uint16</td><td>2バイト</td><td>ページチェックサム</td></tr><tr><td>pd_flags</td><td>uint16</td><td>2バイト</td><td>フラグビット</td></tr><tr><td>pd_lower</td><td>LocationIndex</td><td>2 バイト</td><td>空き領域の始まりに対するオフセット</td></tr><tr><td>pd_upper</td><td>LocationIndex</td><td>2バイト</td><td>空き領域の終わりに対するオフセット</td></tr><tr><td>pd_special</td><td>LocationIndex</td><td>2バイト</td><td>特別な空間の始まりに対するオフセット</td></tr><tr><td>pd_pagesize_version</td><td>uint16</td><td>2バイト</td><td>ページサイズおよびレイアウトのバージョン番号の情報</td></tr><tr><td>pd_prune_xid</td><td>TransactionId</td><td>4バイト</td><td>ページ上でもっとも古い切り詰められていないXMAX。存在しなければゼロ。</td></tr></tbody></table></div></div><br class="table-break" /><p>
+<span class="original">
+  All the details can be found in
+  &lt;filename&gt;src/include/storage/bufpage.h&lt;/filename&gt;.
+</span>
+詳細情報については<code class="filename">src/include/storage/bufpage.h</code>を参照してください。
+ </p><p>
+
+<span class="original">
+  Following the page header are item identifiers
+  (&lt;type&gt;ItemIdData&lt;/type&gt;), each requiring four bytes.
+  An item identifier contains a byte-offset to
+  the start of an item, its length in bytes, and a few attribute bits
+  which affect its interpretation.
+  New item identifiers are allocated
+  as needed from the beginning of the unallocated space.
+  The number of item identifiers present can be determined by looking at
+  &lt;structfield&gt;pd_lower&lt;/structfield&gt;, which is increased to allocate a new identifier.
+  Because an item
+  identifier is never moved until it is freed, its index can be used on a
+  long-term basis to reference an item, even when the item itself is moved
+  around on the page to compact free space.  In fact, every pointer to an
+  item (&lt;type&gt;ItemPointer&lt;/type&gt;, also known as
+  &lt;type&gt;CTID&lt;/type&gt;) created by
+  &lt;productname&gt;PostgreSQL&lt;/productname&gt; consists of a page number and the
+  index of an item identifier.
+</span>
+ページヘッダに続くのはアイテム識別子（<code class="type">ItemIdData</code>）です。
+識別子ごとに4バイトを必要とします。
+アイテム識別子は、アイテムが開始されるバイトオフセット、バイト単位の長さ、そしてその解釈に影響する属性ビット群を持っています。
+新しいアイテム識別子は必要に応じて、未割当て空間の最初から割り当てられます。
+アイテム識別子の数は、新しい識別子を割り当てるために増加される<code class="structfield">pd_lower</code>を見ることで決定できます。
+アイテム識別子は解放されるまで動かされることがないので、アイテム自体が空き領域をまとめるためにページ上で移動される場合でも、そのインデックスはアイテムを参照するために長期にわたって使うことができます。
+実際、<span class="productname">PostgreSQL</span>が作る、アイテムへのポインタ（<code class="type">ItemPointer</code>、<code class="type">CTID</code>とも言います）はページ番号とアイテム識別子のインデックスによって構成されています。
+
+ </p><p>
+
+<span class="original">
+  The items themselves are stored in space allocated backwards from the end
+  of unallocated space.  The exact structure varies depending on what the
+  table is to contain. Tables and sequences both use a structure named
+  &lt;type&gt;HeapTupleHeaderData&lt;/type&gt;, described below.
+</span>
+アイテム自体は、未割り当て空間の最後から順番に割り当てられた空間に格納されます。
+正確な構造は、テーブルに何を含めるかによって異なります。
+テーブルとシーケンスの両方が、以下で説明する<code class="type">HeapTupleHeaderData</code>という構造を使用します。
+
+ </p><p>
+
+<span class="original">
+  The final section is the &lt;quote&gt;special section&lt;/quote&gt; which can
+  contain anything the access method wishes to store.  For example,
+  b-tree indexes store links to the page's left and right siblings,
+  as well as some other data relevant to the index structure.
+  Ordinary tables do not use a special section at all (indicated by setting
+  &lt;structfield&gt;pd_special&lt;/structfield&gt; to equal the page size).
+</span>
+最後のセクションは、アクセスメソッドが格納しようとするものを何でも含めることのできる<span class="quote">「<span class="quote">特別なセクション</span>」</span>です。
+例えば、B-treeインデックスは、そのページの両隣のページへのリンク、ならびに、インデックス構造体に関連したその他の何らかのデータを持ちます。
+通常のテーブルではこれはまったく使用されません（ページサイズを同じにするために<code class="structfield">pd_special</code>を設定することで示されます）。
+
+ </p><div class="sect2" id="STORAGE-TUPLE-LAYOUT"><div class="titlepage"><div><div><h3 class="title">68.6.1. テーブル行のレイアウト</h3></div></div></div><span class="original">
+ &lt;title&gt;Table Row Layout&lt;/title&gt;
+</span><p>
+
+<span class="original">
+  All table rows are structured in the same way. There is a fixed-size
+  header (occupying 23 bytes on most machines), followed by an optional null
+  bitmap, an optional object ID field, and the user data. The header is
+  detailed
+  in &lt;xref linkend="heaptupleheaderdata-table"/&gt;.  The actual user data
+  (columns of the row) begins at the offset indicated by
+  &lt;structfield&gt;t_hoff&lt;/structfield&gt;, which must always be a multiple of the MAXALIGN
+  distance for the platform.
+  The null bitmap is
+  only present if the &lt;firstterm&gt;HEAP_HASNULL&lt;/firstterm&gt; bit is set in
+  &lt;structfield&gt;t_infomask&lt;/structfield&gt;. If it is present it begins just after
+  the fixed header and occupies enough bytes to have one bit per data column
+  (that is, &lt;structfield&gt;t_natts&lt;/structfield&gt; bits altogether). In this list of bits, a
+  1 bit indicates not-null, a 0 bit is a null.  When the bitmap is not
+  present, all columns are assumed not-null.
+  The object ID is only present if the &lt;firstterm&gt;HEAP_HASOID&lt;/firstterm&gt; bit
+  is set in &lt;structfield&gt;t_infomask&lt;/structfield&gt;.  If present, it appears just
+  before the &lt;structfield&gt;t_hoff&lt;/structfield&gt; boundary.  Any padding needed to make
+  &lt;structfield&gt;t_hoff&lt;/structfield&gt; a MAXALIGN multiple will appear between the null
+  bitmap and the object ID.  (This in turn ensures that the object ID is
+  suitably aligned.)
+</span>
+テーブル行はすべて同じ方法で構成されています。
+固定サイズのヘッダ（ほとんどのマシンで23バイトを占有します）があり、その後にオプションのNULLビットマップ、オプションのオブジェクトIDフィールド、およびユーザデータが続きます。
+ヘッダについては<a class="xref" href="storage-page-layout.html#HEAPTUPLEHEADERDATA-TABLE" title="表68.4 HeapTupleHeaderDataのレイアウト">表 68.4</a>で説明します。
+実際のユーザデータ（行内の列）は、常にプラットフォームのMAXALIGN距離の倍数である<code class="structfield">t_hoff</code>で示されるオフセットから始まります。
+NULLビットマップは<em class="firstterm">HEAP_HASNULL</em>ビットが<code class="structfield">t_infomask</code>で設定されている場合にのみ存在します。
+存在する場合は、固定ヘッダのすぐ後ろから始まり、データ列ごとに1ビットとするのに十分なバイト数を占有します（合計すると、<code class="structfield">t_natts</code>のビット数となります）。
+このビットのリスト内では、1ビットは非NULLを、0ビットはNULLを示します。
+このビットマップが存在しない場合、すべての列が非NULLとみなされます。
+オブジェクトIDは<em class="firstterm">HEAP_HASOID</em>ビットが<code class="structfield">t_infomask</code>で設定されている場合にのみ存在します。
+存在する場合、これは<code class="structfield">t_hoff</code>境界の直前に現れます。
+<code class="structfield">t_hoff</code>をMAXALIGNの倍数とするために必要なパッドは全て、NULLビットマップとオブジェクトIDの間に現れます
+（このことにより、オブジェクトIDの位置揃えが確実に適切になります）。
+
+ </p><div class="table" id="HEAPTUPLEHEADERDATA-TABLE"><p class="title"><strong>表68.4 HeapTupleHeaderDataのレイアウト</strong></p><div class="table-contents"><span class="original">
+ &lt;title&gt;HeapTupleHeaderData Layout&lt;/title&gt;
+ &lt;titleabbrev&gt;HeapTupleHeaderData Layout&lt;/titleabbrev&gt;
+</span><table class="table" summary="HeapTupleHeaderDataのレイアウト" border="1"><colgroup><col /><col /><col /><col /></colgroup><thead><tr><th>フィールド</th><th>型</th><th>長さ</th><th>説明</th></tr></thead><tbody><tr><td>t_xmin</td><td>TransactionId</td><td>4バイト</td><td>挿入XIDスタンプ</td></tr><tr><td>t_xmax</td><td>TransactionId</td><td>4バイト</td><td>削除XIDスタンプ</td></tr><tr><td>t_cid</td><td>CommandId</td><td>4バイト</td><td>挿入、削除の両方または片方のCIDスタンプ（t_xvacと共有）</td></tr><tr><td>t_xvac</td><td>TransactionId</td><td>4バイト</td><td>行バージョンを移すVACUUM操作用XID</td></tr><tr><td>t_ctid</td><td>ItemPointerData</td><td>6バイト</td><td>この行または最新バージョンの行の現在のTID</td></tr><tr><td>t_infomask2</td><td>uint16</td><td>2バイト</td><td>属性の数と各種フラグビット</td></tr><tr><td>t_infomask</td><td>uint16</td><td>2バイト</td><td>様々なフラグビット</td></tr><tr><td>t_hoff</td><td>uint8</td><td>1バイト</td><td>ユーザデータに対するオフセット</td></tr></tbody></table></div></div><br class="table-break" /><p>
+<span class="original">
+   All the details can be found in
+   &lt;filename&gt;src/include/access/htup_details.h&lt;/filename&gt;.
+</span>
+詳細情報については<code class="filename">src/include/access/htup_details.h</code>を参照してください。
+ </p><p>
+
+<span class="original">
+  Interpreting the actual data can only be done with information obtained
+  from other tables, mostly &lt;structname&gt;pg_attribute&lt;/structname&gt;. The
+  key values needed to identify field locations are
+  &lt;structfield&gt;attlen&lt;/structfield&gt; and &lt;structfield&gt;attalign&lt;/structfield&gt;.
+  There is no way to directly get a
+  particular attribute, except when there are only fixed width fields and no
+  null values. All this trickery is wrapped up in the functions
+  &lt;firstterm&gt;heap_getattr&lt;/firstterm&gt;, &lt;firstterm&gt;fastgetattr&lt;/firstterm&gt;
+  and &lt;firstterm&gt;heap_getsysattr&lt;/firstterm&gt;.
+</span>
+実際のデータの解釈は、他のテーブル、ほとんどの場合、<code class="structname">pg_attribute</code>から取得された情報でのみ行うことができます。
+フィールド位置を識別するために必要なキー値は、<code class="structfield">attlen</code>および<code class="structfield">attalign</code>です。
+フィールドの幅が固定されていてNULL値が存在しない場合を除き、特定の属性を直接取得する方法はありません。
+この仕組みはすべて、<em class="firstterm">heap_getattr</em>、<em class="firstterm">fastgetattr</em>および<em class="firstterm">heap_getsysattr</em>関数にラップされています。
+
+ </p><p>
+
+<span class="original">
+  To read the data you need to examine each attribute in turn. First check
+  whether the field is NULL according to the null bitmap. If it is, go to
+  the next. Then make sure you have the right alignment.  If the field is a
+  fixed width field, then all the bytes are simply placed. If it's a
+  variable length field (attlen = -1) then it's a bit more complicated.
+  All variable-length data types share the common header structure
+  &lt;type&gt;struct varlena&lt;/type&gt;, which includes the total length of the stored
+  value and some flag bits.  Depending on the flags, the data can be either
+  inline or in a &lt;acronym&gt;TOAST&lt;/acronym&gt; table;
+  it might be compressed, too (see &lt;xref linkend="storage-toast"/&gt;).
+</span>
+データを読むためには、それぞれの属性を順番に検査する必要があります。
+まず、NULLビットマップに従ってフィールドがNULLかどうかを検査します。
+もしNULLであれば、次に進みます。
+次に、位置揃えが正しいことを確認してください。
+フィールドの幅が固定されていれば、すべてのバイトが単純に配置されます。
+可変長のフィールド（attlen == -1）の場合はもう少し複雑です。
+可変長のデータ型はすべて、格納する値の長さといくつかのフラグビットを持つ<code class="type">struct varlena</code>という共通ヘッダ構造体を共有します。
+フラグによって、データは行内、または別のテーブル（TOAST）のいずれかとなったり、圧縮済みとなったりします
+（<a class="xref" href="storage-toast.html" title="68.2. TOAST">68.2</a>を参照してください）。
+
+ </p></div><div class="footnotes"><br /><hr style="width:100; text-align:left;margin-left: 0" /><div id="ftn.id-1.10.20.8.2.2" class="footnote"><p><a href="#id-1.10.20.8.2.2" class="para"><sup class="para">[14] </sup></a>
+実際にはインデックスアクセスメソッドはこのページ書式を使用する必要はありません。
+既存のすべてのインデックスメソッドがこの基本書式を使用しています。
+しかし、インデックスメタページに保持されるデータは通常、アイテムレイアウト規則に正確には従っていません。
+  </p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="storage-init.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="storage.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="bki.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">68.5. 初期化フォーク </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 第69章 システムカタログの宣言と初期内容</td></tr></table></div></body></html>

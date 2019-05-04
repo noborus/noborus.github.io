@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>13.4. アプリケーションレベルでのデータの一貫性チェック</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="explicit-locking.html" title="13.3. 明示的ロック" /><link rel="next" href="mvcc-caveats.html" title="13.5. 警告" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="mvcc.html" title="第13章 同時実行制御">第13章 同時実行制御</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      applevel-consistency.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="explicit-locking.html" title="13.3. 明示的ロック">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="mvcc.html" title="第13章 同時実行制御">上へ</a></td><td width="60%" align="center">13.4. アプリケーションレベルでのデータの一貫性チェック</td><td width="20%" align="right"> <a accesskey="n" href="mvcc-caveats.html" title="13.5. 警告">次へ</a></td></tr></table><hr /></div><div class="sect1" id="APPLEVEL-CONSISTENCY"><div class="titlepage"><div><div><h2 class="title" style="clear: both">13.4. アプリケーションレベルでのデータの一貫性チェック</h2></div></div></div><span class="original">
+   &lt;title&gt;Data Consistency Checks at the Application Level&lt;/title&gt;
+</span><p>
+<span class="original">
+    It is very difficult to enforce business rules regarding data integrity
+    using Read Committed transactions because the view of the data is
+    shifting with each statement, and even a single statement may not
+    restrict itself to the statement's snapshot if a write conflict occurs.
+</span>
+データの参照範囲は各ステートメントで変化するので、リードコミッティドトランザクションを使用して、データ保全性に関するビジネスルールを強化するのは非常に難しいことです。また、書き込み競合が生じる場合、単一のステートメントでさえステートメントのスナップショットに限定されないかもしれません。
+   </p><p>
+<span class="original">
+    While a Repeatable Read transaction has a stable view of the data
+    throughout its execution, there is a subtle issue with using
+    &lt;acronym&gt;MVCC&lt;/acronym&gt; snapshots for data consistency checks, involving
+    something known as &lt;firstterm&gt;read/write conflicts&lt;/firstterm&gt;.
+    If one transaction writes data and a concurrent transaction attempts
+    to read the same data (whether before or after the write), it cannot
+    see the work of the other transaction.  The reader then appears to have
+    executed first regardless of which started first or which committed
+    first.  If that is as far as it goes, there is no problem, but
+    if the reader also writes data which is read by a concurrent transaction
+    there is now a transaction which appears to have run before either of
+    the previously mentioned transactions.  If the transaction which appears
+    to have executed last actually commits first, it is very easy for a
+    cycle to appear in a graph of the order of execution of the transactions.
+    When such a cycle appears, integrity checks will not work correctly
+    without some help.
+</span>
+リピータブルリードトランザクションは実行全体にわたってデータの安定した参照範囲を持ちますが、<acronym class="acronym">MVCC</acronym>スナップショットをデータ完全性チェックに使用することによる、<em class="firstterm">読み取り/書き込み競合</em>として知られるものを含む、微妙な問題があります。
+1つのトランザクションがデータを書き、同時に実行するトランザクションが、同じデータ(書き込みの前に、あるいはその書き込みの後にも)を読むことを試みる場合、それは別のトランザクションの働きを見ることができません。
+その後、読み手は、どれが最初にスタートしたか、あるいは、どれが最初にコミットしたかにかかわらず最初に実行したように見えます。
+そのままいけば問題はありませんが、読み手がさらにデータを書けば、同時に実行したトランザクションがそれを読んだ場合、上で述べたトランザクションのどちらかの前に走ったように見えるトランザクションとなってしまいます。
+最後に実行したように見えるトランザクションが実際には最初にコミットしていた場合、トランザクションの実行順のグラフには循環が容易に出現します。
+そのような循環が出現する時、完全性のチェックはなにかしらの支援がなければ正しく動作しません。
+   </p><p>
+<span class="original">
+    As mentioned in &lt;xref linkend="xact-serializable"/&gt;, Serializable
+    transactions are just Repeatable Read transactions which add
+    nonblocking monitoring for dangerous patterns of read/write conflicts.
+    When a pattern is detected which could cause a cycle in the apparent
+    order of execution, one of the transactions involved is rolled back to
+    break the cycle.
+</span>
+<a class="xref" href="transaction-iso.html#XACT-SERIALIZABLE" title="13.2.3. シリアライザブル分離レベル">13.2.3</a>により述べたように、シリアライザブルトランザクションは、危険なパターンの読み取り/書き込み競合のための非ブロッキング監視を加えたリピータブルリードトランザクションです。
+明白に実行順が循環を引き起こすパターンが検知された場合、含まれていたトランザクションのうちの1つは循環を断ち切るためにロールバックされます。
+   </p><div class="sect2" id="SERIALIZABLE-CONSISTENCY"><div class="titlepage"><div><div><h3 class="title">13.4.1. シリアライザブルトランザクションを用いた一貫性の強化</h3></div></div></div><span class="original">
+    &lt;title&gt;Enforcing Consistency With Serializable Transactions&lt;/title&gt;
+</span><p>
+<span class="original">
+     If the Serializable transaction isolation level is used for all writes
+     and for all reads which need a consistent view of the data, no other
+     effort is required to ensure consistency.  Software from other
+     environments which is written to use serializable transactions to
+     ensure consistency should &lt;quote&gt;just work&lt;/quote&gt; in this regard in
+     &lt;productname&gt;PostgreSQL&lt;/productname&gt;.
+</span>
+シリアライザブルトランザクション分離レベルが、データの一貫性を必要とするすべての書き込みおよびすべての読み取りに使用される場合、一貫性を確実にするために必要なことは他にはありません。
+一貫性を保証するためにシリアライザブルトランザクションを使用するよう書かれている他の環境からのソフトウェアは、<span class="productname">PostgreSQL</span>でこの点に関して<span class="quote">「<span class="quote">正しく動く</span>」</span>べきです。
+    </p><p>
+<span class="original">
+     When using this technique, it will avoid creating an unnecessary burden
+     for application programmers if the application software goes through a
+     framework which automatically retries transactions which are rolled
+     back with a serialization failure.  It may be a good idea to set
+     &lt;literal&gt;default_transaction_isolation&lt;/literal&gt; to &lt;literal&gt;serializable&lt;/literal&gt;.
+     It would also be wise to take some action to ensure that no other
+     transaction isolation level is used, either inadvertently or to
+     subvert integrity checks, through checks of the transaction isolation
+     level in triggers.
+</span>
+この技術を使用した場合、アプリケーションソフトウェアが直列化失敗でロールバックしたトランザクションを自動的に再試行するようなフレームワークを備えている場合、アプリケーションプログラマにとって不必要な負担を生み出さないようにするでしょう。
+<code class="literal">default_transaction_isolation</code>を<code class="literal">serializable</code>にセットすることはよい考えかもしれません。
+他のトランザクション分離レベルは使用されないことを保証する処置を講ずる、そうでなければ、不注意に完全位チェックを失わないよう、トリガーでトランザクション分離レベルのチェックをすることも賢明でしょう。
+    </p><p>
+<span class="original">
+     See &lt;xref linkend="xact-serializable"/&gt; for performance suggestions.
+</span>
+実行に関する提言は<a class="xref" href="transaction-iso.html#XACT-SERIALIZABLE" title="13.2.3. シリアライザブル分離レベル">13.2.3</a>を参照してください。
+    </p><div class="warning"><h3 class="title">警告</h3><p>
+<span class="original">
+      This level of integrity protection using Serializable transactions
+      does not yet extend to hot standby mode (&lt;xref linkend="hot-standby"/&gt;).
+      Because of that, those using hot standby may want to use Repeatable
+      Read and explicit locking on the master.
+</span>
+シリアライザブルトランザクションを使用する整合性保護レベルは、まだホットスタンバイモード(<a class="xref" href="hot-standby.html" title="26.5. ホットスタンバイ">26.5</a>)には拡張されていません。そのために、ホットスタンバイを使用する場合は、マスタにおけるリピータブルリードと明示的なロック処理の利用が望まれるかもしれません。
+     </p></div></div><div class="sect2" id="NON-SERIALIZABLE-CONSISTENCY"><div class="titlepage"><div><div><h3 class="title">13.4.2. 明示的なブロッキングロックを用いた一貫性の強化</h3></div></div></div><span class="original">
+    &lt;title&gt;Enforcing Consistency With Explicit Blocking Locks&lt;/title&gt;
+</span><p>
+<span class="original">
+     When non-serializable writes are possible,
+     to ensure the current validity of a row and protect it against
+     concurrent updates one must use &lt;command&gt;SELECT FOR UPDATE&lt;/command&gt;,
+     &lt;command&gt;SELECT FOR SHARE&lt;/command&gt;, or an appropriate &lt;command&gt;LOCK
+     TABLE&lt;/command&gt; statement.  (&lt;command&gt;SELECT FOR UPDATE&lt;/command&gt;
+     and &lt;command&gt;SELECT FOR SHARE&lt;/command&gt; lock just the
+     returned rows against concurrent updates, while &lt;command&gt;LOCK
+     TABLE&lt;/command&gt; locks the whole table.)  This should be taken into
+     account when porting applications to
+     &lt;productname&gt;PostgreSQL&lt;/productname&gt; from other environments.
+</span>
+非シリアライザブルの書き込みが可能な場合、
+ある行の現時点の有効性を確実なものとし、同時更新を避けるためには、<code class="command">SELECT FOR UPDATE</code>文や<code class="command">SELECT FOR SHARE</code>文、適切な<code class="command">LOCK TABLE</code>文を使用する必要があります
+（<code class="command">SELECT FOR UPDATE</code>文および<code class="command">SELECT FOR SHARE</code>文は返ってきた行のみを同時に起こる更新からロックし、<code class="command">LOCK TABLE</code>はテーブル全体をロックします）。
+これは<span class="productname">PostgreSQL</span>に他の環境からアプリケーションを移植する時に考慮されなければなりません
+    </p><p>
+<span class="original">
+     Also of note to those converting from other environments is the fact
+     that &lt;command&gt;SELECT FOR UPDATE&lt;/command&gt; does not ensure that a
+     concurrent transaction will not update or delete a selected row.
+     To do that in &lt;productname&gt;PostgreSQL&lt;/productname&gt; you must actually
+     update the row, even if no values need to be changed.
+     &lt;command&gt;SELECT FOR UPDATE&lt;/command&gt; &lt;emphasis&gt;temporarily blocks&lt;/emphasis&gt;
+     other transactions from acquiring the same lock or executing an
+     &lt;command&gt;UPDATE&lt;/command&gt; or &lt;command&gt;DELETE&lt;/command&gt; which would
+     affect the locked row, but once the transaction holding this lock
+     commits or rolls back, a blocked transaction will proceed with the
+     conflicting operation unless an actual &lt;command&gt;UPDATE&lt;/command&gt; of
+     the row was performed while the lock was held.
+</span>
+他の環境から切り替えた場合のさらなる注意点としては、同時実行トランザクションが選択された行を更新しないか削除しないということを<code class="command">SELECT FOR UPDATE</code>が保証しないという事実です。
+<span class="productname">PostgreSQL</span>でそれをするためには、値を変更する必要がなくても、実際に行を更新しなければなりません。
+<code class="command">SELECT FOR UPDATE</code>は、他のトランザクションが同じロックを獲得すること、または、ロックされた行に影響する<code class="command">UPDATE</code>または<code class="command">DELETE</code>を実行することを<span class="emphasis"><em>一時的にブロックします。</em></span>
+しかしトランザクションがコミットするかロールバックして一度このロックを獲得すると、ロックが獲得されている間に、行の実際の<code class="command">UPDATE</code>が行なわれなかった場合、ブロックされたトランザクションは、競合した操作を続けることになります。
+    </p><p>
+<span class="original">
+     Global validity checks require extra thought under
+     non-serializable &lt;acronym&gt;MVCC&lt;/acronym&gt;.
+     For example, a banking application might wish to check that the sum of
+     all credits in one table equals the sum of debits in another table,
+     when both tables are being actively updated.  Comparing the results of two
+     successive &lt;literal&gt;SELECT sum(...)&lt;/literal&gt; commands will not work reliably in
+     Read Committed mode, since the second query will likely include the results
+     of transactions not counted by the first.  Doing the two sums in a
+     single repeatable read transaction will give an accurate picture of only the
+     effects of transactions that committed before the repeatable read transaction
+     started &amp;mdash; but one might legitimately wonder whether the answer is still
+     relevant by the time it is delivered.  If the repeatable read transaction
+     itself applied some changes before trying to make the consistency check,
+     the usefulness of the check becomes even more debatable, since now it
+     includes some but not all post-transaction-start changes.  In such cases
+     a careful person might wish to lock all tables needed for the check,
+     in order to get an indisputable picture of current reality.  A
+     &lt;literal&gt;SHARE&lt;/literal&gt; mode (or higher) lock guarantees that there are no
+     uncommitted changes in the locked table, other than those of the current
+     transaction.
+</span>
+非シリアライザブル<acronym class="acronym">MVCC</acronym>においては全体的な有効性チェックに特別な考慮を払わなければなりません。
+例えば銀行のアプリケーションで、１つのテーブルにある全ての貸方の合計が、別のテーブルにある借方の合計と同じであることを、二つのテーブルが常に更新されているときに、チェックする必要があるとします。
+2つの連続する<code class="literal">SELECT sum(...)</code>コマンドの結果を比べると、2番目の問い合わせは、おそらく最初の問い合わせによってカウントされなかったトランザクションの結果を含んでいるため、リードコミッティドモードでは信頼のおける処理を実行できないことがわかります。
+1つのリピータブルリードトランザクションで2つの合計を出力すると、リピータブルリードトランザクションが開始される前にコミットされたトランザクション結果のみの正確な状況を得ることができます。
+しかし、その結果がもたらされた時点でもなお妥当であるかどうかは、実際には疑わしいかもしれません。
+整合性チェックを行う前にリピータブルリードトランザクション自身が変更を行った場合、そのチェックの有効性はさらに疑わしくなります。
+これにより、トランザクション開始後に行われる変更の全てだけでなく、何か別のものが含まれるためです。
+このような場合、注意深い人であれば、現状を確実に把握するためにチェックに必要な全てのテーブルをロックするでしょう。
+<code class="literal">SHARE</code>モード（もしくはそれ以上）のロックにより、現在のトランザクションでの変更を除き、ロックされたテーブルにコミットされていない変更が存在しないことが保証されます。
+    </p><p>
+<span class="original">
+     Note also that if one is relying on explicit locking to prevent concurrent
+     changes, one should either use Read Committed mode, or in Repeatable Read
+     mode be careful to obtain
+     locks before performing queries.  A lock obtained by a
+     repeatable read transaction guarantees that no other transactions modifying
+     the table are still running, but if the snapshot seen by the
+     transaction predates obtaining the lock, it might predate some now-committed
+     changes in the table.  A repeatable read transaction's snapshot is actually
+     frozen at the start of its first query or data-modification command
+     (&lt;literal&gt;SELECT&lt;/literal&gt;, &lt;literal&gt;INSERT&lt;/literal&gt;,
+     &lt;literal&gt;UPDATE&lt;/literal&gt;, or &lt;literal&gt;DELETE&lt;/literal&gt;), so
+     it is possible to obtain locks explicitly before the snapshot is
+     frozen.
+</span>
+同時に、明示的なロック処理を使用して、同時に変更が実行されるのを防ごうとする場合、リードコミッティドモードを使用するか、または、リピータブルリードモードの場合は、問い合わせを実行する前にロックを獲得するよう留意してください。
+リピータブルリードトランザクションにおいて獲得されたロックは、テーブルに変更をかける他のトランザクションが現在実行されていないことを保証します。
+しかし、トランザクションが参照しているスナップショットが、ロックの獲得より前に取得されたものであれば、そのスナップショットは現時点においてコミットされている変更より前のテーブルのものである可能性があります。
+リピータブルリードトランザクションのスナップショットは、実際にはその最初の問い合わせもしくはデータ変更コマンド（<code class="literal">SELECT</code>、<code class="literal">INSERT</code>、<code class="literal">UPDATE</code>、または<code class="literal">DELETE</code>）が開始された時点で取得されます。
+したがって、スナップショットを取得する前に、明示的にロックを獲得することが可能です。
+    </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="explicit-locking.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="mvcc.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="mvcc-caveats.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">13.3. 明示的ロック </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 13.5. 警告</td></tr></table></div></body></html>
