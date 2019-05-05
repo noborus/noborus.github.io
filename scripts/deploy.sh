@@ -1,5 +1,6 @@
 #!/bin/bash
 
+git add -N current
 if ! git diff --name-only current|grep -v bookindex.html ;
 then
     echo "Do not update"
