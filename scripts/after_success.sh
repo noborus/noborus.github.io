@@ -10,3 +10,4 @@ git checkout master
 
 mkdir -p current
 cp -aR travis/jpug-doc/doc/src/sgml/html current/
+cp -a travis/jpug-doc/doc/src/sgml/postgres-A4.pdf current/
