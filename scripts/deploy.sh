@@ -8,7 +8,7 @@ then
 fi
 
 echo "Update because there is a difference"
-sed -e "s/last-updated:.*$/last-updated: $(TZ=Asia/Tokyo date -u "+%Y-%m-%d %T %Z")/" index.md
+sed -i -e "s/last-updated:.*$/last-updated: $(TZ=Asia/Tokyo date -u "+%Y-%m-%d %T %Z")/" index.md
 git add -A current
 git commit -m "by Travis CI (JOB $TRAVIS_JOB_NUMBER) [skip ci]"
 git push ssh://git@github.com/noborus/noborus.github.io.git master:master
