@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>19.14. エラー処理</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="runtime-config-compatible.html" title="19.13. バージョンとプラットフォーム互換性" /><link rel="next" href="runtime-config-preset.html" title="19.15. 設定済みのオプション" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="runtime-config.html" title="第19章 サーバの設定">第19章 サーバの設定</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      runtime-config-error-handling.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>19.14. エラー処理</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="runtime-config-compatible.html" title="19.13. バージョンとプラットフォーム互換性" /><link rel="next" href="runtime-config-preset.html" title="19.15. 設定済みのオプション" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.3文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="runtime-config.html" title="第19章 サーバの設定">第19章 サーバの設定</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.3 &#10;                      runtime-config-error-handling.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="runtime-config-compatible.html" title="19.13. バージョンとプラットフォーム互換性">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="runtime-config.html" title="第19章 サーバの設定">上へ</a></td><td width="60%" align="center">19.14. エラー処理</td><td width="20%" align="right"> <a accesskey="n" href="runtime-config-preset.html" title="19.15. 設定済みのオプション">次へ</a></td></tr></table><hr /></div><div class="sect1" id="RUNTIME-CONFIG-ERROR-HANDLING"><div class="titlepage"><div><div><h2 class="title" style="clear: both">19.14. エラー処理</h2></div></div></div><span class="original">
     &lt;title&gt;Error Handling&lt;/title&gt;
     </span><div class="variablelist"><dl class="variablelist"><dt id="GUC-EXIT-ON-ERROR"><span class="term"><code class="varname">exit_on_error</code> (<code class="type">boolean</code>)
@@ -27,4 +27,26 @@
        真の場合、これがデフォルトですが、<span class="productname">PostgreSQL</span>はバックエンドのクラッシュの後、自動的に再初期化を行います。
        この値を真のままにしておくことは通常データベースの可用性を最大化する最適の方法です。
        しかし、 <span class="productname">PostgreSQL</span>がクラスタウェアにより起動された時のような状況により、クラスタウェアが制御を獲得し、適切とみなされるいかなる振る舞いをも行えるように再起動を無効にすることも有益です。
+       </p></dd><dt id="GUC-DATA-SYNC-RETRY"><span class="term"><code class="varname">data_sync_retry</code> (<code class="type">boolean</code>)
+      <a id="id-1.6.6.17.2.3.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+        When set to false, which is the default, <span class="productname">PostgreSQL</span>
+        will raise a PANIC-level error on failure to flush modified data files
+        to the filesystem.  This causes the database server to crash.  This
+        parameter can only be set at server start.
+       </p><p>
+        On some operating systems, the status of data in the kernel's page
+        cache is unknown after a write-back failure.  In some cases it might
+        have been entirely forgotten, making it unsafe to retry; the second
+        attempt may be reported as successful, when in fact the data has been
+        lost.  In these circumstances, the only way to avoid data loss is to
+        recover from the WAL after any failure is reported, preferably
+        after investigating the root cause of the failure and replacing any
+        faulty hardware.
+       </p><p>
+        If set to true, <span class="productname">PostgreSQL</span> will instead
+        report an error but continue to run so that the data flushing
+        operation can be retried in a later checkpoint.  Only set it to true
+        after investigating the operating system's treatment of buffered data
+        in case of write-back failure.
        </p></dd></dl></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="runtime-config-compatible.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="runtime-config.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="runtime-config-preset.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">19.13. バージョンとプラットフォーム互換性 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 19.15. 設定済みのオプション</td></tr></table></div></body></html>

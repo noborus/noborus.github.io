@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>5.10. テーブルのパーティショニング</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="ddl-inherit.html" title="5.9. 継承" /><link rel="next" href="ddl-foreign-data.html" title="5.11. 外部データ" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="ddl.html" title="第5章 データ定義">第5章 データ定義</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      ddl-partitioning.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>5.10. テーブルのパーティショニング</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="ddl-inherit.html" title="5.9. 継承" /><link rel="next" href="ddl-foreign-data.html" title="5.11. 外部データ" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.3文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="ddl.html" title="第5章 データ定義">第5章 データ定義</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.3 &#10;                      ddl-partitioning.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="ddl-inherit.html" title="5.9. 継承">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="ddl.html" title="第5章 データ定義">上へ</a></td><td width="60%" align="center">5.10. テーブルのパーティショニング</td><td width="20%" align="right"> <a accesskey="n" href="ddl-foreign-data.html" title="5.11. 外部データ">次へ</a></td></tr></table><hr /></div><div class="sect1" id="DDL-PARTITIONING"><div class="titlepage"><div><div><h2 class="title" style="clear: both">5.10. テーブルのパーティショニング</h2></div></div></div><span class="original">
    &lt;title&gt;Table Partitioning&lt;/title&gt;
 </span><a id="id-1.5.4.12.2" class="indexterm"></a><a id="id-1.5.4.12.3" class="indexterm"></a><a id="id-1.5.4.12.4" class="indexterm"></a><p>
@@ -572,30 +572,6 @@ ALTER TABLE measurement ATTACH PARTITION measurement_y2008m02
 （パーティションテーブルから他のテーブルの外部キー参照はサポートされています。）
       </p></li><li class="listitem"><p>
 <span class="original">
-       When an &lt;command&gt;UPDATE&lt;/command&gt; causes a row to move from one
-       partition to another, there is a chance that another concurrent
-       &lt;command&gt;UPDATE&lt;/command&gt; or &lt;command&gt;DELETE&lt;/command&gt; misses this row.
-       Suppose session 1 is performing an &lt;command&gt;UPDATE&lt;/command&gt; on a
-       partition key, and meanwhile a concurrent session 2 for which this row
-       is visible performs an &lt;command&gt;UPDATE&lt;/command&gt; or
-       &lt;command&gt;DELETE&lt;/command&gt; operation on this row. Session 2 can silently
-       miss the row if the row is deleted from the partition due to session
-       1's activity.  In such case, session 2's
-       &lt;command&gt;UPDATE&lt;/command&gt; or &lt;command&gt;DELETE&lt;/command&gt;, being unaware of
-       the row movement thinks that the row has just been deleted and concludes
-       that there is nothing to be done for this row. In the usual case where
-       the table is not partitioned, or where there is no row movement,
-       session 2 would have identified the newly updated row and carried out
-       the &lt;command&gt;UPDATE&lt;/command&gt;/&lt;command&gt;DELETE&lt;/command&gt; on this new row
-       version.
-</span>
-<code class="command">UPDATE</code>により行があるパーティションから別のパーティションに移動したとき、別の同時実行の<code class="command">UPDATE</code>や<code class="command">DELETE</code>がこの行を見逃す可能性があります。
-セッション1はパーティションキーに対して<code class="command">UPDATE</code>を実行し、その一方で同時にこの行が可視であるセッション2ではこの行に<code class="command">UPDATE</code>もしくは<code class="command">DELETE</code>操作を実行すると仮定します。
-もしセッション1の動作が原因によりその行がパーティションから削除された場合、セッション2は暗黙にその行を見逃すことがありえます。
-そのような場合、セッション2の<code class="command">UPDATE</code>もしくは<code class="command">DELETE</code>は行の移動に気付かず、その行が削除されたばかりであると考え何もすることがないと判断します。
-テーブルが分割されていないもしくは行の移動がない通常の場合、セッション2は新しい更新行とこの新しい行バージョンで<code class="command">UPDATE</code>/<code class="command">DELETE</code>が実行されたことを特定するでしょう。
-      </p></li><li class="listitem"><p>
-<span class="original">
        &lt;literal&gt;BEFORE ROW&lt;/literal&gt; triggers, if necessary, must be defined
        on individual partitions, not the partitioned table.
 </span>
@@ -1147,105 +1123,63 @@ Aggregate  (cost=37.75..37.76 rows=1 width=8)
  -&gt;  Seq Scan on measurement_y2008m01  (cost=0.00..33.12 rows=617 width=0)
        Filter: (logdate &gt;= '2008-01-01'::date)
 </pre><p>
-</p><p>
-<span class="original">
-Note that partition pruning is driven only by the constraints defined
-implicitly by the partition keys, not by the presence of indexes.
-Therefore it isn't necessary to define indexes on the key columns.
-Whether an index needs to be created for a given partition depends on
-whether you expect that queries that scan the partition will
-generally scan a large part of the partition or just a small part.
-An index will be helpful in the latter case but not the former.
-</span>
-パーティション除去はパーティションキーによって暗黙的に定義された制約のみで動作し、インデックスの有無では動作しないことに注意してください。よってキー列のインデックスを定義することは必要ではありません。
-あるパーティションでインデックスが必要かどうかは、パーティションをスキャンする問い合わせが通常はパーティションの大部分をスキャンするのか、あるいは小さな部分をスキャンするのかによります。
-インデックスは後者において役立ちますが、前者では役立ちません。
-</p><p>
-<span class="original">
-Partition pruning can be performed not only during the planning of a
-given query, but also during its execution.  This is useful as it can
-allow more partitions to be pruned when clauses contain expressions
-whose values are not known at query planning time; for example,
-parameters defined in a &lt;command&gt;PREPARE&lt;/command&gt; statement, using a
-value obtained from a subquery or using a parameterized value on the
-inner side of a nested loop join.  Partition pruning during execution
-can be performed at any of the following times:
-</span>
-パーティション除去は与えられた問い合わせの計画時だけでなく、問い合わせの実行時にも可能です。
-問い合わせの計画時、句が値のわからない式を含むときにより多くのパーティションを除去できるため便利です。
-例えば、<code class="command">PREPARE</code>文中に定義されたパラメータや、副問い合わせから取得される値の利用、ネステッドループ結合の内側でパラメータ化された値の利用です。
-実行中のパーティション除去は、次のいずれかの時点で可能です。
+   </p><p>
+    Note that partition pruning is driven only by the constraints defined
+    implicitly by the partition keys, not by the presence of indexes.
+    Therefore it isn't necessary to define indexes on the key columns.
+    Whether an index needs to be created for a given partition depends on
+    whether you expect that queries that scan the partition will
+    generally scan a large part of the partition or just a small part.
+    An index will be helpful in the latter case but not the former.
+   </p><p>
+    Partition pruning can be performed not only during the planning of a
+    given query, but also during its execution.  This is useful as it can
+    allow more partitions to be pruned when clauses contain expressions
+    whose values are not known at query planning time; for example,
+    parameters defined in a <code class="command">PREPARE</code> statement, using a
+    value obtained from a subquery or using a parameterized value on the
+    inner side of a nested loop join.  Partition pruning during execution
+    can be performed at any of the following times:
 
-</p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+       During initialization of the query plan.  Partition pruning can be
+       performed here for parameter values which are known during the
+       initialization phase of execution.  Partitions which are pruned
+       during this stage will not show up in the query's
+       <code class="command">EXPLAIN</code> or <code class="command">EXPLAIN ANALYZE</code>.
+       It is possible to determine the number of partitions which were
+       removed during this phase by observing the
+       <span class="quote">「<span class="quote">Subplans Removed</span>」</span> property in the
+       <code class="command">EXPLAIN</code> output.
+      </p></li><li class="listitem"><p>
+       During actual execution of the query plan.  Partition pruning may
+       also be performed here to remove partitions using values which are
+       only known during actual query execution.  This includes values
+       from subqueries and values from execution-time parameters such as
+       those from parameterized nested loop joins.  Since the value of
+       these parameters may change many times during the execution of the
+       query, partition pruning is performed whenever one of the
+       execution parameters being used by partition pruning changes.
+       Determining if partitions were pruned during this phase requires
+       careful inspection of the <code class="literal">loops</code> property in
+       the <code class="command">EXPLAIN ANALYZE</code> output.  Subplans
+       corresponding to different partitions may have different values
+       for it depending on how many times each of them was pruned during
+       execution.  Some may be shown as <code class="literal">(never executed)</code>
+       if they were pruned every time.
+      </p></li></ul></div><p>
+   </p><p>
+    Partition pruning can be disabled using the
+    <a class="xref" href="runtime-config-query.html#GUC-ENABLE-PARTITION-PRUNING">enable_partition_pruning</a> setting.
+   </p><div class="note"><h3 class="title">注記</h3><p>
+     Execution-time partition pruning currently only occurs for the
+     <code class="literal">Append</code> node type, not
+     for <code class="literal">MergeAppend</code> or <code class="literal">ModifyTable</code>
+     nodes.  That is likely to be changed in a future release of
+     <span class="productname">PostgreSQL</span>.
+    </p></div></div><div class="sect2" id="DDL-PARTITIONING-CONSTRAINT-EXCLUSION"><div class="titlepage"><div><div><h3 class="title">5.10.5. Partitioning and Constraint Exclusion</h3></div></div></div><a id="id-1.5.4.12.10.2" class="indexterm"></a><p>
 <span class="original">
-During initialization of the query plan.  Partition pruning can be
-performed here for parameter values which are known during the
-initialization phase of execution.  Partitions which are pruned
-during this stage will not show up in the query's
-&lt;command&gt;EXPLAIN&lt;/command&gt; or &lt;command&gt;EXPLAIN ANALYZE&lt;/command&gt;.
-It is possible to determine the number of partitions which were
-removed during this phase by observing the
-&lt;quote&gt;Subplans Removed&lt;/quote&gt; property in the
-&lt;command&gt;EXPLAIN&lt;/command&gt; output.
-</span>
-問い合わせ計画の初期化時。
-パーティション除去は、パラメータの値が分かる実行の初期化段階時に可能です。
-この段階で除去されたパーティションは、問い合わせの<code class="command">EXPLAIN</code>や<code class="command">EXPLAIN ANALYZE</code>中に姿を見せることはないでしょう。
-<code class="command">EXPLAIN</code>出力中に<span class="quote">「<span class="quote">Subplans removed</span>」</span>プロパティを観察することによってこの段階で削除されるパーティションの数を特定することが可能です。
-</p></li><li class="listitem"><p>
-<span class="original">
-During actual execution of the query plan.  Partition pruning may
-also be performed here to remove partitions using values which are
-only known during actual query execution.  This includes values
-from subqueries and values from execution-time parameters such as
-those from parameterized nested loop joins.  Since the value of
-these parameters may change many times during the execution of the
-query, partition pruning is performed whenever one of the
-execution parameters being used by partition pruning changes.
-Determining if partitions were pruned during this phase requires
-careful inspection of the &lt;literal&gt;nloops&lt;/literal&gt; property in
-the &lt;command&gt;EXPLAIN ANALYZE&lt;/command&gt; output.
-</span>
-問い合わせ計画の実行時。
-パーティション除去では実際に問い合わせの実行をする際にのみ分かる値を用いてパーティションを取り除くことも同様に可能でしょう。
-これは、副問い合わせからの値やネステッドループ結合でパラメータ化されたような実行時のパラメータからの値を含みます。
-それらのパラメータの値は問い合わせの実行時に何回も変わるかもしれないため、パーティション除去はパーティション除去に使われる実行パラメータの値が変るたびに行われます。
-この段階で除去されたパーティションを特定するには、<code class="command">EXPLAIN ANALYZE</code>出力中の<span class="quote">「<span class="quote">nloops</span>」</span>プロパティの慎重な調査が必要です。
-</p></li></ul></div><p>
-</p><p>
-<span class="original">
-Partition pruning can be disabled using the
-&lt;xref linkend="guc-enable-partition-pruning"/&gt; setting.
-</span>
-パーティション除去は<a class="xref" href="runtime-config-query.html#GUC-ENABLE-PARTITION-PRUNING">enable_partition_pruning</a>設定を使うことにより無効化できます。
-</p><div class="note"><h3 class="title">注記</h3><p>
-<span class="original">
-Currently, pruning of partitions during the planning of an
-&lt;command&gt;UPDATE&lt;/command&gt; or &lt;command&gt;DELETE&lt;/command&gt; command is
-implemented using the constraint exclusion method (however, it is
-controlled by the &lt;literal&gt;enable_partition_pruning&lt;/literal&gt; rather than
-&lt;literal&gt;constraint_exclusion&lt;/literal&gt;) &amp;mdash; see the following section
-for details and caveats that apply.
-</span>
-現在、<code class="command">UPDATE</code>もしくは<code class="command">DELETE</code>の計画時のパーティションの除去は、制約による除外を用いて実装されています（しかしながら<code class="literal">constraint_exclusion</code>ではなく<code class="literal">enable_partition_pruning</code>によって制御されます）。
-適用される詳細および注意事項は次の節を参照してください。
-</p><p>
-<span class="original">
-Also, execution-time partition pruning currently only occurs for the
-&lt;literal&gt;Append&lt;/literal&gt; node type, not &lt;literal&gt;MergeAppend&lt;/literal&gt;.
-</span>
-また、実行時のパーティション除去は現在<code class="literal">MergeAppend</code>ではなく<code class="literal">Append</code>ノードタイプに対してのみ発生します。
-</p><p>
-<span class="original">
-Both of these behaviors are likely to be changed in a future release
-of &lt;productname&gt;PostgreSQL&lt;/productname&gt;.
-</span>
-<span class="productname">PostgreSQL</span>の将来のリリースではこれらの両方の動きが変更されるかもしれません。
-</p></div></div><div class="sect2" id="DDL-PARTITIONING-CONSTRAINT-EXCLUSION"><div class="titlepage"><div><div><h3 class="title">5.10.5. パーティショニングと制約による除外</h3></div></div></div><span class="original">
-&lt;title&gt;Partitioning and Constraint Exclusion&lt;/title&gt;
-</span><a id="id-1.5.4.12.10.2" class="indexterm"></a><p>
-<span class="original">
-&lt;firstterm&gt;Constraint exclusion&lt;/firstterm&gt; is a query optimization
+    &lt;firstterm&gt;Constraint exclusion&lt;/firstterm&gt; is a query optimization
     technique similar to partition pruning.  While it is primarily used
     for partitioning implemented using the legacy inheritance method, it can be
     used for other purposes, including with declarative partitioning.
@@ -1298,8 +1232,8 @@ of &lt;productname&gt;PostgreSQL&lt;/productname&gt;.
 
    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
 <span class="original">
-      Constraint exclusion is only applied during query planning; unlike
-      partition pruning, it cannot be applied during query execution.
+      Constraint exclusion is only applied during query planning, unlike
+      partition pruning, which can also be applied during query execution.
 </span>
 制約による除外は問い合わせ計画時にのみ適用されます。
 パーティション除去とは違い、問い合わせの実行時には適用できません。

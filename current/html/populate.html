@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>14.4. データベースへのデータ投入</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="explicit-joins.html" title="14.3. 明示的なJOIN句でプランナを制御する" /><link rel="next" href="non-durability.html" title="14.5. 永続性がない設定" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="performance-tips.html" title="第14章 性能に関するヒント">第14章 性能に関するヒント</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      populate.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>14.4. データベースへのデータ投入</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="explicit-joins.html" title="14.3. 明示的なJOIN句でプランナを制御する" /><link rel="next" href="non-durability.html" title="14.5. 永続性がない設定" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.3文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="performance-tips.html" title="第14章 性能に関するヒント">第14章 性能に関するヒント</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.3 &#10;                      populate.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="explicit-joins.html" title="14.3. 明示的なJOIN句でプランナを制御する">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="performance-tips.html" title="第14章 性能に関するヒント">上へ</a></td><td width="60%" align="center">14.4. データベースへのデータ投入</td><td width="20%" align="right"> <a accesskey="n" href="non-durability.html" title="14.5. 永続性がない設定">次へ</a></td></tr></table><hr /></div><div class="sect1" id="POPULATE"><div class="titlepage"><div><div><h2 class="title" style="clear: both">14.4. データベースへのデータ投入</h2></div></div></div><span class="original">
   &lt;title&gt;Populating a Database&lt;/title&gt;
 </span><p>
@@ -77,20 +77,14 @@
 <code class="command">COPY</code>を使用した大量の行のロードは、ほとんどすべての場合において、<code class="command">INSERT</code>を使用するロードよりも高速です。
 たとえ複数の挿入を単一トランザクションにまとめたとしても、またその際に<code class="command">PREPARE</code>を使用したとしても、これは当てはまります。
    </p><p>
-<span class="original">
-    &lt;command&gt;COPY&lt;/command&gt; is fastest when used within the same
-    transaction as an earlier &lt;command&gt;CREATE TABLE&lt;/command&gt; or
-    &lt;command&gt;TRUNCATE&lt;/command&gt; command. In such cases no WAL
+    <code class="command">COPY</code> is fastest when used within the same
+    transaction as an earlier <code class="command">CREATE TABLE</code> or
+    <code class="command">TRUNCATE</code> command. In such cases no WAL
     needs to be written, because in case of an error, the files
     containing the newly loaded data will be removed anyway.
     However, this consideration only applies when
-    &lt;xref linkend="guc-wal-level"/&gt; is &lt;literal&gt;minimal&lt;/literal&gt; as all commands
-    must write WAL otherwise.
-</span>
-<code class="command">COPY</code>は、前もって行われる<code class="command">CREATE TABLE</code>または<code class="command">TRUNCATE</code>コマンドと同一トランザクションで行った場合に、最速です。
-この場合、エラーが起きた場合に新しくロードされるデータを含むファイルがとにかく削除されますので、WALを書き出す必要がありません。
-しかし、<a class="xref" href="runtime-config-wal.html#GUC-WAL-LEVEL">wal_level</a>が<code class="literal">minimal</code>に設定されている場合のみにこの方法は当てはまります。
-この他の場合には、すべてのコマンドをWALに書き出さなければならないためです。
+    <a class="xref" href="runtime-config-wal.html#GUC-WAL-LEVEL">wal_level</a> is <code class="literal">minimal</code> for
+    non-partitioned tables as all commands must write WAL otherwise.
    </p></div><div class="sect2" id="POPULATE-RM-INDEXES"><div class="titlepage"><div><div><h3 class="title">14.4.3. インデックスを削除する</h3></div></div></div><span class="original">
    &lt;title&gt;Remove Indexes&lt;/title&gt;
 </span><p>

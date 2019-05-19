@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>UPDATE</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-unlisten.html" title="UNLISTEN" /><link rel="next" href="sql-vacuum.html" title="VACUUM" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      sql-update.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>UPDATE</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-unlisten.html" title="UNLISTEN" /><link rel="next" href="sql-vacuum.html" title="VACUUM" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.3文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.3 &#10;                      sql-update.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-unlisten.html" title="UNLISTEN">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">UPDATE</td><td width="20%" align="right"> <a accesskey="n" href="sql-vacuum.html" title="VACUUM">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-UPDATE"><div class="titlepage"></div><a id="id-1.9.3.182.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">UPDATE</span></h2><p>UPDATE<span class="original">
   &lt;refpurpose&gt;update rows of a table&lt;/refpurpose&gt;
 </span> — テーブルの行を更新する</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
@@ -260,13 +260,7 @@ UPDATE <em class="replaceable"><code>count</code></em>
    row satisfies its partition constraint, then the row is moved to that
    partition. If there is no such partition, an error will occur.  Behind the
    scenes, the row movement is actually a &lt;command&gt;DELETE&lt;/command&gt; and
-   &lt;command&gt;INSERT&lt;/command&gt; operation. However, there is a possibility that a
-   concurrent &lt;command&gt;UPDATE&lt;/command&gt; or &lt;command&gt;DELETE&lt;/command&gt; on the
-   same row may miss this row. For details see the section
-   &lt;xref linkend="ddl-partitioning-declarative-limitations"/&gt;.
-   Currently, rows cannot be moved from a partition that is a
-   foreign table to some other partition, but they can be moved into a foreign
-   table if the foreign data wrapper supports it.
+   &lt;command&gt;INSERT&lt;/command&gt; operation.
 </span>
 パーティションテーブルの場合、行を更新することによって含んでいるパーティションのパーティション制約を満たさなくなることがありえます。
 その場合、この行がそのパーティション制約を満たす他のパーティションがパーティションツリー内にあれば、行はそのパーティションに移されます。
@@ -275,6 +269,25 @@ UPDATE <em class="replaceable"><code>count</code></em>
 しかしながら、同じ行に対して同時に実行される<code class="command">UPDATE</code>や<code class="command">DELETE</code>のためにこの行が見つからない可能性があります。
 詳細は<a class="xref" href="ddl-partitioning.html#DDL-PARTITIONING-DECLARATIVE-LIMITATIONS" title="5.10.2.3. 制限事項">5.10.2.3</a>を参照してください。
 現在、外部テーブルであるパーティションから別のパーティションに行を移動することはできませんが、外部データラッパが対応していれば外部テーブルへの移動はできます。
+  </p><p>
+   There is a possibility that a concurrent <code class="command">UPDATE</code> or
+   <code class="command">DELETE</code> on the row being moved will get a serialization
+   failure error.  Suppose session 1 is performing an <code class="command">UPDATE</code>
+   on a partition key, and meanwhile a concurrent session 2 for which this
+   row is visible performs an <code class="command">UPDATE</code> or
+   <code class="command">DELETE</code> operation on this row.  In such case,
+   session 2's <code class="command">UPDATE</code> or <code class="command">DELETE</code> will
+   detect the row movement and raise a serialization failure error (which
+   always returns with an SQLSTATE code '40001').  Applications may wish to
+   retry the transaction if this occurs.  In the usual case where the table
+   is not partitioned, or where there is no row movement, session 2 would
+   have identified the newly updated row and carried out the
+   <code class="command">UPDATE</code>/<code class="command">DELETE</code> on this new row
+    version.
+  </p><p>
+   Note that while rows can be moved from local partitions to a foreign-table
+   partition (provided the foreign data wrapper supports tuple routing), they
+   cannot be moved from a foreign-table partition to another partition.
   </p></div><div class="refsect1" id="id-1.9.3.182.9"><h2>例</h2><span class="original">
   &lt;title&gt;Examples&lt;/title&gt;
 </span><p>

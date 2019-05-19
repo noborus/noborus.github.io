@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>18.4. カーネルリソースの管理</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="server-start.html" title="18.3. データベースサーバの起動" /><link rel="next" href="server-shutdown.html" title="18.5. サーバのシャットダウン" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="runtime.html" title="第18章 サーバの準備と運用">第18章 サーバの準備と運用</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      kernel-resources.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>18.4. カーネルリソースの管理</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="server-start.html" title="18.3. データベースサーバの起動" /><link rel="next" href="server-shutdown.html" title="18.5. サーバのシャットダウン" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.3文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="runtime.html" title="第18章 サーバの準備と運用">第18章 サーバの準備と運用</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.3 &#10;                      kernel-resources.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="server-start.html" title="18.3. データベースサーバの起動">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="runtime.html" title="第18章 サーバの準備と運用">上へ</a></td><td width="60%" align="center">18.4. カーネルリソースの管理</td><td width="20%" align="right"> <a accesskey="n" href="server-shutdown.html" title="18.5. サーバのシャットダウン">次へ</a></td></tr></table><hr /></div><div class="sect1" id="KERNEL-RESOURCES"><div class="titlepage"><div><div><h2 class="title" style="clear: both">18.4. カーネルリソースの管理</h2></div></div></div><span class="original">
   &lt;title&gt;Managing Kernel Resources&lt;/title&gt;
 </span><p>
@@ -144,7 +144,8 @@ System V セマフォを使用している場合、<span class="productname">Pos
 <span class="original">
     In some cases it might also be necessary to increase
     &lt;varname&gt;SEMMAP&lt;/varname&gt; to be at least on the order of
-    &lt;varname&gt;SEMMNS&lt;/varname&gt;. This parameter defines the size of the semaphore
+    &lt;varname&gt;SEMMNS&lt;/varname&gt;.  If the system has this parameter
+    (many do not), it defines the size of the semaphore
     resource map, in which each contiguous block of available semaphores
     needs an entry. When a semaphore set is freed it is either added to
     an existing entry that is adjacent to the freed block or it is
@@ -210,12 +211,11 @@ POSIXセマフォを使用している場合、System Vと同じ数のセマフ�
 </span>
       <a id="id-1.6.5.6.3.16.2.1.2" class="indexterm"></a>
       </span></dt><dd><p>
-<span class="original">
-        The default settings can be changed using
-        the &lt;command&gt;sysctl&lt;/command&gt; or
-        &lt;command&gt;loader&lt;/command&gt; interfaces.  The following
-        parameters can be set using &lt;command&gt;sysctl&lt;/command&gt;:
-</span>
+        The default IPC settings can be changed using
+        the <code class="command">sysctl</code> or
+        <code class="command">loader</code> interfaces.  The following
+        parameters can be set using <code class="command">sysctl</code>:
+--&gt;
 デフォルトの設定は<code class="command">sysctl</code>または<code class="command">loader</code>インタフェースを使用して変更を行うことができます。
 以下では<code class="command">sysctl</code>を使用してパラメータを変更しています。
 </p><pre class="screen">
@@ -237,17 +237,9 @@ POSIXセマフォを使用している場合、System Vと同じ数のセマフ�
 </p><pre class="programlisting">
 kern.ipc.semmni=256
 kern.ipc.semmns=512
-kern.ipc.semmnu=256
 </pre><p>
-<span class="original">
-        After modifying these values a reboot is required for the new
+        After modifying that file, a reboot is required for the new
         settings to take effect.
-        (Note: FreeBSD does not use &lt;varname&gt;SEMMAP&lt;/varname&gt;.  Older versions
-        would accept but ignore a setting for &lt;literal&gt;kern.ipc.semmap&lt;/literal&gt;;
-        newer versions reject it altogether.)
-</span>
-これらの値を変更した後、新しい設定を有効にするためには再起動が必要です。
-(注意: FreeBSD は<code class="varname">SEMMAP</code>を使用しません。古いバージョンは<code class="literal">kern.ipc.semmap</code>の設定を受け入れますが無視します; 新しいバージョンでは拒否します。)
        </p><p>
 <span class="original">
         You might also want to configure your kernel to lock shared
@@ -276,9 +268,8 @@ kern.ipc.semmnu=256
        </p><p>
 <span class="original">
         &lt;systemitem class="osname"&gt;FreeBSD&lt;/systemitem&gt; versions before 4.0 work like
-        &lt;systemitem class="osname"&gt;OpenBSD&lt;/systemitem&gt; (see below).
+        old &lt;systemitem class="osname"&gt;OpenBSD&lt;/systemitem&gt; (see below).
 </span>
-<span class="systemitem">FreeBSD</span>バージョン4.0以前では、（後述の）<span class="systemitem">OpenBSD</span>と同様に動作します。
        </p></dd><dt><span class="term"><span class="systemitem">NetBSD</span>
 <span class="original">
       &lt;indexterm&gt;&lt;primary&gt;NetBSD&lt;/primary&gt;&lt;secondary&gt;IPC configuration&lt;/secondary&gt;&lt;/indexterm&gt;
@@ -292,13 +283,18 @@ kern.ipc.semmnu=256
 </span>
 <span class="systemitem">NetBSD</span> 5.0以降では、以下の例のようにIPCパラメータを<code class="command">sysctl</code>を用いて調整することができます。
 </p><pre class="screen">
-<code class="prompt">$</code> <strong class="userinput"><code>sysctl -w kern.ipc.shmmax=16777216</code></strong>
+<code class="prompt">#</code> <strong class="userinput"><code>sysctl -w kern.ipc.semmni=100</code></strong>
 </pre><p>
 <span class="original">
-        To have these settings persist over reboots, modify
+        To make these settings persist over reboots, modify
         &lt;filename&gt;/etc/sysctl.conf&lt;/filename&gt;.
 </span>
 この設定を再起動しても永続化させるためには<code class="filename">/etc/sysctl.conf</code>を編集してください。
+       </p><p>
+        You will usually want to increase <code class="literal">kern.ipc.semmni</code>
+        and <code class="literal">kern.ipc.semmns</code>,
+        as <span class="systemitem">NetBSD</span>'s default settings
+        for these are uncomfortably small.
        </p><p>
 <span class="original">
         You might also want to configure your kernel to lock shared
@@ -309,30 +305,37 @@ kern.ipc.semmnu=256
 また、共有メモリをRAM上に固定して、スワップによってページアウトされるのを避けるために、カーネルを設定したいと考えるかもしれません。
 これは<code class="command">sysctl</code>を使用して<code class="literal">kern.ipc.shm_use_phys</code>を設定することで実現できます。
        </p><p>
-<span class="original">
-        &lt;systemitem class="osname"&gt;NetBSD&lt;/systemitem&gt; versions before 5.0 work like
-        &lt;systemitem class="osname"&gt;OpenBSD&lt;/systemitem&gt; (see below), except that
-        parameters should be set with the keyword &lt;literal&gt;options&lt;/literal&gt; not
-        &lt;literal&gt;option&lt;/literal&gt;.
-</span>
-5.0より前のバージョンの<span class="systemitem">NetBSD</span>では、（後述の）<span class="systemitem">OpenBSD</span>のように動作します。
-ただし、パラメータは<code class="literal">option</code>ではなく<code class="literal">options</code>キーワードを付けて設定する必要があります。
+        <span class="systemitem">NetBSD</span> versions before 5.0
+        work like old <span class="systemitem">OpenBSD</span>
+        (see below), except that kernel parameters should be set with the
+        keyword <code class="literal">options</code> not <code class="literal">option</code>.
        </p></dd><dt><span class="term"><span class="systemitem">OpenBSD</span>
 <span class="original">
       &lt;indexterm&gt;&lt;primary&gt;OpenBSD&lt;/primary&gt;&lt;secondary&gt;IPC configuration&lt;/secondary&gt;&lt;/indexterm&gt;
 </span>
       <a id="id-1.6.5.6.3.16.4.1.2" class="indexterm"></a>
       </span></dt><dd><p>
-<span class="original">
-        The options &lt;varname&gt;SYSVSHM&lt;/varname&gt; and &lt;varname&gt;SYSVSEM&lt;/varname&gt; need
-        to be enabled when the kernel is compiled. (They are by
-        default.) The maximum size of shared memory is determined by
-        the option &lt;varname&gt;SHMMAXPGS&lt;/varname&gt; (in pages). The following
-        shows an example of how to set the various parameters:
-</span>
-<code class="varname">SYSVSHM</code>オプションと<code class="varname">SYSVSEM</code>オプションはカーネルのコンパイル時に有効にする必要があります（デフォルトでは有効になっています）。
-共有メモリの最大サイズは<code class="varname">SHMMAXPGS</code>オプション（ページ数）で決定されます。
-以下に様々なパラメータの設定方法の例を示します。
+        In <span class="systemitem">OpenBSD</span> 3.3 and later,
+        IPC parameters can be adjusted using <code class="command">sysctl</code>,
+        for example:
+</p><pre class="screen">
+<code class="prompt">#</code> <strong class="userinput"><code>sysctl kern.seminfo.semmni=100</code></strong>
+</pre><p>
+        To make these settings persist over reboots, modify
+        <code class="filename">/etc/sysctl.conf</code>.
+       </p><p>
+        You will usually want to
+        increase <code class="literal">kern.seminfo.semmni</code>
+        and <code class="literal">kern.seminfo.semmns</code>,
+        as <span class="systemitem">OpenBSD</span>'s default settings
+        for these are uncomfortably small.
+       </p><p>
+        In older <span class="systemitem">OpenBSD</span> versions,
+        you will need to build a custom kernel to change the IPC parameters.
+        Make sure that the options <code class="varname">SYSVSHM</code>
+        and <code class="varname">SYSVSEM</code> are enabled, too.  (They are by
+        default.)  The following shows an example of how to set the various
+        parameters in the kernel configuration file:
 </p><pre class="programlisting">
 option        SYSVSHM
 option        SHMMAXPGS=4096
