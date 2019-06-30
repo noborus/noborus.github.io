@@ -266,28 +266,35 @@ UPDATE <em class="replaceable"><code>count</code></em>
 その場合、この行がそのパーティション制約を満たす他のパーティションがパーティションツリー内にあれば、行はそのパーティションに移されます。
 もし、そのようなパーティションがなければ、エラーが発生します。
 舞台裏では、行の移動は実際は<code class="command">DELETE</code>と<code class="command">INSERT</code>操作です。
-しかしながら、同じ行に対して同時に実行される<code class="command">UPDATE</code>や<code class="command">DELETE</code>のためにこの行が見つからない可能性があります。
-詳細は<a class="xref" href="ddl-partitioning.html#DDL-PARTITIONING-DECLARATIVE-LIMITATIONS" title="5.10.2.3. 制限事項">5.10.2.3</a>を参照してください。
-現在、外部テーブルであるパーティションから別のパーティションに行を移動することはできませんが、外部データラッパが対応していれば外部テーブルへの移動はできます。
   </p><p>
-   There is a possibility that a concurrent <code class="command">UPDATE</code> or
-   <code class="command">DELETE</code> on the row being moved will get a serialization
-   failure error.  Suppose session 1 is performing an <code class="command">UPDATE</code>
+<span class="original">
+   There is a possibility that a concurrent &lt;command&gt;UPDATE&lt;/command&gt; or
+   &lt;command&gt;DELETE&lt;/command&gt; on the row being moved will get a serialization
+   failure error.  Suppose session 1 is performing an &lt;command&gt;UPDATE&lt;/command&gt;
    on a partition key, and meanwhile a concurrent session 2 for which this
-   row is visible performs an <code class="command">UPDATE</code> or
-   <code class="command">DELETE</code> operation on this row.  In such case,
-   session 2's <code class="command">UPDATE</code> or <code class="command">DELETE</code> will
+   row is visible performs an &lt;command&gt;UPDATE&lt;/command&gt; or
+   &lt;command&gt;DELETE&lt;/command&gt; operation on this row.  In such case,
+   session 2's &lt;command&gt;UPDATE&lt;/command&gt; or &lt;command&gt;DELETE&lt;/command&gt; will
    detect the row movement and raise a serialization failure error (which
    always returns with an SQLSTATE code '40001').  Applications may wish to
    retry the transaction if this occurs.  In the usual case where the table
    is not partitioned, or where there is no row movement, session 2 would
    have identified the newly updated row and carried out the
-   <code class="command">UPDATE</code>/<code class="command">DELETE</code> on this new row
+   &lt;command&gt;UPDATE&lt;/command&gt;/&lt;command&gt;DELETE&lt;/command&gt; on this new row
     version.
+</span>
+移される行に対して同時に実行される<code class="command">UPDATE</code>や<code class="command">DELETE</code>のために直列化の失敗エラーになる可能性があります。
+セッション1がパーティションキーに対して<code class="command">UPDATE</code>を実行中であるとしましょう。一方、同時に実行しているセッション2に対してこの行は可視であり、セッション2はこの行に対して<code class="command">UPDATE</code>または<code class="command">DELETE</code>操作をするとしましょう。
+その場合、セッション2の<code class="command">UPDATE</code>または<code class="command">DELETE</code>は、行の移動を検出し、直列化の失敗エラー(常にSQLSTATE値が'40001'で返る)を発生させます。
+これが起きた場合には、アプリケーションはトランザクションを再試行すると良いでしょう。
+テーブルがパーティション化されていない、または、行の移動がない通常の場合には、セッション2は新しく更新された行を特定し、この新しい行のバージョンに対して<code class="command">UPDATE</code>/<code class="command">DELETE</code>を実行します。
   </p><p>
+<span class="original">
    Note that while rows can be moved from local partitions to a foreign-table
    partition (provided the foreign data wrapper supports tuple routing), they
    cannot be moved from a foreign-table partition to another partition.
+</span>
+(外部データラッパがタプルルーティングをサポートしていれば)行をローカルパーティションから外部テーブルパーティションへ移動できますが、外部テーブルパーティションから別のパーティションに移動できないことに注意してください。
   </p></div><div class="refsect1" id="id-1.9.3.182.9"><h2>例</h2><span class="original">
   &lt;title&gt;Examples&lt;/title&gt;
 </span><p>

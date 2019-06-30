@@ -65,7 +65,7 @@
      rule of thumb is that the size of the table should exceed the physical
      memory of the database server.
 </span>
-この利益は通常は、そうしなければテーブルが非常に大きくなる場合にのみ価値があります。
+この利益は通常、そうしなければテーブルが非常に大きくなる場合にのみ価値があります。
 テーブルがパーティショニングから利益を得られるかどうかの正確な分岐点はアプリケーションに依存しますが、重要なことはテーブルのサイズがデータベースサーバの物理メモリより大きいことです。
     </p><p>
 <span class="original">
@@ -1054,6 +1054,7 @@ ANALYZE measurement;
 </span>
 <em class="firstterm">パーティション除去</em>は、宣言的パーティショニングテーブルに対するパフォーマンスを向上させる問い合わせの最適化技術です。
 例えば、
+
 </p><pre class="programlisting">
 SET enable_partition_pruning = on;                 -- the default
 SELECT count(*) FROM measurement WHERE logdate &gt;= DATE '2008-01-01';
@@ -1072,13 +1073,13 @@ SELECT count(*) FROM measurement WHERE logdate &gt;= DATE '2008-01-01';
 パーティション除去がなければ、上記の問い合わせは<code class="structname">measurement</code>テーブルの各パーティションをスキャンするでしょう。
 パーティション除去が有効になっているとき、プランナはそれぞれのパーティションの定義を検証し、パーティションが問い合わせの<code class="literal">WHERE</code>に一致する行を含んでいないためにスキャンされる必要が無いことを証明します。
 プランナはこれを証明すると、問い合わせ計画からそのパーティションを除外（<em class="firstterm">除去</em>）します。
-</p><p>
+   </p><p>
 <span class="original">
-By using the EXPLAIN command and the &lt;xref
-linkend="guc-enable-partition-pruning"/&gt; configuration parameter, it's
-possible to show the difference between a plan for which partitions have
-been pruned and one for which they have not.  A typical unoptimized
-plan for this type of table setup is:
+    By using the EXPLAIN command and the &lt;xref
+    linkend="guc-enable-partition-pruning"/&gt; configuration parameter, it's
+    possible to show the difference between a plan for which partitions have
+    been pruned and one for which they have not.  A typical unoptimized
+    plan for this type of table setup is:
 </span>
 EXPLAINコマンドと設定パラメータ<a class="xref" href="runtime-config-query.html#GUC-ENABLE-PARTITION-PRUNING">enable_partition_pruning</a> を使用することによって、パーティションの除去をした計画とそうでない計画の違いを明らかにすることを可能とします。
 この種類のテーブル設定に対する典型的な最適化されない計画は以下のようになります。
@@ -1087,27 +1088,27 @@ SET enable_partition_pruning = off;
 EXPLAIN SELECT count(*) FROM measurement WHERE logdate &gt;= DATE '2008-01-01';
                                     QUERY PLAN
 -----------------------------------------------------------------------------------
-Aggregate  (cost=188.76..188.77 rows=1 width=8)
--&gt;  Append  (cost=0.00..181.05 rows=3085 width=0)
- -&gt;  Seq Scan on measurement_y2006m02  (cost=0.00..33.12 rows=617 width=0)
-       Filter: (logdate &gt;= '2008-01-01'::date)
- -&gt;  Seq Scan on measurement_y2006m03  (cost=0.00..33.12 rows=617 width=0)
-       Filter: (logdate &gt;= '2008-01-01'::date)
+ Aggregate  (cost=188.76..188.77 rows=1 width=8)
+   -&gt;  Append  (cost=0.00..181.05 rows=3085 width=0)
+         -&gt;  Seq Scan on measurement_y2006m02  (cost=0.00..33.12 rows=617 width=0)
+               Filter: (logdate &gt;= '2008-01-01'::date)
+         -&gt;  Seq Scan on measurement_y2006m03  (cost=0.00..33.12 rows=617 width=0)
+               Filter: (logdate &gt;= '2008-01-01'::date)
 ...
- -&gt;  Seq Scan on measurement_y2007m11  (cost=0.00..33.12 rows=617 width=0)
-       Filter: (logdate &gt;= '2008-01-01'::date)
- -&gt;  Seq Scan on measurement_y2007m12  (cost=0.00..33.12 rows=617 width=0)
-       Filter: (logdate &gt;= '2008-01-01'::date)
- -&gt;  Seq Scan on measurement_y2008m01  (cost=0.00..33.12 rows=617 width=0)
-       Filter: (logdate &gt;= '2008-01-01'::date)
+         -&gt;  Seq Scan on measurement_y2007m11  (cost=0.00..33.12 rows=617 width=0)
+               Filter: (logdate &gt;= '2008-01-01'::date)
+         -&gt;  Seq Scan on measurement_y2007m12  (cost=0.00..33.12 rows=617 width=0)
+               Filter: (logdate &gt;= '2008-01-01'::date)
+         -&gt;  Seq Scan on measurement_y2008m01  (cost=0.00..33.12 rows=617 width=0)
+               Filter: (logdate &gt;= '2008-01-01'::date)
 </pre><p>
 
 <span class="original">
-Some or all of the partitions might use index scans instead of
-full-table sequential scans, but the point here is that there
-is no need to scan the older partitions at all to answer this query.
-When we enable partition pruning, we get a significantly
-cheaper plan that will deliver the same answer:
+    Some or all of the partitions might use index scans instead of
+    full-table sequential scans, but the point here is that there
+    is no need to scan the older partitions at all to answer this query.
+    When we enable partition pruning, we get a significantly
+    cheaper plan that will deliver the same answer:
 </span>
 一部のパーティション、もしくはすべてのパーティションで、テーブル全体に対するシーケンシャルスキャンではなく、インデックススキャンが使用される可能性があります。
 しかしここで重要なことは、この問い合わせに対する回答のために古いパーティションをスキャンする必要はまったく無いということです。
@@ -1118,12 +1119,13 @@ SET enable_partition_pruning = on;
 EXPLAIN SELECT count(*) FROM measurement WHERE logdate &gt;= DATE '2008-01-01';
                                     QUERY PLAN
 -----------------------------------------------------------------------------------
-Aggregate  (cost=37.75..37.76 rows=1 width=8)
--&gt;  Append  (cost=0.00..36.21 rows=617 width=0)
- -&gt;  Seq Scan on measurement_y2008m01  (cost=0.00..33.12 rows=617 width=0)
-       Filter: (logdate &gt;= '2008-01-01'::date)
+ Aggregate  (cost=37.75..37.76 rows=1 width=8)
+   -&gt;  Append  (cost=0.00..36.21 rows=617 width=0)
+         -&gt;  Seq Scan on measurement_y2008m01  (cost=0.00..33.12 rows=617 width=0)
+               Filter: (logdate &gt;= '2008-01-01'::date)
 </pre><p>
    </p><p>
+<span class="original">
     Note that partition pruning is driven only by the constraints defined
     implicitly by the partition keys, not by the presence of indexes.
     Therefore it isn't necessary to define indexes on the key columns.
@@ -1131,27 +1133,45 @@ Aggregate  (cost=37.75..37.76 rows=1 width=8)
     whether you expect that queries that scan the partition will
     generally scan a large part of the partition or just a small part.
     An index will be helpful in the latter case but not the former.
+</span>
+パーティション除去はパーティションキーによって暗黙的に定義された制約のみで動作し、インデックスの有無では動作しないことに注意してください。
+よってキー列のインデックスを定義することは必要ではありません。
+あるパーティションでインデックスが必要かどうかは、パーティションをスキャンする問い合わせが通常はパーティションの大部分をスキャンするのか、あるいは小さな部分をスキャンするのかによります。
+インデックスは後者において役立ちますが、前者では役立ちません。
    </p><p>
+<span class="original">
     Partition pruning can be performed not only during the planning of a
     given query, but also during its execution.  This is useful as it can
     allow more partitions to be pruned when clauses contain expressions
     whose values are not known at query planning time; for example,
-    parameters defined in a <code class="command">PREPARE</code> statement, using a
+    parameters defined in a &lt;command&gt;PREPARE&lt;/command&gt; statement, using a
     value obtained from a subquery or using a parameterized value on the
     inner side of a nested loop join.  Partition pruning during execution
     can be performed at any of the following times:
+</span>
+パーティション除去は与えられた問い合わせの計画時だけでなく、問い合わせの実行時にも可能です。
+問い合わせの計画時、句が値のわからない式を含むときにより多くのパーティションを除去できるため便利です。
+例えば、<code class="command">PREPARE</code>文中に定義されたパラメータや、副問い合わせから取得される値の利用、ネステッドループ結合の内側でパラメータ化された値の利用です。
+実行中のパーティション除去は、次のいずれかの時点で可能です。
 
     </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
        During initialization of the query plan.  Partition pruning can be
        performed here for parameter values which are known during the
        initialization phase of execution.  Partitions which are pruned
        during this stage will not show up in the query's
-       <code class="command">EXPLAIN</code> or <code class="command">EXPLAIN ANALYZE</code>.
+       &lt;command&gt;EXPLAIN&lt;/command&gt; or &lt;command&gt;EXPLAIN ANALYZE&lt;/command&gt;.
        It is possible to determine the number of partitions which were
        removed during this phase by observing the
-       <span class="quote">「<span class="quote">Subplans Removed</span>」</span> property in the
-       <code class="command">EXPLAIN</code> output.
+       &lt;quote&gt;Subplans Removed&lt;/quote&gt; property in the
+       &lt;command&gt;EXPLAIN&lt;/command&gt; output.
+</span>
+問い合わせ計画の初期化時。
+パーティション除去は、パラメータの値が分かる実行の初期化段階時に可能です。
+この段階で除去されたパーティションは、問い合わせの<code class="command">EXPLAIN</code>や<code class="command">EXPLAIN ANALYZE</code>中に姿を見せることはないでしょう。
+<code class="command">EXPLAIN</code>出力中に<span class="quote">「<span class="quote">Subplans removed</span>」</span>プロパティを観察することによってこの段階で削除されるパーティションの数を特定することが可能です。
       </p></li><li class="listitem"><p>
+<span class="original">
        During actual execution of the query plan.  Partition pruning may
        also be performed here to remove partitions using values which are
        only known during actual query execution.  This includes values
@@ -1161,23 +1181,40 @@ Aggregate  (cost=37.75..37.76 rows=1 width=8)
        query, partition pruning is performed whenever one of the
        execution parameters being used by partition pruning changes.
        Determining if partitions were pruned during this phase requires
-       careful inspection of the <code class="literal">loops</code> property in
-       the <code class="command">EXPLAIN ANALYZE</code> output.  Subplans
+       careful inspection of the &lt;literal&gt;loops&lt;/literal&gt; property in
+       the &lt;command&gt;EXPLAIN ANALYZE&lt;/command&gt; output.  Subplans
        corresponding to different partitions may have different values
        for it depending on how many times each of them was pruned during
-       execution.  Some may be shown as <code class="literal">(never executed)</code>
+       execution.  Some may be shown as &lt;literal&gt;(never executed)&lt;/literal&gt;
        if they were pruned every time.
+</span>
+問い合わせ計画の実行時。
+パーティション除去では実際に問い合わせの実行をする際にのみ分かる値を用いてパーティションを取り除くことも同様に可能でしょう。
+これは、副問い合わせからの値やネステッドループ結合でパラメータ化されたような実行時のパラメータからの値を含みます。
+それらのパラメータの値は問い合わせの実行時に何回も変わるかもしれないため、パーティション除去はパーティション除去に使われる実行パラメータの値が変るたびに行われます。
+この段階で除去されたパーティションを特定するには、<code class="command">EXPLAIN ANALYZE</code>出力中の<span class="quote">「<span class="quote">loops</span>」</span>プロパティの慎重な調査が必要です。
+異なるパーティションに対応するサブプランは、それぞれ実行時に除去された回数に応じて異なる値を持っているかもしれません。
+毎回パーティションが除去される場合、一部は<code class="literal">(never executed)</code>と表示されるでしょう。
       </p></li></ul></div><p>
    </p><p>
+<span class="original">
     Partition pruning can be disabled using the
-    <a class="xref" href="runtime-config-query.html#GUC-ENABLE-PARTITION-PRUNING">enable_partition_pruning</a> setting.
+    &lt;xref linkend="guc-enable-partition-pruning"/&gt; setting.
+</span>
+パーティション除去は<a class="xref" href="runtime-config-query.html#GUC-ENABLE-PARTITION-PRUNING">enable_partition_pruning</a>設定を使うことにより無効化できます。
    </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
      Execution-time partition pruning currently only occurs for the
-     <code class="literal">Append</code> node type, not
-     for <code class="literal">MergeAppend</code> or <code class="literal">ModifyTable</code>
+     &lt;literal&gt;Append&lt;/literal&gt; node type, not
+     for &lt;literal&gt;MergeAppend&lt;/literal&gt; or &lt;literal&gt;ModifyTable&lt;/literal&gt;
      nodes.  That is likely to be changed in a future release of
-     <span class="productname">PostgreSQL</span>.
-    </p></div></div><div class="sect2" id="DDL-PARTITIONING-CONSTRAINT-EXCLUSION"><div class="titlepage"><div><div><h3 class="title">5.10.5. Partitioning and Constraint Exclusion</h3></div></div></div><a id="id-1.5.4.12.10.2" class="indexterm"></a><p>
+     &lt;productname&gt;PostgreSQL&lt;/productname&gt;.
+</span>
+実行時のパーティション除去は現在<code class="literal">MergeAppend</code>や<code class="literal">ModifyTable</code>ではなく<code class="literal">Append</code>ノードタイプに対してのみ発生します。
+これは<span class="productname">PostgreSQL</span>の将来のリリースで変更される可能性があります。
+    </p></div></div><div class="sect2" id="DDL-PARTITIONING-CONSTRAINT-EXCLUSION"><div class="titlepage"><div><div><h3 class="title">5.10.5. パーティショニングと制約による除外</h3></div></div></div><span class="original">
+   &lt;title&gt;Partitioning and Constraint Exclusion&lt;/title&gt;
+</span><a id="id-1.5.4.12.10.2" class="indexterm"></a><p>
 <span class="original">
     &lt;firstterm&gt;Constraint exclusion&lt;/firstterm&gt; is a query optimization
     technique similar to partition pruning.  While it is primarily used
@@ -1235,8 +1272,7 @@ Aggregate  (cost=37.75..37.76 rows=1 width=8)
       Constraint exclusion is only applied during query planning, unlike
       partition pruning, which can also be applied during query execution.
 </span>
-制約による除外は問い合わせ計画時にのみ適用されます。
-パーティション除去とは違い、問い合わせの実行時には適用できません。
+問い合わせの実行中にも適用できるパーティション除去とは違い、制約による除外は問い合わせ計画時にのみ適用されます。
      </p></li><li class="listitem"><p>
 <span class="original">
       Constraint exclusion only works when the query's &lt;literal&gt;WHERE&lt;/literal&gt;
