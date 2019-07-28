@@ -548,20 +548,30 @@ ALTER TABLE measurement ATTACH PARTITION measurement_y2008m02
 このような制約がなければ、親テーブルに<code class="literal">ACCESS EXCLUSIVE</code>ロックを保持したままで、パーティション制約を検証するためにテーブルを走査することになります。
 この制約は<code class="command">ATTACH PARTITION</code>が終わった後は不要ですので削除することができます。
     </p><p>
+<span class="original">
      As explained above, it is possible to create indexes on partitioned tables
      and they are applied automatically to the entire hierarchy.  This is very
      convenient, as not only the existing partitions will become indexed, but
      also any partitions that are created in the future will.  One limitation is
-     that it's not possible to use the <code class="literal">CONCURRENTLY</code>
+     that it's not possible to use the &lt;literal&gt;CONCURRENTLY&lt;/literal&gt;
      qualifier when creating such a partitioned index.  To overcome long lock
-     times, it is possible to use <code class="command">CREATE INDEX ON ONLY</code>
+     times, it is possible to use &lt;command&gt;CREATE INDEX ON ONLY&lt;/command&gt;
      the partitioned table; such an index is marked invalid, and the partitions
      do not get the index applied automatically.  The indexes on partitions can
-     be created separately using <code class="literal">CONCURRENTLY</code>, and later
-     <em class="firstterm">attached</em> to the index on the parent using
-     <code class="command">ALTER INDEX .. ATTACH PARTITION</code>.  Once indexes for all
+     be created separately using &lt;literal&gt;CONCURRENTLY&lt;/literal&gt;, and later
+     &lt;firstterm&gt;attached&lt;/firstterm&gt; to the index on the parent using
+     &lt;command&gt;ALTER INDEX .. ATTACH PARTITION&lt;/command&gt;.  Once indexes for all
      partitions are attached to the parent index, the parent index is marked
      valid automatically.  Example:
+</span>
+前述したとおり、パーティションテーブル上にインデックスを作成することが可能であり、それらは階層全体に自動で適用されます。
+既存のパーティションだけではなく将来作成されるパーティションもインデックス付けされるため、これはとても便利です。
+一つの制限は、そのようなパーティションのインデックスを作成する場合<code class="literal">CONCURRENTLY</code>句を使うことができません。
+長いロック時間を克服するためには、パーティションテーブルに<code class="command">CREATE INDEX ON ONLY</code>を使うことが可能です。
+そのようなインデックスは無効とマークされ、パーティションは適用するインデックスを自動で取得しません。
+パーティション上のインデックスは<code class="literal">CONCURRENTLY</code>を使用して個々に作成することができ、後から<code class="command">ALTER INDEX .. ATTACH PARTITION</code>を使用して親のインデックスに<em class="firstterm">attached</em>できます。
+全てのパーティションに対してインデックスがアタッチされた時点で、親のインデックスは、自動で有効とマークされます。
+例を示します。
 </p><pre class="programlisting">
 CREATE INDEX measurement_usls_idx ON ONLY measurement (unitsales);
 
@@ -572,9 +582,14 @@ ALTER INDEX measurement_usls_idx
 ...
 </pre><p>
 
-     This technique can be used with <code class="literal">UNIQUE</code> and
-     <code class="literal">PRIMARY KEY</code> constraints too; the indexes are created
+<span class="original">
+     This technique can be used with &lt;literal&gt;UNIQUE&lt;/literal&gt; and
+     &lt;literal&gt;PRIMARY KEY&lt;/literal&gt; constraints too; the indexes are created
      implicitly when the constraint is created.  Example:
+</span>
+この手法は、<code class="literal">UNIQUE</code>と<code class="literal">PRIMARY KEY</code>制約でも使用できます。
+制約が作成された際にインデックスは暗黙的に作成されます。
+例を示します。
 </p><pre class="programlisting">
 ALTER TABLE ONLY measurement ADD UNIQUE (city_id, logdate);
 
@@ -1347,25 +1362,40 @@ EXPLAIN SELECT count(*) FROM measurement WHERE logdate &gt;= DATE '2008-01-01';
 そのため、従来の継承を基にしたパーティショニングはおそらく100個までの子でうまく動作します。
 何千もの子テーブルを使用することは避けてください。
      </p></li></ul></div><p>
-   </p></div><div class="sect2" id="DDL-PARTITIONING-DECLARATIVE-BEST-PRACTICES"><div class="titlepage"><div><div><h3 class="title">5.10.6. Declarative Partitioning Best Practices</h3></div></div></div><p>
+   </p></div><div class="sect2" id="DDL-PARTITIONING-DECLARATIVE-BEST-PRACTICES"><div class="titlepage"><div><div><h3 class="title">5.10.6. 宣言的パーティショニングのベストプラクティス</h3></div></div></div><span class="original">
+   &lt;title&gt;Declarative Partitioning Best Practices&lt;/title&gt;
+</span><p>
+<span class="original">
     The choice of how to partition a table should be made carefully as the
     performance of query planning and execution can be negatively affected by
     poor design.
+</span>
+不十分な設計によってクエリ計画および実行性能に負の影響がでる可能性があるため
+テーブルのパーティション方法の選択は注意して行う必要があります。
    </p><p>
+<span class="original">
     One of the most critical design decisions will be the column or columns
     by which you partition your data.  Often the best choice will be to
     partition by the column or set of columns which most commonly appear in
-    <code class="literal">WHERE</code> clauses of queries being executed on the
-    partitioned table.  <code class="literal">WHERE</code> clause items that match and
+    &lt;literal&gt;WHERE&lt;/literal&gt; clauses of queries being executed on the
+    partitioned table.  &lt;literal&gt;WHERE&lt;/literal&gt; clause items that match and
     are compatible with the partition key can be used to prune unneeded
     partitions.  However, you may be forced into making other decisions by
-    requirements for the <code class="literal">PRIMARY KEY</code> or a
-    <code class="literal">UNIQUE</code> constraint.  Removal of unwanted data is also a
+    requirements for the &lt;literal&gt;PRIMARY KEY&lt;/literal&gt; or a
+    &lt;literal&gt;UNIQUE&lt;/literal&gt; constraint.  Removal of unwanted data is also a
     factor to consider when planning your partitioning strategy.  An entire
     partition can be detached fairly quickly, so it may be beneficial to
     design the partition strategy in such a way that all data to be removed
     at once is located in a single partition.
+</span>
+最も重要な設計の決定の一つは、データを分割するための一つまたは複数の列です。
+大抵最適な選択は、パーティションテーブル上で実行されるクエリの<code class="literal">WHERE</code>句に最もよく現れる列または列の組み合わせによって分割することです。
+パーティションキーと一致し互換性がある<code class="literal">WHERE</code>句の項目は、不要なパーティションを取り除く為に使うことができます。
+しかしながら、<code class="literal">PRIMARY KEY</code>もしくは<code class="literal">UNIQUE</code>制約の条件により、他の決定を強いられるかもしれません。
+不要なデータの削除も同様にパーティショニング戦略を計画する際に考えるべき要素です。
+すべてのパーティションはとても早くデタッチすることができるため、一度に削除される全てのデータが単一のパーティション中に設置されるようにパーティション戦略を設計することが有益かもしれません。
    </p><p>
+<span class="original">
     Choosing the target number of partitions that the table should be divided
     into is also a critical decision to make.  Not having enough partitions
     may mean that indexes remain too large and that data locality remains poor
@@ -1378,32 +1408,52 @@ EXPLAIN SELECT count(*) FROM measurement WHERE logdate &gt;= DATE '2008-01-01';
     currently have a small number of large customers, consider the
     implications if in several years you instead find yourself with a large
     number of small customers.  In this case, it may be better to choose to
-    partition by <code class="literal">HASH</code> and choose a reasonable number of
-    partitions rather than trying to partition by <code class="literal">LIST</code> and
+    partition by &lt;literal&gt;HASH&lt;/literal&gt; and choose a reasonable number of
+    partitions rather than trying to partition by &lt;literal&gt;LIST&lt;/literal&gt; and
     hoping that the number of customers does not increase beyond what it is
     practical to partition the data by.
+</span>
+テーブルを分割するパーティションの目標数を選択することもまた需要な決定です。
+十分なパーティションがないとインデックスは大きくなりデータの局所性が貧しいままであるかもしれず、キャッシュヒット率が低い結果となる可能性があります。
+しかしながら非常に多くのパーティションにテーブルを分割することもまた問題の原因となります。
+非常に多くのパーティションは、クエリの計画時間が長くなり、クエリの計画および実行の両方の際にメモリ消費が高くなることを意味します。
+テーブルを分割する方法を選択するとき、 将来に起こる変化を考慮することもまた重要です。
+例えば、顧客毎に一つのパーティションを用意することを選択し、現在大規模な顧客が少数いる場合、数年以内に小規模な顧客を多数代わりに見つける可能性を含めて考慮します。
+この場合、<code class="literal">LIST</code>によって分割しデータの分割が実用的な数以上に顧客の数が増加しないことを期待するより、<code class="literal">HASH</code>によって分割し妥当なパーティション数にすることを選択する方が良いかもしれません。
    </p><p>
+<span class="original">
     Sub-partitioning can be useful to further divide partitions that are
     expected to become larger than other partitions, although excessive
     sub-partitioning can easily lead to large numbers of partitions and can
     cause the same problems mentioned in the preceding paragraph.
+</span>
+サブパーティショニングは、他のパーティションより巨大になると想定されるパーティションを更に分割するために役立ちますが、過度なサブパーティショニングは大量のパーティションを容易に引き起こし、前の段落で言及したのと同じ問題の原因となります。
    </p><p>
+<span class="original">
     It is also important to consider the overhead of partitioning during
     query planning and execution.  The query planner is generally able to
     handle partition hierarchies with up to a few hundred partitions fairly
     well, provided that typical queries allow the query planner to prune all
     but a small number of partitions.  Planning times become longer and memory
     consumption becomes higher as more partitions are added.  This is
-    particularly true for the <code class="command">UPDATE</code> and
-    <code class="command">DELETE</code> commands.  Another reason to be concerned about
+    particularly true for the &lt;command&gt;UPDATE&lt;/command&gt; and
+    &lt;command&gt;DELETE&lt;/command&gt; commands.  Another reason to be concerned about
     having a large number of partitions is that the server's memory
     consumption may grow significantly over a period of time, especially if
     many sessions touch large numbers of partitions.  That's because each
     partition requires its metadata to be loaded into the local memory of
     each session that touches it.
+</span>
+クエリの計画および実行時のパーティショニングのオーバーヘッドを考慮することもまた重要です。
+典型的なクエリではクエリプランナが少数のパーティションを除いて残り全てのパーティションを除外できるという前提に立てば、クエリプランナは通常最大数百パーティションのパーティション階層を適切に操作することができます。
+パーティションが追加されることにより、計画時間は長くなりメモリ消費は高くなります。
+これは<code class="command">UPDATE</code>と<code class="command">DELETE</code>コマンドに特に当てはまります。
+大量のパーティションを持っていることについて考慮するもうひとつの理由は、特に多くのセッションが大量のパーティションを参照する場合、ある期間にサーバのメモリ消費が著しく増加するかもしれないことです。
+その理由は、各パーティションは参照される各セッションのローカルメモリにメタデータを読み込む必要があるためです。
    </p><p>
+<span class="original">
     With data warehouse type workloads, it can make sense to use a larger
-    number of partitions than with an <acronym class="acronym">OLTP</acronym> type workload.
+    number of partitions than with an &lt;acronym&gt;OLTP&lt;/acronym&gt; type workload.
     Generally, in data warehouses, query planning time is less of a concern as
     the majority of processing time is spent during query execution.  With
     either of these two types of workload, it is important to make the right
@@ -1411,4 +1461,10 @@ EXPLAIN SELECT count(*) FROM measurement WHERE logdate &gt;= DATE '2008-01-01';
     painfully slow.  Simulations of the intended workload are often beneficial
     for optimizing the partitioning strategy.  Never assume that more
     partitions are better than fewer partitions and vice-versa.
+</span>
+データウェアハウスタイプのワークロードでは、<acronym class="acronym">OLTP</acronym>タイプのワークロードより大量のパーティションを使用するのが当然です。
+通常、データウェアハウスでは処理時間の大半をクエリ実行に費やすため、クエリ計画時間はあまり問題になりません。
+2種類のワークロードのいずれかでも、大量のデータを再パーティショニングすることは非常に遅いため、初期に適切な決定を下すことが重要です。
+計画したワークロードのシミュレーションは、パーティショニング戦略を最適化するためにしばしば役立ちます。
+多数のパーティションがより少数のパーティションより優れていることや、少数のパーティションが多数のパーティションより優れていることを前提としないでください。
    </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ddl-inherit.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="ddl.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="ddl-foreign-data.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">5.9. 継承 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 5.11. 外部データ</td></tr></table></div></body></html>
