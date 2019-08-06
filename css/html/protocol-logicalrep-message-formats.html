@@ -1,0 +1,509 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>53.9. 論理レプリケーションのメッセージ書式</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="protocol-error-fields.html" title="53.8. エラーおよび警報メッセージフィールド" /><link rel="next" href="protocol-changes.html" title="53.10. プロトコル2.0からの変更点の要約" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="protocol.html" title="第53章 フロントエンド/バックエンドプロトコル">第53章 フロントエンド/バックエンドプロトコル</a></td><td width="20%" align="right"></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="protocol-error-fields.html" title="53.8. エラーおよび警報メッセージフィールド">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="protocol.html" title="第53章 フロントエンド/バックエンドプロトコル">上へ</a></td><td width="60%" align="center">53.9. 論理レプリケーションのメッセージ書式</td><td width="20%" align="right"> <a accesskey="n" href="protocol-changes.html" title="53.10. プロトコル2.0からの変更点の要約">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PROTOCOL-LOGICALREP-MESSAGE-FORMATS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">53.9. 論理レプリケーションのメッセージ書式</h2></div></div></div><!--
+<title>Logical Replication Message Formats</title>
+--><p>
+<!--
+This section describes the detailed format of each logical replication message.
+These messages are returned either by the replication slot SQL interface or are
+sent by a walsender. In case of a walsender they are encapsulated inside the replication
+protocol WAL messages as described in <xref linkend="protocol-replication"/>
+and generally obey same message flow as physical replication.
+-->
+本節では論理レプリケーションの各メッセージの書式の詳細について説明します。
+これらのメッセージはレプリケーションスロットのSQLインタフェースから返されるか、あるいはwalsenderから送信されるかのいずれかです。
+walsenderの場合は、<a class="xref" href="protocol-replication.html" title="53.4. ストリーミングレプリケーションプロトコル">53.4</a>で説明されているようにレプリケーションプロトコルのWALメッセージ内でカプセル化され、通常は物理レプリケーションと同じメッセージフローに従います。
+</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+Begin
+</span></dt><dd><p>
+
+</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+        Byte1('B')
+</span></dt><dd><p>
+<!--
+                Identifies the message as a begin message.
+-->
+メッセージが開始メッセージであることを識別します。
+</p></dd><dt><span class="term">
+        Int64
+</span></dt><dd><p>
+<!--
+                The final LSN of the transaction.
+-->
+トランザクションの最後のLSNです。
+</p></dd><dt><span class="term">
+        Int64
+</span></dt><dd><p>
+<!--
+                Commit timestamp of the transaction. The value is in number
+                of microseconds since PostgreSQL epoch (2000-01-01).
+-->
+トランザクションのコミット時刻です。
+その値はPostgreSQLのエポック（2000-01-01）からのマイクロ秒数です。
+</p></dd><dt><span class="term">
+        Int32
+</span></dt><dd><p>
+<!--
+                Xid of the transaction.
+-->
+トランザクションのXIDです。
+</p></dd></dl></div><p>
+</p></dd><dt><span class="term">
+Commit
+</span></dt><dd><p>
+
+</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+        Byte1('C')
+</span></dt><dd><p>
+<!--
+                Identifies the message as a commit message.
+-->
+メッセージがCommitメッセージであることを識別します。
+</p></dd><dt><span class="term">
+        Int8
+</span></dt><dd><p>
+<!--
+                Flags; currently unused (must be 0).
+-->
+フラグですが現在は未使用です（0でなければなりません）。
+</p></dd><dt><span class="term">
+        Int64
+</span></dt><dd><p>
+<!--
+                The LSN of the commit.
+-->
+コミットのLSNです。
+</p></dd><dt><span class="term">
+        Int64
+</span></dt><dd><p>
+<!--
+                The end LSN of the transaction.
+-->
+トランザクションの終了LSNです。
+</p></dd><dt><span class="term">
+        Int64
+</span></dt><dd><p>
+<!--
+                Commit timestamp of the transaction. The value is in number
+                of microseconds since PostgreSQL epoch (2000-01-01).
+-->
+トランザクションのコミット時刻です。
+その値はPostgreSQLのエポック（2000-01-01）からのマイクロ秒数です。
+</p></dd></dl></div><p>
+</p></dd><dt><span class="term">
+Origin
+</span></dt><dd><p>
+
+</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+        Byte1('O')
+</span></dt><dd><p>
+<!--
+                Identifies the message as an origin message.
+-->
+メッセージがOriginメッセージであることを識別します。
+</p></dd><dt><span class="term">
+        Int64
+</span></dt><dd><p>
+<!--
+                The LSN of the commit on the origin server.
+-->
+Originサーバ上のコミットのLSNです。
+</p></dd><dt><span class="term">
+        String
+</span></dt><dd><p>
+<!--
+                Name of the origin.
+-->
+Originの名前です。
+</p></dd></dl></div><p>
+</p><p>
+<!--
+  Note that there can be multiple Origin messages inside a single transaction.
+-->
+一つのトランザクション内で複数のOriginメッセージがあり得ることに注意してください。
+</p></dd><dt><span class="term">
+Relation
+</span></dt><dd><p>
+
+</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+        Byte1('R')
+</span></dt><dd><p>
+<!--
+                Identifies the message as a relation message.
+-->
+メッセージがRelationメッセージであることを識別します。
+</p></dd><dt><span class="term">
+        Int32
+</span></dt><dd><p>
+<!--
+                ID of the relation.
+-->
+リレーションのIDです。
+</p></dd><dt><span class="term">
+        String
+</span></dt><dd><p>
+<!--
+                Namespace (empty string for <literal>pg_catalog</literal>).
+-->
+名前空間（<code class="literal">pg_catalog</code>の場合は空文字列）。
+</p></dd><dt><span class="term">
+        String
+</span></dt><dd><p>
+<!--
+                Relation name.
+-->
+リレーション名。
+</p></dd><dt><span class="term">
+        Int8
+</span></dt><dd><p>
+<!--
+                Replica identity setting for the relation (same as
+                <structfield>relreplident</structfield> in <structname>pg_class</structname>).
+-->
+リレーションのレプリカ識別子の設定（<code class="structname">pg_class</code>の<code class="structfield">relreplident</code>と同じ）。
+</p></dd><dt><span class="term">
+        Int16
+</span></dt><dd><p>
+<!--
+                Number of columns.
+-->
+列数。
+</p></dd></dl></div><p>
+<!--
+        Next, the following message part appears for each column:
+-->
+次に、各列について以下のメッセージ部分があります。
+</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+        Int8
+</span></dt><dd><p>
+<!--
+                Flags for the column. Currently can be either 0 for no flags
+                or 1 which marks the column as part of the key.
+-->
+列のフラグ。
+現在は、フラグがないことを示す0か、列がキーの一部であることを示す1のいずれかにできます。
+</p></dd><dt><span class="term">
+        String
+</span></dt><dd><p>
+<!--
+                Name of the column.
+-->
+列名。
+</p></dd><dt><span class="term">
+        Int32
+</span></dt><dd><p>
+<!--
+                ID of the column's data type.
+-->
+列のデータ型のID。
+</p></dd><dt><span class="term">
+        Int32
+</span></dt><dd><p>
+<!--
+                Type modifier of the column (<structfield>atttypmod</structfield>).
+-->
+列の型修飾子（<code class="structfield">atttypmod</code>）。
+</p></dd></dl></div><p>
+</p></dd><dt><span class="term">
+Type
+</span></dt><dd><p>
+
+</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+        Byte1('Y')
+</span></dt><dd><p>
+<!--
+                Identifies the message as a type message.
+-->
+メッセージがTypeメッセージであることを識別します。
+</p></dd><dt><span class="term">
+        Int32
+</span></dt><dd><p>
+<!--
+                ID of the data type.
+-->
+データ型のID。
+</p></dd><dt><span class="term">
+        String
+</span></dt><dd><p>
+<!--
+                Namespace (empty string for <literal>pg_catalog</literal>).
+-->
+名前空間（<code class="literal">pg_catalog</code>の場合は空文字列）。
+</p></dd><dt><span class="term">
+        String
+</span></dt><dd><p>
+<!--
+                Name of the data type.
+-->
+データ型の名前。
+</p></dd></dl></div><p>
+</p></dd><dt><span class="term">
+Insert
+</span></dt><dd><p>
+
+</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+        Byte1('I')
+</span></dt><dd><p>
+<!--
+                Identifies the message as an insert message.
+-->
+メッセージがInsertメッセージであることを識別します。
+</p></dd><dt><span class="term">
+        Int32
+</span></dt><dd><p>
+<!--
+                ID of the relation corresponding to the ID in the relation
+                message.
+-->
+Relationメッセージ中のIDに対応するリレーションのID。
+</p></dd><dt><span class="term">
+        Byte1('N')
+</span></dt><dd><p>
+<!--
+                Identifies the following TupleData message as a new tuple.
+-->
+以下のTupleDataメッセージが新しいタプルであることを識別します。
+</p></dd><dt><span class="term">
+        TupleData
+</span></dt><dd><p>
+<!--
+                TupleData message part representing the contents of new tuple.
+-->
+新しいタプルの内容を表すTupleDataメッセージ部分です。
+</p></dd></dl></div><p>
+</p></dd><dt><span class="term">
+Update
+</span></dt><dd><p>
+
+</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+        Byte1('U')
+</span></dt><dd><p>
+<!--
+                Identifies the message as an update message.
+-->
+メッセージがUpdateメッセージであることを識別します。
+</p></dd><dt><span class="term">
+        Int32
+</span></dt><dd><p>
+<!--
+                ID of the relation corresponding to the ID in the relation
+                message.
+-->
+Relationメッセージ中のIDに対応するリレーションのID。
+</p></dd><dt><span class="term">
+        Byte1('K')
+</span></dt><dd><p>
+<!--
+                Identifies the following TupleData submessage as a key.
+                This field is optional and is only present if
+                the update changed data in any of the column(s) that are
+                part of the REPLICA IDENTITY index.
+-->
+これに続くTupleData副メッセージがキーであることを識別します。
+このフィールドはオプションで、UPDATEがREPLICA IDENTITYインデックスの一部となっている列のどれかを変更したときにのみ存在します。
+</p></dd><dt><span class="term">
+        Byte1('O')
+</span></dt><dd><p>
+<!--
+                Identifies the following TupleData submessage as an old tuple.
+                This field is optional and is only present if table in which
+                the update happened has REPLICA IDENTITY set to FULL.
+-->
+これに続くTupleData副メッセージが古いタプルであることを識別します。
+このフィールドはオプションで、UPDATEが発生したテーブルでREPLICA IENTITYがFULLに設定されている場合にのみ存在します。
+</p></dd><dt><span class="term">
+        TupleData
+</span></dt><dd><p>
+<!--
+                TupleData message part representing the contents of the old tuple
+                or primary key. Only present if the previous 'O' or 'K' part
+                is present.
+-->
+古いタプルまたは主キーの内容を表すTupleDataメッセージ部分です。
+この前に'O'または'K'の部分が存在するときにのみ存在します。
+</p></dd><dt><span class="term">
+        Byte1('N')
+</span></dt><dd><p>
+<!--
+                Identifies the following TupleData message as a new tuple.
+-->
+これに続くTupleDataメッセージが新しいタプルであることを識別します。
+</p></dd><dt><span class="term">
+        TupleData
+</span></dt><dd><p>
+<!--
+                TupleData message part representing the contents of a new tuple.
+-->
+新しいタプルの内容を表すTupleDataメッセージ部分です。
+</p></dd></dl></div><p>
+</p><p>
+<!--
+    The Update message may contain either a 'K' message part or an 'O' message part
+    or neither of them, but never both of them.
+-->
+Updateメッセージは'K'メッセージ部分と'O'メッセージ部分のいずれかを含むか、どちらも含まないかであり、その両方を含むことはできません。
+</p></dd><dt><span class="term">
+Delete
+</span></dt><dd><p>
+
+</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+        Byte1('D')
+</span></dt><dd><p>
+<!--
+                Identifies the message as a delete message.
+-->
+メッセージがDeleteメッセージであることを識別します。
+</p></dd><dt><span class="term">
+        Int32
+</span></dt><dd><p>
+<!--
+                ID of the relation corresponding to the ID in the relation
+                message.
+-->
+Relationメッセージ中のIDに対応するリレーションのID。
+</p></dd><dt><span class="term">
+        Byte1('K')
+</span></dt><dd><p>
+<!--
+                Identifies the following TupleData submessage as a key.
+                This field is present if the table in which the delete has
+                happened uses an index as REPLICA IDENTITY.
+-->
+これに続くTupleData副メッセージがキーであることを識別します。
+このフィールドはDELETEが発生したテーブルがインデックスをREPLICA IDENTITYとして使用している場合にのみ存在します。
+</p></dd><dt><span class="term">
+        Byte1('O')
+</span></dt><dd><p>
+<!--
+                Identifies the following TupleData message as a old tuple.
+                This field is present if the table in which the delete has
+                happened has REPLICA IDENTITY set to FULL.
+-->
+これに続くTupleDataメッセージが古いタプルであることを識別します。
+このフィールドはDELETEが発生したテーブルでREPLICA IDENTITYがFULLに設定されている場合にのみ存在します。
+</p></dd><dt><span class="term">
+        TupleData
+</span></dt><dd><p>
+<!--
+                TupleData message part representing the contents of the old tuple
+                or primary key, depending on the previous field.
+-->
+直前のフィールドに従って、古いタプルまたは主キーの内容を表すTupleDataメッセージ部分です。
+</p></dd></dl></div><p>
+</p><p>
+<!--
+    The Delete message may contain either a 'K' message part or an 'O' message part,
+    but never both of them.
+-->
+Deleteメッセージは'K'メッセージ部分と'O'メッセージ部分のいずれかを含みますが、両方を含むことはできません。
+</p></dd><dt><span class="term">
+Truncate
+</span></dt><dd><p>
+
+</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+        Byte1('T')
+</span></dt><dd><p>
+<!--
+                Identifies the message as a truncate message.
+-->
+メッセージをTruncateメッセージと識別します。
+</p></dd><dt><span class="term">
+        Int32
+</span></dt><dd><p>
+<!--
+                Number of relations
+-->
+リレーション数
+</p></dd><dt><span class="term">
+        Int8
+</span></dt><dd><p>
+<!--
+                Option bits for <command>TRUNCATE</command>:
+                1 for <literal>CASCADE</literal>, 2 for <literal>RESTART IDENTITY</literal>
+-->
+<code class="command">TRUNCATE</code>に対するオプションビット。1は<code class="literal">CASCADE</code>、2は<code class="literal">RESTART IDENTITY</code>
+</p></dd><dt><span class="term">
+        Int32
+</span></dt><dd><p>
+<!--
+                ID of the relation corresponding to the ID in the relation
+                message.  This field is repeated for each relation.
+-->
+リレーションメッセージのIDに一致するリレーションのID。
+このフィールドは各リレーション毎に繰り返されます。
+</p></dd></dl></div><p>
+</p></dd></dl></div><p>
+
+<!--
+The following message parts are shared by the above messages.
+-->
+以下のメッセージ部分は上記のメッセージに共通です。
+
+</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+TupleData
+</span></dt><dd><p>
+
+</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+        Int16
+</span></dt><dd><p>
+<!--
+                Number of columns.
+-->
+列数。
+</p></dd></dl></div><p>
+<!--
+        Next, one of the following submessages appears for each column:
+-->
+次に各列を表す以下の副メッセージの一つがあります。
+</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+        Byte1('n')
+</span></dt><dd><p>
+<!--
+                Identifies the data as NULL value.
+-->
+データがNULL値であることを識別します。
+</p></dd></dl></div><p>
+<!--
+        Or
+-->
+または、
+</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+        Byte1('u')
+</span></dt><dd><p>
+<!--
+                Identifies unchanged TOASTed value (the actual value is not
+                sent).
+-->
+TOAST値が変更されないことを識別します（実際の値は送信されません）。
+</p></dd></dl></div><p>
+<!--
+        Or
+-->
+または
+</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+        Byte1('t')
+</span></dt><dd><p>
+<!--
+                Identifies the data as text formatted value.
+-->
+データがテキスト形式の値であることを識別します。
+</p></dd><dt><span class="term">
+        Int32
+</span></dt><dd><p>
+<!--
+                Length of the column value.
+-->
+列値の長さ。
+</p></dd><dt><span class="term">
+        Byte<em class="replaceable"><code>n</code></em>
+</span></dt><dd><p>
+<!--
+                The value of the column, in text format.  (A future release
+                might support additional formats.)
+                <replaceable>n</replaceable> is the above length.
+-->
+テキスト形式での列の値。
+（将来のリリースでは他の形式もサポートするかもしれません。）
+<em class="replaceable"><code>n</code></em>は上記の長さです。
+
+</p></dd></dl></div><p>
+</p></dd></dl></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="protocol-error-fields.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="protocol.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="protocol-changes.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">53.8. エラーおよび警報メッセージフィールド </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 53.10. プロトコル2.0からの変更点の要約</td></tr></table></div></body></html>

@@ -1,0 +1,1410 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>43.6. 制御構造</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="plpgsql-statements.html" title="43.5. 基本的な文" /><link rel="next" href="plpgsql-cursors.html" title="43.7. カーソル" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="plpgsql.html" title="第43章 PL/pgSQL - SQL手続き言語">第43章 <span class="application">PL/pgSQL</span> - <acronym class="acronym">SQL</acronym>手続き言語</a></td><td width="20%" align="right"></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="plpgsql-statements.html" title="43.5. 基本的な文">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="plpgsql.html" title="第43章 PL/pgSQL - SQL手続き言語">上へ</a></td><td width="60%" align="center">43.6. 制御構造</td><td width="20%" align="right"> <a accesskey="n" href="plpgsql-cursors.html" title="43.7. カーソル">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PLPGSQL-CONTROL-STRUCTURES"><div class="titlepage"><div><div><h2 class="title" style="clear: both">43.6. 制御構造</h2></div></div></div><!--
+   <title>Control Structures</title>
+--><p>
+<!--
+    Control structures are probably the most useful (and
+    important) part of <application>PL/pgSQL</application>. With
+    <application>PL/pgSQL</application>'s control structures,
+    you can manipulate <productname>PostgreSQL</productname> data in a very
+    flexible and powerful way.
+-->
+制御構造はおそらく<span class="application">PL/pgSQL</span>の最も有用（かつ重要）な部分です。
+<span class="application">PL/pgSQL</span>の制御構造を使用して、<span class="productname">PostgreSQL</span>のデータを非常に柔軟、強力に操作することができます。
+   </p><div class="sect2" id="PLPGSQL-STATEMENTS-RETURNING"><div class="titlepage"><div><div><h3 class="title">43.6.1. 関数からの復帰</h3></div></div></div><!--
+    <title>Returning From a Function</title>
+--><p>
+<!--
+     There are two commands available that allow you to return data
+     from a function: <command>RETURN</command> and <command>RETURN
+     NEXT</command>.
+-->
+関数からデータを返すために使用できるコマンドが2つあります。
+<code class="command">RETURN</code>および<code class="command">RETURN NEXT</code>です。
+    </p><div class="sect3" id="id-1.8.8.8.3.3"><div class="titlepage"><div><div><h4 class="title">43.6.1.1. <code class="command">RETURN</code></h4></div></div></div><pre class="synopsis">
+RETURN <em class="replaceable"><code>expression</code></em>;
+</pre><p>
+<!--
+      <command>RETURN</command> with an expression terminates the
+      function and returns the value of
+      <replaceable>expression</replaceable> to the caller.  This form
+      is used for <application>PL/pgSQL</application> functions that do
+      not return a set.
+-->
+式を持つ<code class="command">RETURN</code>は関数を終了し、<em class="replaceable"><code>expression</code></em>の値を呼び出し元に返します。
+この形式は集合を返さない<span class="application">PL/pgSQL</span>関数で使用されます。
+     </p><p>
+<!--
+      In a function that returns a scalar type, the expression's result will
+      automatically be cast into the function's return type as described for
+      assignments.  But to return a composite (row) value, you must write an
+      expression delivering exactly the requested column set.  This may
+      require use of explicit casting.
+-->
+スカラ型を返す関数において、代入のところで説明したように、式の結果は自動的に関数の戻り値の型にキャストされます。
+しかし、複合（行）値を返すためには、要求された列集合を正確に導出する式を記述しなければなりません。
+これにより、明示的なキャストの使用が必要となることがあります。
+     </p><p>
+<!--
+      If you declared the function with output parameters, write just
+      <command>RETURN</command> with no expression.  The current values
+      of the output parameter variables will be returned.
+-->
+出力パラメータを持った関数を宣言した時は、式の無い<code class="command">RETURN</code>を記述してください。
+その時点における出力パラメータの値が返されます。
+     </p><p>
+<!--
+      If you declared the function to return <type>void</type>, a
+      <command>RETURN</command> statement can be used to exit the function
+      early; but do not write an expression following
+      <command>RETURN</command>.
+-->
+<code class="type">void</code>を返すように関数を宣言した場合でも、関数を直ちに抜け出すために<code class="command">RETURN</code>を使用できますが、<code class="command">RETURN</code>の後に式を記述しないでください。
+     </p><p>
+<!--
+      The return value of a function cannot be left undefined. If
+      control reaches the end of the top-level block of the function
+      without hitting a <command>RETURN</command> statement, a run-time
+      error will occur.  This restriction does not apply to functions
+      with output parameters and functions returning <type>void</type>,
+      however.  In those cases a <command>RETURN</command> statement is
+      automatically executed if the top-level block finishes.
+-->
+関数の戻り値は未定義とさせたままにすることはできません。
+制御が、<code class="command">RETURN</code>文が見つからない状態で関数の最上位のブロックの終わりまで達した時、実行時エラーが発生します。
+しかし、この制限は出力パラメータを持った関数及び<code class="type">void</code>を返す関数には当てはまりません。
+このような場合は最上位のブロックが終わった時、<code class="command">RETURN</code>文が自動的に実行されます。
+     </p><p>
+<!--
+      Some examples:
+-->
+例を示します。
+
+</p><pre class="programlisting">
+<!--
+&#045;- functions returning a scalar type
+-->
+-- スカラ型を返す関数
+RETURN 1 + 2;
+RETURN scalar_var;
+
+<!--
+&#045;- functions returning a composite type
+-->
+-- 複合型を返す関数
+RETURN composite_type_var;
+<!--
+RETURN (1, 2, 'three'::text);  &#045;- must cast columns to correct types
+-->
+RETURN (1, 2, 'three'::text);  -- 正しい型の列にキャストしなければなりません
+</pre><p>
+     </p></div><div class="sect3" id="id-1.8.8.8.3.4"><div class="titlepage"><div><div><h4 class="title">43.6.1.2. <code class="command">RETURN NEXT</code>および<code class="command">RETURN QUERY</code></h4></div></div></div><!--
+     <title><command>RETURN NEXT</command> and <command>RETURN QUERY</command></title>
+--><a id="id-1.8.8.8.3.4.2" class="indexterm"></a><a id="id-1.8.8.8.3.4.3" class="indexterm"></a><pre class="synopsis">
+RETURN NEXT <em class="replaceable"><code>expression</code></em>;
+RETURN QUERY <em class="replaceable"><code>query</code></em>;
+RETURN QUERY EXECUTE <em class="replaceable"><code>command-string</code></em> [<span class="optional"> USING <em class="replaceable"><code>expression</code></em> [<span class="optional">, ... </span>] </span>];
+</pre><p>
+<!--
+      When a <application>PL/pgSQL</application> function is declared to return
+      <literal>SETOF <replaceable>sometype</replaceable></literal>, the procedure
+      to follow is slightly different.  In that case, the individual
+      items to return are specified by a sequence of <command>RETURN
+      NEXT</command> or <command>RETURN QUERY</command> commands, and
+      then a final <command>RETURN</command> command with no argument
+      is used to indicate that the function has finished executing.
+      <command>RETURN NEXT</command> can be used with both scalar and
+      composite data types; with a composite result type, an entire
+      <quote>table</quote> of results will be returned.
+      <command>RETURN QUERY</command> appends the results of executing
+      a query to the function's result set. <command>RETURN
+      NEXT</command> and <command>RETURN QUERY</command> can be freely
+      intermixed in a single set-returning function, in which case
+      their results will be concatenated.
+-->
+<span class="application">PL/pgSQL</span>関数が<code class="literal">SETOF <em class="replaceable"><code>sometype</code></em></code>を返すように宣言した場合、後続の処理が多少違います。
+この場合、戻り値の個々の項目は、<code class="command">RETURN NEXT</code>コマンドまたは<code class="command">RETURN QUERY</code>コマンドで指定されます。
+そして、引数のない最後の<code class="command">RETURN</code>コマンドにより、関数が実行を終了したことが示されます。
+<code class="command">RETURN NEXT</code>は、スカラ型および複合型の両方で使用することができます。
+複合型の場合、結果の<span class="quote">「<span class="quote">テーブル</span>」</span>全体が返されます。
+<code class="command">RETURN QUERY</code>は、問い合わせを実行した結果を関数の結果集合に追加します。
+<code class="command">RETURN NEXT</code>と<code class="command">RETURN QUERY</code>は、単一の集合を返す関数の中で自由に混合できます。
+この場合、連結されたものが結果となります。
+     </p><p>
+<!--
+      <command>RETURN NEXT</command> and <command>RETURN
+      QUERY</command> do not actually return from the function &mdash;
+      they simply append zero or more rows to the function's result
+      set.  Execution then continues with the next statement in the
+      <application>PL/pgSQL</application> function.  As successive
+      <command>RETURN NEXT</command> or <command>RETURN
+      QUERY</command> commands are executed, the result set is built
+      up.  A final <command>RETURN</command>, which should have no
+      argument, causes control to exit the function (or you can just
+      let control reach the end of the function).
+-->
+実際には、<code class="command">RETURN NEXT</code>および<code class="command">RETURN QUERY</code>は関数から戻りません。
+単に関数の結果集合に行を追加しているだけです。
+そして、その実行は<span class="application">PL/pgSQL</span>関数内の次の文に継続します。
+<code class="command">RETURN NEXT</code>または<code class="command">RETURN QUERY</code>コマンドが連続して実行されると、結果集合が作成されます。
+最後の、引数を持ってはならない<code class="command">RETURN</code>により、関数の終了を制御します
+(または制御を関数の最後に移すことができます)。
+     </p><p>
+<!--
+      <command>RETURN QUERY</command> has a variant
+      <command>RETURN QUERY EXECUTE</command>, which specifies the
+      query to be executed dynamically.  Parameter expressions can
+      be inserted into the computed query string via <literal>USING</literal>,
+      in just the same way as in the <command>EXECUTE</command> command.
+-->
+<code class="command">RETURN QUERY</code>には<code class="command">RETURN QUERY EXECUTE</code>という亜種があり、それは問い合わせが動的に実行されることを指定します。
+パラメータ式を、<code class="command">EXECUTE</code>コマンド内と全く同じように、<code class="literal">USING</code>によって演算された問い合わせ文字列に挿入することができます。
+     </p><p>
+<!--
+      If you declared the function with output parameters, write just
+      <command>RETURN NEXT</command> with no expression.  On each
+      execution, the current values of the output parameter
+      variable(s) will be saved for eventual return as a row of the
+      result.  Note that you must declare the function as returning
+      <literal>SETOF record</literal> when there are multiple output
+      parameters, or <literal>SETOF <replaceable>sometype</replaceable></literal>
+      when there is just one output parameter of type
+      <replaceable>sometype</replaceable>, in order to create a set-returning
+      function with output parameters.
+-->
+出力パラメータを持つ関数を宣言した時は、式の無い<code class="command">RETURN NEXT</code>だけを記述してください。
+実行の度に、その時点における出力パラメータの値が、関数からの戻り値のために結果の行として保存されます。
+出力パラメータを持つ集合を返す関数を作成するためには、出力パラメータが複数の時は<code class="literal">SETOF record</code>を返すように関数を宣言し、単一の<em class="replaceable"><code>sometype</code></em>型の出力パラメータの時は<code class="literal">SETOF <em class="replaceable"><code>sometype</code></em></code>を返すように関数を宣言しなければならないことに注意してください。
+     </p><p>
+<!--
+      Here is an example of a function using <command>RETURN
+      NEXT</command>:
+-->
+<code class="command">RETURN NEXT</code>を使用する関数の例を以下に示します。
+
+</p><pre class="programlisting">
+CREATE TABLE foo (fooid INT, foosubid INT, fooname TEXT);
+INSERT INTO foo VALUES (1, 2, 'three');
+INSERT INTO foo VALUES (4, 5, 'six');
+
+CREATE OR REPLACE FUNCTION get_all_foo() RETURNS SETOF foo AS
+$BODY$
+DECLARE
+    r foo%rowtype;
+BEGIN
+    FOR r IN
+        SELECT * FROM foo WHERE fooid &gt; 0
+    LOOP
+<!--
+        &#045;- can do some processing here
+        RETURN NEXT r; &#045;- return current row of SELECT
+-->
+        -- ここで処理を実行できます
+        RETURN NEXT r; -- SELECTの現在の行を返します
+    END LOOP;
+    RETURN;
+END
+$BODY$
+LANGUAGE plpgsql;
+
+SELECT * FROM get_all_foo();
+</pre><p>
+     </p><p>
+<!--
+      Here is an example of a function using <command>RETURN
+      QUERY</command>:
+-->
+<code class="command">RETURN QUERY</code>を使用する関数の例を以下に示します。
+
+</p><pre class="programlisting">
+CREATE FUNCTION get_available_flightid(date) RETURNS SETOF integer AS
+$BODY$
+BEGIN
+    RETURN QUERY SELECT flightid
+                   FROM flight
+                  WHERE flightdate &gt;= $1
+                    AND flightdate &lt; ($1 + 1);
+
+<!--
+    &#045;- Since execution is not finished, we can check whether rows were returned
+    &#045;- and raise exception if not.
+-->
+-- 実行が終わっていないので、行が返されたか検査して、行がなければ例外を発生させます。
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'No flight at %.', $1;
+    END IF;
+
+    RETURN;
+ END
+$BODY$
+LANGUAGE plpgsql;
+
+<!--
+&#045;- Returns available flights or raises exception if there are no
+&#045;- available flights.
+-->
+-- 利用できるフライトを返し、フライトがない場合は例外を発生させます。
+SELECT * FROM get_available_flightid(CURRENT_DATE);
+</pre><p>
+     </p><div class="note"><h3 class="title">注記</h3><p>
+<!--
+       The current implementation of <command>RETURN NEXT</command>
+       and <command>RETURN QUERY</command> stores the entire result set
+       before returning from the function, as discussed above.  That
+       means that if a <application>PL/pgSQL</application> function produces a
+       very large result set, performance might be poor: data will be
+       written to disk to avoid memory exhaustion, but the function
+       itself will not return until the entire result set has been
+       generated.  A future version of <application>PL/pgSQL</application> might
+       allow users to define set-returning functions
+       that do not have this limitation.  Currently, the point at
+       which data begins being written to disk is controlled by the
+       <xref linkend="guc-work-mem"/>
+       configuration variable.  Administrators who have sufficient
+       memory to store larger result sets in memory should consider
+       increasing this parameter.
+-->
+上記のように、<code class="command">RETURN NEXT</code>および<code class="command">RETURN QUERY</code>の現在の実装では、関数から返される前に結果集合全体を保管します。
+これにより、<span class="application">PL/pgSQL</span>関数が非常に大量の結果集合を返した場合、性能が低下する可能性があります。
+メモリの枯渇を避けるため、データはディスクに書き込まれます。
+しかし、関数自体は結果集合全体が生成されるまでは戻りません。
+将来の<span class="application">PL/pgSQL</span>のバージョンでは、この制限を受けずに集合を返す関数をユーザが定義できるようになるかもしれません。
+現在、データがディスクに書き込まれ始まる時点は<a class="xref" href="runtime-config-resource.html#GUC-WORK-MEM">work_mem</a>設定変数によって制御されています。
+大量の結果集合を保管するのに十分なメモリがある場合、管理者はこのパラメータの値を大きくすることを考慮すべきです。
+      </p></div></div></div><div class="sect2" id="PLPGSQL-STATEMENTS-RETURNING-PROCEDURE"><div class="titlepage"><div><div><h3 class="title">43.6.2. プロシージャからの戻り</h3></div></div></div><!--
+    <title>Returning From a Procedure</title>
+--><p>
+<!--
+     A procedure does not have a return value.  A procedure can therefore end
+     without a <command>RETURN</command> statement.  If you wish to use
+     a <command>RETURN</command> statement to exit the code early, write
+     just <command>RETURN</command> with no expression.
+-->
+プロシージャは戻り値を持ちません。
+したがって、プロシージャは<code class="command">RETURN</code>文なしで終了できます。
+早期にコードを抜けるために<code class="command">RETURN</code>文を使いたいときには、式を伴わない<code class="command">RETURN</code>だけを書いてください。
+    </p><p>
+<!--
+     If the procedure has output parameters, the final values of the output
+     parameter variables will be returned to the caller.
+-->
+プロシージャが出力パラメータを持っている場合、出力パラメータ変数の最終の値が呼び出し元に返されます。
+    </p></div><div class="sect2" id="PLPGSQL-STATEMENTS-CALLING-PROCEDURE"><div class="titlepage"><div><div><h3 class="title">43.6.3. プロシージャを呼び出す</h3></div></div></div><!--
+    <title>Calling a Procedure</title>
+--><p>
+<!--
+     A <application>PL/pgSQL</application> function, procedure,
+     or <command>DO</command> block can call a procedure
+     using <command>CALL</command>.  Output parameters are handled
+     differently from the way that <command>CALL</command> works in plain
+     SQL.  Each <literal>INOUT</literal> parameter of the procedure must
+     correspond to a variable in the <command>CALL</command> statement, and
+     whatever the procedure returns is assigned back to that variable after
+     it returns.  For example:
+-->
+<span class="application">PL/pgSQL</span>の関数、プロシージャ、<code class="command">DO</code>ブロックは、<code class="command">CALL</code>を使ってプロシージャを呼び出しできます。
+<code class="command">CALL</code>を普通のSQLで実行する場合とは、出力パラメータの扱いが異なります。
+プロシージャの各<code class="literal">INOUT</code>パラメータは<code class="command">CALL</code>文の変数と対応しなければならず、プロシージャが返すものは全て、<code class="command">CALL</code>文が返った後にこの変数に書き戻されます。
+以下に例を示します。
+</p><pre class="programlisting">
+CREATE PROCEDURE triple(INOUT x int)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    x := x * 3;
+END;
+$$;
+
+DO $$
+DECLARE myvar int := 5;
+BEGIN
+  CALL triple(myvar);
+  RAISE NOTICE 'myvar = %', myvar;  -- prints 15
+END
+$$;
+</pre><p>
+    </p></div><div class="sect2" id="PLPGSQL-CONDITIONALS"><div class="titlepage"><div><div><h3 class="title">43.6.4. 条件分岐</h3></div></div></div><!--
+    <title>Conditionals</title>
+--><p>
+<!--
+     <command>IF</command> and <command>CASE</command> statements let you execute
+     alternative commands based on certain conditions.
+     <application>PL/pgSQL</application> has three forms of <command>IF</command>:
+-->
+<code class="command">IF</code>と<code class="command">CASE</code>文はある条件に基づいて代わりのコマンドを実行させます。
+<span class="application">PL/pgSQL</span>には、以下のような３つの<code class="command">IF</code>の形式があります。
+    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p><code class="literal">IF ... THEN ... END IF</code></p></li><li class="listitem"><p><code class="literal">IF ... THEN ... ELSE ... END IF</code></p></li><li class="listitem"><p><code class="literal">IF ... THEN ... ELSIF ... THEN ... ELSE ... END IF</code></p></li></ul></div><p>
+
+<!--
+    and two forms of <command>CASE</command>:
+-->
+また、以下のような２つの<code class="command">CASE</code>の形式があります。
+    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p><code class="literal">CASE ... WHEN ... THEN ... ELSE ... END CASE</code></p></li><li class="listitem"><p><code class="literal">CASE WHEN ... THEN ... ELSE ... END CASE</code></p></li></ul></div><p>
+    </p><div class="sect3" id="id-1.8.8.8.6.3"><div class="titlepage"><div><div><h4 class="title">43.6.4.1. <code class="literal">IF-THEN</code></h4></div></div></div><pre class="synopsis">
+IF <em class="replaceable"><code>boolean-expression</code></em> THEN
+    <em class="replaceable"><code>statements</code></em>
+END IF;
+</pre><p>
+<!--
+        <literal>IF-THEN</literal> statements are the simplest form of
+        <literal>IF</literal>. The statements between
+        <literal>THEN</literal> and <literal>END IF</literal> will be
+        executed if the condition is true. Otherwise, they are
+        skipped.
+-->
+<code class="literal">IF-THEN</code>文は最も単純な<code class="literal">IF</code>の形式です。
+<code class="literal">THEN</code>と<code class="literal">END IF</code>の間の文が条件が真の場合に実行されます。
+さもなければそれらは飛ばされます。
+       </p><p>
+<!--
+        Example:
+-->
+例：
+</p><pre class="programlisting">
+IF v_user_id &lt;&gt; 0 THEN
+    UPDATE users SET email = v_email WHERE user_id = v_user_id;
+END IF;
+</pre><p>
+       </p></div><div class="sect3" id="id-1.8.8.8.6.4"><div class="titlepage"><div><div><h4 class="title">43.6.4.2. <code class="literal">IF-THEN-ELSE</code></h4></div></div></div><pre class="synopsis">
+IF <em class="replaceable"><code>boolean-expression</code></em> THEN
+    <em class="replaceable"><code>statements</code></em>
+ELSE
+    <em class="replaceable"><code>statements</code></em>
+END IF;
+</pre><p>
+<!--
+        <literal>IF-THEN-ELSE</literal> statements add to
+        <literal>IF-THEN</literal> by letting you specify an
+        alternative set of statements that should be executed if the
+        condition is not true.  (Note this includes the case where the
+        condition evaluates to NULL.)
+-->
+<code class="literal">IF-THEN-ELSE</code>文は<code class="literal">IF-THEN</code>に加え、条件評価が偽の場合に実行すべき代替となる文の集合を指定することができます。
+（これには条件がNULLと評価した場合も含まれることに注意してください。）
+       </p><p>
+<!--
+        Examples:
+-->
+例：
+</p><pre class="programlisting">
+IF parentid IS NULL OR parentid = ''
+THEN
+    RETURN fullname;
+ELSE
+    RETURN hp_true_filename(parentid) || '/' || fullname;
+END IF;
+</pre><p>
+
+</p><pre class="programlisting">
+IF v_count &gt; 0 THEN
+    INSERT INTO users_count (count) VALUES (v_count);
+    RETURN 't';
+ELSE
+    RETURN 'f';
+END IF;
+</pre><p>
+     </p></div><div class="sect3" id="id-1.8.8.8.6.5"><div class="titlepage"><div><div><h4 class="title">43.6.4.3. <code class="literal">IF-THEN-ELSIF</code></h4></div></div></div><pre class="synopsis">
+IF <em class="replaceable"><code>boolean-expression</code></em> THEN
+    <em class="replaceable"><code>statements</code></em>
+[<span class="optional"> ELSIF <em class="replaceable"><code>boolean-expression</code></em> THEN
+    <em class="replaceable"><code>statements</code></em>
+[<span class="optional"> ELSIF <em class="replaceable"><code>boolean-expression</code></em> THEN
+    <em class="replaceable"><code>statements</code></em>
+    ...
+</span>]
+</span>]
+[<span class="optional"> ELSE
+    <em class="replaceable"><code>statements</code></em> </span>]
+END IF;
+</pre><p>
+<!--
+        Sometimes there are more than just two alternatives.
+        <literal>IF-THEN-ELSIF</literal> provides a convenient
+        method of checking several alternatives in turn.
+        The <literal>IF</literal> conditions are tested successively
+        until the first one that is true is found.  Then the
+        associated statement(s) are executed, after which control
+        passes to the next statement after <literal>END IF</literal>.
+        (Any subsequent <literal>IF</literal> conditions are <emphasis>not</emphasis>
+        tested.)  If none of the <literal>IF</literal> conditions is true,
+        then the <literal>ELSE</literal> block (if any) is executed.
+-->
+選択肢が２つだけではなくより多くになる場合があります。
+<code class="literal">IF-THEN-ELSIF</code>は、順番に複数の代替手段を検査する、より便利な方法を提供します。
+<code class="literal">IF</code>条件は最初の真である結果が見つかるまで連続して検査されます。
+そして関連した文が実行され、その後<code class="literal">END IF</code>以降の次の文に制御が渡されます。
+（以降にある<code class="literal">IF</code>条件の検査はすべて実行<span class="emphasis"><em>されません</em></span>。）
+全ての<code class="literal">IF</code>条件が真でない場合、<code class="literal">ELSE</code>ブロックが（もし存在すれば）実行されます。
+機能的には、<code class="literal">IF-THEN-ELSE-IF-THEN</code>コマンドを入れ子にしたものと同じですが、必要な<code class="literal">END IF</code>は1つだけです。
+       </p><p>
+<!--
+        Here is an example:
+-->
+以下に例を示します。
+
+</p><pre class="programlisting">
+IF number = 0 THEN
+    result := 'zero';
+ELSIF number &gt; 0 THEN
+    result := 'positive';
+ELSIF number &lt; 0 THEN
+    result := 'negative';
+ELSE
+<!--
+    &#045;&#045; hmm, the only other possibility is that number is null
+-->
+    -- ふうむ、残る唯一の可能性はその値がNULLであることだ
+    result := 'NULL';
+END IF;
+</pre><p>
+       </p><p>
+<!--
+        The key word <literal>ELSIF</literal> can also be spelled
+        <literal>ELSEIF</literal>.
+-->
+<code class="literal">ELSIF</code>キーワードは<code class="literal">ELSEIF</code>のように書くことができます。
+       </p><p>
+<!--
+        An alternative way of accomplishing the same task is to nest
+        <literal>IF-THEN-ELSE</literal> statements, as in the
+        following example:
+-->
+同じ作業を遂行する別の方法は、以下の例のように<code class="literal">IF-THEN-ELSE</code>文を入れ子にすることです。
+
+</p><pre class="programlisting">
+IF demo_row.sex = 'm' THEN
+    pretty_sex := 'man';
+ELSE
+    IF demo_row.sex = 'f' THEN
+        pretty_sex := 'woman';
+    END IF;
+END IF;
+</pre><p>
+       </p><p>
+<!--
+        However, this method requires writing a matching <literal>END IF</literal>
+        for each <literal>IF</literal>, so it is much more cumbersome than
+        using <literal>ELSIF</literal> when there are many alternatives.
+-->
+しかし、この方法はそれぞれの<code class="literal">IF</code>に対応する<code class="literal">END IF</code>の記述が必要です。
+従って、多くの選択肢がある場合<code class="literal">ELSIF</code>を使用するよりも厄介です。
+       </p></div><div class="sect3" id="id-1.8.8.8.6.6"><div class="titlepage"><div><div><h4 class="title">43.6.4.4. 単純な<code class="literal">CASE</code></h4></div></div></div><!--
+      <title>Simple <literal>CASE</literal></title>
+--><pre class="synopsis">
+CASE <em class="replaceable"><code>search-expression</code></em>
+    WHEN <em class="replaceable"><code>expression</code></em> [<span class="optional">, <em class="replaceable"><code>expression</code></em> [<span class="optional"> ... </span>]</span>] THEN
+      <em class="replaceable"><code>statements</code></em>
+  [<span class="optional"> WHEN <em class="replaceable"><code>expression</code></em> [<span class="optional">, <em class="replaceable"><code>expression</code></em> [<span class="optional"> ... </span>]</span>] THEN
+      <em class="replaceable"><code>statements</code></em>
+    ... </span>]
+  [<span class="optional"> ELSE
+      <em class="replaceable"><code>statements</code></em> </span>]
+END CASE;
+</pre><p>
+<!--
+       The simple form of <command>CASE</command> provides conditional execution
+       based on equality of operands.  The <replaceable>search-expression</replaceable>
+       is evaluated (once) and successively compared to each
+       <replaceable>expression</replaceable> in the <literal>WHEN</literal> clauses.
+       If a match is found, then the corresponding
+       <replaceable>statements</replaceable> are executed, and then control
+       passes to the next statement after <literal>END CASE</literal>.  (Subsequent
+       <literal>WHEN</literal> expressions are not evaluated.)  If no match is
+       found, the <literal>ELSE</literal> <replaceable>statements</replaceable> are
+       executed; but if <literal>ELSE</literal> is not present, then a
+       <literal>CASE_NOT_FOUND</literal> exception is raised.
+-->
+<code class="command">CASE</code>の単純な形式はオペランドの等価性にもとづく条件的実行を提供します。
+<em class="replaceable"><code>search-expression</code></em>は（一度だけ）評価され、その後<code class="literal">WHEN</code>句内のそれぞれの<em class="replaceable"><code>expression</code></em>と比較されます。
+一致するものが見つかると、関連した<em class="replaceable"><code>statements</code></em>が実行され、<code class="literal">END CASE</code>の次の文に制御が渡されます。
+（以降の<code class="literal">WHEN</code>式は評価されません。）
+一致するものが見つからない場合、<code class="literal">ELSE</code> <em class="replaceable"><code>statements</code></em>が実行されますが、<code class="literal">ELSE</code>が無いときは<code class="literal">CASE_NOT_FOUND</code>例外を引き起こします。
+      </p><p>
+<!--
+       Here is a simple example:
+-->
+以下は簡単な例です。
+
+</p><pre class="programlisting">
+CASE x
+    WHEN 1, 2 THEN
+        msg := 'one or two';
+    ELSE
+        msg := 'other value than one or two';
+END CASE;
+</pre><p>
+      </p></div><div class="sect3" id="id-1.8.8.8.6.7"><div class="titlepage"><div><div><h4 class="title">43.6.4.5. 検索付き<code class="literal">CASE</code></h4></div></div></div><!--
+      <title>Searched <literal>CASE</literal></title>
+--><pre class="synopsis">
+CASE
+    WHEN <em class="replaceable"><code>boolean-expression</code></em> THEN
+      <em class="replaceable"><code>statements</code></em>
+  [<span class="optional"> WHEN <em class="replaceable"><code>boolean-expression</code></em> THEN
+      <em class="replaceable"><code>statements</code></em>
+    ... </span>]
+  [<span class="optional"> ELSE
+      <em class="replaceable"><code>statements</code></em> </span>]
+END CASE;
+</pre><p>
+<!--
+       The searched form of <command>CASE</command> provides conditional execution
+       based on truth of Boolean expressions.  Each <literal>WHEN</literal> clause's
+       <replaceable>boolean-expression</replaceable> is evaluated in turn,
+       until one is found that yields <literal>true</literal>.  Then the
+       corresponding <replaceable>statements</replaceable> are executed, and
+       then control passes to the next statement after <literal>END CASE</literal>.
+       (Subsequent <literal>WHEN</literal> expressions are not evaluated.)
+       If no true result is found, the <literal>ELSE</literal>
+       <replaceable>statements</replaceable> are executed;
+       but if <literal>ELSE</literal> is not present, then a
+       <literal>CASE_NOT_FOUND</literal> exception is raised.
+-->
+<code class="command">CASE</code>の検索された形式は論理値式の真の結果に基づく条件付き実行を提供します。
+それぞれの<code class="literal">WHEN</code>句の<em class="replaceable"><code>boolean-expression</code></em>は<code class="literal">true</code>となる１つが見つかるまで順番に評価されます。
+その後、関連する<em class="replaceable"><code>statements</code></em>が実行され、その結果<code class="literal">END CASE</code>の次の文に制御が渡されます。
+（以降の<code class="literal">WHEN</code>式は評価されません。）
+真となる結果が見つからない場合、<code class="literal">ELSE</code> <em class="replaceable"><code>statements</code></em>が実行されますが、<code class="literal">ELSE</code>が存在しないときは<code class="literal">CASE_NOT_FOUND</code>例外を引き起こします。
+      </p><p>
+<!--
+       Here is an example:
+-->
+以下は簡単な例です。
+
+</p><pre class="programlisting">
+CASE
+    WHEN x BETWEEN 0 AND 10 THEN
+        msg := 'value is between zero and ten';
+    WHEN x BETWEEN 11 AND 20 THEN
+        msg := 'value is between eleven and twenty';
+END CASE;
+</pre><p>
+      </p><p>
+<!--
+       This form of <command>CASE</command> is entirely equivalent to
+       <literal>IF-THEN-ELSIF</literal>, except for the rule that reaching
+       an omitted <literal>ELSE</literal> clause results in an error rather
+       than doing nothing.
+-->
+この形式の<code class="command">CASE</code>は、判定基準が省略された<code class="literal">ELSE</code>句に達した場合に何もしないのではなくエラーなる点を除き、<code class="literal">IF-THEN-ELSIF</code>と全く同一です。
+      </p></div></div><div class="sect2" id="PLPGSQL-CONTROL-STRUCTURES-LOOPS"><div class="titlepage"><div><div><h3 class="title">43.6.5. 単純なループ</h3></div></div></div><!--
+    <title>Simple Loops</title>
+--><a id="id-1.8.8.8.7.2" class="indexterm"></a><p>
+<!--
+     With the <literal>LOOP</literal>, <literal>EXIT</literal>,
+     <literal>CONTINUE</literal>, <literal>WHILE</literal>, <literal>FOR</literal>,
+     and <literal>FOREACH</literal> statements, you can arrange for your
+     <application>PL/pgSQL</application> function to repeat a series of commands.
+-->
+<code class="literal">LOOP</code>、<code class="literal">EXIT</code>、<code class="literal">CONTINUE</code>、<code class="literal">WHILE</code>、<code class="literal">FOR</code>、<code class="literal">FOREACH</code>文を使用して、<span class="application">PL/pgSQL</span>関数で、一連のコマンドを繰り返すことができます。
+    </p><div class="sect3" id="id-1.8.8.8.7.4"><div class="titlepage"><div><div><h4 class="title">43.6.5.1. <code class="literal">LOOP</code></h4></div></div></div><pre class="synopsis">
+[<span class="optional"> &lt;&lt;<em class="replaceable"><code>label</code></em>&gt;&gt; </span>]
+LOOP
+    <em class="replaceable"><code>statements</code></em>
+END LOOP [<span class="optional"> <em class="replaceable"><code>label</code></em> </span>];
+</pre><p>
+<!--
+      <literal>LOOP</literal> defines an unconditional loop that is repeated
+      indefinitely until terminated by an <literal>EXIT</literal> or
+      <command>RETURN</command> statement.  The optional
+      <replaceable>label</replaceable> can be used by <literal>EXIT</literal>
+      and <literal>CONTINUE</literal> statements within nested loops to
+      specify which loop those statements refer to.
+-->
+<code class="literal">LOOP</code>は、<code class="literal">EXIT</code>文または<code class="command">RETURN</code>文によって終了されるまで無限に繰り返される、条件なしのループを定義します。
+省略可能な<em class="replaceable"><code>label</code></em>は、ネステッドループにおいて<code class="literal">EXIT</code>および<code class="literal">CONTINUE</code>文がどのレベルの入れ子を参照するかを指定するために使用されます。
+     </p></div><div class="sect3" id="id-1.8.8.8.7.5"><div class="titlepage"><div><div><h4 class="title">43.6.5.2. <code class="literal">EXIT</code></h4></div></div></div><a id="id-1.8.8.8.7.5.2" class="indexterm"></a><pre class="synopsis">
+EXIT [<span class="optional"> <em class="replaceable"><code>label</code></em> </span>] [<span class="optional"> WHEN <em class="replaceable"><code>boolean-expression</code></em> </span>];
+</pre><p>
+<!--
+        If no <replaceable>label</replaceable> is given, the innermost
+        loop is terminated and the statement following <literal>END
+        LOOP</literal> is executed next.  If <replaceable>label</replaceable>
+        is given, it must be the label of the current or some outer
+        level of nested loop or block. Then the named loop or block is
+        terminated and control continues with the statement after the
+        loop's/block's corresponding <literal>END</literal>.
+-->
+<em class="replaceable"><code>label</code></em>が指定されない場合、最も内側のループを終わらせ、<code class="literal">END LOOP</code>の次の文がその後に実行されます。
+<em class="replaceable"><code>label</code></em>が指定された場合、それは現在またはその上位のネステッドループやブロックのラベルである必要があります。
+その後、指名されたループまたはブロックを終わらせ、そのループまたはブロックの対応する<code class="literal">END</code>の次の文に制御を移します。
+       </p><p>
+<!--
+        If <literal>WHEN</literal> is specified, the loop exit occurs only if
+        <replaceable>boolean-expression</replaceable> is true. Otherwise, control passes
+        to the statement after <literal>EXIT</literal>.
+-->
+<code class="literal">WHEN</code>が指定された場合、<em class="replaceable"><code>boolean-expression</code></em>が真の場合のみループの終了が起こります。
+さもなければ、<code class="literal">EXIT</code>の後の行に制御が移ります。
+       </p><p>
+<!--
+        <literal>EXIT</literal> can be used with all types of loops; it is
+        not limited to use with unconditional loops.
+-->
+<code class="literal">EXIT</code>は、すべての種類のループと共に使用できます。
+条件なしのループでの使用に限定されません。
+       </p><p>
+<!--
+        When used with a
+        <literal>BEGIN</literal> block, <literal>EXIT</literal> passes
+        control to the next statement after the end of the block.
+        Note that a label must be used for this purpose; an unlabeled
+        <literal>EXIT</literal> is never considered to match a
+        <literal>BEGIN</literal> block.  (This is a change from
+        pre-8.4 releases of <productname>PostgreSQL</productname>, which
+        would allow an unlabeled <literal>EXIT</literal> to match
+        a <literal>BEGIN</literal> block.)
+-->
+<code class="literal">BEGIN</code>ブロックと共に使用した時、<code class="literal">EXIT</code>によりブロックの次の文に制御が移ります。
+この目的のためにラベルが使用されなければならないことに注意してください。
+ラベル無しの<code class="literal">EXIT</code>は<code class="literal">BEGIN</code>ブロックに対応するとは決して考えられません。
+（これは、ラベル無しの<code class="literal">EXIT</code>が<code class="literal">BEGIN</code>ブロックに対応することを許容する<span class="productname">PostgreSQL</span>の8.4より前のリリースからの変更です。）
+       </p><p>
+<!--
+        Examples:
+-->
+例：
+</p><pre class="programlisting">
+LOOP
+<!--
+    &#045;&#045; some computations
+-->
+    -- 何らかの演算
+    IF count &gt; 0 THEN
+<!--
+        EXIT;  &#045;&#045; exit loop
+-->
+        EXIT;  -- ループを抜け出す
+    END IF;
+END LOOP;
+
+LOOP
+<!--
+    &#045;&#045; some computations
+    EXIT WHEN count &gt; 0;  &#045;&#045; same result as previous example
+-->
+-- 何らかの演算
+    EXIT WHEN count &gt; 0;  -- 上例と同じ結果
+END LOOP;
+
+&lt;&lt;ablock&gt;&gt;
+BEGIN
+<!--
+    &#045;&#045; some computations
+-->
+    -- 何らかの演算
+    IF stocks &gt; 100000 THEN
+<!--
+        EXIT ablock;  &#045;&#045; causes exit from the BEGIN block
+-->
+        EXIT ablock;  -- これによりBEGINブロックを抜け出す
+    END IF;
+<!--
+    &#045;&#045; computations here will be skipped when stocks &gt; 100000
+-->
+    -- stokcs &gt; 100000 であればここでの演算は省略
+END;
+</pre><p>
+       </p></div><div class="sect3" id="id-1.8.8.8.7.6"><div class="titlepage"><div><div><h4 class="title">43.6.5.3. <code class="literal">CONTINUE</code></h4></div></div></div><a id="id-1.8.8.8.7.6.2" class="indexterm"></a><pre class="synopsis">
+CONTINUE [<span class="optional"> <em class="replaceable"><code>label</code></em> </span>] [<span class="optional"> WHEN <em class="replaceable"><code>boolean-expression</code></em> </span>];
+</pre><p>
+<!--
+        If no <replaceable>label</replaceable> is given, the next iteration of
+        the innermost loop is begun. That is, all statements remaining
+        in the loop body are skipped, and control returns
+        to the loop control expression (if any) to determine whether
+        another loop iteration is needed.
+        If <replaceable>label</replaceable> is present, it
+        specifies the label of the loop whose execution will be
+        continued.
+-->
+<em class="replaceable"><code>label</code></em>が無い場合、すぐ外側のループの次の繰り返しが開始されます。
+すなわち、ループ本体の残りの文は飛ばされて、他のループの繰り返しが必要かどうかを決めるため、制御がループ制御式(もし存在すれば)に戻ります。
+<em class="replaceable"><code>label</code></em>が存在する場合、実行を継続するループのラベルを指定します。
+       </p><p>
+<!--
+        If <literal>WHEN</literal> is specified, the next iteration of the
+        loop is begun only if <replaceable>boolean-expression</replaceable> is
+        true. Otherwise, control passes to the statement after
+        <literal>CONTINUE</literal>.
+-->
+<code class="literal">WHEN</code>が指定された場合、<em class="replaceable"><code>boolean-expression</code></em>が真の場合のみループにおける次の繰り返しが始まります。
+さもなければ、<code class="literal">CONTINUE</code>の後の行に制御が移ります。
+       </p><p>
+<!--
+        <literal>CONTINUE</literal> can be used with all types of loops; it
+        is not limited to use with unconditional loops.
+-->
+<code class="literal">CONTINUE</code>は全ての種類のループで使用可能です。
+条件なしのループに限定されません。
+       </p><p>
+<!--
+        Examples:
+-->
+例
+</p><pre class="programlisting">
+LOOP
+<!--
+    &#045;&#045; some computations
+-->
+    -- 何らかの演算
+    EXIT WHEN count &gt; 100;
+    CONTINUE WHEN count &lt; 50;
+<!--
+    &#045;&#045; some computations for count IN [50 .. 100] 
+-->
+    -- 50から100を数える、何らかの演算
+END LOOP;
+</pre><p>
+       </p></div><div class="sect3" id="id-1.8.8.8.7.7"><div class="titlepage"><div><div><h4 class="title">43.6.5.4. <code class="literal">WHILE</code></h4></div></div></div><a id="id-1.8.8.8.7.7.2" class="indexterm"></a><pre class="synopsis">
+[<span class="optional"> &lt;&lt;<em class="replaceable"><code>label</code></em>&gt;&gt; </span>]
+WHILE <em class="replaceable"><code>boolean-expression</code></em> LOOP
+    <em class="replaceable"><code>statements</code></em>
+END LOOP [<span class="optional"> <em class="replaceable"><code>label</code></em> </span>];
+</pre><p>
+<!--
+        The <literal>WHILE</literal> statement repeats a
+        sequence of statements so long as the
+        <replaceable>boolean-expression</replaceable>
+        evaluates to true.  The expression is checked just before
+        each entry to the loop body.
+-->
+<code class="literal">WHILE</code>文は<em class="replaceable"><code>boolean-expression</code></em>の評価が真である間、一連の文を繰り返します。
+条件式は、ループ本体に入る前にのみ検査されます。
+       </p><p>
+<!--
+        For example:
+-->
+以下に例を示します。
+</p><pre class="programlisting">
+WHILE amount_owed &gt; 0 AND gift_certificate_balance &gt; 0 LOOP
+<!--
+    &#045;&#045; some computations here
+-->
+    -- ここで演算をいくつか行います。
+END LOOP;
+
+WHILE NOT done LOOP
+<!--
+    &#045;&#045; some computations here
+-->
+    -- ここで演算をいくつか行います。
+END LOOP;
+</pre><p>
+       </p></div><div class="sect3" id="PLPGSQL-INTEGER-FOR"><div class="titlepage"><div><div><h4 class="title">43.6.5.5. 整数<code class="literal">FOR</code>ループ</h4></div></div></div><!--
+      <title><literal>FOR</literal> (Integer Variant)</title>
+--><pre class="synopsis">
+[<span class="optional"> &lt;&lt;<em class="replaceable"><code>label</code></em>&gt;&gt; </span>]
+FOR <em class="replaceable"><code>name</code></em> IN [<span class="optional"> REVERSE </span>] <em class="replaceable"><code>expression</code></em> .. <em class="replaceable"><code>expression</code></em> [<span class="optional"> BY <em class="replaceable"><code>expression</code></em> </span>] LOOP
+    <em class="replaceable"><code>statements</code></em>
+END LOOP [<span class="optional"> <em class="replaceable"><code>label</code></em> </span>];
+</pre><p>
+<!--
+        This form of <literal>FOR</literal> creates a loop that iterates over a range
+        of integer values. The variable
+        <replaceable>name</replaceable> is automatically defined as type
+        <type>integer</type> and exists only inside the loop (any existing
+        definition of the variable name is ignored within the loop).
+        The two expressions giving
+        the lower and upper bound of the range are evaluated once when entering
+        the loop. If the <literal>BY</literal> clause isn't specified the iteration
+        step is 1, otherwise it's the value specified in the <literal>BY</literal>
+        clause, which again is evaluated once on loop entry.
+        If <literal>REVERSE</literal> is specified then the step value is
+        subtracted, rather than added, after each iteration.
+-->
+この形式の<code class="literal">FOR</code>は整数値の範囲内で繰り返すループを生成します。
+<em class="replaceable"><code>name</code></em>変数は<code class="type">integer</code>型として自動的に定義され、ループ内部のみで存在します
+（ループ外部で定義しても、ループ内部では全て無視されます）。
+範囲の下限、上限として与えられる2つの式はループに入った時に一度だけ評価されます。
+<code class="literal">BY</code>句を指定しない時の繰り返し刻みは1ですが、<code class="literal">BY</code>句を用いて指定でき、ループに入った時に一度だけ評価されます。
+<code class="literal">REVERSE</code>が指定された場合、繰り返し刻みの値は加算されるのではなく、繰り返しごとに減算されます。
+       </p><p>
+<!--
+        Some examples of integer <literal>FOR</literal> loops:
+-->
+整数FORループの例を以下に示します。
+</p><pre class="programlisting">
+FOR i IN 1..10 LOOP
+<!--
+    &#045;&#045; i will take on the values 1,2,3,4,5,6,7,8,9,10 within the loop
+-->
+    -- i はループ内で 1、2、3、4、5、6、7、8、9、10 の値を取ります。
+END LOOP;
+
+FOR i IN REVERSE 10..1 LOOP
+<!--
+    &#045;&#045; i will take on the values 10,9,8,7,6,5,4,3,2,1 within the loop
+-->
+    -- i はループ内で 10、9、8、7、6、5、4、3、2、1 の値を取ります。
+END LOOP;
+
+FOR i IN REVERSE 10..1 BY 2 LOOP
+<!--
+    &#045;&#045; i will take on the values 10,8,6,4,2 within the loop
+-->
+    -- i はループ内で 10、8、6、4、2 の値を取ります。
+END LOOP;
+</pre><p>
+       </p><p>
+<!--
+        If the lower bound is greater than the upper bound (or less than,
+        in the <literal>REVERSE</literal> case), the loop body is not
+        executed at all.  No error is raised.
+-->
+下限が上限よりも大きい（<code class="literal">REVERSE</code>の場合はより小さい）場合、ループ本体はまったく実行されません。
+エラーは発生しません。
+       </p><p>
+<!--
+        If a <replaceable>label</replaceable> is attached to the
+        <literal>FOR</literal> loop then the integer loop variable can be
+        referenced with a qualified name, using that
+        <replaceable>label</replaceable>.
+-->
+<em class="replaceable"><code>label</code></em>を<code class="literal">FOR</code>ループに付加することにより、<em class="replaceable"><code>label</code></em>を用いて修飾した名前の整数ループ変数を参照できます。
+       </p></div></div><div class="sect2" id="PLPGSQL-RECORDS-ITERATING"><div class="titlepage"><div><div><h3 class="title">43.6.6. 問い合わせ結果による繰り返し</h3></div></div></div><!--
+    <title>Looping Through Query Results</title>
+--><p>
+<!--
+     Using a different type of <literal>FOR</literal> loop, you can iterate through
+     the results of a query and manipulate that data
+     accordingly. The syntax is:
+-->
+別の種類の<code class="literal">FOR</code>ループを使用して、問い合わせの結果を繰り返し、そのデータを扱うことができます。
+以下に構文を示します。
+</p><pre class="synopsis">
+[<span class="optional"> &lt;&lt;<em class="replaceable"><code>label</code></em>&gt;&gt; </span>]
+FOR <em class="replaceable"><code>target</code></em> IN <em class="replaceable"><code>query</code></em> LOOP
+    <em class="replaceable"><code>statements</code></em>
+END LOOP [<span class="optional"> <em class="replaceable"><code>label</code></em> </span>];
+</pre><p>
+<!--
+     The <replaceable>target</replaceable> is a record variable, row variable,
+     or comma-separated list of scalar variables.
+     The <replaceable>target</replaceable> is successively assigned each row
+     resulting from the <replaceable>query</replaceable> and the loop body is
+     executed for each row. Here is an example:
+-->
+<em class="replaceable"><code>target</code></em>は、レコード変数、行変数またはカンマで区切ったスカラ変数のリストです。
+<em class="replaceable"><code>target</code></em>には順次、<em class="replaceable"><code>query</code></em>の結果の全ての行が代入され、各行に対してループ本体が実行されます。
+以下に例を示します。
+</p><pre class="programlisting">
+CREATE FUNCTION cs_refresh_mviews() RETURNS integer AS $$
+DECLARE
+    mviews RECORD;
+BEGIN
+    RAISE NOTICE 'Refreshing materialized views...';
+
+    FOR mviews IN SELECT * FROM cs_materialized_views ORDER BY sort_key LOOP
+
+<!--
+        &#045;&#045; Now "mviews" has one record from cs_materialized_views
+-->
+        -- ここで"mviews"はcs_materialized_viewsの1つのレコードを持ちます
+
+        RAISE NOTICE 'Refreshing materialized view %s ...', quote_ident(mviews.mv_name);
+        EXECUTE format('TRUNCATE TABLE %I', mviews.mv_name);
+        EXECUTE format('INSERT INTO %I %s', mviews.mv_name, mviews.mv_query);
+    END LOOP;
+
+    RAISE NOTICE 'Done refreshing materialized views.';
+    RETURN 1;
+END;
+$$ LANGUAGE plpgsql;
+</pre><p>
+
+<!--
+     If the loop is terminated by an <literal>EXIT</literal> statement, the last
+     assigned row value is still accessible after the loop.
+-->
+このループが<code class="literal">EXIT</code>文で終了した場合、最後に割り当てられた行の値はループを抜けた後でもアクセスすることができます。
+    </p><p>
+<!--
+     The <replaceable>query</replaceable> used in this type of <literal>FOR</literal>
+     statement can be any SQL command that returns rows to the caller:
+     <command>SELECT</command> is the most common case,
+     but you can also use <command>INSERT</command>, <command>UPDATE</command>, or
+     <command>DELETE</command> with a <literal>RETURNING</literal> clause.  Some utility
+     commands such as <command>EXPLAIN</command> will work too.
+-->
+この種類の<code class="literal">FOR</code>文の<em class="replaceable"><code>query</code></em>としては、呼び出し元に行を返すSQLコマンドをすべて使用できます。
+通常は<code class="command">SELECT</code>ですが、<code class="literal">RETURNING</code>句を持つ<code class="command">INSERT</code>、<code class="command">UPDATE</code>または<code class="command">DELETE</code>も使用できます。
+<code class="command">EXPLAIN</code>などのユーティリティコマンドも作動します。
+    </p><p>
+<!--
+     <application>PL/pgSQL</application> variables are substituted into the query text,
+     and the query plan is cached for possible re-use, as discussed in
+     detail in <xref linkend="plpgsql-var-subst"/> and
+     <xref linkend="plpgsql-plan-caching"/>.
+-->
+<span class="application">PL/pgSQL</span>変数は問い合わせテキストに置き換えられます。
+問い合わせ計画は、<a class="xref" href="plpgsql-implementation.html#PLPGSQL-VAR-SUBST" title="43.11.1. 変数置換">43.11.1</a>および<a class="xref" href="plpgsql-implementation.html#PLPGSQL-PLAN-CACHING" title="43.11.2. 計画のキャッシュ">43.11.2</a>で述べたように、再利用のためにキャッシュされます。
+    </p><p>
+<!--
+     The <literal>FOR-IN-EXECUTE</literal> statement is another way to iterate over
+     rows:
+-->
+<code class="literal">FOR-IN-EXECUTE</code>文は行を繰り返すもう1つの方法です。
+</p><pre class="synopsis">
+[<span class="optional"> &lt;&lt;<em class="replaceable"><code>label</code></em>&gt;&gt; </span>]
+FOR <em class="replaceable"><code>target</code></em> IN EXECUTE <em class="replaceable"><code>text_expression</code></em> [<span class="optional"> USING <em class="replaceable"><code>expression</code></em> [<span class="optional">, ... </span>] </span>] LOOP
+    <em class="replaceable"><code>statements</code></em>
+END LOOP [<span class="optional"> <em class="replaceable"><code>label</code></em> </span>];
+</pre><p>
+<!--
+     This is like the previous form, except that the source query
+     is specified as a string expression, which is evaluated and replanned
+     on each entry to the <literal>FOR</literal> loop.  This allows the programmer to
+     choose the speed of a preplanned query or the flexibility of a dynamic
+     query, just as with a plain <command>EXECUTE</command> statement.
+     As with <command>EXECUTE</command>, parameter values can be inserted
+     into the dynamic command via <literal>USING</literal>.
+-->
+この方法は、問い合わせのソースが文字列式で指定される点を除き、前の形式と似ています。
+この式は<code class="literal">FOR</code>ループの各項目で評価され、再計画が行われます。
+これにより、プログラマは、通常の<code class="command">EXECUTE</code>文と同じように事前に計画された問い合わせによる高速性と、動的な問い合わせの持つ柔軟性を選択することができます。
+<code class="command">EXECUTE</code>の場合と同様、パラメータ値は<code class="literal">USING</code>により動的コマンドに挿入できます。
+    </p><p>
+<!--
+     Another way to specify the query whose results should be iterated
+     through is to declare it as a cursor.  This is described in
+     <xref linkend="plpgsql-cursor-for-loop"/>.
+-->
+結果を通して繰り返さなければならない問い合わせを指定するもう１つの方法として、カーソルの宣言があります。
+これは<a class="xref" href="plpgsql-cursors.html#PLPGSQL-CURSOR-FOR-LOOP" title="43.7.4. カーソル結果に対するループ">43.7.4</a>で説明します。
+    </p></div><div class="sect2" id="PLPGSQL-FOREACH-ARRAY"><div class="titlepage"><div><div><h3 class="title">43.6.7. 配列を巡回</h3></div></div></div><!--
+    <title>Looping Through Arrays</title>
+--><p>
+<!--
+     The <literal>FOREACH</literal> loop is much like a <literal>FOR</literal> loop,
+     but instead of iterating through the rows returned by a SQL query,
+     it iterates through the elements of an array value.
+     (In general, <literal>FOREACH</literal> is meant for looping through
+     components of a composite-valued expression; variants for looping
+     through composites besides arrays may be added in future.)
+     The <literal>FOREACH</literal> statement to loop over an array is:
+-->
+<code class="literal">FOREACH</code>ループは<code class="literal">FOR</code>ループにとてもよく似ています。
+しかし、SQL 問い合わせが抽出した行を繰り返す代わりに、配列の要素を繰り返します。
+（一般的に<code class="literal">FOREACH</code>は、複合値で表現される構成要素の巡回を意味しますが、配列でない複合値も巡回する亜種が将来は追加されるかもしれません。）
+配列を巡回する<code class="literal">FOREACH</code>文を示します。
+
+</p><pre class="synopsis">
+[<span class="optional"> &lt;&lt;<em class="replaceable"><code>label</code></em>&gt;&gt; </span>]
+FOREACH <em class="replaceable"><code>target</code></em> [<span class="optional"> SLICE <em class="replaceable"><code>number</code></em> </span>] IN ARRAY <em class="replaceable"><code>expression</code></em> LOOP
+    <em class="replaceable"><code>statements</code></em>
+END LOOP [<span class="optional"> <em class="replaceable"><code>label</code></em> </span>];
+</pre><p>
+    </p><p>
+<!--
+     Without <literal>SLICE</literal>, or if <literal>SLICE 0</literal> is specified,
+     the loop iterates through individual elements of the array produced
+     by evaluating the <replaceable>expression</replaceable>.
+     The <replaceable>target</replaceable> variable is assigned each
+     element value in sequence, and the loop body is executed for each element.
+     Here is an example of looping through the elements of an integer
+     array:
+-->
+<code class="literal">SLICE</code>がない、または<code class="literal">SLICE 0</code>が指定された場合、ループは<em class="replaceable"><code>expression</code></em>によって評価されて作成された配列の各要素を繰り返します。
+<em class="replaceable"><code>target</code></em>変数が各要素の値に順次割り当てられ、各要素に対してループ本体が実行されます。
+整数配列の要素を巡回する例を示します。
+
+</p><pre class="programlisting">
+CREATE FUNCTION sum(int[]) RETURNS int8 AS $$
+DECLARE
+  s int8 := 0;
+  x int;
+BEGIN
+  FOREACH x IN ARRAY $1
+  LOOP
+    s := s + x;
+  END LOOP;
+  RETURN s;
+END;
+$$ LANGUAGE plpgsql;
+</pre><p>
+
+<!--
+     The elements are visited in storage order, regardless of the number of
+     array dimensions.  Although the <replaceable>target</replaceable> is
+     usually just a single variable, it can be a list of variables when
+     looping through an array of composite values (records).  In that case,
+     for each array element, the variables are assigned from successive
+     columns of the composite value.
+-->
+配列の次元数に関係なく、要素は格納した順番で処理されます。
+通常<em class="replaceable"><code>target</code></em>は単一の変数ですが、複合値（レコード）の配列を巡回するときは、変数のリストも可能です。
+その場合、配列の各要素に対して、変数は複合値（レコード）の列から連続的に割り当てられます。
+    </p><p>
+<!--
+     With a positive <literal>SLICE</literal> value, <literal>FOREACH</literal>
+     iterates through slices of the array rather than single elements.
+     The <literal>SLICE</literal> value must be an integer constant not larger
+     than the number of dimensions of the array.  The
+     <replaceable>target</replaceable> variable must be an array,
+     and it receives successive slices of the array value, where each slice
+     is of the number of dimensions specified by <literal>SLICE</literal>.
+     Here is an example of iterating through one-dimensional slices:
+-->
+正の<code class="literal">SLICE</code>値を持つ場合、<code class="literal">FOREACH</code>は単一の要素ではなく多次元配列の低次元部分配列を通して繰り返します。
+<code class="literal">SLICE</code>値は、配列の次元数より小さい整数定数でなければなりません。
+<em class="replaceable"><code>target</code></em>変数は配列でなければなりません。
+この変数は、配列値から連続した部分配列を受けとります
+ここで部分配列は<code class="literal">SLICE</code>で指定した次数となります。
+以下に1次元の部分配列を通した繰り返しの例を示します。
+
+</p><pre class="programlisting">
+CREATE FUNCTION scan_rows(int[]) RETURNS void AS $$
+DECLARE
+  x int[];
+BEGIN
+  FOREACH x SLICE 1 IN ARRAY $1
+  LOOP
+    RAISE NOTICE 'row = %', x;
+  END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+
+SELECT scan_rows(ARRAY[[1,2,3],[4,5,6],[7,8,9],[10,11,12]]);
+
+NOTICE:  row = {1,2,3}
+NOTICE:  row = {4,5,6}
+NOTICE:  row = {7,8,9}
+NOTICE:  row = {10,11,12}
+</pre><p>
+    </p></div><div class="sect2" id="PLPGSQL-ERROR-TRAPPING"><div class="titlepage"><div><div><h3 class="title">43.6.8. エラーの捕捉</h3></div></div></div><!--
+    <title>Trapping Errors</title>
+--><a id="id-1.8.8.8.10.2" class="indexterm"></a><p>
+<!--
+     By default, any error occurring in a <application>PL/pgSQL</application>
+     function aborts execution of the function, and indeed of the
+     surrounding transaction as well.  You can trap errors and recover
+     from them by using a <command>BEGIN</command> block with an
+     <literal>EXCEPTION</literal> clause.  The syntax is an extension of the
+     normal syntax for a <command>BEGIN</command> block:
+-->
+デフォルトでは、<span class="application">PL/pgSQL</span>関数の内部で発生したエラーは関数の実行を中止し、実際に上位のトランザクションをアボートします。
+<code class="command">BEGIN</code>ブロックおよび<code class="literal">EXCEPTION</code>句を使用すれば、エラーを捕捉してその状態から回復できます。
+その構文は通常の<code class="command">BEGIN</code>ブロックの構文を拡張したものです。
+
+</p><pre class="synopsis">
+[<span class="optional"> &lt;&lt;<em class="replaceable"><code>label</code></em>&gt;&gt; </span>]
+[<span class="optional"> DECLARE
+    <em class="replaceable"><code>declarations</code></em> </span>]
+BEGIN
+    <em class="replaceable"><code>statements</code></em>
+EXCEPTION
+    WHEN <em class="replaceable"><code>condition</code></em> [<span class="optional"> OR <em class="replaceable"><code>condition</code></em> ... </span>] THEN
+        <em class="replaceable"><code>handler_statements</code></em>
+    [<span class="optional"> WHEN <em class="replaceable"><code>condition</code></em> [<span class="optional"> OR <em class="replaceable"><code>condition</code></em> ... </span>] THEN
+          <em class="replaceable"><code>handler_statements</code></em>
+      ... </span>]
+END;
+</pre><p>
+    </p><p>
+<!--
+     If no error occurs, this form of block simply executes all the
+     <replaceable>statements</replaceable>, and then control passes
+     to the next statement after <literal>END</literal>.  But if an error
+     occurs within the <replaceable>statements</replaceable>, further
+     processing of the <replaceable>statements</replaceable> is
+     abandoned, and control passes to the <literal>EXCEPTION</literal> list.
+     The list is searched for the first <replaceable>condition</replaceable>
+     matching the error that occurred.  If a match is found, the
+     corresponding <replaceable>handler_statements</replaceable> are
+     executed, and then control passes to the next statement after
+     <literal>END</literal>.  If no match is found, the error propagates out
+     as though the <literal>EXCEPTION</literal> clause were not there at all:
+     the error can be caught by an enclosing block with
+     <literal>EXCEPTION</literal>, or if there is none it aborts processing
+     of the function.
+-->
+エラーが発生しない時、この形式のブロックは単に全ての<em class="replaceable"><code>statements</code></em>を実行し、<code class="literal">END</code>の次の文に制御が移ります。
+しかし、<em class="replaceable"><code>statements</code></em>の内部でエラーが発生すると、それ以後の<em class="replaceable"><code>statements</code></em>の処理は中断され、<code class="literal">EXCEPTION</code>リストに制御が移ります。
+そしてリストの中から、発生したエラーと合致する最初の<em class="replaceable"><code>condition</code></em>を探します。
+合致するものがあれば、対応する<em class="replaceable"><code>handler_statements</code></em>を実行し、<code class="literal">END</code>の次の文に制御が移ります。
+合致するものがなければ、<code class="literal">EXCEPTION</code>句が存在しないのと同じで、エラーは外側に伝播します。
+<code class="literal">EXCEPTION</code>を含んだ外側のブロックはエラーを捕捉できますが、失敗すると関数の処理は中断されます。
+    </p><p>
+<!--
+     The <replaceable>condition</replaceable> names can be any of
+     those shown in <xref linkend="errcodes-appendix"/>.  A category
+     name matches any error within its category.  The special
+     condition name <literal>OTHERS</literal> matches every error type except
+     <literal>QUERY_CANCELED</literal> and <literal>ASSERT_FAILURE</literal>.
+     (It is possible, but often unwise, to trap those two error types
+     by name.)  Condition names are
+     not case-sensitive.  Also, an error condition can be specified
+     by <literal>SQLSTATE</literal> code; for example these are equivalent:
+-->
+全ての<em class="replaceable"><code>condition</code></em>の名前は<a class="xref" href="errcodes-appendix.html" title="付録A PostgreSQLエラーコード">付録A</a>に示したもののいずれかを取ることができます。
+分類名はそこに分類される全てのエラーに合致します。
+<code class="literal">OTHERS</code>という特別の状態名は<code class="literal">QUERY_CANCELED</code>と<code class="literal">ASSERT_FAILURE</code>を除く全てのエラーに合致します。
+（<code class="literal">QUERY_CANCELED</code>と<code class="literal">ASSERT_FAILURE</code>を名前で捕捉することは可能ですが、賢明ではありません。）
+状態名は大文字小文字を区別しません。
+同時に、エラー状態は<code class="literal">SQLSTATE</code>コードで指定可能です。
+例えば以下は等価です。
+</p><pre class="programlisting">
+WHEN division_by_zero THEN ...
+WHEN SQLSTATE '22012' THEN ...
+</pre><p>
+    </p><p>
+<!--
+     If a new error occurs within the selected
+     <replaceable>handler_statements</replaceable>, it cannot be caught
+     by this <literal>EXCEPTION</literal> clause, but is propagated out.
+     A surrounding <literal>EXCEPTION</literal> clause could catch it.
+-->
+エラーが該当する<em class="replaceable"><code>handler_statements</code></em>内部で新たに発生した時、<code class="literal">EXCEPTION</code>句はそのエラーを捕捉できずエラーは外側に伝播します。
+なお、上位の<code class="literal">EXCEPTION</code>句はそのエラーを捕捉できます。
+    </p><p>
+<!--
+     When an error is caught by an <literal>EXCEPTION</literal> clause,
+     the local variables of the <application>PL/pgSQL</application> function
+     remain as they were when the error occurred, but all changes
+     to persistent database state within the block are rolled back.
+     As an example, consider this fragment:
+-->
+<code class="literal">EXCEPTION</code>句がエラーを捕捉した時、<span class="application">PL/pgSQL</span>関数のローカル変数はエラーが起こった後の状態を保ちます。
+しかし、ブロック内部における永続的なデータベースの状態は、ロールバックされます。
+そのような例を以下に示します。
+
+</p><pre class="programlisting">
+INSERT INTO mytab(firstname, lastname) VALUES('Tom', 'Jones');
+BEGIN
+    UPDATE mytab SET firstname = 'Joe' WHERE lastname = 'Jones';
+    x := x + 1;
+    y := x / 0;
+EXCEPTION
+    WHEN division_by_zero THEN
+        RAISE NOTICE 'caught division_by_zero';
+        RETURN x;
+END;
+</pre><p>
+
+<!--
+     When control reaches the assignment to <literal>y</literal>, it will
+     fail with a <literal>division_by_zero</literal> error.  This will be caught by
+     the <literal>EXCEPTION</literal> clause.  The value returned in the
+     <command>RETURN</command> statement will be the incremented value of
+     <literal>x</literal>, but the effects of the <command>UPDATE</command> command will
+     have been rolled back.  The <command>INSERT</command> command preceding the
+     block is not rolled back, however, so the end result is that the database
+     contains <literal>Tom Jones</literal> not <literal>Joe Jones</literal>.
+-->
+制御が変数<code class="literal">y</code>の代入に移ると、<code class="literal">division_by_zero</code>エラーとなり、<code class="literal">EXCEPTION</code>句がそのエラーを捕捉します。
+<code class="command">RETURN</code>文による関数の戻り値は、1を加算した後の<code class="literal">x</code>の値となりますが、<code class="command">UPDATE</code>コマンドによる結果はロールバックされます。
+しかし、前のブロックの<code class="command">INSERT</code>コマンドはロールバックされません。
+したがって、データベースの内容の最終結果は<code class="literal">Tom Jones</code>であり、<code class="literal">Joe Jones</code>ではありません。
+    </p><div class="tip"><h3 class="title">ヒント</h3><p>
+<!--
+      A block containing an <literal>EXCEPTION</literal> clause is significantly
+      more expensive to enter and exit than a block without one.  Therefore,
+      don't use <literal>EXCEPTION</literal> without need.
+-->
+<code class="literal">EXCEPTION</code>句を含んだブロックの実行に要する時間は、含まないブロックに比べてとても長くなります。
+したがって、必要のない時に<code class="literal">EXCEPTION</code>を使用してはいけません。
+     </p></div><div class="example" id="PLPGSQL-UPSERT-EXAMPLE"><p class="title"><strong>例43.2 <code class="command">UPDATE</code>/<code class="command">INSERT</code>の例外</strong></p><div class="example-contents"><!--
+    <title>Exceptions with <command>UPDATE</command>/<command>INSERT</command></title>
+--><p>
+
+<!--
+    This example uses exception handling to perform either
+    <command>UPDATE</command> or <command>INSERT</command>, as appropriate.  It is
+    recommended that applications use <command>INSERT</command> with
+    <literal>ON CONFLICT DO UPDATE</literal> rather than actually using
+    this pattern.  This example serves primarily to illustrate use of
+    <application>PL/pgSQL</application> control flow structures:
+-->
+これは<code class="command">UPDATE</code>または<code class="command">INSERT</code>の実行における例外処理を使用した適当な例題です。
+アプリケーションでは実際にこの方式を使うよりも、<code class="literal">ON CONFLICT DO UPDATE</code>を伴った<code class="command">INSERT</code>を使うことが推奨されます。本例は主として<span class="application">PL/pgSQL</span>の制御構造の使い方を示すものです。
+
+</p><pre class="programlisting">
+CREATE TABLE db (a INT PRIMARY KEY, b TEXT);
+
+CREATE FUNCTION merge_db(key INT, data TEXT) RETURNS VOID AS
+$$
+BEGIN
+    LOOP
+<!--
+        &#045;&#045; first try to update the key
+-->
+        -- 最初にキーを更新する
+        UPDATE db SET b = data WHERE a = key;
+        IF found THEN
+            RETURN;
+        END IF;
+<!--
+        &#045;&#045; not there, so try to insert the key
+        &#045;&#045; if someone else inserts the same key concurrently,
+        &#045;&#045; we could get a unique-key failure
+-->
+        -- キーが存在しないので、キーの挿入を試行する
+        -- 他者がすでに同一のキーを挿入していたならば
+        -- 一意性に違反する欠陥となります
+        BEGIN
+            INSERT INTO db(a,b) VALUES (key, data);
+            RETURN;
+        EXCEPTION WHEN unique_violation THEN
+<!--
+        &#045;&#045; Do nothing, and loop to try the UPDATE again.
+-->
+        -- 何もしないで、更新を再試行します
+        END;
+    END LOOP;
+END;
+$$
+LANGUAGE plpgsql;
+
+SELECT merge_db(1, 'david');
+SELECT merge_db(1, 'dennis');
+</pre><p>
+
+<!--
+     This coding assumes the <literal>unique_violation</literal> error is caused by
+     the <command>INSERT</command>, and not by, say, an <command>INSERT</command> in a
+     trigger function on the table.  It might also misbehave if there is
+     more than one unique index on the table, since it will retry the
+     operation regardless of which index caused the error.
+     More safety could be had by using the
+     features discussed next to check that the trapped error was the one
+     expected.
+-->
+このコーディングでは<code class="literal">unique_violation</code>エラーの原因が<code class="command">INSERT</code>によるものであり、テーブルのトリガ関数内部の<code class="command">INSERT</code>によるものでないと仮定します。
+また、テーブルに2つ以上の一意インデックスが存在した場合、どちらのインデックスがエラーの原因になろうと操作を再試行するので、誤作動となります。
+捕捉したエラーが予測したものであるか検証するために、次節で記述するエラー情報を利用すれば、より安全となります。
+    </p></div></div><br class="example-break" /><div class="sect3" id="PLPGSQL-EXCEPTION-DIAGNOSTICS"><div class="titlepage"><div><div><h4 class="title">43.6.8.1. エラーに関する情報の取得</h4></div></div></div><!--
+    <title>Obtaining Information About an Error</title>
+--><p>
+<!--
+     Exception handlers frequently need to identify the specific error that
+     occurred.  There are two ways to get information about the current
+     exception in <application>PL/pgSQL</application>: special variables and the
+     <command>GET STACKED DIAGNOSTICS</command> command.
+-->
+例外ハンドラはしばしば、起こった特定のエラーを識別する必要があります。
+現在の例外に関する情報を取得する方法は2つあります。
+特殊な変数と<code class="command">GET STACKED DIAGNOSTICS</code>コマンドです。
+    </p><p>
+<!--
+     Within an exception handler, the special variable
+     <varname>SQLSTATE</varname> contains the error code that corresponds to
+     the exception that was raised (refer to <xref linkend="errcodes-table"/>
+     for a list of possible error codes). The special variable
+     <varname>SQLERRM</varname> contains the error message associated with the
+     exception. These variables are undefined outside exception handlers.
+-->
+例外ハンドラの内部では、特殊な変数<code class="varname">SQLSTATE</code>変数が起こった例外に対応したエラーコード（<a class="xref" href="errcodes-appendix.html#ERRCODES-TABLE" title="表A.1 PostgreSQLエラーコード">表 A.1</a>のエラーコード表を参照してください）を保有します。
+特殊な変数<code class="varname">SQLERRM</code>は例外に関連したエラーメッセージを保有します。
+これらの変数は、例外ハンドラの外部では定義されていません。
+    </p><p>
+<!--
+     Within an exception handler, one may also retrieve
+     information about the current exception by using the
+     <command>GET STACKED DIAGNOSTICS</command> command, which has the form:
+-->
+例外ハンドラの内部では、<code class="command">GET STACKED DIAGNOSTICS</code>コマンドを使用して、現在の例外に関する情報を取り出すこともできます。
+次のようなやり方となります。
+
+</p><pre class="synopsis">
+GET STACKED DIAGNOSTICS <em class="replaceable"><code>variable</code></em> { = | := } <em class="replaceable"><code>item</code></em> [<span class="optional"> , ... </span>];
+</pre><p>
+
+<!--
+     Each <replaceable>item</replaceable> is a key word identifying a status
+     value to be assigned to the specified <replaceable>variable</replaceable>
+     (which should be of the right data type to receive it).  The currently
+     available status items are shown
+     in <xref linkend="plpgsql-exception-diagnostics-values"/>.
+-->
+各<em class="replaceable"><code>item</code></em>は、指定された変数（これは受け取るために正しいデータ型でなければなりません）に代入される状態値を識別するキーワードです。
+現在使用可能なステータス項目は<a class="xref" href="plpgsql-control-structures.html#PLPGSQL-EXCEPTION-DIAGNOSTICS-VALUES" title="表43.2 エラーの診断値">表 43.2</a>に表示されています。
+    </p><div class="table" id="PLPGSQL-EXCEPTION-DIAGNOSTICS-VALUES"><p class="title"><strong>表43.2 エラーの診断値</strong></p><div class="table-contents"><!--
+      <title>Error Diagnostics Items</title>
+--><table class="table" summary="エラーの診断値" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>名前</th><th>型</th><th>説明</th></tr></thead><tbody><tr><td><code class="literal">RETURNED_SQLSTATE</code></td><td><code class="type">text</code></td><td>例外のSQLSTATEエラーコード</td></tr><tr><td><code class="literal">COLUMN_NAME</code></td><td><code class="type">text</code></td><td>例外に関する列名</td></tr><tr><td><code class="literal">CONSTRAINT_NAME</code></td><td><code class="type">text</code></td><td>例外に関する制約名</td></tr><tr><td><code class="literal">PG_DATATYPE_NAME</code></td><td><code class="type">text</code></td><td>例外に関するデータ型名</td></tr><tr><td><code class="literal">MESSAGE_TEXT</code></td><td><code class="type">text</code></td><td>例外の主要なメッセージのテキスト</td></tr><tr><td><code class="literal">TABLE_NAME</code></td><td><code class="type">text</code></td><td>例外に関するテーブル名</td></tr><tr><td><code class="literal">SCHEMA_NAME</code></td><td><code class="type">text</code></td><td>例外に関するスキーマ名</td></tr><tr><td><code class="literal">PG_EXCEPTION_DETAIL</code></td><td><code class="type">text</code></td><td>例外の詳細なメッセージのテキスト、存在する場合</td></tr><tr><td><code class="literal">PG_EXCEPTION_HINT</code></td><td><code class="type">text</code></td><td>例外のヒントとなるメッセージのテキスト、存在する場合</td></tr><tr><td><code class="literal">PG_EXCEPTION_CONTEXT</code></td><td><code class="type">text</code></td><td>例外時における呼び出しスタックを記述するテキストの行（<a class="xref" href="plpgsql-control-structures.html#PLPGSQL-CALL-STACK" title="43.6.9. 実行位置情報の取得">43.6.9</a>を参照）</td></tr></tbody></table></div></div><br class="table-break" /><p>
+<!--
+     If the exception did not set a value for an item, an empty string
+     will be returned.
+-->
+例外が項目の値を設定しない場合、空文字列が返されます。
+    </p><p>
+<!--
+     Here is an example:
+-->
+以下に例を示します。
+</p><pre class="programlisting">
+DECLARE
+  text_var1 text;
+  text_var2 text;
+  text_var3 text;
+BEGIN
+<!--
+  &#045;&#045; some processing which might cause an exception
+-->
+  -- 例外を引き起こす処理
+  ...
+EXCEPTION WHEN OTHERS THEN
+  GET STACKED DIAGNOSTICS text_var1 = MESSAGE_TEXT,
+                          text_var2 = PG_EXCEPTION_DETAIL,
+                          text_var3 = PG_EXCEPTION_HINT;
+END;
+</pre><p>
+    </p></div></div><div class="sect2" id="PLPGSQL-CALL-STACK"><div class="titlepage"><div><div><h3 class="title">43.6.9. 実行位置情報の取得</h3></div></div></div><!--
+   <title>Obtaining Execution Location Information</title>
+--><p>
+<!--
+    The <command>GET DIAGNOSTICS</command> command, previously described
+    in <xref linkend="plpgsql-statements-diagnostics"/>, retrieves information
+    about current execution state (whereas the <command>GET STACKED
+    DIAGNOSTICS</command> command discussed above reports information about
+    the execution state as of a previous error).  Its <literal>PG_CONTEXT</literal>
+    status item is useful for identifying the current execution
+    location.  <literal>PG_CONTEXT</literal> returns a text string with line(s)
+    of text describing the call stack.  The first line refers to the current
+    function and currently executing <command>GET DIAGNOSTICS</command>
+    command.  The second and any subsequent lines refer to calling functions
+    further up the call stack.  For example:
+-->
+以前、<a class="xref" href="plpgsql-statements.html#PLPGSQL-STATEMENTS-DIAGNOSTICS" title="43.5.5. 結果ステータスの取得">43.5.5</a>に記載されていた<code class="command">GET DIAGNOSTICS</code>コマンドは、現在の実行状態に関する情報を取得します（対して、前述の<code class="command">GET STACKED DIAGNOSTICS</code>コマンドは一つ前のエラー時点の実行状態を報告します）。
+これの<code class="literal">PG_CONTEXT</code>ステータス項目は現在の実行位置を識別するのに役立ちます。
+<code class="literal">PG_CONTEXT</code>は呼び出しスタックを記述したテキスト行を含むテキスト文字列を返します。
+最初の行は現在の関数と現在実行中の<code class="command">GET DIAGNOSTICS</code>コマンドを参照します。
+次行および後の行は、呼び出しスタック上の呼び出し関数を参照します。
+例を示します。
+
+</p><pre class="programlisting">
+CREATE OR REPLACE FUNCTION outer_func() RETURNS integer AS $$
+BEGIN
+  RETURN inner_func();
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION inner_func() RETURNS integer AS $$
+DECLARE
+  stack text;
+BEGIN
+  GET DIAGNOSTICS stack = PG_CONTEXT;
+  RAISE NOTICE E'--- Call Stack ---\n%', stack;
+  RETURN 1;
+END;
+$$ LANGUAGE plpgsql;
+
+SELECT outer_func();
+
+NOTICE:  --- Call Stack ---
+PL/pgSQL function inner_func() line 5 at GET DIAGNOSTICS
+PL/pgSQL function outer_func() line 3 at RETURN
+CONTEXT:  PL/pgSQL function outer_func() line 3 at RETURN
+ outer_func
+ ------------
+           1
+(1 row)
+</pre><p>
+
+   </p><p>
+<!--
+    <literal>GET STACKED DIAGNOSTICS ... PG_EXCEPTION_CONTEXT</literal>
+    returns the same sort of stack trace, but describing the location
+    at which an error was detected, rather than the current location.
+-->
+    <code class="literal">GET STACKED DIAGNOSTICS ... PG_EXCEPTION_CONTEXT</code>は同種のスタックトレースを返しますが、現在の位置ではなく、エラーが検出されたところの位置を記述します。
+   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="plpgsql-statements.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="plpgsql.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="plpgsql-cursors.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">43.5. 基本的な文 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 43.7. カーソル</td></tr></table></div></body></html>

@@ -1,0 +1,1631 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>36.15. Informix互換モード</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="ecpg-sql-whenever.html" title="WHENEVER" /><link rel="next" href="ecpg-develop.html" title="36.16. 内部" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="ecpg.html" title="第36章 ECPG - C言語による埋め込みSQL">第36章 <span class="application">ECPG</span> - C言語による埋め込み<acronym class="acronym">SQL</acronym></a></td><td width="20%" align="right"></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="ecpg-sql-whenever.html" title="WHENEVER">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="ecpg.html" title="第36章 ECPG - C言語による埋め込みSQL">上へ</a></td><td width="60%" align="center">36.15. <span class="productname">Informix</span>互換モード</td><td width="20%" align="right"> <a accesskey="n" href="ecpg-develop.html" title="36.16. 内部">次へ</a></td></tr></table><hr /></div><div class="sect1" id="ECPG-INFORMIX-COMPAT"><div class="titlepage"><div><div><h2 class="title" style="clear: both">36.15. <span class="productname">Informix</span>互換モード</h2></div></div></div><!--
+  <title><productname>Informix</productname> Compatibility Mode</title>
+--><p>
+<!--
+   <command>ecpg</command> can be run in a so-called <firstterm>Informix compatibility mode</firstterm>. If
+   this mode is active, it tries to behave as if it were the <productname>Informix</productname>
+   precompiler for <productname>Informix</productname> E/SQL. Generally spoken this will allow you to use
+   the dollar sign instead of the <literal>EXEC SQL</literal> primitive to introduce
+   embedded SQL commands:
+-->
+<code class="command">ecpg</code>を<em class="firstterm">Informix互換モード</em>というモードで動作させることができます。
+このモードが有効ならば、<span class="productname">Informix</span> E/SQL用の<span class="productname">Informix</span>プリプロセッサであるかのように動作します。
+一般的にいうと、これにより埋め込みSQLコマンドを導入する際に<code class="literal">EXEC SQL</code>プリミティブの代わりにドル記号を使用することができます。
+</p><pre class="programlisting">
+$int j = 3;
+$CONNECT TO :dbname;
+$CREATE TABLE test(i INT PRIMARY KEY, j INT);
+$INSERT INTO test(i, j) VALUES (7, :j);
+$COMMIT;
+</pre><p>
+  </p><div class="note"><h3 class="title">注記</h3><p>
+<!--
+    There must not be any white space between the <literal>$</literal>
+    and a following preprocessor directive, that is,
+    <literal>include</literal>, <literal>define</literal>, <literal>ifdef</literal>,
+    etc.  Otherwise, the preprocessor will parse the token as a host
+    variable.
+-->
+<code class="literal">$</code>とその後に続く<code class="literal">include</code>、<code class="literal">define</code>、<code class="literal">ifdef</code>などのプリプロセッサ指示子の間に空白文字を含めてはなりません。
+こうしないと、プリプロセッサはトークンをホスト変数として解析します。
+   </p></div><p>
+<!--
+   There are two compatibility modes: <literal>INFORMIX</literal>, <literal>INFORMIX_SE</literal>
+-->
+<code class="literal">INFORMIX</code>、<code class="literal">INFORMIX_SE</code>という2つの互換モードがあります。
+  </p><p>
+<!--
+   When linking programs that use this compatibility mode, remember to link
+   against <literal>libcompat</literal> that is shipped with ECPG.
+-->
+互換モードを使用するプログラムをリンクする際、ECPGに同梱される<code class="literal">libcompat</code>とリンクすることを忘れないでください。
+  </p><p>
+<!--
+   Besides the previously explained syntactic sugar, the <productname>Informix</productname> compatibility
+   mode ports some functions for input, output and transformation of data as
+   well as embedded SQL statements known from E/SQL to ECPG.
+-->
+以前に説明した構文上の飾りの他に、<span class="productname">Informix</span>互換モードでは、入力、出力、データ変換関数、E/SQLからECPGで既知の埋め込みSQL文変換に関する関数もいくつか移植しています。
+  </p><p>
+<!--
+   <productname>Informix</productname> compatibility mode is closely connected to the pgtypeslib library
+   of ECPG. pgtypeslib maps SQL data types to data types within the C host
+   program and most of the additional functions of the <productname>Informix</productname> compatibility
+   mode allow you to operate on those C host program types. Note however that
+   the extent of the compatibility is limited. It does not try to copy <productname>Informix</productname>
+   behavior; it allows you to do more or less the same operations and gives
+   you functions that have the same name and the same basic behavior but it is
+   no drop-in replacement if you are using <productname>Informix</productname> at the moment. Moreover,
+   some of the data types are different. For example,
+   <productname>PostgreSQL's</productname> datetime and interval types do not
+   know about ranges like for example <literal>YEAR TO MINUTE</literal> so you won't
+   find support in ECPG for that either.
+-->
+<span class="productname">Informix</span>互換モードはECPGのpgtypeslibライブラリと密接に関係しています。
+pgtypeslibはSQLデータ型とCホストプログラム内のデータ型を対応付けし、ほとんどの<span class="productname">Informix</span>互換モードで追加された関数を使用してこれらのCホストプログラム型を操作することができます。
+しかし、互換範囲は制限されています。
+これは<span class="productname">Informix</span>の動作を真似ることはしません。
+これを使用して、多少は同じ名前で同じ基本動作を行う関数を操作、提供できますが、<span class="productname">Informix</span>を使用しているのであれば、完全な置き換えにはなりません。
+さらに一部のデータ型は異なります。
+例えば、<span class="productname">PostgreSQL</span>の日付時刻やinterval型では<code class="literal">YEAR TO MINUTE</code>のような範囲を持ちませんので、これらはECPGではサポートできないことがわかります。
+  </p><div class="sect2" id="ECPG-INFORMIX-TYPES"><div class="titlepage"><div><div><h3 class="title">36.15.1. 追加の型</h3></div></div></div><!--
+   <title>Additional Types</title>
+--><p>
+<!--
+    The Informix-special "string" pseudo-type for storing right-trimmed character string data is now
+    supported in Informix-mode without using <literal>typedef</literal>. In fact, in Informix-mode,
+    ECPG refuses to process source files that contain <literal>typedef sometype string;</literal>
+-->
+右側を切り詰めた文字列データを格納するInformixの特別な"string"仮想型は<code class="literal">typedef</code>を使用せずともInformixモードでサポートされるようになりました。
+実際Informixモードでは、ECPGは<code class="literal">typedef sometype string;</code>を含むソースファイルの処理を拒絶します。
+</p><pre class="programlisting">
+EXEC SQL BEGIN DECLARE SECTION;
+<!--
+string userid; /* this variable will contain trimmed data */
+-->
+string userid; /* この変数は切り詰められたデータを含むことになる */
+EXEC SQL END DECLARE SECTION;
+
+EXEC SQL FETCH MYCUR INTO :userid;
+</pre><p>
+   </p></div><div class="sect2" id="ECPG-INFORMIX-STATEMENTS"><div class="titlepage"><div><div><h3 class="title">36.15.2. 追加または存在しない埋め込みSQL文</h3></div></div></div><!--
+   <title>Additional/Missing Embedded SQL Statements</title>
+--><p>
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">CLOSE DATABASE</code></span></dt><dd><p>
+<!--
+        This statement closes the current connection. In fact, this is a
+        synonym for ECPG's <literal>DISCONNECT CURRENT</literal>:
+-->
+このSQL文は現在の接続を閉じます。
+実際、これはECPGの<code class="literal">DISCONNECT CURRENT</code>と同義です。
+</p><pre class="programlisting">
+<!--
+$CLOSE DATABASE;                /* close the current connection */
+-->
+$CLOSE DATABASE;                /* 現在の接続を閉じる */
+EXEC SQL CLOSE DATABASE;
+</pre><p>
+       </p></dd><dt><span class="term"><code class="literal">FREE cursor_name</code></span></dt><dd><p>
+<!--
+        Due to the differences how ECPG works compared to Informix's ESQL/C (i.e. which steps
+        are purely grammar transformations and which steps rely on the underlying run-time library)
+        there is no <literal>FREE cursor_name</literal> statement in ECPG. This is because in ECPG,
+        <literal>DECLARE CURSOR</literal> doesn't translate to a function call into
+        the run-time library that uses to the cursor name. This means that there's no run-time
+        bookkeeping of SQL cursors in the ECPG run-time library, only in the PostgreSQL server.
+-->
+InformixのESQL/Cと比べECPGの動作方法に違いがあります(つまり純粋に文法の変換がどの段階で行われ、背後の実行時ライブラリにどの段階で依存するか)ので、ECPGには<code class="literal">FREE cursor_name</code>文はありません。
+このためECPGにおいて、<code class="literal">DECLARE CURSOR</code>がカーソル名を使用する実行時ライブラリ内の関数呼び出しに変換されません。
+これはECPG実行時ライブラリ内ではSQLカーソルの実行状況を保持しておらず、PostgreSQLサーバ内のみで保持していることを意味します。
+       </p></dd><dt><span class="term"><code class="literal">FREE statement_name</code></span></dt><dd><p>
+<!--
+        <literal>FREE statement_name</literal> is a synonym for <literal>DEALLOCATE PREPARE statement_name</literal>.
+-->
+<code class="literal">FREE statement_name</code>は<code class="literal">DEALLOCATE PREPARE statement_name</code>の類義語です。
+       </p></dd></dl></div><p>
+   </p></div><div class="sect2" id="ECPG-INFORMIX-SQLDA"><div class="titlepage"><div><div><h3 class="title">36.15.3. Informix互換SQLDA記述子領域</h3></div></div></div><!--
+   <title>Informix-compatible SQLDA Descriptor Areas</title>
+--><p>
+<!--
+    Informix-compatible mode supports a different structure than the one described in
+    <xref linkend="ecpg-sqlda-descriptors"/>. See below:
+-->
+Informix互換モードは<a class="xref" href="ecpg-descriptors.html#ECPG-SQLDA-DESCRIPTORS" title="36.7.2. SQLDA記述子領域">36.7.2</a>の説明と異なる構造体をサポートします。
+以下を参照してください。
+</p><pre class="programlisting">
+struct sqlvar_compat
+{
+    short   sqltype;
+    int     sqllen;
+    char   *sqldata;
+    short  *sqlind;
+    char   *sqlname;
+    char   *sqlformat;
+    short   sqlitype;
+    short   sqlilen;
+    char   *sqlidata;
+    int     sqlxid;
+    char   *sqltypename;
+    short   sqltypelen;
+    short   sqlownerlen;
+    short   sqlsourcetype;
+    char   *sqlownername;
+    int     sqlsourceid;
+    char   *sqlilongdata;
+    int     sqlflags;
+    void   *sqlreserved;
+};
+
+struct sqlda_compat
+{
+    short  sqld;
+    struct sqlvar_compat *sqlvar;
+    char   desc_name[19];
+    short  desc_occ;
+    struct sqlda_compat *desc_next;
+    void  *reserved;
+};
+
+typedef struct sqlvar_compat    sqlvar_t;
+typedef struct sqlda_compat     sqlda_t;
+</pre><p>
+   </p><p>
+<!--
+    The global properties are:
+-->
+大域的な属性を以下に示します。
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">sqld</code></span></dt><dd><p>
+<!--
+        The number of fields in the <literal>SQLDA</literal> descriptor.
+-->
+<code class="literal">SQLDA</code>記述子内のフィールド数です。
+       </p></dd><dt><span class="term"><code class="literal">sqlvar</code></span></dt><dd><p>
+<!--
+        Pointer to the per-field properties.
+-->
+フィールド単位の属性へのポインタです。
+       </p></dd><dt><span class="term"><code class="literal">desc_name</code></span></dt><dd><p>
+<!--
+        Unused, filled with zero-bytes.
+-->
+未使用です。
+ゼロバイトで埋められます。
+       </p></dd><dt><span class="term"><code class="literal">desc_occ</code></span></dt><dd><p>
+<!--
+        Size of the allocated structure.
+-->
+割り当てられた構造体のサイズです。
+       </p></dd><dt><span class="term"><code class="literal">desc_next</code></span></dt><dd><p>
+<!--
+        Pointer to the next SQLDA structure if the result set contains more than one record.
+-->
+結果セットに複数のレコードが含まれる場合、次のSQLDA構造体へのポインタです。
+       </p></dd><dt><span class="term"><code class="literal">reserved</code></span></dt><dd><p>
+<!--
+        Unused pointer, contains NULL. Kept for Informix-compatibility.
+-->
+未使用のポインタでNULLが含まれます。
+Informix互換のために保持されます。
+       </p></dd></dl></div><p>
+
+<!--
+    The per-field properties are below, they are stored in the <literal>sqlvar</literal> array:
+-->
+フィールド毎の属性を以下に示します。
+これらは<code class="literal">sqlvar</code>配列内に格納されます。
+
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">sqltype</code></span></dt><dd><p>
+<!--
+        Type of the field. Constants are in <literal>sqltypes.h</literal>
+-->
+フィールドの型です。
+定数は<code class="literal">sqltypes.h</code>内に記載されています。
+       </p></dd><dt><span class="term"><code class="literal">sqllen</code></span></dt><dd><p>
+<!--
+        Length of the field data.
+-->
+フィールドデータ長です。
+       </p></dd><dt><span class="term"><code class="literal">sqldata</code></span></dt><dd><p>
+<!--
+        Pointer to the field data. The pointer is of <literal>char *</literal> type,
+        the data pointed by it is in a binary format. Example:
+-->
+フィールドデータへのポインタです。
+このポインタは<code class="literal">char *</code>型です。
+指し示されるデータはバイナリ書式です。
+以下に例を示します。
+</p><pre class="programlisting">
+int intval;
+
+switch (sqldata-&gt;sqlvar[i].sqltype)
+{
+    case SQLINTEGER:
+        intval = *(int *)sqldata-&gt;sqlvar[i].sqldata;
+        break;
+  ...
+}
+</pre><p>
+       </p></dd><dt><span class="term"><code class="literal">sqlind</code></span></dt><dd><p>
+<!--
+        Pointer to the NULL indicator. If returned by DESCRIBE or FETCH then it's always a valid pointer.
+        If used as input for <literal>EXECUTE ... USING sqlda;</literal> then NULL-pointer value means
+        that the value for this field is non-NULL. Otherwise a valid pointer and <literal>sqlitype</literal>
+        has to be properly set. Example:
+-->
+NULL指示子へのポインタです。
+DESCRIBEまたはFETCHで返される場合、常に有効なポインタです。
+<code class="literal">EXECUTE ... USING sqlda;</code>への入力として使用される場合、NULLポインタ値はこのフィールドの値が非NULLであることを意味します。
+さもなくば、有効なポインタと<code class="literal">sqlitype</code>は適切に設定されなければなりません。
+以下に例を示します。
+</p><pre class="programlisting">
+if (*(int2 *)sqldata-&gt;sqlvar[i].sqlind != 0)
+    printf("value is NULL\n");
+</pre><p>
+       </p></dd><dt><span class="term"><code class="literal">sqlname</code></span></dt><dd><p>
+<!--
+        Name of the field. 0-terminated string.
+-->
+フィールド名です。
+ゼロ終端の文字列です。
+       </p></dd><dt><span class="term"><code class="literal">sqlformat</code></span></dt><dd><p>
+<!--
+        Reserved in Informix, value of <function>PQfformat()</function> for the field.
+-->
+Informixでは予約されています。
+このフィールドの<code class="function">PQfformat()</code>の値です。
+       </p></dd><dt><span class="term"><code class="literal">sqlitype</code></span></dt><dd><p>
+<!--
+        Type of the NULL indicator data. It's always SQLSMINT when returning data from the server.
+        When the <literal>SQLDA</literal> is used for a parameterized query, the data is treated
+        according to the set type.
+-->
+NULL指示子データの型です。
+サーバからデータが返される場合は常にSQLSMINTです。
+パラメータ付き問い合わせで<code class="literal">SQLDA</code>が使用される時、データは集合型にしたがって扱われます。
+       </p></dd><dt><span class="term"><code class="literal">sqlilen</code></span></dt><dd><p>
+<!--
+        Length of the NULL indicator data.
+-->
+NULL指示子データの長さです。
+       </p></dd><dt><span class="term"><code class="literal">sqlxid</code></span></dt><dd><p>
+<!--
+        Extended type of the field, result of <function>PQftype()</function>.
+-->
+フィールドの拡張型で、<code class="function">PQftype()</code>の結果です。
+       </p></dd><dt><span class="term"><code class="literal">sqltypename</code><br /></span><span class="term"><code class="literal">sqltypelen</code><br /></span><span class="term"><code class="literal">sqlownerlen</code><br /></span><span class="term"><code class="literal">sqlsourcetype</code><br /></span><span class="term"><code class="literal">sqlownername</code><br /></span><span class="term"><code class="literal">sqlsourceid</code><br /></span><span class="term"><code class="literal">sqlflags</code><br /></span><span class="term"><code class="literal">sqlreserved</code></span></dt><dd><p>
+<!--
+        Unused.
+-->
+未使用です。
+       </p></dd><dt><span class="term"><code class="literal">sqlilongdata</code></span></dt><dd><p>
+<!--
+        It equals to <literal>sqldata</literal> if <literal>sqllen</literal> is larger than 32kB.
+-->
+<code class="literal">sqllen</code>が32キロバイトより大きい場合<code class="literal">sqldata</code>と同じです。
+       </p></dd></dl></div><p>
+
+<!--
+    Example:
+-->
+以下に例を示します。
+</p><pre class="programlisting">
+EXEC SQL INCLUDE sqlda.h;
+
+<!--
+    sqlda_t        *sqlda; /* This doesn't need to be under embedded DECLARE SECTION */
+-->
+    sqlda_t        *sqlda; /* これは埋め込まれたDECLARE SECTIONの中にある必要はない */
+
+    EXEC SQL BEGIN DECLARE SECTION;
+    char *prep_stmt = "select * from table1";
+    int i;
+    EXEC SQL END DECLARE SECTION;
+
+    ...
+
+    EXEC SQL PREPARE mystmt FROM :prep_stmt;
+
+    EXEC SQL DESCRIBE mystmt INTO sqlda;
+
+    printf("# of fields: %d\n", sqlda-&gt;sqld);
+    for (i = 0; i &lt; sqlda-&gt;sqld; i++)
+      printf("field %d: \"%s\"\n", sqlda-&gt;sqlvar[i]-&gt;sqlname);
+
+    EXEC SQL DECLARE mycursor CURSOR FOR mystmt;
+    EXEC SQL OPEN mycursor;
+    EXEC SQL WHENEVER NOT FOUND GOTO out;
+
+    while (1)
+    {
+      EXEC SQL FETCH mycursor USING sqlda;
+    }
+
+    EXEC SQL CLOSE mycursor;
+
+<!--
+    free(sqlda); /* The main structure is all to be free(),
+                  * sqlda and sqlda-&gt;sqlvar is in one allocated area */
+-->
+    free(sqlda); /* 主な構造体はすべてfree()される、
+                  * sqldaとsqlda-&gt;sqlvarは1つの割り当て領域内にある */
+</pre><p>
+<!--
+    For more information, see the <literal>sqlda.h</literal> header and the
+    <literal>src/interfaces/ecpg/test/compat_informix/sqlda.pgc</literal> regression test.
+-->
+より詳細については<code class="literal">sqlda.h</code>ヘッダファイルと<code class="literal">src/interfaces/ecpg/test/compat_informix/sqlda.pgc</code>リグレッションテストを参照してください。
+   </p></div><div class="sect2" id="ECPG-INFORMIX-FUNCTIONS"><div class="titlepage"><div><div><h3 class="title">36.15.4. 追加関数</h3></div></div></div><!--
+   <title>Additional Functions</title>
+--><p>
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="function">decadd</code></span></dt><dd><p>
+<!--
+        Add two decimal type values.
+-->
+2つのdecimal型変数を加算します。
+</p><pre class="synopsis">
+int decadd(decimal *arg1, decimal *arg2, decimal *sum);
+</pre><p>
+<!--
+        The function receives a pointer to the first operand of type decimal
+        (<literal>arg1</literal>), a pointer to the second operand of type decimal
+        (<literal>arg2</literal>) and a pointer to a value of type decimal that will
+        contain the sum (<literal>sum</literal>). On success, the function returns 0.
+        <symbol>ECPG_INFORMIX_NUM_OVERFLOW</symbol> is returned in case of overflow and
+        <symbol>ECPG_INFORMIX_NUM_UNDERFLOW</symbol> in case of underflow. -1 is returned for
+        other failures and <varname>errno</varname> is set to the respective <varname>errno</varname> number of the
+        pgtypeslib.
+-->
+この関数は、decimal型の最初の演算項目(<code class="literal">arg1</code>)へのポインタ、decimal型の2番目の演算項目(<code class="literal">arg2</code>)へのポインタ、加算結果を格納するdecimal型値(<code class="literal">sum</code>)へのポインタを受付けます。
+成功すると、この関数は0を返します。
+オーバーフローが発生した場合は<code class="symbol">ECPG_INFORMIX_NUM_OVERFLOW</code>が、アンダーフローの場合は<code class="symbol">ECPG_INFORMIX_NUM_UNDERFLOW</code>が返ります。
+この他の失敗が発生した場合は-1が返り、<code class="varname">errno</code>にはpgtypeslibにおける対応する<code class="varname">errno</code>番号が設定されます。
+       </p></dd><dt><span class="term"><code class="function">deccmp</code></span></dt><dd><p>
+<!--
+        Compare two variables of type decimal.
+-->
+2つのdecimal型変数を比較します。
+</p><pre class="synopsis">
+int deccmp(decimal *arg1, decimal *arg2);
+</pre><p>
+<!--
+        The function receives a pointer to the first decimal value
+        (<literal>arg1</literal>), a pointer to the second decimal value
+        (<literal>arg2</literal>) and returns an integer value that indicates which is
+        the bigger value.
+-->
+この関数は、最初のdecimal値(<code class="literal">arg1</code>)へのポインタ、2番目のdecimal値(<code class="literal">arg2</code>)へのポインタを受付け、どちらが大きいかを示すint値を返します。
+        </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<!--
+           1, if the value that <literal>arg1</literal> points to is bigger than the
+           value that <literal>var2</literal> points to
+-->
+<code class="literal">arg1</code>が指し示す値が<code class="literal">arg2</code>が指し示す値より大きければ1。
+          </p></li><li class="listitem"><p>
+<!--
+           -1, if the value that <literal>arg1</literal> points to is smaller than the
+           value that <literal>arg2</literal> points to </para>
+-->
+<code class="literal">arg1</code>が指し示す値が<code class="literal">arg2</code>が指し示す値より小さければ-1。
+          </p></li><li class="listitem"><p>
+<!--
+           0, if the value that <literal>arg1</literal> points to and the value that
+           <literal>arg2</literal> points to are equal
+-->
+<code class="literal">arg1</code>が指し示す値と<code class="literal">arg2</code>が指し示す値が同じならば0。
+          </p></li></ul></div><p>
+       </p></dd><dt><span class="term"><code class="function">deccopy</code></span></dt><dd><p>
+<!--
+        Copy a decimal value.
+-->
+decimal値をコピーします。
+</p><pre class="synopsis">
+void deccopy(decimal *src, decimal *target);
+</pre><p>
+<!--
+        The function receives a pointer to the decimal value that should be
+        copied as the first argument (<literal>src</literal>) and a pointer to the
+        target structure of type decimal (<literal>target</literal>) as the second
+        argument.
+-->
+この関数は、最初の引数としてコピー元のdecimal値(<code class="literal">src</code>)へのポインタ、2番目の引数としてdecimal型のコピー先構造体(<code class="literal">target</code>)へのポインタを受付けます。
+       </p></dd><dt><span class="term"><code class="function">deccvasc</code></span></dt><dd><p>
+<!--
+        Convert a value from its ASCII representation into a decimal type.
+-->
+ASCII表現からdecimal型に値を変換します。
+</p><pre class="synopsis">
+int deccvasc(char *cp, int len, decimal *np);
+</pre><p>
+<!--
+        The function receives a pointer to string that contains the string
+        representation of the number to be converted (<literal>cp</literal>) as well
+        as its length <literal>len</literal>. <literal>np</literal> is a pointer to the
+        decimal value that saves the result of the operation.
+-->
+この関数は、変換対象の文字列表現を持つ文字列(<code class="literal">cp</code>)へのポインタとその文字列長<code class="literal">len</code>を受付けます。
+<code class="literal">np</code>はこの操作結果を格納するdecimal型の値へのポインタです。
+       </p><p>
+<!--
+        Valid formats are for example:
+         <literal>-2</literal>,
+         <literal>.794</literal>,
+         <literal>+3.44</literal>,
+         <literal>592.49E07</literal> or
+         <literal>-32.84e-4</literal>.
+-->
+有効な書式の例は以下の通りです。
+         <code class="literal">-2</code>、
+         <code class="literal">.794</code>、
+         <code class="literal">+3.44</code>、
+         <code class="literal">592.49E07</code>、
+         <code class="literal">-32.84e-4</code>。
+       </p><p>
+<!--
+        The function returns 0 on success. If overflow or underflow occurred,
+        <literal>ECPG_INFORMIX_NUM_OVERFLOW</literal> or
+        <literal>ECPG_INFORMIX_NUM_UNDERFLOW</literal> is returned. If the ASCII
+        representation could not be parsed,
+        <literal>ECPG_INFORMIX_BAD_NUMERIC</literal> is returned or
+        <literal>ECPG_INFORMIX_BAD_EXPONENT</literal> if this problem occurred while
+        parsing the exponent.
+-->
+この関数は成功時0を返します。
+オーバーフローやアンダーフローが発生した場合は<code class="literal">ECPG_INFORMIX_NUM_OVERFLOW</code>や<code class="literal">ECPG_INFORMIX_NUM_UNDERFLOW</code>が返されます。
+ASCII表現の解析ができなかった場合は<code class="literal">ECPG_INFORMIX_BAD_NUMERIC</code>が、指数部分の解析に問題がある場合は<code class="literal">ECPG_INFORMIX_BAD_EXPONENT</code>が返されます。
+       </p></dd><dt><span class="term"><code class="function">deccvdbl</code></span></dt><dd><p>
+<!--
+        Convert a value of type double to a value of type decimal.
+-->
+double型の値をdecimal型の値に変換します。
+</p><pre class="synopsis">
+int deccvdbl(double dbl, decimal *np);
+</pre><p>
+<!--
+        The function receives the variable of type double that should be
+        converted as its first argument (<literal>dbl</literal>). As the second
+        argument (<literal>np</literal>), the function receives a pointer to the
+        decimal variable that should hold the result of the operation.
+-->
+この関数は、最初の引数として変換対象のdouble型の変数(<code class="literal">dbl</code>)を受付けます。
+2番目の引数(<code class="literal">np</code>)として、この関数は操作結果を格納するdecimal型変数へのポインタを受付けます。
+       </p><p>
+<!--
+        The function returns 0 on success and a negative value if the
+        conversion failed.
+-->
+この関数は成功時に0を返します。
+変換が失敗した場合は負の値が返ります。
+       </p></dd><dt><span class="term"><code class="function">deccvint</code></span></dt><dd><p>
+<!--
+        Convert a value of type int to a value of type decimal.
+-->
+int型の値をdecimal型の値に変換します。
+</p><pre class="synopsis">
+int deccvint(int in, decimal *np);
+</pre><p>
+<!--
+        The function receives the variable of type int that should be
+        converted as its first argument (<literal>in</literal>). As the second
+        argument (<literal>np</literal>), the function receives a pointer to the
+        decimal variable that should hold the result of the operation.
+-->
+この関数は最初の引数として、変換対象のint型変数(<code class="literal">in</code>)を受付けます。
+2番目の引数(<code class="literal">np</code>)として、この関数は変換結果を格納するdecimal型変数へのポインタを受付けます。
+       </p><p>
+<!--
+        The function returns 0 on success and a negative value if the
+        conversion failed.
+-->
+この関数は成功時に0を返します。
+変換が失敗した場合は負の値が返ります。
+       </p></dd><dt><span class="term"><code class="function">deccvlong</code></span></dt><dd><p>
+<!--
+        Convert a value of type long to a value of type decimal.
+-->
+long型の値をdecimal型の値に変換します。
+</p><pre class="synopsis">
+int deccvlong(long lng, decimal *np);
+</pre><p>
+<!--
+        The function receives the variable of type long that should be
+        converted as its first argument (<literal>lng</literal>). As the second
+        argument (<literal>np</literal>), the function receives a pointer to the
+        decimal variable that should hold the result of the operation.
+-->
+この関数は最初の引数として、変換対象のlong型変数(<code class="literal">lng</code>)を受付けます。
+2番目の引数(<code class="literal">np</code>)として、この関数は変換結果を格納するdecimal型変数へのポインタを受付けます。
+       </p><p>
+<!--
+        The function returns 0 on success and a negative value if the
+        conversion failed.
+-->
+この関数は成功時に0を返します。
+変換が失敗した場合は負の値が返ります。
+       </p></dd><dt><span class="term"><code class="function">decdiv</code></span></dt><dd><p>
+<!--
+        Divide two variables of type decimal.
+-->
+2つのdecimal型変数の除算を行います。
+</p><pre class="synopsis">
+int decdiv(decimal *n1, decimal *n2, decimal *result);
+</pre><p>
+<!--
+        The function receives pointers to the variables that are the first
+        (<literal>n1</literal>) and the second (<literal>n2</literal>) operands and
+        calculates <literal>n1</literal>/<literal>n2</literal>. <literal>result</literal> is a
+        pointer to the variable that should hold the result of the operation.
+-->
+この関数は、1番目の演算項目(<code class="literal">n1</code>)と2番目の演算項目(<code class="literal">n2</code>)となる変数のポインタを受付け、<code class="literal">n1</code>/<code class="literal">n2</code>を計算します。
+<code class="literal">result</code>は、操作結果を格納する変数へのポインタです。
+       </p><p>
+<!--
+        On success, 0 is returned and a negative value if the division fails.
+        If overflow or underflow occurred, the function returns
+        <literal>ECPG_INFORMIX_NUM_OVERFLOW</literal> or
+        <literal>ECPG_INFORMIX_NUM_UNDERFLOW</literal> respectively. If an attempt to
+        divide by zero is observed, the function returns
+        <literal>ECPG_INFORMIX_DIVIDE_ZERO</literal>.
+-->
+成功時0が返され、除算の失敗時には負の値が返されます。
+オーバーフローやアンダーフローが発生した場合、この関数はそれぞれ<code class="literal">ECPG_INFORMIX_NUM_OVERFLOW</code>、<code class="literal">ECPG_INFORMIX_NUM_UNDERFLOW</code>を返します。
+0割りが発生した場合は<code class="literal">ECPG_INFORMIX_DIVIDE_ZERO</code>が返されます。
+       </p></dd><dt><span class="term"><code class="function">decmul</code></span></dt><dd><p>
+<!--
+        Multiply two decimal values.
+-->
+2つのdecimal型変数を乗算します。
+</p><pre class="synopsis">
+int decmul(decimal *n1, decimal *n2, decimal *result);
+</pre><p>
+<!--
+        The function receives pointers to the variables that are the first
+        (<literal>n1</literal>) and the second (<literal>n2</literal>) operands and
+        calculates <literal>n1</literal>*<literal>n2</literal>. <literal>result</literal> is a
+        pointer to the variable that should hold the result of the operation.
+-->
+この関数は、1番目の演算項目(<code class="literal">n1</code>)と2番目の演算項目(<code class="literal">n2</code>)となる変数のポインタを受付け、<code class="literal">n1</code>*<code class="literal">n2</code>を計算します。
+<code class="literal">result</code>は、操作結果を格納する変数へのポインタです。
+       </p><p>
+<!--
+        On success, 0 is returned and a negative value if the multiplication
+        fails. If overflow or underflow occurred, the function returns
+        <literal>ECPG_INFORMIX_NUM_OVERFLOW</literal> or
+        <literal>ECPG_INFORMIX_NUM_UNDERFLOW</literal> respectively.
+-->
+成功時0が返され、乗算の失敗時には負の値が返されます。
+オーバーフローやアンダーフローが発生した場合、この関数はそれぞれ<code class="literal">ECPG_INFORMIX_NUM_OVERFLOW</code>、<code class="literal">ECPG_INFORMIX_NUM_UNDERFLOW</code>を返します。
+       </p></dd><dt><span class="term"><code class="function">decsub</code></span></dt><dd><p>
+<!--
+        Subtract one decimal value from another.
+-->
+10進数型値同士の引算を行います。
+</p><pre class="synopsis">
+int decsub(decimal *n1, decimal *n2, decimal *result);
+</pre><p>
+<!--
+        The function receives pointers to the variables that are the first
+        (<literal>n1</literal>) and the second (<literal>n2</literal>) operands and
+        calculates <literal>n1</literal>-<literal>n2</literal>. <literal>result</literal> is a
+        pointer to the variable that should hold the result of the operation.
+-->
+この関数は、1番目の演算項目(<code class="literal">n1</code>)と2番目の演算項目(<code class="literal">n2</code>)となる変数のポインタを受付け、<code class="literal">n1</code>-<code class="literal">n2</code>を計算します。
+<code class="literal">result</code>は、操作結果を格納する変数へのポインタです。
+       </p><p>
+<!--
+        On success, 0 is returned and a negative value if the subtraction
+        fails. If overflow or underflow occurred, the function returns
+        <literal>ECPG_INFORMIX_NUM_OVERFLOW</literal> or
+        <literal>ECPG_INFORMIX_NUM_UNDERFLOW</literal> respectively.
+-->
+成功時0が返され、減算の失敗時には負の値が返されます。
+オーバーフローやアンダーフローが発生した場合、この関数はそれぞれ<code class="literal">ECPG_INFORMIX_NUM_OVERFLOW</code>、<code class="literal">ECPG_INFORMIX_NUM_UNDERFLOW</code>を返します。
+       </p></dd><dt><span class="term"><code class="function">dectoasc</code></span></dt><dd><p>
+<!--
+        Convert a variable of type decimal to its ASCII representation in a C
+        char* string.
+-->
+decimal型変数をC char* 文字列のASCII表現に変換します。
+</p><pre class="synopsis">
+int dectoasc(decimal *np, char *cp, int len, int right)
+</pre><p>
+<!--
+        The function receives a pointer to a variable of type decimal
+        (<literal>np</literal>) that it converts to its textual representation.
+        <literal>cp</literal> is the buffer that should hold the result of the
+        operation. The parameter <literal>right</literal> specifies, how many digits
+        right of the decimal point should be included in the output. The result
+        will be rounded to this number of decimal digits. Setting
+        <literal>right</literal> to -1 indicates that all available decimal digits
+        should be included in the output. If the length of the output buffer,
+        which is indicated by <literal>len</literal> is not sufficient to hold the
+        textual representation including the trailing zero byte, only a
+        single <literal>*</literal> character is stored in the result and -1 is
+        returned.
+-->
+この関数はdecimal型変数(<code class="literal">np</code>)のポインタを受け付け、テキスト表現に変換します。
+<code class="literal">cp</code>は変換結果を格納するためのバッファです。
+<code class="literal">right</code>パラメータは、decimal小数点の右側の何桁を出力するかを指定します。
+結果はこの10進桁数で丸められます。
+<code class="literal">right</code>を-1にすることで、すべての有効な桁数が出力されるようになります。
+<code class="literal">len</code>で示す出力バッファ長が、最後のNULL文字を含むテキスト表現を格納するのには不十分であった場合、結果には<code class="literal">*</code>という1文字が格納され、-1が返されます。
+       </p><p>
+<!--
+        The function returns either -1 if the buffer <literal>cp</literal> was too
+        small or <literal>ECPG_INFORMIX_OUT_OF_MEMORY</literal> if memory was
+        exhausted.
+-->
+この関数は、<code class="literal">cp</code>バッファが小さすぎる場合に-1を返します。
+メモリ不足の場合は<code class="literal">ECPG_INFORMIX_OUT_OF_MEMORY</code>を返します。
+       </p></dd><dt><span class="term"><code class="function">dectodbl</code></span></dt><dd><p>
+<!--
+        Convert a variable of type decimal to a double.
+-->
+decimal型変数をdoubleに変換します。
+</p><pre class="synopsis">
+int dectodbl(decimal *np, double *dblp);
+</pre><p>
+<!--
+        The function receives a pointer to the decimal value to convert
+        (<literal>np</literal>) and a pointer to the double variable that
+        should hold the result of the operation (<literal>dblp</literal>).
+-->
+この関数は変換対象のdecimal型変数(<code class="literal">np</code>)のポインタと処理結果を格納するdouble変数(<code class="literal">dblp</code>)へのポインタを受け付けます。
+       </p><p>
+<!--
+        On success, 0 is returned and a negative value if the conversion
+        failed.
+-->
+成功時0が、変換失敗時負の値が返されます。
+       </p></dd><dt><span class="term"><code class="function">dectoint</code></span></dt><dd><p>
+<!--
+        Convert a variable to type decimal to an integer.
+-->
+decimal型変数を整数型に変換します。
+</p><pre class="synopsis">
+int dectoint(decimal *np, int *ip);
+</pre><p>
+<!--
+        The function receives a pointer to the decimal value to convert
+        (<literal>np</literal>) and a pointer to the integer variable that
+        should hold the result of the operation (<literal>ip</literal>).
+-->
+この関数は変換対象のdecimal型変数(<code class="literal">np</code>)のポインタと処理結果を格納するint型変数(<code class="literal">ip</code>)へのポインタを受け付けます。
+       </p><p>
+<!--
+        On success, 0 is returned and a negative value if the conversion
+        failed. If an overflow occurred, <literal>ECPG_INFORMIX_NUM_OVERFLOW</literal>
+        is returned.
+-->
+成功時0が、変換失敗時負の値が返されます。
+オーバーフローが発生した場合は<code class="literal">ECPG_INFORMIX_NUM_OVERFLOW</code>が返されます。
+       </p><p>
+<!--
+        Note that the ECPG implementation differs from the <productname>Informix</productname>
+        implementation. <productname>Informix</productname> limits an integer to the range from -32767 to
+        32767, while the limits in the ECPG implementation depend on the
+        architecture (<literal>-INT_MAX .. INT_MAX</literal>).
+-->
+このECPGの実装は<span class="productname">Informix</span>の実装と異なることに注意してください。
+<span class="productname">Informix</span>では、整数範囲に-32767から32767までという制限をしていますが、ECPGでの制限はアーキテクチャに依存(<code class="literal">-INT_MAX .. INT_MAX</code>)します。
+       </p></dd><dt><span class="term"><code class="function">dectolong</code></span></dt><dd><p>
+<!--
+        Convert a variable to type decimal to a long integer.
+-->
+decimal型変数をlong型に変換します。
+</p><pre class="synopsis">
+int dectolong(decimal *np, long *lngp);
+</pre><p>
+<!--
+        The function receives a pointer to the decimal value to convert
+        (<literal>np</literal>) and a pointer to the long variable that
+        should hold the result of the operation (<literal>lngp</literal>).
+-->
+この関数は変換対象のdecimal型変数(<code class="literal">np</code>)のポインタと処理結果を格納するlong変数(<code class="literal">lngp</code>)へのポインタを受け付けます。
+       </p><p>
+<!--
+        On success, 0 is returned and a negative value if the conversion
+        failed. If an overflow occurred, <literal>ECPG_INFORMIX_NUM_OVERFLOW</literal>
+        is returned.
+-->
+成功時0が、変換失敗時負の値が返されます。
+オーバーフローが発生した場合は<code class="literal">ECPG_INFORMIX_NUM_OVERFLOW</code>が返されます。
+       </p><p>
+<!--
+        Note that the ECPG implementation differs from the <productname>Informix</productname>
+        implementation. <productname>Informix</productname> limits a long integer to the range from
+        -2,147,483,647 to 2,147,483,647, while the limits in the ECPG
+        implementation depend on the architecture (<literal>-LONG_MAX ..
+        LONG_MAX</literal>).
+-->
+このECPGの実装は<span class="productname">Informix</span>の実装と異なることに注意してください。
+<span class="productname">Informix</span>では、整数範囲に-2,147,483,647から2,147,483,647までという制限をしていますが、ECPGでの制限はアーキテクチャに依存(<code class="literal">-LONG_MAX .. LONG_MAX</code>)します。
+       </p></dd><dt><span class="term"><code class="function">rdatestr</code></span></dt><dd><p>
+<!--
+        Converts a date to a C char* string.
+-->
+date型をC char*文字列に変換します。
+</p><pre class="synopsis">
+int rdatestr(date d, char *str);
+</pre><p>
+<!--
+        The function receives two arguments, the first one is the date to
+        convert (<literal>d</literal>) and the second one is a pointer to the target
+        string. The output format is always <literal>yyyy-mm-dd</literal>, so you need
+        to allocate at least 11 bytes (including the zero-byte terminator) for the
+        string.
+-->
+この関数は2つの引数を受付けます。
+最初の引数は変換対象のdate型(<code class="literal">d</code>)、2番目は変換後の文字列へのポインタです。
+出力書式は常に<code class="literal">yyyy-mm-dd</code>ですので、少なくとも11文字（NULL終端を含む）を結果文字列に割り当てなければなりません。
+       </p><p>
+<!--
+        The function returns 0 on success and a negative value in case of
+        error.
+-->
+この関数は成功時0を、エラー時負の値を返します。
+       </p><p>
+<!--
+        Note that ECPG's implementation differs from the <productname>Informix</productname>
+        implementation. In <productname>Informix</productname> the format can be influenced by setting
+        environment variables. In ECPG however, you cannot change the output
+        format.
+-->
+このECPGの実装は<span class="productname">Informix</span>の実装と異なることに注意してください。
+<span class="productname">Informix</span>では、環境変数により書式を変更できますが、ECPGでは出力書式を変更することはできません。
+       </p></dd><dt><span class="term"><code class="function">rstrdate</code></span></dt><dd><p>
+<!--
+        Parse the textual representation of a date.
+-->
+date型のテキスト表現を解析します。
+</p><pre class="synopsis">
+int rstrdate(char *str, date *d);
+</pre><p>
+<!--
+        The function receives the textual representation of the date to convert
+        (<literal>str</literal>) and a pointer to a variable of type date
+        (<literal>d</literal>). This function does not allow you to specify a format
+        mask. It uses the default format mask of <productname>Informix</productname> which is
+        <literal>mm/dd/yyyy</literal>. Internally, this function is implemented by
+        means of <function>rdefmtdate</function>. Therefore, <function>rstrdate</function> is
+        not faster and if you have the choice you should opt for
+        <function>rdefmtdate</function> which allows you to specify the format mask
+        explicitly.
+-->
+この関数は、変換対象のdate型のテキスト表現(<code class="literal">str</code>)とdate型変数のポインタ(<code class="literal">d</code>)を受付けます。
+この関数では書式マスクを指定することができません。
+<span class="productname">Informix</span>のデフォルトの書式マスクである<code class="literal">mm/dd/yyyy</code>を使用します。
+内部的には、この関数は<code class="function">rdefmtdate</code>を使用して実装しています。
+したがって<code class="function">rstrdate</code>は速くありません。
+もし選択肢があるのであれば、書式マスクを明示的に指定することができる<code class="function">rdefmtdate</code>を選択すべきです。
+       </p><p>
+<!--
+        The function returns the same values as <function>rdefmtdate</function>.
+-->
+この関数は<code class="function">rdefmtdate</code>と同様の値を返します。
+       </p></dd><dt><span class="term"><code class="function">rtoday</code></span></dt><dd><p>
+<!--
+        Get the current date.
+-->
+現在の日付を（date型で）入手します。
+</p><pre class="synopsis">
+void rtoday(date *d);
+</pre><p>
+<!--
+        The function receives a pointer to a date variable (<literal>d</literal>)
+        that it sets to the current date.
+-->
+この関数はdate型変数(<code class="literal">d</code>)へのポインタを受付け、そこに現在の日付を格納します。
+       </p><p>
+<!--
+        Internally this function uses the <xref linkend="pgtypesdatetoday"/>
+        function.
+-->
+内部的には、この関数は<a class="xref" href="ecpg-pgtypes.html#PGTYPESDATETODAY"><code class="function">PGTYPESdate_today</code></a>関数を使用します。
+       </p></dd><dt><span class="term"><code class="function">rjulmdy</code></span></dt><dd><p>
+<!--
+        Extract the values for the day, the month and the year from a variable
+        of type date.
+-->
+date型変数から、日、月、年の値を取り出します。
+</p><pre class="synopsis">
+int rjulmdy(date d, short mdy[3]);
+</pre><p>
+<!--
+        The function receives the date <literal>d</literal> and a pointer to an array
+        of 3 short integer values <literal>mdy</literal>. The variable name indicates
+        the sequential order: <literal>mdy[0]</literal> will be set to contain the
+        number of the month, <literal>mdy[1]</literal> will be set to the value of the
+        day and <literal>mdy[2]</literal> will contain the year.
+-->
+この関数は日付<code class="literal">d</code>、3つのshort integer型の値からなる配列<code class="literal">mdy</code>へのポインタを受付けます。
+この変数名はその並びを表し、<code class="literal">mdy[0]</code>には月数、<code class="literal">mdy[1]</code>には日数が、<code class="literal">mdy[2]</code>には年が入ります。
+       </p><p>
+<!--
+        The function always returns 0 at the moment.
+-->
+現在この関数は常に0を返します。
+       </p><p>
+<!--
+        Internally the function uses the <xref linkend="pgtypesdatejulmdy"/>
+        function.
+-->
+内部的にはこの関数は<a class="xref" href="ecpg-pgtypes.html#PGTYPESDATEJULMDY"><code class="function">PGTYPESdate_julmdy</code></a>関数を使用します。
+       </p></dd><dt><span class="term"><code class="function">rdefmtdate</code></span></dt><dd><p>
+<!--
+        Use a format mask to convert a character string to a value of type
+        date.
+-->
+書式マスクを使用して、文字列をdate型の値に変換します。
+</p><pre class="synopsis">
+int rdefmtdate(date *d, char *fmt, char *str);
+</pre><p>
+<!--
+        The function receives a pointer to the date value that should hold the
+        result of the operation (<literal>d</literal>), the format mask to use for
+        parsing the date (<literal>fmt</literal>) and the C char* string containing
+        the textual representation of the date (<literal>str</literal>). The textual
+        representation is expected to match the format mask. However you do not
+        need to have a 1:1 mapping of the string to the format mask. The
+        function only analyzes the sequential order and looks for the literals
+        <literal>yy</literal> or <literal>yyyy</literal> that indicate the
+        position of the year, <literal>mm</literal> to indicate the position of
+        the month and <literal>dd</literal> to indicate the position of the
+        day.
+-->
+この関数は、処理結果を格納するためのdate型へのポインタ(<code class="literal">d</code>)、日付を解析するための書式マスク(<code class="literal">fmt</code>)、dateのテキスト表現を含むCのchar*文字列(<code class="literal">str</code>)を受付けます。
+テキスト表現は書式マスクに合った表現であることが仮定されています。
+しかし、文字列と書式マスクを1:1に対応付けする必要はありません。
+この関数は並んだ順番に解析し、年の位置を表す<code class="literal">yy</code>または<code class="literal">yyyy</code>を、月の位置を表す<code class="literal">mm</code>を、日の位置を表す<code class="literal">dd</code>を検索します。
+       </p><p>
+<!--
+        The function returns the following values:
+-->
+この関数は以下の値を返します。
+        </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<!--
+           0 - The function terminated successfully.
+-->
+0 - 関数が正常に終了しました。
+          </p></li><li class="listitem"><p>
+<!--
+           <literal>ECPG_INFORMIX_ENOSHORTDATE</literal> - The date does not contain
+           delimiters between day, month and year. In this case the input
+           string must be exactly 6 or 8 bytes long but isn't.
+-->
+<code class="literal">ECPG_INFORMIX_ENOSHORTDATE</code> - 日付に、日、月、年を区切る文字がありませんでした。
+この場合、入力文字列は6バイト、8バイトのいずれかでなければなりませんが、そうではありませんでした。
+          </p></li><li class="listitem"><p>
+<!--
+           <literal>ECPG_INFORMIX_ENOTDMY</literal> - The format string did not
+           correctly indicate the sequential order of year, month and day.
+-->
+<code class="literal">ECPG_INFORMIX_ENOTDMY</code> - 書式文字列が正しく年月日の順番を示していません。
+          </p></li><li class="listitem"><p>
+<!--
+           <literal>ECPG_INFORMIX_BAD_DAY</literal> - The input string does not
+           contain a valid day.
+-->
+<code class="literal">ECPG_INFORMIX_BAD_DAY</code> - 入力文字列に有効な日が含まれていません。
+          </p></li><li class="listitem"><p>
+<!--
+           <literal>ECPG_INFORMIX_BAD_MONTH</literal> - The input string does not
+           contain a valid month.
+-->
+<code class="literal">ECPG_INFORMIX_BAD_MONTH</code> - 入力文字列に有効な月が含まれていません。
+          </p></li><li class="listitem"><p>
+<!--
+           <literal>ECPG_INFORMIX_BAD_YEAR</literal> - The input string does not
+           contain a valid year.
+-->
+<code class="literal">ECPG_INFORMIX_BAD_YEAR</code> - 入力文字列に有効な年が含まれていません。
+          </p></li></ul></div><p>
+       </p><p>
+<!--
+        Internally this function is implemented to use the <xref
+        linkend="pgtypesdatedefmtasc"/> function. See the reference there for a
+        table of example input.
+-->
+内部的には、この関数は<a class="xref" href="ecpg-pgtypes.html#PGTYPESDATEDEFMTASC"><code class="function">PGTYPESdate_defmt_asc</code></a>関数を使用して実装しています。
+この関数の説明には、入力例の表がありますので、こちらも参照してください。
+       </p></dd><dt><span class="term"><code class="function">rfmtdate</code></span></dt><dd><p>
+<!--
+        Convert a variable of type date to its textual representation using a
+        format mask.
+-->
+書式マスクを使用してdate型変数をテキスト表現に変換します。
+</p><pre class="synopsis">
+int rfmtdate(date d, char *fmt, char *str);
+</pre><p>
+<!--
+        The function receives the date to convert (<literal>d</literal>), the format
+        mask (<literal>fmt</literal>) and the string that will hold the textual
+        representation of the date (<literal>str</literal>).
+-->
+この関数は変換対象の日付(<code class="literal">d</code>)、書式マスク(<code class="literal">fmt</code>)、日付のテキスト表現を格納する文字列(<code class="literal">str</code>)を受付けます。
+       </p><p>
+<!--
+        On success, 0 is returned and a negative value if an error occurred.
+-->
+成功時0、エラーが発生した場合は負の値が返されます。
+       </p><p>
+<!--
+        Internally this function uses the <xref linkend="pgtypesdatefmtasc"/>
+        function, see the reference there for examples.
+-->
+内部的にはこの関数は<a class="xref" href="ecpg-pgtypes.html#PGTYPESDATEFMTASC"><code class="function">PGTYPESdate_fmt_asc</code></a>関数を使用します。
+例が記載されていますので、こちらも参照してください。
+       </p></dd><dt><span class="term"><code class="function">rmdyjul</code></span></dt><dd><p>
+<!--
+        Create a date value from an array of 3 short integers that specify the
+        day, the month and the year of the date.
+-->
+日付の日、月、年を表す3つのshort integer型からなる配列から日付型の値を作成します。
+</p><pre class="synopsis">
+int rmdyjul(short mdy[3], date *d);
+</pre><p>
+<!--
+        The function receives the array of the 3 short integers
+        (<literal>mdy</literal>) and a pointer to a variable of type date that should
+        hold the result of the operation.
+-->
+この関数は3つのshort integer型からなる配列(<code class="literal">mdy</code>)と処理結果を格納するdate型変数へのポインタを受付けます。
+       </p><p>
+<!--
+        Currently the function returns always 0.
+-->
+現在この関数は常に0を返します。
+       </p><p>
+<!--
+        Internally the function is implemented to use the function <xref
+        linkend="pgtypesdatemdyjul"/>.
+-->
+内部的にはこの関数は<a class="xref" href="ecpg-pgtypes.html#PGTYPESDATEMDYJUL"><code class="function">PGTYPESdate_mdyjul</code></a>関数を使用して実装しています。
+       </p></dd><dt><span class="term"><code class="function">rdayofweek</code></span></dt><dd><p>
+<!--
+        Return a number representing the day of the week for a date value.
+-->
+日付型の値の週内日数を示す値を返します。
+</p><pre class="synopsis">
+int rdayofweek(date d);
+</pre><p>
+<!--
+        The function receives the date variable <literal>d</literal> as its only
+        argument and returns an integer that indicates the day of the week for
+        this date.
+-->
+この関数はdate型変数<code class="literal">d</code>をその唯一の引数として受付け、その日付の週内日数を示す整数を返します。
+        </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<!--
+           0 - Sunday
+-->
+0 - 日曜
+          </p></li><li class="listitem"><p>
+<!--
+           1 - Monday
+-->
+1 - 月曜
+          </p></li><li class="listitem"><p>
+<!--
+           2 - Tuesday
+-->
+2 - 火曜
+          </p></li><li class="listitem"><p>
+<!--
+           3 - Wednesday
+-->
+3 - 水曜
+          </p></li><li class="listitem"><p>
+<!--
+           4 - Thursday
+-->
+4 - 木曜
+          </p></li><li class="listitem"><p>
+<!--
+           5 - Friday
+-->
+5 - 金曜
+          </p></li><li class="listitem"><p>
+<!--
+           6 - Saturday
+-->
+6 - 土曜
+          </p></li></ul></div><p>
+       </p><p>
+<!--
+        Internally the function is implemented to use the function <xref
+        linkend="pgtypesdatedayofweek"/>.
+-->
+内部的にはこの関数は <a class="xref" href="ecpg-pgtypes.html#PGTYPESDATEDAYOFWEEK"><code class="function">PGTYPESdate_dayofweek</code></a>関数を使用して実装しています。
+       </p></dd><dt><span class="term"><code class="function">dtcurrent</code></span></dt><dd><p>
+<!--
+        Retrieve the current timestamp.
+-->
+現在のタイムスタンプを取り出します。
+</p><pre class="synopsis">
+void dtcurrent(timestamp *ts);
+</pre><p>
+<!--
+        The function retrieves the current timestamp and saves it into the
+        timestamp variable that <literal>ts</literal> points to.
+-->
+この関数は現在のタイムスタンプを受け取り、<code class="literal">ts</code>が指し示すタイムスタンプ型変数に格納します。
+       </p></dd><dt><span class="term"><code class="function">dtcvasc</code></span></dt><dd><p>
+<!--
+        Parses a timestamp from its textual representation
+        into a timestamp variable.
+-->
+テキスト表現からtimestamp型変数にタイムスタンプを解析します。
+</p><pre class="synopsis">
+int dtcvasc(char *str, timestamp *ts);
+</pre><p>
+<!--
+        The function receives the string to parse (<literal>str</literal>) and a
+        pointer to the timestamp variable that should hold the result of the
+        operation (<literal>ts</literal>).
+-->
+この関数は対象の文字列(<code class="literal">str</code>)と処理結果を格納するtimestamp型変数(<code class="literal">ts</code>)へのポインタを受付けます。
+       </p><p>
+<!--
+        The function returns 0 on success and a negative value in case of
+        error.
+-->
+この関数は成功時0を返し、エラー時負の値を返します。
+       </p><p>
+<!--
+        Internally this function uses the <xref
+        linkend="pgtypestimestampfromasc"/> function. See the reference there
+        for a table with example inputs.
+-->
+内部的にはこの関数は<a class="xref" href="ecpg-pgtypes.html#PGTYPESTIMESTAMPFROMASC"><code class="function">PGTYPEStimestamp_from_asc</code></a>関数を使用します。
+入力例の表がありますので、こちらも参照してください。
+       </p></dd><dt><span class="term"><code class="function">dtcvfmtasc</code></span></dt><dd><p>
+<!--
+        Parses a timestamp from its textual representation
+        using a format mask into a timestamp variable.
+-->
+書式マスクを使用してタイムスタンプのテキスト表現をtimestamp型変数に変換します。
+</p><pre class="synopsis">
+dtcvfmtasc(char *inbuf, char *fmtstr, timestamp *dtvalue)
+</pre><p>
+<!--
+        The function receives the string to parse (<literal>inbuf</literal>), the
+        format mask to use (<literal>fmtstr</literal>) and a pointer to the timestamp
+        variable that should hold the result of the operation
+        (<literal>dtvalue</literal>).
+-->
+この関数は、対象とする文字列(<code class="literal">inbuf</code>)、使用する書式マスク(<code class="literal">fmtstr</code>)、処理結果を格納するtimestamp変数(<code class="literal">dtvalue</code>)へのポインタを受付けます。
+       </p><p>
+<!--
+        This function is implemented by means of the <xref
+        linkend="pgtypestimestampdefmtasc"/> function. See the documentation
+        there for a list of format specifiers that can be used.
+-->
+この関数は<a class="xref" href="ecpg-pgtypes.html#PGTYPESTIMESTAMPDEFMTASC"><code class="function">PGTYPEStimestamp_defmt_asc</code></a>関数を使用して実装されています。
+使用可能な書式指定のリストがありますので、こちらも参照してください。
+       </p><p>
+<!--
+        The function returns 0 on success and a negative value in case of
+        error.
+-->
+この関数は成功時に0を、エラー時負の値を返します。
+       </p></dd><dt><span class="term"><code class="function">dtsub</code></span></dt><dd><p>
+<!--
+        Subtract one timestamp from another and return a variable of type
+        interval.
+-->
+timestamp型同士で減算を行い、interval型変数を返します。
+</p><pre class="synopsis">
+int dtsub(timestamp *ts1, timestamp *ts2, interval *iv);
+</pre><p>
+<!--
+        The function will subtract the timestamp variable that <literal>ts2</literal>
+        points to from the timestamp variable that <literal>ts1</literal> points to
+        and will store the result in the interval variable that <literal>iv</literal>
+        points to.
+-->
+この関数は<code class="literal">ts1</code>が指し示すtimestamp型変数から<code class="literal">ts2</code>が指し示すtimestamp型変数を引きます。
+結果は<code class="literal">iv</code>が指し示すinterval型変数に格納されます。
+       </p><p>
+<!--
+        Upon success, the function returns 0 and a negative value if an
+        error occurred.
+-->
+成功時この関数は0を返し、エラー時負の値を返します。
+       </p></dd><dt><span class="term"><code class="function">dttoasc</code></span></dt><dd><p>
+<!--
+        Convert a timestamp variable to a C char* string.
+-->
+timestamp型変数をC char*文字列に変換します。
+</p><pre class="synopsis">
+int dttoasc(timestamp *ts, char *output);
+</pre><p>
+<!--
+        The function receives a pointer to the timestamp variable to convert
+        (<literal>ts</literal>) and the string that should hold the result of the
+        operation (<literal>output</literal>). It converts <literal>ts</literal> to its
+        textual representation according to the SQL standard, which is
+        be <literal>YYYY-MM-DD HH:MM:SS</literal>.
+-->
+この関数は対象のtimestamp型変数(<code class="literal">ts</code>)へのポインタ、処理結果を格納する文字列(<code class="literal">output</code>)を受付けます。
+これは<code class="literal">ts</code>を標準SQLに従うテキスト表現（<code class="literal">YYYY-MM-DD HH:MM:SS</code>として定義）に変換します。
+       </p><p>
+<!--
+        Upon success, the function returns 0 and a negative value if an
+        error occurred.
+-->
+成功時この関数は0を返し、エラー時負の値を返します。
+       </p></dd><dt><span class="term"><code class="function">dttofmtasc</code></span></dt><dd><p>
+<!--
+        Convert a timestamp variable to a C char* using a format mask.
+-->
+書式マスクを使用してtimestamp型変数をC char*に変換します。
+</p><pre class="synopsis">
+int dttofmtasc(timestamp *ts, char *output, int str_len, char *fmtstr);
+</pre><p>
+<!--
+        The function receives a pointer to the timestamp to convert as its
+        first argument (<literal>ts</literal>), a pointer to the output buffer
+        (<literal>output</literal>), the maximal length that has been allocated for
+        the output buffer (<literal>str_len</literal>) and the format mask to
+        use for the conversion (<literal>fmtstr</literal>).
+-->
+この関数は、最初の引数として変換対象のタイムスタンプ(<code class="literal">ts</code>)を、出力バッファのポインタ(<code class="literal">output</code>)、出力バッファで割当て可能な最大長 (<code class="literal">str_len</code>)、変換に使用する書式マスク(<code class="literal">fmtstr</code>)を受付けます。
+       </p><p>
+<!--
+        Upon success, the function returns 0 and a negative value if an
+        error occurred.
+-->
+成功時この関数は0を返します。エラーが発生した場合は負の値を返します。
+       </p><p>
+<!--
+        Internally, this function uses the <xref
+        linkend="pgtypestimestampfmtasc"/> function. See the reference there for
+        information on what format mask specifiers can be used.
+-->
+内部的に、この関数は<a class="xref" href="ecpg-pgtypes.html#PGTYPESTIMESTAMPFMTASC"><code class="function">PGTYPEStimestamp_fmt_asc</code></a>関数を使用します。
+使用できる書式マスクに関する情報がありますので、こちらも参照してください。
+       </p></dd><dt><span class="term"><code class="function">intoasc</code></span></dt><dd><p>
+<!--
+        Convert an interval variable to a C char* string.
+-->
+interval型変数をC char*文字列に変換します。
+</p><pre class="synopsis">
+int intoasc(interval *i, char *str);
+</pre><p>
+<!--
+        The function receives a pointer to the interval variable to convert
+        (<literal>i</literal>) and the string that should hold the result of the
+        operation (<literal>str</literal>). It converts <literal>i</literal> to its
+        textual representation according to the SQL standard, which is
+        be <literal>YYYY-MM-DD HH:MM:SS</literal>.
+-->
+この関数は、変換対象のinterval型変数(<code class="literal">i</code>)へのポインタ、処理結果を格納する文字列(<code class="literal">str</code>)を受付けます。
+これは<code class="literal">i</code>を標準SQLに従うテキスト表現（<code class="literal">YYYY-MM-DD HH:MM:SS</code>として定義）に変換します。
+       </p><p>
+<!--
+        Upon success, the function returns 0 and a negative value if an
+        error occurred.
+-->
+成功時、この関数は0を返します。
+エラーが発生した場合は負の値を返します。
+       </p></dd><dt><span class="term"><code class="function">rfmtlong</code></span></dt><dd><p>
+<!--
+        Convert a long integer value to its textual representation using a
+        format mask.
+-->
+long integer値を書式マスクを使用してテキスト表現に変換します。
+</p><pre class="synopsis">
+int rfmtlong(long lng_val, char *fmt, char *outbuf);
+</pre><p>
+<!--
+        The function receives the long value <literal>lng_val</literal>, the format
+        mask <literal>fmt</literal> and a pointer to the output buffer
+        <literal>outbuf</literal>. It converts the long value according to the format
+        mask to its textual representation.
+-->
+この関数は、long型の値<code class="literal">lng_val</code>、書式マスク<code class="literal">fmt</code>、出力バッファ<code class="literal">outbuf</code>へのポインタを受付けます。
+これはlong型の値を書式マスクに従ってテキスト表現に変換します。
+       </p><p>
+<!--
+        The format mask can be composed of the following format specifying
+        characters:
+-->
+書式マスクは以下の書式指定文字を組み合わせることができます。
+        </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<!--
+           <literal>*</literal> (asterisk) - if this position would be blank
+           otherwise, fill it with an asterisk.
+-->
+<code class="literal">*</code> (アスタリスク) - この位置が空白ならばアスタリスクで埋めます。
+          </p></li><li class="listitem"><p>
+<!--
+           <literal>&amp;</literal> (ampersand) - if this position would be
+           blank otherwise, fill it with a zero.
+-->
+<code class="literal">&amp;</code> (アンパサンド) - この位置が空白ならば0で埋めます。
+          </p></li><li class="listitem"><p>
+<!--
+           <literal>#</literal> - turn leading zeroes into blanks.
+-->
+           <code class="literal">#</code> - 先頭のゼロを空白に変換します。
+          </p></li><li class="listitem"><p>
+<!--
+           <literal>&lt;</literal> - left-justify the number in the string.
+-->
+           <code class="literal">&lt;</code> - 文字列内で数値を左そろえします。
+          </p></li><li class="listitem"><p>
+<!--
+           <literal>,</literal> (comma) - group numbers of four or more digits
+           into groups of three digits separated by a comma.
+-->
+<code class="literal">,</code> (カンマ) - 4桁以上の数値をカンマで区切った3桁にグループ化します。
+          </p></li><li class="listitem"><p>
+<!--
+           <literal>.</literal> (period) - this character separates the
+           whole-number part of the number from the fractional part.
+-->
+           <code class="literal">.</code> (ピリオド) - この文字は数値から小数部分を区別します。
+          </p></li><li class="listitem"><p>
+<!--
+           <literal>-</literal> (minus) - the minus sign appears if the number
+           is a negative value.
+-->
+           <code class="literal">-</code> (マイナス) - 数値が負の場合、マイナス記号を付けます。
+          </p></li><li class="listitem"><p>
+<!--
+           <literal>+</literal> (plus) - the plus sign appears if the number is
+           a positive value.
+-->
+           <code class="literal">+</code> (プラス) - 数値が正の場合プラス記号を付けます。
+          </p></li><li class="listitem"><p>
+<!--
+           <literal>(</literal> - this replaces the minus sign in front of the
+           negative number. The minus sign will not appear.
+-->
+           <code class="literal">(</code> - これは負の値の先頭のマイナス記号を置き換えます。
+マイナス記号は現れません。
+          </p></li><li class="listitem"><p>
+<!--
+           <literal>)</literal> - this character replaces the minus and is
+           printed behind the negative value.
+-->
+           <code class="literal">)</code> - この文字はマイナス記号を置き換え、負の値の最後に出力します。
+          </p></li><li class="listitem"><p>
+<!--
+           <literal>$</literal> - the currency symbol.
+-->
+           <code class="literal">$</code> - 通貨記号
+          </p></li></ul></div><p>
+       </p></dd><dt><span class="term"><code class="function">rupshift</code></span></dt><dd><p>
+<!--
+        Convert a string to upper case.
+-->
+文字列を大文字に変換します。
+</p><pre class="synopsis">
+void rupshift(char *str);
+</pre><p>
+<!--
+        The function receives a pointer to the string and transforms every
+        lower case character to upper case.
+-->
+この関数は文字列へのポインタを受付け、すべての小文字を大文字に変換します。
+       </p></dd><dt><span class="term"><code class="function">byleng</code></span></dt><dd><p>
+<!--
+        Return the number of characters in a string without counting trailing
+        blanks.
+-->
+文字列内の文字数を返します。
+ただし、末尾の空白は数えません。
+</p><pre class="synopsis">
+int byleng(char *str, int len);
+</pre><p>
+<!--
+        The function expects a fixed-length string as its first argument
+        (<literal>str</literal>) and its length as its second argument
+        (<literal>len</literal>). It returns the number of significant characters,
+        that is the length of the string without trailing blanks.
+-->
+この関数は最初の引数として、固定長の文字列(<code class="literal">str</code>)を、2番目の引数としてその文字列長 (<code class="literal">len</code>)想定しています。
+これは、文字列から末尾の空白を取り除いた、有効文字の数を返します。
+       </p></dd><dt><span class="term"><code class="function">ldchar</code></span></dt><dd><p>
+<!--
+        Copy a fixed-length string into a null-terminated string.
+-->
+固定長の文字列をNULL終端の文字列に複製します。
+</p><pre class="synopsis">
+void ldchar(char *src, int len, char *dest);
+</pre><p>
+<!--
+        The function receives the fixed-length string to copy
+        (<literal>src</literal>), its length (<literal>len</literal>) and a pointer to the
+        destination memory (<literal>dest</literal>). Note that you need to reserve at
+        least <literal>len+1</literal> bytes for the string that <literal>dest</literal>
+        points to. The function copies at most <literal>len</literal> bytes to the new
+        location (less if the source string has trailing blanks) and adds the
+        null-terminator.
+-->
+この関数はコピー対象の固定長の文字列(<code class="literal">src</code>)、文字列長(<code class="literal">len</code>)、格納先メモリ(<code class="literal">dest</code>)へのポインタを受付けます。
+<code class="literal">dest</code>が指し示す文字列には少なくとも<code class="literal">len+1</code>バイトを割り当てなければならない点に注意してください。
+この関数は多くても<code class="literal">len</code>バイトを新しい場所にコピーします。
+（元の文字列が末尾に空白文字を持つ場合に少なくなります。）
+そして、NULL終端を付与します。
+       </p></dd><dt><span class="term"><code class="function">rgetmsg</code></span></dt><dd><p>
+</p><pre class="synopsis">
+int rgetmsg(int msgnum, char *s, int maxsize);
+</pre><p>
+<!--
+        This function exists but is not implemented at the moment!
+-->
+この関数は存在しますが、現在実装されていません。
+       </p></dd><dt><span class="term"><code class="function">rtypalign</code></span></dt><dd><p>
+</p><pre class="synopsis">
+int rtypalign(int offset, int type);
+</pre><p>
+<!--
+        This function exists but is not implemented at the moment!
+-->
+この関数は存在しますが、現在実装されていません。
+       </p></dd><dt><span class="term"><code class="function">rtypmsize</code></span></dt><dd><p>
+</p><pre class="synopsis">
+int rtypmsize(int type, int len);
+</pre><p>
+<!--
+        This function exists but is not implemented at the moment!
+-->
+この関数は存在しますが、現在実装されていません。
+       </p></dd><dt><span class="term"><code class="function">rtypwidth</code></span></dt><dd><p>
+</p><pre class="synopsis">
+int rtypwidth(int sqltype, int sqllen);
+</pre><p>
+<!--
+        This function exists but is not implemented at the moment!
+-->
+この関数は存在しますが、現在実装されていません。
+       </p></dd><dt id="RSETNULL"><span class="term"><code class="function">rsetnull</code></span></dt><dd><p>
+<!--
+        Set a variable to NULL.
+-->
+変数にNULLを設定します。
+</p><pre class="synopsis">
+int rsetnull(int t, char *ptr);
+</pre><p>
+<!--
+        The function receives an integer that indicates the type of the
+        variable and a pointer to the variable itself that is cast to a C
+        char* pointer.
+-->
+この関数は、変数の種類を示す整数とC char*にキャストした変数自体へのポインタを受付けます。
+       </p><p>
+<!--
+        The following types exist:
+-->
+以下の種類が存在します。
+        </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<!--
+           <literal>CCHARTYPE</literal> - For a variable of type <type>char</type> or <type>char*</type>
+-->
+           <code class="literal">CCHARTYPE</code> - <code class="type">char</code>または <code class="type">char*</code>型の変数用
+          </p></li><li class="listitem"><p>
+<!--
+           <literal>CSHORTTYPE</literal> - For a variable of type <type>short int</type>
+-->
+           <code class="literal">CSHORTTYPE</code> - <code class="type">short int</code>型の変数用
+          </p></li><li class="listitem"><p>
+<!--
+           <literal>CINTTYPE</literal> - For a variable of type <type>int</type>
+-->
+           <code class="literal">CINTTYPE</code> - <code class="type">int</code>型の変数用
+          </p></li><li class="listitem"><p>
+<!--
+           <literal>CBOOLTYPE</literal> - For a variable of type <type>boolean</type>
+-->
+           <code class="literal">CBOOLTYPE</code> - <code class="type">boolean</code>型の変数用
+          </p></li><li class="listitem"><p>
+<!--
+           <literal>CFLOATTYPE</literal> - For a variable of type <type>float</type>
+-->
+           <code class="literal">CFLOATTYPE</code> - <code class="type">float</code>型の変数用
+          </p></li><li class="listitem"><p>
+<!--
+           <literal>CLONGTYPE</literal> - For a variable of type <type>long</type>
+-->
+           <code class="literal">CLONGTYPE</code> - <code class="type">long</code>型の変数用
+          </p></li><li class="listitem"><p>
+<!--
+           <literal>CDOUBLETYPE</literal> - For a variable of type <type>double</type>
+-->
+           <code class="literal">CDOUBLETYPE</code> - <code class="type">double</code>型の変数用
+          </p></li><li class="listitem"><p>
+<!--
+           <literal>CDECIMALTYPE</literal> - For a variable of type <type>decimal</type>
+-->
+           <code class="literal">CDECIMALTYPE</code> - <code class="type">decimal</code>型の変数用
+          </p></li><li class="listitem"><p>
+<!--
+           <literal>CDATETYPE</literal> - For a variable of type <type>date</type>
+-->
+           <code class="literal">CDATETYPE</code> - <code class="type">date</code>型の変数用
+          </p></li><li class="listitem"><p>
+<!--
+           <literal>CDTIMETYPE</literal> - For a variable of type <type>timestamp</type>
+-->
+           <code class="literal">CDTIMETYPE</code> - <code class="type">timestamp</code>型の変数用
+          </p></li></ul></div><p>
+       </p><p>
+<!--
+        Here is an example of a call to this function:
+-->
+以下にこの関数の呼び出し例を示します。
+</p><pre class="programlisting">
+$char c[] = "abc       ";
+$short s = 17;
+$int i = -74874;
+
+rsetnull(CCHARTYPE, (char *) c);
+rsetnull(CSHORTTYPE, (char *) &amp;s);
+rsetnull(CINTTYPE, (char *) &amp;i);
+
+</pre><p>
+       </p></dd><dt><span class="term"><code class="function">risnull</code></span></dt><dd><p>
+<!--
+        Test if a variable is NULL.
+-->
+変数がNULLか検査します。
+</p><pre class="synopsis">
+int risnull(int t, char *ptr);
+</pre><p>
+<!--
+        The function receives the type of the variable to test (<literal>t</literal>)
+        as well a pointer to this variable (<literal>ptr</literal>). Note that the
+        latter needs to be cast to a char*. See the function <xref
+        linkend="rsetnull"/> for a list of possible variable types.
+-->
+この関数は検査する変数の種類(<code class="literal">t</code>)、変数(<code class="literal">ptr</code>)へのポインタを受付けます。
+後者はchar*にキャストする必要があることに注意してください。
+取り得る変数種類については <a class="xref" href="ecpg-informix-compat.html#RSETNULL"><code class="function">rsetnull</code></a>関数を参照してください。
+       </p><p>
+<!--
+        Here is an example of how to use this function:
+-->
+この関数の使用方法の例を示します。
+</p><pre class="programlisting">
+$char c[] = "abc       ";
+$short s = 17;
+$int i = -74874;
+
+risnull(CCHARTYPE, (char *) c);
+risnull(CSHORTTYPE, (char *) &amp;s);
+risnull(CINTTYPE, (char *) &amp;i);
+
+</pre><p>
+       </p></dd></dl></div><p>
+   </p></div><div class="sect2" id="ECPG-INFORMIX-CONSTANTS"><div class="titlepage"><div><div><h3 class="title">36.15.5. 追加の定数</h3></div></div></div><!--
+   <title>Additional Constants</title>
+--><p>
+<!--
+    Note that all constants here describe errors and all of them are defined
+    to represent negative values. In the descriptions of the different
+    constants you can also find the value that the constants represent in the
+    current implementation. However you should not rely on this number. You can
+    however rely on the fact all of them are defined to represent negative
+    values.
+-->
+ここで示す定数はすべてエラーを示すものであり、負の値を表すように定義されていることに注意してください。
+また、他の定数の説明では、現在の実装で定数が表す数値がわかります。
+しかし、この数値に依存してはなりません。
+しかし、これらのすべてが負の値であることに依存することは可能です。
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">ECPG_INFORMIX_NUM_OVERFLOW</code></span></dt><dd><p>
+<!--
+        Functions return this value if an overflow occurred in a
+        calculation. Internally it is defined as -1200 (the <productname>Informix</productname>
+        definition).
+-->
+計算時にオーバーフローが発生した場合、関数はこの値を返します。
+内部的には-1200（<span class="productname">Informix</span>の定義）と定義されています。
+       </p></dd><dt><span class="term"><code class="literal">ECPG_INFORMIX_NUM_UNDERFLOW</code></span></dt><dd><p>
+<!--
+        Functions return this value if an underflow occurred in a calculation.
+        Internally it is defined as -1201 (the <productname>Informix</productname> definition).
+-->
+計算時にアンダーフローが発生した場合、関数はこの値を返します。
+内部的には-1201（<span class="productname">Informix</span>の定義）と定義されています。
+       </p></dd><dt><span class="term"><code class="literal">ECPG_INFORMIX_DIVIDE_ZERO</code></span></dt><dd><p>
+<!--
+        Functions return this value if an attempt to divide by zero is
+        observed. Internally it is defined as -1202 (the <productname>Informix</productname> definition).
+-->
+計算時にゼロ除算が発生した場合、関数はこの値を返します。
+内部的には-1202（<span class="productname">Informix</span>の定義）と定義されています。
+       </p></dd><dt><span class="term"><code class="literal">ECPG_INFORMIX_BAD_YEAR</code></span></dt><dd><p>
+<!--
+        Functions return this value if a bad value for a year was found while
+        parsing a date. Internally it is defined as -1204 (the <productname>Informix</productname>
+        definition).
+-->
+日付の解析時に年の値が不正であった場合、関数はこの値を返します。
+内部的には-1204（<span class="productname">Informix</span>の定義）と定義されています。
+       </p></dd><dt><span class="term"><code class="literal">ECPG_INFORMIX_BAD_MONTH</code></span></dt><dd><p>
+<!--
+        Functions return this value if a bad value for a month was found while
+        parsing a date. Internally it is defined as -1205 (the <productname>Informix</productname>
+        definition).
+-->
+日付の解析時に月の値が不正であった場合、関数はこの値を返します。
+内部的には-1205（<span class="productname">Informix</span>の定義）と定義されています。
+       </p></dd><dt><span class="term"><code class="literal">ECPG_INFORMIX_BAD_DAY</code></span></dt><dd><p>
+<!--
+        Functions return this value if a bad value for a day was found while
+        parsing a date. Internally it is defined as -1206 (the <productname>Informix</productname>
+        definition).
+-->
+日付の解析時に日の値が不正であった場合、関数はこの値を返します。
+内部的には-1206（<span class="productname">Informix</span>の定義）と定義されています。
+       </p></dd><dt><span class="term"><code class="literal">ECPG_INFORMIX_ENOSHORTDATE</code></span></dt><dd><p>
+<!--
+        Functions return this value if a parsing routine needs a short date
+        representation but did not get the date string in the right length.
+        Internally it is defined as -1209 (the <productname>Informix</productname> definition).
+-->
+解析処理が短縮日付表現を必要としているが、正しい長さの日付文字列が得られなかった場合、関数はこの値を返します。
+内部的には-1209（<span class="productname">Informix</span>の定義）と定義されています。
+       </p></dd><dt><span class="term"><code class="literal">ECPG_INFORMIX_DATE_CONVERT</code></span></dt><dd><p>
+<!--
+        Functions return this value if an error occurred during date
+        formatting.  Internally it is defined as -1210 (the
+        <productname>Informix</productname> definition).
+-->
+日付の書式付けの時にエラーが発生した場合、関数はこの値を返します。
+内部的には-1210（<span class="productname">Informix</span>の定義）と定義されています。
+       </p></dd><dt><span class="term"><code class="literal">ECPG_INFORMIX_OUT_OF_MEMORY</code></span></dt><dd><p>
+<!--
+        Functions return this value if memory was exhausted during
+        their operation.  Internally it is defined as -1211 (the
+        <productname>Informix</productname> definition).
+-->
+操作時にメモリが不足した場合、関数はこの値を返します。
+内部的には-1211（<span class="productname">Informix</span>の定義）と定義されています。
+       </p></dd><dt><span class="term"><code class="literal">ECPG_INFORMIX_ENOTDMY</code></span></dt><dd><p>
+<!--
+        Functions return this value if a parsing routine was supposed to get a
+        format mask (like <literal>mmddyy</literal>) but not all fields were listed
+        correctly. Internally it is defined as -1212 (the <productname>Informix</productname> definition).
+-->
+解析処理が書式マスク（<code class="literal">mmddyy</code>のような）が存在することを前提としているが、すべてのフィールドが正しく列挙されていない場合、関数はこの値を返します。
+内部的には-1212（<span class="productname">Informix</span>の定義）と定義されています。
+       </p></dd><dt><span class="term"><code class="literal">ECPG_INFORMIX_BAD_NUMERIC</code></span></dt><dd><p>
+<!--
+        Functions return this value either if a parsing routine cannot parse
+        the textual representation for a numeric value because it contains
+        errors or if a routine cannot complete a calculation involving numeric
+        variables because at least one of the numeric variables is invalid.
+        Internally it is defined as -1213 (the <productname>Informix</productname> definition).
+-->
+解析処理がエラーのため数値のテキスト表現を解析できなかった場合や数値変数の少なくとも1つが無効のため数値変数を使用した計算を完了できなかった場合、関数はこの値を返します。
+内部的には-1213（<span class="productname">Informix</span>の定義）と定義されています。
+       </p></dd><dt><span class="term"><code class="literal">ECPG_INFORMIX_BAD_EXPONENT</code></span></dt><dd><p>
+<!--
+        Functions return this value if a parsing routine cannot parse
+        an exponent.  Internally it is defined as -1216 (the
+        <productname>Informix</productname> definition).
+-->
+解析処理が指数の解析を行うことができなかった場合、関数はこの値を返します。
+内部的には-1216（<span class="productname">Informix</span>の定義）と定義されています。
+       </p></dd><dt><span class="term"><code class="literal">ECPG_INFORMIX_BAD_DATE</code></span></dt><dd><p>
+<!--
+        Functions return this value if a parsing routine cannot parse
+        a date.  Internally it is defined as -1218 (the
+        <productname>Informix</productname> definition).
+-->
+解析処理が日付を解析できなかった場合、関数はこの値を返します。
+内部的には-1218（<span class="productname">Informix</span>の定義）と定義されています。
+       </p></dd><dt><span class="term"><code class="literal">ECPG_INFORMIX_EXTRA_CHARS</code></span></dt><dd><p>
+<!--
+        Functions return this value if a parsing routine is passed extra
+        characters it cannot parse.  Internally it is defined as -1264 (the
+        <productname>Informix</productname> definition).
+-->
+解析処理が追加の文字列を解析できなかった場合、関数はこの値を返します。
+内部的には-1264（<span class="productname">Informix</span>の定義）と定義されています。
+       </p></dd></dl></div><p>
+   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ecpg-sql-whenever.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="ecpg.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="ecpg-develop.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">WHENEVER </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 36.16. 内部</td></tr></table></div></body></html>

@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>51.3. 構文解析過程</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="connect-estab.html" title="51.2. 接続の確立" /><link rel="next" href="rule-system.html" title="51.4. PostgreSQLルールシステム" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="overview.html" title="第51章 PostgreSQL内部の概要">第51章 PostgreSQL内部の概要</a></td><td width="20%" align="right"></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="connect-estab.html" title="51.2. 接続の確立">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="overview.html" title="第51章 PostgreSQL内部の概要">上へ</a></td><td width="60%" align="center">51.3. 構文解析過程</td><td width="20%" align="right"> <a accesskey="n" href="rule-system.html" title="51.4. PostgreSQLルールシステム">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PARSER-STAGE"><div class="titlepage"><div><div><h2 class="title" style="clear: both">51.3. 構文解析過程</h2></div></div></div><!--
+   <title>The Parser Stage</title>
+--><p>
+<!--
+    The <firstterm>parser stage</firstterm> consists of two parts:
+-->
+<em class="firstterm">構文解析過程</em>は2つの部分から構成されています。
+
+    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<!--
+       The <firstterm>parser</firstterm> defined in
+       <filename>gram.y</filename> and <filename>scan.l</filename> is
+       built using the Unix tools <application>bison</application>
+       and <application>flex</application>.
+-->
+<code class="filename">gram.y</code>と<code class="filename">scan.l</code>で定義されている<em class="firstterm">パーサ</em>は、Unixのツール<span class="application">bison</span>と<span class="application">flex</span>を使って構築されます。
+      </p></li><li class="listitem"><p>
+<!--
+       The <firstterm>transformation process</firstterm> does
+       modifications and augmentations to the data structures returned by the parser.
+-->
+<em class="firstterm">変換プロセス</em>は、パーサから返されたデータ構造の変更や追加を行います。
+      </p></li></ul></div><p>
+   </p><div class="sect2" id="id-1.10.3.6.3"><div class="titlepage"><div><div><h3 class="title">51.3.1. パーサ</h3></div></div></div><!--
+    <title>Parser</title>
+--><p>
+<!--
+     The parser has to check the query string (which arrives as plain
+     text) for valid syntax. If the syntax is correct a
+     <firstterm>parse tree</firstterm> is built up and handed back;
+     otherwise an error is returned. The parser and lexer are
+     implemented using the well-known Unix tools <application>bison</application>
+     and <application>flex</application>.
+-->
+パーサは、（平文のテキストとして渡される）問い合わせ文字列が正しい構文になっているかチェックしなければいけません。
+もし構文が正しい場合は<em class="firstterm">構文解析ツリー</em>が作られて返されます。
+正しくない場合はエラーが返されます。
+パーサと字句解析はUnixでよく知られたツールの<span class="application">bison</span>と<span class="application">flex</span>を使用して実装されています。
+    </p><p>
+<!--
+     The <firstterm>lexer</firstterm> is defined in the file
+     <filename>scan.l</filename> and is responsible
+     for recognizing <firstterm>identifiers</firstterm>,
+     the <firstterm>SQL key words</firstterm> etc. For
+     every key word or identifier that is found, a <firstterm>token</firstterm>
+     is generated and handed to the parser.
+-->
+<em class="firstterm">字句解析</em>はファイル<code class="filename">scan.l</code>で定義され、<em class="firstterm">識別子</em>や<em class="firstterm">SQLキーワード</em>などの確認を担当します。
+検出された全てのキーワードや識別子に対し<em class="firstterm">トークン</em>が生成されパーサに渡されます。
+    </p><p>
+<!--
+     The parser is defined in the file <filename>gram.y</filename> and
+     consists of a set of <firstterm>grammar rules</firstterm> and
+     <firstterm>actions</firstterm> that are executed whenever a rule
+     is fired. The code of the actions (which is actually C code) is
+     used to build up the parse tree.
+-->
+パーサはファイル<code class="filename">gram.y</code>の中で定義され、<em class="firstterm">文法ルール</em>とルールが実行された時に実行される<em class="firstterm">アクション</em>の組から構成されています。
+アクションのコード（実際はC言語コードです）は構文解析ツリーを作るのに使われます。
+    </p><p>
+<!--
+     The file <filename>scan.l</filename> is transformed to the C
+     source file <filename>scan.c</filename> using the program
+     <application>flex</application> and <filename>gram.y</filename> is
+     transformed to <filename>gram.c</filename> using
+     <application>bison</application>.  After these transformations
+     have taken place a normal C compiler can be used to create the
+     parser. Never make any changes to the generated C files as they
+     will be overwritten the next time <application>flex</application>
+     or <application>bison</application> is called.
+-->
+ファイル<code class="filename">scan.l</code>はプログラム<span class="application">flex</span>を使ってCのソースファイル<code class="filename">scan.c</code>に変換されます。
+そして<code class="filename">gram.y</code>は<span class="application">bison</span>を使って<code class="filename">gram.c</code>に書き換えられます。
+これらの書き換えが終わると、パーサを作るために通常のCコンパイラが使えるようになります。
+生成されたCのファイルには絶対に変更を加えないでください。
+と言うのは次に<span class="application">flex</span>もしくは<span class="application">bison</span> が呼ばれた時に上書きされるからです。
+
+     </p><div class="note"><h3 class="title">注記</h3><p>
+<!--
+       The mentioned transformations and compilations are normally done
+       automatically using the <firstterm>makefiles</firstterm>
+       shipped with the <productname>PostgreSQL</productname>
+       source distribution.
+-->
+ここで言及した書き換えやコンパイルは通常<span class="productname">PostgreSQL</span>のソースと一緒に配布される<em class="firstterm">makefile</em>を使って自動的に行われます。
+      </p></div><p>
+    </p><p>
+<!--
+     A detailed description of <application>bison</application> or
+     the grammar rules given in <filename>gram.y</filename> would be
+     beyond the scope of this paper. There are many books and
+     documents dealing with <application>flex</application> and
+     <application>bison</application>. You should be familiar with
+     <application>bison</application> before you start to study the
+     grammar given in <filename>gram.y</filename> otherwise you won't
+     understand what happens there.
+-->
+<span class="application">bison</span>または<code class="filename">gram.y</code>で定義される文法ルールの詳細は本稿では説明しきれません。
+<span class="application">flex</span>や<span class="application">bison</span>については本や資料がたくさん出ています。
+<code class="filename">gram.y</code>の文法の勉強を始める前に<span class="application">bison</span>の知識が必須となります。
+その知識なしではそこで何が起こっているのかを理解することは難しいでしょう。
+    </p></div><div class="sect2" id="id-1.10.3.6.4"><div class="titlepage"><div><div><h3 class="title">51.3.2. 書き換えプロセス</h3></div></div></div><!--
+     <title>Transformation Process</title>
+--><p>
+<!--
+     The parser stage creates a parse tree using only fixed rules about
+     the syntactic structure of SQL.  It does not make any lookups in the
+     system catalogs, so there is no possibility to understand the detailed
+     semantics of the requested operations.  After the parser completes,
+     the <firstterm>transformation process</firstterm> takes the tree handed
+     back by the parser as input and does the semantic interpretation needed
+     to understand which tables, functions, and operators are referenced by
+     the query.  The data structure that is built to represent this
+     information is called the <firstterm>query tree</firstterm>.
+-->
+構文解析過程ではSQLの構文構造に関する固定ルールのみを使って構文解析ツリーを作成します。
+システムカタログの参照を行わないので、要求されている操作の詳細な語義は理解しません。
+構文解析が終わった後に入力としてパーサから戻されたツリーを<em class="firstterm">書き換えプロセス</em>が引き受け、どのテーブル、関数、そして演算子が問い合わせによって参照されているのかの判断に必要な語義翻訳を行います。
+この情報を表すために作成されるデータ構造を<em class="firstterm">問い合わせツリー</em>と呼びます。
+    </p><p>
+<!--
+     The reason for separating raw parsing from semantic analysis is that
+     system catalog lookups can only be done within a transaction, and we
+     do not wish to start a transaction immediately upon receiving a query
+     string.  The raw parsing stage is sufficient to identify the transaction
+     control commands (<command>BEGIN</command>, <command>ROLLBACK</command>, etc), and
+     these can then be correctly executed without any further analysis.
+     Once we know that we are dealing with an actual query (such as
+     <command>SELECT</command> or <command>UPDATE</command>), it is okay to
+     start a transaction if we're not already in one.  Only then can the
+     transformation process be invoked.
+-->
+語義解釈と入力の構文解釈を切り分ける理由は、システムカタログの参照はトランザクション内でのみ行うことができますが、問い合わせ文字列を受け取ってすぐにトランザクションを開始することは好ましくないと考えられるからです。
+入力に対する構文解析過程ではトランザクション管理コマンド（<code class="command">BEGIN</code>、<code class="command">ROLLBACK</code>など）を特定するだけで十分であるとともに、それ以上の分析を行わなくても正しい処理が実行されます。
+実際の問い合わせ（例えば<code class="command">SELECT</code>もしくは<code class="command">UPDATE</code>）に関わっていると言うことがわかっていて既にあるトランザクション内にいなければ新規トランザクションを開始することは問題ありません。これ以降に限り書き換えプロセスを起動することができます。
+    </p><p>
+<!--
+     The query tree created by the transformation process is structurally
+     similar to the raw parse tree in most places, but it has many differences
+     in detail.  For example, a <structname>FuncCall</structname> node in the
+     parse tree represents something that looks syntactically like a function
+     call.  This might be transformed to either a <structname>FuncExpr</structname>
+     or <structname>Aggref</structname> node depending on whether the referenced
+     name turns out to be an ordinary function or an aggregate function.
+     Also, information about the actual data types of columns and expression
+     results is added to the query tree.
+-->
+書き換えプロセスで作成された問い合わせツリーはほとんどの箇所で加工されていない構文解析ツリーに構造的には似ていますが、細部では数多くの相違が存在します。
+例えば、構文解析ツリーの<code class="structname">FuncCall</code>ノードは構文的には関数呼び出しのように見える何かを表わしています。
+これは参照された名前が通常の関数になるか集約関数となるかによって<code class="structname">FuncExpr</code>もしくは<code class="structname">Aggref</code>に書き換えられることがあります。
+さらに、列の実際のデータ型と式の結果についての情報が問い合わせツリーに書き加えられます。
+    </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="connect-estab.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="overview.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="rule-system.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">51.2. 接続の確立 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 51.4. <span class="productname">PostgreSQL</span>ルールシステム</td></tr></table></div></body></html>

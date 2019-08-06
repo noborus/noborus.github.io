@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>12.8. テキスト検索のテストとデバッグ</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="textsearch-configuration.html" title="12.7. 設定例" /><link rel="next" href="textsearch-indexes.html" title="12.9. GINおよびGiSTインデックス種類" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="textsearch.html" title="第12章 全文検索">第12章 全文検索</a></td><td width="20%" align="right"></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="textsearch-configuration.html" title="12.7. 設定例">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="textsearch.html" title="第12章 全文検索">上へ</a></td><td width="60%" align="center">12.8. テキスト検索のテストとデバッグ</td><td width="20%" align="right"> <a accesskey="n" href="textsearch-indexes.html" title="12.9. GINおよびGiSTインデックス種類">次へ</a></td></tr></table><hr /></div><div class="sect1" id="TEXTSEARCH-DEBUGGING"><div class="titlepage"><div><div><h2 class="title" style="clear: both">12.8. テキスト検索のテストとデバッグ</h2></div></div></div><!--
+  <title>Testing and Debugging Text Search</title>
+--><p>
+<!--
+   The behavior of a custom text search configuration can easily become
+   confusing.  The functions described
+   in this section are useful for testing text search objects.  You can
+   test a complete configuration, or test parsers and dictionaries separately.
+-->
+カスタムテキスト検索設定の挙動は複雑になりがちで、結果として混乱を招くことになります。この章では、テキスト検索オブジェクトのテストの際に役に立つ関数を説明します。設定が完全かどうか、パーサと辞書を別々にテストすることなどが可能です。
+  </p><div class="sect2" id="TEXTSEARCH-CONFIGURATION-TESTING"><div class="titlepage"><div><div><h3 class="title">12.8.1. 設定のテスト</h3></div></div></div><!--
+   <title>Configuration Testing</title>
+--><p>
+<!--
+   The function <function>ts_debug</function> allows easy testing of a
+   text search configuration.
+-->
+<code class="function">ts_debug</code>関数により、テキスト検索設定の容易なテストができます。
+  </p><a id="id-1.5.11.11.3.3" class="indexterm"></a><pre class="synopsis">
+ts_debug([<span class="optional"> <em class="replaceable"><code>config</code></em> <code class="type">regconfig</code>, </span>] <em class="replaceable"><code>document</code></em> <code class="type">text</code>,
+         OUT <em class="replaceable"><code>alias</code></em> <code class="type">text</code>,
+         OUT <em class="replaceable"><code>description</code></em> <code class="type">text</code>,
+         OUT <em class="replaceable"><code>token</code></em> <code class="type">text</code>,
+         OUT <em class="replaceable"><code>dictionaries</code></em> <code class="type">regdictionary[]</code>,
+         OUT <em class="replaceable"><code>dictionary</code></em> <code class="type">regdictionary</code>,
+         OUT <em class="replaceable"><code>lexemes</code></em> <code class="type">text[]</code>)
+         returns setof record
+</pre><p>
+<!--
+   <function>ts_debug</function> displays information about every token of
+   <replaceable class="parameter">document</replaceable> as produced by the
+   parser and processed by the configured dictionaries.  It uses the
+   configuration specified by <replaceable
+   class="parameter">config</replaceable>,
+   or <varname>default_text_search_config</varname> if that argument is
+   omitted.
+-->
+<code class="function">ts_debug</code>は、パーサが生成し、設定された辞書が処理した<em class="replaceable"><code>document</code></em>のすべてのトークンの情報を表示します。その際、<em class="replaceable"><code>config</code></em>で指定した設定が使われます。引数が省略されると<code class="varname">default_text_search_config</code>が使われます。
+  </p><p>
+<!--
+   <function>ts_debug</function> returns one row for each token identified in the text
+   by the parser.  The columns returned are
+-->
+<code class="function">ts_debug</code>は、パーサが認識したテキスト中のトークンを1行につき一つ返します。
+返却される列は以下です。
+
+    </p><div class="itemizedlist"><ul class="itemizedlist compact" style="list-style-type: bullet; "><li class="listitem" style="list-style-type: disc"><p>
+<!--
+       <replaceable>alias</replaceable> <type>text</type> &mdash; short name of the token type
+-->
+       <em class="replaceable"><code>alias</code></em> <code class="type">text</code> — トークン型の短縮名
+      </p></li><li class="listitem" style="list-style-type: disc"><p>
+<!--
+       <replaceable>description</replaceable> <type>text</type> &mdash; description of the
+       token type
+-->
+       <em class="replaceable"><code>description</code></em> <code class="type">text</code> — トークン型の説明
+      </p></li><li class="listitem" style="list-style-type: disc"><p>
+<!--
+       <replaceable>token</replaceable> <type>text</type> &mdash; text of the token
+-->
+       <em class="replaceable"><code>token</code></em> <code class="type">text</code> — トークンテキスト
+      </p></li><li class="listitem" style="list-style-type: disc"><p>
+<!--
+       <replaceable>dictionaries</replaceable> <type>regdictionary[]</type> &mdash; the
+       dictionaries selected by the configuration for this token type
+-->
+       <em class="replaceable"><code>dictionaries</code></em> <code class="type">regdictionary[]</code> — 設定によってこのトークン型用に選択された辞書
+      </p></li><li class="listitem" style="list-style-type: disc"><p>
+<!--
+       <replaceable>dictionary</replaceable> <type>regdictionary</type> &mdash; the dictionary
+       that recognized the token, or <literal>NULL</literal> if none did
+-->
+       <em class="replaceable"><code>dictionary</code></em> <code class="type">regdictionary</code> — トークンを認識した辞書。もし認識した辞書がなければ <code class="literal">NULL</code>
+      </p></li><li class="listitem" style="list-style-type: disc"><p>
+<!--
+       <replaceable>lexemes</replaceable> <type>text[]</type> &mdash; the lexeme(s) produced
+       by the dictionary that recognized the token, or <literal>NULL</literal> if
+       none did; an empty array (<literal>{}</literal>) means it was recognized as a
+       stop word
+-->
+       <em class="replaceable"><code>lexemes</code></em> <code class="type">text[]</code> — トークンを認識した辞書が生成した語彙素。もしどの辞書も認識しなければ<code class="literal">NULL</code>。空の配列(<code class="literal">{}</code>)が返った場合は、ストップワードとして認識されたことを示す
+      </p></li></ul></div><p>
+  </p><p>
+<!--
+   Here is a simple example:
+-->
+簡単な例を示します。
+
+</p><pre class="screen">
+SELECT * FROM ts_debug('english','a fat  cat sat on a mat - it ate a fat rats');
+   alias   |   description   | token |  dictionaries  |  dictionary  | lexemes 
+-----------+-----------------+-------+----------------+--------------+---------
+ asciiword | Word, all ASCII | a     | {english_stem} | english_stem | {}
+ blank     | Space symbols   |       | {}             |              | 
+ asciiword | Word, all ASCII | fat   | {english_stem} | english_stem | {fat}
+ blank     | Space symbols   |       | {}             |              | 
+ asciiword | Word, all ASCII | cat   | {english_stem} | english_stem | {cat}
+ blank     | Space symbols   |       | {}             |              | 
+ asciiword | Word, all ASCII | sat   | {english_stem} | english_stem | {sat}
+ blank     | Space symbols   |       | {}             |              | 
+ asciiword | Word, all ASCII | on    | {english_stem} | english_stem | {}
+ blank     | Space symbols   |       | {}             |              | 
+ asciiword | Word, all ASCII | a     | {english_stem} | english_stem | {}
+ blank     | Space symbols   |       | {}             |              | 
+ asciiword | Word, all ASCII | mat   | {english_stem} | english_stem | {mat}
+ blank     | Space symbols   |       | {}             |              | 
+ blank     | Space symbols   | -     | {}             |              | 
+ asciiword | Word, all ASCII | it    | {english_stem} | english_stem | {}
+ blank     | Space symbols   |       | {}             |              | 
+ asciiword | Word, all ASCII | ate   | {english_stem} | english_stem | {ate}
+ blank     | Space symbols   |       | {}             |              | 
+ asciiword | Word, all ASCII | a     | {english_stem} | english_stem | {}
+ blank     | Space symbols   |       | {}             |              | 
+ asciiword | Word, all ASCII | fat   | {english_stem} | english_stem | {fat}
+ blank     | Space symbols   |       | {}             |              | 
+ asciiword | Word, all ASCII | rats  | {english_stem} | english_stem | {rat}
+</pre><p>
+  </p><p>
+<!--
+   For a more extensive demonstration, we
+   first create a <literal>public.english</literal> configuration and
+   Ispell dictionary for the English language:
+-->
+もう少し高度なデモをお見せするために、まず英語用の<code class="literal">public.english</code>設定と、Ispell辞書を作ります。
+  </p><pre class="programlisting">
+CREATE TEXT SEARCH CONFIGURATION public.english ( COPY = pg_catalog.english );
+
+CREATE TEXT SEARCH DICTIONARY english_ispell (
+    TEMPLATE = ispell,
+    DictFile = english,
+    AffFile = english,
+    StopWords = english
+);
+
+ALTER TEXT SEARCH CONFIGURATION public.english
+   ALTER MAPPING FOR asciiword WITH english_ispell, english_stem;
+</pre><pre class="screen">
+SELECT * FROM ts_debug('public.english','The Brightest supernovaes');
+   alias   |   description   |    token    |         dictionaries          |   dictionary   |   lexemes   
+-----------+-----------------+-------------+-------------------------------+----------------+-------------
+ asciiword | Word, all ASCII | The         | {english_ispell,english_stem} | english_ispell | {}
+ blank     | Space symbols   |             | {}                            |                | 
+ asciiword | Word, all ASCII | Brightest   | {english_ispell,english_stem} | english_ispell | {bright}
+ blank     | Space symbols   |             | {}                            |                | 
+ asciiword | Word, all ASCII | supernovaes | {english_ispell,english_stem} | english_stem   | {supernova}
+</pre><p>
+<!--
+   In this example, the word <literal>Brightest</literal> was recognized by the
+   parser as an <literal>ASCII word</literal> (alias <literal>asciiword</literal>).
+   For this token type the dictionary list is
+   <literal>english_ispell</literal> and
+   <literal>english_stem</literal>. The word was recognized by
+   <literal>english_ispell</literal>, which reduced it to the noun
+   <literal>bright</literal>. The word <literal>supernovaes</literal> is
+   unknown to the <literal>english_ispell</literal> dictionary so it
+   was passed to the next dictionary, and, fortunately, was recognized (in
+   fact, <literal>english_stem</literal> is a Snowball dictionary which
+   recognizes everything; that is why it was placed at the end of the
+   dictionary list).
+-->
+この例では、単語<code class="literal">Brightest</code>は、<code class="literal">ASCII word</code> (別名は<code class="literal">asciiword</code>)として認識されています。
+このトークン型のための辞書リストは<code class="literal">english_ispell</code> と<code class="literal">english_stem</code>です。この単語は<code class="literal">english_ispell</code>に認識され、名詞<code class="literal">bright</code>へと縮退されています。単語<code class="literal">supernovaes</code>は<code class="literal">english_ispell</code>辞書には認識されず、次の辞書に渡され、幸い認識されました(実際には、<code class="literal">english_stem</code>はSnowball辞書で、何でも認識します。それで、この辞書は辞書リストの最後に置かれているわけです)。
+  </p><p>
+<!--
+   The word <literal>The</literal> was recognized by the
+   <literal>english_ispell</literal> dictionary as a stop word (<xref
+   linkend="textsearch-stopwords"/>) and will not be indexed.
+   The spaces are discarded too, since the configuration provides no
+   dictionaries at all for them.
+-->
+単語<code class="literal">The</code>は、<code class="literal">english_ispell</code>辞書によってストップワード(<a class="xref" href="textsearch-dictionaries.html#TEXTSEARCH-STOPWORDS" title="12.6.1. ストップワード">12.6.1</a>)として認識されており、インデックス付けされません。空白も捨てられます。この設定では空白に関する辞書が提供されていないからです。
+  </p><p>
+<!--
+   You can reduce the width of the output by explicitly specifying which columns
+   you want to see:
+-->
+明示的に見たい列を指定することにより、出力の幅を減らすことができます。
+
+</p><pre class="screen">
+SELECT alias, token, dictionary, lexemes
+FROM ts_debug('public.english','The Brightest supernovaes');
+   alias   |    token    |   dictionary   |   lexemes   
+-----------+-------------+----------------+-------------
+ asciiword | The         | english_ispell | {}
+ blank     |             |                | 
+ asciiword | Brightest   | english_ispell | {bright}
+ blank     |             |                | 
+ asciiword | supernovaes | english_stem   | {supernova}
+</pre><p>
+  </p></div><div class="sect2" id="TEXTSEARCH-PARSER-TESTING"><div class="titlepage"><div><div><h3 class="title">12.8.2. パーサのテスト</h3></div></div></div><!--
+   <title>Parser Testing</title>
+--><p>
+<!--
+   The following functions allow direct testing of a text search parser.
+-->
+次にあげた関数により、テキスト検索パーサを直接テストすることができます。
+  </p><a id="id-1.5.11.11.4.3" class="indexterm"></a><pre class="synopsis">
+ts_parse(<em class="replaceable"><code>parser_name</code></em> <code class="type">text</code>, <em class="replaceable"><code>document</code></em> <code class="type">text</code>,
+         OUT <em class="replaceable"><code>tokid</code></em> <code class="type">integer</code>, OUT <em class="replaceable"><code>token</code></em> <code class="type">text</code>) returns <code class="type">setof record</code>
+ts_parse(<em class="replaceable"><code>parser_oid</code></em> <code class="type">oid</code>, <em class="replaceable"><code>document</code></em> <code class="type">text</code>,
+         OUT <em class="replaceable"><code>tokid</code></em> <code class="type">integer</code>, OUT <em class="replaceable"><code>token</code></em> <code class="type">text</code>) returns <code class="type">setof record</code>
+</pre><p>
+<!--
+   <function>ts_parse</function> parses the given <replaceable>document</replaceable>
+   and returns a series of records, one for each token produced by
+   parsing. Each record includes a <varname>tokid</varname> showing the
+   assigned token type and a <varname>token</varname> which is the text of the
+   token.  For example:
+-->
+<code class="function">ts_parse</code>は与えられた<em class="replaceable"><code>document</code></em>をパースし、パーサが生成したトークンを1行に1個もつ一連のレコードを返します。それぞれのレコードには、割り当てられたトークン型を示す<code class="varname">tokid</code>と、テキストのトークンである<code class="varname">token</code>が含まれます。
+例を示します。
+
+</p><pre class="screen">
+SELECT * FROM ts_parse('default', '123 - a number');
+ tokid | token
+-------+--------
+    22 | 123
+    12 |
+    12 | -
+     1 | a
+    12 |
+     1 | number
+</pre><p>
+  </p><a id="id-1.5.11.11.4.6" class="indexterm"></a><pre class="synopsis">
+ts_token_type(<em class="replaceable"><code>parser_name</code></em> <code class="type">text</code>, OUT <em class="replaceable"><code>tokid</code></em> <code class="type">integer</code>,
+              OUT <em class="replaceable"><code>alias</code></em> <code class="type">text</code>, OUT <em class="replaceable"><code>description</code></em> <code class="type">text</code>) returns <code class="type">setof record</code>
+ts_token_type(<em class="replaceable"><code>parser_oid</code></em> <code class="type">oid</code>, OUT <em class="replaceable"><code>tokid</code></em> <code class="type">integer</code>,
+              OUT <em class="replaceable"><code>alias</code></em> <code class="type">text</code>, OUT <em class="replaceable"><code>description</code></em> <code class="type">text</code>) returns <code class="type">setof record</code>
+</pre><p>
+<!--
+   <function>ts_token_type</function> returns a table which describes each type of
+   token the specified parser can recognize.  For each token type, the table
+   gives the integer <varname>tokid</varname> that the parser uses to label a
+   token of that type, the <varname>alias</varname> that names the token type
+   in configuration commands, and a short <varname>description</varname>.  For
+   example:
+-->
+<code class="function">ts_token_type</code>は、指定したパーサが認識できるトークン型を記述したテーブルを返します。各々のトークン型に対し、パーサがトークン型をラベル付けするのに使用する整数<code class="varname">tokid</code>、設定コマンド中のトークンの名前である<code class="varname">alias</code>、簡単な説明である<code class="varname">description</code>が含まれます。
+例を示します。
+
+</p><pre class="screen">
+SELECT * FROM ts_token_type('default');
+ tokid |      alias      |               description                
+-------+-----------------+------------------------------------------
+     1 | asciiword       | Word, all ASCII
+     2 | word            | Word, all letters
+     3 | numword         | Word, letters and digits
+     4 | email           | Email address
+     5 | url             | URL
+     6 | host            | Host
+     7 | sfloat          | Scientific notation
+     8 | version         | Version number
+     9 | hword_numpart   | Hyphenated word part, letters and digits
+    10 | hword_part      | Hyphenated word part, all letters
+    11 | hword_asciipart | Hyphenated word part, all ASCII
+    12 | blank           | Space symbols
+    13 | tag             | XML tag
+    14 | protocol        | Protocol head
+    15 | numhword        | Hyphenated word, letters and digits
+    16 | asciihword      | Hyphenated word, all ASCII
+    17 | hword           | Hyphenated word, all letters
+    18 | url_path        | URL path
+    19 | file            | File or path name
+    20 | float           | Decimal notation
+    21 | int             | Signed integer
+    22 | uint            | Unsigned integer
+    23 | entity          | XML entity
+</pre><p>
+   </p></div><div class="sect2" id="TEXTSEARCH-DICTIONARY-TESTING"><div class="titlepage"><div><div><h3 class="title">12.8.3. 辞書のテスト</h3></div></div></div><!--
+   <title>Dictionary Testing</title>
+--><p>
+<!--
+    The <function>ts_lexize</function> function facilitates dictionary testing.
+-->
+<code class="function">ts_lexize</code>関数は辞書のテストを支援します。
+   </p><a id="id-1.5.11.11.5.3" class="indexterm"></a><pre class="synopsis">
+ts_lexize(<em class="replaceable"><code>dict</code></em> <code class="type">regdictionary</code>, <em class="replaceable"><code>token</code></em> <code class="type">text</code>) returns <code class="type">text[]</code>
+</pre><p>
+<!--
+    <function>ts_lexize</function> returns an array of lexemes if the input
+    <replaceable>token</replaceable> is known to the dictionary,
+    or an empty array if the token
+    is known to the dictionary but it is a stop word, or
+    <literal>NULL</literal> if it is an unknown word.
+-->
+<code class="function">ts_lexize</code>は、入力<em class="replaceable"><code>token</code></em>が辞書に認識されれば語彙素の配列を返します。辞書に認識され、それがストップワードである場合には空の配列を返します。認識されなければ<code class="literal">NULL</code>を返します。
+   </p><p>
+<!--
+    Examples:
+-->
+例:
+
+</p><pre class="screen">
+SELECT ts_lexize('english_stem', 'stars');
+ ts_lexize
+-----------
+ {star}
+
+SELECT ts_lexize('english_stem', 'a');
+ ts_lexize
+-----------
+ {}
+</pre><p>
+   </p><div class="note"><h3 class="title">注記</h3><p>
+<!--
+     The <function>ts_lexize</function> function expects a single
+     <emphasis>token</emphasis>, not text. Here is a case
+     where this can be confusing:
+-->
+<code class="function">ts_lexize</code>関数には、テキストではなく単一の<span class="emphasis"><em>トークン</em></span>を与えます。これを間違えると次のようになります。
+
+</p><pre class="screen">
+SELECT ts_lexize('thesaurus_astro','supernovae stars') is null;
+ ?column?
+----------
+ t
+</pre><p>
+
+<!--
+     The thesaurus dictionary <literal>thesaurus_astro</literal> does know the
+     phrase <literal>supernovae stars</literal>, but <function>ts_lexize</function>
+     fails since it does not parse the input text but treats it as a single
+     token. Use <function>plainto_tsquery</function> or <function>to_tsvector</function> to
+     test thesaurus dictionaries, for example:
+-->
+類語辞書<code class="literal">thesaurus_astro</code>は語句<code class="literal">supernovae stars</code>を認識しますが、<code class="function">ts_lexize</code>はしません。なぜなら、入力をテキストではなく、単一のトークンとして扱うからです。類語辞書をテストするには、<code class="function">plainto_tsquery</code>または<code class="function">to_tsvector</code>を使ってください。例を示します。
+
+</p><pre class="screen">
+SELECT plainto_tsquery('supernovae stars');
+ plainto_tsquery
+-----------------
+ 'sn'
+</pre><p>
+    </p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="textsearch-configuration.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="textsearch.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="textsearch-indexes.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">12.7. 設定例 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 12.9. GINおよびGiSTインデックス種類</td></tr></table></div></body></html>

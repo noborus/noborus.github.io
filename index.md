@@ -2,7 +2,9 @@
 
 最新 [html](current/html) | [pdf](current/postgres-A4.pdf)
 
-last-updated: 2019-05-06 04:41:23 JST
+[CSSサンプル](css/html)
+
+last-updated: 2019-08-06 15:01:23 JST
 
 テスト版PDF
 
