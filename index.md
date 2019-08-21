@@ -1,7 +1,6 @@
 ---
 layout: default
 ---
-| [github](https://github.com/noborus/) | [qiita](https://qiita.com/noborus) | [twitter](https://twitter.com/noborus) | [instagram](https://www.instagram.com/noborusai/) |
 
 ## 作ったもの
 
@@ -11,19 +10,17 @@ layout: default
 
 CSV,LTSV,JSON,TBLNファイルにSQLを実行できるツール
 
-### [tbln](https://github.com/noborus/tbln)
+### [tbln](https://github.com/noborus/tbln) [[tbln.dev](https://tbln.dev/)]
 
 [![GoDoc](https://godoc.org/github.com/noborus/tbln?status.svg)](https://godoc.org/github.com/noborus/tbln)
 
-データベースのテーブルと親和性のあるファイルフォーマットを扱うライブラリ＆ツール
-
-* [[tbln.dev(オフィシャルサイト)](https://tbln.dev/)]
+データベースのテーブルと親和性のあるファイルフォーマット(tbln)を扱うライブラリ＆ツール
 
 ### [psutilsql](https://github.com/noborus/psutilsql)
 
 [![GoDoc](https://godoc.org/github.com/noborus/psutilsql?status.svg)](https://godoc.org/github.com/noborus/psutilsql)
 
-システム情報にSQLで実行して表示するツール
+システム情報にSQLを実行して表示するツール
 
 ## 参加しているプロジェクト
 
@@ -47,3 +44,6 @@ last-updated: 2019-08-06 15:01:23 JST
 
 [テスト版PDF](test/postgres-A4.pdf)
 
+## お手伝い
+
+[中国地方DB勉強会](https://dbstudychugoku.github.io/) のサイト
