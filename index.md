@@ -43,7 +43,3 @@ CSV,LTSV,JSON,TBLNファイルにSQLを実行できるツール
 last-updated: 2019-08-06 15:01:23 JST
 
 [テスト版PDF](test/postgres-A4.pdf)
-
-## お手伝い
-
-[中国地方DB勉強会](https://dbstudychugoku.github.io/) のサイト
