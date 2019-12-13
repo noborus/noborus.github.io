@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>VACUUM</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-update.html" title="UPDATE" /><link rel="next" href="sql-values.html" title="VALUES" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-update.html" title="UPDATE">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">VACUUM</td><td width="20%" align="right"> <a accesskey="n" href="sql-values.html" title="VALUES">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-VACUUM"><div class="titlepage"></div><a id="id-1.9.3.183.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">VACUUM</span></h2><p>VACUUM<!--
+  <refpurpose>garbage-collect and optionally analyze a database</refpurpose>
+--> — 
+データベースの不要領域の回収とデータベースの解析（オプション）を行う
+</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
+VACUUM [ ( <em class="replaceable"><code>option</code></em> [, ...] ) ] [ <em class="replaceable"><code>table_and_columns</code></em> [, ...] ]
+VACUUM [ FULL ] [ FREEZE ] [ VERBOSE ] [ ANALYZE ] [ <em class="replaceable"><code>table_and_columns</code></em> [, ...] ]
+
+<!--
+<phrase>where <replaceable class="parameter">option</replaceable> can be one of:</phrase>
+-->
+<span class="phrase">ここで<em class="replaceable"><code>option</code></em>は以下の一つであり、</span>
+
+    FULL
+    FREEZE
+    VERBOSE
+    ANALYZE
+    DISABLE_PAGE_SKIPPING
+
+<!--
+<phrase>and <replaceable class="parameter">table_and_columns</replaceable> is:</phrase>
+-->
+<span class="phrase"><em class="replaceable"><code>table_and_columns</code></em>は以下の通りです。</span>
+
+    <em class="replaceable"><code>table_name</code></em> [ ( <em class="replaceable"><code>column_name</code></em> [, ...] ) ]
+</pre></div><div class="refsect1" id="id-1.9.3.183.5"><h2>説明</h2><!--
+  <title>Description</title>
+--><p>
+<!--
+   <command>VACUUM</command> reclaims storage occupied by dead tuples.
+   In normal <productname>PostgreSQL</productname> operation, tuples that
+   are deleted or obsoleted by an update are not physically removed from
+   their table; they remain present until a <command>VACUUM</command> is
+   done.  Therefore it's necessary to do <command>VACUUM</command>
+   periodically, especially on frequently-updated tables.
+-->
+<code class="command">VACUUM</code> は、無効タプルが使用する領域を回収します。
+<span class="productname">PostgreSQL</span>の通常動作では、削除されたタプルや更新によって不要となったタプルは、テーブルから物理的には削除されません。
+これらのタプルは<code class="command">VACUUM</code>が完了するまで存在し続けます。
+そのため、特に更新頻度が多いテーブルでは、<code class="command">VACUUM</code>を定期的に実行する必要があります。
+  </p><p>
+<!--
+   Without a <replaceable class="parameter">table_and_columns</replaceable>
+   list, <command>VACUUM</command> processes every table and materialized view
+   in the current database that the current user has permission to vacuum.
+   With a list, <command>VACUUM</command> processes only those table(s).
+-->
+<em class="replaceable"><code>table_and_columns</code></em>リストを指定しない場合、<code class="command">VACUUM</code>は現在のユーザがバキュームできる権限を持つ、現在のデータベース内の全てのテーブルとマテリアライズドビューを処理します。
+リストを指定した場合、<code class="command">VACUUM</code>は指定したテーブルのみを処理します。
+  </p><p>
+<!--
+   <command>VACUUM ANALYZE</command> performs a <command>VACUUM</command>
+   and then an <command>ANALYZE</command> for each selected table.  This
+   is a handy combination form for routine maintenance scripts.  See
+   <xref linkend="sql-analyze"/>
+   for more details about its processing.
+-->
+<code class="command">VACUUM ANALYZE</code>は、指定したテーブルの1つひとつに対し、<code class="command">VACUUM</code>を行った後、<code class="command">ANALYZE</code>を行います。
+このコマンドの組合わせは、日常的な管理スクリプトで使うと便利です。
+処理の詳細に関しては、<a class="xref" href="sql-analyze.html" title="ANALYZE"><span class="refentrytitle">ANALYZE</span></a>を参照してください。
+  </p><p>
+<!--
+   Plain <command>VACUUM</command> (without <literal>FULL</literal>) simply reclaims
+   space and makes it
+   available for re-use.  This form of the command can operate in parallel
+   with normal reading and writing of the table, as an exclusive lock
+   is not obtained.  However, extra space is not returned to the operating
+   system (in most cases); it's just kept available for re-use within the
+   same table.  <command>VACUUM FULL</command> rewrites the entire contents
+   of the table into a new disk file with no extra space, allowing unused
+   space to be returned to the operating system.  This form is much slower and
+   requires an exclusive lock on each table while it is being processed.
+-->
+（<code class="literal">FULL</code>が指定されていない）通常の<code class="command">VACUUM</code>は、単に領域を回収し、そこを再利用可能な状態に変更します。
+この形式のコマンドでは排他的ロックを取得しないため、テーブルへの通常の読み書き操作と並行して実行することができます。
+しかし余った領域はオペレーティングシステムには(ほとんどの場合)返されません。
+同じテーブル内で再利用できるように保持されるだけです。
+<code class="command">VACUUM FULL</code>では、テーブルの内容全体を新しいディスクファイルに領域を余すことなく書き換えるため、オペレーティングシステムに未使用の領域を返すことができます。
+この形式では、実行速度がかなり低速になります。また、処理中のテーブルに対する排他的ロックが必要になります。
+  </p><p>
+<!--
+   When the option list is surrounded by parentheses, the options can be
+   written in any order.  Without parentheses, options must be specified
+   in exactly the order shown above.
+   The parenthesized syntax was added in
+   <productname>PostgreSQL</productname> 9.0;  the unparenthesized
+   syntax is deprecated.
+-->
+オプションリストが括弧でくくられていた場合、オプションを任意の順序で記述することができます。
+括弧がないと、オプションは上で示した通りの順番で指定しなければなりません。
+括弧付きの構文は<span class="productname">PostgreSQL</span> 9.0で追加されました。
+カッコがない構文は廃止予定です。
+  </p></div><div class="refsect1" id="id-1.9.3.183.6"><h2>パラメータ</h2><!--
+  <title>Parameters</title>
+--><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">FULL</code></span></dt><dd><p>
+<!--
+      Selects <quote>full</quote> vacuum, which can reclaim more
+      space, but takes much longer and exclusively locks the table.
+      This method also requires extra disk space, since it writes a
+      new copy of the table and doesn't release the old copy until
+      the operation is complete.  Usually this should only be used when a
+      significant amount of space needs to be reclaimed from within the table.
+-->
+より多くの領域の回収することができる<span class="quote">「<span class="quote">完全な</span>」</span>バキュームを選択します。
+ただし、通常よりも処理に時間がかかります。
+また、テーブルに対する排他ロックが必要です。
+またこの方式では、テーブルのコピーを新しく書き出し、操作が終わるまで古いコピーが解放されませんので、余分にディスク領域が必要です。
+通常、大きな容量がテーブルから回収されなければならない場合にのみこれが使用されるべきです。
+     </p></dd><dt><span class="term"><code class="literal">FREEZE</code></span></dt><dd><p>
+<!--
+      Selects aggressive <quote>freezing</quote> of tuples.
+      Specifying <literal>FREEZE</literal> is equivalent to performing
+      <command>VACUUM</command> with the
+      <xref linkend="guc-vacuum-freeze-min-age"/> and
+      <xref linkend="guc-vacuum-freeze-table-age"/> parameters
+      set to zero.  Aggressive freezing is always performed when the
+      table is rewritten, so this option is redundant when <literal>FULL</literal>
+      is specified.
+-->
+積極的なタプルの<span class="quote">「<span class="quote">凍結</span>」</span>を選択します。
+<code class="literal">FREEZE</code>指定は、<a class="xref" href="runtime-config-client.html#GUC-VACUUM-FREEZE-MIN-AGE">vacuum_freeze_min_age</a>および<a class="xref" href="runtime-config-client.html#GUC-VACUUM-FREEZE-TABLE-AGE">vacuum_freeze_table_age</a>パラメータをゼロとして<code class="command">VACUUM</code>を実行することと同じです。
+テーブルが書き換えられる時は、必ず積極的な凍結が行われるので、<code class="literal">FULL</code>が指定されているときは、このオプションは冗長です。
+     </p></dd><dt><span class="term"><code class="literal">VERBOSE</code></span></dt><dd><p>
+<!--
+      Prints a detailed vacuum activity report for each table.
+-->
+各テーブルについてバキューム処理の詳細な報告を出力します。
+     </p></dd><dt><span class="term"><code class="literal">ANALYZE</code></span></dt><dd><p>
+<!--
+      Updates statistics used by the planner to determine the most
+      efficient way to execute a query.
+-->
+プランナが使用する統計情報を更新し、問い合わせを実行する最も効率的な方法を決定できるようにします。
+     </p></dd><dt><span class="term"><code class="literal">DISABLE_PAGE_SKIPPING</code></span></dt><dd><p>
+<!--
+      Normally, <command>VACUUM</command> will skip pages based on the <link
+      linkend="vacuum-for-visibility-map">visibility map</link>.  Pages where
+      all tuples are known to be frozen can always be skipped, and those
+      where all tuples are known to be visible to all transactions may be
+      skipped except when performing an aggressive vacuum.  Furthermore,
+      except when performing an aggressive vacuum, some pages may be skipped
+      in order to avoid waiting for other sessions to finish using them.
+      This option disables all page-skipping behavior, and is intended to
+      be used only when the contents of the visibility map are
+      suspect, which should happen only if there is a hardware or software
+      issue causing database corruption.
+-->
+通常、<code class="command">VACUUM</code>は<a class="link" href="routine-vacuuming.html#VACUUM-FOR-VISIBILITY-MAP" title="24.1.4. 可視性マップの更新">可視性マップ</a>に基いてページをスキップします。
+すべてのタプルが凍結されていることがわかっているページは、常にスキップできます。
+また、すべてのタプルがすべてのトランザクションに対して可視であることがわかっているページは、積極的なバキュームを実行している場合を除き、スキップできます。
+さらに、積極的なバキュームを実行している場合を除き、一部のページは、他のセッションがその使用を終了するのを待つのを避けるため、スキップされます。
+このオプションは、ページをスキップする動作をすべて無効にします。
+これは可視性マップの内容が怪しいときにのみ使用されることを意図したもので、それはデータベースの破損を引き起こすようなハードウェアあるいはソフトウェアの障害がある場合にのみ発生します。
+     </p></dd><dt><span class="term"><em class="replaceable"><code>table_name</code></em></span></dt><dd><p>
+<!--
+      The name (optionally schema-qualified) of a specific table or
+      materialized view to vacuum.  If the specified table is a partitioned
+      table, all of its leaf partitions are vacuumed.
+-->
+バキューム対象のテーブルまたはマテリアライズドビューの名前です（スキーマ修飾名も可）。
+指定したテーブルがパーティションテーブルの場合、そのすべてのリーフパーティションがバキュームされます。
+     </p></dd><dt><span class="term"><em class="replaceable"><code>column_name</code></em></span></dt><dd><p>
+<!--
+      The name of a specific column to analyze. Defaults to all columns.
+      If a column list is specified, <literal>ANALYZE</literal> must also be
+      specified.
+-->
+解析の対象とする列名です。
+デフォルトは全列です。
+列リストが指定された場合は<code class="literal">ANALYZE</code>も指定しなければいけません。
+     </p></dd></dl></div></div><div class="refsect1" id="id-1.9.3.183.7"><h2>出力</h2><!--
+  <title>Outputs</title>
+--><p>
+<!--
+    When <literal>VERBOSE</literal> is specified, <command>VACUUM</command> emits
+    progress messages to indicate which table is currently being
+    processed.  Various statistics about the tables are printed as well.
+-->
+<code class="literal">VERBOSE</code>が指定された場合、<code class="command">VACUUM</code>は、現在処理中のテーブルを示す進行状況メッセージを表示します。
+同様に、テーブルについての各種の統計情報も表示されます。
+   </p></div><div class="refsect1" id="id-1.9.3.183.8"><h2>注釈</h2><!--
+  <title>Notes</title>
+--><p>
+<!--
+    To vacuum a table, one must ordinarily be the table's owner or a
+    superuser.  However, database owners are allowed to
+    vacuum all tables in their databases, except shared catalogs.
+    (The restriction for shared catalogs means that a true database-wide
+    <command>VACUUM</command> can only be performed by a superuser.)
+    <command>VACUUM</command> will skip over any tables that the calling user
+    does not have permission to vacuum.
+-->
+テーブルをバキュームするためには、通常はテーブルの所有者もしくはスーパーユーザでなければなりません。
+しかしデータベースの所有者は共有カタログを除くデータベース内の全テーブルをバキュームすることができます。
+（共有カタログに関する制限は、データベース全体の<code class="command">VACUUM</code>はスーパーユーザのみが実行可能であることを意味します。）
+<code class="command">VACUUM</code>は、呼び出したユーザがバキュームするための権限を持たないテーブルはすべて飛ばします。
+   </p><p>
+<!--
+    <command>VACUUM</command> cannot be executed inside a transaction block.
+-->
+トランザクションブロック内で<code class="command">VACUUM</code>を実行することはできません。
+   </p><p>
+<!--
+    For tables with <acronym>GIN</acronym> indexes, <command>VACUUM</command> (in
+    any form) also completes any pending index insertions, by moving pending
+    index entries to the appropriate places in the main <acronym>GIN</acronym> index
+    structure.  See <xref linkend="gin-fast-update"/> for details.
+-->
+<acronym class="acronym">GIN</acronym>インデックスを持つテーブルでは、<code class="command">VACUUM</code>（全構文）は待ち状態のインデックス挿入を主<acronym class="acronym">GIN</acronym>インデックス構造内の適切なところに移動させることにより、待ち状態のインデックス挿入をすべて完了させます。
+<a class="xref" href="gin-implementation.html#GIN-FAST-UPDATE" title="66.4.1. GIN高速更新手法">66.4.1</a>を参照してください。
+   </p><p>
+<!--
+    We recommend that active production databases be
+    vacuumed frequently (at least nightly), in order to
+    remove dead rows. After adding or deleting a large number
+    of rows, it might be a good idea to issue a <command>VACUUM
+    ANALYZE</command> command for the affected table. This will update the
+    system catalogs with
+    the results of all recent changes, and allow the
+    <productname>PostgreSQL</productname> query planner to make better
+    choices in planning queries.
+-->
+不要となった行を削除するため、実運用状態のデータベースに対しては定期的に（少なくとも毎晩）<code class="command">VACUUM</code>を実行することを推奨します。
+また、テーブルに対して多数の行を追加/削除した後は、そのテーブルに<code class="command">VACUUM ANALYZE</code>を発行することを推奨します。
+これによりシステムカタログに最近なされた全ての変更が反映されることになり、<span class="productname">PostgreSQL</span>の問い合わせプランナが、問い合わせ計画の作成時により良い選択をできるようになります。
+   </p><p>
+<!--
+    The <option>FULL</option> option is not recommended for routine use,
+    but might be useful in special cases.  An example is when you have deleted
+    or updated most of the rows in a table and would like the table to
+    physically shrink to occupy less disk space and allow faster table
+    scans. <command>VACUUM FULL</command> will usually shrink the table
+    more than a plain <command>VACUUM</command> would.
+-->
+<code class="option">FULL</code>オプションを日常的に使用することは推奨しませんが、特殊なケースでは有用となる場合もあります。
+例えば、テーブル内のほとんど全ての行を削除または更新し、そのテーブルによるディスクの使用量を物理的に縮小させて高速なテーブルスキャンを行いたい場合です。
+<code class="command">VACUUM FULL</code>はたいていの場合、通常の<code class="command">VACUUM</code>よりもテーブルを縮小します。
+   </p><p>
+<!--
+    <command>VACUUM</command> causes a substantial increase in I/O traffic,
+    which might cause poor performance for other active sessions.  Therefore,
+    it is sometimes advisable to use the cost-based vacuum delay feature.
+    See <xref linkend="runtime-config-resource-vacuum-cost"/> for details.
+-->
+<code class="command">VACUUM</code>によりI/Oトラフィックがかなり増大しますので、実行中の他のセッションの性能が悪化する可能性があります。
+このため、コストベースのバキューム遅延機能の使用が推奨される場合があります。
+詳細は<a class="xref" href="runtime-config-resource.html#RUNTIME-CONFIG-RESOURCE-VACUUM-COST" title="19.4.4. コストに基づくVacuum遅延">19.4.4</a>を参照してください。
+   </p><p>
+<!--
+    <productname>PostgreSQL</productname> includes an <quote>autovacuum</quote>
+    facility which can automate routine vacuum maintenance.  For more
+    information about automatic and manual vacuuming, see
+    <xref linkend="routine-vacuuming"/>.
+-->
+<span class="productname">PostgreSQL</span>には、バキューム保守作業を自動化する<span class="quote">「<span class="quote">autovacuum</span>」</span>機能があります。
+自動バキューム処理および手作業によるバキューム処理に関する詳細については、<a class="xref" href="routine-vacuuming.html" title="24.1. 定常的なバキューム作業">24.1</a>を参照してください。
+   </p></div><div class="refsect1" id="id-1.9.3.183.9"><h2>例</h2><!--
+  <title>Examples</title>
+--><p>
+<!--
+   To clean a single table <literal>onek</literal>, analyze it for
+   the optimizer and print a detailed vacuum activity report:
+-->
+<code class="literal">onek</code> というテーブル1つだけを掃除し、オプティマイザ用に解析し、バキューム処理の詳細な報告を出力するには、次のようにします。
+
+</p><pre class="programlisting">
+VACUUM (VERBOSE, ANALYZE) onek;
+</pre></div><div class="refsect1" id="id-1.9.3.183.10"><h2>互換性</h2><!--
+  <title>Compatibility</title>
+--><p>
+<!--
+   There is no <command>VACUUM</command> statement in the SQL standard.
+-->
+標準SQLには<code class="command">VACUUM</code>文はありません。
+  </p></div><div class="refsect1" id="id-1.9.3.183.11"><h2>関連項目</h2><!--
+  <title>See Also</title>
+--><span class="simplelist"><a class="xref" href="app-vacuumdb.html" title="vacuumdb"><span class="refentrytitle"><span class="application">vacuumdb</span></span></a>, <a class="xref" href="runtime-config-resource.html#RUNTIME-CONFIG-RESOURCE-VACUUM-COST" title="19.4.4. コストに基づくVacuum遅延">19.4.4</a>, <a class="xref" href="routine-vacuuming.html#AUTOVACUUM" title="24.1.6. 自動バキュームデーモン">24.1.6</a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-update.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-values.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">UPDATE </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> VALUES</td></tr></table></div></body></html>

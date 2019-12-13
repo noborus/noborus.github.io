@@ -1,0 +1,1259 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>E.3. リリース11.3</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="release-11-4.html" title="E.2. リリース 11.4" /><link rel="next" href="release-11-2.html" title="E.4. リリース 11.2" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.5文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="release.html" title="付録E リリースノート">付録E リリースノート</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.5 &#10;                      release-11-3.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="release-11-4.html" title="E.2. リリース 11.4">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="release.html" title="付録E リリースノート">上へ</a></td><td width="60%" align="center">E.3. リリース11.3</td><td width="20%" align="right"> <a accesskey="n" href="release-11-2.html" title="E.4. リリース 11.2">次へ</a></td></tr></table><hr /></div><div class="sect1" id="RELEASE-11-3"><div class="titlepage"><div><div><h2 class="title" style="clear: both">E.3. リリース11.3</h2></div></div></div><span class="original">
+  &lt;title&gt;Release 11.3&lt;/title&gt;
+</span><p><span class="original">
+  &lt;title&gt;Release date:&lt;/title&gt;
+</span><strong>リリース日: </strong>2019-05-09</p><p>
+<span class="original">
+   This release contains a variety of fixes from 11.2.
+   For information about new features in major release 11, see
+   &lt;xref linkend="release-11"/&gt;.
+</span>
+このリリースは11.2に対し、様々な不具合を修正したものです。
+11メジャーリリースにおける新機能については、<a class="xref" href="release-11.html" title="E.6. リリース11">E.6</a>を参照してください。
+  </p><div class="sect2" id="id-1.11.6.7.4"><div class="titlepage"><div><div><h3 class="title">E.3.1. バージョン11.3への移行</h3></div></div></div><span class="original">
+   &lt;title&gt;Migration to Version 11.3&lt;/title&gt;
+</span><p>
+<span class="original">
+    A dump/restore is not required for those running 11.X.
+</span>
+11.Xからの移行ではダンプ/リストアは不要です。
+   </p><p>
+<span class="original">
+    However, if you are upgrading from a version earlier than 11.1,
+    see &lt;xref linkend="release-11-1"/&gt;.
+</span>
+しかしながら、11.1よりも前のバージョンからアップグレードする場合には、<a class="xref" href="release-11-1.html" title="E.5. リリース11.1">E.5</a>を参照してください。
+   </p></div><div class="sect2" id="id-1.11.6.7.5"><div class="titlepage"><div><div><h3 class="title">E.3.2. 変更点</h3></div></div></div><span class="original">
+   &lt;title&gt;Changes&lt;/title&gt;
+</span><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><span class="original">
+Author: Dean Rasheed &lt;dean.a.rasheed@gmail.com&gt;
+Branch: master [1aebfbea8] 2019-05-06 11:38:43 +0100
+Branch: REL_11_STABLE [0027ee3c5] 2019-05-06 11:41:22 +0100
+Branch: REL_10_STABLE [940802830] 2019-05-06 11:43:09 +0100
+Branch: REL9_6_STABLE [085d64d9d] 2019-05-06 11:45:01 +0100
+Branch: REL9_5_STABLE [93c36145a] 2019-05-06 11:46:33 +0100
+</span><p>
+<span class="original">
+      Prevent row-level security policies from being bypassed via
+      selectivity estimators (Dean Rasheed)
+</span>
+行単位セキュリティポリシーが選択率の見積処理を通して回避されてしまうのを防止しました。
+(Dean Rasheed)
+     </p><p>
+<span class="original">
+      Some of the planner's selectivity estimators apply user-defined
+      operators to values found in &lt;structname&gt;pg_statistic&lt;/structname&gt;
+      (e.g., most-common values).  A leaky operator therefore can disclose
+      some of the entries in a data column, even if the calling user lacks
+      permission to read that column.  In CVE-2017-7484 we added
+      restrictions to forestall that, but we failed to consider the
+      effects of row-level security.  A user who has SQL permission to
+      read a column, but who is forbidden to see certain rows due to RLS
+      policy, might still learn something about those rows' contents via a
+      leaky operator.  This patch further tightens the rules, allowing
+      leaky operators to be applied to statistics data only when there is
+      no relevant RLS policy.  (CVE-2019-10130)
+</span>
+一部のプランナの選択率見積処理はユーザ定義演算子を<code class="structname">pg_statistic</code>から得た値に適用します。
+それゆえ漏洩のある演算子により、呼び出すユーザに列を読む権限が無くとも、データ列要素の一部が漏洩する可能性があります。
+CVE-2017-7484ではこれを未然に防ぐ対処をしましたが、行単位セキュリティの影響を考慮していませんでした。
+列を読むSQL権限を持つけれどRLSポリシーによりいくつかの行の参照は禁じられているユーザが、漏洩のある演算子を通してこれら行内容について何らかを知るかもしれませんでした。
+本修正はルールをより厳しくして、漏洩のある演算子は関連するRLSポリシーが無いときだけ統計データに適用できるようにします。
+(CVE-2019-10130)
+     </p></li><li class="listitem"><span class="original">
+Author: Michael Paquier &lt;michael@paquier.xyz&gt;
+Branch: master [91248608a] 2019-05-06 21:44:24 +0900
+Branch: REL_11_STABLE [52635c276] 2019-05-06 21:44:39 +0900
+</span><p>
+<span class="original">
+      Avoid access to already-freed memory during partition routing error
+      reports (Michael Paquier)
+</span>
+パーティション振り分けのエラー報告時の解放済みメモリの使用を回避しました。
+(Michael Paquier)
+     </p><p>
+<span class="original">
+      This mistake could lead to a crash, and in principle it might be
+      possible to use it to disclose server memory contents.
+      (CVE-2019-10129)
+</span>
+この誤りはクラッシュをもたらし、また、原理的にはサーバメモリ内容を露出させるのに使われる可能性があります。
+(CVE-2019-10129)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [c01eb619a] 2019-04-26 17:18:07 -0400
+Branch: REL_11_STABLE [02c359eed] 2019-04-26 17:18:07 -0400
+</span><p>
+<span class="original">
+      Avoid catalog corruption when an &lt;command&gt;ALTER TABLE&lt;/command&gt; on a
+      partitioned table finds that a partitioned index is reusable (Amit
+      Langote, Tom Lane)
+</span>
+パーティションテーブルに対する<code class="command">ALTER TABLE</code>がパーティションインデックスが再利用可能と判断した場合のカタログ破損を回避しました。
+(Amit Langote, Tom Lane)
+     </p><p>
+<span class="original">
+      This occurs, for example, when &lt;command&gt;ALTER COLUMN TYPE&lt;/command&gt;
+      finds that no physical table rewrite is required.
+</span>
+例えば<code class="command">ALTER COLUMN TYPE</code>が物理テーブルの書き換えが必要ないと判断した場合に発生します。
+     </p></li><li class="listitem"><span class="original">
+Author: Peter Eisentraut &lt;peter@eisentraut.org&gt;
+Branch: master [cd3e27464] 2019-04-29 08:49:03 +0200
+Branch: REL_11_STABLE [474982fc3] 2019-04-29 08:49:14 +0200
+Branch: REL_10_STABLE [10b2675d6] 2019-04-29 08:49:22 +0200
+</span><p>
+<span class="original">
+      Avoid catalog corruption when a temporary table with &lt;literal&gt;ON
+      COMMIT DROP&lt;/literal&gt; and an identity column is created in a
+      single-statement transaction (Peter Eisentraut)
+</span>
+単一文のトランザクションで<code class="literal">ON COMMIT DROP</code>と識別列を伴う一時テーブルが作られたときのカタログ破損を回避しました。
+(Peter Eisentraut)
+     </p><p>
+<span class="original">
+      This hazard was overlooked because the case is not actually useful,
+      since the temporary table would be dropped immediately after
+      creation.
+</span>
+一時テーブルは作成後すぐに削除されますので本ケースは実際には役に立たず、そのため本障害は見逃されました。
+     </p></li><li class="listitem"><span class="original">
+Author: Alvaro Herrera &lt;alvherre@alvh.no-ip.org&gt;
+Branch: master [126d63122] 2019-03-26 20:19:28 -0300
+Branch: REL_11_STABLE [7009f1a2d] 2019-03-26 20:19:39 -0300
+</span><p>
+<span class="original">
+      Fix failure in &lt;command&gt;ALTER INDEX ... ATTACH PARTITION&lt;/command&gt;
+      if the partitioned table contains more dropped columns than its
+      partition does (&amp;Aacute;lvaro Herrera)
+</span>
+パーティションテーブルが属するパーティションよりも削除された列を多く含む場合における、<code class="command">ALTER INDEX ... ATTACH PARTITION</code>でのエラー発生を修正しました。
+(Álvaro Herrera)
+     </p></li><li class="listitem"><span class="original">
+Author: Alvaro Herrera &lt;alvherre@alvh.no-ip.org&gt;
+Branch: master [05b38c7e6] 2019-04-25 11:22:29 -0400
+Branch: REL_11_STABLE [b1f570b57] 2019-04-25 11:37:08 -0400
+</span><p>
+<span class="original">
+      Fix failure to attach a partition's existing index to a newly-created
+      partitioned index in some cases (Amit Langote, &amp;Aacute;lvaro Herrera)
+</span>
+一部の場合でパーティションの既存インデックスを新たに作成されたパーティションインデックスに付加するのに失敗するのを修正しました。
+(Amit Langote, Álvaro Herrera)
+     </p><p>
+<span class="original">
+      This would lead to errors such as &lt;quote&gt;index ... not found in
+      partition&lt;/quote&gt; in subsequent DDL that uses the partitioned index.
+</span>
+これは続くこのパーティションインデックスを使うDDLで<span class="quote">「<span class="quote">index ... not found in partition（インデックス...がパーティションに見つかりません）</span>」</span>のようなエラーをもたらします。
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [a8cb8f124] 2019-04-08 12:20:22 -0400
+Branch: REL_11_STABLE [b291488da] 2019-04-08 12:20:22 -0400
+Branch: REL_10_STABLE [1b5bbe4bc] 2019-04-08 12:20:23 -0400
+</span><p>
+<span class="original">
+      Avoid crash when an EPQ recheck is performed for a partitioned query
+      result relation (Amit Langote)
+</span>
+パーティション問い合わせの結果リレーションに対してEPQ再チェックが実行されたときのクラッシュを回避しました。
+(Amit Langote)
+     </p><p>
+<span class="original">
+      This occurs when using &lt;literal&gt;READ COMMITTED&lt;/literal&gt; isolation
+      level and another session has concurrently updated some of the
+      target row(s).
+</span>
+これは、<code class="literal">READ COMMITTED</code>隔離レベルを使っていて他のセッションが同時に対象行の一部を更新しているときに発生します。
+     </p></li><li class="listitem"><span class="original">
+Author: Michael Paquier &lt;michael@paquier.xyz&gt;
+Branch: master [964bae4d8] 2019-04-08 13:44:55 +0900
+Branch: REL_11_STABLE [6b0208ebc] 2019-04-08 13:45:14 +0900
+</span><p>
+<span class="original">
+      Fix tuple routing in multi-level partitioned tables that have dropped
+      attributes (Amit Langote, Michael Paquier)
+</span>
+削除された列を持つ複数階層のパーティションテーブルでのタプル振り分けを修正しました。
+(Amit Langote, Michael Paquier)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [46e3442c9] 2019-04-06 15:09:09 -0400
+Branch: REL_11_STABLE [c2a5fb33d] 2019-04-06 15:09:10 -0400
+</span><p>
+<span class="original">
+      Fix failure when the slow path of foreign key constraint initial
+      validation is applied to partitioned tables (Hadi Moshayedi, Tom
+      Lane, Andres Freund)
+</span>
+外部キー制約の初期検証の遅い処理パスがパーティションテーブルに適用されたときのエラーを修正しました。
+(Hadi Moshayedi, Tom Lane, Andres Freund)
+     </p><p>
+<span class="original">
+      This didn't manifest except in the uncommon cases where the fast
+      path can't be used (such as permissions problems).
+</span>
+これは（権限の問題などで）速い処理パスが使われないという稀な場合を除いて、出現しません。
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [ab5fcf2b0] 2019-02-22 12:23:19 -0500
+Branch: REL_11_STABLE [07fba9ad9] 2019-02-22 12:23:20 -0500
+Branch: REL_10_STABLE [58947fbd5] 2019-02-22 12:23:21 -0500
+Branch: REL9_6_STABLE [714344ae6] 2019-02-22 12:23:00 -0500
+Branch: REL9_5_STABLE [0fe3f6dd4] 2019-02-22 12:23:00 -0500
+Branch: REL9_4_STABLE [99a1554a2] 2019-02-22 12:23:00 -0500
+Branch: master [159970bca] 2019-04-07 12:54:22 -0400
+Branch: REL_11_STABLE [10e3991fa] 2019-04-07 12:54:26 -0400
+Branch: REL_10_STABLE [67999b354] 2019-04-07 12:54:26 -0400
+</span><p>
+<span class="original">
+      Fix behavior for an &lt;command&gt;UPDATE&lt;/command&gt;
+      or &lt;command&gt;DELETE&lt;/command&gt; on an inheritance tree or partitioned
+      table in which every table can be excluded (Amit Langote, Tom Lane)
+</span>
+全てのテーブルを除外できる継承ツリーやパーティションテーブルへの<code class="command">UPDATE</code>や<code class="command">DELETE</code>の振る舞いを修正しました。
+(Amit Langote, Tom Lane)
+     </p><p>
+<span class="original">
+      In such cases, the query did not report the correct set of output
+      columns when a &lt;literal&gt;RETURNING&lt;/literal&gt; clause was present, and
+      if there were any statement-level triggers that should be fired, it
+      didn't fire them.
+</span>
+このような場合、<code class="literal">RETURNING</code>があるときに問い合わせが正しい出力列集合を報告せず、発動すべき文単位トリガがあるときにそれが発動しませんでした。
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [e03ff7396] 2019-04-30 15:03:50 -0400
+Branch: REL_11_STABLE [11ea45ffe] 2019-04-30 15:03:35 -0400
+</span><p>
+<span class="original">
+      When accessing a partition directly,
+      and &lt;varname&gt;constraint_exclusion&lt;/varname&gt; is set
+      to &lt;literal&gt;on&lt;/literal&gt;, use the partition's partition constraint
+      as well as any &lt;literal&gt;CHECK&lt;/literal&gt; constraints for exclusion
+      checking (Amit Langote, Tom Lane)
+</span>
+<code class="varname">constraint_exclusion</code>が<code class="literal">on</code>に設定されていてパーティションディレクトリにアクセスするとき、パーティションのパーティション制約を排他検査における<code class="literal">CHECK</code>制約と同様に使用するようにしました。
+(Amit Langote, Tom Lane)
+     </p><p>
+<span class="original">
+      This change restores the behavior to what it was in v10.
+</span>
+この変更は振る舞いをバージョン10のものに戻します。
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [4d5840cea] 2019-04-19 11:20:37 -0400
+Branch: REL_11_STABLE [0998f32ca] 2019-04-19 11:20:37 -0400
+</span><p>
+<span class="original">
+      Avoid server crash when an error occurs while trying to persist
+      a cursor query across a transaction commit (Tom Lane)
+</span>
+トランザクションコミットをまたがるカーソル問い合わせを永続化しようとする間にエラーが発生したときのサーバクラッシュを回避しました。
+(Tom Lane)
+     </p><p>
+<span class="original">
+      If a procedure attempts to commit while it has an open explicit or
+      implicit cursor (for example, a PL/pgSQL &lt;command&gt;FOR&lt;/command&gt;-loop
+      query), the cursor must be executed to completion and its results
+      saved before the transaction commit can be performed.  An error
+      occurring during such execution led to a crash.
+</span>
+プロシージャが明示的または暗黙的なカーソル（例えばPL/pgSQLの<code class="command">FOR</code>ループ問い合わせ）をオープンしている間にコミットしようとした場合、そのカーソルは完全に実施されなければならず、トランザクションコミットが行われる前に保存されたその結果が使用可能になります。
+このような処理の際に起きるエラーがクラッシュをもたらしました。
+     </p></li><li class="listitem"><span class="original">
+Author: Peter Eisentraut &lt;peter@eisentraut.org&gt;
+Branch: master [bb385c4fb] 2019-04-18 08:55:55 +0200
+Branch: REL_11_STABLE [f993bacde] 2019-04-18 08:56:32 +0200
+Branch: REL_10_STABLE [05d151e13] 2019-04-18 09:58:21 +0200
+</span><p>
+<span class="original">
+      Avoid throwing incorrect errors for updates of temporary tables and
+      unlogged tables when a &lt;literal&gt;FOR ALL TABLES&lt;/literal&gt; publication
+      exists (Peter Eisentraut)
+</span>
+<code class="literal">FOR ALL TABLES</code>のパブリケーションがあるときに、一時テーブルとログを取らないテーブルの更新に対して誤ったエラーが投げられるのを回避しました。
+(Peter Eisentraut)
+     </p><p>
+<span class="original">
+      Such tables should be ignored for publication purposes, but some
+      parts of the code failed to do so.
+</span>
+このようなテーブルはパブリケーションの対象として無視されるべきですが、いくらかのコード箇所ではそのようになっていませんでした。
+     </p></li><li class="listitem"><span class="original">
+Author: Dean Rasheed &lt;dean.a.rasheed@gmail.com&gt;
+Branch: master [41531e42d] 2019-02-20 08:30:21 +0000
+Branch: REL_11_STABLE [fbec6fa38] 2019-02-20 08:28:42 +0000
+Branch: REL_10_STABLE [2b1971c03] 2019-02-20 08:27:24 +0000
+Branch: REL9_6_STABLE [d31e421d7] 2019-02-20 08:25:24 +0000
+Branch: REL9_5_STABLE [90f91bfbd] 2019-02-20 08:22:52 +0000
+Branch: REL9_4_STABLE [5a73edf05] 2019-02-20 08:19:55 +0000
+Branch: master [ed4653db8] 2019-03-03 10:51:13 +0000
+Branch: REL_11_STABLE [6ccb97337] 2019-03-03 10:52:54 +0000
+Branch: REL_10_STABLE [0a0844630] 2019-03-03 10:54:55 +0000
+Branch: REL9_6_STABLE [133923aeb] 2019-03-03 10:56:05 +0000
+Branch: REL9_5_STABLE [556fdd49c] 2019-03-03 10:57:37 +0000
+Branch: REL9_4_STABLE [431471e1f] 2019-03-03 10:58:45 +0000
+</span><p>
+<span class="original">
+      Fix handling of explicit &lt;literal&gt;DEFAULT&lt;/literal&gt; items in
+      an &lt;command&gt;INSERT ... VALUES&lt;/command&gt; command with
+      multiple &lt;literal&gt;VALUES&lt;/literal&gt; rows, if the target relation is
+      an updatable view (Amit Langote, Dean Rasheed)
+</span>
+対象リレーションが更新可能ビューである場合に、複数の<code class="literal">VALUES</code>行を伴う<code class="command">INSERT ... VALUES</code>コマンドでの明示的な<code class="literal">DEFAULT</code>要素の処理を修正しました。
+(Amit Langote, Dean Rasheed)
+     </p><p>
+<span class="original">
+      When the updatable view has no default for the column but its
+      underlying table has one, a single-row &lt;command&gt;INSERT
+      ... VALUES&lt;/command&gt; will use the underlying table's default.
+      In the multi-row case, however, NULL was always used.  Correct it to
+      act like the single-row case.
+</span>
+更新可能ビューは列にデフォルトを持たないけれども、元となるテーブルにはあるとき、単一行の<code class="command">INSERT ... VALUES</code>は元となるテーブルのデフォルトを使用します。
+しかしながら、複数行の場合には、常にNULLが使われました。
+これを単一行の場合と同様に動作するように修正しました。
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [a32ca7883] 2019-02-17 12:37:31 -0500
+Branch: REL_11_STABLE [4eca1905d] 2019-02-17 12:37:31 -0500
+Branch: REL_10_STABLE [b355be443] 2019-02-17 12:37:32 -0500
+Branch: REL9_6_STABLE [1f29a1d22] 2019-02-17 12:37:32 -0500
+Branch: REL9_5_STABLE [0b476cf62] 2019-02-17 12:37:32 -0500
+Branch: REL9_4_STABLE [9fdc49d08] 2019-02-17 12:37:32 -0500
+</span><p>
+<span class="original">
+      Fix &lt;command&gt;CREATE VIEW&lt;/command&gt; to allow zero-column views
+      (Ashutosh Sharma)
+</span>
+<code class="command">CREATE VIEW</code>をゼロ列のビューを許容するように修正しました。
+(Ashutosh Sharma)
+     </p><p>
+<span class="original">
+      We should allow this for consistency with allowing zero-column
+      tables.  Since a table can be converted to a view, zero-column views
+      could be created even with the restriction in place, leading to
+      dump/reload failures.
+</span>
+ゼロ列のテーブルを許容していることとの一貫性のため、私たちはこれを許容すべきです。
+テーブルはビューに転換される可能性があるので、制限があっても代わりにゼロ列ビューが作られて、ダンプ/リストアの失敗をひき起こす可能性がありました。
+     </p></li><li class="listitem"><span class="original">
+Author: Michael Paquier &lt;michael@paquier.xyz&gt;
+Branch: master [331a613e9] 2019-02-15 17:12:24 +0900
+Branch: REL_11_STABLE [75aba11ec] 2019-02-15 17:12:31 +0900
+Branch: REL_10_STABLE [3a2923a9b] 2019-02-15 17:12:36 +0900
+Branch: REL9_6_STABLE [d08fae377] 2019-02-15 17:12:46 +0900
+Branch: REL9_5_STABLE [06cdab9df] 2019-02-15 17:12:51 +0900
+</span><p>
+<span class="original">
+      Add missing support for &lt;command&gt;CREATE TABLE IF NOT EXISTS ... AS
+      EXECUTE ...&lt;/command&gt; (Andreas Karlsson)
+</span>
+欠けていた<code class="command">CREATE TABLE IF NOT EXISTS ... AS EXECUTE ...</code>のサポートが追加されていた。
+(Andreas Karlsson)
+     </p><p>
+<span class="original">
+      The combination of &lt;literal&gt;IF NOT EXISTS&lt;/literal&gt;
+      and &lt;literal&gt;EXECUTE&lt;/literal&gt; should work, but the grammar omitted
+      it.
+</span>
+<code class="literal">IF NOT EXISTS</code>と<code class="literal">EXECUTE</code>の組み合わせは動作すべきですが、文法で省かれていました。
+     </p></li><li class="listitem"><span class="original">
+Author: Dean Rasheed &lt;dean.a.rasheed@gmail.com&gt;
+Branch: master [e2d28c0f4] 2019-04-02 08:13:59 +0100
+Branch: REL_11_STABLE [157dcf534] 2019-04-02 08:17:04 +0100
+Branch: REL_10_STABLE [db4bc9994] 2019-04-02 08:19:09 +0100
+Branch: REL9_6_STABLE [1b9a2f458] 2019-04-02 08:20:55 +0100
+Branch: REL9_5_STABLE [2e606d0ad] 2019-04-02 08:22:48 +0100
+</span><p>
+<span class="original">
+      Ensure that sub-&lt;command&gt;SELECT&lt;/command&gt;s appearing in
+      row-level-security policy expressions are executed with the correct
+      user's permissions (Dean Rasheed)
+</span>
+行単位セキュリティポリシーの式にあらわれる副<code class="command">SELECT</code>が正しいユーザの権限で実行されることを保証しました。
+(Dean Rasheed)
+     </p><p>
+<span class="original">
+      Previously, if the table having the RLS policy was accessed via a
+      view, such checks might be executed as the user calling the view,
+      not as the view owner as they should be.
+</span>
+これまでは、RLSポリシーを持つテーブルがビューを通してアクセスされた場合、その検査が本来そうあるべきビュー所有者としてではなく、ビューを呼び出したユーザとして実行されるかもしれませんでした。
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [8d1dadb25] 2019-03-23 16:51:37 -0400
+Branch: REL_11_STABLE [849f87a1c] 2019-03-23 16:24:30 -0400
+Branch: REL_10_STABLE [754ffcd42] 2019-03-23 16:24:30 -0400
+Branch: REL9_6_STABLE [d7cfd5ee4] 2019-03-23 16:24:30 -0400
+Branch: REL9_5_STABLE [da45927ce] 2019-03-23 16:24:30 -0400
+Branch: REL9_4_STABLE [78f84fe0f] 2019-03-23 16:24:30 -0400
+Branch: REL_10_STABLE [d88d71e31] 2019-03-23 17:35:04 -0400
+Branch: REL9_6_STABLE [c4c2958c6] 2019-03-23 17:35:04 -0400
+Branch: REL9_5_STABLE [809cccc35] 2019-03-23 17:35:05 -0400
+Branch: REL9_4_STABLE [d5e9e2330] 2019-03-23 17:35:05 -0400
+Branch: master [f778e537a] 2019-03-23 17:40:19 -0400
+Branch: REL_11_STABLE [e319f03d1] 2019-03-23 17:40:19 -0400
+Branch: REL_10_STABLE [581b890c2] 2019-03-23 17:40:19 -0400
+Branch: REL9_6_STABLE [87a44b6cf] 2019-03-23 17:40:19 -0400
+Branch: REL9_5_STABLE [06c320c8a] 2019-03-23 17:40:19 -0400
+Branch: REL9_4_STABLE [432356a9d] 2019-03-23 17:40:19 -0400
+Branch: master [4870dce37] 2019-03-23 16:51:37 -0400
+Branch: REL_11_STABLE [7c89f350f] 2019-03-23 16:51:25 -0400
+Branch: REL_10_STABLE [de922529f] 2019-03-23 16:51:25 -0400
+Branch: REL9_6_STABLE [687acb598] 2019-03-23 16:51:25 -0400
+Branch: REL9_5_STABLE [08d8cfe3c] 2019-03-23 16:51:26 -0400
+Branch: REL9_4_STABLE [8ba485422] 2019-03-23 16:51:26 -0400
+</span><p>
+<span class="original">
+      Accept XML documents as valid values of type &lt;type&gt;xml&lt;/type&gt;
+      when &lt;varname&gt;xmloption&lt;/varname&gt; is set
+      to &lt;literal&gt;content&lt;/literal&gt;, as required by SQL:2006 and later
+      (Chapman Flack)
+</span>
+SQL:2006以降の要求により、<code class="varname">xmloption</code>が<code class="literal">content</code>に設定されているとき、XMLドキュメントを<code class="type">xml</code>型の有効な値として受け入れるようにしました。
+(Chapman Flack)
+     </p><p>
+<span class="original">
+      Previously &lt;productname&gt;PostgreSQL&lt;/productname&gt; followed the
+      SQL:2003 definition, which doesn't allow this.  But that creates a
+      serious problem for dump/restore: there is no setting
+      of &lt;varname&gt;xmloption&lt;/varname&gt; that will accept all valid XML data.
+      Hence, switch to the 2006 definition.
+</span>
+これまでは<span class="productname">PostgreSQL</span>は、これを許さないSQL:2003の定義に従っていました。
+しかし、これによりダンプ/リストアに、全ての有効なXMLデータを受け付ける<code class="varname">xmloption</code>の設定が無いという重大な問題が生じます。
+そこで、2006の定義に切り替えました。
+     </p><p>
+<span class="original">
+      &lt;application&gt;pg_dump&lt;/application&gt; is also modified to emit
+      &lt;literal&gt;SET xmloption = content&lt;/literal&gt; while restoring data,
+      ensuring that dump/restore works even if the prevailing
+      setting is &lt;literal&gt;document&lt;/literal&gt;.
+</span>
+さらに<span class="application">pg_dump</span>はデータのリストアに際して<code class="literal">SET xmloption = content</code>を出力するように変更され、有力な設定が<code class="literal">document</code>であってもダンプ/リストアが機能することを保証します。
+     </p></li><li class="listitem"><span class="original">
+Author: Noah Misch &lt;noah@leadboat.com&gt;
+Branch: master [c09850992] 2019-04-12 22:36:38 -0700
+Branch: REL_11_STABLE [7ef2b313e] 2019-04-12 22:36:42 -0700
+Branch: REL_10_STABLE [6d81e3c65] 2019-04-12 22:36:42 -0700
+Branch: REL9_6_STABLE [808e1e75f] 2019-04-12 22:39:52 -0700
+Branch: REL9_5_STABLE [c565de643] 2019-04-12 22:41:42 -0700
+Branch: REL9_4_STABLE [3ef5e16c6] 2019-04-12 22:41:45 -0700
+Branch: master [4ab02e815] 2019-04-14 20:02:19 -0700
+Branch: REL_11_STABLE [0bdf6d635] 2019-04-14 20:02:22 -0700
+Branch: REL_10_STABLE [4543ef36f] 2019-04-14 20:03:48 -0700
+Branch: REL9_6_STABLE [9f65081cf] 2019-04-14 20:04:03 -0700
+</span><p>
+<span class="original">
+      Improve server's startup-time checks for whether a pre-existing
+      shared memory segment is still in use (Noah Misch)
+</span>
+サーバの起動時の、既存の共有メモリセグメントが未だ使われているかどうかの検査を改善しました。
+(Noah Misch)
+     </p><p>
+<span class="original">
+      The postmaster is now more likely to detect that there are still
+      active processes from a previous postmaster incarnation, even if
+      the &lt;filename&gt;postmaster.pid&lt;/filename&gt; file has been removed.
+</span>
+postmasterは、たとえ<code class="filename">postmaster.pid</code>ファイルが削除されていても、未だ動作中の以前のpostmasterで生じたプロセスがあることをより良く検出するようになりました。
+     </p></li><li class="listitem"><span class="original">
+Author: Alexander Korotkov &lt;akorotkov@postgresql.org&gt;
+Branch: master [1e8719818] 2019-04-15 20:20:43 +0300
+Branch: REL_11_STABLE [0d68ad3fc] 2019-04-15 21:52:32 +0300
+</span><p>
+<span class="original">
+      Avoid possible division-by-zero in btree index vacuum logic
+      (Piotr Stefaniak, Alexander Korotkov)
+</span>
+btreeインデックスのバキュームのロジックでゼロ除算の可能性があり、回避しました。
+(Piotr Stefaniak, Alexander Korotkov)
+     </p><p>
+<span class="original">
+      This could lead to incorrect decisions about whether index cleanup is
+      needed.
+</span>
+これはインデックスのクリーンアップが必要かどうかについて誤った判断をもたらします。
+     </p></li><li class="listitem"><span class="original">
+Author: Amit Kapila &lt;akapila@postgresql.org&gt;
+Branch: master [bdf35744b] 2019-04-10 08:24:15 +0530
+Branch: REL_11_STABLE [036f7d378] 2019-04-10 08:36:42 +0530
+Branch: REL_10_STABLE [7657072e0] 2019-04-10 08:47:39 +0530
+Branch: REL9_6_STABLE [09630a1e9] 2019-04-10 09:00:09 +0530
+</span><p>
+<span class="original">
+      Avoid counting parallel workers' transactions as separate
+      transactions (Haribabu Kommi)
+</span>
+パラレルワーカのトランザクションを別トランザクションとして数えるのを回避しました。
+(Haribabu Kommi)
+     </p></li><li class="listitem"><span class="original">
+Author: Alexander Korotkov &lt;akorotkov@postgresql.org&gt;
+Branch: REL_11_STABLE [89f39736f] 2019-03-24 15:26:45 +0300
+Branch: REL_10_STABLE [e23d44016] 2019-03-24 15:41:32 +0300
+Branch: REL9_6_STABLE [f8a69a68a] 2019-03-24 15:44:31 +0300
+Branch: REL9_5_STABLE [cda5f6575] 2019-03-24 15:44:56 +0300
+Branch: REL9_4_STABLE [d1166af19] 2019-03-24 16:31:23 +0300
+</span><p>
+<span class="original">
+      Fix incompatibility of GIN-index WAL records (Alexander Korotkov)
+</span>
+GINインデックスのWALレコードの非互換性を修正しました。
+(Alexander Korotkov)
+     </p><p>
+<span class="original">
+      A fix applied in February's minor releases was not sufficiently
+      careful about backwards compatibility, leading to problems if a
+      standby server of that vintage reads GIN page-deletion WAL records
+      generated by a primary server of a previous minor release.
+</span>
+2月のマイナーリリースで適用された修正は後方互換性に十分な注意が払われておらず、そのリリースのスタンバイサーバがより以前のマイナーリリースのプライマリサーバで生成されたGINページ削除のWALレコードを読む場合に問題をもたらしました。
+     </p></li><li class="listitem"><span class="original">
+Author: Michael Paquier &lt;michael@paquier.xyz&gt;
+Branch: master [c34677fda] 2019-04-15 12:34:32 +0900
+Branch: REL_11_STABLE [512902643] 2019-04-15 12:34:51 +0900
+Branch: REL_10_STABLE [ab359624b] 2019-04-15 12:35:02 +0900
+</span><p>
+<span class="original">
+      Fix possible crash while executing a &lt;command&gt;SHOW&lt;/command&gt; command
+      in a replication connection (Michael Paquier)
+</span>
+レプリケーション接続で<code class="command">SHOW</code>コマンド実行中にクラッシュの可能性があり、修正されました。
+(Michael Paquier)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [f2004f19e] 2019-03-18 17:54:41 -0400
+Branch: REL_11_STABLE [adf27de8e] 2019-03-18 17:54:43 -0400
+</span><p>
+<span class="original">
+      Avoid server memory leak when fetching rows from a portal one at a
+      time (Tom Lane)
+</span>
+ポータルから一件ずつ行を取り出すときのサーバのメモリリークを回避しました。
+(Tom Lane)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [5f1433ac5] 2019-04-13 13:22:26 -0400
+Branch: REL_11_STABLE [089e4d405] 2019-04-13 13:22:26 -0400
+Branch: REL_10_STABLE [d4c50b4b1] 2019-04-13 13:22:26 -0400
+</span><p>
+<span class="original">
+      Avoid memory leak when a partition's relation cache entry is rebuilt
+      (Amit Langote, Tom Lane)
+</span>
+パーティションのリレーションキャッシュの項目が再構築されるときのメモリリークを回避しました。
+(Amit Langote, Tom Lane)
+     </p></li><li class="listitem"><span class="original">
+Author: Thomas Munro &lt;tmunro@postgresql.org&gt;
+Branch: master [483520eca] 2019-02-24 22:37:20 +1300
+Branch: REL_11_STABLE [30dcb6270] 2019-02-24 22:43:54 +1300
+Branch: REL_10_STABLE [387483e89] 2019-02-24 22:44:18 +1300
+Branch: REL9_6_STABLE [64b8c51bc] 2019-02-24 22:44:57 +1300
+Branch: master [f16735d80] 2019-02-24 23:50:20 +1300
+Branch: REL_11_STABLE [4d67357db] 2019-02-24 23:51:54 +1300
+Branch: REL_10_STABLE [bcf627834] 2019-02-24 23:52:20 +1300
+Branch: REL9_6_STABLE [ad714c607] 2019-02-24 23:59:26 +1300
+Branch: REL9_5_STABLE [0ec89a0f6] 2019-02-25 00:02:15 +1300
+Branch: REL9_4_STABLE [ede6b1962] 2019-02-25 00:02:56 +1300
+</span><p>
+<span class="original">
+      Tolerate &lt;literal&gt;EINVAL&lt;/literal&gt; and &lt;literal&gt;ENOSYS&lt;/literal&gt;
+      error results, where appropriate, for &lt;function&gt;fsync&lt;/function&gt;
+      and &lt;function&gt;sync_file_range&lt;/function&gt; calls
+      (Thomas Munro, James Sewell)
+</span>
+適切な場所において、<code class="function">fsync</code>と<code class="function">sync_file_range</code>の呼び出しに対して、<code class="literal">EINVAL</code>と<code class="literal">ENOSYS</code>のエラー結果に寛容に扱うようにしました。
+(Thomas Munro, James Sewell)
+     </p><p>
+<span class="original">
+      The previous change to panic on file synchronization failures turns
+      out to have been excessively paranoid for certain cases where a
+      failure is predictable and essentially means &lt;quote&gt;operation not
+      supported&lt;/quote&gt;.
+</span>
+以前のファイル同期の失敗をパニックとする変更は、失敗が想定できて本質的に<span class="quote">「<span class="quote">操作がサポートされない</span>」</span>といういくつかの場合において過度に偏執的であることがわかりました。
+     </p></li><li class="listitem"><span class="original">
+Author: Alvaro Herrera &lt;alvherre@alvh.no-ip.org&gt;
+Branch: master [98098faaf] 2019-02-22 13:00:16 -0300
+Branch: REL_11_STABLE [630de1131] 2019-02-22 13:00:15 -0300
+Branch: REL_10_STABLE [398cc6fb9] 2019-02-22 13:00:15 -0300
+</span><p>
+<span class="original">
+      Report correct relation name in
+      autovacuum's &lt;structname&gt;pg_stat_activity&lt;/structname&gt; display
+      during BRIN summarize operations (&amp;Aacute;lvaro Herrera)
+</span>
+BRINの要約操作の時にautovacuumの<code class="structname">pg_stat_activity</code>が正しいリレーション名を報告するようにしました。
+(Álvaro Herrera)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [7ad6498fd] 2019-03-30 12:48:32 -0400
+Branch: REL_11_STABLE [d70c147fa] 2019-03-30 12:48:19 -0400
+</span><p>
+<span class="original">
+      Avoid crash when trying to plan a partition-wise join when GEQO
+      is active (Tom Lane)
+</span>
+GEQOが有効なときにパーティションに関する結合プランの作成を試みたときのクラッシュを回避しました。
+(Tom Lane)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [45f8eaa8e] 2019-04-08 16:09:26 -0400
+Branch: REL_11_STABLE [68e745ed0] 2019-04-08 16:09:27 -0400
+Branch: REL_10_STABLE [051c71c67] 2019-04-08 16:09:29 -0400
+Branch: REL9_6_STABLE [23791c415] 2019-04-08 16:09:07 -0400
+Branch: REL9_5_STABLE [2f78974e2] 2019-04-08 16:09:07 -0400
+Branch: REL9_4_STABLE [c6df3a28f] 2019-04-08 16:09:07 -0400
+</span><p>
+<span class="original">
+      Fix &lt;quote&gt;failed to build any &lt;replaceable&gt;N&lt;/replaceable&gt;-way
+      joins&lt;/quote&gt; planner failures with lateral references leading out
+      of &lt;literal&gt;FULL&lt;/literal&gt; outer joins (Tom Lane)
+</span>
+<code class="literal">FULL</code>外部結合の中から外に導くラテラル参照での<span class="quote">「<span class="quote">failed to build any <em class="replaceable"><code>N</code></em>-way joins（N-way結合の構成に失敗しました）</span>」</span>というプランナのエラーを修正しました。
+(Tom Lane)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [1d3385840] 2019-03-07 14:22:13 -0500
+Branch: REL_11_STABLE [925f46ffb] 2019-03-07 14:21:52 -0500
+Branch: REL_10_STABLE [19ff710aa] 2019-03-07 14:21:52 -0500
+</span><p>
+<span class="original">
+      Fix misplanning of queries in which a set-returning function is
+      applied to a relation that is provably empty (Tom Lane, Julien
+      Rouhaud)
+</span>
+集合を返す関数が空といえるリレーションに適用される問い合わせにおけるプラン作成の誤りを修正しました。
+(Tom Lane, Julien Rouhaud)
+     </p><p>
+<span class="original">
+      In v10, this oversight only led to slightly inefficient plans, but
+      in v11 it could cause &lt;quote&gt;set-valued function called in context
+      that cannot accept a set&lt;/quote&gt; errors.
+</span>
+v10では、この見過ごしは僅かに効率的でないプランを導くだけですが、v11 では<span class="quote">「<span class="quote">set-valued function called in context that cannot accept a set（集合値の関数が集合を受け付けない文脈で呼ばれました）</span>」</span>のエラーをひき起こします。
+     </p></li><li class="listitem"><span class="original">
+Author: Dean Rasheed &lt;dean.a.rasheed@gmail.com&gt;
+Branch: master [a0905056f] 2019-05-06 11:54:32 +0100
+Branch: REL_11_STABLE [98dad4cd4] 2019-05-06 11:56:37 +0100
+Branch: REL_10_STABLE [ca74e3e0f] 2019-05-06 11:58:32 +0100
+Branch: REL9_6_STABLE [71185228c] 2019-05-06 12:00:00 +0100
+Branch: REL9_5_STABLE [01256815a] 2019-05-06 12:01:44 +0100
+Branch: REL9_4_STABLE [3c0999909] 2019-05-06 12:05:05 +0100
+</span><p>
+<span class="original">
+      Check the appropriate user's permissions when enforcing rules about
+      letting a leaky operator see &lt;structname&gt;pg_statistic&lt;/structname&gt;
+      data (Dean Rasheed)
+</span>
+漏洩のある演算子に<code class="structname">pg_statistic</code>のデータを参照させる場合の規則を強制するときに、適切なユーザ権限を検査するようにしました。
+(Dean Rasheed)
+     </p><p>
+<span class="original">
+      When an underlying table is being accessed via a view, consider the
+      privileges of the view owner while deciding whether leaky operators
+      may be applied to the table's statistics data, rather than the
+      privileges of the user making the query.  This makes the planner's
+      rules about what data is visible match up with the executor's,
+      avoiding unnecessarily-poor plans.
+</span>
+基となるテーブルがビューを通してアクセスされているとき、漏洩のある演算子をテーブルの統計データに適用するかどうかの判断に、問い合わせを実行したユーザの権限ではなくビュー所有者の権限を考慮します。
+これにより、プランナのどのデータが可視かに関する規則をエクゼキュータのものと一致させて、無駄に劣ったプランを回避します。
+     </p></li><li class="listitem"><span class="original">
+Author: Etsuro Fujita &lt;efujita@postgresql.org&gt;
+Branch: master [b5afdde6a] 2019-03-12 16:21:57 +0900
+Branch: REL_11_STABLE [fd1eaf920] 2019-03-12 16:32:27 +0900
+</span><p>
+<span class="original">
+      Fix planner's parallel-safety assessment for grouped queries
+      (Etsuro Fujita)
+</span>
+グループ化問い合わせに対するプランナのパラレル安全の検査を修正しました。
+(Etsuro Fujita)
+     </p><p>
+<span class="original">
+      Previously, target-list evaluation work that could have been
+      parallelized might not be.
+</span>
+これまでは、並列化されていた可能性のある対象リストの検査動作が無いかもしれませんでした。
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [75c46149f] 2019-02-12 18:38:32 -0500
+Branch: REL_11_STABLE [364857f73] 2019-02-12 18:38:33 -0500
+</span><p>
+<span class="original">
+      Fix mishandling of &lt;quote&gt;included&lt;/quote&gt; index columns in
+      planner's unique-index logic (Tom Lane)
+</span>
+プランナの一意性インデックスのロジックで、<span class="quote">「<span class="quote">含められた</span>」</span>インデックス列の処理を修正しました。
+(Tom Lane)
+     </p><p>
+<span class="original">
+      This could result in failing to recognize that a unique index with
+      included columns proves uniqueness of a query result, leading to a
+      poor plan.
+</span>
+これにより、含められた列を伴う一意性インデックスが問い合わせ結果の一意性を証明することを認識できない結果になる可能性がありました。
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [1571bc0f0] 2019-02-20 13:36:55 -0500
+Branch: REL_11_STABLE [93ec0c90c] 2019-02-20 13:36:55 -0500
+</span><p>
+<span class="original">
+      Fix incorrect strictness check for array coercion expressions
+      (Tom Lane)
+</span>
+配列の強制式に対する誤った厳格性（STRICT）の検査を修正しました。
+(Tom Lane)
+     </p><p>
+<span class="original">
+      This might allow, for example, incorrect inlining of a strict SQL
+      function, leading to non-enforcement of the strictness condition.
+</span>
+これにより、例えば、誤ったSTRICTなSQL関数のインライン化を許してしまうかもしれず、厳格性の条件が強制されない結果をもたらしました。
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [fa86238f1] 2019-02-20 20:53:17 -0500
+Branch: REL_11_STABLE [e22bfe94e] 2019-02-20 20:53:08 -0500
+Branch: REL_10_STABLE [affee8b14] 2019-02-20 20:53:08 -0500
+Branch: REL9_6_STABLE [09c9dd39e] 2019-02-20 20:53:08 -0500
+</span><p>
+<span class="original">
+      Speed up planning when there are many equality conditions and many
+      potentially-relevant foreign key constraints (David Rowley)
+</span>
+多数の同値条件と多数の潜在的に関連する外部キー制約があるときのプラン作成を高速化しました。
+(David Rowley)
+     </p></li><li class="listitem"><span class="original">
+Author: Tomas Vondra &lt;tomas.vondra@postgresql.org&gt;
+Branch: master [6ca015f9f] 2019-03-27 02:39:39 +0100
+Branch: REL_11_STABLE [fb0b5b0b8] 2019-03-27 03:18:54 +0100
+Branch: REL_10_STABLE [5601f9fb9] 2019-03-27 03:19:33 +0100
+Branch: REL9_6_STABLE [0a5dcb87a] 2019-03-27 03:20:10 +0100
+Branch: REL9_5_STABLE [261aa218c] 2019-03-27 03:20:57 +0100
+Branch: REL9_4_STABLE [31737eb43] 2019-03-27 03:24:35 +0100
+</span><p>
+<span class="original">
+      Avoid O(N^2) performance issue when rolling back a transaction that
+      created many tables (Tomas Vondra)
+</span>
+多数のテーブルを作るトランザクションをロールバックする際にO(N^2)性能になる問題を回避しました。
+(Tomas Vondra)
+     </p></li><li class="listitem"><span class="original">
+Author: Thomas Munro &lt;tmunro@postgresql.org&gt;
+Branch: master [7215efdc0] 2019-02-13 13:24:11 +1300
+Branch: REL_11_STABLE [b8386b036] 2019-02-13 13:25:27 +1300
+Branch: REL_10_STABLE [2cfdf24e7] 2019-02-13 13:32:05 +1300
+Branch: master [29ddb548f] 2019-02-25 11:11:40 +1300
+Branch: REL_11_STABLE [50ae61903] 2019-02-25 11:12:57 +1300
+Branch: REL_10_STABLE [406e937d1] 2019-02-25 11:13:50 +1300
+</span><p>
+<span class="original">
+      Fix corner-case server crashes in dynamic shared memory
+      allocation (Thomas Munro, Robert Haas)
+</span>
+動的共有メモリの割り当てで稀な場合のサーバクラッシュを修正しました。
+(Thomas Munro, Robert Haas)
+     </p></li><li class="listitem"><span class="original">
+Author: Thomas Munro &lt;tmunro@postgresql.org&gt;
+Branch: master [0b55aaace] 2019-02-18 09:58:29 +1300
+Branch: REL_11_STABLE [1d93d1804] 2019-02-18 09:59:27 +1300
+Branch: REL_10_STABLE [7718a9920] 2019-02-18 10:02:37 +1300
+Branch: master [6c0fb9418] 2019-02-15 14:05:09 +1300
+Branch: REL_11_STABLE [faf132449] 2019-02-15 13:34:51 +1300
+Branch: REL_10_STABLE [cb3d674e1] 2019-02-15 13:41:02 +1300
+Branch: REL9_6_STABLE [cb0680573] 2019-02-15 13:44:50 +1300
+Branch: REL9_5_STABLE [b7c8766d3] 2019-02-15 13:48:08 +1300
+Branch: REL9_4_STABLE [bd195071f] 2019-02-15 13:54:27 +1300
+</span><p>
+<span class="original">
+      Fix race conditions in management of dynamic shared memory
+      (Thomas Munro)
+</span>
+動的共有メモリの制御での競合状態を修正しました。
+(Thomas Munro)
+     </p><p>
+<span class="original">
+      These could lead to &lt;quote&gt;dsa_area could not attach to
+      segment&lt;/quote&gt; or &lt;quote&gt;cannot unpin a segment that is not
+      pinned&lt;/quote&gt; errors.
+</span>
+これにより、<span class="quote">「<span class="quote">dsa_area could not attach to segment（dsa_areaがセグメントにアタッチできません）</span>」</span>や<span class="quote">「<span class="quote">cannot unpin a segment that is not pinned（ピンされていないセグメントをピン解除できません）</span>」</span>のエラーが生じる可能性がありました。
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [0fae84623] 2019-04-24 14:15:44 -0400
+Branch: REL_11_STABLE [f8642fb17] 2019-04-24 14:15:44 -0400
+Branch: REL_10_STABLE [a0bbd012d] 2019-04-24 14:15:44 -0400
+Branch: REL9_6_STABLE [ec537c1e8] 2019-04-24 14:15:45 -0400
+Branch: REL9_5_STABLE [c7e38be4d] 2019-04-24 14:15:45 -0400
+Branch: REL9_4_STABLE [f0c82454d] 2019-04-24 14:15:45 -0400
+</span><p>
+<span class="original">
+      Fix race condition in which a hot-standby postmaster could fail to
+      shut down after receiving a smart-shutdown request (Tom Lane)
+</span>
+それによりシャットダウン要求を受け取った後にホットスタンバイpostmasterがシャットダウンに失敗する可能性のある競合状態を修正しました。
+(Tom Lane)
+     </p></li><li class="listitem"><span class="original">
+Author: Alvaro Herrera &lt;alvherre@alvh.no-ip.org&gt;
+Branch: master [5721b9b3c] 2019-02-20 11:26:08 -0300
+Branch: REL_11_STABLE [728ac262d] 2019-02-20 11:22:48 -0300
+Branch: REL_10_STABLE [ddad002de] 2019-02-20 11:22:13 -0300
+Branch: REL9_6_STABLE [e4542ca96] 2019-02-20 09:12:02 -0300
+Branch: REL9_5_STABLE [545928bbb] 2019-02-20 09:16:00 -0300
+</span><p>
+<span class="original">
+      Fix possible crash
+      when &lt;function&gt;pg_identify_object_as_address()&lt;/function&gt; is given
+      invalid input (&amp;Aacute;lvaro Herrera)
+</span>
+<code class="function">pg_identify_object_as_address()</code>に無効な入力が与えられたときに起こりうるクラッシュを修正しました。
+(Álvaro Herrera)
+     </p></li><li class="listitem"><span class="original">
+Author: Thomas Munro &lt;tmunro@postgresql.org&gt;
+Branch: master [d2fd7f74e] 2019-03-27 21:30:04 +1300
+Branch: REL_11_STABLE [26d4fda37] 2019-03-27 21:30:49 +1300
+Branch: REL_10_STABLE [339927797] 2019-03-27 21:31:29 +1300
+</span><p>
+<span class="original">
+      Fix possible &lt;quote&gt;could not access status of transaction&lt;/quote&gt;
+      failures in &lt;function&gt;txid_status()&lt;/function&gt; (Thomas Munro)
+</span>
+<code class="function">txid_status()</code>で起きる可能性のある<span class="quote">「<span class="quote">could not access status of transaction（トランザクションの状態にアクセスできません）</span>」</span>エラーを修正しました。
+(Thomas Munro)
+     </p></li><li class="listitem"><span class="original">
+Author: Michael Paquier &lt;michael@paquier.xyz&gt;
+Branch: master [87c346a35] 2019-02-28 09:40:28 +0900
+Branch: REL_11_STABLE [d9bba27c8] 2019-02-28 09:40:39 +0900
+</span><p>
+<span class="original">
+      Fix authentication failure when attempting to use SCRAM
+      authentication with mixed OpenSSL library versions (Michael Paquier,
+      Peter Eisentraut)
+</span>
+複数OpenSSLライブラリバージョンを混用してSCRAM認証を使おうとしたときの認証失敗を修正しました。
+(Michael Paquier, Peter Eisentraut)
+     </p><p>
+<span class="original">
+      If &lt;application&gt;libpq&lt;/application&gt; is using OpenSSL 1.0.1 or older
+      while the server is using OpenSSL 1.0.2 or newer, the negotiation of
+      which SASL mechanism to use went wrong, leading to a
+      confusing &lt;quote&gt;channel binding not supported by this build&lt;/quote&gt;
+      error message.
+</span>
+<span class="application">libpq</span>がOpenSSL 1.0.1以前を使っていて、サーバがOpenSSL 1.0.2以降を使っているとき、どのSASLメカニズムを使うかのネゴシエーションに失敗して、混乱させる<span class="quote">「<span class="quote">channel binding not supported by this build（このビルドではチャンネルバインディングはサポートされません）</span>」</span>エラーメッセージをもたらしました。
+     </p></li><li class="listitem"><span class="original">
+Author: Michael Paquier &lt;michael@paquier.xyz&gt;
+Branch: master [ccae190b9] 2019-04-23 15:43:21 +0900
+Branch: REL_11_STABLE [7f56d4366] 2019-04-23 15:43:32 +0900
+Branch: REL_10_STABLE [15fe91e70] 2019-04-23 15:43:38 +0900
+Branch: REL9_6_STABLE [af298f00a] 2019-04-24 09:05:25 +0900
+Branch: REL9_5_STABLE [20dbc84bd] 2019-04-24 09:05:30 +0900
+Branch: REL9_4_STABLE [a82c06f40] 2019-04-24 09:05:37 +0900
+</span><p>
+<span class="original">
+      Tighten validation of encoded SCRAM-SHA-256 and MD5 passwords
+      (Jonathan Katz)
+</span>
+エンコードされたSCRAM-SHA-256およびMD5パスワードの検証を厳格にしました。
+(Jonathan Katz)
+     </p><p>
+<span class="original">
+      A password string that had the right initial characters could be
+      mistaken for one that is correctly hashed into SCRAM-SHA-256 or MD5
+      format.  The password would be accepted but would be unusable later.
+</span>
+一致する先頭の文字列を持つパスワード文字列がSCRAM-SHA-256やMD5形式で適切にハッシュ化されたものと誤認される可能性がありました。
+パスワードは受け入れられますが後で使うことができません。
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [7ad1cd31b] 2019-04-23 18:51:30 -0400
+Branch: REL_11_STABLE [e899df6a2] 2019-04-23 18:51:31 -0400
+Branch: REL_10_STABLE [7c02c3f75] 2019-04-23 18:51:31 -0400
+Branch: REL9_6_STABLE [1e5de9662] 2019-04-23 18:51:31 -0400
+Branch: REL9_5_STABLE [74589026f] 2019-04-23 18:51:31 -0400
+Branch: REL9_4_STABLE [c0bafc5e5] 2019-04-23 18:51:31 -0400
+</span><p>
+<span class="original">
+      Fix handling of &lt;varname&gt;lc_time&lt;/varname&gt; settings that imply an
+      encoding different from the database's encoding (Juan Jos&amp;eacute;
+      Santamar&amp;iacute;a Flecha, Tom Lane)
+</span>
+データベースエンコーディングと異なるエンコーディングを暗示する<code class="varname">lc_time</code>設定の処理を修正しました。
+(Juan José Santamaría Flecha, Tom Lane)
+     </p><p>
+<span class="original">
+      Localized month or day names that include non-ASCII characters
+      previously caused unexpected errors or wrong output in such locales.
+</span>
+以前は、そのようなロケールで非ASCII文字を含むローカライズされた月と日の名前が予期せぬエラーや誤った出力をひき起こしていました。
+     </p></li><li class="listitem"><span class="original">
+Author: Michael Paquier &lt;michael@paquier.xyz&gt;
+Branch: master [276d2e6c2] 2019-03-24 21:00:35 +0900
+Branch: REL_11_STABLE [7d7435c5c] 2019-03-24 21:01:10 +0900
+</span><p>
+<span class="original">
+      Create the &lt;filename&gt;current_logfiles&lt;/filename&gt; file with the same
+      permissions as other files in the server's data directory
+      (Haribabu Kommi)
+</span>
+<code class="filename">current_logfiles</code>ファイルをサーバのデータディレクトリの他のファイルと同じパーミッションで作成するようにしました。
+(Haribabu Kommi)
+     </p><p>
+<span class="original">
+      Previously it used the permissions specified
+      by &lt;varname&gt;log_file_mode&lt;/varname&gt;, but that can cause problems for
+      backup utilities.
+</span>
+これまでは<code class="varname">log_file_mode</code>で指定されたパーミッションが使われましたが、これはバックアップユーティリティで問題を起こすおそれがあります。
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [4cae471d1] 2019-04-10 19:02:21 -0400
+Branch: REL_11_STABLE [930930c47] 2019-04-10 19:02:32 -0400
+Branch: REL_10_STABLE [99bbff5c1] 2019-04-10 19:02:58 -0400
+Branch: REL9_6_STABLE [62d495395] 2019-04-10 19:03:14 -0400
+Branch: REL9_5_STABLE [b9b7fe8ca] 2019-04-10 19:03:29 -0400
+</span><p>
+<span class="original">
+      Fix incorrect &lt;varname&gt;operator_precedence_warning&lt;/varname&gt; checks
+      involving unary minus operators (Rikard Falkeborn)
+</span>
+単項マイナス演算子に関する誤った<code class="varname">operator_precedence_warning</code>の検査を修正しました。
+(Rikard Falkeborn)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [ac75959cd] 2019-03-10 12:59:16 -0400
+Branch: REL_11_STABLE [bc2232f2f] 2019-03-10 12:58:52 -0400
+Branch: REL_10_STABLE [f9ec64df8] 2019-03-10 12:58:52 -0400
+Branch: REL9_6_STABLE [5aafedc2f] 2019-03-10 12:58:52 -0400
+Branch: REL9_5_STABLE [d8f8183c0] 2019-03-10 12:58:52 -0400
+Branch: REL9_4_STABLE [e04bb2616] 2019-03-10 12:58:52 -0400
+</span><p>
+<span class="original">
+      Disallow &lt;literal&gt;NaN&lt;/literal&gt; as a value for floating-point server
+      parameters (Tom Lane)
+</span>
+浮動小数点のサーバ設定値として<code class="literal">NaN</code>を禁止しました。
+(Tom Lane)
+     </p></li><li class="listitem"><span class="original">
+Author: Andres Freund &lt;andres@anarazel.de&gt;
+Branch: master [3dbb317d3] 2019-04-29 19:42:08 -0700
+Branch: REL_11_STABLE [14323493d] 2019-04-29 19:42:09 -0700
+Branch: REL_10_STABLE [f495b65a5] 2019-04-29 19:42:09 -0700
+Branch: REL9_6_STABLE [17126e089] 2019-04-29 19:42:58 -0700
+Branch: REL9_5_STABLE [670a492c5] 2019-04-29 19:43:32 -0700
+Branch: REL9_4_STABLE [e7418f89f] 2019-04-29 19:48:58 -0700
+Branch: master [4b40d40b3] 2019-04-30 17:45:32 -0700
+Branch: REL_11_STABLE [d264bb51c] 2019-04-30 17:45:32 -0700
+Branch: REL_10_STABLE [d8d5e1ae5] 2019-04-30 17:45:32 -0700
+Branch: REL9_6_STABLE [d18f5ff90] 2019-04-30 17:45:32 -0700
+Branch: REL9_5_STABLE [5409e359f] 2019-04-30 17:45:32 -0700
+Branch: REL9_4_STABLE [40230f0e2] 2019-04-30 17:45:32 -0700
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [f912d7dec] 2019-05-02 19:11:28 -0400
+Branch: REL_11_STABLE [727c155cf] 2019-05-02 19:11:28 -0400
+Branch: REL_10_STABLE [18138066f] 2019-05-02 19:11:28 -0400
+Branch: REL9_6_STABLE [2bb1adfac] 2019-05-02 19:11:28 -0400
+Branch: REL9_5_STABLE [d18ef6905] 2019-05-02 19:11:28 -0400
+Branch: REL9_4_STABLE [5f8e84ff4] 2019-05-02 19:11:29 -0400
+</span><p>
+<span class="original">
+      Rearrange &lt;command&gt;REINDEX&lt;/command&gt; processing to avoid assertion
+      failures when reindexing individual indexes
+      of &lt;structname&gt;pg_class&lt;/structname&gt; (Andres Freund, Tom Lane)
+</span>
+<code class="structname">pg_class</code>の個々のインデックスを再構築するときにアサート失敗を回避するように<code class="command">REINDEX</code>処理を再調整しました。
+(Andres Freund, Tom Lane)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [0a9d7e1f6] 2019-03-14 12:16:36 -0400
+Branch: REL_11_STABLE [5b866005c] 2019-03-14 12:16:09 -0400
+Branch: REL_10_STABLE [d4b754c87] 2019-03-14 12:16:09 -0400
+Branch: REL9_6_STABLE [0255329a7] 2019-03-14 12:16:09 -0400
+Branch: REL9_5_STABLE [71288846e] 2019-03-14 12:16:10 -0400
+Branch: REL9_4_STABLE [98f8ffa18] 2019-03-14 12:16:10 -0400
+</span><p>
+<span class="original">
+      Fix planner assertion failure for parameterized dummy paths (Tom Lane)
+</span>
+プランナのパラメータ化されたダミーパスに対するアサート失敗を修正しました。
+(Tom Lane)
+     </p></li><li class="listitem"><span class="original">
+Author: Michael Paquier &lt;michael@paquier.xyz&gt;
+Branch: master [56fadbedb] 2019-02-20 12:31:07 +0900
+Branch: REL_11_STABLE [7ed9285c6] 2019-02-20 12:31:27 +0900
+Branch: REL_10_STABLE [a80f5c279] 2019-02-20 12:31:32 +0900
+Branch: REL9_6_STABLE [f13188951] 2019-02-20 12:31:45 +0900
+Branch: REL9_5_STABLE [03cd99a8e] 2019-02-20 12:32:15 +0900
+Branch: REL9_4_STABLE [2ad57e9e9] 2019-02-20 12:32:23 +0900
+</span><p>
+<span class="original">
+      Insert correct test function in the result
+      of &lt;function&gt;SnapBuildInitialSnapshot()&lt;/function&gt; (Antonin Houska)
+</span>
+<code class="function">SnapBuildInitialSnapshot()</code>の結果に正しいテスト関数を挿入するようにしました。
+     </p><p>
+<span class="original">
+      No core code cares about this, but some extensions do.
+</span>
+これはコアコードには無関係ですが、いくつかの拡張に影響します。
+     </p></li><li class="listitem"><span class="original">
+Author: Noah Misch &lt;noah@leadboat.com&gt;
+Branch: master [617dc6d29] 2019-04-08 21:39:00 -0700
+Branch: REL_11_STABLE [e45a8ff87] 2019-04-08 21:39:03 -0700
+Branch: REL_10_STABLE [f5989b379] 2019-04-08 21:39:04 -0700
+Branch: REL9_6_STABLE [57ebbbb8f] 2019-04-08 21:39:04 -0700
+Branch: REL9_5_STABLE [7a5677818] 2019-04-08 21:39:04 -0700
+Branch: REL9_4_STABLE [203886d3a] 2019-04-08 21:39:05 -0700
+Branch: master [ba3fb5d4f] 2019-04-09 08:25:39 -0700
+Branch: REL_11_STABLE [47b6362b5] 2019-04-09 08:25:42 -0700
+Branch: REL_10_STABLE [4c9e54572] 2019-04-09 08:25:42 -0700
+Branch: REL9_6_STABLE [3318c4555] 2019-04-09 08:25:42 -0700
+Branch: REL9_5_STABLE [292e2000e] 2019-04-09 08:25:43 -0700
+Branch: REL9_4_STABLE [3105844e2] 2019-04-09 08:25:43 -0700
+</span><p>
+<span class="original">
+      Fix intermittent &lt;quote&gt;could not reattach to shared memory&lt;/quote&gt;
+      session startup failures on Windows (Noah Misch)
+</span>
+Windowsにおける断続的な<span class="quote">「<span class="quote">could not reattach to shared memory（共有メモリに再アタッチできません）</span>」</span>でのセッション開始失敗を修正しました。
+(Noah Misch)
+     </p><p>
+<span class="original">
+      A previously unrecognized source of these failures is creation of
+      thread stacks for a process's default thread pool.  Arrange for such
+      stacks to be allocated in a different memory region.
+</span>
+これまで認識されていなかった本障害の原因は、プロセスのデフォルトスレッドプールに対するスレッドのスタック作成です。
+そのようなスタックが異なるメモリ領域に割り当てられるように調整しました。
+     </p></li><li class="listitem"><span class="original">
+Author: Michael Paquier &lt;michael@paquier.xyz&gt;
+Branch: master [754b90f65] 2019-03-04 09:49:06 +0900
+Branch: REL_11_STABLE [8722c4dac] 2019-03-04 09:50:02 +0900
+Branch: REL_10_STABLE [9aa59e64b] 2019-03-04 09:50:06 +0900
+Branch: REL9_6_STABLE [d95133163] 2019-03-04 09:50:14 +0900
+Branch: REL9_5_STABLE [977f83377] 2019-03-04 09:50:19 +0900
+Branch: REL9_4_STABLE [81f5b3283] 2019-03-04 09:50:24 +0900
+</span><p>
+<span class="original">
+      Fix error detection in directory scanning on Windows (Konstantin
+      Knizhnik)
+</span>
+Windowsにおけるディレクトリのスキャンでのエラー検出を修正しました。
+(Konstantin Knizhnik)
+     </p><p>
+<span class="original">
+      Errors, such as lack of permissions to read the directory, were not
+      detected or reported correctly; instead the code silently acted as
+      though the directory were empty.
+</span>
+ディレクトリを読むのに権限が不足してる、といったエラーが、検出されないか、あるいは正しく報告されず、そのかわりにディレクトリが空であるかのように黙って動作していました。
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [9e138a401] 2019-02-24 12:51:50 -0500
+Branch: REL_11_STABLE [de94ed89d] 2019-02-24 12:51:50 -0500
+Branch: REL_10_STABLE [8ec638e69] 2019-02-24 12:51:50 -0500
+Branch: REL9_6_STABLE [904fce2a7] 2019-02-24 12:51:50 -0500
+Branch: REL9_5_STABLE [3a682a21b] 2019-02-24 12:51:51 -0500
+Branch: REL9_4_STABLE [53c2bb78d] 2019-02-24 12:51:51 -0500
+</span><p>
+<span class="original">
+      Fix grammar problems in &lt;application&gt;ecpg&lt;/application&gt; (Tom Lane)
+</span>
+<span class="application">ecpg</span>で文法の問題を修正しました。
+(Tom Lane)
+     </p><p>
+<span class="original">
+      A missing semicolon led to mistranslation
+      of &lt;literal&gt;SET &lt;replaceable&gt;variable&lt;/replaceable&gt; =
+      DEFAULT&lt;/literal&gt; (but
+      not &lt;literal&gt;SET &lt;replaceable&gt;variable&lt;/replaceable&gt; TO
+      DEFAULT&lt;/literal&gt;) in &lt;application&gt;ecpg&lt;/application&gt; programs,
+      producing syntactically invalid output that the server would reject.
+      Additionally, in a &lt;command&gt;DROP TYPE&lt;/command&gt; or &lt;command&gt;DROP
+      DOMAIN&lt;/command&gt; command that listed multiple type names, only the
+      first type name was actually processed.
+</span>
+<span class="application">ecpg</span>プログラムで、セミコロンの欠如が<code class="literal">SET <em class="replaceable"><code>variable</code></em> = DEFAULT</code>（ただし<code class="literal">SET <em class="replaceable"><code>variable</code></em> TO DEFAULT</code>ではない）の誤変換をもたらし、サーバが拒絶するであろう構文的に不正な出力を生成していました。
+加えて、複数の型名を列挙する<code class="command">DROP TYPE</code>や<code class="command">DROP DOMAIN</code>コマンドで、最初の型名だけが実際に処理されました。
+     </p></li><li class="listitem"><span class="original">
+Author: Michael Meskes &lt;meskes@postgresql.org&gt;
+Branch: master [e81f0e311] 2019-02-18 11:57:34 +0100
+Branch: REL_11_STABLE [3530c508c] 2019-02-18 12:01:34 +0100
+Branch: REL_10_STABLE [f647a5fb0] 2019-02-18 12:05:14 +0100
+Branch: REL9_6_STABLE [10b3299b6] 2019-02-18 12:08:18 +0100
+Branch: REL9_5_STABLE [180606b68] 2019-02-18 12:16:45 +0100
+</span><p>
+<span class="original">
+      Sync &lt;application&gt;ecpg&lt;/application&gt;'s syntax for &lt;command&gt;CREATE
+      TABLE AS&lt;/command&gt; with the server's (Daisuke Higuchi)
+</span>
+<code class="command">CREATE TABLE AS</code>に対する<span class="application">ecpg</span>の構文をサーバの構文と一致させました。
+(Daisuke Higuchi)
+     </p></li><li class="listitem"><span class="original">
+Author: Michael Meskes &lt;meskes@postgresql.org&gt;
+Branch: master [08cecfaf6] 2019-03-11 16:11:16 +0100
+Branch: REL_11_STABLE [e7adda86b] 2019-03-11 16:14:03 +0100
+Branch: REL_10_STABLE [5469a1e78] 2019-03-11 16:15:09 +0100
+Branch: REL9_6_STABLE [8cdce0a45] 2019-03-11 16:26:59 +0100
+Branch: REL9_5_STABLE [72f725ab2] 2019-03-11 16:17:17 +0100
+Branch: REL9_4_STABLE [e7e78f159] 2019-03-11 16:18:17 +0100
+Branch: master [ed16ba324] 2019-04-11 20:56:17 +0200
+Branch: REL_11_STABLE [0ba09cc02] 2019-04-11 21:04:37 +0200
+Branch: REL_10_STABLE [e7e71b9e1] 2019-04-11 21:05:39 +0200
+Branch: REL9_6_STABLE [773006848] 2019-04-11 21:05:59 +0200
+Branch: REL9_5_STABLE [67f6e645e] 2019-04-11 21:06:10 +0200
+Branch: REL9_4_STABLE [12c42a543] 2019-04-11 21:06:21 +0200
+</span><p>
+<span class="original">
+      Fix possible buffer overruns in &lt;application&gt;ecpg&lt;/application&gt;'s
+      processing of include filenames (Liu Huailing, Fei Wu)
+</span>
+<span class="application">ecpg</span>のインクルードファイル名の処理で、起こりうるバッファオーバーランを修正しました。
+(Liu Huailing, Fei Wu)
+     </p></li><li class="listitem"><span class="original">
+Author: Michael Paquier &lt;michael@paquier.xyz&gt;
+Branch: master [a7eadaaaa] 2019-03-18 10:34:45 +0900
+Branch: REL_11_STABLE [dcf2a0db8] 2019-03-18 10:35:01 +0900
+</span><p>
+<span class="original">
+      Fix &lt;application&gt;pg_rewind&lt;/application&gt; failures due to failure to
+      remove some transient files in the target data directory (Michael
+      Paquier)
+</span>
+対象データディレクトリ内の一時ファイルの削除失敗による<span class="application">pg_rewind</span>のエラーを修正しました。
+(Michael Paquier)
+     </p></li><li class="listitem"><span class="original">
+Author: Michael Paquier &lt;michael@paquier.xyz&gt;
+Branch: master [c9ae7f704] 2019-03-13 09:51:02 +0900
+Branch: REL_11_STABLE [501f58359] 2019-03-13 09:51:25 +0900
+</span><p>
+<span class="original">
+      Make &lt;application&gt;pg_verify_checksums&lt;/application&gt; verify that the
+      data directory it's pointed at is of the
+      right &lt;productname&gt;PostgreSQL&lt;/productname&gt; version (Michael Paquier)
+</span>
+<span class="application">pg_verify_checksums</span>が指定されたデータディレクトリが正しい<span class="productname">PostgreSQL</span>バージョンのものであるかを確認するようにしました。
+(Michael Paquier)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [8cad5adb9] 2019-04-27 13:15:54 -0400
+Branch: REL_11_STABLE [1bf52d688] 2019-04-27 13:15:54 -0400
+Branch: REL_10_STABLE [c25e638b1] 2019-04-27 13:15:55 -0400
+</span><p>
+<span class="original">
+      Avoid crash in &lt;filename&gt;contrib/postgres_fdw&lt;/filename&gt; when a
+      query using remote grouping or aggregation has
+      a &lt;literal&gt;SELECT&lt;/literal&gt;-list item that is an uncorrelated
+      sub-select, outer reference, or parameter symbol (Tom Lane)
+</span>
+<code class="filename">contrib/postgres_fdw</code>で、リモートのグルーピングまたは集約を使う問い合わせが、関連しない副SELECTや外部参照あるいはパラメータシンボルの<code class="literal">SELECT</code>リスト要素を持つときのクラッシュを回避しました。
+(Tom Lane)
+     </p></li><li class="listitem"><span class="original">
+Author: Etsuro Fujita &lt;efujita@postgresql.org&gt;
+Branch: master [5c4704918] 2019-04-24 18:31:50 +0900
+Branch: REL_11_STABLE [7a3d05534] 2019-04-24 18:31:51 +0900
+</span><p>
+<span class="original">
+      Change &lt;filename&gt;contrib/postgres_fdw&lt;/filename&gt; to report an error
+      when a remote partition chosen to insert a routed row into is
+      also an &lt;command&gt;UPDATE&lt;/command&gt; subplan target that will be
+      updated later in the same command (Amit Langote, Etsuro Fujita)
+</span>
+振り分けられた行を挿入するのに選択されたリモートパーティションが、同コマンドにて後で更新される<code class="command">UPDATE</code>サブプランの対象でもあるとき、エラーを報告するように<code class="filename">contrib/postgres_fdw</code>を変更しました。
+(Amit Langote, Etsuro Fujita)
+     </p><p>
+<span class="original">
+      Previously, such situations led to server crashes or incorrect
+      results of the &lt;command&gt;UPDATE&lt;/command&gt;.  Allowing such cases to
+      work correctly is a matter for future work.
+</span>
+これまでは、このような状況はサーバクラッシュや<code class="command">UPDATE</code>の不正な結果をもたらしていました。
+このような場合に正しく動作できるようにすることは今後の課題です。
+     </p></li><li class="listitem"><span class="original">
+Author: Robert Haas &lt;rhaas@postgresql.org&gt;
+Branch: master [1459e84cb] 2019-03-18 15:22:42 -0400
+Branch: REL_11_STABLE [fc8b39a46] 2019-03-18 15:30:32 -0400
+</span><p>
+<span class="original">
+      In &lt;filename&gt;contrib/pg_prewarm&lt;/filename&gt;, avoid indefinitely
+      respawning background worker processes if prewarming fails for some
+      reason (Mithun Cy)
+</span>
+<code class="filename">contrib/pg_prewarm</code>で、何らか理由でプレウォームに失敗した場合にバックグラウンドワーカプロセスを際限なく再作成しないようにしました。
+(Mithun Cy)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [bd9396a0b] 2019-03-24 15:13:20 -0400
+Branch: REL_11_STABLE [b7ffa0ee8] 2019-03-24 15:13:21 -0400
+Branch: REL_10_STABLE [e484f0701] 2019-03-24 15:13:21 -0400
+Branch: REL9_6_STABLE [926488822] 2019-03-24 15:13:21 -0400
+Branch: REL9_5_STABLE [171baf183] 2019-03-24 15:13:21 -0400
+Branch: REL9_4_STABLE [99e414cac] 2019-03-24 15:13:21 -0400
+</span><p>
+<span class="original">
+      Avoid crash in &lt;filename&gt;contrib/vacuumlo&lt;/filename&gt; if
+      an &lt;function&gt;lo_unlink()&lt;/function&gt; call failed (Tom Lane)
+</span>
+<code class="filename">contrib/vacuumlo</code>で<code class="function">lo_unlink()</code>呼び出しに失敗した場合のクラッシュを回避しました。
+(Tom Lane)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [acb897b80] 2019-04-26 19:46:26 -0400
+Branch: REL_11_STABLE [7898d01da] 2019-04-26 19:46:37 -0400
+Branch: REL_10_STABLE [fd7474151] 2019-04-26 19:46:45 -0400
+Branch: REL9_6_STABLE [28aa0ee4f] 2019-04-26 19:46:55 -0400
+Branch: REL9_5_STABLE [22ba95536] 2019-04-26 19:47:00 -0400
+Branch: REL9_4_STABLE [7f36286c2] 2019-04-26 19:47:05 -0400
+Branch: master [48f8fa9ce] 2019-04-26 21:20:55 -0400
+Branch: REL_11_STABLE [a97cfd9b8] 2019-04-26 21:20:21 -0400
+Branch: REL_10_STABLE [7c22e1388] 2019-04-26 21:20:27 -0400
+Branch: REL9_6_STABLE [578cb33df] 2019-04-26 21:20:33 -0400
+Branch: REL9_5_STABLE [b3904abb4] 2019-04-26 21:20:39 -0400
+Branch: REL9_4_STABLE [1c61ec7bb] 2019-04-26 21:20:44 -0400
+</span><p>
+<span class="original">
+      Sync our copy of the timezone library with IANA tzcode release 2019a
+      (Tom Lane)
+</span>
+タイムゾーンライブラリのコピーをIANA tzcode release 2019aに同期しました。
+(Tom Lane)
+     </p><p>
+<span class="original">
+      This corrects a small bug in &lt;application&gt;zic&lt;/application&gt; that
+      caused it to output an incorrect year-2440 transition in
+      the &lt;literal&gt;Africa/Casablanca&lt;/literal&gt; zone, and adds support
+      for &lt;application&gt;zic&lt;/application&gt;'s new &lt;option&gt;-r&lt;/option&gt; option.
+</span>
+これは、<span class="application">zic</span>での<code class="literal">Africa/Casablanca</code>ゾーンで誤った2440年の遷移を出力する小さなバグを直し、<span class="application">zic</span>の新たな<code class="option">-r</code>オプションの対応を追加します。
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [d312de3fc] 2019-04-26 17:56:26 -0400
+Branch: REL_11_STABLE [f6307baca] 2019-04-26 17:56:38 -0400
+Branch: REL_10_STABLE [14c28c3b5] 2019-04-26 17:56:45 -0400
+Branch: REL9_6_STABLE [b25a81c71] 2019-04-26 17:56:52 -0400
+Branch: REL9_5_STABLE [c1c76431c] 2019-04-26 17:56:57 -0400
+Branch: REL9_4_STABLE [baeb12010] 2019-04-26 17:57:03 -0400
+</span><p>
+<span class="original">
+      Update time zone data files to &lt;application&gt;tzdata&lt;/application&gt;
+      release 2019a for DST law changes in Palestine and Metlakatla,
+      plus historical corrections for Israel.
+</span>
+タイムゾーンデータファイルを<span class="application">tzdata</span> release 2019aに更新しました。パレスチナとメトラカトラの夏時間法の変更とイスラエルの歴史的な修正が含まれます。
+     </p><p>
+<span class="original">
+      &lt;literal&gt;Etc/UCT&lt;/literal&gt; is now a backward-compatibility link
+      to &lt;literal&gt;Etc/UTC&lt;/literal&gt;, instead of being a separate zone that
+      generates the abbreviation &lt;literal&gt;UCT&lt;/literal&gt;, which nowadays is
+      typically a typo.  &lt;productname&gt;PostgreSQL&lt;/productname&gt; will still
+      accept &lt;literal&gt;UCT&lt;/literal&gt; as an input zone abbreviation, but it
+      won't output it.
+</span>
+<code class="literal">Etc/UCT</code>は、現在では一般的にタイプミスとされる略記法<code class="literal">UCT</code>を生成する別のゾーンである代わりに、後方互換性のある<code class="literal">Etc/UTC</code>へのリンクになりました。
+<span class="productname">PostgreSQL</span>は未だ<code class="literal">UCT</code>を入力のゾーン略記法として受け入れますが、出力はしません。
+     </p></li></ul></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="release-11-4.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="release.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="release-11-2.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">E.2. リリース 11.4 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> E.4. リリース 11.2</td></tr></table></div></body></html>

@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>E.155. リリース9.0.3</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="release-9-0-4.html" title="E.154. リリース9.0.4" /><link rel="next" href="release-9-0-2.html" title="E.156. リリース9.0.2" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="release.html" title="付録E リリースノート">付録E リリースノート</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      release-9-0-3.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="release-9-0-4.html" title="E.154. リリース9.0.4">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="release.html" title="付録E リリースノート">上へ</a></td><td width="60%" align="center">E.155. リリース9.0.3</td><td width="20%" align="right"> <a accesskey="n" href="release-9-0-2.html" title="E.156. リリース9.0.2">次へ</a></td></tr></table><hr /></div><div class="sect1" id="RELEASE-9-0-3"><div class="titlepage"><div><div><h2 class="title" style="clear: both">E.155. リリース9.0.3</h2></div></div></div><span class="original">
+  &lt;title&gt;Release 9.0.3&lt;/title&gt;
+</span><p><span class="original">
+  &lt;title&gt;Release date:&lt;/title&gt;
+</span><strong>リリース日: </strong>2011-01-31</p><p>
+<span class="original">
+   This release contains a variety of fixes from 9.0.2.
+   For information about new features in the 9.0 major release, see
+   &lt;xref linkend="release-9-0"/&gt;.
+</span>
+このリリースは9.0.2に対し、各種の不具合を修正したものです。
+9.0メジャーリリースにおける新機能については<a class="xref" href="release-9-0.html" title="E.158. リリース9.0">E.158</a>を参照してください。
+  </p><div class="sect2" id="id-1.11.6.159.4"><div class="titlepage"><div><div><h3 class="title">E.155.1. バージョン9.0.3への移行</h3></div></div></div><span class="original">
+   &lt;title&gt;Migration to Version 9.0.3&lt;/title&gt;
+</span><p>
+<span class="original">
+    A dump/restore is not required for those running 9.0.X.
+</span>
+9.0.Xからの移行ではダンプ/リストアは不要です。
+   </p></div><div class="sect2" id="id-1.11.6.159.5"><div class="titlepage"><div><div><h3 class="title">E.155.2. 変更点</h3></div></div></div><span class="original">
+   &lt;title&gt;Changes&lt;/title&gt;
+</span><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+      Before exiting &lt;application&gt;walreceiver&lt;/application&gt;, ensure all the received WAL
+      is fsync'd to disk (Heikki Linnakangas)
+</span>
+<span class="application">walreceiver</span>の終了前に、受信したすべてのWALをディスクにfsyncされることを確実にしました。(Heikki Linnakangas)
+     </p><p>
+<span class="original">
+      Otherwise the standby server could replay some un-synced WAL, conceivably
+      leading to data corruption if the system crashes just at that point.
+</span>
+こうしないとスタンバイサーバは一部の同期されていないWALを再生することがあり得、もしシステムがまさにその時点でクラッシュした場合おそらくデータ破損につながります。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Avoid excess fsync activity in &lt;application&gt;walreceiver&lt;/application&gt;
+      (Heikki Linnakangas)
+</span>
+<span class="application">walreceiver</span>における余分なfsync実行を防止しました。(Heikki Linnakangas)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Make &lt;command&gt;ALTER TABLE&lt;/command&gt; revalidate uniqueness and exclusion
+      constraints when needed (Noah Misch)
+</span>
+必要な場合に<code class="command">ALTER TABLE</code>が一意性制約および排他制約を再検証するようにしました。(Noah Misch)
+     </p><p>
+<span class="original">
+      This was broken in 9.0 by a change that was intended to suppress
+      revalidation during &lt;command&gt;VACUUM FULL&lt;/command&gt; and &lt;command&gt;CLUSTER&lt;/command&gt;,
+      but unintentionally affected &lt;command&gt;ALTER TABLE&lt;/command&gt; as well.
+</span>
+<code class="command">VACUUM FULL</code>および<code class="command">CLUSTER</code>実行中の再検証を抑制することを目的とした変更が、意図せず<code class="command">ALTER TABLE</code>にも影響したため、9.0でおかしくなりました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix EvalPlanQual for &lt;command&gt;UPDATE&lt;/command&gt; of an inheritance tree in which
+      the tables are not all alike (Tom Lane)
+</span>
+継承ツリーのテーブルがすべて同一でない場合、その継承ツリーの<code class="command">UPDATE</code>に対するEvalPlanQualを修正しました。(Tom Lane)
+     </p><p>
+<span class="original">
+      Any variation in the table row types (including dropped columns present
+      in only some child tables) would confuse the EvalPlanQual code, leading
+      to misbehavior or even crashes.  Since EvalPlanQual is only executed
+      during concurrent updates to the same row, the problem was only seen
+      intermittently.
+</span>
+テーブルの行型の（一部の子テーブルにのみ削除された列が存在するなど）何らかの変化はEvalPlanQualコードを混乱させ、誤動作、最悪はクラッシュを導きました。
+EvalPlanQualは同一行に対する同時更新の間だけ実行されますので、この問題は散発的にしか発生しませんでした。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Avoid failures when &lt;command&gt;EXPLAIN&lt;/command&gt; tries to display a simple-form
+      &lt;literal&gt;CASE&lt;/literal&gt; expression (Tom Lane)
+</span>
+<code class="command">EXPLAIN</code>が<code class="literal">CASE</code>式の簡易構文を表示しようとした時の失敗を防止します。(Tom Lane)
+     </p><p>
+<span class="original">
+      If the &lt;literal&gt;CASE&lt;/literal&gt;'s test expression was a constant, the planner
+      could simplify the &lt;literal&gt;CASE&lt;/literal&gt; into a form that confused the
+      expression-display code, resulting in &lt;quote&gt;unexpected CASE WHEN
+      clause&lt;/quote&gt; errors.
+</span>
+<code class="literal">CASE</code>のテスト式が定数の場合、プランナは<code class="literal">CASE</code>を式表示用コードを混乱させる形式に単純化してしまいました。
+その結果<span class="quote">「<span class="quote">unexpected CASE WHEN clause</span>」</span>というエラーになりました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix assignment to an array slice that is before the existing range
+      of subscripts (Tom Lane)
+</span>
+過去に存在した添字範囲に対する部分配列代入を修正しました。(Tom Lane)
+     </p><p>
+<span class="original">
+      If there was a gap between the newly added subscripts and the first
+      pre-existing subscript, the code miscalculated how many entries needed
+      to be copied from the old array's null bitmap, potentially leading to
+      data corruption or crash.
+</span>
+新しく追加される添字と過去に存在した添字の先頭との間に隙間があった場合、コードは古い配列のヌルビットマップからコピーしなければならない項目数を誤計算してしまい、データ破損またはクラッシュを導く可能性がありました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Avoid unexpected conversion overflow in planner for very distant date
+      values (Tom Lane)
+</span>
+プランナにおける、非常に時間が離れた日付値に対する想定外の変換オーバーフローを防止します。(Tom Lane)
+     </p><p>
+<span class="original">
+      The &lt;type&gt;date&lt;/type&gt; type supports a wider range of dates than can be
+      represented by the &lt;type&gt;timestamp&lt;/type&gt; types, but the planner assumed it
+      could always convert a date to timestamp with impunity.
+</span>
+<code class="type">date</code>型は<code class="type">timestamp</code>型で表現可能な範囲よりもより広い日付範囲をサポートします。
+しかしプランナは常に問題なくdateからtimestampへの変換が可能であることを仮定していました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix PL/Python crash when an array contains null entries (Alex Hunsaker)
+</span>
+配列にNULL項目が含まれる場合のPL/Pythonのクラッシュを修正しました。(Alex Hunsaker)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Remove &lt;application&gt;ecpg&lt;/application&gt;'s fixed length limit for constants defining
+      an array dimension (Michael Meskes)
+</span>
+配列の次元を定義する定数についての<span class="application">ecpg</span>の固定の長さ制限を取り除きました。(Michael Meskes)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix erroneous parsing of &lt;type&gt;tsquery&lt;/type&gt; values containing
+      &lt;literal&gt;... &amp;amp; !(subexpression) | ...&lt;/literal&gt; (Tom Lane)
+</span>
+<code class="literal">... &amp; !(subexpression) | ...</code>を含む<code class="type">tsquery</code>値の間違った解析を修正しました。(Tom Lane)
+     </p><p>
+<span class="original">
+      Queries containing this combination of operators were not executed
+      correctly.  The same error existed in &lt;filename&gt;contrib/intarray&lt;/filename&gt;'s
+      &lt;type&gt;query_int&lt;/type&gt; type and &lt;filename&gt;contrib/ltree&lt;/filename&gt;'s
+      &lt;type&gt;ltxtquery&lt;/type&gt; type.
+</span>
+こうした演算子の組み合わせを含む問い合わせは正しく実行されませんでした。
+同じエラーが<code class="filename">contrib/intarray</code>の<code class="type">query_int</code>型と<code class="filename">contrib/ltree</code>の<code class="type">ltxtquery</code>型に存在しました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix buffer overrun in &lt;filename&gt;contrib/intarray&lt;/filename&gt;'s input function
+      for the &lt;type&gt;query_int&lt;/type&gt; type (Apple)
+</span>
+<code class="type">query_int</code>型に対する<code class="filename">contrib/intarray</code>入力関数におけるバッファオーバーランを修正しました。(Apple)
+     </p><p>
+<span class="original">
+      This bug is a security risk since the function's return address could
+      be overwritten.  Thanks to Apple Inc's security team for reporting this
+      issue and supplying the fix.  (CVE-2010-4015)
+</span>
+この関数の返すアドレスが上書きされる可能性があるという点で、この不具合はセキュリティ問題です。
+この問題を報告し修正版を提供していただいたApple Incのセキュリティチームに感謝します。(CVE-2010-4015)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix bug in &lt;filename&gt;contrib/seg&lt;/filename&gt;'s GiST picksplit algorithm
+      (Alexander Korotkov)
+</span>
+<code class="filename">contrib/seg</code>のGiST picksplitアルゴリズムにおける不具合を修正しました。(Alexander Korotkov)
+     </p><p>
+<span class="original">
+      This could result in considerable inefficiency, though not actually
+      incorrect answers, in a GiST index on a &lt;type&gt;seg&lt;/type&gt; column.
+      If you have such an index, consider &lt;command&gt;REINDEX&lt;/command&gt;ing it after
+      installing this update.  (This is identical to the bug that was fixed in
+      &lt;filename&gt;contrib/cube&lt;/filename&gt; in the previous update.)
+</span>
+これにより、<code class="type">seg</code>列上のGiSTインデックスにおいて実際に不正な結果になることはありませんが、非常に非効率的な結果になることがあり得ました。
+こうしたインデックスがある場合、この更新版をインストールした後に<code class="command">REINDEX</code>処理を行うことを検討してください。
+（これは過去の更新の<code class="filename">contrib/cube</code>で修正された不具合と同じです。）
+     </p></li></ul></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="release-9-0-4.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="release.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="release-9-0-2.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">E.154. リリース9.0.4 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> E.156. リリース9.0.2</td></tr></table></div></body></html>

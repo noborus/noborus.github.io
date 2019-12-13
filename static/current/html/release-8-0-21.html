@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>E.259. リリース8.0.21</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="release-8-0-22.html" title="E.258. リリース8.0.22" /><link rel="next" href="release-8-0-20.html" title="E.260. リリース8.0.20" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="release.html" title="付録E リリースノート">付録E リリースノート</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      release-8-0-21.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="release-8-0-22.html" title="E.258. リリース8.0.22">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="release.html" title="付録E リリースノート">上へ</a></td><td width="60%" align="center">E.259. リリース8.0.21</td><td width="20%" align="right"> <a accesskey="n" href="release-8-0-20.html" title="E.260. リリース8.0.20">次へ</a></td></tr></table><hr /></div><div class="sect1" id="RELEASE-8-0-21"><div class="titlepage"><div><div><h2 class="title" style="clear: both">E.259. リリース8.0.21</h2></div></div></div><span class="original">
+  &lt;title&gt;Release 8.0.21&lt;/title&gt;
+</span><p><span class="original">
+  &lt;title&gt;Release date:&lt;/title&gt;
+</span><strong>リリース日: </strong>2009-03-16</p><p>
+<span class="original">
+   This release contains a variety of fixes from 8.0.20.
+   For information about new features in the 8.0 major release, see
+   &lt;xref linkend="release-8-0"/&gt;.
+</span>
+このリリースは8.0.20に対し、各種の不具合を修正したものです。
+8.0メジャーリリースにおける新機能については<a class="xref" href="release-8-0.html" title="E.280. リリース8.0">E.280</a>を参照してください。
+  </p><div class="sect2" id="id-1.11.6.263.4"><div class="titlepage"><div><div><h3 class="title">E.259.1. バージョン8.0.21への移行</h3></div></div></div><span class="original">
+   &lt;title&gt;Migration to Version 8.0.21&lt;/title&gt;
+</span><p>
+<span class="original">
+    A dump/restore is not required for those running 8.0.X.
+    However, if you are upgrading from a version earlier than 8.0.6,
+    see &lt;xref linkend="release-8-0-6"/&gt;.
+</span>
+8.0.Xからの移行ではダンプ/リストアは不要です。
+しかしながら、8.0.6より前のバージョンからアップグレードする場合は、<a class="xref" href="release-8-0-6.html" title="E.274. リリース8.0.6">E.274</a>を参照してください。
+   </p></div><div class="sect2" id="id-1.11.6.263.5"><div class="titlepage"><div><div><h3 class="title">E.259.2. 変更点</h3></div></div></div><span class="original">
+   &lt;title&gt;Changes&lt;/title&gt;
+</span><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+      Prevent error recursion crashes when encoding conversion fails (Tom)
+</span>
+符号化方式の変換に失敗した時、再帰的なエラーによるクラッシュを防止しました。(Tom)
+     </p><p>
+<span class="original">
+      This change extends fixes made in the last two minor releases for
+      related failure scenarios.  The previous fixes were narrowly tailored
+      for the original problem reports, but we have now recognized that
+      &lt;emphasis&gt;any&lt;/emphasis&gt; error thrown by an encoding conversion function could
+      potentially lead to infinite recursion while trying to report the
+      error.  The solution therefore is to disable translation and encoding
+      conversion and report the plain-ASCII form of any error message,
+      if we find we have gotten into a recursive error reporting situation.
+      (CVE-2009-0922)
+</span>
+この変更は、最近の2つのマイナーリリースにて関連する失敗の状況に対してなされた改修を拡張したものです。
+前回の修正は元の問題報告に特化したものでしたが、符号化方式変換関数で発生する<span class="emphasis"><em>すべての</em></span>エラーがそのエラーを報告しようとして、無限に再帰される可能性があることが分かりました。
+したがって、再帰的なエラー報告を行う状況になったことがわかった時の解決策は、変換と符号化方式を無効にし、通常のASCII形式のエラーメッセージで報告することです。
+      (CVE-2009-0922)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Disallow &lt;command&gt;CREATE CONVERSION&lt;/command&gt; with the wrong encodings
+      for the specified conversion function (Heikki)
+</span>
+特定の変換関数に対する、間違った符号化方式を用いた<code class="command">CREATE CONVERSION</code>を許可しません。(Heikki)
+     </p><p>
+<span class="original">
+      This prevents one possible scenario for encoding conversion failure.
+      The previous change is a backstop to guard against other kinds of
+      failures in the same area.
+</span>
+これにより、符号化方式に関する失敗における、あり得る状況を防止します。
+前回の変更は、同じ問題における別の種類の失敗に対する防止策でした。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix core dump when &lt;function&gt;to_char()&lt;/function&gt; is given format codes that
+      are inappropriate for the type of the data argument (Tom)
+</span>
+<code class="function">to_char()</code>に引数のデータに対して不適切な整形用のコードが渡された時のコアダンプを修正しました。(Tom)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Add &lt;literal&gt;MUST&lt;/literal&gt; (Mauritius Island Summer Time) to the default list
+      of known timezone abbreviations (Xavier Bugaud)
+</span>
+デフォルトの既知の時間帯省略形のリストに<code class="literal">MUST</code>（モーリシャス島夏時間）を追加しました。(Xavier Bugaud)
+     </p></li></ul></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="release-8-0-22.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="release.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="release-8-0-20.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">E.258. リリース8.0.22 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> E.260. リリース8.0.20</td></tr></table></div></body></html>
