@@ -26,11 +26,14 @@ CSV,LTSV,JSON,TBLNファイルにSQLを実行できるツール
 
 ## 参加しているプロジェクト
 
-### PostgreSQLマニュアル翻訳
+### [jpug-doc](https://github.com/pgsql-jp/jpug-doc)
 
-* jpug-doc [github](https://github.com/pgsql-jp/jpug-doc)
-* [日本PostgreSQLユーザ会（別館）](https://pgsql-jp.github.io/) [github](https://github.com/pgsql-jp/pgsql-jp.github.io)
-* 対訳集 [github](https://github.com/pgsql-jp/taiyaku)
+PostgreSQLマニュアルの翻訳作業をしているレポジトリ。
+
+* (Qiita)[PostgreSQL日本語マニュアルについて](https://qiita.com/noborus/items/03f98e43c216d7e23767)
+* [日本PostgreSQLユーザ会（別館）](https://pgsql-jp.github.io/) 最新版の翻訳マニュアルがあるサイト
+  * [github](https://github.com/pgsql-jp/pgsql-jp.github.io)
+* [対訳集](https://github.com/pgsql-jp/taiyaku) PostgreSQLマニュアルの対訳集
 
 #### テスト版
 
