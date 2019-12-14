@@ -13,8 +13,6 @@ categories = [
 ]
 +++
 
-これまでSQLは使用していましたが、データベースについてはそれほど言及してきませんでした。
-
 trdsqlは組込みのSQLite3を利用してSQLを実行していますが、データベースの処理を別のデータベースに変更出来ます。
 
 ここではPostgreSQLを使用する方法を説明します。
@@ -51,9 +49,9 @@ trdsql -driver postgres -dsn "host=localhost port=5433 dbname=trdsql_test" "SELE
 
 接続できれば、これまでと同じようにSQLが実行できますが、実際に実行されるのはPostgreSQL上なので、PostgreSQLが実行できるSQLを書く必要があります。
 
-まず違うのが、列名のエスケープに使用していた「`」文字が「"」になります。
+まず注意が必要なのが、列名のエスケープに使用していた「`」文字が「"」になります。
 
-PostgreSQLドライバを指定して、-aオプションによる解析をおこなうとSQL例も変更されています。
+PostgreSQLドライバを指定して、-aオプションによる解析をおこなうとSQLの例も変更されています。
 
 ```sh
 trdsql -driver postgres -dsn "host=localhost dbname=trdsql_test" -ih  -a sample.csv

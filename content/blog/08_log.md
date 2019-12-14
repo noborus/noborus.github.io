@@ -14,6 +14,8 @@ categories = [
 ]
 +++
 
+## Log集計
+
 ApacheやnginxなどのLogを[LTSV](http://ltsv.org)フォーマットで出力する方法も定着してきました。
 
 そのようなLogをtrdsqlで解析する例です。
@@ -34,6 +36,8 @@ host:192.54.157.102	ident:-	user:-	time:[21/Oct/2019:21:33:53 +0900]	req:GET /it
 host:88.60.137.115	ident:-	user:-	time:[21/Oct/2019:21:33:53 +0900]	req:POST /search/?c=Games+Electronics HTTP/1.1	status:200	size:98	referer:/item/networking/929	ua:Mozilla/5.0 (iPhone; CPU iPhone OS 5_0_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9A405 Safari/7534.48.3
 ...
 ```
+
+## 解析
 
 まずは trdsql の -aを実行してみます。
 
@@ -74,6 +78,8 @@ trdsql "SELECT \`host\`, ident, \`user\`, \`time\`, req, \`status\`, \`size\`, r
 
 Examplesの実行例をヒントにこれまでに紹介したSQLを使用して実行していきます。
 
+### 上位を出力
+
 アクセスが多いホストTop 5を出力
 
 ```sh
@@ -105,6 +111,8 @@ trdsql -oat "SELECT req, count(req) as count FROM log.ltsv GROUP BY req ORDER BY
 | GET /category/office HTTP/1.1  |    30 |
 +--------------------------------+-------+
 ```
+
+### 検索条件と組み合わせて出力
 
 status が200以外のリクエストと回数を出力
 

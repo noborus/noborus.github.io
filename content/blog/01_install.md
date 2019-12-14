@@ -63,3 +63,11 @@ go get -u github.com/noborus/trdsql
 ```
 
 自分の環境用にビルドするのは難しくないと思いますが、クロスコンパイルする場合は、依存している[go-sqlite3](https://github.com/mattn/go-sqlite3)が cgo を使用しているので、注意が必要になります。
+
+### 実行
+
+実行はターミナル上から実行します。
+
+```sh
+trdsql [OPTIONS] [SQLコマンド]
+```

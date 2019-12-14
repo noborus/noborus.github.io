@@ -13,6 +13,8 @@ categories = [
 ]
 +++
 
+## GROUP集計
+
 全体の合計を計算することもありますが、グループ毎の合計をまとめて出力したい場合もあります。
 そこで使うのがGROUP BYです。
 
@@ -32,19 +34,22 @@ orange,40
 ここでappleやorange毎の合計を出したい場合は、以下のように検索条件で絞れば計算できますが、nameの種類の数だけ実行するとなると大変な作業になります。
 
 ```sh
-trdsql -ih "SELECT name,SUM(CAST(price AS INT)) as sum FROM sample.csv WHERE name='apple'"
+trdsql -ih \
+"SELECT name,SUM(CAST(price AS INT)) as sum FROM sample.csv WHERE name='apple'"
 apple,280
 ```
 
 ```sh
-trdsql -ih "SELECT name,SUM(CAST(price AS INT)) as sum FROM sample.csv WHERE name='orange'"
+trdsql -ih \
+"SELECT name,SUM(CAST(price AS INT)) as sum FROM sample.csv WHERE name='orange'"
 orange,130
 ```
 
 そこでGROUP BY を使ってnameをグループとして扱うことで、それぞれの集計結果を求めることができます。
 
 ```sh
-trdsql -ih "SELECT name,SUM(CAST(price AS INT)) as sum FROM sample.csv GROUP BY name"
+trdsql -ih \
+"SELECT name,SUM(CAST(price AS INT)) as sum FROM sample.csv GROUP BY name"
 apple,280
 melon,500
 orange,130
@@ -54,7 +59,9 @@ orange,130
 出力は-oat(Ascii Table)を使うと見やすく表示できます。
 
 ```sh
-trdsql -ih -oat "SELECT name, COUNT(name) as count, MIN(CAST(price AS INT)) AS min,MAX(CAST(price AS INT)) as max,SUM(CAST(price AS INT)) as sum,AVG(CAST(price AS INT)) as avg FROM sample.csv GROUP BY name"
+trdsql -ih -oat \
+"SELECT name, COUNT(name) as count, MIN(CAST(price AS INT)) AS min,MAX(CAST(price AS INT)) as max, \
+ SUM(CAST(price AS INT)) as sum,AVG(CAST(price AS INT)) as avg FROM sample.csv GROUP BY name"
 +--------+-------+-----+-----+-----+--------------------+
 |  name  | count | min | max | sum |        avg         |
 +--------+-------+-----+-----+-----+--------------------+
@@ -67,7 +74,10 @@ trdsql -ih -oat "SELECT name, COUNT(name) as count, MIN(CAST(price AS INT)) AS m
 GROUP集計した結果をORDER BYで並べ替えることもできます。
 
 ```sh
-trdsql -ih -oat "SELECT name, COUNT(name) as count, MIN(CAST(price AS INT)) AS min,MAX(CAST(price AS INT)) as max,SUM(CAST(price AS INT)) as sum,AVG(CAST(price AS INT)) as avg FROM sample.csv GROUP BY name ORDER BY sum DESC"
+trdsql -ih -oat \
+"SELECT name, COUNT(name) as count, MIN(CAST(price AS INT)) AS min,MAX(CAST(price AS INT)) as max, \
+ SUM(CAST(price AS INT)) as sum,AVG(CAST(price AS INT)) as avg FROM sample.csv GROUP BY name \
+ ORDER BY sum DESC"
 +--------+-------+-----+-----+-----+--------------------+
 |  name  | count | min | max | sum |        avg         |
 +--------+-------+-----+-----+-----+--------------------+
@@ -80,7 +90,10 @@ trdsql -ih -oat "SELECT name, COUNT(name) as count, MIN(CAST(price AS INT)) AS m
 GROUP集計した結果についてWHEREで条件を指定することはできません。そこからさらに絞るにはHAVINGを使用します。
 
 ```sh
-trdsql -ih -oat "SELECT name, COUNT(name) as count, MIN(CAST(price AS INT)) AS min,MAX(CAST(price AS INT)) as max,SUM(CAST(price AS INT)) as sum,AVG(CAST(price AS INT)) as avg FROM sample.csv GROUP BY name HAVING count > 1 ORDER BY sum DESC"
+trdsql -ih -oat \
+"SELECT name, COUNT(name) as count, MIN(CAST(price AS INT)) AS min,MAX(CAST(price AS INT)) as max, \
+ SUM(CAST(price AS INT)) as sum,AVG(CAST(price AS INT)) as avg FROM sample.csv \
+ GROUP BY name HAVING count > 1 ORDER BY sum DESC"
 +--------+-------+-----+-----+-----+--------------------+
 |  name  | count | min | max | sum |        avg         |
 +--------+-------+-----+-----+-----+--------------------+
