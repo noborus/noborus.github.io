@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>E.223. リリース8.2.6</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="release-8-2-7.html" title="E.222. リリース8.2.7" /><link rel="next" href="release-8-2-5.html" title="E.224. リリース8.2.5" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="release.html" title="付録E リリースノート">付録E リリースノート</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      release-8-2-6.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="release-8-2-7.html" title="E.222. リリース8.2.7">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="release.html" title="付録E リリースノート">上へ</a></td><td width="60%" align="center">E.223. リリース8.2.6</td><td width="20%" align="right"> <a accesskey="n" href="release-8-2-5.html" title="E.224. リリース8.2.5">次へ</a></td></tr></table><hr /></div><div class="sect1" id="RELEASE-8-2-6"><div class="titlepage"><div><div><h2 class="title" style="clear: both">E.223. リリース8.2.6</h2></div></div></div><span class="original">
+  &lt;title&gt;Release 8.2.6&lt;/title&gt;
+</span><p><span class="original">
+  &lt;title&gt;Release date:&lt;/title&gt;
+</span><strong>リリース日: </strong>2008-01-07</p><p>
+<span class="original">
+   This release contains a variety of fixes from 8.2.5,
+   including fixes for significant security issues.
+   For information about new features in the 8.2 major release, see
+   &lt;xref linkend="release-8-2"/&gt;.
+</span>
+このリリースは、重大なセキュリティ問題の修正を含む、8.2.5の各種不具合を修正したものです。
+8.2メジャーリリースにおける新機能については<a class="xref" href="release-8-2.html" title="E.229. リリース8.2">E.229</a>を参照してください。
+  </p><div class="sect2" id="id-1.11.6.227.4"><div class="titlepage"><div><div><h3 class="title">E.223.1. バージョン8.2.6への移行</h3></div></div></div><span class="original">
+   &lt;title&gt;Migration to Version 8.2.6&lt;/title&gt;
+</span><p>
+<span class="original">
+    A dump/restore is not required for those running 8.2.X.
+</span>
+8.2.Xからの移行ではダンプ/リストアは不要です。
+   </p></div><div class="sect2" id="id-1.11.6.227.5"><div class="titlepage"><div><div><h3 class="title">E.223.2. 変更点</h3></div></div></div><span class="original">
+   &lt;title&gt;Changes&lt;/title&gt;
+</span><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+      Prevent functions in indexes from executing with the privileges of
+      the user running &lt;command&gt;VACUUM&lt;/command&gt;, &lt;command&gt;ANALYZE&lt;/command&gt;, etc (Tom)
+</span>
+インデックス内の関数が<code class="command">VACUUM</code>、<code class="command">ANALYZE</code>などを実行するユーザの権限で実行されることを防止します。(Tom)
+     </p><p>
+<span class="original">
+      Functions used in index expressions and partial-index
+      predicates are evaluated whenever a new table entry is made.  It has
+      long been understood that this poses a risk of trojan-horse code
+      execution if one modifies a table owned by an untrustworthy user.
+      (Note that triggers, defaults, check constraints, etc. pose the
+      same type of risk.)  But functions in indexes pose extra danger
+      because they will be executed by routine maintenance operations
+      such as &lt;command&gt;VACUUM FULL&lt;/command&gt;, which are commonly performed
+      automatically under a superuser account.  For example, a nefarious user
+      can execute code with superuser privileges by setting up a
+      trojan-horse index definition and waiting for the next routine vacuum.
+      The fix arranges for standard maintenance operations
+      (including &lt;command&gt;VACUUM&lt;/command&gt;, &lt;command&gt;ANALYZE&lt;/command&gt;, &lt;command&gt;REINDEX&lt;/command&gt;,
+      and &lt;command&gt;CLUSTER&lt;/command&gt;) to execute as the table owner rather than
+      the calling user, using the same privilege-switching mechanism already
+      used for &lt;literal&gt;SECURITY DEFINER&lt;/literal&gt; functions.  To prevent bypassing
+      this security measure, execution of &lt;command&gt;SET SESSION
+      AUTHORIZATION&lt;/command&gt; and &lt;command&gt;SET ROLE&lt;/command&gt; is now forbidden within a
+      &lt;literal&gt;SECURITY DEFINER&lt;/literal&gt; context.  (CVE-2007-6600)
+</span>
+インデックス式内で使用される関数および部分インデックスの述語は、新しいテーブル項目が作成されると評価されます。
+これが、もし信頼できないユーザが所有するテーブルを変更したとすると、トロイの木馬となるコードの実行という危険性を引き起こすことは以前から解っていました。
+（トリガ、デフォルト、検査制約なども同種の危険性を引き起こします。）
+しかしインデックス内の関数は、<code class="command">VACUUM FULL</code>などの日常の保守作業で実行される可能性があるため、さらに危険です。
+こうした保守作業は通常自動的にスーパーユーザ権限で行われます。
+例えば、極悪なユーザがトロイの木馬となるインデックス定義を設定し、次回の日常のバキューム処理を待つことで、スーパーユーザ権限でコードを実行することが可能です。
+この修正は、<code class="literal">SECURITY DEFINER</code>関数で使用されていた権限変更機構を使用して、標準的な保守作業（<code class="command">VACUUM</code>、<code class="command">ANALYZE</code>、<code class="command">REINDEX</code>、<code class="command">CLUSTER</code>を含む）が呼び出したユーザではなくテーブル所有者として実行するように調整しました。
+こうしたセキュリティ制限の迂回を防ぐために、<code class="command">SET SESSION AUTHORIZATION</code>および<code class="command">SET ROLE</code>が<code class="literal">SECURITY DEFINER</code>コンテキストで禁止されるようになりました。(CVE-2007-6600)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Repair assorted bugs in the regular-expression package (Tom, Will Drewry)
+</span>
+正規表現パッケージ内のさまざまな不具合を修正しました。(Tom, Will Drewry)
+     </p><p>
+<span class="original">
+      Suitably crafted regular-expression patterns could cause crashes,
+      infinite or near-infinite looping, and/or massive memory consumption,
+      all of which pose denial-of-service hazards for applications that
+      accept regex search patterns from untrustworthy sources.
+      (CVE-2007-4769, CVE-2007-4772, CVE-2007-6067)
+</span>
+より巧妙な正規表現パターンにより、信頼できないソースから正規表現検索パターンを受け付けるアプリケーションでは、クラッシュ、無限または無限に近いループ、大量のメモリの浪費、DoS攻撃を引き起こすすべてが発生する可能性がありました。(CVE-2007-4769、CVE-2007-4772、CVE-2007-6067)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Require non-superusers who use &lt;filename&gt;/contrib/dblink&lt;/filename&gt; to use only
+      password authentication, as a security measure (Joe)
+</span>
+<code class="filename">/contrib/dblink</code>を使用する非スーパーユーザは、パスワード認証のみをセキュリティ制限として使用しなければなりません。(Joe)
+     </p><p>
+<span class="original">
+      The fix that appeared for this in 8.2.5 was incomplete, as it plugged
+      the hole for only some &lt;filename&gt;dblink&lt;/filename&gt; functions.  (CVE-2007-6601,
+      CVE-2007-3278)
+</span>
+8.2.5で行った修正は不十分で、一部の<code class="filename">dblink</code>関数に対してのみ問題を解消していました。(CVE-2007-6601,CVE-2007-3278)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix bugs in WAL replay for GIN indexes (Teodor)
+</span>
+GINインデックスに対するWAL再生における不具合を修正しました。(Teodor)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix GIN index build to work properly when
+      &lt;varname&gt;maintenance_work_mem&lt;/varname&gt; is 4GB or more (Tom)
+</span>
+<code class="varname">maintenance_work_mem</code>が4GB以上の場合にGINインデックスの構築が適切に動作するように修正しました。(Tom)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Update time zone data files to &lt;application&gt;tzdata&lt;/application&gt; release 2007k
+      (in particular, recent Argentina changes) (Tom)
+</span>
+時間帯ファイルを<span class="application">tzdata</span>リリース2007kに更新しました（具体的には最近のアルゼンチンの変更）。(Tom)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Improve planner's handling of LIKE/regex estimation in non-C locales
+      (Tom)
+</span>
+非CロケールにおけるプランナのLIKE/正規表現の推定を改良しました。(Tom)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix planning-speed problem for deep outer-join nests, as well as
+      possible poor choice of join order (Tom)
+</span>
+深い階層の外部結合における計画処理速度を修正しました。
+同様に結合順の非効率な選択を行う可能性も修正しました。(Tom)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix planner failure in some cases of &lt;literal&gt;WHERE false AND var IN
+      (SELECT ...)&lt;/literal&gt; (Tom)
+</span>
+一部の<code class="literal">WHERE false AND var IN (SELECT ...)</code>におけるプランナの失敗を修正しました。 (Tom)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Make &lt;command&gt;CREATE TABLE ... SERIAL&lt;/command&gt; and
+      &lt;command&gt;ALTER SEQUENCE ... OWNED BY&lt;/command&gt; not change the
+      &lt;function&gt;currval()&lt;/function&gt; state of the sequence (Tom)
+</span>
+<code class="command">CREATE TABLE ... SERIAL</code>と<code class="command">ALTER SEQUENCE ... OWNED BY</code>がシーケンスの<code class="function">currval()</code>状態を変更しないようにしました。(Tom)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Preserve the tablespace and storage parameters of indexes that are
+      rebuilt by &lt;command&gt;ALTER TABLE ... ALTER COLUMN TYPE&lt;/command&gt; (Tom)
+</span>
+<code class="command">ALTER TABLE ... ALTER COLUMN TYPE</code>で再構築されるインデックスのテーブル空間と格納パラメータを保持します。(Tom)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Make archive recovery always start a new WAL timeline, rather than only
+      when a recovery stop time was used (Simon)
+</span>
+アーカイブリカバリが、リカバリの停止時間が使用された時だけではなく、常に新しいWAL時系列から始まるようにしました。
+     </p><p>
+<span class="original">
+      This avoids a corner-case risk of trying to overwrite an existing
+      archived copy of the last WAL segment, and seems simpler and cleaner
+      than the original definition.
+</span>
+これは、まれに起こる可能性のある既存の最後のWALセグメントのアーカイブされたコピーを上書きしようとする危険を防止します。
+また元の定義より単純、明確になったと考えられます。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Make &lt;command&gt;VACUUM&lt;/command&gt; not use all of &lt;varname&gt;maintenance_work_mem&lt;/varname&gt;
+      when the table is too small for it to be useful (Alvaro)
+</span>
+テーブルが小さすぎて有用でない場合、<code class="command">VACUUM</code>がすべての<code class="varname">maintenance_work_mem</code>を使用しないようにしました。(Alvaro)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix potential crash in &lt;function&gt;translate()&lt;/function&gt; when using a multibyte
+      database encoding (Tom)
+</span>
+マルチバイトデータベース符号化方式を使用している時に潜在する、<code class="function">translate()</code>のクラッシュを修正しました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Make &lt;function&gt;corr()&lt;/function&gt; return the correct result for negative
+      correlation values (Neil)
+</span>
+<code class="function">corr()</code>が負の相関値に対して正しい結果を返すようにしました。(Neil)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix overflow in &lt;literal&gt;extract(epoch from interval)&lt;/literal&gt; for intervals
+      exceeding 68 years (Tom)
+</span>
+68年を超える間隔で<code class="literal">extract(epoch from interval)</code>がオーバーフローすることを修正しました。(Tom)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix PL/Perl to not fail when a UTF-8 regular expression is used
+      in a trusted function (Andrew)
+</span>
+信頼された関数内でUTF-8正規表現が使用された場合にPL/Perlが失敗しないように修正しました。(Andrew)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix PL/Perl to cope when platform's Perl defines type &lt;literal&gt;bool&lt;/literal&gt;
+      as &lt;literal&gt;int&lt;/literal&gt; rather than &lt;literal&gt;char&lt;/literal&gt; (Tom)
+</span>
+プラットフォームのPerlが<code class="literal">bool</code>型を<code class="literal">char</code>ではなく<code class="literal">int</code>として定義した場合に対応するようにPL/Perlを修正しました。(Tom)
+     </p><p>
+<span class="original">
+      While this could theoretically happen anywhere, no standard build of
+      Perl did things this way ... until &lt;productname&gt;macOS&lt;/productname&gt; 10.5.
+</span>
+これは理論上どこでも発生する可能性がありましたが、標準的に構築されたPerlではこうなりませんでした。<span class="productname">macOS</span> 10.5までは…。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix PL/Python to work correctly with Python 2.5 on 64-bit machines
+      (Marko Kreen)
+</span>
+64ビットマシン上のPython 2.5で正常に動作するようPL/Pythonを修正しました。(Marko Kreen)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix PL/Python to not crash on long exception messages (Alvaro)
+</span>
+長い例外メッセージでクラッシュしないようPL/Pythonを修正しました。(Alvaro)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix &lt;application&gt;pg_dump&lt;/application&gt; to correctly handle inheritance child tables
+      that have default expressions different from their parent's (Tom)
+</span>
+親テーブルと異なるデフォルト式を持つ、継承子テーブルを正しく扱うよう<span class="application">pg_dump</span>を修正しました。(Tom)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix &lt;application&gt;libpq&lt;/application&gt; crash when &lt;varname&gt;PGPASSFILE&lt;/varname&gt; refers
+      to a file that is not a plain file (Martin Pitt)
+</span>
+<code class="varname">PGPASSFILE</code>が普通のファイル以外のファイルを参照する場合に<span class="application">libpq</span>がクラッシュすることを修正しました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      &lt;application&gt;ecpg&lt;/application&gt; parser fixes (Michael)
+</span>
+<span class="application">ecpg</span>パーサを修正しました。(Michael)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Make &lt;filename&gt;contrib/pgcrypto&lt;/filename&gt; defend against
+      &lt;application&gt;OpenSSL&lt;/application&gt; libraries that fail on keys longer than 128
+      bits; which is the case at least on some Solaris versions (Marko Kreen)
+</span>
+128ビットより長いキーで失敗する<span class="application">OpenSSL</span>ライブラリに対して<code class="filename">contrib/pgcrypto</code>が防衛するようにしました。
+これは少なくとも一部のバージョンのSolarisで発生します。(Marko Kreen)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Make &lt;filename&gt;contrib/tablefunc&lt;/filename&gt;'s &lt;function&gt;crosstab()&lt;/function&gt; handle
+      NULL rowid as a category in its own right, rather than crashing (Joe)
+</span>
+<code class="filename">contrib/tablefunc</code>の<code class="function">crosstab()</code>が、クラッシュするのではなく、独自の意味でカテゴリとしてNULL行識別子を扱うようにしました。(Joe)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix &lt;type&gt;tsvector&lt;/type&gt; and &lt;type&gt;tsquery&lt;/type&gt; output routines to
+      escape backslashes correctly (Teodor, Bruce)
+</span>
+<code class="type">tsvector</code>および<code class="type">tsquery</code>出力関数が正しくバックスラッシュをエスケープするように修正しました。(Teodor, Bruce)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix crash of &lt;function&gt;to_tsvector()&lt;/function&gt; on huge input strings (Teodor)
+</span>
+入力文字列が大きな場合に<code class="function">to_tsvector()</code>がクラッシュすることを修正しました。(Teodor)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Require a specific version of &lt;productname&gt;Autoconf&lt;/productname&gt; to be used
+      when re-generating the &lt;command&gt;configure&lt;/command&gt; script (Peter)
+</span>
+<code class="command">configure</code>スクリプトを再生成する場合、特定のバージョンの<span class="productname">Autoconf</span>を使用することが必要になりました。(Peter)
+     </p><p>
+<span class="original">
+      This affects developers and packagers only.  The change was made
+      to prevent accidental use of untested combinations of
+      &lt;productname&gt;Autoconf&lt;/productname&gt; and &lt;productname&gt;PostgreSQL&lt;/productname&gt; versions.
+      You can remove the version check if you really want to use a
+      different &lt;productname&gt;Autoconf&lt;/productname&gt; version, but it's
+      your responsibility whether the result works or not.
+</span>
+これは開発者とパッケージ作成者のみに影響します。
+この変更は、<span class="productname">Autoconf</span>と<span class="productname">PostgreSQL</span>の未確認のバージョンの組み合わせを使用する事故を防ぐためになされました。
+その結果がうまくいくかどうかについて責任を負う限り、異なるバージョンの<span class="productname">Autoconf</span>を本当に使用したい場合は、このバージョン検査を取り除くことができます。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Update &lt;function&gt;gettimeofday&lt;/function&gt; configuration check so that
+      &lt;productname&gt;PostgreSQL&lt;/productname&gt; can be built on newer versions of
+      &lt;productname&gt;MinGW&lt;/productname&gt; (Magnus)
+</span>
+<span class="productname">PostgreSQL</span>が<span class="productname">MinGW</span>の新しいバージョンで構築できるように<code class="function">gettimeofday</code>の構築用検査を更新しました。
+     </p></li></ul></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="release-8-2-7.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="release.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="release-8-2-5.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">E.222. リリース8.2.7 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> E.224. リリース8.2.5</td></tr></table></div></body></html>

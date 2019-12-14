@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>36.16. 内部</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="ecpg-informix-compat.html" title="36.15. Informix互換モード" /><link rel="next" href="information-schema.html" title="第37章 情報スキーマ" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="ecpg.html" title="第36章 ECPG - C言語による埋め込みSQL">第36章 <span class="application">ECPG</span> - C言語による埋め込み<acronym class="acronym">SQL</acronym></a></td><td width="20%" align="right"></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="ecpg-informix-compat.html" title="36.15. Informix互換モード">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="ecpg.html" title="第36章 ECPG - C言語による埋め込みSQL">上へ</a></td><td width="60%" align="center">36.16. 内部</td><td width="20%" align="right"> <a accesskey="n" href="information-schema.html" title="第37章 情報スキーマ">次へ</a></td></tr></table><hr /></div><div class="sect1" id="ECPG-DEVELOP"><div class="titlepage"><div><div><h2 class="title" style="clear: both">36.16. 内部</h2></div></div></div><!--
+  <title>Internals</title>
+--><p>
+<!--
+   This section explains how <application>ECPG</application> works
+   internally. This information can occasionally be useful to help
+   users understand how to use <application>ECPG</application>.
+-->
+本節では内部的な<span class="application">ECPG</span>の動作を説明します。
+この情報は<span class="application">ECPG</span>の使用方法を理解する手助けとして有用なことがあります。
+  </p><p>
+<!--
+    The first four lines written by <command>ecpg</command> to the
+    output are fixed lines.  Two are comments and two are include
+    lines necessary to interface to the library.  Then the
+    preprocessor reads through the file and writes output.  Normally
+    it just echoes everything to the output.
+-->
+<code class="command">ecpg</code>によって出力に書き込まれる最初の4行は固定されています。
+2行はコメントで、残り2行はライブラリとのインタフェースのために必要なインクルード行です。
+その後、プリプロセッサはファイル全体を読み取り、出力に書き出します。
+通常は、単にすべてそのまま出力に書き出します。
+   </p><p>
+<!--
+    When it sees an <command>EXEC SQL</command> statement, it
+    intervenes and changes it. The command starts with <command>EXEC
+    SQL</command> and ends with <command>;</command>. Everything in
+    between is treated as an <acronym>SQL</acronym> statement and
+    parsed for variable substitution.
+-->
+<code class="command">EXEC SQL</code>を検出すると、間に入り、それを変更します。
+このコマンドは<code class="command">EXEC SQL</code>で始まり、<code class="command">;</code>で終わります。
+この間のすべては<acronym class="acronym">SQL</acronym>文として扱われ、変数の置換のために解析されます。
+   </p><p>
+<!--
+    Variable substitution occurs when a symbol starts with a colon
+    (<literal>:</literal>). The variable with that name is looked up
+    among the variables that were previously declared within a
+    <literal>EXEC SQL DECLARE</literal> section.
+-->
+変数置換は、シンボルがコロン（<code class="literal">:</code>）から始まる場合に発生します。
+その名前の変数が、<code class="literal">EXEC SQL DECLARE</code>セクションで事前に宣言された変数の中から検索されます。
+   </p><p>
+<!--
+    The most important function in the library is
+    <function>ECPGdo</function>, which takes care of executing most
+    commands. It takes a variable number of arguments. This can easily
+    add up to 50 or so arguments, and we hope this will not be a
+    problem on any platform.
+-->
+ライブラリ内で最も重要な関数は<code class="function">ECPGdo</code>です。
+これが、ほとんどのコマンドの実行を管理します。
+可変長の引数をとります。
+すべてのプラットフォームで問題にならないことを祈っていますが、これは50程度の引数まで簡単に追加できます。
+   </p><p>
+<!--
+    The arguments are:
+-->
+引数を以下に示します。
+
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">行番号</span></dt><dd><p>
+<!--
+        This is the line number of the original line; used in error
+        messages only.
+-->
+元の行の行番号です。
+エラーメッセージ内でのみ使用されます。
+       </p></dd><dt><span class="term">文字列</span></dt><dd><p>
+<!--
+        This is the <acronym>SQL</acronym> command that is to be issued.
+        It is modified by the input variables, i.e., the variables that
+        where not known at compile time but are to be entered in the
+        command. Where the variables should go the string contains
+        <literal>?</literal>.
+-->
+発行すべき<acronym class="acronym">SQL</acronym>コマンドです。
+入力変数、つまり、コンパイル時に未知だったがそのコマンド内に与えるべき変数によって変更されます。
+変数が文字列内に挿入される箇所は<code class="literal">?</code>となっています。
+       </p></dd><dt><span class="term">入力変数</span></dt><dd><p>
+<!--
+        Every input variable causes ten arguments to be created.  (See below.)
+-->
+        すべての入力変数は10個の引数を作成します（後述）。
+       </p></dd><dt><span class="term"><em class="parameter"><code>ECPGt_EOIT</code></em></span></dt><dd><p>
+<!--
+        An <type>enum</type> telling that there are no more input
+        variables.
+-->
+        入力変数がもうないことを表す<code class="type">enum</code>です。
+       </p></dd><dt><span class="term">出力変数</span></dt><dd><p>
+<!--
+        Every output variable causes ten arguments to be created.
+        (See below.)  These variables are filled by the function.
+-->
+すべての出力変数は10個の引数を作成します（後述）。
+これらの変数は関数によって埋められます。
+       </p></dd><dt><span class="term"><em class="parameter"><code>ECPGt_EORT</code></em></span></dt><dd><p>
+<!--
+        An <type>enum</type> telling that there are no more variables.
+-->
+        変数がもうないことを表す<code class="type">enum</code>です。
+       </p></dd></dl></div><p>
+   </p><p>
+<!--
+    For every variable that is part of the <acronym>SQL</acronym>
+    command, the function gets ten arguments:
+-->
+<acronym class="acronym">SQL</acronym>コマンドの一部となるすべての変数に対して、この関数は以下の10個の引数を生成します。
+
+    </p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p>
+<!--
+       The type as a special symbol.
+-->
+特別シンボルとしての型。
+      </p></li><li class="listitem"><p>
+<!--
+       A pointer to the value or a pointer to the pointer.
+-->
+値へのポインタ、もしくはポインタのポインタ。
+      </p></li><li class="listitem"><p>
+<!--
+       The size of the variable if it is a <type>char</type> or <type>varchar</type>.
+-->
+変数が<code class="type">char</code>か<code class="type">varchar</code>の場合はそのサイズ。
+      </p></li><li class="listitem"><p>
+<!--
+       The number of elements in the array (for array fetches).
+-->
+配列の要素数（配列取り出し用）。
+      </p></li><li class="listitem"><p>
+<!--
+       The offset to the next element in the array (for array fetches).
+-->
+配列の次の要素のオフセット（配列取り出し用）。
+      </p></li><li class="listitem"><p>
+<!--
+       The type of the indicator variable as a special symbol.
+-->
+特別シンボルとしての指示子変数の型。
+      </p></li><li class="listitem"><p>
+<!--
+       A pointer to the indicator variable.
+-->
+指示子変数へのポインタ。
+      </p></li><li class="listitem"><p>
+       0
+      </p></li><li class="listitem"><p>
+<!--
+       The number of elements in the indicator array (for array fetches).
+-->
+指示子配列内の要素数（配列取り出し用）。
+      </p></li><li class="listitem"><p>
+<!--
+       The offset to the next element in the indicator array (for
+       array fetches).
+-->
+指示子配列内の次要素へのオフセット（配列取り出し用）。
+      </p></li></ol></div><p>
+   </p><p>
+<!--
+    Note that not all SQL commands are treated in this way.  For
+    instance, an open cursor statement like:
+-->
+すべてのSQLコマンドがこの方法で扱われるわけではないことに注意してください。
+例えば、以下のカーソルを開くSQL文は出力にコピーされません。
+</p><pre class="programlisting">
+EXEC SQL OPEN <em class="replaceable"><code>cursor</code></em>;
+</pre><p>
+<!--
+    is not copied to the output. Instead, the cursor's
+    <command>DECLARE</command> command is used at the position of the <command>OPEN</command> command
+    because it indeed opens the cursor.
+-->
+その代わりにカーソルの<code class="command">DECLARE</code>コマンドが<code class="command">OPEN</code>コマンドの場所で使用されます。
+実際にこのコマンドがカーソルを開くからです。
+   </p><p>
+<!--
+    Here is a complete example describing the output of the
+    preprocessor of a file <filename>foo.pgc</filename> (details might
+    change with each particular version of the preprocessor):
+-->
+以下に、<code class="filename">foo.pgc</code>ファイルに対するプリプロセッサの出力を完全に説明する例を示します
+（プリプロセッサのバージョンによって詳細が異なっているかもしれません）。
+</p><pre class="programlisting">
+EXEC SQL BEGIN DECLARE SECTION;
+int index;
+int result;
+EXEC SQL END DECLARE SECTION;
+...
+EXEC SQL SELECT res INTO :result FROM mytable WHERE index = :index;
+</pre><p>
+<!--
+    is translated into:
+-->
+これは以下に翻訳されます。
+</p><pre class="programlisting">
+/* Processed by ecpg (2.6.0) */
+/* These two include files are added by the preprocessor */
+#include &lt;ecpgtype.h&gt;;
+#include &lt;ecpglib.h&gt;;
+
+/* exec sql begin declare section */
+
+#line 1 "foo.pgc"
+
+ int index;
+ int result;
+/* exec sql end declare section */
+...
+ECPGdo(__LINE__, NULL, "SELECT res FROM mytable WHERE index = ?     ",
+        ECPGt_int,&amp;(index),1L,1L,sizeof(int),
+        ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EOIT,
+        ECPGt_int,&amp;(result),1L,1L,sizeof(int),
+        ECPGt_NO_INDICATOR, NULL , 0L, 0L, 0L, ECPGt_EORT);
+#line 147 "foo.pgc"
+
+</pre><p>
+<!--
+    (The indentation here is added for readability and not
+    something the preprocessor does.)
+-->
+ここで可読性のためにインデントを付けています。
+プリプロセッサが行ったものではありません。
+   </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ecpg-informix-compat.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="ecpg.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="information-schema.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">36.15. <span class="productname">Informix</span>互換モード </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 第37章 情報スキーマ</td></tr></table></div></body></html>

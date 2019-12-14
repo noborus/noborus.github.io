@@ -1,0 +1,619 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>E.102. リリース9.2.7</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="release-9-2-8.html" title="E.101. リリース9.2.8" /><link rel="next" href="release-9-2-6.html" title="E.103. リリース9.2.6" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="release.html" title="付録E リリースノート">付録E リリースノート</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      release-9-2-7.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="release-9-2-8.html" title="E.101. リリース9.2.8">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="release.html" title="付録E リリースノート">上へ</a></td><td width="60%" align="center">E.102. リリース9.2.7</td><td width="20%" align="right"> <a accesskey="n" href="release-9-2-6.html" title="E.103. リリース9.2.6">次へ</a></td></tr></table><hr /></div><div class="sect1" id="RELEASE-9-2-7"><div class="titlepage"><div><div><h2 class="title" style="clear: both">E.102. リリース9.2.7</h2></div></div></div><span class="original">
+  &lt;title&gt;Release 9.2.7&lt;/title&gt;
+</span><p><span class="original">
+  &lt;title&gt;Release date:&lt;/title&gt;
+</span><strong>リリース日: </strong>2014-02-20</p><p>
+<span class="original">
+   This release contains a variety of fixes from 9.2.6.
+   For information about new features in the 9.2 major release, see
+   &lt;xref linkend="release-9-2"/&gt;.
+</span>
+このリリースは9.2.6に対し、各種不具合を修正したものです。
+9.2メジャーリリースにおける新機能については、<a class="xref" href="release-9-2.html" title="E.109. リリース9.2">E.109</a>を参照してください。
+  </p><div class="sect2" id="id-1.11.6.106.4"><div class="titlepage"><div><div><h3 class="title">E.102.1. バージョン9.2.7への移行</h3></div></div></div><span class="original">
+   &lt;title&gt;Migration to Version 9.2.7&lt;/title&gt;
+</span><p>
+<span class="original">
+    A dump/restore is not required for those running 9.2.X.
+</span>
+9.2.Xからの移行ではダンプ/リストアは不要です。
+   </p><p>
+<span class="original">
+    However, if you are upgrading from a version earlier than 9.2.6,
+    see &lt;xref linkend="release-9-2-6"/&gt;.
+</span>
+しかしながら、9.2.6以前のリリースからアップグレードする場合は、<a class="xref" href="release-9-2-6.html" title="E.103. リリース9.2.6">E.103</a>を参照して下さい。
+   </p></div><div class="sect2" id="id-1.11.6.106.5"><div class="titlepage"><div><div><h3 class="title">E.102.2. 変更点</h3></div></div></div><span class="original">
+   &lt;title&gt;Changes&lt;/title&gt;
+</span><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+      Shore up &lt;literal&gt;GRANT ... WITH ADMIN OPTION&lt;/literal&gt; restrictions
+      (Noah Misch)
+</span>
+<code class="literal">GRANT ... WITH ADMIN OPTION</code>制限を強化しました。(Noah Misch)
+     </p><p>
+<span class="original">
+      Granting a role without &lt;literal&gt;ADMIN OPTION&lt;/literal&gt; is supposed to
+      prevent the grantee from adding or removing members from the granted
+      role, but this restriction was easily bypassed by doing &lt;literal&gt;SET
+      ROLE&lt;/literal&gt; first.  The security impact is mostly that a role member can
+      revoke the access of others, contrary to the wishes of his grantor.
+      Unapproved role member additions are a lesser concern, since an
+      uncooperative role member could provide most of his rights to others
+      anyway by creating views or &lt;literal&gt;SECURITY DEFINER&lt;/literal&gt; functions.
+      (CVE-2014-0060)
+</span>
+<code class="literal">ADMIN OPTION</code>無しのロール権限では、メンバーの追加や削除が出来ないことになっていますが、
+先に<code class="literal">SET ROLE</code>することにより、この制限は簡単にバイパス出来ていました。
+セキュリティのインパクトは大体、ロールのメンバーが、権限を譲り受けた他のメンバーの意図に反し、アクセスを取り消すことができることです。
+未承認のロールメンバー追加はあまり重要ではありません。
+非協力的なロールのメンバーは、いずれにせよ、ビューを作ったり<code class="literal">SECURITY DEFINER</code>機能によって、
+他者に多くの権限を提供することができるからです。(CVE-2014-0060)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Prevent privilege escalation via manual calls to PL validator
+      functions (Andres Freund)
+</span>
+PLバリデータ関数を手動呼び出し経由の権限昇格を防止しました。(Andres Freund)
+     </p><p>
+<span class="original">
+      The primary role of PL validator functions is to be called implicitly
+      during &lt;command&gt;CREATE FUNCTION&lt;/command&gt;, but they are also normal SQL
+      functions that a user can call explicitly.  Calling a validator on
+      a function actually written in some other language was not checked
+      for and could be exploited for privilege-escalation purposes.
+      The fix involves adding a call to a privilege-checking function in
+      each validator function.  Non-core procedural languages will also
+      need to make this change to their own validator functions, if any.
+      (CVE-2014-0061)
+</span>
+PLバリデータ関数の主な役割は<code class="command">CREATE FUNCTION</code>の中で黙示的に呼び出されますが、
+明示的に呼び出すことができる通常のSQL関数でもあります。
+実際に幾つか他の言語で書かれた機能で呼び出されているバリデータはチェックされておらず、
+プロセスの権限昇格に悪用される可能性がありました。
+もし同様の可能性があれば、必須ではない手続き言語でも独自のバリデーション機能にこの変更を加える必要があります。(CVE-2014-0061)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Avoid multiple name lookups during table and index DDL
+      (Robert Haas, Andres Freund)
+</span>
+テーブルとインデックスDDLでの名前の多重検索を防止しました。(Robert Haas、Andres Freund)
+     </p><p>
+<span class="original">
+      If the name lookups come to different conclusions due to concurrent
+      activity, we might perform some parts of the DDL on a different table
+      than other parts.  At least in the case of &lt;command&gt;CREATE INDEX&lt;/command&gt;,
+      this can be used to cause the permissions checks to be performed
+      against a different table than the index creation, allowing for a
+      privilege escalation attack.
+      (CVE-2014-0062)
+</span>
+が実行中の名前検索で異なる結果が出た場合、DDLのある部分をその他の部分とは違ったテーブルで実施することがありました。
+少なくとも<code class="command">CREATE INDEX</code>では、権限チェックがインデックス作成とは異なるテーブルに対して実施されることにより、権限昇格攻撃を許す可能性があります。(CVE-2014-0062)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Prevent buffer overrun with long datetime strings (Noah Misch)
+</span>
+長い日付時刻文字列によるバッファオーバーランを防止しました。(Noah Misch)
+     </p><p>
+<span class="original">
+      The &lt;literal&gt;MAXDATELEN&lt;/literal&gt; constant was too small for the longest
+      possible value of type &lt;type&gt;interval&lt;/type&gt;, allowing a buffer overrun
+      in &lt;function&gt;interval_out()&lt;/function&gt;.  Although the datetime input
+      functions were more careful about avoiding buffer overrun, the limit
+      was short enough to cause them to reject some valid inputs, such as
+      input containing a very long timezone name.  The &lt;application&gt;ecpg&lt;/application&gt;
+      library contained these vulnerabilities along with some of its own.
+      (CVE-2014-0063)
+</span>
+<code class="literal">MAXDATELEN</code>定数は<code class="type">interval</code>型の取りえる最長の値に対して小さ過ぎたため、<code class="function">interval_out()</code>関数内でバッファオーバーランを許していました。
+日付時刻の入力関数はバッファオーバーラン防止に対して慎重でしたが、非常に長いタイムゾーン名を含むような、有効な入力値を拒否するほど、制限は短いものでした。
+<span class="application">ecpg</span>ライブラリには、これらを含む幾つか固有の脆弱性を含んでいました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Prevent buffer overrun due to integer overflow in size calculations
+      (Noah Misch, Heikki Linnakangas)
+</span>
+サイズ算出での整数オーバーフローによるバッファオーバーランを防止しました。(Noah Misch、Heikki Linnakangas)
+     </p><p>
+<span class="original">
+      Several functions, mostly type input functions, calculated an
+      allocation size without checking for overflow.  If overflow did
+      occur, a too-small buffer would be allocated and then written past.
+      (CVE-2014-0064)
+</span>
+幾つかの関数、多くはデータ入力関数で、オーバフローをチェックせずにメモリの割り当てサイズを計算していました。
+オーバーフローが発生した場合、小さすぎるバッファが割り当てられ、それを越えて書かれていました。(CVE-2014-0064)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Prevent overruns of fixed-size buffers
+      (Peter Eisentraut, Jozef Mlich)
+</span>
+固定サイズのバッファのオーバーランを防止しました。(Peter Eisentraut、Jozef Mlich)
+     </p><p>
+<span class="original">
+      Use &lt;function&gt;strlcpy()&lt;/function&gt; and related functions to provide a clear
+      guarantee that fixed-size buffers are not overrun.  Unlike the
+      preceding items, it is unclear whether these cases really represent
+      live issues, since in most cases there appear to be previous
+      constraints on the size of the input string.  Nonetheless it seems
+      prudent to silence all Coverity warnings of this type.
+      (CVE-2014-0065)
+</span>
+固定サイズのバッファがオーバランしない明確な保証を提供するために、<code class="function">strlcpy()</code>や関連する関数を使いました。
+前項とは違い、これらのケースが実際に問題を引き起こすかどうかは不明です。というのは、ほとんどの場合、入力文字列のサイズは事前に制限されている様に思われるからです。
+とはいえ、コベリティ(Coverity)のこのタイプの警告はすべて黙らせた方が賢明と思えます。(CVE-2014-0065)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Avoid crashing if &lt;function&gt;crypt()&lt;/function&gt; returns NULL (Honza Horak,
+      Bruce Momjian)
+</span>
+<code class="function">crypt()</code>関数がNULLを返した場合のクラッシュを防止しました。(Honza Horak、Bruce Momjian)
+     </p><p>
+<span class="original">
+      There are relatively few scenarios in which &lt;function&gt;crypt()&lt;/function&gt;
+      could return NULL, but &lt;filename&gt;contrib/chkpass&lt;/filename&gt; would crash
+      if it did.  One practical case in which this could be an issue is
+      if &lt;application&gt;libc&lt;/application&gt; is configured to refuse to execute unapproved
+      hashing algorithms (e.g., &lt;quote&gt;FIPS mode&lt;/quote&gt;).
+      (CVE-2014-0066)
+</span>
+<code class="function">crypt()</code>がNULLを返す比較的まれなシナリオがあり、その場合、 <code class="filename">contrib/chkpass</code>はクラッシュしていました。
+問題が起こる可能性の中で、一つの実際的なケースは、<span class="application">libc</span>が承認されていないハッシュアルゴリズムの実行を拒否するよう設定されてる（例えば<span class="quote">「<span class="quote">FIPS モード</span>」</span>）場合です。(CVE-2014-0066)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Document risks of &lt;literal&gt;make check&lt;/literal&gt; in the regression testing
+      instructions (Noah Misch, Tom Lane)
+</span>
+再帰テスト(regression testing)命令における<code class="literal">make check</code>のリスクを文書化しました。(Noah Misch、Tom Lane)
+     </p><p>
+<span class="original">
+      Since the temporary server started by &lt;literal&gt;make check&lt;/literal&gt;
+      uses &lt;quote&gt;trust&lt;/quote&gt; authentication, another user on the same machine
+      could connect to it as database superuser, and then potentially
+      exploit the privileges of the operating-system user who started the
+      tests.  A future release will probably incorporate changes in the
+      testing procedure to prevent this risk, but some public discussion is
+      needed first.  So for the moment, just warn people against using
+      &lt;literal&gt;make check&lt;/literal&gt; when there are untrusted users on the
+      same machine.
+      (CVE-2014-0067)
+</span>
+<code class="literal">make check</code>によって起動した一時サーバは<span class="quote">「<span class="quote">trust</span>」</span>認証を使うため、
+同一マシン上の他のユーザがデータベースのスーパーユーザとして接続でき、
+そして、テストを起動したオペレーティングシステムのユーザ特権を悪用できる可能性があります。
+将来のリリースでは、おそらくこのリスクを防ぐためにテスト手順の変更が盛り込む予定ですが、その前に公開議論が必要です。
+そこで差し当たりは、同一マシン上に信頼されていないユーザが居る場合、<code class="literal">make check</code>を使っている人に対して、警告を発するに留めています。(CVE-2014-0067)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix possible mis-replay of WAL records when some segments of a
+      relation aren't full size (Greg Stark, Tom Lane)
+</span>
+リレーションのセグメントが一杯でない時に、WALレコードが誤再生する場合があったのを修復しました。(Greg Stark、Tom Lane)
+     </p><p>
+<span class="original">
+      The WAL update could be applied to the wrong page, potentially many
+      pages past where it should have been.  Aside from corrupting data,
+      this error has been observed to result in significant &lt;quote&gt;bloat&lt;/quote&gt;
+      of standby servers compared to their masters, due to updates being
+      applied far beyond where the end-of-file should have been.  This
+      failure mode does not appear to be a significant risk during crash
+      recovery, only when initially synchronizing a standby created from a
+      base backup taken from a quickly-changing master.
+</span>
+WAL更新は、本来あるべき場所から多くのページを通り過ぎて、間違ったページに適用されることがありました。
+データ破壊とは別に、ファイル終端であるべき場所をずっと越えてアップデートが適用されてしまうため、
+このエラーはマスタサーバと比べてスタンバイサーバで著しい<span class="quote">「<span class="quote">肥大化(bloat)</span>」</span>をもたらすことが報告されています。
+この故障モードはクラッシュリカバリ中の重大なリスクとは思われません。
+更新が頻発するマスタから得たベースバックアップで作られたスタンバイサーバの初期同期の時にのみリスクが発生します。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix bug in determining when recovery has reached consistency
+      (Tomonari Katsumata, Heikki Linnakangas)
+</span>
+リカバリによって整合性がとれたか判定する箇所の不具合を修正しました。(Tomonari Katsumata、Heikki Linnakangas)
+     </p><p>
+<span class="original">
+      In some cases WAL replay would mistakenly conclude that the database
+      was already consistent at the start of replay, thus possibly allowing
+      hot-standby queries before the database was really consistent.  Other
+      symptoms such as &lt;quote&gt;PANIC: WAL contains references to invalid
+      pages&lt;/quote&gt; were also possible.
+</span>
+WALのリプレイ開始時にデータベースの整合性が既に取れていると誤った結論を得てしまう場合があり、
+そのためにデータベースが実際に整合性が取れる前にホットスタンバイのクエリを許可している可能性がありました。
+その他の症状として、<span class="quote">「<span class="quote">PANIC: WAL contains references to invalid pages</span>」</span>が発生する可能性もありました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix improper locking of btree index pages while replaying
+      a &lt;literal&gt;VACUUM&lt;/literal&gt; operation in hot-standby mode (Andres Freund,
+      Heikki Linnakangas, Tom Lane)
+</span>
+ホットスタンバイモードの<code class="literal">VACUUM</code>操作によるWALリプレイで、Btreeインデックスページの不適切なロック処理を修正しました。 (Andres Freund、Heikki Linnakangas、Tom Lane)
+     </p><p>
+<span class="original">
+      This error could result in &lt;quote&gt;PANIC: WAL contains references to
+      invalid pages&lt;/quote&gt; failures.
+</span>
+このエラーは<span class="quote">「<span class="quote">PANIC: WAL contains references to invalid pages</span>」</span>障害をもたらす可能性がありました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Ensure that insertions into non-leaf GIN index pages write a full-page
+      WAL record when appropriate (Heikki Linnakangas)
+</span>
+非リーフのGINインデックスページへの挿入によって、ページ全体のWALレコードに適宜書き込むことを保証します。(Heikki Linnakangas)
+     </p><p>
+<span class="original">
+      The previous coding risked index corruption in the event of a
+      partial-page write during a system crash.
+</span>
+これまでのコードでは、部分ページ書き込みのイベント中にシステムがクラッシュした場合、インデックスが破損する恐れがありました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      When &lt;literal&gt;pause_at_recovery_target&lt;/literal&gt;
+      and &lt;literal&gt;recovery_target_inclusive&lt;/literal&gt; are both set, ensure the
+      target record is applied before pausing, not after (Heikki
+      Linnakangas)
+</span>
+<code class="literal">pause_at_recovery_target</code>と<code class="literal">recovery_target_inclusive</code>が両方セットされた場合、リカバリターゲットのレコードは停止後ではなく停止前に適用される事を保証します。(Heikki Linnakangas)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix race conditions during server process exit (Robert Haas)
+</span>
+サーバプロセス終了中の競合状態を修正しました。(Robert Haas)
+     </p><p>
+<span class="original">
+      Ensure that signal handlers don't attempt to use the
+      process's &lt;varname&gt;MyProc&lt;/varname&gt; pointer after it's no longer valid.
+</span>
+シグナルハンドラが、既に無効となったプロセスの<code class="varname">MyProc</code> ポインタを利用しないことを保証します。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix race conditions in walsender shutdown logic and walreceiver
+      SIGHUP signal handler (Tom Lane)
+</span>
+walsenderの終了ロジックとwalreceiverのSIGHUPシグナルハンドラの競合状態を修正しました。(Tom Lane)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix unsafe references to &lt;varname&gt;errno&lt;/varname&gt; within error reporting
+      logic (Christian Kruse)
+</span>
+エラー出力ロジックの中で、<code class="varname">errno</code>の安全でない参照方法を修正しました。(Christian Kruse)
+     </p><p>
+<span class="original">
+      This would typically lead to odd behaviors such as missing or
+      inappropriate &lt;literal&gt;HINT&lt;/literal&gt; fields.
+</span>
+これは、主に<code class="literal">HINT</code>フィールドが欠如或いは不適切であるという奇妙な現象を引き起こしていました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix possible crashes from using &lt;function&gt;ereport()&lt;/function&gt; too early
+      during server startup (Tom Lane)
+</span>
+サーバ起動時に早すぎる<code class="function">ereport()</code>関数使用によって、クラッシュする可能性があったのを修正しました。(Tom Lane)
+     </p><p>
+<span class="original">
+      The principal case we've seen in the field is a crash if the server
+      is started in a directory it doesn't have permission to read.
+</span>
+クラッシュが観察された主なケースは、読み取り権限を持たないディレクトリでサーバが起動された場合です。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Clear retry flags properly in OpenSSL socket write
+      function (Alexander Kukushkin)
+</span>
+OpenSSLのソケット書き込み関数で、リトライフラグを適切に消去しました。(Alexander Kukushkin)
+     </p><p>
+<span class="original">
+      This omission could result in a server lockup after unexpected loss
+      of an SSL-encrypted connection.
+</span>
+この消去が省かれると、SSLで暗号化された接続が突然切れた場合、サーバのロックアップを引き起こす可能性がありました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix length checking for Unicode identifiers (&lt;literal&gt;U&amp;amp;"..."&lt;/literal&gt;
+      syntax) containing escapes (Tom Lane)
+</span>
+エスケープを含むユニコードの識別子(<code class="literal">U&amp;"..."</code>構文)の長さチェックを修正しました。(Tom Lane)
+     </p><p>
+<span class="original">
+      A spurious truncation warning would be printed for such identifiers
+      if the escaped form of the identifier was too long, but the
+      identifier actually didn't need truncation after de-escaping.
+</span>
+識別子がエスケープされたフォームが長すぎた場合、誤った切り捨て警告が出力されていました。
+しかし実際には、エスケープをデコードした後、識別子に切り捨ては不要でした。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Allow keywords that are type names to be used in lists of roles
+      (Stephen Frost)
+</span>
+ロールのリストで、型名をキーワードに使うことができるようにしました。(Stephen Frost)
+     </p><p>
+<span class="original">
+      A previous patch allowed such keywords to be used without quoting
+      in places such as role identifiers; but it missed cases where a
+      list of role identifiers was permitted, such as &lt;literal&gt;DROP ROLE&lt;/literal&gt;.
+</span>
+以前のパッチで使えるようになった型名キーワードは、定位置のクオート無しでロール識別子として使うことができるものですが、
+<code class="literal">DROP ROLE</code>のように、許されたロール識別子のリストから漏れていたケースがありました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix parser crash for &lt;literal&gt;EXISTS(SELECT * FROM
+      zero_column_table)&lt;/literal&gt; (Tom Lane)
+</span>
+<code class="literal">EXISTS(SELECT * FROM zero_column_table)</code>でパーサがクラッシュする障害を修正しました。(Tom Lane)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix possible crash due to invalid plan for nested sub-selects, such
+      as &lt;literal&gt;WHERE (... x IN (SELECT ...) ...) IN (SELECT ...)&lt;/literal&gt;
+      (Tom Lane)
+</span>
+<code class="literal">WHERE (... x IN (SELECT ...) ...) IN (SELECT ...)</code>のような、入れ子になったサブセレクトの誤ったプランによって、クラッシュする可能性があるのを修正しました。(Tom Lane)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix &lt;literal&gt;UPDATE/DELETE&lt;/literal&gt; of an inherited target table
+      that has &lt;literal&gt;UNION ALL&lt;/literal&gt; subqueries (Tom Lane)
+</span>
+サブクエリに<code class="literal">UNION ALL</code>を含む、継承テーブルへの<code class="literal">UPDATE/DELETE</code>を修正しました。(Tom Lane)
+     </p><p>
+<span class="original">
+      Without this fix, &lt;literal&gt;UNION ALL&lt;/literal&gt; subqueries aren't correctly
+      inserted into the update plans for inheritance child tables after the
+      first one, typically resulting in no update happening for those child
+      table(s).
+</span>
+この修正なしでは、<code class="literal">UNION ALL</code>サブクエリは最初の処理の後、継承された子テーブの更新プランに処理が正しく挿入されませんでした。典型的な結果として、それらの子テーブルには更新が起こりません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Ensure that &lt;command&gt;ANALYZE&lt;/command&gt; creates statistics for a table column
+      even when all the values in it are &lt;quote&gt;too wide&lt;/quote&gt; (Tom Lane)
+</span>
+テーブル列の全ての値の分布が<span class="quote">「<span class="quote">広すぎる</span>」</span>場合であっても、<code class="command">ANALYZE</code> コマンドが統計情報を作る事を保証しました。(Tom Lane)
+     </p><p>
+<span class="original">
+      &lt;command&gt;ANALYZE&lt;/command&gt; intentionally omits very wide values from its
+      histogram and most-common-values calculations, but it neglected to do
+      something sane in the case that all the sampled entries are too wide.
+</span>
+<code class="command">ANALYZE</code>コマンドはヒストグラムと算出した中央値より大幅に離れた値は意図的に除外していますが、
+全てのサンプリングされたエントリが広すぎる場合、極端な値を排除するのは正常なことです。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      In &lt;literal&gt;ALTER TABLE ... SET TABLESPACE&lt;/literal&gt;, allow the database's
+      default tablespace to be used without a permissions check
+      (Stephen Frost)
+</span>
+<code class="literal">ALTER TABLE ... SET TABLESPACE</code>内で権限チェック無しにデータベースのデフォルトテーブルスペース使用を許可するようにしました。(Stephen Frost)
+     </p><p>
+<span class="original">
+      &lt;literal&gt;CREATE TABLE&lt;/literal&gt; has always allowed such usage,
+      but &lt;literal&gt;ALTER TABLE&lt;/literal&gt; didn't get the memo.
+</span>
+<code class="literal">CREATE TABLE</code>は常に使用を許可していましたが、<code class="literal">ALTER TABLE</code>ではそれをしていませんでした。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix &lt;quote&gt;cannot accept a set&lt;/quote&gt; error when some arms of
+      a &lt;literal&gt;CASE&lt;/literal&gt; return a set and others don't (Tom Lane)
+</span>
+<code class="literal">CASE</code>の戻り値が複数行のものと、そうではないものが混ざっている場合に、<span class="quote">「<span class="quote">cannot accept a set</span>」</span>エラーが発生してしたのを修正しました。(Tom Lane)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Properly distinguish numbers from non-numbers when generating JSON
+      output (Andrew Dunstan)
+</span>
+JSON出力で生成した場合の非数値を数値として適切に識別するようにしました。(Andrew Dunstan)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix checks for all-zero client addresses in pgstat functions (Kevin
+      Grittner)
+</span>
+pgstat関数の中でクライアントアドレスが全てゼロの場合のチェックを修正しました。(Kevin Grittner)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix possible misclassification of multibyte characters by the text
+      search parser (Tom Lane)
+</span>
+テキストサーチのパーサでマルチバイト文字を誤判別する可能性を修正しました。(Tom Lane)
+     </p><p>
+<span class="original">
+      Non-ASCII characters could be misclassified when using C locale with
+      a multibyte encoding.  On Cygwin, non-C locales could fail as well.
+</span>
+マルチバイトエンコーディングでロケールにCを使用している場合、非ASCII文字は誤判別される可能性がありました。
+Cygwinでは非Cロケールでも同様に誤判別する可能性がありました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix possible misbehavior in &lt;function&gt;plainto_tsquery()&lt;/function&gt;
+      (Heikki Linnakangas)
+</span>
+<code class="function">plainto_tsquery()</code>関数が誤作動する可能性があったのを修正しました。(Heikki Linnakangas)
+     </p><p>
+<span class="original">
+      Use &lt;function&gt;memmove()&lt;/function&gt; not &lt;function&gt;memcpy()&lt;/function&gt; for copying
+      overlapping memory regions.  There have been no field reports of
+      this actually causing trouble, but it's certainly risky.
+</span>
+メモリ領域が重なっている場合のコピーで<code class="function">memcpy()</code>関数ではなく<code class="function">memmove()</code>関数を使うようにしました。
+これによる具体的な障害報告はありませんが、これは確かに危険性がありました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix placement of permissions checks in &lt;function&gt;pg_start_backup()&lt;/function&gt;
+      and &lt;function&gt;pg_stop_backup()&lt;/function&gt; (Andres Freund, Magnus Hagander)
+</span>
+<code class="function">pg_start_backup()</code>と<code class="function">pg_stop_backup()</code>の権限チェックの配置を修正しました。(Andres Freund、Magnus Hagander)
+     </p><p>
+<span class="original">
+      The previous coding might attempt to do catalog access when it
+      shouldn't.
+</span>
+以前のコーディングではカタログにアクセスにすべきではない時に、アクセスしようとすることがありました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Accept &lt;literal&gt;SHIFT_JIS&lt;/literal&gt; as an encoding name for locale checking
+      purposes (Tatsuo Ishii)
+</span>
+ロケールチェック用のエンコーディング名として、<code class="literal">SHIFT_JIS</code>を受け付けるようにしました。(Tatsuo Ishii)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix &lt;literal&gt;*&lt;/literal&gt;-qualification of named parameters in SQL-language
+      functions (Tom Lane)
+</span>
+SQL言語関数における名前付きパラメータの<code class="literal">*</code>修飾子を修正しました。(Tom Lane)
+     </p><p>
+<span class="original">
+      Given a composite-type parameter
+      named &lt;literal&gt;foo&lt;/literal&gt;, &lt;literal&gt;$1.*&lt;/literal&gt; worked fine,
+      but &lt;literal&gt;foo.*&lt;/literal&gt; not so much.
+</span>
+コンポジットタイプの名前付きパラメータ<code class="literal">foo</code>に<code class="literal">$1.*</code>を与えた場合正しく動作しますが、<code class="literal">foo.*</code>では動作しませんでした。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix misbehavior of &lt;function&gt;PQhost()&lt;/function&gt; on Windows (Fujii Masao)
+</span>
+Windows上の<code class="function">PQhost()</code>関数の誤作動を修正しました。(Fujii Masao)
+     </p><p>
+<span class="original">
+      It should return &lt;literal&gt;localhost&lt;/literal&gt; if no host has been specified.
+</span>
+ホストが定義されていない場合、<code class="literal">localhost</code>を返すべきでした。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Improve error handling in &lt;application&gt;libpq&lt;/application&gt; and &lt;application&gt;psql&lt;/application&gt;
+      for failures during &lt;literal&gt;COPY TO STDOUT/FROM STDIN&lt;/literal&gt; (Tom Lane)
+</span>
+<code class="literal">COPY TO STDOUT/FROM STDIN</code>中の障害用に<span class="application">libpq</span>と<span class="application">psql</span>のエラーハンドリングを改善しました。(Tom Lane)
+     </p><p>
+<span class="original">
+      In particular this fixes an infinite loop that could occur in 9.2 and
+      up if the server connection was lost during &lt;literal&gt;COPY FROM
+      STDIN&lt;/literal&gt;.  Variants of that scenario might be possible in older
+      versions, or with other client applications.
+</span>
+この修正を具体的にいうと、<code class="literal">COPY FROM STDIN</code>中にサーバとの接続が切れた場合、9.2以上のサーバでは無限ループに陥る可能性がありました。
+これより古いバージョンのサーバや、他のクライアントアプリケーションでも、これに類する状況が起こるかもしれませんでした。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix incorrect translation handling in
+      some &lt;application&gt;psql&lt;/application&gt; &lt;literal&gt;\d&lt;/literal&gt; commands
+      (Peter Eisentraut, Tom Lane)
+</span>
+<span class="application">psql</span>の<code class="literal">\d</code>コマンドにおいて、誤った翻訳ハンドリングを修正しました。(Peter Eisentraut, Tom Lane)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Ensure &lt;application&gt;pg_basebackup&lt;/application&gt;'s background process is killed
+      when exiting its foreground process (Magnus Hagander)
+</span>
+フォアグラウンドプロセスが終了した場合、<span class="application">pg_basebackup</span>のバックグラウンドプロセスが停止させられることを保証しました。(Magnus Hagander)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix possible incorrect printing of filenames
+      in &lt;application&gt;pg_basebackup&lt;/application&gt;'s verbose mode (Magnus Hagander)
+</span>
+<span class="application">pg_basebackup</span>の冗長モードで、正しくないファイル名が出力される可能性があるのを修正しました。(Magnus Hagander)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Avoid including tablespaces inside PGDATA twice in base backups
+      (Dimitri Fontaine, Magnus Hagander)
+</span>
+PGDATA内のテーブル空間をベースバックアップ内に2重に含まないようにしました。(Dimitri Fontaine、Magnus Hagander)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix misaligned descriptors in &lt;application&gt;ecpg&lt;/application&gt; (MauMau)
+</span>
+<span class="application">ecpg</span>の記述子の並びが間違っているのを修正しました。(MauMau)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      In &lt;application&gt;ecpg&lt;/application&gt;, handle lack of a hostname in the connection
+      parameters properly (Michael Meskes)
+</span>
+<span class="application">ecpg</span>で、接続パラメータにホスト名が欠如している場合の処理を適切に修正しました。(Michael Meskes)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix performance regression in &lt;filename&gt;contrib/dblink&lt;/filename&gt; connection
+      startup (Joe Conway)
+</span>
+<code class="filename">contrib/dblink</code>の接続開始時におけるパフォーマンス退行を修正しました。(Joe Conway)
+     </p><p>
+<span class="original">
+      Avoid an unnecessary round trip when client and server encodings match.
+</span>
+クライアントとサーバのエンコーディングが一致する場合、不必要な二重設定を止めました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      In &lt;filename&gt;contrib/isn&lt;/filename&gt;, fix incorrect calculation of the check
+      digit for ISMN values (Fabien Coelho)
+</span>
+<code class="filename">contrib/isn</code>で、ISMN値のチェックディジットの間違った演算を修正しました。(Fabien Coelho)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix &lt;filename&gt;contrib/pg_stat_statement&lt;/filename&gt;'s handling
+      of &lt;literal&gt;CURRENT_DATE&lt;/literal&gt; and related constructs (Kyotaro
+      Horiguchi)
+</span>
+<code class="filename">contrib/pg_stat_statement</code>の<code class="literal">CURRENT_DATE</code>や関連する構造の処理を修正しました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Ensure client-code-only installation procedure works as documented
+      (Peter Eisentraut)
+</span>
+ドキュメント通りの手順でクライアントのみのコードをインストールできることを保証しました。(Peter Eisentraut)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      In Mingw and Cygwin builds, install the &lt;application&gt;libpq&lt;/application&gt; DLL
+      in the &lt;filename&gt;bin&lt;/filename&gt; directory (Andrew Dunstan)
+</span>
+MingwとCygwin環境でビルドする場合、<span class="application">libpq</span> DLLを<code class="filename">bin</code>ディレクトリにインストールするようにしました。(Andrew Dunstan)
+     </p><p>
+<span class="original">
+      This duplicates what the MSVC build has long done.  It should fix
+      problems with programs like &lt;application&gt;psql&lt;/application&gt; failing to start
+      because they can't find the DLL.
+</span>
+MSVCビルドに於いて、このコピーは長らく行われてきました。
+<span class="application">psql</span>のようなプログラムが、DLLを見つける事が出来ずに起動に失敗する問題は修正すべきです。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Avoid using the deprecated &lt;literal&gt;dllwrap&lt;/literal&gt; tool in Cygwin builds
+      (Marco Atzeri)
+</span>
+Cygwin環境で廃止予定の<code class="literal">dllwrap</code>ツールの使用を止めました。(Marco Atzeri)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Don't generate plain-text &lt;filename&gt;HISTORY&lt;/filename&gt;
+      and &lt;filename&gt;src/test/regress/README&lt;/filename&gt; files anymore (Tom Lane)
+</span>
+プレインテキストの<code class="filename">HISTORY</code>ファイルと<code class="filename">src/test/regress/README</code>ファイルは今後、生成されません。(Tom Lane)
+     </p><p>
+<span class="original">
+      These text files duplicated the main HTML and PDF documentation
+      formats.  The trouble involved in maintaining them greatly outweighs
+      the likely audience for plain-text format.  Distribution tarballs
+      will still contain files by these names, but they'll just be stubs
+      directing the reader to consult the main documentation.
+      The plain-text &lt;filename&gt;INSTALL&lt;/filename&gt; file will still be maintained, as
+      there is arguably a use-case for that.
+</span>
+これらのテキストファイルは、メインHTMLとPDFドキュメントフォーマットで重複していました。
+それらの保守に関する問題は、読者が好むプレインテキストフォーマットより大幅に上回ります。
+配布用tarボールにはまた、これらの名前でファイルが含まれていますが、メインドキュメントを参照してもらうための指標となるスタブにすぎません。
+プレインテキストの<code class="filename">INSTALL</code>ファイルは、そのためのユースケースとして、まだ保守されています。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Update time zone data files to &lt;application&gt;tzdata&lt;/application&gt; release 2013i
+      for DST law changes in Jordan and historical changes in Cuba.
+</span>
+タイムゾーンデータファイルを<span class="application">tzdata</span>リリース2013iに更新しました。
+ヨルダンでの夏時間の変更およびキューバの歴史的な地域データの修正が含まれます。
+     </p><p>
+<span class="original">
+      In addition, the zones &lt;literal&gt;Asia/Riyadh87&lt;/literal&gt;,
+      &lt;literal&gt;Asia/Riyadh88&lt;/literal&gt;, and &lt;literal&gt;Asia/Riyadh89&lt;/literal&gt; have been
+      removed, as they are no longer maintained by IANA, and never
+      represented actual civil timekeeping practice.
+</span>
+それに加え、<code class="literal">Asia/Riyadh87</code>、<code class="literal">Asia/Riyadh88</code>と<code class="literal">Asia/Riyadh89</code>は、
+もはやIANAによって保守されず、実際の常用時計として表示されることが無いため、削除されました。
+     </p></li></ul></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="release-9-2-8.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="release.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="release-9-2-6.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">E.101. リリース9.2.8 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> E.103. リリース9.2.6</td></tr></table></div></body></html>

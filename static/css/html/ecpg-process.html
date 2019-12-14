@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>36.10. 埋め込みSQLプログラムの処理</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="ecpg-preproc.html" title="36.9. プリプロセッサ指示子" /><link rel="next" href="ecpg-library.html" title="36.11. ライブラリ関数" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="ecpg.html" title="第36章 ECPG - C言語による埋め込みSQL">第36章 <span class="application">ECPG</span> - C言語による埋め込み<acronym class="acronym">SQL</acronym></a></td><td width="20%" align="right"></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="ecpg-preproc.html" title="36.9. プリプロセッサ指示子">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="ecpg.html" title="第36章 ECPG - C言語による埋め込みSQL">上へ</a></td><td width="60%" align="center">36.10. 埋め込みSQLプログラムの処理</td><td width="20%" align="right"> <a accesskey="n" href="ecpg-library.html" title="36.11. ライブラリ関数">次へ</a></td></tr></table><hr /></div><div class="sect1" id="ECPG-PROCESS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">36.10. 埋め込みSQLプログラムの処理</h2></div></div></div><!--
+  <title>Processing Embedded SQL Programs</title>
+--><p>
+<!--
+   Now that you have an idea how to form embedded SQL C programs, you
+   probably want to know how to compile them.  Before compiling you
+   run the file through the embedded <acronym>SQL</acronym>
+   <acronym>C</acronym> preprocessor, which converts the
+   <acronym>SQL</acronym> statements you used to special function
+   calls.  After compiling, you must link with a special library that
+   contains the needed functions. These functions fetch information
+   from the arguments, perform the <acronym>SQL</acronym> command using
+   the <application>libpq</application> interface, and put the result
+   in the arguments specified for output.
+-->
+ここまでで、埋め込みSQL Cプログラムの作成方法は理解できたと思います。
+ここからはそのコンパイル方法についてお話しします。
+コンパイルの前に、そのファイルを埋め込み<acronym class="acronym">SQL</acronym> <acronym class="acronym">C</acronym>プリプロセッサに通します。
+これは、使用する<acronym class="acronym">SQL</acronym>文を特別な関数呼び出しに変換します。
+コンパイル後、必要な関数を持つ特別なライブラリとリンクしなければなりません。
+これらの関数は引数から情報を取り出し、<span class="application">libpq</span>を使用してその<acronym class="acronym">SQL</acronym>を実行し、出力用に指定された引数にその結果を格納します。
+  </p><p>
+<!--
+   The preprocessor program is called <filename>ecpg</filename> and is
+   included in a normal <productname>PostgreSQL</productname> installation.
+   Embedded SQL programs are typically named with an extension
+   <filename>.pgc</filename>.  If you have a program file called
+   <filename>prog1.pgc</filename>, you can preprocess it by simply
+   calling:
+-->
+プリプロセッサプログラムは<code class="filename">ecpg</code>という名前で、通常<span class="productname">PostgreSQL</span>のインストレーションに含まれています。
+通常、埋め込みSQLプログラムの拡張子は<code class="filename">.pgc</code>とします。
+<code class="filename">prog1.pgc</code>という名前のプログラムファイルがある場合、単純に以下を呼び出すことで前処理を行うことができます。
+</p><pre class="programlisting">
+ecpg prog1.pgc
+</pre><p>
+<!--
+   This will create a file called <filename>prog1.c</filename>.  If
+   your input files do not follow the suggested naming pattern, you
+   can specify the output file explicitly using the
+   <option>-o</option> option.
+-->
+これは<code class="filename">prog1.c</code>という名前のファイルを作成します。
+入力ファイルがこの提案パターンに従った名前でない場合、<code class="option">-o</code> オプションを使用して明示的に出力ファイルを指定することができます。
+  </p><p>
+<!--
+   The preprocessed file can be compiled normally, for example:
+-->
+前処理後のファイルは普通にコンパイルできます。
+以下に例を示します。
+</p><pre class="programlisting">
+cc -c prog1.c
+</pre><p>
+<!--
+   The generated C source files include header files from the
+   <productname>PostgreSQL</productname> installation, so if you installed
+   <productname>PostgreSQL</productname> in a location that is not searched by
+   default, you have to add an option such as
+   <literal>-I/usr/local/pgsql/include</literal> to the compilation
+   command line.
+-->
+生成されたCソースファイルは<span class="productname">PostgreSQL</span>インストレーションに付随するヘッダファイルをインクルードします。
+ですので、デフォルトで検索されない場所に<span class="productname">PostgreSQL</span>をインストールした場合は、コンパイル用のコマンドラインに<code class="literal">-I/usr/local/pgsql/include</code>のようなオプションを追加しなければなりません。
+  </p><p>
+<!--
+   To link an embedded SQL program, you need to include the
+   <filename>libecpg</filename> library, like so:
+-->
+埋め込みSQLプログラムをリンクするためには、以下のように、<code class="filename">libecpg</code>ライブラリを含めなければなりません。
+</p><pre class="programlisting">
+cc -o myprog prog1.o prog2.o ... -lecpg
+</pre><p>
+<!--
+   Again, you might have to add an option like
+   <literal>-L/usr/local/pgsql/lib</literal> to that command line.
+-->
+繰り返しになりますが、コマンドラインに<code class="literal">-L/usr/local/pgsql/lib</code>といったオプションを追加する必要があるかもしれません。
+  </p><p>
+<!--
+   You can
+   use <command>pg_config</command><indexterm><primary>pg_config</primary><secondary sortas="ecpg">with
+   ecpg</secondary></indexterm>
+   or <command>pkg-config</command><indexterm><primary>pkg-config</primary><secondary sortas="ecpg">with
+   ecpg</secondary></indexterm> with package name <literal>libecpg</literal> to
+   get the paths for your installation.
+-->
+インストール先のパスを取得するために、パッケージ名<code class="literal">libecpg</code>で<code class="command">pg_config</code><a id="id-1.7.5.16.6.3" class="indexterm"></a>または<code class="command">pkg-config</code><a id="id-1.7.5.16.6.5" class="indexterm"></a>を使うことができます。
+  </p><p>
+<!--
+   If you manage the build process of a larger project using
+   <application>make</application>, it might be convenient to include
+   the following implicit rule to your makefiles:
+-->
+大規模プロジェクトの構築処理を<span class="application">make</span>を使用して管理している場合、以下の暗黙規則をMakefileに含めておくと便利です。
+</p><pre class="programlisting">
+ECPG = ecpg
+
+%.c: %.pgc
+        $(ECPG) $&lt;
+</pre><p>
+  </p><p>
+<!--
+   The complete syntax of the <command>ecpg</command> command is
+   detailed in <xref linkend="app-ecpg"/>.
+-->
+<code class="command">ecpg</code>コマンドの完全な構文は<a class="xref" href="app-ecpg.html" title="ecpg"><span class="refentrytitle"><span class="application">ecpg</span></span></a>に説明があります。
+  </p><p>
+<!--
+   The <application>ecpg</application> library is thread-safe by
+   default.  However, you might need to use some threading
+   command-line options to compile your client code.
+-->
+デフォルトでは<span class="application">ecpg</span>はスレッドセーフです。
+しかしクライアントコードのコンパイル時に他のスレッド関連のコマンドラインオプションを使用する必要があるかもしれません。
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ecpg-preproc.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="ecpg.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="ecpg-library.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">36.9. プリプロセッサ指示子 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 36.11. ライブラリ関数</td></tr></table></div></body></html>

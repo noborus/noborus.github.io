@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>45.6. PL/Perlトリガ</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="plperl-trusted.html" title="45.5. 信頼されたPL/Perlおよび信頼されないPL/Perl" /><link rel="next" href="plperl-event-triggers.html" title="45.7. PL/Perlイベントトリガ" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="plperl.html" title="第45章 PL/Perl - Perl手続き言語">第45章 PL/Perl - Perl手続き言語</a></td><td width="20%" align="right"></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="plperl-trusted.html" title="45.5. 信頼されたPL/Perlおよび信頼されないPL/Perl">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="plperl.html" title="第45章 PL/Perl - Perl手続き言語">上へ</a></td><td width="60%" align="center">45.6. PL/Perlトリガ</td><td width="20%" align="right"> <a accesskey="n" href="plperl-event-triggers.html" title="45.7. PL/Perlイベントトリガ">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PLPERL-TRIGGERS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">45.6. PL/Perlトリガ</h2></div></div></div><!--
+  <title>PL/Perl Triggers</title>
+--><p>
+<!--
+   PL/Perl can be used to write trigger functions.  In a trigger function,
+   the hash reference <varname>$_TD</varname> contains information about the
+   current trigger event. <varname>$_TD</varname> is a global variable,
+   which gets a separate local value for each invocation of the trigger.
+   The fields of the <varname>$_TD</varname> hash reference are:
+-->
+PL/Perlを使用してトリガ関数を作成することができます。
+トリガ関数では、<code class="varname">$_TD</code>というハッシュへの参照に、現在のトリガイベントに関する情報が含まれています。
+<code class="varname">$_TD</code>は大域変数であり、各トリガ呼び出しに対して局所的な値を別々に取り出します。
+以下に<code class="varname">$_TD</code>というハッシュへの参照のフィールドを示します。
+
+   </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">$_TD-&gt;{new}{foo}</code></span></dt><dd><p>
+<!--
+       <literal>NEW</literal> value of column <literal>foo</literal>
+-->
+<code class="literal">NEW</code>の<code class="literal">foo</code>列値。
+      </p></dd><dt><span class="term"><code class="literal">$_TD-&gt;{old}{foo}</code></span></dt><dd><p>
+<!--
+       <literal>OLD</literal> value of column <literal>foo</literal>
+-->
+<code class="literal">OLD</code>の<code class="literal">foo</code>列値。
+      </p></dd><dt><span class="term"><code class="literal">$_TD-&gt;{name}</code></span></dt><dd><p>
+<!--
+       Name of the trigger being called
+-->
+呼び出されたトリガの名前。
+      </p></dd><dt><span class="term"><code class="literal">$_TD-&gt;{event}</code></span></dt><dd><p>
+<!--
+       Trigger event: <literal>INSERT</literal>, <literal>UPDATE</literal>,
+       <literal>DELETE</literal>, <literal>TRUNCATE</literal>, or <literal>UNKNOWN</literal>
+-->
+トリガイベント。
+<code class="literal">INSERT</code>、<code class="literal">UPDATE</code>、<code class="literal">DELETE</code>、<code class="literal">TRUNCATE</code>、もしくは<code class="literal">UNKNOWN</code>。
+      </p></dd><dt><span class="term"><code class="literal">$_TD-&gt;{when}</code></span></dt><dd><p>
+<!--
+       When the trigger was called: <literal>BEFORE</literal>,
+       <literal>AFTER</literal>, <literal>INSTEAD OF</literal>, or
+       <literal>UNKNOWN</literal>
+-->
+トリガがいつ呼び出されたか。
+<code class="literal">BEFORE</code>、<code class="literal">AFTER</code>、<code class="literal">INSTEAD OF</code>もしくは<code class="literal">UNKNOWN</code>。
+      </p></dd><dt><span class="term"><code class="literal">$_TD-&gt;{level}</code></span></dt><dd><p>
+<!--
+       The trigger level: <literal>ROW</literal>, <literal>STATEMENT</literal>, or <literal>UNKNOWN</literal>
+-->
+トリガレベル。
+<code class="literal">ROW</code>、<code class="literal">STATEMENT</code>、もしくは<code class="literal">UNKNOWN</code>。
+      </p></dd><dt><span class="term"><code class="literal">$_TD-&gt;{relid}</code></span></dt><dd><p>
+<!--
+       OID of the table on which the trigger fired
+-->
+トリガの発行元テーブルのOID。
+      </p></dd><dt><span class="term"><code class="literal">$_TD-&gt;{table_name}</code></span></dt><dd><p>
+<!--
+       Name of the table on which the trigger fired
+-->
+トリガの発行元テーブルの名前。
+      </p></dd><dt><span class="term"><code class="literal">$_TD-&gt;{relname}</code></span></dt><dd><p>
+<!--
+       Name of the table on which the trigger fired. This has been deprecated,
+       and could be removed in a future release.
+       Please use $_TD-&gt;{table_name} instead.
+-->
+トリガの発行元テーブルの名前。
+これは廃止予定で、将来のリリースで削除される可能性があります。
+代わりに$_TD-&gt;{table_name}を使用してください。
+      </p></dd><dt><span class="term"><code class="literal">$_TD-&gt;{table_schema}</code></span></dt><dd><p>
+<!--
+       Name of the schema in which the table on which the trigger fired, is
+-->
+トリガの発行元テーブルが存在するスキーマの名前。
+      </p></dd><dt><span class="term"><code class="literal">$_TD-&gt;{argc}</code></span></dt><dd><p>
+<!--
+       Number of arguments of the trigger function
+-->
+トリガ関数の引数の数。
+      </p></dd><dt><span class="term"><code class="literal">@{$_TD-&gt;{args}}</code></span></dt><dd><p>
+<!--
+       Arguments of the trigger function.  Does not exist if <literal>$_TD-&gt;{argc}</literal> is 0.
+-->
+トリガ関数の引数。
+<code class="literal">$_TD-&gt;{argc}</code>が0の場合は存在しません。
+      </p></dd></dl></div><p>
+  </p><p>
+<!--
+   Row-level triggers can return one of the following:
+-->
+行レベルトリガは以下のいずれかを返すことができます。
+
+   </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">return;</code></span></dt><dd><p>
+<!--
+       Execute the operation
+-->
+操作を実行します。
+      </p></dd><dt><span class="term"><code class="literal">"SKIP"</code></span></dt><dd><p>
+<!--
+       Don't execute the operation
+-->
+操作を実行しません。
+      </p></dd><dt><span class="term"><code class="literal">"MODIFY"</code></span></dt><dd><p>
+<!--
+       Indicates that the <literal>NEW</literal> row was modified by
+       the trigger function
+-->
+トリガ関数によって<code class="literal">NEW</code>行が変更されたことを示します。
+      </p></dd></dl></div><p>
+  </p><p>
+<!--
+   Here is an example of a trigger function, illustrating some of the
+   above:
+-->
+以下はトリガ関数の例で、ここまでの説明の一部を例証するものです。
+</p><pre class="programlisting">
+CREATE TABLE test (
+    i int,
+    v varchar
+);
+
+CREATE OR REPLACE FUNCTION valid_id() RETURNS trigger AS $$
+    if (($_TD-&gt;{new}{i} &gt;= 100) || ($_TD-&gt;{new}{i} &lt;= 0)) {
+<!--
+        return "SKIP";    # skip INSERT/UPDATE command
+-->
+        return "SKIP";    # INSERT/UPDATEコマンドを取消します。
+    } elsif ($_TD-&gt;{new}{v} ne "immortal") {
+        $_TD-&gt;{new}{v} .= "(modified by trigger)";
+<!--
+        return "MODIFY";  # modify row and execute INSERT/UPDATE command
+-->
+        return "MODIFY";  # 行を変更し、INSERT/UPDATEコマンドを実行します。
+    } else {
+<!--
+        return;           # execute INSERT/UPDATE command
+-->
+        return;           # INSERT/UPDATEコマンドを実行します。
+    }
+$$ LANGUAGE plperl;
+
+CREATE TRIGGER test_valid_id_trig
+    BEFORE INSERT OR UPDATE ON test
+    FOR EACH ROW EXECUTE FUNCTION valid_id();
+</pre><p>
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="plperl-trusted.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="plperl.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="plperl-event-triggers.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">45.5. 信頼されたPL/Perlおよび信頼されないPL/Perl </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 45.7. PL/Perlイベントトリガ</td></tr></table></div></body></html>

@@ -1,0 +1,337 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>E.201. リリース8.3.4</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="release-8-3-5.html" title="E.200. リリース8.3.5" /><link rel="next" href="release-8-3-3.html" title="E.202. リリース8.3.3" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="release.html" title="付録E リリースノート">付録E リリースノート</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.1 &#10;                      release-8-3-4.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="release-8-3-5.html" title="E.200. リリース8.3.5">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="release.html" title="付録E リリースノート">上へ</a></td><td width="60%" align="center">E.201. リリース8.3.4</td><td width="20%" align="right"> <a accesskey="n" href="release-8-3-3.html" title="E.202. リリース8.3.3">次へ</a></td></tr></table><hr /></div><div class="sect1" id="RELEASE-8-3-4"><div class="titlepage"><div><div><h2 class="title" style="clear: both">E.201. リリース8.3.4</h2></div></div></div><span class="original">
+  &lt;title&gt;Release 8.3.4&lt;/title&gt;
+</span><p><span class="original">
+  &lt;title&gt;Release date:&lt;/title&gt;
+</span><strong>リリース日: </strong>2008-09-22</p><p>
+<span class="original">
+   This release contains a variety of fixes from 8.3.3.
+   For information about new features in the 8.3 major release, see
+   &lt;xref linkend="release-8-3"/&gt;.
+</span>
+このリリースは8.3.3に対し、各種の不具合を修正したものです。
+8.3メジャーリリースにおける新機能については<a class="xref" href="release-8-3.html" title="E.205. リリース8.3">E.205</a>を参照してください。
+  </p><div class="sect2" id="id-1.11.6.205.4"><div class="titlepage"><div><div><h3 class="title">E.201.1. バージョン8.3.4への移行</h3></div></div></div><span class="original">
+   &lt;title&gt;Migration to Version 8.3.4&lt;/title&gt;
+</span><p>
+<span class="original">
+    A dump/restore is not required for those running 8.3.X.
+    However, if you are upgrading from a version earlier than 8.3.1,
+    see &lt;xref linkend="release-8-3-1"/&gt;.
+</span>
+8.3.Xからの移行ではダンプ/リストアは不要です。
+しかしながら、8.3.1より前のバージョンからアップグレードする場合は、<a class="xref" href="release-8-3-1.html" title="E.204. リリース8.3.1">E.204</a>を参照してください。
+   </p></div><div class="sect2" id="id-1.11.6.205.5"><div class="titlepage"><div><div><h3 class="title">E.201.2. 変更点</h3></div></div></div><span class="original">
+   &lt;title&gt;Changes&lt;/title&gt;
+</span><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+      Fix bug in btree WAL recovery code (Heikki)
+</span>
+B-tree WALリカバリコード内の不具合を修正しました。(Heikki)
+     </p><p>
+<span class="original">
+      Recovery failed if the WAL ended partway through a page split operation.
+</span>
+ページ分割操作中にWALが途中で止まった場合にリカバリが失敗しました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix potential use of wrong cutoff XID for HOT page pruning (Alvaro)
+</span>
+HOTページの切り詰めの際に間違ったカットオフXIDを使用する可能性を修正しました。(Alvaro)
+     </p><p>
+<span class="original">
+      This error created a risk of corruption in system
+      catalogs that are consulted by &lt;command&gt;VACUUM&lt;/command&gt;: dead tuple versions
+      might be removed too soon.  The impact of this on actual database
+      operations would be minimal, since the system doesn't follow MVCC
+      rules while examining catalogs, but it might result in transiently
+      wrong output from &lt;application&gt;pg_dump&lt;/application&gt; or other client programs.
+</span>
+このエラーにより、<code class="command">VACUUM</code>によって生じるシステムカタログの破壊の危険性が生まれました。
+無効タプルの削除が早すぎる可能性です。
+カタログの検証中にシステムがMVCC規則に従わないため、実行中のデータベース操作における影響は最小です。
+しかし、<span class="application">pg_dump</span>や他のクライアントプログラムからの出力が過渡的に間違ったものになるかもしれません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix potential miscalculation of &lt;structfield&gt;datfrozenxid&lt;/structfield&gt; (Alvaro)
+</span>
+<code class="structfield">datfrozenxid</code>の誤計算の可能性を修正しました。(Alvaro)
+     </p><p>
+<span class="original">
+      This error may explain some recent reports of failure to remove old
+      &lt;structname&gt;pg_clog&lt;/structname&gt; data.
+</span>
+このエラーにより古い<code class="structname">pg_clog</code>データの削除に失敗するというここ最近の報告が説明できます。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix incorrect HOT updates after &lt;structname&gt;pg_class&lt;/structname&gt; is reindexed
+      (Tom)
+</span>
+<code class="structname">pg_class</code>が再インデックス付けされた後不正確なHOT更新を修正しました。(Tom)
+     </p><p>
+<span class="original">
+      Corruption of &lt;structname&gt;pg_class&lt;/structname&gt; could occur if &lt;literal&gt;REINDEX
+      TABLE pg_class&lt;/literal&gt; was followed in the same session by an &lt;literal&gt;ALTER
+      TABLE RENAME&lt;/literal&gt; or &lt;literal&gt;ALTER TABLE SET SCHEMA&lt;/literal&gt; command.
+</span>
+<code class="literal">REINDEX TABLE pg_class</code>が<code class="literal">ALTER TABLE RENAME</code>または<code class="literal">ALTER TABLE SET SCHEMA</code>コマンドによるセッションと同じセッションで続けられた場合<code class="structname">pg_class</code>の破損が発生する可能性がありました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix missed &lt;quote&gt;combo cid&lt;/quote&gt; case (Karl Schnaitter)
+</span>
+失った<span class="quote">「<span class="quote">コンボ cid</span>」</span>状況を修正しました。(Karl Schnaitter)
+     </p><p>
+<span class="original">
+      This error made rows incorrectly invisible to a transaction in which they
+      had been deleted by multiple subtransactions that all aborted.
+</span>
+複数の副トランザクションで削除されたが、すべての副トランザクションがアボートされた場合、このエラーによりトランザクションから不正に不可視の行が生じました。
+
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Prevent autovacuum from crashing if the table it's currently
+      checking is deleted at just the wrong time (Alvaro)
+</span>
+自動バキュームにより検査中のテーブルが運悪く削除された場合に自動バキュームがクラッシュしないようにしました。(Alvaro)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Widen local lock counters from 32 to 64 bits (Tom)
+</span>
+局所ロックのカウンタを32ビットから64ビットに広げました。(Tom)
+     </p><p>
+<span class="original">
+      This responds to reports that the counters could overflow in
+      sufficiently long transactions, leading to unexpected &lt;quote&gt;lock is
+      already held&lt;/quote&gt; errors.
+</span>
+これは、かなり長いトランザクションでカウンタがオーバーフローし、想定外の<span class="quote">「<span class="quote">すでに保持済のロックである</span>」</span>というエラーになるという報告に対応したものです。
+
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix possible duplicate output of tuples during a GiST index scan (Teodor)
+</span>
+GiSTインデックススキャン中に出力タプルが重複する可能性を修正しました。(Teodor)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Regenerate foreign key checking queries from scratch when either
+      table is modified (Tom)
+</span>
+どちらかのテーブルが変更された場合の外部キー検査問い合わせを初めから作り直しました。(Tom)
+     </p><p>
+<span class="original">
+      Previously, 8.3 would attempt to replan the query, but would work from
+      previously generated query text.  This led to failures if a
+      table or column was renamed.
+</span>
+これまで8.3は問い合わせの計画を再作成しようとしていましたが、これまでに生成された問い合わせテキストから作業していました。
+これは、テーブルや列の名前が変わった場合に失敗することになります。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix missed permissions checks when a view contains a simple
+      &lt;literal&gt;UNION ALL&lt;/literal&gt; construct (Heikki)
+</span>
+ビューが単純な<code class="literal">UNION ALL</code>式を含む場合、行われなかった権限検査を修正しました。(Heikki)
+     </p><p>
+<span class="original">
+      Permissions for the referenced tables were checked properly, but not
+      permissions for the view itself.
+</span>
+被参照テーブルの権限は正しく検査されていましたが、ビュー自体の権限はそうでありませんでした。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Add checks in executor startup to ensure that the tuples produced by an
+      &lt;command&gt;INSERT&lt;/command&gt; or &lt;command&gt;UPDATE&lt;/command&gt; will match the target table's
+      current rowtype (Tom)
+</span>
+<code class="command">INSERT</code>または<code class="command">UPDATE</code>で生成されるタプルが対象のテーブルの現在の行型に一致するか確認するために、エグゼキュータ起動の際の検査を追加しました。(Tom)
+     </p><p>
+<span class="original">
+      This situation is believed to be impossible in 8.3, but it can happen in
+      prior releases, so a check seems prudent.
+</span>
+このような状況は8.3では起こりえないと考えていますが、過去のリリースでは発生することがあります。
+ですので、この検査は用心深いものといえます。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix possible repeated drops during &lt;command&gt;DROP OWNED&lt;/command&gt; (Tom)
+</span>
+<code class="command">DROP OWNED</code>中の削除が繰り返される可能性を修正しました。(Tom)
+     </p><p>
+<span class="original">
+      This would typically result in strange errors such as &lt;quote&gt;cache
+      lookup failed for relation NNN&lt;/quote&gt;.
+</span>
+これによりよく<span class="quote">「<span class="quote">リレーションNNNのキャッシュ検索に失敗した</span>」</span>などのおかしなエラーが発生しました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix several memory leaks in XML operations (Kris Jurka, Tom)
+</span>
+XML操作における複数のメモリリークを修正しました。(Kris Jurka, Tom)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix &lt;function&gt;xmlserialize()&lt;/function&gt; to raise error properly for
+      unacceptable target data type (Tom)
+</span>
+対象のデータ型で受け入れられない場合、正しくエラーになるように<code class="function">xmlserialize()</code>を修正しました。(Tom)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix a couple of places that mis-handled multibyte characters in text
+      search configuration file parsing (Tom)
+</span>
+テキスト検索設定ファイルの解析においてマルチバイト文字を間違って扱う数か所を修正しました。(Tom)
+     </p><p>
+<span class="original">
+      Certain characters occurring in configuration files would always cause
+      &lt;quote&gt;invalid byte sequence for encoding&lt;/quote&gt; failures.
+</span>
+設定ファイル内に存在する特定の文字により常に<span class="quote">「<span class="quote">符号化方式において無効なバイトシーケンス</span>」</span>という失敗が発生しました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Provide file name and line number location for all errors reported
+      in text search configuration files (Tom)
+</span>
+テキスト検索設定ファイル内で報告されるすべてのエラーに対してファイル名と行番号を含めました。(Tom)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix &lt;literal&gt;AT TIME ZONE&lt;/literal&gt; to first try to interpret its timezone
+      argument as a timezone abbreviation, and only try it as a full timezone
+      name if that fails, rather than the other way around as formerly (Tom)
+</span>
+まず時間帯引数を時間帯省略形として解釈し、これまでのように他の方法を取らずに、それが失敗した場合にのみ完全な時間帯名称として解釈するように<code class="literal">AT TIME ZONE</code>を修正しました。(Tom)
+     </p><p>
+<span class="original">
+      The timestamp input functions have always resolved ambiguous zone names
+      in this order.  Making &lt;literal&gt;AT TIME ZONE&lt;/literal&gt; do so as well improves
+      consistency, and fixes a compatibility bug introduced in 8.1:
+      in ambiguous cases we now behave the same as 8.0 and before did,
+      since in the older versions &lt;literal&gt;AT TIME ZONE&lt;/literal&gt; accepted
+      &lt;emphasis&gt;only&lt;/emphasis&gt; abbreviations.
+</span>
+タイムスタンプ入力関数は常にこの順序であいまいな時間帯名の解決を行っていました。
+<code class="literal">AT TIME ZONE</code>も同様にすることで一貫性が向上し、そして、8.1で混入された互換性に関する不具合を修正します。
+過去のバージョンの<code class="literal">AT TIME ZONE</code>では省略形<span class="emphasis"><em>のみ</em></span>を受け付けていましたので、あいまいな場合に8.0以前と同様な動作をするようになりました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix datetime input functions to correctly detect integer overflow when
+      running on a 64-bit platform (Tom)
+</span>
+64ビットプラットフォームで稼働している場合、日付時刻入力関数が正しく整数オーバーフローを検知できるよう修正しました。(Tom)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Prevent integer overflows during units conversion when displaying a
+      configuration parameter that has units (Tom)
+</span>
+単位指定がある設定パラメータを表示する際に、単位変換による整数オーバーフローを防ぎます。(Tom)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Improve performance of writing very long log messages to syslog (Tom)
+</span>
+非常に長いログメッセージをsyslogに書き出す際の性能を向上しました。(Tom)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Allow spaces in the suffix part of an LDAP URL in
+      &lt;filename&gt;pg_hba.conf&lt;/filename&gt; (Tom)
+</span>
+<code class="filename">pg_hba.conf</code>内のLDAP URLの接尾辞部分に空白文字を許します。(Tom)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix bug in backwards scanning of a cursor on a &lt;literal&gt;SELECT DISTINCT
+      ON&lt;/literal&gt; query (Tom)
+</span>
+<code class="literal">SELECT DISTINCT ON</code>問い合わせに対するカーソルの後方スキャンにおける不具合を修正しました。(Tom)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix planner bug that could improperly push down &lt;literal&gt;IS NULL&lt;/literal&gt;
+      tests below an outer join (Tom)
+</span>
+間違って外部結合の下に<code class="literal">IS NULL</code>検査を押し下げるというプランナの不具合を修正しました。
+     </p><p>
+<span class="original">
+      This was triggered by occurrence of &lt;literal&gt;IS NULL&lt;/literal&gt; tests for
+      the same relation in all arms of an upper &lt;literal&gt;OR&lt;/literal&gt; clause.
+</span>
+これは、上位の<code class="literal">OR</code>句のすべての辺において同一のリレーションに対する<code class="literal">IS NULL</code>検査が存在する場合に発生しました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix planner bug with nested sub-select expressions (Tom)
+</span>
+入れ子状の副問い合わせ式がある場合のプランナの不具合を修正しました。(Tom)
+     </p><p>
+<span class="original">
+      If the outer sub-select has no direct dependency on the parent query,
+      but the inner one does, the outer value might not get recalculated
+      for new parent query rows.
+</span>
+外側の副問い合わせが親問い合わせに直接の依存性がなく、内側の副問い合わせが依存性がある場合、外側の値が新しい親問い合わせの行に対して再計算されなくなる可能性がありました。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix planner to estimate that &lt;literal&gt;GROUP BY&lt;/literal&gt; expressions yielding
+      boolean results always result in two groups, regardless of the
+      expressions' contents (Tom)
+</span>
+プランナが論理型の結果を生成する<code class="literal">GROUP BY</code>式を、式の内容に関係なく、常に2つのグループになると推定することを修正しました。(Tom)
+     </p><p>
+<span class="original">
+      This is very substantially more accurate than the regular &lt;literal&gt;GROUP
+      BY&lt;/literal&gt; estimate for certain boolean tests like &lt;replaceable&gt;col&lt;/replaceable&gt;
+      &lt;literal&gt;IS NULL&lt;/literal&gt;.
+</span>
+これにより、<em class="replaceable"><code>col</code></em> <code class="literal">IS NULL</code>などの特定の論理試験に対して、通常の<code class="literal">GROUP BY</code>推定より非常により良く精度が上がります。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix PL/pgSQL to not fail when a &lt;literal&gt;FOR&lt;/literal&gt; loop's target variable
+      is a record containing composite-type fields (Tom)
+</span>
+<code class="literal">FOR</code>ループの対象値が複合型のフィールドを含むレコードである場合に失敗しないようにPL/pgSQLを修正しました。(Tom)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix PL/Tcl to behave correctly with Tcl 8.5, and to be more careful
+      about the encoding of data sent to or from Tcl (Tom)
+</span>
+Tcl 8.5で正しく動作するようPL/Tclを修正しました。
+また、Tcl間でやりとりされるデータの符号化方式についてより注意を払うように修正しました。(Tom)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Improve performance of &lt;function&gt;PQescapeBytea()&lt;/function&gt; (Rudolf Leitgeb)
+</span>
+<code class="function">PQescapeBytea()</code>の性能を向上しました。(Rudolf Leitgeb)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      On Windows, work around a Microsoft bug by preventing
+      &lt;application&gt;libpq&lt;/application&gt; from trying to send more than 64kB per system call
+      (Magnus)
+</span>
+Windowsにおいて、<span class="application">libpq</span>がシステムコール当たり64kBを超えて送信しないようにすることで、Microsoftの不具合を回避しました。(Magnus)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix &lt;application&gt;ecpg&lt;/application&gt; to handle variables properly in &lt;command&gt;SET&lt;/command&gt;
+      commands (Michael)
+</span>
+<code class="command">SET</code>コマンドで変数を正しく扱うよう<span class="application">ecpg</span>を修正しました。(Michael)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Improve &lt;application&gt;pg_dump&lt;/application&gt; and &lt;application&gt;pg_restore&lt;/application&gt;'s
+      error reporting after failure to send a SQL command (Tom)
+</span>
+<span class="application">pg_dump</span>および<span class="application">pg_restore</span>がSQLコマンドの送信に失敗した後に報告するエラーを改良しました。(Tom)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix &lt;application&gt;pg_ctl&lt;/application&gt; to properly preserve postmaster
+      command-line arguments across a &lt;literal&gt;restart&lt;/literal&gt; (Bruce)
+</span>
+<span class="application">pg_ctl</span>が<code class="literal">restart</code>の間正しくpostmasterのコマンドライン引数を保持するように修正しました。(Bruce)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Fix erroneous WAL file cutoff point calculation in
+      &lt;application&gt;pg_standby&lt;/application&gt; (Simon)
+</span>
+<span class="application">pg_standby</span>の間違ったWALファイルのカットオフポイント計算を修正しました。(Simon)
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Update time zone data files to &lt;application&gt;tzdata&lt;/application&gt; release 2008f (for
+      DST law changes in Argentina, Bahamas, Brazil, Mauritius, Morocco,
+      Pakistan, Palestine, and Paraguay)
+</span>
+時間帯データファイルを<span class="application">tzdata</span>リリース2008f（アルゼンチン、バハマ、ブラジル、モーリシャス、モロッコ、パキスタン、パレスチナ、パラグアイにおける夏時間規則の変更）まで更新しました。
+     </p></li></ul></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="release-8-3-5.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="release.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="release-8-3-3.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">E.200. リリース8.3.5 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> E.202. リリース8.3.3</td></tr></table></div></body></html>
