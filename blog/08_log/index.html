@@ -1,0 +1,70 @@
+<!doctype html><html><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>trdsql Log集計 &ndash; Noboru Saito&#39;s page</title><meta name=description property=og:description content="apacheやnginxなどのLogをLTSVフォーマットで出力する方法も定着してきました。 そのようなLogをtrdsqlで解析する例です。 出力する側は、apacheのLogFormatの設定を以下のようにカスタマイズフォーマットにします。 LogFormat &amp;quot;host:%h\tident:%l\tuser:%u\ttime:%t\treq:%r\tstatus:%&amp;gt;s\tsize:%b\treferer:\%{Referer}i\tua:%{User-Agent}i&amp;quot; combined_ltsv host,ident,user,t|Noboru Saito's site"><meta name=apple-mobile-web-app-title content="Noboru Saito's page"><link rel=icon href=/favicon-64.png><link rel=apple-touch-icon href=/apple-touch-icon.png><link rel=mask-icon size=any href=/pinned-icon.svg><meta name=twitter:card content=summary><meta name=twitter:site content=@><meta name=twitter:creator content=@><meta name=twitter:title content="trdsql Log集計 | Noboru Saito's page"><meta name=twitter:description content='apacheやnginxなどのLogをLTSVフォーマットで出力する方法も定着してきました。 そのようなLogをtrdsqlで解析する例です。 出力する側は、apacheのLogFormatの設定を以下のようにカスタマイズフォーマットにします。 LogFormat "host:%h\tident:%l\tuser:%u\ttime:%t\treq:%r\tstatus:%&gt;s\tsize:%b\treferer:\%{Referer}i\tua:%{User-Agent}i" combined_ltsv host,ident,user,t|Noboru Saito&#39;s site'><meta name=twitter:image content=https://noborus.github.io/twitter-card.png><link rel=stylesheet href=/assets/syntax.css><link rel=stylesheet href=/assets/primer-build.css><link rel=stylesheet href=/assets/style.css></head><body class=bg-gray><div id=holy class="container-lg bg-white h-100"><div id=header class="px-1 bg-white"><nav class="UnderlineNav UnderlineNav--right px-2"><a class="UnderlineNav-actions muted-link h2" href=https://noborus.github.io/>Noboru Saito&#39;s page</a><div class=UnderlineNav-body><a class=UnderlineNav-item href=/><span>Top</span></a>
+<a class=UnderlineNav-item href=/blog/><span>Blog</span></a>
+<a class=UnderlineNav-item href=/about/><span>About</span></a></div></nav></div><div role=main id=main class="holy-main markdown-body px-4 bg-white"><div class=Subhead><div class=Subhead-heading><div class="h1 mt-3 mb-1">trdsql Log集計</div></div><div class=Subhead-description><a href=/categories/trdsql class=muted-link><span class="Label Label--gray-darker">trdsql</span></a>
+<a href=/categories/advent-calendar-2019 class=muted-link><span class="Label Label--gray-darker">advent calendar 2019</span></a>
+<a href=/tags/trdsql class=muted-link><span class="Label Label--gray">trdsql</span></a><div class=float-md-right><span title="Lastmod: 2019-12-08. Published at: 2019-12-08.">Published: 2019-12-08</span></div></div></div><article><section class="pb-6 mb-3 border-bottom"><p>apacheやnginxなどのLogを<a href=http://ltsv.org>LTSV</a>フォーマットで出力する方法も定着してきました。</p><p>そのようなLogをtrdsqlで解析する例です。</p><p>出力する側は、apacheのLogFormatの設定を以下のようにカスタマイズフォーマットにします。</p><pre><code>LogFormat &quot;host:%h\tident:%l\tuser:%u\ttime:%t\treq:%r\tstatus:%&gt;s\tsize:%b\treferer:\%{Referer}i\tua:%{User-Agent}i&quot; combined_ltsv
+</code></pre><p>host,ident,user,time,req,status,size,referer,uaの項目が出力されます。</p><p>実際のLogは以下のようになります。</p><pre><code>host:176.99.192.42	ident:-	user:-	time:[21/Oct/2019:21:33:53 +0900]	req:GET /category/software HTTP/1.1	status:200	size:138	referer:-	ua:Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0)
+host:192.54.157.102	ident:-	user:-	time:[21/Oct/2019:21:33:53 +0900]	req:GET /item/electronics/4478 HTTP/1.1	status:200	size:60	referer:/category/sports	ua:Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:9.0.1) Gecko/20100101 Firefox/9.0.1
+host:88.60.137.115	ident:-	user:-	time:[21/Oct/2019:21:33:53 +0900]	req:POST /search/?c=Games+Electronics HTTP/1.1	status:200	size:98	referer:/item/networking/929	ua:Mozilla/5.0 (iPhone; CPU iPhone OS 5_0_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9A405 Safari/7534.48.3
+...
+</code></pre><p>まずは trdsql の -aを実行してみます。</p><div class=highlight><pre class=chroma><code class=language-sh data-lang=sh>The table name is log.ltsv.
+The file <span class=nb>type</span> is LTSV.
+
+Data types:
++-------------+------+
+<span class=p>|</span> column name <span class=p>|</span> <span class=nb>type</span> <span class=p>|</span>
++-------------+------+
+<span class=p>|</span> <span class=se>\`</span>host<span class=se>\`</span>    <span class=p>|</span> text <span class=p>|</span>
+<span class=p>|</span> ident       <span class=p>|</span> text <span class=p>|</span>
+<span class=p>|</span> <span class=se>\`</span>user<span class=se>\`</span>    <span class=p>|</span> text <span class=p>|</span>
+<span class=p>|</span> <span class=se>\`</span>time<span class=se>\`</span>    <span class=p>|</span> text <span class=p>|</span>
+<span class=p>|</span> req         <span class=p>|</span> text <span class=p>|</span>
+<span class=p>|</span> <span class=se>\`</span>status<span class=se>\`</span>  <span class=p>|</span> text <span class=p>|</span>
+<span class=p>|</span> <span class=se>\`</span>size<span class=se>\`</span>    <span class=p>|</span> text <span class=p>|</span>
+<span class=p>|</span> referer     <span class=p>|</span> text <span class=p>|</span>
+<span class=p>|</span> ua          <span class=p>|</span> text <span class=p>|</span>
++-------------+------+
+
+Data samples:
++---------------+-------+----------+------------------------------+--------------------------------+------------+----------+---------+--------------------------------+
+<span class=p>|</span>   <span class=se>\`</span>host<span class=se>\`</span>    <span class=p>|</span> ident <span class=p>|</span> <span class=se>\`</span>user<span class=se>\`</span> <span class=p>|</span>           <span class=se>\`</span>time<span class=se>\`</span>           <span class=p>|</span>              req               <span class=p>|</span> <span class=se>\`</span>status<span class=se>\`</span> <span class=p>|</span> <span class=se>\`</span>size<span class=se>\`</span> <span class=p>|</span> referer <span class=p>|</span>               ua               <span class=p>|</span>
++---------------+-------+----------+------------------------------+--------------------------------+------------+----------+---------+--------------------------------+
+<span class=p>|</span> <span class=m>176</span>.99.192.42 <span class=p>|</span> -     <span class=p>|</span> -        <span class=p>|</span> <span class=o>[</span><span class=m>21</span>/Oct/2019:21:33:53 +0900<span class=o>]</span> <span class=p>|</span> GET /category/software         <span class=p>|</span>        <span class=m>200</span> <span class=p>|</span>      <span class=m>138</span> <span class=p>|</span> -       <span class=p>|</span> Mozilla/5.0 <span class=o>(</span>compatible<span class=p>;</span> MSIE  <span class=p>|</span>
+<span class=p>|</span>               <span class=p>|</span>       <span class=p>|</span>          <span class=p>|</span>                              <span class=p>|</span> HTTP/1.1                       <span class=p>|</span>            <span class=p>|</span>          <span class=p>|</span>         <span class=p>|</span> <span class=m>9</span>.0<span class=p>;</span> Windows NT <span class=m>6</span>.1<span class=p>;</span> WOW64<span class=p>;</span>    <span class=p>|</span>
+<span class=p>|</span>               <span class=p>|</span>       <span class=p>|</span>          <span class=p>|</span>                              <span class=p>|</span>                                <span class=p>|</span>            <span class=p>|</span>          <span class=p>|</span>         <span class=p>|</span> Trident/5.0<span class=o>)</span>                   <span class=p>|</span>
++---------------+-------+----------+------------------------------+--------------------------------+------------+----------+---------+--------------------------------+
+
+Examples:
+trdsql <span class=s2>&#34;SELECT \`host\`, ident, \`user\`, \`time\`, req, \`status\`, \`size\`, referer, ua FROM log.ltsv&#34;</span>
+trdsql <span class=s2>&#34;SELECT \`host\`, ident, \`user\`, \`time\`, req, \`status\`, \`size\`, referer, ua FROM log.ltsv WHERE \`host\` = &#39;176.99.192.42&#39;&#34;</span>
+trdsql <span class=s2>&#34;SELECT \`host\`, count(\`host\`) FROM log.ltsv GROUP BY \`host\`&#34;</span>
+trdsql <span class=s2>&#34;SELECT \`host\`, ident, \`user\`, \`time\`, req, \`status\`, \`size\`, referer, ua FROM log.ltsv ORDER BY \`host\` LIMIT 10&#34;</span></code></pre></div><p>Examplesの実行例をヒントにこれまでに紹介したSQLを使用して実行していきます。</p><p>アクセスが多いホストTop 5を出力</p><div class=highlight><pre class=chroma><code class=language-sh data-lang=sh>trdsql -oat <span class=s2>&#34;SELECT \`host\`, count(\`host\`) as count FROM log.ltsv GROUP BY \`host\` ORDER BY count DESC LIMIT 5&#34;</span>
++----------------+-------+
+<span class=p>|</span>      host      <span class=p>|</span> count <span class=p>|</span>
++----------------+-------+
+<span class=p>|</span> <span class=m>36</span>.69.176.222  <span class=p>|</span>     <span class=m>5</span> <span class=p>|</span>
+<span class=p>|</span> <span class=m>92</span>.132.226.51  <span class=p>|</span>     <span class=m>4</span> <span class=p>|</span>
+<span class=p>|</span> <span class=m>76</span>.222.144.225 <span class=p>|</span>     <span class=m>4</span> <span class=p>|</span>
+<span class=p>|</span> <span class=m>28</span>.63.137.225  <span class=p>|</span>     <span class=m>4</span> <span class=p>|</span>
+<span class=p>|</span> <span class=m>28</span>.57.188.28   <span class=p>|</span>     <span class=m>4</span> <span class=p>|</span>
++----------------+-------+</code></pre></div><p>リクエストが多い順Top 5を出力</p><div class=highlight><pre class=chroma><code class=language-sh data-lang=sh>trdsql -oat <span class=s2>&#34;SELECT req, count(req) as count FROM log.ltsv GROUP BY req ORDER BY count DESC LIMIT 5&#34;</span>
++--------------------------------+-------+
+<span class=p>|</span>              req               <span class=p>|</span> count <span class=p>|</span>
++--------------------------------+-------+
+<span class=p>|</span> GET /category/software         <span class=p>|</span>    <span class=m>74</span> <span class=p>|</span>
+<span class=p>|</span> HTTP/1.1                       <span class=p>|</span>       <span class=p>|</span>
+<span class=p>|</span> GET /category/electronics      <span class=p>|</span>    <span class=m>73</span> <span class=p>|</span>
+<span class=p>|</span> HTTP/1.1                       <span class=p>|</span>       <span class=p>|</span>
+<span class=p>|</span> GET /category/games HTTP/1.1   <span class=p>|</span>    <span class=m>66</span> <span class=p>|</span>
+<span class=p>|</span> GET /category/books HTTP/1.1   <span class=p>|</span>    <span class=m>44</span> <span class=p>|</span>
+<span class=p>|</span> GET /category/office HTTP/1.1  <span class=p>|</span>    <span class=m>30</span> <span class=p>|</span>
++--------------------------------+-------+</code></pre></div><p>status が200以外のリクエストと回数を出力</p><div class=highlight><pre class=chroma><code class=language-sh data-lang=sh>trdsql -oat <span class=s2>&#34;SELECT req, status,count(req) as count FROM log.ltsv WHERE status != &#39;200&#39; GROUP BY req, status ORDER BY count DESC&#34;</span>
++-------------------------------+--------+-------+
+<span class=p>|</span>              req              <span class=p>|</span> status <span class=p>|</span> count <span class=p>|</span>
++-------------------------------+--------+-------+
+<span class=p>|</span> GET /item/books/3230 HTTP/1.1 <span class=p>|</span>    <span class=m>404</span> <span class=p>|</span>     <span class=m>1</span> <span class=p>|</span>
+<span class=p>|</span> GET /item/games/4672 HTTP/1.1 <span class=p>|</span>    <span class=m>404</span> <span class=p>|</span>     <span class=m>1</span> <span class=p>|</span>
++-------------------------------+--------+-------+</code></pre></div></section><section></section></article></div><div id=side class="pr-1 bg-white"><aside class=pr-3><div id=toc class="Box Box--blue mb-3"><b>trdsql Log集計</b></div><div></div></aside></div><div id=footer class="pt-2 pb-3 bg-white text-center"><span class="text-small text-gray">&copy;Noboru Saito 2019 &middot;
+Powered by the
+<a href=https://github.com/qqhann/hugo-primer class=link-gray-dark>Hugo-Primer</a> theme for
+<a href=https://gohugo.io class=link-gray-dark>Hugo</a>.</span></div></div><script type=text/javascript src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><script type=text/x-mathjax-config>MathJax.Hub.Config({ tex2jax: { inlineMath: [['$','$'], ['\\(','\\)']] } });</script></body></html>

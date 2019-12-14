@@ -1,0 +1,46 @@
+<!doctype html><html><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>trdsql 標準入力 &ndash; Noboru Saito&#39;s page</title><meta name=description property=og:description content="trdsqlは他のUNIXツールのように標準入力からデータを受け取ることができます。ただSQLの文法上テーブル名となるものを指定する必要があります。標準入力をしようするときは、「-」か「stdin」を使用します。 （上記の名前は他のツールでも混乱を起こすので、本当のファイルの名前と|Noboru Saito's site"><meta name=apple-mobile-web-app-title content="Noboru Saito's page"><link rel=icon href=/favicon-64.png><link rel=apple-touch-icon href=/apple-touch-icon.png><link rel=mask-icon size=any href=/pinned-icon.svg><meta name=twitter:card content=summary><meta name=twitter:site content=@><meta name=twitter:creator content=@><meta name=twitter:title content="trdsql 標準入力 | Noboru Saito's page"><meta name=twitter:description content="trdsqlは他のUNIXツールのように標準入力からデータを受け取ることができます。ただSQLの文法上テーブル名となるものを指定する必要があります。標準入力をしようするときは、「-」か「stdin」を使用します。 （上記の名前は他のツールでも混乱を起こすので、本当のファイルの名前と|Noboru Saito's site"><meta name=twitter:image content=https://noborus.github.io/twitter-card.png><link rel=stylesheet href=/assets/syntax.css><link rel=stylesheet href=/assets/primer-build.css><link rel=stylesheet href=/assets/style.css></head><body class=bg-gray><div id=holy class="container-lg bg-white h-100"><div id=header class="px-1 bg-white"><nav class="UnderlineNav UnderlineNav--right px-2"><a class="UnderlineNav-actions muted-link h2" href=https://noborus.github.io/>Noboru Saito&#39;s page</a><div class=UnderlineNav-body><a class=UnderlineNav-item href=/><span>Top</span></a>
+<a class=UnderlineNav-item href=/blog/><span>Blog</span></a>
+<a class=UnderlineNav-item href=/about/><span>About</span></a></div></nav></div><div role=main id=main class="holy-main markdown-body px-4 bg-white"><div class=Subhead><div class=Subhead-heading><div class="h1 mt-3 mb-1">trdsql 標準入力</div></div><div class=Subhead-description><a href=/categories/trdsql class=muted-link><span class="Label Label--gray-darker">trdsql</span></a>
+<a href=/categories/advent-calendar-2019 class=muted-link><span class="Label Label--gray-darker">advent calendar 2019</span></a>
+<a href=/tags/trdsql class=muted-link><span class="Label Label--gray">trdsql</span></a><div class=float-md-right><span title="Lastmod: 2019-12-10. Published at: 2019-12-10.">Published: 2019-12-10</span></div></div></div><article><section class="pb-6 mb-3 border-bottom"><p>trdsqlは他のUNIXツールのように標準入力からデータを受け取ることができます。ただSQLの文法上テーブル名となるものを指定する必要があります。標準入力をしようするときは、「-」か「stdin」を使用します。</p><p>（上記の名前は他のツールでも混乱を起こすので、本当のファイルの名前としては使用しないようにしてください）。</p><div class=highlight><pre class=chroma><code class=language-sh data-lang=sh>cat test.csv<span class=p>|</span>trdsql -icsv <span class=s2>&#34;SELECT * FROM -&#34;</span>
+apple,100
+orange,50
+potato,30</code></pre></div><p>（ここで注意が必要なのが、trdsqlは標準入力から受け取りますが、標準入力をすべて受け取り終わってからSQLの実行が開始されます。そのため終わらないコマンドからの出力を受け取ることはできません。）</p><p>利用方法としては、（ちゃんと終了する）コマンドから受け取ってデータとして利用できるようにしたり、見やすくすることができます。</p><p>CSV、LTSV、JSONを出力するコマンドでは、ファイル名の代わりに標準入力を使えばそのまま利用できます。</p><p>それ以外にも、例えばUNIX系のコマンドでは、スペースを区切りとして解釈すればテーブルデータとして扱える出力をするコマンドが数多くあります。</p><p>例えば psコマンドでは、</p><div class=highlight><pre class=chroma><code class=language-sh data-lang=sh>ps
+  PID TTY          TIME CMD
+ <span class=m>1157</span> pts/3    <span class=m>00</span>:00:00 ps
+<span class=m>22590</span> pts/3    <span class=m>00</span>:00:03 zsh</code></pre></div><p>のようにヘッダーがあり、それぞれの列を出力しています（trdsqlでは連続したスペースの区切り文字は一つとして解釈するように動作します）。</p><p>そのため、以下のように実行すると Ascii Table形式で出力できます。</p><div class=highlight><pre class=chroma><code class=language-sh data-lang=sh>ps<span class=p>|</span>trdsql -ih -id <span class=s2>&#34; &#34;</span> -oat <span class=s2>&#34;SELECT \`PID\`, \`TTY\`, \`TIME\`, \`CMD\` FROM -&#34;</span>
++-------+-------+----------+--------+
+<span class=p>|</span>  PID  <span class=p>|</span>  TTY  <span class=p>|</span>   TIME   <span class=p>|</span>  CMD   <span class=p>|</span>
++-------+-------+----------+--------+
+<span class=p>|</span>  <span class=m>1363</span> <span class=p>|</span> pts/3 <span class=p>|</span> <span class=m>00</span>:00:00 <span class=p>|</span> ps     <span class=p>|</span>
+<span class=p>|</span>  <span class=m>1364</span> <span class=p>|</span> pts/3 <span class=p>|</span> <span class=m>00</span>:00:00 <span class=p>|</span> trdsql <span class=p>|</span>
+<span class=p>|</span> <span class=m>22590</span> <span class=p>|</span> pts/3 <span class=p>|</span> <span class=m>00</span>:00:03 <span class=p>|</span> zsh    <span class=p>|</span>
++-------+-------+----------+--------+</code></pre></div><p>また、trdsqlの-a解析オプションは標準入力も使用することが出来ます。</p><div class=highlight><pre class=chroma><code class=language-sh data-lang=sh>コマンド <span class=p>|</span> trdsql -ih -id <span class=s2>&#34; &#34;</span> -a -</code></pre></div><div class=highlight><pre class=chroma><code class=language-sh data-lang=sh>ps<span class=p>|</span>trdsql -id <span class=s2>&#34; &#34;</span> -ih -a -
+The table name is -.
+The file <span class=nb>type</span> is CSV.
+
+Data types:
++-------------+------+
+<span class=p>|</span> column name <span class=p>|</span> <span class=nb>type</span> <span class=p>|</span>
++-------------+------+
+<span class=p>|</span> <span class=se>\`</span>PID<span class=se>\`</span>     <span class=p>|</span> text <span class=p>|</span>
+<span class=p>|</span> <span class=se>\`</span>TTY<span class=se>\`</span>     <span class=p>|</span> text <span class=p>|</span>
+<span class=p>|</span> <span class=se>\`</span>TIME<span class=se>\`</span>    <span class=p>|</span> text <span class=p>|</span>
+<span class=p>|</span> <span class=se>\`</span>CMD<span class=se>\`</span>     <span class=p>|</span> text <span class=p>|</span>
++-------------+------+
+
+Data samples:
++---------+---------+----------+---------+
+<span class=p>|</span> <span class=se>\`</span>PID<span class=se>\`</span> <span class=p>|</span> <span class=se>\`</span>TTY<span class=se>\`</span> <span class=p>|</span> <span class=se>\`</span>TIME<span class=se>\`</span> <span class=p>|</span> <span class=se>\`</span>CMD<span class=se>\`</span> <span class=p>|</span>
++---------+---------+----------+---------+
+<span class=p>|</span>    <span class=m>3168</span> <span class=p>|</span> pts/0   <span class=p>|</span> <span class=m>00</span>:00:00 <span class=p>|</span> ps      <span class=p>|</span>
++---------+---------+----------+---------+
+
+Examples:
+trdsql -id <span class=s2>&#34; &#34;</span> -ih <span class=s2>&#34;SELECT \`PID\`, \`TTY\`, \`TIME\`, \`CMD\` FROM -&#34;</span>
+trdsql -id <span class=s2>&#34; &#34;</span> -ih <span class=s2>&#34;SELECT \`PID\`, \`TTY\`, \`TIME\`, \`CMD\` FROM - WHERE \`PID\` = &#39;3168&#39;&#34;</span>
+trdsql -id <span class=s2>&#34; &#34;</span> -ih <span class=s2>&#34;SELECT \`PID\`, count(\`PID\`) FROM - GROUP BY \`PID\`&#34;</span>
+trdsql -id <span class=s2>&#34; &#34;</span> -ih <span class=s2>&#34;SELECT \`PID\`, \`TTY\`, \`TIME\`, \`CMD\` FROM - ORDER BY \`PID\` LIMIT 10&#34;</span></code></pre></div></section><section></section></article></div><div id=side class="pr-1 bg-white"><aside class=pr-3><div id=toc class="Box Box--blue mb-3"><b>trdsql 標準入力</b></div><div></div></aside></div><div id=footer class="pt-2 pb-3 bg-white text-center"><span class="text-small text-gray">&copy;Noboru Saito 2019 &middot;
+Powered by the
+<a href=https://github.com/qqhann/hugo-primer class=link-gray-dark>Hugo-Primer</a> theme for
+<a href=https://gohugo.io class=link-gray-dark>Hugo</a>.</span></div></div><script type=text/javascript src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><script type=text/x-mathjax-config>MathJax.Hub.Config({ tex2jax: { inlineMath: [['$','$'], ['\\(','\\)']] } });</script></body></html>
