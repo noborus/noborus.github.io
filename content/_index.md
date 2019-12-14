@@ -13,8 +13,6 @@ weight: 1
 
 CSV,LTSV,JSON,TBLNファイルにSQLを実行できるツール
 
-[Example](trdsql-example.html)
-
 ### [tbln](https://github.com/noborus/tbln) [[tbln.dev](https://tbln.dev/)]
 
 [![GoDoc](https://godoc.org/github.com/noborus/tbln?status.svg)](https://godoc.org/github.com/noborus/tbln)
