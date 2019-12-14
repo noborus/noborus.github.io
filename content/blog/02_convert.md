@@ -105,7 +105,7 @@ trdsql -icsv -ih -ovf "SELECT * FROM header.csv"
   name | Apple
 ```
 
-また、CSVはComma-Separated Valuesではなく、Character-separated valuesとも呼ばれたりすることがあるように、区切り文字として「,」以外を使用することができます。
+また、CSVはComma-Separated Valuesではなく、Character-separated valuesとも呼ばれたりすることがあるように、区切り文字として「,」以外を使用できます。
 
 タブ区切り(TSVとも呼ばれます)で出力するには以下のようにします。
 

@@ -5,6 +5,8 @@ date = "2019-12-08"
 description = ""
 tags = [
     "trdsql",
+    "log",
+    "ltsv",
 ]
 categories = [
     "trdsql",
@@ -12,7 +14,7 @@ categories = [
 ]
 +++
 
-apacheやnginxなどのLogを[LTSV](http://ltsv.org)フォーマットで出力する方法も定着してきました。
+ApacheやnginxなどのLogを[LTSV](http://ltsv.org)フォーマットで出力する方法も定着してきました。
 
 そのようなLogをtrdsqlで解析する例です。
 

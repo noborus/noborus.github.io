@@ -5,6 +5,7 @@ date = "2019-12-12"
 description = ""
 tags = [
     "trdsql",
+    "postgresql",
 ]
 categories = [
     "trdsql",
@@ -22,7 +23,7 @@ trdsqlは組込みのSQLite3を利用してSQLを実行していますが、デ�
 
 SQLite3と違いPostgreSQLは動作しているPostgreSQLサーバーが必要です。接続できテーブルが作成できる権限があるデータベースを作成しておきます。
 
-オプションの -driver に postgres を指定し、-dsn にサーバーへの接続情報を指定します。
+オプションの -driver に **postgres** を指定し、-dsn にサーバーへの接続情報を指定します。
 
 dsnの項目には以下が指定できます。デフォルトの場合は省略可能です。
 

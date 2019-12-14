@@ -6,9 +6,7 @@ description = ""
 tags = [
     "trdsql",
     "sql",
-    "csv",
-    "ltsv",
-    "json",
+    "count",
 ]
 categories = [
     "trdsql",

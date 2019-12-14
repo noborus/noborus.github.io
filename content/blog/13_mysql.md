@@ -5,6 +5,7 @@ date = "2019-12-13"
 description = ""
 tags = [
     "trdsql",
+    "mysql",
 ]
 categories = [
     "trdsql",
@@ -18,7 +19,7 @@ categories = [
 
 MySQLに接続するには動作しているMySQLサーバーが必要です。接続できテーブルが作成できる権限があるデータベースを作成しておきます。
 
-オプションの -driver に mysql を指定し、-dsn にサーバーへの接続情報を指定します。
+オプションの -driver に **mysql** を指定し、-dsn にサーバーへの接続情報を指定します。
 
 MySQLのdsnは以下のような形式です。
 
@@ -28,7 +29,7 @@ MySQLのdsnは以下のような形式です。
 
 param=valueのパラメーターは多くの種類がありますので、MySQLのマニュアルを参照して下さい。
 
-ローカルホストのUnixドメインソケットを使用する場合は、ユーザー名、パスワード、データベース名を指定すれば接続できます。
+ローカルホストのUNIXドメインソケットを使用する場合は、ユーザー名、パスワード、データベース名を指定すれば接続できます。
 
 ```sh
 trdsql -driver mysql -dsn "noborus:noborus@/trdsql_test" "SELECT 1"

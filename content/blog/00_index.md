@@ -9,6 +9,7 @@ tags = [
     "csv",
     "ltsv",
     "json",
+    "目次",
 ]
 categories = [
     "trdsql",

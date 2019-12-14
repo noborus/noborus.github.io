@@ -5,6 +5,7 @@ date = "2019-12-07"
 description = ""
 tags = [
     "trdsql",
+    "group by",
 ]
 categories = [
     "trdsql",
@@ -28,7 +29,7 @@ orange,40
 orange,40
 ```
 
-ここでappleやorange毎の合計を出したい場合は、以下のように検索条件で絞れば計算することができますが、nameの種類の数だけ実行するとなると大変な作業になります。
+ここでappleやorange毎の合計を出したい場合は、以下のように検索条件で絞れば計算できますが、nameの種類の数だけ実行するとなると大変な作業になります。
 
 ```sh
 trdsql -ih "SELECT name,SUM(CAST(price AS INT)) as sum FROM sample.csv WHERE name='apple'"

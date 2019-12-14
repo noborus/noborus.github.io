@@ -5,6 +5,10 @@ date = "2019-12-06"
 description = ""
 tags = [
     "trdsql",
+    "sum",
+    "min",
+    "max",
+    "avg",
 ]
 categories = [
     "trdsql",
@@ -66,9 +70,9 @@ MIN(CAST(price AS INT)),MAX(CAST(price AS INT))
 
 MINやMAXはテキスト型でも使用できるため、明示的にCASTする必要があります。
 
-（MINやMAXのnameを知りたくなるところですが、SQLだとちょっと複雑になるので後に回します。）
+（MINやMAXのnameを知りたくなるところですが、SQLだとちょっと複雑になるので後に回します）。
 
-前回書いたように、集計関数は一度に実行することができます。
+前回書いたように、集計関数は一度に実行できます。
 
 ```sh
 trdsql -ih -oat "SELECT COUNT(name) as count,COUNT(DISTINCT name) as uniq, MIN(CAST(price AS INT)) AS min,MAX(CAST(price AS INT)) as max,SUM(CAST(price AS INT)) as sum,AVG(CAST(price AS INT)) as avg FROM sample.csv"

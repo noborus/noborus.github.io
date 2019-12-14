@@ -5,6 +5,8 @@ date = "2019-12-01"
 description = ""
 tags = [
     "trdsql",
+    "install",
+    "docker",
 ]
 categories = [
     "trdsql",
@@ -14,7 +16,7 @@ categories = [
 
 ## 概要
 
-[trdsql](https://github.com/noborus/trdsql)はテーブル（表）形式のテキストに対してSQLを実行するツールです。
+[trdsql](https://github.com/noborus/trdsql)はテーブル（表）形式のテキストに対してSQLを実行するCLIツールです。
 テーブル形式とは、行と列で構成される以下のようなデータです。
 
 |    | 1列 | 2列 |
@@ -25,7 +27,7 @@ categories = [
 ## インストール
 
 Linux/Windows/macOSの場合は、[GitHubのリリースページ](https://github.com/noborus/trdsql/releases)からバイナリをダウンロードできます。
-Goで作られていて、他に依存ライブラリがない１バイナリなので、展開してすぐに実行することができます。
+Goで作られていて、他に依存ライブラリがない１バイナリなので、展開してすぐに実行できます。
 
 ### Docker
 

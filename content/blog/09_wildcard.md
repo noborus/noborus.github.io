@@ -5,6 +5,9 @@ date = "2019-12-09"
 description = ""
 tags = [
     "trdsql",
+    "wildcard",
+    "圧縮",
+    "gz",
 ]
 categories = [
     "trdsql",
