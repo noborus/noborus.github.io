@@ -7,21 +7,20 @@ weight: 1
 
 ## 作ったもの
 
-### [trdsql](https://github.com/noborus/trdsql)
-
-[![GoDoc](https://godoc.org/github.com/noborus/trdsql?status.svg)](https://godoc.org/github.com/noborus/trdsql)
+### [trdsql](https://github.com/noborus/trdsql) [![GoDoc](https://godoc.org/github.com/noborus/trdsql?status.svg)](https://godoc.org/github.com/noborus/trdsql)
 
 CSV,LTSV,JSON,TBLNファイルにSQLを実行できるツール
 
-### [tbln](https://github.com/noborus/tbln) [[tbln.dev](https://tbln.dev/)]
+* (Qiita)[trdsqlというコマンドラインツールを作った](https://qiita.com/noborus/items/f253961cca6f4465f20c)
+* [trdsqlのBlog](blog/00_index/)
 
-[![GoDoc](https://godoc.org/github.com/noborus/tbln?status.svg)](https://godoc.org/github.com/noborus/tbln)
+### [tbln](https://github.com/noborus/tbln) [![GoDoc](https://godoc.org/github.com/noborus/tbln?status.svg)](https://godoc.org/github.com/noborus/tbln)
 
 データベースのテーブルと親和性のあるファイルフォーマット(tbln)を扱うライブラリ＆ツール
 
-### [psutilsql](https://github.com/noborus/psutilsql)
+* [[tbln.dev](https://tbln.dev/)]
 
-[![GoDoc](https://godoc.org/github.com/noborus/psutilsql?status.svg)](https://godoc.org/github.com/noborus/psutilsql)
+### [psutilsql](https://github.com/noborus/psutilsql) [![GoDoc](https://godoc.org/github.com/noborus/psutilsql?status.svg)](https://godoc.org/github.com/noborus/psutilsql)
 
 システム情報にSQLを実行して表示するツール
 
@@ -32,10 +31,6 @@ CSV,LTSV,JSON,TBLNファイルにSQLを実行できるツール
 * jpug-doc [github](https://github.com/pgsql-jp/jpug-doc)
 * [日本PostgreSQLユーザ会（別館）](https://pgsql-jp.github.io/) [github](https://github.com/pgsql-jp/pgsql-jp.github.io)
 * 対訳集 [github](https://github.com/pgsql-jp/taiyaku)
-
-成果物の一時置き場
-
-最新 | [html](current/html) | [pdf](current/postgres-A4.pdf)
 
 #### テスト版
 
