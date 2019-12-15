@@ -32,6 +32,7 @@ categories = [
 1. [MySQLエンジンの使用](../13_mysql)
 1. [SQLite3エンジンの使用](../14_sqlite3)
 1. [DBインポート](../15_import)
+1. [JOIN](../16_join)
 
 <!--
 1. 前処理
