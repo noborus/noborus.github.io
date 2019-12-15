@@ -31,9 +31,9 @@ categories = [
 1. [PostgreSQLエンジンの使用](../12_postgres)
 1. [MySQLエンジンの使用](../13_mysql)
 1. [SQLite3エンジンの使用](../14_sqlite3)
+1. [DBインポート](../15_import)
 
 <!--
-1. DBインポート
 1. 前処理
 1. ライブラリ使用
 1. ライブラリ使用インポート
