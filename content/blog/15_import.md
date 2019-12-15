@@ -97,6 +97,8 @@ trdsql -driver sqlite3 -dsn "trdsql_test" -ih \
 "CREATE TABLE fruits AS SELECT CAST(id AS int) AS num,name FROM header.csv WHERE 1=2"
 ```
 
+SQLite3では後から主キーを付けることができません。
+
 ### INSERT
 
 既にテーブルがあって、ファイルの内容をインポートしたい場合は、SELECTの前に `INSERT INTO テーブル名`を付けて、実行します。
@@ -118,7 +120,34 @@ trdsql -driver postgres -dsn "dbname=trdsql_test" -ih \
 
 INSERT ON CONFLICTの構文を使用すると差分のみINSERTができます。
 
+既に同じidが在る行については何もしない。
+
 ```sh
 trdsql -driver postgres -dsn "dbname=trdsql_test" -ih \
 "INSERT INTO fruits SELECT CAST(id AS int) AS num,name FROM header.csv ON CONFLICT DO NOTHING"
 ```
+
+既に同じidが在る行についてはUPDATEする。
+
+```sh
+trdsql -driver postgres -dsn "dbname=trdsql_test" -ih \
+"INSERT INTO fruits SELECT CAST(id AS int) AS num,name FROM header.csv "\
+"ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name"
+```
+
+MySQLでは、`INSERT IGNORE`で重複エラーを回避できます。
+
+```sh
+trdsql -driver mysql -dsn "noborus:noborus@/trdsql_test" -ih \
+"INSERT IGNORE INTO fruits SELECT CAST(id AS unsigned) AS num,name FROM header.csv"
+```
+
+既に同じidが在る行についてはUPDATEするには`ON DUPLICATE KEY UPDATE`を使用して以下のようにします。
+
+```sh
+trdsql -driver mysql -dsn "noborus:noborus@/trdsql_test" -ih \
+"INSERT INTO fruits SELECT CAST(id AS unsigned) AS num,name FROM header.csv AS h "\
+"ON DUPLICATE KEY UPDATE name = h.name"
+```
+
+SQLite3は、(trdsqlでの使用では）重複時の更新には、まだ対応していません。
