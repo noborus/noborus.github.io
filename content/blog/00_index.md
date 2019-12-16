@@ -17,6 +17,8 @@ categories = [
 ]
 +++
 
+[trdsql  Advent Calendar 2019](https://qiita.com/advent-calendar/2019/trdsql)として書かれています。
+
 1. [インストール](../01_install)
 1. [変換](../02_convert)
 1. [簡単なSQL](../03_sql)
