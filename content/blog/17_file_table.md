@@ -1,7 +1,7 @@
 +++
 author = "Noboru Saito"
-title = "trdsql JOIN"
-date = "2019-12-16¥7"
+title = "trdsql"
+date = "2019-12-17 ファイルとテーブルのJOIN"
 description = ""
 tags = [
     "trdsql",
