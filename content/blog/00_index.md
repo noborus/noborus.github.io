@@ -35,6 +35,7 @@ categories = [
 1. [SQLite3エンジンの使用](../14_sqlite3)
 1. [DBインポート](../15_import)
 1. [JOIN](../16_join)
+1. [ファイルとテーブルのJOIN](../17_file_table)
 
 <!--
 1. 前処理
