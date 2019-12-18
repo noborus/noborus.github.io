@@ -36,14 +36,23 @@ categories = [
 1. [DBインポート](../15_import)
 1. [JOIN](../16_join)
 1. [ファイルとテーブルのJOIN](../17_file_table)
+1. [列の編集](../18_edit_columns)
+1. Window関数
+1. SQL関数
+1. JSON解析
+1. JSON出力
+1. 比較・差分
+1. グラフ
+1. ライブラリ使用
 
 <!--
-1. 前処理
-1. ライブラリ使用
-1. ライブラリ使用インポート
-1. ライブラリ使用エクスポート
-1. ライブラリ使用slice
-1. ライブラリ使用map
-1. JSON関数
+1. [列の編集](../18_edit_columns)
+1. [Window関数](../19_window)
+1. [SQL関数](../20_functions)
+1. [JSON解析](../21_json_parse)
+1. [JSON出力](../22_json_output)
+1. [比較・差分](../23_except)
+1. [グラフ](../24_graph)
+1. [ライブラリ使用](25_library)
 -->
 
