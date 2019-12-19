@@ -39,7 +39,6 @@ id,class,name,score
 
 平均はavg(score)で求められますが、集約関数だと1行のみの出力になりまが、Window関数を使用して平均との差を表示させると以下のようになります。
 
-
 ```sh
 trdsql -ih -omd \
 "SELECT id,name,score," \
@@ -80,7 +79,7 @@ trdsql -ih -omd \
 |  4 | B     | dave  |   289 |         50 |
 |  5 | B     | eve   |   157 |        -82 |
 |  6 | B     | flank |   272 |         33 |
-````
+```
 
 class Aでは平均195との差を表示していて、class Bでは平均239との差を表示しています。
 
@@ -99,7 +98,9 @@ trdsql -ih -omd \
 
 Window関数を使うと行番号を付けることもできます。
 
-```fruits.ltsv
+fruits.ltsv
+
+```ltsv
 name:grape	num:10
 name:apple	num:3
 name:banana	num:5
