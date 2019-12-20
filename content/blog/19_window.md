@@ -6,6 +6,7 @@ description = ""
 tags = [
     "trdsql",
     "sql",
+    "window関数",
 ]
 categories = [
     "trdsql",

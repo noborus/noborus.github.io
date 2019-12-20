@@ -38,7 +38,7 @@ categories = [
 1. [ファイルとテーブルのJOIN](../17_file_table)
 1. [列の編集](../18_edit_columns)
 1. [Window関数](../19_window)
-1. SQL関数
+1. [日付・時刻処理](../20_date)
 1. JSON解析
 1. JSON出力
 1. 比較・差分
@@ -46,7 +46,6 @@ categories = [
 1. ライブラリ使用
 
 <!--
-1. [SQL関数](../20_functions)
 1. [JSON解析](../21_json_parse)
 1. [JSON出力](../22_json_output)
 1. [比較・差分](../23_except)
