@@ -39,14 +39,13 @@ categories = [
 1. [列の編集](../18_edit_columns)
 1. [Window関数](../19_window)
 1. [日付・時刻処理](../20_date)
-1. JSON解析
+1. [JSON解析](../21_json_parse)
 1. JSON出力
 1. 比較・差分
 1. グラフ
 1. ライブラリ使用
 
 <!--
-1. [JSON解析](../21_json_parse)
 1. [JSON出力](../22_json_output)
 1. [比較・差分](../23_except)
 1. [グラフ](../24_graph)

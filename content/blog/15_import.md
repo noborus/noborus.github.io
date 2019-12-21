@@ -142,7 +142,7 @@ trdsql -driver mysql -dsn "noborus:noborus@/trdsql_test" -ih \
 "INSERT IGNORE INTO fruits SELECT CAST(id AS unsigned) AS num,name FROM header.csv"
 ```
 
-既に同じidが在る行についてはUPDATEするには`ON DUPLICATE KEY UPDATE`を使用して以下のようにします。
+既に同じidが在る行をUPDATEするには`ON DUPLICATE KEY UPDATE`を使用して以下のようにします。
 
 ```sh
 trdsql -driver mysql -dsn "noborus:noborus@/trdsql_test" -ih \
@@ -150,4 +150,16 @@ trdsql -driver mysql -dsn "noborus:noborus@/trdsql_test" -ih \
 "ON DUPLICATE KEY UPDATE name = h.name"
 ```
 
-SQLite3は、(trdsqlでの使用では）重複時の更新には、まだ対応していません。
+又は、REPLACE INTO文が使用できます。
+
+```sh
+trdsql -driver mysql -dsn "noborus:noborus@/trdsql_test" -ih \
+"REPLACE INTO fruits SELECT CAST(id AS unsigned) AS num,name FROM header.csv AS h "
+```
+
+SQLite3は、主キーがあるテーブルが作成済みであれば、同様にREPLACE INTO文が使用できます。
+
+```sh
+trdsql -driver sqlite3 -dsn "trdsql_test.db" -ih \
+"REPLACE INTO fruits SELECT CAST(id AS int) AS num,name FROM header.csv AS h "
+```
