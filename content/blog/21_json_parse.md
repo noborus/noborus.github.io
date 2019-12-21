@@ -69,7 +69,7 @@ trdsql -oat "SELECT color,category,code FROM sample.json"
 
 ## SQLite3, MySQL
 
-SQLite3とMySQLではjson_extract()により「$」をルートとして（コマンドラインでは「$」が意味を持つので「\」でエスケープしてください）、指定した値を取得出来ます。
+SQLite3とMySQLではjson_extract()により`$`をルートとして（コマンドラインでは`$`が意味を持つので「\」でエスケープしてください）、指定した値を取得出来ます。
 codeの中の"hex"のみを表示するには以下のようにします。
 
 ```sh
