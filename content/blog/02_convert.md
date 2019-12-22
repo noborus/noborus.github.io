@@ -21,7 +21,7 @@ trdsqlはCSV等のファイルをSQLで処理するツールとして説明し�
 その場合、SQLは以下の定型句さえ覚えておけば、十分です。
 ファイル内のすべての行と列を出力します。
 
-```
+```SQL
 SELECT * FROM ファイル名
 ```
 
@@ -36,7 +36,9 @@ trdsql -icsv -oltsv "SELECT * FROM ファイル名"
 
 CSVファイルはヘッダーに列名がついている場合 -ih でヘッダーを解釈して列名として使用できます。
 
-```header.csv
+header.csv
+
+```CSV
 id,name
 1,Orange
 2,Melon
@@ -47,7 +49,9 @@ id,name
 trdsql -icsv -ih -oltsv "SELECT * FROM header.csv" > test.ltsv
 ```
 
-```test.ltsv
+test.ltsv
+
+```LTSV
 id:1	name:Orange
 id:2	name:Melon
 id:3	name:Apple

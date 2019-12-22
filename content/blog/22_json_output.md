@@ -37,6 +37,8 @@ SQLite3、MySQLでは、json_array()やjson_object()を使用することによ�
 ```sh
 trdsql -ih -oraw \
 "SELECT json_object('id',id,'name',name) FROM header.csv"
+```
+```json
 {"id":"1","name":"Orange"}
 {"id":"2","name":"Melon"}
 {"id":"3","name":"Apple"}
@@ -49,6 +51,8 @@ SQLite3にはjson_pretty()関数が無いので、jqで見やすくしていま�
 trdsql -ih -oraw \
 "SELECT json_object('fruits', json_object('id',id,'name',name)) "\
   "FROM header.csv"|jq .
+```
+```json
 {
   "fruits": {
     "id": "1",
@@ -77,6 +81,8 @@ SQLite3
 trdsql -ih -oraw \
 "SELECT json_group_array(json_object('fruits', json_object('id',id,'name',name))) "\
  " FROM header.csv"|jq .
+ ```
+ ```json
  [
   {
     "fruits": {
@@ -105,6 +111,8 @@ MySQL
 trdsql -driver mysql -dsn "noborus:noborus@/trdsql_test" -ih -oraw \
 "SELECT json_pretty(json_arrayagg(json_object('fruits', json_object('id',id,'name',name)))) "\
   "FROM header.csv"
+```
+```json
 [
   {
     "fruits": {
@@ -142,6 +150,8 @@ PostgreSQLでは、JSONを扱うのにjsonとjsonbの２つの型があり、関
 trdsql -driver postgres -dsn "dbname=trdsql_test" -ih -oraw \
 "SELECT jsonb_pretty(jsonb_build_object('fruits', jsonb_build_object('id',id,'name',name))) "\
   "FROM header.csv"
+```
+```json
 {
     "fruits": {
         "id": "1",
@@ -168,6 +178,8 @@ trdsql -driver postgres -dsn "dbname=trdsql_test" -ih -oraw \
 trdsql -driver postgres -dsn "dbname=trdsql_test" -ih -oraw \
 "SELECT jsonb_pretty(jsonb_agg(jsonb_build_object('fruits', jsonb_build_object('id',id,'name',name)))) "\
   "FROM header.csv"
+```
+```json
 [
     {
         "fruits": {
