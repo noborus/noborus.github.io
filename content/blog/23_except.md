@@ -22,3 +22,30 @@ SQLでの比較には、EXCEPTを使用します。EXCEPTは Aのテーブルか
 
 Bの方に多くの行があっても関係なく、AにあってBにない行を出力します。
 
+以下のCSVファイルで比較してみます。new.csvで、3の更新と4の追加があるCSVファイルです。
+
+old.csv
+
+```CSV
+1,AAA
+2,BBB
+3,CCC
+```
+
+new.csv
+
+```CSV
+1,AAA
+2,BBB
+3,CCB
+4,DDD
+```
+
+単純に全列を比較すると1と2の行が同じであるため、消されて残った3と4が出力されます。
+この場合old.csv側にnew.csvにない行があっても出力されません。これがdiffの比較とは違いますね。
+
+```sh
+trdsql  "SELECT * FROM new.csv EXCEPT SELECT * FROM old.csv"
+3,CCB
+4,DDD
+```
