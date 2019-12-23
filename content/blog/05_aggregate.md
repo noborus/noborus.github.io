@@ -16,7 +16,7 @@ categories = [
 
 ## 集計
 
-### COUNT
+### COUNT(*)
 
 最初はCOUNT(*)です。全体の件数を数えることが出来ます。
 
@@ -39,6 +39,8 @@ trdsql -icsv -ih -oh "SELECT COUNT(*) FROM header.csv WHERE id<'1'"
 count(*)
 2
 ```
+
+### COUNT(列名)
 
 COUNT(列名) もよく使用します。RDBMSではNULLが除外されるので、COUNT(*)とは区別して使われます。
 

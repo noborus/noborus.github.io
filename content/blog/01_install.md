@@ -16,7 +16,7 @@ categories = [
 
 ## 概要
 
-[trdsql](https://github.com/noborus/trdsql)はテーブル（表）形式のテキストに対してSQLを実行するCLIツールです。
+[trdsql](https://github.com/noborus/trdsql "GitHub/noborus/trdsql")はテーブル（表）形式のテキストに対してSQLを実行するCLIツールです。
 テーブル形式とは、行と列で構成される以下のようなデータです。
 
 |    | 1列 | 2列 |
@@ -26,7 +26,7 @@ categories = [
 
 ## インストール
 
-Linux/Windows/macOSの場合は、[GitHubのリリースページ](https://github.com/noborus/trdsql/releases)からバイナリをダウンロードできます。
+Linux/Windows/macOSの場合は、[GitHubのリリースページ](https://github.com/noborus/trdsql/releases "github.com/noborus/trdsql/releases")からバイナリをダウンロードできます。
 Goで作られていて、他に依存ライブラリがない１バイナリなので、展開してすぐに実行できます。
 
 ### Docker
@@ -42,7 +42,8 @@ docker pull noborus/trdsql
 カレントディレクトリにあるtest.csvに対して実行するときは以下のようになります。
 
 ```sh
-docker run --rm -it -v $(pwd):$(pwd) --workdir $(pwd) noborus/trdsql "SELECT * FROM test.csv" > test_new.csv
+docker run --rm -it -v $(pwd):$(pwd) --workdir $(pwd) noborus/trdsql \
+"SELECT * FROM test.csv" > test_new.csv
 ```
 
 ### Homebrew

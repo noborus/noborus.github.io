@@ -81,10 +81,10 @@ ImporterとExporterの準備が済んでいれば、ExecでSQLを実際に実行
 ## 参考資料
 
 trdsqlには、参考してファイルからのインポートだけでなく、スライスからインポートする関数が入っています。
-それを利用したサンプルが [_example/slice/](https://github.com/noborus/trdsql/blob/master/_example/slice/main.go) にあります。
+それを利用したサンプルが [_example/slice/](https://github.com/noborus/trdsql/blob/master/_example/slice/main.go "github.com/noborus/trdsql/blob/master/_example/slice/main.go") にあります。
 
 
-また、trdsql packageを利用して[shirou/gopsutil](https://github.com/shirou/gopsutil)の結果をSQLで取得できるようにしたものが、
-[noborus/psutilsql](https://github.com/noborus/psutilsql) です。
+また、trdsql packageを利用して[shirou/gopsutil](https://github.com/shirou/gopsutil "github.com/shirou/gopsutil")の結果をSQLで取得できるようにしたものが、
+[noborus/psutilsql](https://github.com/noborus/psutilsql "github.com/noborus/psutilsql") です。
 
-trdsqlの[godoc](https://godoc.org/github.com/noborus/trdsql)も参考にして下さい。
+trdsqlの[godoc](https://godoc.org/github.com/noborus/trdsql "godoc.org/github.com/noborus/trdsql")も参考にして下さい。
