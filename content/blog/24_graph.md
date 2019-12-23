@@ -66,4 +66,3 @@ trdsql -od "\t" \
 ![bar.png](../bar.png)
 
 [marianogappa/chart](https://github.com/marianogappa/chart)は、[Chart.js](https://www.chartjs.org/)を使用してグラフを描画しています。Chart.js自体が簡単なJavaScriptを用意すれば描画してくれるので、もう少し複雑なグラフを描きたい場合は直接利用するのが良いでしょう。
-
