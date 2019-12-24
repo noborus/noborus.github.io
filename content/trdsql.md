@@ -36,10 +36,9 @@ CSV,LTSV,JSON,TBLNファイルにSQLを実行できるツールの[trdsql](https
 1. [JSON解析](/blog/21_json_parse)
 1. [JSON出力](/blog/22_json_output)
 1. [比較・差分](/blog/23_except)
-1. グラフ
+1. [グラフ](/blog/24_graph)
 1. ライブラリ使用
 
 <!--
-1. [グラフ](/blog/24_graph)
 1. [ライブラリ使用](/blog/25_library)
 -->
