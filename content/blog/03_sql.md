@@ -6,6 +6,8 @@ description = ""
 tags = [
     "trdsql",
     "sql",
+    "cut",
+    "sort",
 ]
 categories = [
     "trdsql",
@@ -50,23 +52,29 @@ trdsql -ih "SELECT id, \`name\` FROM header.csv ORDER BY id LIMIT 10"
 
 ### Examplesの使用
 
-Examplesに実際に実行できるSQLが出力されています。SQLには予約語があり、予約語を列名に使用する場合\`\`や小文字以外の列名を使用している場合等エスケープする必要がある列名は上記のようにエスケープされて出力されます。
+Examplesに実際に実行できるSQLが出力されています。
+
+SQLには予約語があり、予約語を列名に使用する場合や小文字以外の列名を使用している場合等エスケープする必要がある列名は上記のようにエスケープされて（データベースにより「\`」か「"」）います。
+コマンドラインから使用する場合は、更にシェルからエスケープするために「\」を追加して、「\\'」で囲んで実行します。
+
 （SQLの実装やバージョンによって予約語は変更されますが、予約語以外をエスケープしても問題ないので、実際には必要のない語もエスケープされています）。
 
 ここでExamplesの一つを実行してみます。
 
-```sh
+```SQL
 trdsql -ih "SELECT id, \`name\` FROM header.csv"
 1,Orange
 2,Melon
 3,Apple
 ```
 
+`SELECT * FROM header.csv`と同じ結果になりました。
+
 このSQLをひな型として変更していきます。
 
 ## 列の並べ替え、列の抽出
 
-今度は、id,nameの順番を入れ替えて、name,idで出力するには以下のようにします。
+今度は、id,nameの順番を入れ替えて、name,idの順で出力するには以下のようにします。
 
 ```sh
 trdsql -ih "SELECT \`name\`,id FROM header.csv"
@@ -75,7 +83,7 @@ Melon,2
 Apple,3
 ```
 
-そのまんまですね。ではidは必要ないのでnameのみを出力する場合は...
+そのまんまですね。ではidは必要ないのでnameのみを出力する場合はnameだけ残せば良いことになります。
 
 ```sh
 trdsql -ih "SELECT \`name\` FROM header.csv"
@@ -88,7 +96,7 @@ Apple
 
 ## 行の並べ替え
 
-もう一つ、並べ替えることがあるとしたら行ですね。行の並べ替えは`ORDER BY 列名｀で出来ます。
+もう一つ、並べ替えることがあるとしたら行です。行の並べ替えは`ORDER BY 列名｀で出来ます。
 昇順（小さい→大きい）はASC（デフォルトなので省略可能）、降順（大きい→小さい）はDESCを付けます。
 
 ```sh
@@ -108,7 +116,7 @@ trdsql -ih "SELECT id, \`name\` FROM header.csv ORDER BY id DESC"
 実は、これでは意図した通りに並べ替えられない可能性があります。
 trdsqlではCSV、LTSV、JSON等の入力データはtext型として動作します。ここでのidのような場合は、idを数値として扱わないとふた桁以上のときに意図しない結果になります。
 
-数値として扱うには、以下のようにSQLのCASTを使用します。
+数値として扱うには、以下のようにSQLのCAST(列名 AS 型名)を使用します。
 
 ```sh
 trdsql -ih "SELECT id,\`name\` FROM  header.csv  ORDER BY CAST(id AS int) DESC"

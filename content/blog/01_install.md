@@ -24,14 +24,16 @@ categories = [
 | **1行** |  a1 |  a2   |
 | **2行** |  b1  |  b2  |
 
+結果をざまざまなフォーマットに出力できるので、テーブル形式データのフォーマット変換にも使用できます。
+
 ## インストール
 
-Linux/Windows/macOSの場合は、[GitHubのリリースページ](https://github.com/noborus/trdsql/releases "github.com/noborus/trdsql/releases")からバイナリをダウンロードできます。
+Linux/Windows/macOSの場合は、[GitHubのリリースページ](https://github.com/noborus/trdsql/releases "github.com/noborus/trdsql/releases")からバイナリを[ダウンロード{{< md-icon cloud_download >}}](https://github.com/noborus/trdsql/releases "github.com/noborus/trdsql/releases")できます。
 Goで作られていて、他に依存ライブラリがない１バイナリなので、展開してすぐに実行できます。
 
-### Docker
+### [Docker](https://www.docker.com/)
 
-Dockerが使用できる環境であればDockerでも実行できます。docker pullも使用できるので、以下のようにしてpullしてください。
+Dockerが使用できる環境であればDockerでも実行できます。[Docker Hub](https://hub.docker.com/)からdocker pullも使用できるので、以下のようにしてpullしてください。
 
 ```sh
 docker pull noborus/trdsql
@@ -60,10 +62,12 @@ brew install trdsql
 go のビルド環境があれば自分でビルドすることもできます。
 
 ```sh
-go get -u github.com/noborus/trdsql
+go get -u -d github.com/noborus/trdsql
+cd trdsql
+make
 ```
 
-自分の環境用にビルドするのは難しくないと思いますが、クロスコンパイルする場合は、依存している[go-sqlite3](https://github.com/mattn/go-sqlite3)が cgo を使用しているので、注意が必要になります。
+自分の環境用にビルドするのは難しくないと思いますが、クロスコンパイルする場合は、依存している[go-sqlite3](https://github.com/mattn/go-sqlite3 "https://github.com/mattn/go-sqlite3")が cgo を使用しているので、注意が必要になります。
 
 ### 実行
 
@@ -72,3 +76,5 @@ go get -u github.com/noborus/trdsql
 ```sh
 trdsql [OPTIONS] [SQLコマンド]
 ```
+
+SQLコマンドでは、データベースのテーブルを指定しますが、テーブルの代わりにファイルをそのまま指定できます。

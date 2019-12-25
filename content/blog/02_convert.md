@@ -28,6 +28,8 @@ SELECT * FROM ファイル名
 後は、オプションとして入力形式(-i...)と出力形式(-o...)を指定してあげればファイル形式の変換が可能です。
 CSV、LTSV、JSON等の相互変換ができます。
 
+CSV(-icsv)からLTSV(-oltsv)への変換は以下のようにします。
+
 ```sh
 trdsql -icsv -oltsv "SELECT * FROM ファイル名"
 ```
@@ -56,6 +58,8 @@ id:1	name:Orange
 id:2	name:Melon
 id:3	name:Apple
 ```
+
+ヘッダーが無い場合は、列名はc1,c2,c3...の連番になります。
 
 ### LTSV入力
 
@@ -87,7 +91,7 @@ trdsql -icsv -id "\t" -ih "SELECT * FROM test.tsv"
 
 ### JSON出力
 
-JSON出力では、最初に配列があるJSONとして出力されます。
+JSON出力では、全体を配列としてのJSONが出力されます。
 
 ```sh
 trdsql -icsv -ih -ojson "SELECT * FROM header.csv"
@@ -157,7 +161,7 @@ trdsql -icsv -ih -ovf "SELECT * FROM header.csv"
   name | Apple
 ```
 
-使用できるフォーマットには以下があります。
+### 使用できるフォーマット
 
 | フォーマット | 入力 | 出力 | 注釈 |
 |:-----|:----:|:---:|:-------|
@@ -169,3 +173,94 @@ trdsql -icsv -ih -ovf "SELECT * FROM header.csv"
 | MD | × | ○ | MarkDownテーブル |
 | AT | × | ○ | ASCIIテーブル |
 | VF | × | ○ | Verticalフォーマット |
+
+#### CSV
+
+```CSV
+id,name
+1,Orange
+2,Melon
+3,Apple
+```
+
+#### LTSV
+
+```LTSV
+id:1	name:Orange
+id:2	name:Melon
+id:3	name:Apple
+```
+
+#### JSON
+
+```JSON
+[
+  {
+    "id": "1",
+    "name": "Orange"
+  },
+  {
+    "id": "2",
+    "name": "Melon"
+  },
+  {
+    "id": "3",
+    "name": "Apple"
+  }
+]
+```
+
+#### TBLN
+
+```TBLN
+; name: | id | name |
+; type: | text | text |
+| 1 | Orange |
+| 2 | Melon |
+| 3 | Apple |
+```
+
+#### RAW
+
+```CSV
+id,name
+1,Orange
+2,Melon
+3,Apple
+```
+
+#### MD
+
+```Markdown
+| id |  name  |
+|----|--------|
+|  1 | Orange |
+|  2 | Melon  |
+|  3 | Apple  |
+```
+
+#### AT
+
+```AsciiTable
++----+--------+
+| id |  name  |
++----+--------+
+|  1 | Orange |
+|  2 | Melon  |
+|  3 | Apple  |
++----+--------+
+```
+
+#### VF
+
+```VerticalFormat
+---[ 1]-------------------------------------------------------------------
+    id | 1
+  name | Orange
+---[ 2]-------------------------------------------------------------------
+    id | 2
+  name | Melon
+---[ 3]-------------------------------------------------------------------
+    id | 3
+  name | Apple
+```
