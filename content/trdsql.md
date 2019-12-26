@@ -38,3 +38,4 @@ CSV,LTSV,JSON,TBLNファイルにSQLを実行できるツールの[trdsql](https
 1. [比較・差分](/blog/23_except)
 1. [グラフ](/blog/24_graph)
 1. [ライブラリ使用](/blog/25_library)
+1. [ファイル名指定](/blog/26_file_sql)
