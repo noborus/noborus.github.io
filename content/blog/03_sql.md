@@ -19,9 +19,10 @@ trdsqlと簡単なSQLを使用することで、他のUNIXツールを組み合�
 
 ## ファイル解析
 
-`SELECT * FROM`から進んで簡単なSQLを実行する場合、あらかじめ列名を調べておく必要があります。trdsql に `-a`とファイル名を付けて実行するとファイルを解析して情報を出力してくれます。
+`SELECT * FROM`から進んで簡単なSQLを実行する場合、あらかじめ列名を把握しておく必要があります。
+trdsql に `-a`オプションにファイル名を付けて実行するとファイルを解析して情報を出力してくれます。
 
-（CSVファイルの拡張子が.csvの様な場合は、-icsvを省略することが出来ます。-ih ヘッダを解釈、 -is スキップ数の指定等のオプションを必要に応じて付けないと意図しない解析結果になることがあります）。
+（CSVファイルの拡張子が.csvの様な場合は、`-icsv`を省略することが出来ます。`-ih` ヘッダを解釈、 `-is` スキップ数の指定等のオプションを必要に応じて付けないと意図しない解析結果になることがあります）。
 
 ```sh
 trdsql -ih -a header.csv
@@ -74,7 +75,7 @@ trdsql -ih "SELECT id, \`name\` FROM header.csv"
 
 ## 列の並べ替え、列の抽出
 
-今度は、id,nameの順番を入れ替えて、name,idの順で出力するには以下のようにします。
+今度は、id,nameの順番を入れ替えて、name,idの順で出力してみます。
 
 ```sh
 trdsql -ih "SELECT \`name\`,id FROM header.csv"
@@ -116,13 +117,14 @@ trdsql -ih "SELECT id, \`name\` FROM header.csv ORDER BY id DESC"
 実は、これでは意図した通りに並べ替えられない可能性があります。
 trdsqlではCSV、LTSV、JSON等の入力データはtext型として動作します。ここでのidのような場合は、idを数値として扱わないとふた桁以上のときに意図しない結果になります。
 
-数値として扱うには、以下のようにSQLのCAST(列名 AS 型名)を使用します。
+数値として扱うには、以下のようにSQLの`CAST(列名 AS 型名)`を使用します。
 
 ```sh
 trdsql -ih "SELECT id,\`name\` FROM  header.csv  ORDER BY CAST(id AS int) DESC"
 ```
 
-さらに ORDER BY と組み合わせて、よく使用するのが LIMIT です。LIMITは指定した件数のみ出力するように制限できます。一つだけ出力したいとか上位10件のみ出力したいときに使用します。
+さらに ORDER BY と組み合わせて、よく使用するのが`LIMIT`です。
+`LIMIT`は指定した件数のみ出力するように制限できます。一つだけ出力したいとか上位10件のみ出力したいときに使用します。
 
 ```sh
 trdsql -ih "SELECT id,\`name\` FROM  header.csv  ORDER BY CAST(id AS int) DESC LIMIT 1"

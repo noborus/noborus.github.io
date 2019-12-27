@@ -170,6 +170,7 @@ trdsql -icsv -ih -ovf "SELECT * FROM header.csv"
 | CSV  | ○ | ○ | TSV等もオプションにより対応 |
 | LTSV | ○ | ○ |[ltsv.org](http://ltsv.org) |
 | JSON | ○ | ○ |[www.json.org](www.json.org)|
+| JSONL | ○ | ○ |入力はJSONで可能|
 | TBLN | ○ | ○ |[tbln.dev](https://tbln.dev)|
 | RAW | × | ○ | そのまま出力（エスケープ処理をしない）|
 | MD | × | ○ | MarkDownテーブル |
@@ -210,6 +211,14 @@ id:3	name:Apple
     "name": "Apple"
   }
 ]
+```
+
+#### JSONL
+
+```JSON
+{"id":"1","name":"Orange"}
+{"id":"2","name":"Melon"}
+{"id":"3","name":"Apple"}
 ```
 
 #### TBLN
