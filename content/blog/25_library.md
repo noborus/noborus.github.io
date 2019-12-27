@@ -20,7 +20,7 @@ trdsqlのパッケージは、以下の構成になっていて、それぞれ�
 
 簡単なサンプルを示します。
 
-```go
+{{< highlight go "linenos=table,linenostart=1" >}}
 package main
 
 import (
@@ -39,7 +39,7 @@ func main() {
                 log.Fatal(err)
         }
 }
-```
+{{< / highlight >}}
 
 上記のプログラムは/etc/passwdに対してSQL文を実行しています。
 Importer(データベースにインポートするインターフェイス）とExporter(データベースから結果を出力するインターフェイス）を与えてTRDSQLをNewし、Execで実行するのが、おおまかな流れです。

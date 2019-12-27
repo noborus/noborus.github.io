@@ -168,9 +168,9 @@ trdsql -icsv -ih -ovf "SELECT * FROM header.csv"
 | フォーマット | 入力 | 出力 | 注釈 |
 |:-----|:----:|:---:|:-------|
 | CSV  | ○ | ○ | TSV等もオプションにより対応 |
-| LTSV | ○ | ○ |http://ltsv.org/|
-| JSON | ○ | ○ |https://www.json.org/|
-| TBLN | ○ | ○ |https://tbln.dev/|
+| LTSV | ○ | ○ |[ltsv.org](http://ltsv.org) |
+| JSON | ○ | ○ |[www.json.org](www.json.org)|
+| TBLN | ○ | ○ |[tbln.dev](https://tbln.dev)|
 | RAW | × | ○ | そのまま出力（エスケープ処理をしない）|
 | MD | × | ○ | MarkDownテーブル |
 | AT | × | ○ | ASCIIテーブル |
