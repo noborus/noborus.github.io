@@ -93,7 +93,7 @@ GROUP集計した結果についてWHEREで条件を指定することはでき�
 trdsql -ih -oat \
 "SELECT name, COUNT(name) as count, MIN(CAST(price AS INT)) AS min,MAX(CAST(price AS INT)) as max, \
  SUM(CAST(price AS INT)) as sum,AVG(CAST(price AS INT)) as avg FROM sample.csv \
- GROUP BY name HAVING count > 1 ORDER BY sum DESC"
+ GROUP BY name HAVING COUNT(name) > 1 ORDER BY sum DESC"
 +--------+-------+-----+-----+-----+--------------------+
 |  name  | count | min | max | sum |        avg         |
 +--------+-------+-----+-----+-----+--------------------+
