@@ -40,6 +40,42 @@ id,name_id
 3,Apple_3
 ```
 
+### PostgreSQL、MySQL
+
+またPostgreSQLとMySQLでは、複数の列をつなげたいときには concat(列名or文字列,列名or文字列,...) が使用できます。
+
+```sh
+trdsql -driver postgres -dsn "dbname=trdsql_test" -ih -oh \
+"SELECT concat(id,name,'個') FROM header.csv"
+concat
+1Orange個
+2Melon個
+3Apple個
+```
+
+接続文字を付けてつなげたい場合は、concat_ws(接続文字,列名or文字列,列名or文字列,...)が使用できます。
+
+```sh
+trdsql -driver postgres -dsn "dbname=trdsql_test" -ih -oh \
+"SELECT concat_ws(' ',id,name,'個') FROM header.csv"
+concat_ws
+1 Orange 個
+2 Melon 個
+3 Apple 個
+```
+
+### SQLite3
+
+SQLite3では、concat,concat_wsはありませんが、printfが使用できますので、より柔軟に文字列を生成できます。
+
+```sh
+trdsql -ih -oh "SELECT printf('%s %s %s',id,name,'個') FROM header.csv"
+"printf(""%s %s %s"",id,name,'個')"
+1 Orange 個
+2 Melon 個
+3 Apple 個
+```
+
 ## 部分文字列
 
 列の文字列を一部分だけ使用します。substr(列名or文字列、開始位置、文字の長さ)関数を使用します。
