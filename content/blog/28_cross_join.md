@@ -1,6 +1,6 @@
 +++
 author = "Noboru Saito"
-title = "trdsql config"
+title = "trdsql CROSS JOIN"
 date = "2019-12-28"
 description = ""
 tags = [
