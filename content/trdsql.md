@@ -41,3 +41,4 @@ CSV,LTSV,JSON,TBLNファイルにSQLを実行できるツールの[trdsql](https
 1. [ファイル名指定](/blog/26_file_sql)
 1. [config](/blog/27_config)
 1. [CROSS JOIN](/blog/28_cross_join)
+1. [generate_series](29_generate_series/)
