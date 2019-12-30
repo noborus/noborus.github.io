@@ -58,6 +58,7 @@ flog -f apache_common -t log -o access.common.log
 trdsql -id " " -oltsv \
 "SELECT c1 AS host, c2 AS ident, c3 as user, c4||' '||c5 AS time, c6 AS req, c7 AS status, c8 as size "\ 
 "  FROM access.common.log"
+```
 
 ```ltsv
 host:92.129.44.198	ident:-	user:metz3917	time:[30/Dec/2019:17:02:27 +0900]	req:DELETE /infomediaries/e-markets HTTP/2.0	status:500	size:24843
