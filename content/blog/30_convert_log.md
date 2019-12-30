@@ -89,4 +89,4 @@ host:25.54.196.41	ident:-	user:-	time:[30/Dec/2019:17:13:22 +0900]	req:POST /har
 host:60.50.255.15	ident:-	user:-	time:[30/Dec/2019:17:13:22 +0900]	req:PATCH /end-to-end HTTP/2.0	status:405	size:3834	refer:http://www.district24/365.net/schemas	ua:Mozilla/5.0 (iPad; CPU OS 7_2_1 like Mac OS X; en-US) AppleWebKit/532.17.5 (KHTML, like Gecko) Version/5.0.5 Mobile/8B119 Safari/6532.17.5
 host:56.46.161.47	ident:-	user:-	time:[30/Dec/2019:17:13:22 +0900]	req:PATCH /architect/turn-key/clicks-and-mortar/killer HTTP/1.1	status:304	size:63656	refer:http://www.principalbest-of-breed.com/morph/magnetic/turn-key/cross-media	ua:Mozilla/5.0 (Windows NT 5.2; en-US; rv:1.9.3.20) Gecko/1931-04-08 Firefox/36.0
 host:48.195.162.51	ident:-	user:-	time:[30/Dec/2019:17:13:22 +0900]	req:PATCH /enhance/extend HTTP/2.0	status:405	size:13091	refer:http://www.districtmorph.name/customized/cutting-edge	ua:Opera/10.97 (X11; Linux i686; en-US) Presto/2.8.259 Version/10.00
-````
+```
