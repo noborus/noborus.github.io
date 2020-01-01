@@ -41,11 +41,48 @@ dsnの項目には以下が指定できます。デフォルトの場合は省�
 
 項目=値をスペース区切りで指定します。
 
+### DSN指定
+
 例えば、ローカルホストのportが5433でデータベース名がtrdsql_testに接続するには以下のようにします。
 
 ```sh
-trdsql -driver postgres -dsn "host=localhost port=5433 dbname=trdsql_test" "SELECT 1"
+trdsql -driver postgres -dsn "host=localhost port=5433 dbname=trdsql_test" \
+"SELECT 1"
 ```
+
+### Unixドメインソケット
+
+Unixドメインソケットへ接続もできます。
+
+パッケージ等でPostgreSQLをインストールすると以下のような場所にUnixドメインソケットファイルが作成されています。
+
+```path
+/var/run/postgresql/.s.PGSQL.5432
+```
+
+上記の場合、hostに`/var/run/postgresql/`を指定します。「`/`」から始まるとUnixドメインソケットとみなされます。portは`.s.PGSQL.`の後にある「5432」を指定します。
+
+```sh
+trdsql -driver postgres -dsn "host=/var/run/postgresql/ port=5432 dbname=trdsql_test" \
+"SELECT VERSION()"
+"PostgreSQL 10.10 (Ubuntu 10.10-0ubuntu0.18.04.1) on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 7.4.0-1ubuntu1~18.04.1) 7.4.0, 64-bit"
+```
+
+ソースからインストールした場合のデフォルトは、/tmp/にUnixドメインソケットが作成されています。
+
+```path
+/tmp/.s.PGSQL.5120
+```
+
+というファイルがあれば、以下のようにして接続します。
+
+```sh
+trdsql -driver postgres -dsn "host=/tmp/ port=5120 dbname=postgres" \
+"SELECT VERSION()"
+"PostgreSQL 12.0 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 7.4.0-1ubuntu1~18.04.1) 7.4.0, 64-bit"
+```
+
+### 他のドライバとの違い
 
 接続できれば、これまでと同じようにSQLが実行できますが、実際に実行されるのはPostgreSQL上なので、PostgreSQLが実行できるSQLを書く必要があります。
 
@@ -85,7 +122,9 @@ trdsql -driver postgres -dsn "host=localhost dbname=trdsql_test" -ih "SELECT \"n
 
 日頃PostgreSQLを使っている方は、慣れた文法で書くことができますが、PostgreSQLに接続して使用するメリットはこれだけではありません。
 
-また、trdsqlは対象のファイルが無くてもSQLの実行するようになっているため、実際のテーブルに対してSQLの実行が出来ます。そして、出力フォーマットの指定はそのまま有効なため、豊富なフォーマットに出力できるデータベースクライアントとして使用できます。
+### 実テーブルの出力
+
+trdsqlは対象のファイルが無くてもSQLの実行するようになっているため、実際のテーブルに対してSQLの実行が出来ます。そして、出力フォーマットの指定はそのまま有効なため、豊富なフォーマットに出力できるデータベースクライアントとして使用できます。
 
 例えば実際のテーブルをMarkDownで出力することも簡単にできます。
 
