@@ -50,11 +50,11 @@ trdsql -driver postgres -dsn "host=localhost port=5433 dbname=trdsql_test" \
 "SELECT 1"
 ```
 
-### Unixドメインソケット
+### UNIXドメインソケット
 
-Unixドメインソケットへ接続もできます。
+UNIXドメインソケットへ接続もできます。
 
-パッケージ等でPostgreSQLをインストールすると以下のような場所にUnixドメインソケットファイルが作成されています。
+パッケージ等でPostgreSQLをインストールすると以下のような場所にUNIXドメインソケットファイルが作成されています。
 
 ```path
 /var/run/postgresql/.s.PGSQL.5432

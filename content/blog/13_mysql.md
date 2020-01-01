@@ -23,24 +23,45 @@ MySQLに接続するには動作しているMySQLサーバーが必要です。�
 
 MySQLのdsnは以下のような形式です。
 
-```
+```dsn
 ユーザー名:パスワード@プロトコル(ホスト名:ポート番号)/データベース名?param=value
 ```
 
-param=valueのパラメーターは多くの種類がありますので、MySQLのマニュアルを参照して下さい。
+param=valueのパラメーターは多くの種類がありますので、[go-sql-driver](https://github.com/go-sql-driver/mysql#dsn-data-source-name)を参照して下さい。
 
-ローカルホストのUNIXドメインソケットを使用する場合は、ユーザー名、パスワード、データベース名を指定すれば接続できます。
+### UNIXドメインソケット
+
+ローカルホストのデフォルトのUNIXドメインソケットを使用する場合は、ユーザー名、パスワード、データベース名を指定すれば接続できます。
 
 ```sh
 trdsql -driver mysql -dsn "noborus:noborus@/trdsql_test" "SELECT 1"
 ```
+
+UNIXドメインソケットのパスを指定するには、プロトコルにunixを指定して、`unix(パス)`で指定します。
+
+```sh
+trdsql -driver mysql -dsn "noborus:noborus@unix(/var/run/mysqld/mysqld.sock)/trdsql_test" \
+"SELECT 1"
+```
+
+### TCP接続
+
+TCPはプロトコルにtcpを指定して、`tcp(ホスト名:ポート番号)`を指定します。
+
+```sh
+trdsql -driver mysql -dsn "noborus:noborus@tcp(localhost:3306)/trdsql_test" \
+"SELECT 1"
+```
+
+### 実テーブルの出力
 
 接続できれば、これまでと同じようにSQLが実行できますが、実際に実行されるのはMySQL上なので、MySQLが実行できるSQLを書く必要があります。
 
 前回のPostgreSQLと同様にMySQLのテーブルに対してSQLを実行し、オプションで指定したフォーマットで出力することが出来ます。
 
 ```sh
-trdsql -driver mysql -dsn "noborus:noborus@/trdsql_test" -oat -ih "SELECT * FROM actor LIMIT 10"
+trdsql -driver mysql -dsn "noborus:noborus@/trdsql_test" -oat -ih \
+"SELECT * FROM actor LIMIT 10"
 +----------+------------+--------------+---------------------+
 | actor_id | first_name |  last_name   |     last_update     |
 +----------+------------+--------------+---------------------+
