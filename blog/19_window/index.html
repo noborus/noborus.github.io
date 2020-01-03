@@ -7,13 +7,25 @@
 <a href=/tags/sql class=muted-link><span class="Label Label--gray">sql</span></a>
 <a href=/tags/window%E9%96%A2%E6%95%B0 class=muted-link><span class="Label Label--gray">window関数</span></a><div class=float-md-right><span title="Lastmod: 2019-12-19. Published at: 2019-12-19.">Published: 2019-12-19</span></div></div></div><article><section class="pb-6 mb-3 border-bottom"><p>これまで<a href=../07_group>グループ集計</a>による集計を紹介していますが、グループ集計は元の行とはまったく別にグループ毎の行を出力していました。
 つまり、元のファイルとは別に集計の結果を出力していた訳です。</p><p>そうではなくて、元のファイルの情報にプラスして集計結果を出して欲しい場合があります。
-例えば、点数の列では、点数の平均との差を出力したり、柔軟な計算が出来るようになります。これまでの方法では、一旦集計してからJOINするしかありませんでしたが、SQLのWindow関数を使うとそういった集計も出すことが出来ます。</p><p>古いバージョンではSQLite3では、Window関数を使用できませんでしたが、現在のtrdsqlに含まれているSQLite3では、Window関数を使用できます。</p><p>PostgreSQLやMySQLでもWindow関数が使用できますが、MySQLは8.0からなので、注意が必要です。</p><h2 id=平均との差>平均との差</h2><p>例えば、以下のような点数のCSVについて</p><div class=highlight><pre class=chroma><code class=language-score.csv data-lang=score.csv>id,class,name,score
+例えば、点数の列では、点数の平均との差を出力したり、柔軟な計算が出来るようになります。これまでの方法では、一旦集計してからJOINするしかありませんでしたが、SQLのWindow関数を使うとそういった集計も出すことが出来ます。</p><p>古いバージョンではSQLite3では、Window関数を使用できませんでしたが、現在のtrdsqlに含まれているSQLite3では、Window関数を使用できます。</p><p>PostgreSQLやMySQLでもWindow関数が使用できますが、MySQLは8.0からなので、注意が必要です。</p><h2 id=合計の表示>合計の表示</h2><p>合計の計算は<a href=/blog/06_calculation>集計計算</a>で出しましたが、最後の結果のみを出力していました。
+Window関数では、行毎に結果を表示できます。</p><p>例えば、以下のような点数のCSVについて結果を表示してみます。</p><div class=highlight><pre class=chroma><code class=language-score.csv data-lang=score.csv>id,class,name,score
 1,A,bob,174
 2,A,alice,248
 3,A,carol,163
 4,B,dave,289
 5,B,eve,157
-6,B,flank,272</code></pre></div><p>平均はavg(score)で求められますが、集約関数だと1行のみの出力になりまが、Window関数を使用して平均との差を表示させると以下のようになります。</p><div class=highlight><pre class=chroma><code class=language-sh data-lang=sh>trdsql -ih -omd <span class=se>\
+6,B,flank,272</code></pre></div><p>Window関数は集約関数の関数に<code>OVER ()</code>句を付けることにより範囲や、順序を指定することにより計算をおこないます。
+<code>OVER ()</code>句があることで、他の列とは独立して対象の行以外を計算できます。</p><p><code>OVER()</code>句を空で指定すると全行が対象となります。</p><div class=highlight><pre class=chroma><code class=language-sh data-lang=sh>trdsql -ih -omd <span class=se>\
+</span><span class=se></span><span class=s2>&#34;SELECT id,name,score, SUM(CAST(score AS int)) OVER () FROM score.csv&#34;</span>
+<span class=p>|</span> id <span class=p>|</span> name  <span class=p>|</span> score <span class=p>|</span> sum  <span class=p>|</span>
+<span class=p>|</span>----<span class=p>|</span>-------<span class=p>|</span>-------<span class=p>|</span>------<span class=p>|</span>
+<span class=p>|</span>  <span class=m>1</span> <span class=p>|</span> bob   <span class=p>|</span>   <span class=m>174</span> <span class=p>|</span> <span class=m>1303</span> <span class=p>|</span>
+<span class=p>|</span>  <span class=m>2</span> <span class=p>|</span> alice <span class=p>|</span>   <span class=m>248</span> <span class=p>|</span> <span class=m>1303</span> <span class=p>|</span>
+<span class=p>|</span>  <span class=m>3</span> <span class=p>|</span> carol <span class=p>|</span>   <span class=m>163</span> <span class=p>|</span> <span class=m>1303</span> <span class=p>|</span>
+<span class=p>|</span>  <span class=m>4</span> <span class=p>|</span> dave  <span class=p>|</span>   <span class=m>289</span> <span class=p>|</span> <span class=m>1303</span> <span class=p>|</span>
+<span class=p>|</span>  <span class=m>5</span> <span class=p>|</span> eve   <span class=p>|</span>   <span class=m>157</span> <span class=p>|</span> <span class=m>1303</span> <span class=p>|</span>
+<span class=p>|</span>  <span class=m>6</span> <span class=p>|</span> flank <span class=p>|</span>   <span class=m>272</span> <span class=p>|</span> <span class=m>1303</span> <span class=p>|</span></code></pre></div><p><code>SUM()</code>で合計が求められるので、<code>AVG()</code>で平均も求められます。</p><h2 id=平均との差>平均との差</h2><p>Window関数を使用した平均と対象の行との計算が可能です。
+差を表示させると以下のようになります。</p><div class=highlight><pre class=chroma><code class=language-sh data-lang=sh>trdsql -ih -omd <span class=se>\
 </span><span class=se></span><span class=s2>&#34;SELECT id,name,score,&#34;</span> <span class=se>\
 </span><span class=se></span>        <span class=s2>&#34;score - round(AVG(score) OVER()) AS 平均との差&#34;</span><span class=se>\
 </span><span class=se></span> <span class=s2>&#34; FROM score.csv&#34;</span>
@@ -24,8 +36,7 @@
 <span class=p>|</span>  <span class=m>3</span> <span class=p>|</span> carol <span class=p>|</span>   <span class=m>163</span> <span class=p>|</span>        -54 <span class=p>|</span>
 <span class=p>|</span>  <span class=m>4</span> <span class=p>|</span> dave  <span class=p>|</span>   <span class=m>289</span> <span class=p>|</span>         <span class=m>72</span> <span class=p>|</span>
 <span class=p>|</span>  <span class=m>5</span> <span class=p>|</span> eve   <span class=p>|</span>   <span class=m>157</span> <span class=p>|</span>        -60 <span class=p>|</span>
-<span class=p>|</span>  <span class=m>6</span> <span class=p>|</span> flank <span class=p>|</span>   <span class=m>272</span> <span class=p>|</span>         <span class=m>55</span> <span class=p>|</span></code></pre></div><p>round()は小数点以下を丸める関数です。</p><p>集約関数と違うのは、 「AVG(score) OVER()」のOVER()の部分で、範囲や順序を指定出来ます。今回は()で全体を範囲としています。
-これにより指定された範囲（今回は全体）の平均（今回は217)を求めて新しい列として使用できます。それをさらに scoreから引くことで平均との差を表示しています。</p><p>これまでのSQLでは、1行づつの処理か、グループ化しての処理どちらかだけだったのが、Window関数では行の範囲を決めて、その処理を各行ごとに求めることができます。</p><p>行の範囲の指定は「PARTITION BY」の後に「GROUP BY」で指定するような列が指定できます。</p><p>全体ではなく、class毎に変更して出力してみます。</p><div class=highlight><pre class=chroma><code class=language-sh data-lang=sh>trdsql -ih -omd <span class=se>\
+<span class=p>|</span>  <span class=m>6</span> <span class=p>|</span> flank <span class=p>|</span>   <span class=m>272</span> <span class=p>|</span>         <span class=m>55</span> <span class=p>|</span></code></pre></div><p>round()は小数点以下を丸める関数です。</p><p>これまでのSQLでは、1行づつの処理か、グループ化しての処理どちらかだけだったのが、Window関数では行の範囲を決めて、その処理を各行ごとに求められます。</p><p>行の範囲の指定は「PARTITION BY」の後に「GROUP BY」で指定するような列が指定できます。</p><p>全体ではなく、class毎に変更して出力してみます。</p><div class=highlight><pre class=chroma><code class=language-sh data-lang=sh>trdsql -ih -omd <span class=se>\
 </span><span class=se></span><span class=s2>&#34;SELECT id,class,name,score,&#34;</span> <span class=se>\
 </span><span class=se></span> <span class=s2>&#34;score - ROUND(avg(score) OVER(PARTITION BY class)) &#34;</span><span class=se>\
 </span><span class=se></span>  <span class=s2>&#34;AS 平均との差&#34;</span> <span class=se>\
@@ -55,7 +66,7 @@ name:orange	num:2</code></pre></div><p>上記のLTSVファイルに、ROW_NUMBER
 <span class=m>1</span>,orange,2
 <span class=m>2</span>,apple,3
 <span class=m>3</span>,banana,5
-<span class=m>4</span>,grape,10</code></pre></div><p>Window関数には、まだまだ多くの種類の関数があります。各データベースのマニュアルを参照して下さい。</p></section><section></section></article></div><div id=side class="pr-1 bg-white"><aside class=pr-3><div id=toc class="Box Box--blue mb-3"><b>trdsql window関数</b><nav id=TableOfContents><ul><li><a href=#平均との差>平均との差</a></li><li><a href=#行番号の付与>行番号の付与</a></li></ul></li></ul></nav></div><div><a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class=twitter-share-button data-show-count=false>Tweet</a><script async src=https://platform.twitter.com/widgets.js></script>
+<span class=m>4</span>,grape,10</code></pre></div><p>Window関数には、まだまだ多くの種類の関数があります。各データベースのマニュアルを参照して下さい。</p></section><section></section></article></div><div id=side class="pr-1 bg-white"><aside class=pr-3><div id=toc class="Box Box--blue mb-3"><b>trdsql window関数</b><nav id=TableOfContents><ul><li><a href=#合計の表示>合計の表示</a></li><li><a href=#平均との差>平均との差</a></li><li><a href=#行番号の付与>行番号の付与</a></li></ul></li></ul></nav></div><div><a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class=twitter-share-button data-show-count=false>Tweet</a><script async src=https://platform.twitter.com/widgets.js></script>
 <iframe src="https://www.facebook.com/plugins/share_button.php?href=https%3A%2F%2Fdevelopers.facebook.com%2Fdocs%2Fplugins%2F&layout=button&size=small&mobile_iframe=true&width=61&height=20&appId" width=61 height=20 style=border:none;overflow:hidden scrolling=no frameborder=0 allowtransparency=true allow=encrypted-media></iframe>
 <a href=http://b.hatena.ne.jp/entry/ class=hatena-bookmark-button data-hatena-bookmark-layout=basic-label-counter data-hatena-bookmark-lang=ja title=このエントリーをはてなブックマークに追加><img src=https://b.st-hatena.com/images/entry-button/button-only@2x.png alt=このエントリーをはてなブックマークに追加 width=20 height=20 style=border:none></a><script type=text/javascript src=https://b.st-hatena.com/js/bookmark_button.js async></script>
 <a data-pocket-label=pocket data-pocket-count=none class=pocket-btn data-lang=en></a><script type=text/javascript>!function(d,i){if(!d.getElementById(i)){var j=d.createElement("script");j.id=i;j.src="https://widgets.getpocket.com/v1/j/btn.js?v=1";var w=d.getElementById(i);d.body.appendChild(j);}}(document,"pocket-btn-js");</script></div></aside></div><div id=footer class="pt-2 pb-3 bg-white text-center"><span class="text-small text-gray">&copy;Noboru Saito 2019 &middot;
