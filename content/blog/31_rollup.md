@@ -154,3 +154,4 @@ trdsql -driver mysql -oat -ih \
 |    | dave,eve,flank                 | B     |   718 |
 |    | bob,alice,carol,dave,eve,flank |       |  1303 |
 +----+--------------------------------+-------+-------+
+```
