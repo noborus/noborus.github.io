@@ -16,7 +16,7 @@ categories = [
 ## GROUP集計
 
 全体の合計を計算することもありますが、グループ毎の合計をまとめて出力したい場合もあります。
-そこで使うのがGROUP BYです。
+そこで使うのが`GROUP BY`です。
 
 前回の例をもう一度使用します。
 
@@ -45,7 +45,7 @@ trdsql -ih \
 orange,130
 ```
 
-そこでGROUP BY を使ってnameをグループとして扱うことで、それぞれの集計結果を求めることができます。
+そこで`GROUP BY`を使ってnameをグループとして扱うことで、それぞれの集計結果を求めることができます。
 
 ```sh
 trdsql -ih \
@@ -60,8 +60,10 @@ orange,130
 
 ```sh
 trdsql -ih -oat \
-"SELECT name, COUNT(name) as count, MIN(CAST(price AS INT)) AS min,MAX(CAST(price AS INT)) as max, \
- SUM(CAST(price AS INT)) as sum,AVG(CAST(price AS INT)) as avg FROM sample.csv GROUP BY name"
+"SELECT name, COUNT(name) as count, MIN(CAST(price AS INT)) AS min, " \
+"       MAX(CAST(price AS INT)) as max, SUM(CAST(price AS INT)) as sum, " \
+"       AVG(CAST(price AS INT)) as avg " \
+"  FROM sample.csv GROUP BY name"
 +--------+-------+-----+-----+-----+--------------------+
 |  name  | count | min | max | sum |        avg         |
 +--------+-------+-----+-----+-----+--------------------+
@@ -75,9 +77,11 @@ GROUP集計した結果をORDER BYで並べ替えることもできます。
 
 ```sh
 trdsql -ih -oat \
-"SELECT name, COUNT(name) as count, MIN(CAST(price AS INT)) AS min,MAX(CAST(price AS INT)) as max, \
- SUM(CAST(price AS INT)) as sum,AVG(CAST(price AS INT)) as avg FROM sample.csv GROUP BY name \
- ORDER BY sum DESC"
+"SELECT name, COUNT(name) as count, MIN(CAST(price AS INT)) AS min," \
+      " MAX(CAST(price AS INT)) as max, SUM(CAST(price AS INT)) as sum, " \
+      " AVG(CAST(price AS INT)) as avg " \
+ " FROM sample.csv GROUP BY name " \
+" ORDER BY sum DESC"
 +--------+-------+-----+-----+-----+--------------------+
 |  name  | count | min | max | sum |        avg         |
 +--------+-------+-----+-----+-----+--------------------+
@@ -91,9 +95,12 @@ GROUP集計した結果についてWHEREで条件を指定することはでき�
 
 ```sh
 trdsql -ih -oat \
-"SELECT name, COUNT(name) as count, MIN(CAST(price AS INT)) AS min,MAX(CAST(price AS INT)) as max, \
- SUM(CAST(price AS INT)) as sum,AVG(CAST(price AS INT)) as avg FROM sample.csv \
- GROUP BY name HAVING COUNT(name) > 1 ORDER BY sum DESC"
+"SELECT name, COUNT(name) as count, MIN(CAST(price AS INT)) AS min, " \
+      " MAX(CAST(price AS INT)) as max, SUM(CAST(price AS INT)) as sum, " \
+      " AVG(CAST(price AS INT)) as avg " \
+ " FROM sample.csv" \
+" GROUP BY name " \
+      " HAVING COUNT(name) > 1 ORDER BY sum DESC"
 +--------+-------+-----+-----+-----+--------------------+
 |  name  | count | min | max | sum |        avg         |
 +--------+-------+-----+-----+-----+--------------------+
