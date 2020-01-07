@@ -44,3 +44,4 @@ CSV,LTSV,JSON,TBLNファイルにSQLを実行できるツールの[trdsql](https
 1. [generate_series](/blog/29_generate_series/)
 1. [既存のログを変換](/blog/30_convert_log/)
 1. [合計を行に追加する](/blog/31_rollup/)
+1. [CASE式](/blog/32_case/)

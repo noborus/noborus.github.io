@@ -5,7 +5,9 @@ date = "2020-01-04T13:38:00+09:00"
 description = ""
 tags = [
     "trdsql",
-    "sqlite3",
+    "MySQL",
+    "PostgreSQL",
+    "ROLLUP",
 ]
 categories = [
     "trdsql",
