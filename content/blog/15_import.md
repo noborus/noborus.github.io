@@ -23,6 +23,8 @@ trdsqlにはデータベースにインポートするオプションはあり�
 
 ## CREATE TABLE AS
 
+テーブルを作成してインポートするには `CREATE TABLE AS`を使用します。
+
 ### PostgreSQL で CREATE TABLE AS
 
 まず、PostgreSQLへデータをインポートしてみます。
@@ -99,7 +101,7 @@ trdsql -driver sqlite3 -dsn "trdsql_test" -ih \
 
 SQLite3では後から主キーを付けることができません。
 
-### INSERT
+## INSERT
 
 既にテーブルがあって、ファイルの内容をインポートしたい場合は、SELECTの前に `INSERT INTO テーブル名`を付けて、実行します。
 これは、ほぼデータベース共通です。

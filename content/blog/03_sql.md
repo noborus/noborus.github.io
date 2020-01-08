@@ -62,7 +62,7 @@ SQLには予約語があり、予約語を列名に使用する場合や小文�
 
 ここでExamplesの一つを実行してみます。
 
-```SQL
+```sh {hl_lines=[1]}
 trdsql -ih "SELECT id, \`name\` FROM header.csv"
 1,Orange
 2,Melon
@@ -77,7 +77,7 @@ trdsql -ih "SELECT id, \`name\` FROM header.csv"
 
 今度は、id,nameの順番を入れ替えて、name,idの順で出力してみます。
 
-```sh
+```sh {hl_lines=[1]}
 trdsql -ih "SELECT \`name\`,id FROM header.csv"
 Orange,1
 Melon,2
@@ -86,7 +86,7 @@ Apple,3
 
 そのまんまですね。ではidは必要ないのでnameのみを出力する場合はnameだけ残せば良いことになります。
 
-```sh
+```sh {hl_lines=[1]}
 trdsql -ih "SELECT \`name\` FROM header.csv"
 Orange
 Melon
@@ -100,14 +100,14 @@ Apple
 もう一つ、並べ替えることがあるとしたら行です。行の並べ替えは`ORDER BY 列名｀で出来ます。
 昇順（小さい→大きい）はASC（デフォルトなので省略可能）、降順（大きい→小さい）はDESCを付けます。
 
-```sh
+```sh {hl_lines=[1]}
 trdsql -ih "SELECT id, \`name\` FROM header.csv ORDER BY \`name\`"
 3,Apple
 2,Melon
 1,Orange
 ```
 
-```sh
+```sh {hl_lines=[1]}
 trdsql -ih "SELECT id, \`name\` FROM header.csv ORDER BY id DESC"
 3,Apple
 2,Melon
@@ -119,14 +119,14 @@ trdsqlではCSV、LTSV、JSON等の入力データはtext型として動作し�
 
 数値として扱うには、以下のようにSQLの`CAST(列名 AS 型名)`を使用します。
 
-```sh
+```sh {hl_lines=[1]}
 trdsql -ih "SELECT id,\`name\` FROM  header.csv  ORDER BY CAST(id AS int) DESC"
 ```
 
 さらに ORDER BY と組み合わせて、よく使用するのが`LIMIT`です。
 `LIMIT`は指定した件数のみ出力するように制限できます。一つだけ出力したいとか上位10件のみ出力したいときに使用します。
 
-```sh
+```sh {hl_lines=[1]}
 trdsql -ih "SELECT id,\`name\` FROM  header.csv  ORDER BY CAST(id AS int) DESC LIMIT 1"
 3,Apple
 ```
