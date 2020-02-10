@@ -22,7 +22,7 @@ categories = [
 
 サーバー側から`LOAD DATA LOCAL INFILE`に書いてあったファイル名とは違うファイル名を伝えられてもそのファイルを送信してしまう可能性があるため、セキュリティのリスクがあります。
 
-## go で MySQL の LOAD DATA INFILE
+## LOAD DATA LOCAL INFILE(go)
 
 [goのmysqlドライバ](https://github.com/go-sql-driver/mysql)では、[LOAD DATA LOCAL INFILE support](https://github.com/go-sql-driver/mysql#load-data-local-infile-support)にあるように
 `mysql.RegisterLocalFile(filepath)`や`mysql.RegisterReaderHandler(name, handler)`という関数が追加されていてセキュリティ上の問題を解決するような拡張がされています。
