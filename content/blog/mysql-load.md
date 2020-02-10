@@ -27,7 +27,7 @@ categories = [
 [goのmysqlドライバ](https://github.com/go-sql-driver/mysql)では、[LOAD DATA LOCAL INFILE support](https://github.com/go-sql-driver/mysql#load-data-local-infile-support)にあるように
 `mysql.RegisterLocalFile(filepath)`や`mysql.RegisterReaderHandler(name, handler)`という関数が追加されていてセキュリティ上の問題を解決するような拡張がされています。
 
-g`mysql.RegisterLocalFile(filepath)`は、`LOAD DATA LOCAL INFILE`を実行する前にあらかじめ送信するファイル名を登録しておいて、登録してあるファイルのみを送信することでリスクを軽減しています。
+`mysql.RegisterLocalFile(filepath)`は、`LOAD DATA LOCAL INFILE`を実行する前にあらかじめ送信するファイル名を登録しておいて、登録してあるファイルのみを送信することでリスクを軽減しています。
 
 ```go
 mysql.RegisterLocalFile("/tmp/test.csv")
@@ -82,12 +82,12 @@ goのSQLドライバはPREPARE文をサポートしているので、ExecのSQL�
 stmt, err := tx.Prepare("LOAD DATA LOCAL INFILE 'Data::Data' INTO TABLE test")
 ```
 
-のようにPrepara文でstatementを受け取りstatementに対して、
+のように`Prepara`文でstatementを受け取りstatementに対して、
 `stmt.Exec("column1", "column")`のように実行するのが良いかもしれません。
 
-いづれもINSERT文で実行されていた文を少し書き換えるだけで`LOAD DATA`を使用することが出来ます。
+どちらもINSERT文で実行されていた文を少し書き換えるだけで`LOAD DATA`を使用することが出来ます。
 
-ということで、上記を試しに実装してみたのが、以下になります。
+ということで、上記を試しに実装してみたのが、以下になります。まだPull Request前の状態です。
 
 https://github.com/go-sql-driver/mysql/compare/master...noborus:load_data_of_slice
 
@@ -150,6 +150,8 @@ func main() {
 ## MySQLのLOAD DATAの提案
 
 MySQLの`LOAD DATA LOCAL INFILE`はセキュリティの問題もあり、今後自分で設定しないと使用できなくなり、いつかは廃止されるかもしれません。
+
+この方法であれば、ファイルを開く場合もクライアント側で決定したファイルを開いて送信することになるため、LOCAL INFILEのセキュリティ問題は発生しません。
 
 `LOCAL INFILE`の仕組みには問題がありますので使用できない方向にするのは良いと思いますが、上記のようにファイル名を気にせずデータを送信する（`LOAD DATA LOCAL DATA`のような）構文を追加して`LOCAL INFILE`の設定と分けて利用できるようにならないでしょうか？
 
