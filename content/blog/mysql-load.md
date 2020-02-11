@@ -91,61 +91,11 @@ stmt, err := tx.Prepare("LOAD DATA LOCAL INFILE 'Data::Data' INTO TABLE test")
 
 https://github.com/go-sql-driver/mysql/compare/master...noborus:load_data_of_slice
 
-まだ問題が残っている可能性があり、書き方の流儀も元のmysqlドライバに合わせてない状態ですが、一応動作します。
+まだ問題が残っている可能性がありますが、一応動作します。
 
 動作するサンプルは以下になります。
 
-```go
-package main
-
-import (
-	"database/sql"
-
-	//_ "github.com/go-sql-driver/mysql"
-	_ "github.com/noborus/mysql"
-)
-
-func main() {
-	db, err := sql.Open("mysql", "root:@/gotest")
-	if err != nil {
-		panic(err.Error())
-	}
-	defer db.Close()
-	_, err = db.Exec("CREATE TABLE loadtest ( col1 text, col2 text );")
-	if err != nil {
-		panic(err.Error())
-	}
-
-	tx, err := db.Begin()
-	if err != nil {
-		panic(err.Error())
-	}
-	stmt, err := tx.Prepare("LOAD DATA LOCAL INFILE 'Data::Data' INTO TABLE loadtest;")
-	if err != nil {
-		panic(err.Error())
-	}
-	data := [][]interface{}{
-		{"test11", "test12"},
-		{"test21", "test22"},
-		{"test31", "test32"},
-	}
-	for _, row := range data {
-		_, err = stmt.Exec(row...)
-		if err != nil {
-			panic(err.Error())
-		}
-	}
-	_, err = stmt.Exec()
-	if err != nil {
-		panic(err.Error())
-	}
-	stmt.Close()
-	err = tx.Commit()
-	if err != nil {
-		panic(err.Error())
-	}
-}
-```
+{{< gist noborus 45672d1a3fcb8c9c5b484eff18f45a6d >}}
 
 ## MySQLのLOAD DATAの提案
 
