@@ -106,3 +106,24 @@ MySQLの`LOAD DATA LOCAL INFILE`はセキュリティの問題もあり、今後
 `LOCAL INFILE`の仕組みには問題がありますので使用できない方向にするのは良いと思いますが、上記のようにファイル名を気にせずデータを送信する（`LOAD DATA LOCAL DATA`のような）構文を追加して`LOCAL INFILE`の設定と分けて利用できるようにならないでしょうか？
 
 他の言語ドライバも上記のような（他の言語ではExecインターフェイスに合わせる必要が無ければもっと簡単に）実装できると思います。
+
+### 2020-02-13追記
+
+新しいクライアントのMySQL Shellでは、サーバー側が有効（`SELECT @@local_infile`;が1）でもSQLとしては、
+`ERROR: 3948 (42000): Loading local data is disabled; this must be enabled on both the client and server sides`
+とエラーとなる。
+
+その代わりMySQL Shellに[Parallel Table Import Utility](https://dev.mysql.com/doc/mysql-shell/8.0/en/mysql-shell-utilities-parallel-table.html)
+というのがあり、JavaScript mode(\js)（又はちょっと書式が変わるがPython mode）でimportTableによりパラレルインポートが可能になっている。
+
+```js
+util.importTable("test.csv", {"schema": "mydb", "table": "test", "dialect": "csv-unix", "skipRows": 1, "showProgress": true});
+```
+
+これは上記[マニュアル](https://dev.mysql.com/doc/mysql-shell/8.0/en/mysql-shell-utilities-parallel-table.html)に書いてあるように
+`LOAD DATA LOCAL INFILE`を内部で使用しているため、サーバー側で無効`SET GLOBAL local_infile=0`にした場合）使用することが出来ない。
+
+MySQL Shellでは、ファイル名の要求がきても無視されると記述されているので、セキュリティ上の問題は回避されています。
+ということで、MySQL Shellでもlocal_infileのセキュリティ問題に影響されて使いづらくなっているのは変更した方が良いと思うのですけど、
+（内部的に発行しているのであれば、別の構文が追加されても対応は簡単でしょうし）
+今後もこのままでしょうか？
