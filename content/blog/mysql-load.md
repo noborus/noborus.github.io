@@ -97,6 +97,12 @@ https://github.com/go-sql-driver/mysql/compare/master...noborus:load_data_of_sli
 
 {{< gist noborus 45672d1a3fcb8c9c5b484eff18f45a6d >}}
 
+### 2020-02-15追記
+
+整理して[Extension to help use `LOAD DATA LOCAL INFILE` #1060](https://github.com/go-sql-driver/mysql/pull/1060) という Pull Requestを送ってみました。
+
+変更内容が元の方向性に沿うものではないので、マージされるのは難しいかもしれません。
+
 ## MySQLのLOAD DATAの提案
 
 MySQLの`LOAD DATA LOCAL INFILE`はセキュリティの問題もあり、今後自分で設定しないと使用できなくなり、いつかは廃止されるかもしれません。
