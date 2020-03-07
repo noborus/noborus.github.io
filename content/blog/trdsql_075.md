@@ -11,7 +11,7 @@ categories = [
 ]
 +++
 
-# [trdsql 0.7.5をリリースしました。](https://github.com/noborus/trdsql/releases)
+## [trdsql 0.7.5をリリースしました。](https://github.com/noborus/trdsql/releases)
 
 [リリース](https://github.com/noborus/trdsql/releases/tag/v0.7.5)のページから各バイナリがダウンロードできます。
 
@@ -20,6 +20,8 @@ categories = [
 [trdsql 圧縮ファイル](../33_compression)に書いたように圧縮ファイルのサポートを増やしました。
 
 また、圧縮しての出力を出来るようにしました。
+
+### ファイルへの出力
 
 [trdsql output](../34_output)に書いたように出力ファイルを指定して出力出来るようになりました。
 
@@ -75,3 +77,9 @@ Output options:
   -ovf                Vertical format for output.
   -oz string          output compression format. [ gz | bz2 | zstd | lz4 | xz ]
 ```
+
+### 今回のリリース
+
+前回の[リリース](../trdsql_074)は、要望により出力形式を追加する形でしたが、今回は、まだあまり使用していないであろう圧縮形式のサポートを追加しました。
+今回は、「これからこれで使ってみて欲しい」という提案的なリリースです。
+出力ファイル名による推測を使用すると煩わしさが無いので、「圧縮しておいても良いかな」と思ってもらえるのではないかと思います。
