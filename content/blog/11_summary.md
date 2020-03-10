@@ -21,7 +21,7 @@ trdsqlの内部処理は、以下のようになっています。
 2. SQLの実行
 3. 指定された出力フォーマットで実行結果を出力
 
-![format](format.png)
+![format](../format.png)
 
 SQLの実行は実際のRDBMSを使用して実行されます（デフォルトではSQLite3のメモリデータベース)。
 
