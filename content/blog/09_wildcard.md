@@ -8,6 +8,10 @@ tags = [
     "wildcard",
     "圧縮",
     "gz",
+    "bz2",
+    "zstd",
+    "lz4",
+    "xz",
 ]
 categories = [
     "trdsql",
@@ -31,9 +35,9 @@ trdsql -icsv "SELECT COUNT(*) FROM test*.csv"
 15
 ```
 
-## gzip圧縮
+## 圧縮ファイル
 
-また古いログファイルは圧縮されている場合があります。gzip圧縮であれば自動で伸長して実行します。
+また古いログファイルは圧縮されている場合があります。[gzip, bzip2, zstd, lz4, xz]圧縮であれば自動で伸長して実行します。
 
 ```sh
 trdsql -iltsv "SELECT * FROM access.log.2.gz"
@@ -48,13 +52,4 @@ access.log    access.log.1    access.log.2.gz
 
 ```sh
 trdsql -iltsv "SELECT * FROM access.log.*"
-```
-
-後述しますが、gzip圧縮以外の場合等、単純なワイルドカード指定では対応できない場合は、標準入力を使用して下さい。
-
-```sh
-zstdcat test.csv.zst|trdsql -icsv "SELECT * FROM -"
-apple,100
-orange,50
-potato,30
 ```
