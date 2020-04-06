@@ -34,6 +34,12 @@ CSV,LTSV,JSON,TBLNファイルにSQLを実行できるツール
 
 マークダウンテーブルに対してSQLを実行するツール
 
+### [oviewer](https://github.com/noborus/oviewer)
+
+Terminal PAGER
+
+less,moreのようなページャー
+
 ## 参加しているプロジェクト
 
 ### [jpug-doc](https://github.com/pgsql-jp/jpug-doc)
