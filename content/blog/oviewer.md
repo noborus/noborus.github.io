@@ -16,6 +16,16 @@ categories = [
 
 私が作成中の[Oviewer](https://github.com/noborus/oviewer)の紹介です。
 
+## インストール
+
+[Oviewer](https://github.com/noborus/oviewer) のリリースからバイナリもダウンロード出来ますが、今はまだ go getで最新をダウンロードして使うことをお勧めします。
+
+```console
+go get -u github.com/noborus/oviewer
+cd oviewer
+make install
+```
+
 ## 特徴
 
 lessやmoreのようなTerminal PAGERです。
