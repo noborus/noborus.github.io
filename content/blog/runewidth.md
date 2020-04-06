@@ -7,6 +7,7 @@ tags = [
     "runewidth",
     "go",
     "ambiguous width",
+    "gnome-terminal",
 ]
 categories = [
     "go",
