@@ -15,6 +15,10 @@ categories = [
 ]
 +++
 
+## 結論
+
+gnome-terminalを使用している場合は、設定の「曖昧幅の文字(W)」と環境変数`RUNEWIDTH_EASTASIAN`を一致させよう。
+
 ## Ambiguous width(曖昧幅)
 
 ターミナル上のアプリケーション(TUI)では、GUIと違って文字単位で描画されます。
