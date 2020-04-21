@@ -38,7 +38,9 @@ CSV,LTSV,JSON,TBLNファイルにSQLを実行できるツール
 
 Terminal PAGER
 
-less,moreのようなページャー
+高機能ページャーless,moreの代わりとしても動作。
+
+* [oviewerのBlog](blog/oviewer/)
 
 ## 参加しているプロジェクト
 

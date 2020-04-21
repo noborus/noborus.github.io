@@ -1,10 +1,11 @@
 +++
 author = "Noboru Saito"
 title = "Oviewer"
-date = "2020-04-06T21:50:00+09:00"
+date = "2020-04-21T14:50:00+09:00"
 description = ""
 tags = [
     "Oviewer",
+    "ov",
     "terminal pager",
 ]
 categories = [
@@ -28,7 +29,7 @@ make install
 
 ## 特徴
 
-lessやmoreのようなTerminal PAGERです。
+`less`や`more`のようなTerminal pagerです。
 
 * 圧縮(gzip, bzip2, zstd, lz4, xz)されているファイルをそのまま表示可能
 * より良いUnicodeのサポート。ターミナルで表示できる（フォントがあれば）結合文字も表示可能
