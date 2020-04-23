@@ -16,6 +16,14 @@ CSV,LTSV,JSON,TBLNファイルにSQLを実行できるツール
 * [trdsqlというコマンドラインツールを作った](https://qiita.com/noborus/items/f253961cca6f4465f20c)(Qiita)
 * [trdsqlのBlog](blog/00_index/)
 
+### [ov](https://github.com/noborus/ov)
+
+Terminal PAGER
+
+less,moreの代わりとしても動作する高機能ページャー。
+
+* [ovの紹介](blog/oviewer/)
+
 ### [tbln](https://github.com/noborus/tbln) 
 
 [![GoDoc](https://godoc.org/github.com/noborus/tbln?status.svg)](https://godoc.org/github.com/noborus/tbln)
@@ -33,14 +41,6 @@ CSV,LTSV,JSON,TBLNファイルにSQLを実行できるツール
 ### [mdtsql](https://github.com/noborus/mdtsql)
 
 マークダウンテーブルに対してSQLを実行するツール
-
-### [oviewer](https://github.com/noborus/oviewer)
-
-Terminal PAGER
-
-高機能ページャーless,moreの代わりとしても動作。
-
-* [oviewerのBlog](blog/oviewer/)
 
 ## 参加しているプロジェクト
 

@@ -15,16 +15,17 @@ categories = [
 ]
 +++
 
-私が作成中の[Oviewer](https://github.com/noborus/oviewer)の紹介です。
+私が作成中の[Oviewer](https://github.com/noborus/ov)の紹介です。
 
 ## インストール
 
-[Oviewer](https://github.com/noborus/oviewer) のリリースからバイナリもダウンロード出来ますが、今はまだ go getで最新をダウンロードして使うことをお勧めします。
+[Oviewer](https://github.com/noborus/ov) のリリースからバイナリもダウンロード出来ますが、今はまだ go getで最新をダウンロードして使うことをお勧めします。
 
 ```console
-go get -u github.com/noborus/oviewer
-cd oviewer
-make install
+go get -u github.com/noborus/ov
+cd ov
+make
+sudo make install
 ```
 
 ## 特徴
@@ -123,24 +124,24 @@ psqlでは環境変数PAGER又は(PostgreSQL Ver.11.0からは）PSQL_PAGERが�
 
 ### 折り返し／折り返さない (`w`)
 
-![wrap/nowrap](https://raw.githubusercontent.com/noborus/oviewer/master/docs/ov-wrap.gif)
+![wrap/nowrap](https://raw.githubusercontent.com/noborus/ov/master/docs/ov-wrap.gif)
 
 ### １行毎に背景色を付ける／付けない (`C`)
 
-![color enable/disable](https://raw.githubusercontent.com/noborus/oviewer/master/docs/ov-color.gif)
+![color enable/disable](https://raw.githubusercontent.com/noborus/ov/master/docs/ov-color.gif)
 
 ### 固定するヘッダーの行数指定 (`H`)
 
 入力モードになるので行数を入力する。
 
-![header](https://raw.githubusercontent.com/noborus/oviewer/master/docs/ov-header.gif)
+![header](https://raw.githubusercontent.com/noborus/ov/master/docs/ov-header.gif)
 
 ### 列モード (`c`)
 
 (`d`) で指定した区切り文字に囲まれた列として選択できるようになります。選択されている列がハイライト表示されます。
 wrap/nowapで動作が変わり、nowrapモードの場合は、選択した列が表示されるように横スクロールします。
 
-![column](https://raw.githubusercontent.com/noborus/oviewer/master/docs/ov-column.gif)
+![column](https://raw.githubusercontent.com/noborus/ov/master/docs/ov-column.gif)
 
 ## mysqlでの使用
 
