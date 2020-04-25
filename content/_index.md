@@ -23,6 +23,7 @@ Terminal PAGER
 less,moreの代わりとしても動作する高機能ページャー。
 
 * [ovの紹介](blog/oviewer/)
+* [ov(English)](blog/oviewer_en/)
 
 ### [tbln](https://github.com/noborus/tbln) 
 
