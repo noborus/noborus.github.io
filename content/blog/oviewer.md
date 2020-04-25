@@ -15,11 +15,11 @@ categories = [
 ]
 +++
 
-私が作成中の[Oviewer](https://github.com/noborus/ov)の紹介です。
+私が作成中の[OV - Oviewer](https://github.com/noborus/ov)の紹介です。
 
 ## インストール
 
-[Oviewer](https://github.com/noborus/ov) のリリースからバイナリもダウンロード出来ますが、今はまだ go getで最新をダウンロードして使うことをお勧めします。
+[ov](https://github.com/noborus/ov) のリリースからバイナリもダウンロード出来ますが、今はまだ go getで最新をダウンロードして使うことをお勧めします。
 
 ```console
 go get -u github.com/noborus/ov
@@ -35,7 +35,7 @@ sudo make install
 * 圧縮(gzip, bzip2, zstd, lz4, xz)されているファイルをそのまま表示可能
 * より良いUnicodeのサポート。ターミナルで表示できる（フォントがあれば）結合文字も表示可能
 * より良いワイド幅（全角文字）の対応
-* ヘッダーを行数を指定して固定可能
+* ヘッダーの行数を指定して固定可能
 * 行の折り返し／折り返さないを表示後に切替可能
 * 1行毎に背景色を付けることが可能
 * psqlやmysqlからの表示を考慮
@@ -145,7 +145,7 @@ wrap/nowapで動作が変わり、nowrapモードの場合は、選択した列�
 
 ## mysqlでの使用
 
-またmysqlからの使用されるPAGERとしても同様に使用できます。
+またmysqlから使用されるPAGERとしても同様に使用できます。
 
 ```console
 mysql -pager='ov -H3 -w=f -C -d "|"'
