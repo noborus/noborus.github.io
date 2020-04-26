@@ -24,8 +24,7 @@ categories = [
 ```console
 go get -u github.com/noborus/ov
 cd ov
-make
-sudo make install
+make install
 ```
 
 ## 特徴

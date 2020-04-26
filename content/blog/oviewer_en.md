@@ -23,9 +23,8 @@ but for now it is still recommended to go get and download the latest version.
 
 ```console
 go get -u github.com/noborus/ov
-cd oviewer
-make
-sudo make install
+cd ov
+make install
 ```
 
 ## Features
