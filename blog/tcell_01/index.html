@@ -1,0 +1,59 @@
+<!doctype html><html><head><script type=application/javascript>var doNotTrack=false;if(!doNotTrack){window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;ga('create','UA-136434199-2','auto');ga('send','pageview');}</script><script async src=https://www.google-analytics.com/analytics.js></script><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>tcellについて &ndash; Noboru Saito's page</title><meta name=description property="og:description" content="SetContent() goのTUIについてで書いたようにtcellのsetContent()は1文字設置していくのでASCIIの範囲内だと簡単ですが、Unicodeの世界では注意すべき点があります。 まず日本語などの全角幅の文字と半角幅の文字が混在すると全角幅のときには、次の文字は1つとばして設置する|Noboru Saito's site"><meta name=apple-mobile-web-app-title content="Noboru Saito's page"><link rel=icon href=/favicon-64.png><link rel=apple-touch-icon href=/apple-touch-icon.png><link rel=mask-icon size=any href=/pinned-icon.svg><meta name=twitter:card content="summary"><meta name=twitter:site content="@noborus"><meta name=twitter:creator content="@noborus"><meta name=twitter:title content="tcellについて | Noboru Saito's page"><meta name=twitter:description content="SetContent() goのTUIについてで書いたようにtcellのsetContent()は1文字設置していくのでASCIIの範囲内だと簡単ですが、Unicodeの世界では注意すべき点があります。 まず日本語などの全角幅の文字と半角幅の文字が混在すると全角幅のときには、次の文字は1つとばして設置する|Noboru Saito's site"><meta name=twitter:image content="https://noborus.github.io/twitter-card.png"><link rel=stylesheet href=/assets/syntax.css><link rel=stylesheet href=/assets/primer-build.css><link rel=stylesheet href=/assets/style.css><link rel=stylesheet href=/assets/custom.css><link rel=stylesheet href="https://fonts.googleapis.com/icon?family=Material+Icons"></head><body class=bg-gray><div id=holy class="container-lg bg-white h-100"><div id=header class="px-1 bg-white"><nav class="UnderlineNav UnderlineNav--right px-2"><a class="UnderlineNav-actions muted-link h2" href=https://noborus.github.io/>Noboru Saito's page</a><div class=UnderlineNav-body><a class=UnderlineNav-item href=/><span>Top</span></a>
+<a class=UnderlineNav-item href=/trdsql/><span>trdsql 目次</span></a>
+<a class=UnderlineNav-item href=/blog/><span>Blog</span></a>
+<a class=UnderlineNav-item href=/about/><span>About</span></a></div></nav></div><div role=main id=main class="holy-main markdown-body px-4 bg-white"><div class=Subhead><div class=Subhead-heading><div class="h1 mt-3 mb-1">tcellについて</div></div><div class=Subhead-description><a href=/categories/go class=muted-link><span class="Label Label--gray-darker">go</span></a>
+<a href=/categories/tui class=muted-link><span class="Label Label--gray-darker">tui</span></a>
+<a href=/tags/tcell class=muted-link><span class="Label Label--gray">tcell</span></a>
+<a href=/tags/go class=muted-link><span class="Label Label--gray">go</span></a>
+<a href=/tags/tui class=muted-link><span class="Label Label--gray">tui</span></a><div class=float-md-right><span title="Lastmod: 2020-05-13. Published at: 2020-05-13.">Published: 2020-05-13</span></div></div></div><article><section class="pb-6 mb-3 border-bottom"><h2 id=setcontent>SetContent()</h2><p><a href=../go_tui>goのTUIについて</a>で書いたように<a href=https://github.com/gdamore/tcell>tcell</a>のsetContent()は1文字設置していくのでASCIIの範囲内だと簡単ですが、Unicodeの世界では注意すべき点があります。</p><p>まず日本語などの全角幅の文字と半角幅の文字が混在すると全角幅のときには、次の文字は1つとばして設置するといったことが必要になります。</p><p>単純に実装する場合は<code>runewidth.RuneWidth()</code>を使用すれば、runeの文字幅を0,1,2で返してくれるので、その分xをずらせば表示されます。以下が実装例です。文字列を渡せる<code>setContents()</code>で処理しています。</p><div class=highlight><pre class=chroma><code class=language-go data-lang=go><span class=kn>package</span> <span class=nx>main</span>
+
+<span class=kn>import</span> <span class=p>(</span>
+	<span class=s>&#34;log&#34;</span>
+
+	<span class=s>&#34;github.com/gdamore/tcell&#34;</span>
+	<span class=s>&#34;github.com/mattn/go-runewidth&#34;</span>
+<span class=p>)</span>
+
+<span class=kd>func</span> <span class=nf>setContents</span><span class=p>(</span><span class=nx>screen</span> <span class=nx>tcell</span><span class=p>.</span><span class=nx>Screen</span><span class=p>,</span> <span class=nx>x</span> <span class=kt>int</span><span class=p>,</span> <span class=nx>y</span> <span class=kt>int</span><span class=p>,</span> <span class=nx>str</span> <span class=kt>string</span><span class=p>,</span> <span class=nx>style</span> <span class=nx>tcell</span><span class=p>.</span><span class=nx>Style</span><span class=p>)</span> <span class=p>{</span>
+	<span class=k>for</span> <span class=nx>_</span><span class=p>,</span> <span class=nx>r</span> <span class=o>:=</span> <span class=k>range</span> <span class=nx>str</span> <span class=p>{</span>
+		<span class=nx>screen</span><span class=p>.</span><span class=nf>SetContent</span><span class=p>(</span><span class=nx>x</span><span class=p>,</span> <span class=nx>y</span><span class=p>,</span> <span class=nx>r</span><span class=p>,</span> <span class=kc>nil</span><span class=p>,</span> <span class=nx>style</span><span class=p>)</span>
+		<span class=nx>x</span> <span class=o>+=</span> <span class=nx>runewidth</span><span class=p>.</span><span class=nf>RuneWidth</span><span class=p>(</span><span class=nx>r</span><span class=p>)</span>
+	<span class=p>}</span>
+<span class=p>}</span>
+
+<span class=kd>func</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+	<span class=nx>screen</span><span class=p>,</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>tcell</span><span class=p>.</span><span class=nf>NewScreen</span><span class=p>(</span><span class=p>)</span>
+	<span class=k>if</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+		<span class=nx>log</span><span class=p>.</span><span class=nf>Fatal</span><span class=p>(</span><span class=nx>err</span><span class=p>)</span>
+	<span class=p>}</span>
+	<span class=k>if</span> <span class=nx>err</span> <span class=p>=</span> <span class=nx>screen</span><span class=p>.</span><span class=nf>Init</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+		<span class=nx>log</span><span class=p>.</span><span class=nf>Fatal</span><span class=p>(</span><span class=nx>err</span><span class=p>)</span>
+	<span class=p>}</span>
+	<span class=k>defer</span> <span class=nx>screen</span><span class=p>.</span><span class=nf>Fini</span><span class=p>(</span><span class=p>)</span>
+
+	<span class=nf>setContents</span><span class=p>(</span><span class=nx>screen</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=mi>10</span><span class=p>,</span> <span class=s>&#34;あいうえお&#34;</span><span class=p>,</span> <span class=nx>tcell</span><span class=p>.</span><span class=nx>StyleDefault</span><span class=p>)</span>
+	<span class=nx>screen</span><span class=p>.</span><span class=nf>Show</span><span class=p>(</span><span class=p>)</span>
+
+	<span class=nx>quit</span> <span class=o>:=</span> <span class=nb>make</span><span class=p>(</span><span class=kd>chan</span> <span class=kd>struct</span><span class=p>{</span><span class=p>}</span><span class=p>)</span>
+	<span class=k>go</span> <span class=kd>func</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+		<span class=k>for</span> <span class=p>{</span>
+			<span class=nx>ev</span> <span class=o>:=</span> <span class=nx>screen</span><span class=p>.</span><span class=nf>PollEvent</span><span class=p>(</span><span class=p>)</span>
+			<span class=k>switch</span> <span class=nx>ev</span><span class=p>.</span><span class=p>(</span><span class=kd>type</span><span class=p>)</span> <span class=p>{</span>
+			<span class=k>case</span> <span class=o>*</span><span class=nx>tcell</span><span class=p>.</span><span class=nx>EventKey</span><span class=p>:</span>
+				<span class=nb>close</span><span class=p>(</span><span class=nx>quit</span><span class=p>)</span>
+			<span class=p>}</span>
+		<span class=p>}</span>
+	<span class=p>}</span><span class=p>(</span><span class=p>)</span>
+	<span class=o>&lt;-</span><span class=nx>quit</span>
+<span class=p>}</span>
+</code></pre></div><p>上記では結合文字は無視されて表示されます。結合文字を出したい場合は、文字列をループしている中でruneが結合文字のコード範囲だった場合には、<strong>前の文字</strong>のcombcに入れた上で<code>SetContent()</code>を実行する必要があります。</p><p>また、<code>runewidth.RuneWidth()</code>で、0幅と出る文字の中にはタブ（<code>\t</code>）等、アプリケーションによって判断が変わる文字もあります。</p><p>さらに <a href=../runewidth>GoのTUIで表示が崩れる場合</a>で書いたように<a href=https://github.com/mattn/go-runewidth>go-runewidth</a>では、曖昧幅がロケールや環境変数<code>RUNEWIDTH_EASTASIAN</code>で変わる文字幅があるので注意が必要です。</p><h3 id=style>Style</h3><p>tcellでは、<code>SetContent()</code>の中でスタイルを指定します。</p><p>通常端末ではエスケープシーケンスにより色等を変更しますが、エスケープシーケンスでは色指定した後は別の色指定やリセットするまで、その色が続く仕様でした。</p><p>tcellでは、<code>SetContent()</code>の中でスタイルをtcell独自の値で指定すれば良いので明確です。
+色は<a href="https://pkg.go.dev/github.com/gdamore/tcell?tab=doc#Color">tcellの定数</a>で定義されているので、エスケープシーケンスよりも扱うのは簡単だと思います。</p><p>たとえば赤い文字で出したい場合は、<code>tcell.StyleDefault</code>を<code>tcell.StyleDefault.Foreground(tcell.ColorRed)</code>に変更するだけです。</p><p>ただし、使用できる色数は端末環境により異なります。16色から24ビットカラーが出せる端末まであり、tcellは24ビットカラーもサポートしています。</p><p>多くの端末で動くことを想定するTUIの場合は16色の範囲内で指定することが多いです。
+ただ、16色だと原色が多く使用されるためケバケバしい印象になります。
+そこで、端末の環境によっては設定によりパレットを用意して16色の色を変更できるようにしている場合があります。</p><p><img src=../palette.png alt=パレット></p><p>この様に指定してあると16色の中の赤をエスケープシーケンスで指定しても原色の赤とは違う色にして見やすくカスタマイズができるようになっています。</p><p>ところが、tcellでは24ビットカラーをサポートしているため、さまざまな赤が出せる一方<code>tcell.ColorRed</code>は原色の赤で表示されます。</p><p>TUIアプリケーションで、それほど多く色を使わない場合はパレットの色を尊重した方が使う人に優しいと思います。その場合は、環境変数<code>TCELL_TRUECOLOR</code>を<code>disable</code>にセットしておくとパレットの方を使用します。</p><pre><code class=language-console data-lang=console>export TCELL_TRUECOLOR=disable
+</code></pre><p>アプリケーションによってはプログラム内でセットしておくと良いでしょう。</p></section><section></section></article></div><div id=side class="pr-1 bg-white"><aside class=pr-3><div id=toc class="Box Box--blue mb-3"><b>tcellについて</b><nav id=TableOfContents><ul><li><a href=#setcontent>SetContent()</a><ul><li><a href=#style>Style</a></li></ul></li></ul></nav></div><div><a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class=twitter-share-button data-show-count=false>Tweet</a><script async src=https://platform.twitter.com/widgets.js></script>
+<iframe src="https://www.facebook.com/plugins/share_button.php?href=https%3A%2F%2Fdevelopers.facebook.com%2Fdocs%2Fplugins%2F&layout=button&size=small&mobile_iframe=true&width=61&height=20&appId" width=61 height=20 style=border:none;overflow:hidden scrolling=no frameborder=0 allowtransparency=true allow=encrypted-media></iframe>
+<a href=http://b.hatena.ne.jp/entry/ class=hatena-bookmark-button data-hatena-bookmark-layout=basic-label-counter data-hatena-bookmark-lang=ja title=このエントリーをはてなブックマークに追加><img src=https://b.st-hatena.com/images/entry-button/button-only@2x.png alt=このエントリーをはてなブックマークに追加 width=20 height=20 style=border:none></a><script type=text/javascript src=https://b.st-hatena.com/js/bookmark_button.js async></script>
+<a data-pocket-label=pocket data-pocket-count=none class=pocket-btn data-lang=en></a><script type=text/javascript>!function(d,i){if(!d.getElementById(i)){var j=d.createElement("script");j.id=i;j.src="https://widgets.getpocket.com/v1/j/btn.js?v=1";var w=d.getElementById(i);d.body.appendChild(j);}}(document,"pocket-btn-js");</script></div></aside></div><div id=footer class="pt-2 pb-3 bg-white text-center"><span class="text-small text-gray">©Noboru Saito 2019 &#183;
+Powered by the
+<a href=https://github.com/qqhann/hugo-primer class=link-gray-dark>Hugo-Primer</a> theme for
+<a href=https://gohugo.io class=link-gray-dark>Hugo</a>.</span></div></div><script type=text/javascript src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><script type=text/x-mathjax-config>MathJax.Hub.Config({ tex2jax: { inlineMath: [['$','$'], ['\\(','\\)']] } });</script></body></html>
