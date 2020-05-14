@@ -9,6 +9,7 @@ tags = [
     "tcell",
 ]
 categories = [
+    "go",
     "tui",
 ]
 +++

@@ -16,7 +16,7 @@ categories = [
 
 ## SetContent()
 
-[goのTUIについて](../go_tui)で書いたように[tcell](https://github.com/gdamore/tcell)のsetContent()は1文字設置していくのでASCIIの範囲内だと簡単ですが、Unicodeの世界では注意すべき点があります。
+[goのTUIについて](../go_tui)で書いたように[tcell](https://github.com/gdamore/tcell)のSetContent()は1文字設置していくのでASCIIの範囲内だと簡単ですが、Unicodeの世界では注意すべき点があります。
 
 まず日本語などの全角幅の文字と半角幅の文字が混在すると全角幅のときには、次の文字は1つとばして設置するといったことが必要になります。
 
