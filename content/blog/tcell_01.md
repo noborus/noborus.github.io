@@ -116,5 +116,6 @@ echo "白\e[31m赤\e[0m白"
 残念ながらエスケープシーケンスを解釈してくれる関数は含まれていないので、自分で実装する必要があります。
 エスケープシーケンスの解釈自体はそれほど難しくないので、1文字づつ見ていきエスケープシーケンスの開始で処理を入れることで可能になります。
 
-同様なことをしている処理はいくつかありますが、拙作の[ov](https://github.com/noborus/ov)の中でも[解釈してスタイルに変換](https://github.com/noborus/ov/blob/d388725bf3559f88af5cd9c71e8ffaf4a19b75a6/internal/oviewer/model.go#L250)しています。
+同様なことをしている処理はいくつかありますが、[tviewのansi.go](https://github.com/rivo/tview/blob/master/ansi.go)で、エスケープシーケンスをパースしています（こちらは、tviewの記法に変換）。
 
+また、拙作の[ov](https://github.com/noborus/ov)の中でも[解釈してスタイルに変換](https://github.com/noborus/ov/blob/d388725bf3559f88af5cd9c71e8ffaf4a19b75a6/internal/oviewer/model.go#L250)しています。
