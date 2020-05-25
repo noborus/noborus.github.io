@@ -10,7 +10,6 @@ tags = [
 ]
 categories = [
     "trdsql",
-    "advent calendar 2019",
 ]
 +++
 

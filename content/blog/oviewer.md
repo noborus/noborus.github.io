@@ -4,14 +4,11 @@ title = "ov"
 date = "2020-04-21T14:50:00+09:00"
 description = ""
 tags = [
-    "Oviewer",
     "ov",
     "terminal pager",
 ]
 categories = [
-    "Oviewer",
-    "go",
-    "tcell",
+    "ov",
 ]
 +++
 
