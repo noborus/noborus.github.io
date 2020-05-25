@@ -1,6 +1,6 @@
 +++
 author = "Noboru Saito"
-title = "Oviewer"
+title = "ov"
 date = "2020-04-21T14:50:00+09:00"
 description = ""
 tags = [
@@ -15,7 +15,7 @@ categories = [
 ]
 +++
 
-私が作成中の[ov - Oviewer](https://github.com/noborus/ov)の紹介です。
+私が作成中の[ov](https://github.com/noborus/ov)の紹介です。
 
 最初Oviewerというレポジトリ名でしたが、コマンド名に合わせるように`ov`に変更しました。
 
@@ -47,7 +47,10 @@ make install
 環境変数PAGERに設定して使用しても問題なく使えることを目指しています。
 
 現在はUTF-8のテキストを対象にしています。
-また、manのpagerとしては、問題があるので、MANPAGERは別途指定する必要があります。
+
+~~また、manのpagerとしては、問題があるので、MANPAGERは別途指定する必要があります。~~
+
+※ 2020/5/25 追記 v0.2.0からMANPAGERとしても使用できるようになりました。
 
 ### 実装の特徴
 
@@ -74,7 +77,7 @@ cat filename|ov
 
 ```console
 $ ov --help
-Oviewer is a feature rich pager(such as more/less).
+ov is a feature rich pager(such as more/less).
 It supports various compressed files(gzip, bzip2, zstd, lz4, and xz).
 
 Usage:
@@ -90,6 +93,7 @@ Flags:
   -X, --exit-write                output the current screen when exiting
   -H, --header int                number of header rows to fix
   -h, --help                      help for ov
+  -n, --line-number               line number
   -F, --quit-if-one-screen        quit if the output fits on one screen
   -x, --tab-width int             tab stop width (default 8)
   -v, --version                   display version information
@@ -125,26 +129,30 @@ psqlでは環境変数PAGER又は（PostgreSQL Ver.11.0からは）PSQL_PAGERが
 
 これは起動時の動作のため、起動後以下のように切り替えることが可能です（`-F` は終了時に必ず書く設定なので、`-F`を付けずに起動すれば、`q`で書き出さないで終了（クリアする）、`Q`で書き出して終了する、というような動作になります。
 
-### 折り返し／折り返さない (`w`)
+### 折り返し／折り返さない(w)
 
 ![wrap/nowrap](https://raw.githubusercontent.com/noborus/ov/master/docs/ov-wrap.gif)
 
-### 1行毎に背景色を付ける／付けない (`C`)
+### 1行毎に背景色を付ける／付けない(C)
 
 ![color enable/disable](https://raw.githubusercontent.com/noborus/ov/master/docs/ov-color.gif)
 
-### 固定するヘッダーの行数指定 (`H`)
+### 固定するヘッダーの行数指定 (H)
 
 入力モードになるので行数を入力する。
 
 ![header](https://raw.githubusercontent.com/noborus/ov/master/docs/ov-header.gif)
 
-### 列モード (`c`)
+### 列モード(c)
 
 (`d`) で指定した区切り文字に囲まれた列として選択できるようになります。選択されている列がハイライト表示されます。
 wrap/nowapで動作が変わり、nowrapモードの場合は、選択した列が表示されるように横スクロールします。
 
 ![column](https://raw.githubusercontent.com/noborus/ov/master/docs/ov-column.gif)
+
+### 行番号モード(G)
+
+(`G`)で先頭に行番号が表示されます。
 
 ## mysqlでの使用
 
