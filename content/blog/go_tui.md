@@ -38,6 +38,7 @@ termbox-goを使用して、より高度なウィジットを実装したライ�
 * [termbox-go](https://github.com/nsf/termbox-go)
 * [gocui](https://github.com/jroimartin/gocui)
 * [termui](https://github.com/gizak/termui)
+* [termbox-goのimported by](https://pkg.go.dev/github.com/nsf/termbox-go?tab=importedby)
 
 ### tcell系
 
@@ -51,6 +52,7 @@ tcellは基本的な機能しか提供しませんが、[tcell/views](https://gi
 * [tview](https://github.com/rivo/tview)
 * [gowid](https://github.com/gcla/gowid)
 * [goban](https://github.com/eihigh/goban)
+* [tcellのimported by](https://pkg.go.dev/github.com/gdamore/tcell?tab=importedby)
 
 ### その他
 
@@ -74,7 +76,8 @@ tviewは豊富な[デモ](https://github.com/rivo/tview/tree/master/demos)の実
 
 ということで、tviewの使い方は他に任せて、tcellの解説をします。tviewを使う場合もその下層について理解するのは有用だと思います。
 
-個人的にtcellの一番大事な機能だと思うのは[SetContent](https://pkg.go.dev/github.com/gdamore/tcell?tab=doc#CellBuffer.SetContent)です。SetContent()は指定された座標に文字を描画します。
+個人的にtcellの一番大事な機能だと思うのは[SetContent](https://pkg.go.dev/github.com/gdamore/tcell?tab=doc#CellBuffer.SetContent)です。
+SetContent()は指定された座標に文字を描画します。
 
 ```go
 SetContent(
@@ -151,7 +154,7 @@ func main() {
 
 その後`defer screen.Fini()`は終了時に画面を元に戻します。`Fini()`を実行しないで終了すると`shell`に戻ってから画面が崩れたりします。
 
-その後からが、メインで、`screen.SetContent()`で文字をずらしながら設置しています。実はこの時点では実際には画面に描画されていなくて、その後の`screen.Show()`で、実際に描画されます。
+その後からがメインで、`screen.SetContent()`で文字をずらしながら設置しています。実はこの時点では実際には画面に描画されていなくて、その後の`screen.Show()`で、実際に描画されます。
 
 `screen.Show()`を実行するまでに`SetContent()`を何回実行しても`screen.Show()`が実行される時に置かれていた文字が描画されるだけなので、場合によってはイベントが起こる度に`screen.SetContent()`で全部をスペースで埋め、その後必要なところに`screen.SetContent()`を実行するといったことをおこなっても大丈夫な様になっています。
 
