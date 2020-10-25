@@ -24,13 +24,17 @@ categories = [
 
 同じ列で構成されている対象ファイルであれば、ワイルドカードを使用して、複数のファイルを一つのテーブルとして扱うことができます。
 
-```sh
+{{<cmd>}}
 ls test*.csv
+{{</cmd>}}
+```
 test1.csv  test2.csv  test3.csv
 ```
 
-```sh
+{{<cmd>}}
 trdsql -icsv "SELECT COUNT(*) FROM test*.csv"
+{{</cmd>}}
+```
 15
 ```
 
@@ -38,17 +42,19 @@ trdsql -icsv "SELECT COUNT(*) FROM test*.csv"
 
 また古いログファイルは圧縮されている場合があります。[gzip, bzip2, zstd, lz4, xz]圧縮であれば自動で伸長して実行します。
 
-```sh
+{{<cmd>}}
 trdsql -iltsv "SELECT * FROM access.log.2.gz"
-```
+{{</cmd>}}
 
 圧縮ファイルとワイルドカードを組み合わせて実行することもできます。
 
-```sh
+{{<cmd>}}
 ls
+{{</cmd>}}
+```
 access.log    access.log.1    access.log.2.gz
 ```
 
-```sh
+{{<cmd>}}
 trdsql -iltsv "SELECT * FROM access.log.*"
-```
+{{</cmd>}}

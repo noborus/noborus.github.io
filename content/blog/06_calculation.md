@@ -36,8 +36,10 @@ orange,40
 
 合計を計算します。price列をすべて足します。
 
-```sh
+{{<cmd>}}
 trdsql -ih "SELECT SUM(price) FROM sample.csv"
+{{</cmd>}}
+```
 910
 ```
 
@@ -45,8 +47,10 @@ trdsql -ih "SELECT SUM(price) FROM sample.csv"
 
 明示的にCASTする場合は以下のようにします。
 
-```sh
+{{<cmd>}}
 trdsql -ih "SELECT SUM(CAST(price AS int)) FROM sample.csv"
+{{</cmd>}}
+```
 910
 ```
 
@@ -54,8 +58,10 @@ trdsql -ih "SELECT SUM(CAST(price AS int)) FROM sample.csv"
 
 平均を計算します。合計/件数で計算できますが、関数が用意されているので、使用したほうがわかりやすく書けます。この例では、平均の意味はそれほどないかもしれませんが。
 
-```sh
+{{<cmd>}}
 trdsql -ih "SELECT AVG(CAST(price AS int)) FROM sample.csv"
+{{</cmd>}}
+```
 130
 ```
 
@@ -63,8 +69,10 @@ trdsql -ih "SELECT AVG(CAST(price AS int)) FROM sample.csv"
 
 最小値や最大値を出力します。
 
-```sh
+{{<cmd>}}
 trdsql -ih -oh "SELECT MIN(CAST(price AS INT)),MAX(CAST(price AS INT)) FROM sample.csv"
+{{</cmd>}}
+```
 MIN(CAST(price AS INT)),MAX(CAST(price AS INT))
 40,500
 ```
@@ -75,15 +83,10 @@ MINやMAXはテキスト型でも使用できるため、明示的にCASTする�
 
 前回書いたように、集計関数は一度に実行できます。
 
-```sh
-trdsql -ih -oat \
-"SELECT COUNT(name) as count, " \
-      " COUNT(DISTINCT name) as uniq, " \
-      " MIN(CAST(price AS INT)) AS min, " \
-      " MAX(CAST(price AS INT)) as max, " \
-      " SUM(CAST(price AS INT)) as sum, " \
-      " AVG(CAST(price AS INT)) as avg " \
-  "FROM sample.csv"
+{{<cmd>}}
+trdsql -ih -oat "SELECT COUNT(name) as count, COUNT(DISTINCT name) as uniq,  MIN(CAST(price AS INT)) AS min,  MAX(CAST(price AS INT)) as max,  SUM(CAST(price AS INT)) as sum,  AVG(CAST(price AS INT)) as avg FROM sample.csv"
+{{</cmd>}}
+```
 +-------+------+-----+-----+-----+-----+
 | count | uniq | min | max | sum | avg |
 +-------+------+-----+-----+-----+-----+

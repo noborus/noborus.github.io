@@ -29,7 +29,7 @@ trdsqlにはデータベースにインポートするオプションはあり�
 まず、PostgreSQLへデータをインポートしてみます。
 これまで、SELECTで実行してきた内容に `CREATE TABLE テーブル名 AS` を前につければ、テーブルが作成されデータがインポートされます。
 
-```sh
+```shell
 trdsql -driver postgres -dsn "dbname=trdsql_test" -ih \
  "CREATE TABLE test AS SELECT * FROM header.csv"
 ```
@@ -38,12 +38,12 @@ trdsql -driver postgres -dsn "dbname=trdsql_test" -ih \
 
 SELECTの結果がインポートされるため、SELECT側で列名の変更、列の型指定、インポートするデータの条件指定をすれば良いことになります。
 
-```sh
+```shell
 trdsql -driver postgres -dsn "dbname=trdsql_test" -ih \
  "CREATE TABLE fruits AS SELECT id::int AS num, name::VARCHAR(20) FROM header.csv"
 ```
 
-```sh
+```shell
 trdsql -driver postgres -dsn "dbname=trdsql_test" -ih -oh\
  "SELECT * FROM fruits"
  num,name

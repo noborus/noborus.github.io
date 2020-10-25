@@ -23,8 +23,10 @@ trdsql に `-a`オプションにファイル名を付けて実行するとフ�
 
 （CSVファイルの拡張子が.csvの様な場合は、`-icsv`を省略することが出来ます。`-ih` ヘッダを解釈、 `-is` スキップ数の指定等のオプションを必要に応じて付けないと意図しない解析結果になることがあります）。
 
-```sh
+{{<cmd>}}
 trdsql -ih -a header.csv
+{{</cmd>}}
+```
 The table name is header.csv.
 The file type is CSV.
 
@@ -61,8 +63,10 @@ SQLには予約語があり、予約語を列名に使用する場合や小文�
 
 ここでExamplesの一つを実行してみます。
 
-```sh {hl_lines=[1]}
+{{<cmd>}}
 trdsql -ih "SELECT id, \`name\` FROM header.csv"
+{{</cmd>}}
+```csv
 1,Orange
 2,Melon
 3,Apple
@@ -76,8 +80,10 @@ trdsql -ih "SELECT id, \`name\` FROM header.csv"
 
 今度は、id,nameの順番を入れ替えて、name,idの順で出力してみます。
 
-```sh {hl_lines=[1]}
+{{<cmd>}}
 trdsql -ih "SELECT \`name\`,id FROM header.csv"
+{{</cmd>}}
+```
 Orange,1
 Melon,2
 Apple,3
@@ -85,8 +91,10 @@ Apple,3
 
 そのまんまですね。ではidは必要ないのでnameのみを出力する場合はnameだけ残せば良いことになります。
 
-```sh {hl_lines=[1]}
+{{<cmd>}}
 trdsql -ih "SELECT \`name\` FROM header.csv"
+{{</cmd>}}
+```
 Orange
 Melon
 Apple
@@ -99,15 +107,19 @@ Apple
 もう一つ、並べ替えることがあるとしたら行です。行の並べ替えは`ORDER BY 列名｀で出来ます。
 昇順（小さい→大きい）はASC（デフォルトなので省略可能）、降順（大きい→小さい）はDESCを付けます。
 
-```sh {hl_lines=[1]}
+{{<cmd>}}
 trdsql -ih "SELECT id, \`name\` FROM header.csv ORDER BY \`name\`"
+{{</cmd>}}
+```
 3,Apple
 2,Melon
 1,Orange
 ```
 
-```sh {hl_lines=[1]}
+{{<cmd>}}
 trdsql -ih "SELECT id, \`name\` FROM header.csv ORDER BY id DESC"
+{{</cmd>}}
+```
 3,Apple
 2,Melon
 1,Orange
@@ -118,14 +130,16 @@ trdsqlではCSV、LTSV、JSON等の入力データはtext型として動作し�
 
 数値として扱うには、以下のようにSQLの`CAST(列名 AS 型名)`を使用します。
 
-```sh {hl_lines=[1]}
+{{<cmd>}}
 trdsql -ih "SELECT id,\`name\` FROM  header.csv  ORDER BY CAST(id AS int) DESC"
-```
+{{</cmd>}}
 
 さらに ORDER BY と組み合わせて、よく使用するのが`LIMIT`です。
 `LIMIT`は指定した件数のみ出力するように制限できます。一つだけ出力したいとか上位10件のみ出力したいときに使用します。
 
-```sh {hl_lines=[1]}
+{{<cmd>}}
 trdsql -ih "SELECT id,\`name\` FROM  header.csv  ORDER BY CAST(id AS int) DESC LIMIT 1"
+{{</cmd>}}
+```
 3,Apple
 ```

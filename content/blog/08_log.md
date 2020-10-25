@@ -40,7 +40,7 @@ host:88.60.137.115	ident:-	user:-	time:[21/Oct/2019:21:33:53 +0900]	req:POST /se
 
 まずは trdsql の -aを実行してみます。
 
-```sh
+```
 The table name is log.ltsv.
 The file type is LTSV.
 
@@ -81,8 +81,10 @@ Examplesの実行例をヒントにこれまでに紹介したSQLを使用して
 
 アクセスが多いホストTop 5を出力
 
-```sh
+{{<cmd>}}
 trdsql -oat "SELECT \`host\`, count(\`host\`) as count FROM log.ltsv GROUP BY \`host\` ORDER BY count DESC LIMIT 5"
+{{</cmd>}}
+```
 +----------------+-------+
 |      host      | count |
 +----------------+-------+
@@ -96,8 +98,10 @@ trdsql -oat "SELECT \`host\`, count(\`host\`) as count FROM log.ltsv GROUP BY \`
 
 リクエストが多い順Top 5を出力
 
-```sh
+{{<cmd>}}
 trdsql -oat "SELECT req, count(req) as count FROM log.ltsv GROUP BY req ORDER BY count DESC LIMIT 5"
+{{</cmd>}}
+```
 +--------------------------------+-------+
 |              req               | count |
 +--------------------------------+-------+
@@ -115,8 +119,10 @@ trdsql -oat "SELECT req, count(req) as count FROM log.ltsv GROUP BY req ORDER BY
 
 status が200以外のリクエストと回数を出力
 
-```sh
+{{<cmd>}}
 trdsql -oat "SELECT req, status,count(req) as count FROM log.ltsv WHERE status != '200' GROUP BY req, status ORDER BY count DESC"
+{{</cmd>}}
+```
 +-------------------------------+--------+-------+
 |              req              | status | count |
 +-------------------------------+--------+-------+
