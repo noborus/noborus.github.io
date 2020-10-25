@@ -7,9 +7,7 @@ weight: 1
 
 ## 作ったもの
 
-### [trdsql](https://github.com/noborus/trdsql)
-
- [![GoDoc](https://godoc.org/github.com/noborus/trdsql?status.svg)](https://godoc.org/github.com/noborus/trdsql)
+### [trdsql](https://github.com/noborus/trdsql) [![GoDoc](https://godoc.org/github.com/noborus/trdsql?status.svg)](https://godoc.org/github.com/noborus/trdsql)
 
 CSV,LTSV,JSON,TBLNファイルにSQLを実行できるツール
 
@@ -18,24 +16,20 @@ CSV,LTSV,JSON,TBLNファイルにSQLを実行できるツール
 
 ### [ov](https://github.com/noborus/ov)
 
-Terminal PAGER
+ターミナルページャー
 
 less,moreの代わりとしても動作する高機能ページャー。
 
 * [ovの紹介](blog/oviewer/)
 * [ov(English)](blog/oviewer_en/)
 
-### [tbln](https://github.com/noborus/tbln) 
-
-[![GoDoc](https://godoc.org/github.com/noborus/tbln?status.svg)](https://godoc.org/github.com/noborus/tbln)
+### [tbln](https://github.com/noborus/tbln) [![GoDoc](https://godoc.org/github.com/noborus/tbln?status.svg)](https://godoc.org/github.com/noborus/tbln)
 
 データベースのテーブルと親和性のあるファイルフォーマット(tbln)を扱うライブラリ＆ツール
 
 * [[tbln.dev](https://tbln.dev/)]
 
-### [psutilsql](https://github.com/noborus/psutilsql)
-
- [![GoDoc](https://godoc.org/github.com/noborus/psutilsql?status.svg)](https://godoc.org/github.com/noborus/psutilsql)
+### [psutilsql](https://github.com/noborus/psutilsql) [![GoDoc](https://godoc.org/github.com/noborus/psutilsql?status.svg)](https://godoc.org/github.com/noborus/psutilsql)
 
 システム情報にSQLを実行して表示するツール
 

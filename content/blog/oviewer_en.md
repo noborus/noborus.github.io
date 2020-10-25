@@ -1,6 +1,6 @@
 +++
 author = "Noboru Saito"
-title = "Oviewer"
+title = "ov(en)"
 date = "2020-04-25T16:50:00+09:00"
 description = ""
 tags = [
@@ -19,11 +19,11 @@ Introduction to [OV - Oviewer](https://github.com/noborus/ov).
 You can also download binaries from the [ov](https://github.com/noborus/ov) release,
 but for now it is still recommended to go get and download the latest version.
 
-```console
+{{< cmd >}}
 go get -u github.com/noborus/ov
 cd ov
 make install
-```
+{{< /cmd >}}
 
 ## Features
 
@@ -57,21 +57,23 @@ The command name is `ov`.
 
 Basically, specify the file name to start.
 
-```console
+{{< cmd >}}
 ov filename
-```
+{{< /cmd >}}
 
 Another use is to use a pipe to accept input from standard input.
 
-```console
+{{< cmd >}}
 cat filename|ov
-```
+{{< /cmd >}}
 
 These are the command line options:
 (Many of the options can be toggled from the key after startup).
 
-```console
+{{< cmd >}}
 $ ov --help
+{{< /cmd >}}
+```
 Oviewer is a feature rich pager(such as more/less).
 It supports various compressed files(gzip, bzip2, zstd, lz4, and xz).
 
@@ -98,16 +100,16 @@ Flags:
 
 You can view compressed files as they are.
 
-```console
+{{< cmd >}}
 ov test.csv.zst
-```
+{{< /cmd >}}
 
 It works even from a pipe because it looks at the magic number at the beginning of the file,
 regardless of the extension.
 
-```console
+{{< cmd >}}
 cat test.csv.zst|ov
-```
+{{< /cmd >}}
 
 ## Using from psql
 

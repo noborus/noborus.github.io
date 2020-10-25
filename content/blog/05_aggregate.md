@@ -21,18 +21,24 @@ categories = [
 
 以下の例は結果が１行なので、CSVの様に見えませんが、1行1列(ヘッダー付き)のCSVとして出力されています。
 
+{{< note >}}
 単純に件数を数えるだけですが、ヘッダーと解釈して数に含まないか等の注意が必要です。
+{{< /note >}}
 
-```sh
+{{< cmd >}}
 trdsql -icsv -ih -oh "SELECT COUNT(*) FROM header.csv"
+{{< /cmd >}}
+```
 count(*)
 3
 ```
 
 検索条件の指定が出来ます。検索条件にあてはまる件数を知りたい時に使用します。
 
-```sh
+{{< cmd >}}
 trdsql -icsv -ih -oh "SELECT COUNT(*) FROM header.csv WHERE id<'1'"
+{{< /cmd >}}
+```
 count(*)
 2
 ```
@@ -53,22 +59,28 @@ id,name
 4,aaa
 ```
 
-```sh
+{{< cmd >}}
 trdsql -icsv -ih -oh "SELECT COUNT(name) FROM abc.csv"
+{{< /cmd >}}
+```
 count(name)
 4
 ```
 
-```sh
+{{< cmd >}}
 trdsql -ih -oh "SELECT COUNT(DISTINCT name) FROM abc.csv"
+{{< /cmd >}}
+```
 COUNT(DISTINCT name)
 3
 ```
 
 集計関数は一度に実行することもできます。
 
-```sh
+{{< cmd >}}
 trdsql -ih -oh "SELECT COUNT(name), COUNT(DISTINCT name) FROM abc.csv"
+{{< /cmd >}}
+```
 COUNT(name),COUNT(DISTINCT name)
 4,3
 ```
