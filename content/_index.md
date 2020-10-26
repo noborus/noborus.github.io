@@ -13,8 +13,9 @@ weight: 1
 
 CSV,LTSV,JSON,TBLNファイルにSQLを実行できるツール
 
+* [trdsqlのBlog](/trdsql/)
 * [trdsqlというコマンドラインツールを作った](https://qiita.com/noborus/items/f253961cca6f4465f20c)(Qiita)
-* [trdsqlのBlog](blog/00_index/)
+* [trdsqlはCSV,LTSV,JSONをDB(PostgreSQL,MySQL)にインポートするツールです](https://zenn.dev/noborus/articles/16451ce8351765380c03)(Zenn)
 
 ---
 
@@ -26,6 +27,7 @@ less,moreの代わりとしても動作する高機能ページャー。
 
 * [ovの紹介](blog/oviewer/)
 * [ov(English)](blog/oviewer_en/)
+* [ovの紹介](https://zenn.dev/noborus/articles/2b1087a1274cf41c4c0a)(Zenn)
 
 ---
 

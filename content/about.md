@@ -13,7 +13,6 @@ weight = 4
 ## Links
 
 * GitHub: [https://github.com/noborus](https://github.com/noborus)
-
 * Twitter: [https://twitter.com/noborus](https://twitter.com/noborus)
-
 * Qiita: [https://qiita.com/noborus](https://qiita.com/noborus)
+* Zenn: [https://zenn.dev/noborus](https://zenn.dev/noborus)
