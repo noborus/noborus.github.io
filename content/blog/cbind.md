@@ -61,7 +61,7 @@ tcellのキーイベントを取得するのは以下のように`switch case`�
 
 cbind は `*tcell.EventKey`を文字列にする`Encode`とキー文字列（`ctrl+a`等）をtcellのイベントキーに変換する`Decode`があり、それらを利用して「文字列」にイベントハンドラを結びつけて登録できます。実際にキーイベントが起きたら、cbindに任せれば登録されていたイベントハンドラが実行されることになります。
 
-実際の使用例です。
+### 実際の使用例です。
 
 キーの登録は、まず`cbind.NewConfiguration()`をしてConfigurationを作成します。
 そのConfigurationにキー文字列を`Decode`でイベントキーに変換して、`SetRune`または`SetKey`で登録します。
