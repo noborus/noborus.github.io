@@ -8,6 +8,7 @@ tags = [
     "go",
     "ambiguous width",
     "gnome-terminal",
+    "tui",
 ]
 categories = [
     "go",
