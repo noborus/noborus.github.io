@@ -16,8 +16,10 @@ categories = [
 
 trdsqlは他のUNIXツールのように標準入力からデータを受け取ることができます。ただSQLの文法上テーブル名を指定する必要があります。標準入力を使用するときは、「-」か「stdin」を使用します。
 
-```sh
+{{< cmd >}}
 cat test.csv|trdsql -icsv "SELECT * FROM -"
+{{< /cmd >}}
+```
 apple,100
 orange,50
 potato,30
@@ -31,23 +33,25 @@ trdsqlは標準入力から受け取りますが、標準入力をすべて受�
 CSV、LTSV、JSONを出力するコマンドでは、ファイル名の代わりに標準入力を使えばそのまま利用できます。
 例えば、文字コードがUTF-8でないファイルをUTF-8に変更してそのまま使用したり、
 
-```sh
+{{< cmd >}}
 nkf -w sjis.csv|trdsql -icsv "SELECT * FROM -"
-```
+{{< /cmd >}}
 
 大きなファイルを処理する前に先頭の数行のみを処理して試してみたりできます。
 
 
-```sh
+{{< cmd >}}
 head -100 big.csv|trdsql -icsv "SELECT * FROM -"
-```
+{{< /cmd >}}
 
 それ以外にも、例えばUNIX系のコマンドでは、スペースを区切りとして解釈すればテーブルデータとして扱える出力をするコマンドが数多くあります。
 
 例えば psコマンドでは、
 
-```sh
+{{< cmd >}}
 ps
+{{< /cmd >}}
+```
   PID TTY          TIME CMD
  1157 pts/3    00:00:00 ps
 22590 pts/3    00:00:03 zsh
@@ -57,8 +61,10 @@ ps
 
 そのため、以下のように実行すると Ascii Table形式で出力できます。
 
-```sh
+{{< cmd >}}
 ps|trdsql -ih -id " " -oat "SELECT \`PID\`, \`TTY\`, \`TIME\`, \`CMD\` FROM -"
+{{< /cmd >}}
+```
 +-------+-------+----------+--------+
 |  PID  |  TTY  |   TIME   |  CMD   |
 +-------+-------+----------+--------+
@@ -72,12 +78,14 @@ ps|trdsql -ih -id " " -oat "SELECT \`PID\`, \`TTY\`, \`TIME\`, \`CMD\` FROM -"
 
 また、trdsqlの-a解析オプションは標準入力も使用することが出来ます。
 
-```sh
+{{< cmd >}}
 コマンド | trdsql -ih -id " " -a -
-```
+{{< /cmd >}}
 
-```sh
+{{< cmd >}}
 ps|trdsql -id " " -ih -a -
+{{< /cmd >}}
+```
 The table name is -.
 The file type is CSV.
 
