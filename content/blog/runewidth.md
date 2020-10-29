@@ -34,11 +34,16 @@ Unicodeでは幅が決まっている文字がほとんどですが、一部に�
 
 ターミナル上で罫線を使用したプログラムがズレる場合はこれが原因です。
 
+![runewide0.png](../runewide0.png)
+
 そのための対応として、gnome-terminalではPreferencesから「曖昧幅の文字(W)」を半角／全角で変更出来るようになっています。
 
 ![ambiguous_width.png](../ambiguous_width.png)
 
 これを半角にすれば、罫線が1文字幅で表示されるため、表示が直ります。
+
+![runewide2.png](../runewide2.png)
+
 例えば、`psql`の `\pset linestyle unicode`をgnome-terminalで使用するには、ここを半角にしておかないと縦の線が揃わなくなります。
 
 ただし、これはアプリケーションが幅を半角幅と仮定しているのに合わせているだけなので、別のアプリケーションでは合わなくなるといったことが起こります。
@@ -51,5 +56,7 @@ go-runewidthでは、ロケールに従ってAmbiguousな幅を決定してい�
 
 この場合、上記のgnome-terminalで「曖昧幅の文字(W)」を半角にしていた場合は、余分な隙間が空いて表示が崩れたようになります。
 `LANG=C`でアプリケーションを起動し直してみて表示が正常になる場合は、この「曖昧幅の文字(W)」とgo-runewidthが解釈するロケールに齟齬が起こっていることになります。
+
+![runewide1.png](../runewide1.png)
 
 go-runewideth ではロケールの他に環境変数`RUNEWIDTH_EASTASIAN`によりAmbiguousな幅を変更できますので、gnome-terminalではPreferencesの「曖昧幅の文字(W)」が半角の場合は、環境変数`RUNEWIDTH_EASTASIAN`を0に全角の場合は1に設定しておくとgo言語のTUIアプリケーションの表示の乱れが無くなるのでは無いかと思います。
