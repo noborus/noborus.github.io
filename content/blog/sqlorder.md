@@ -53,8 +53,12 @@ SELECT c1%2, c1, c2 FROM test_table ORDER BY c1%2;
 1,3,Apple
 ```
 
+## ORDER BYの列番号指定
+
 そして、厄介なのはここからです。ORDER BYは列番号を使用できる実装が多く存在します。
 これは、SQL-92で標準に入って、その後削除されたとのことなので、大抵の実装では使えてしまいます。
+
+{{< tweet 1232944202075426816 >}}
 
 ```SQL
 SELECT c1,c2 FROM test_table ORDER BY 1;
@@ -92,7 +96,7 @@ PostgreSQL、MySQL、SQLite3でしか試していませんが、だいたい同�
 
 ```SQL
 SELECT c2 FROM test_table ORDER BY 4;
-export: Error 1054: Unknown column '4' in 'order clause'
+Error 1054: Unknown column '4' in 'order clause'
 ```
 
 ```SQL
@@ -102,7 +106,7 @@ Melon
 Apple
 ```
 
-しかしながら、PostgreSQLとMySQL、SQLite3ではちょっと挙動が違う場合があって、整数値以外の値（文字列等）定数を入れた場合には、PostgreSQLでは「non-integer constant」でエラーに成りますが、MySQL、SQLite3では式と同じ扱いになります。
+しかしながら、PostgreSQLとMySQL、SQLite3ではちょっと挙動が違う場合があって、整数値以外の値（文字列等）定数を入れた場合には、PostgreSQLでは「non-integer constant」でエラーになりますが、MySQL、SQLite3では式と同じ扱いになります。
 
 ```SQL
 SELECT c2 FROM test_table ORDER BY '1';
@@ -118,7 +122,17 @@ Melon
 Apple
 ```
 
+動作を推測するに、ORDER BY は、まず列番号かどうかを判別して列番号ではないと解釈したら、通常の（他のところでも使える）式の評価に移るのでしょう。
+
+その際、恐らくPostgreSQLでは、`ORDER BY '1'`や `ORDER BY 'name'`を間違って入れた人がいて「ソートされない？？ 」となって、
+こんなの入れる訳ないからエラーにしてよ！というツッコミがあったのでしょう。 ← 勝手に推測
+
+## まとめ
+
 ということで、最初の [8.0.22でのprepared statementの挙動変化](https://tombo2.hatenablog.com/entry/2020/10/29/135053) は「prepared statement」によって列番号で解釈していたのを式評価になったと考えれば納得できます。
 
-そうすると「the results are no longer ordered, as is expected with ORDER BY constant.」はちょっと誤解を招くと思います。
-「列番号」ではなく「式と解釈される固定値」（ただし直接指定すると列番号と解釈されちゃう）ということではないかと。
+しかし、そうすると「the results are no longer ordered, as is expected with ORDER BY constant.」はちょっと誤解を招くと思います。
+実際、誤解しましたし。
+{{< tweet 1322178409074618368 >}}
+
+つまり、これは「列番号」ではなく「列番号と解釈されない固定値」（しかし直接、整数を指定すると列番号と解釈されちゃう）ということではないかと。
