@@ -47,7 +47,7 @@ Apple
 さらに列名だけでなく「式」も使用できます。
 
 ```SQL
-SELECT c1, c1%2, c2 FROM test_table ORDER BY c1%2;
+SELECT c1%2, c1, c2 FROM test_table ORDER BY c1%2;
 0,2,Melon
 1,1,Orange
 1,3,Apple
