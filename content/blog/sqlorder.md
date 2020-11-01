@@ -14,7 +14,7 @@ categories = [
 
 ## きっかけ
 
-きっかけはtom__boさんの[8.0.22でのprepared statementの挙動変化](https://tombo2.hatenablog.com/entry/2020/10/29/135053) で、ORDER BY に列番号を指定する問題に注目が集まったことです。
+tom__boさんが書かれた[8.0.22でのprepared statementの挙動変化](https://tombo2.hatenablog.com/entry/2020/10/29/135053) で、`ORDER BY` に列番号を指定する問題に注目が集まりました。
 
 その中で紹介されていた、
 
@@ -55,7 +55,7 @@ SELECT c1%2, c1, c2 FROM test_table ORDER BY c1%2;
 
 ## ORDER BYの列番号指定
 
-そして、厄介なのはここからです。ORDER BYは列番号を使用できる実装が多く存在します。
+そして、厄介なのはここからです。`ORDER BY`は列番号を使用できる実装が多く存在します。
 これは、SQL-92で標準に入って、その後削除されたとのことなので、大抵の実装では使えてしまいます。
 
 {{< tweet 1232944202075426816 >}}
