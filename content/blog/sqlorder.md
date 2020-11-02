@@ -56,13 +56,13 @@ SELECT c1%2, c1, c2 FROM test_table ORDER BY c1%2;
 ## ORDER BYの列番号指定
 
 そして、厄介なのはここからです。`ORDER BY`は列番号を使用できる実装が多く存在します。
-これは、SQL-92で標準に入って、その後削除されたとのことなので、大抵の実装では使えてしまいます。
+これは、一旦SQL-92で標準に入った（その後削除されたとのことな）ので、大抵の実装では使えてしまいます。
 
 {{< tweet 1232944202075426816 >}}
 
 ```SQL
 SELECT c1,c2 FROM test_table ORDER BY 1;
-// <-- c1でソートされる
+// c1でソートされる
 1,Orange
 2,Melon
 3,Apple
@@ -106,7 +106,8 @@ Melon
 Apple
 ```
 
-しかしながら、PostgreSQLとMySQL、SQLite3ではちょっと挙動が違う場合があって、整数値以外の値（文字列等）定数を入れた場合には、PostgreSQLでは「non-integer constant」でエラーになりますが、MySQL、SQLite3では式と同じ扱いになります。
+しかしながら、PostgreSQLとMySQL、SQLite3ではちょっと挙動が違う場合があります。
+整数値以外の値（文字列等）定数を入れた場合には、PostgreSQLでは「non-integer constant」でエラーになりますが、MySQL、SQLite3では式と同じ扱いになります。
 
 ```SQL
 SELECT c2 FROM test_table ORDER BY '1';
