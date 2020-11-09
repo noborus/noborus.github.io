@@ -44,9 +44,11 @@ time:2015-09-06T06:00:42+09:00	method:GET	...
 
 datetime(time)で日時として、認識させれば、strftime()で再フォーマットがしやすくなります。
 
-```sh
-trdsql -iltsv \
-"SELECT strftime('%Y年%m月%d日%H時%M分%S秒',datetime(time)) FROM log.ltsv"
+{{< cmd >}}
+trdsql -iltsv "SELECT strftime('%Y年%m月%d日%H時%M分%S秒',datetime(time)) FROM log.ltsv"
+{{< /cmd >}}
+
+```
 2015年09月05日20時58分05秒
 2015年09月05日20時58分41秒
 2015年09月05日21時00分42秒
@@ -60,9 +62,11 @@ trdsql -iltsv \
 
 多くの場合は、dateやtimestampにCASTするだけで、多くの有名なフォーマットは解釈されます。
 
-```sh
-trdsql -driver postgres -dsn "dbname=trdsql_test" \
-"SELECT to_char(CAST(time AS timestamp),'YYYY年MM月dd日HH24時MI分ss秒') FROM log.ltsv"
+{{< cmd >}}
+trdsql -driver postgres -dsn "dbname=trdsql_test" "SELECT to_char(CAST(time AS timestamp),'YYYY年MM月dd日HH24時MI分ss秒') FROM log.ltsv"
+{{< /cmd >}}
+
+```
 2015年09月06日05時58分05秒
 2015年09月06日05時58分41秒
 2015年09月06日06時00分42秒
@@ -74,9 +78,11 @@ trdsql -driver postgres -dsn "dbname=trdsql_test" \
 
 例えば上記で出力したフォーマットの場合、to_charと同じフォーマット指定でto_timestampを実行すれば逆にタイムスタンプとして扱われます。
 
-```sh
-trdsql -ih -oh  -driver postgres -dsn "dbname=trdsql_test" \
-"SELECT to_timestamp(\"日時\",'YYYY年MM月dd日HH24時MI分ss秒') FROM d.csv"
+{{< cmd >}}
+trdsql -ih -oh  -driver postgres -dsn "dbname=trdsql_test" "SELECT to_timestamp(\"日時\",'YYYY年MM月dd日HH24時MI分ss秒') FROM d.csv"
+{{< /cmd >}}
+
+```
 2015-09-05T20:58:05+09:00
 2015-09-05T20:58:41+09:00
 2015-09-05T21:00:42+09:00
@@ -86,9 +92,11 @@ trdsql -ih -oh  -driver postgres -dsn "dbname=trdsql_test" \
 
 [MySQL](https://dev.mysql.com/doc/refman/5.6/ja/date-and-time-functions.html#function_timestamp)でも多くのフォーマットをdate()やtimestamp()により変換させることができます。
 
-```sh
-trdsql -driver mysql -dsn "noborus:noborus@/trdsql_test" -oat \
-"SELECT date(time),timestamp(time) FROM log.ltsv"
+{{< cmd >}}
+trdsql -driver mysql -dsn "noborus:noborus@/trdsql_test" -oat "SELECT date(time),timestamp(time) FROM log.ltsv"
+{{< /cmd >}}
+
+```
 +------------+----------------------------+
 | date(time) |      timestamp(time)       |
 +------------+----------------------------+
@@ -101,9 +109,11 @@ trdsql -driver mysql -dsn "noborus:noborus@/trdsql_test" -oat \
 独自のフォーマットを解釈させる場合は、STR_TO_DATE()を使用します。
 上記の年月日時分秒を解釈させるには次のようにします。
 
+{{< cmd >}}
+trdsql -ih -driver mysql -dsn "noborus:noborus@/trdsql_test" "SELECT STR_TO_DATE(\`日時\`,'%Y年%m月%d日%H時%i分%s秒') FROM d.csv"
+{{< /cmd >}}
+
 ```sh
-trdsql -ih -driver mysql -dsn "noborus:noborus@/trdsql_test" \
-"SELECT STR_TO_DATE(\`日時\`,'%Y年%m月%d日%H時%i分%s秒') FROM d.csv"
 2015-09-05 20:58:05
 2015-09-05 20:58:41
 2015-09-05 21:00:42
@@ -111,9 +121,11 @@ trdsql -ih -driver mysql -dsn "noborus:noborus@/trdsql_test" \
 
 日時から表示するフォーマットには、DATE_FORMAT()が使用できます。「/」で日付を表示してみます。
 
+{{< cmd >}}
+trdsql -ih -driver mysql -dsn "noborus:noborus@/trdsql_test" "SELECT DATE_FORMAT(STR_TO_DATE(\`日時\`,'%Y年%m月%d日%H時%i分%s秒'),'%Y/%m/%d') FROM d.csv"
+{{< /cmd >}}
+
 ```sh
-trdsql -ih -driver mysql -dsn "noborus:noborus@/trdsql_test" \
-"SELECT DATE_FORMAT(STR_TO_DATE(\`日時\`,'%Y年%m月%d日%H時%i分%s秒'),'%Y/%m/%d') FROM d.csv"
 2015/09/05
 2015/09/05
 2015/09/05
