@@ -15,7 +15,7 @@ categories = [
 [cbind](https://gitlab.com/tslocum/cbind)は[tcell](https://github.com/gdamore/tcell)のキーイベントとイベントハンドラを結びつけるライブラリです。
 
 {{< warning >}}
-現在cbindの最新はtcellのversion 2が対象になっています。まだtcell のversion 2は開発版のため、version 1を対象にする場合は cbind v0.1.1を使用して下さい。
+現在cbindの最新はtcellのversion 2が対象になっています。version 1を対象にする場合は cbind v0.1.1を使用して下さい。
 {{< /warning >}}
 
 {{< cmd >}}
