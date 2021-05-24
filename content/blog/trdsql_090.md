@@ -24,8 +24,7 @@ JSONは階層構造に出来るため、その中のオブジェクトをテー�
 
 この実装には[gojq](https://github.com/itchyny/gojq)を利用しています。
 
-例えば以下のようなJSONファイルがあった場合に、
-
+例えば以下のようなJSONファイルがあった場合に、通常のtrdsqlでは menuカラムしかありませんでした。
 ```json
 {
 	"menu": {
@@ -51,8 +50,7 @@ JSONは階層構造に出来るため、その中のオブジェクトをテー�
 }
 ```
 
-これにより`jq ".menu.popup.menuitem" menu.json | trdsql -oat -ijson "SELECT * FROM -`
-のように書かなければできなかった`menuitem`に対して以下のようにすればSQLを書けるようになります。
+ファイル名に追加してjq式を書くことで以下のようにmenuitemに対してSQLを書けるようになります。
 
 ```console
 trdsql -oat "SELECT * FROM menu.json::.menu.popup.menuitem"
@@ -68,10 +66,10 @@ trdsql -oat "SELECT * FROM menu.json::.menu.popup.menuitem"
 +-------+-------------+
 ```
 
-jqが含まれているため必要なくなって標準入力を使用しないために複数のファイル又は一つのJSONファイルの中の複数のテーブルを使用できるようになります。
+これによりjqコマンドは必要なくなり、複数のファイル又は一つのJSONファイルの中の複数のテーブルを使用できるようになります。
 
 jq式は非常に強烈でSQL相当のこともjq式で出来てしまいます。SQLでやるかjq式でやるかはお好みですが、適正を考えるのが良いと思います。
-またjq式を書く場合はjq式をダブルクオートでくくる必要があるかもしれません。 `"SELECT * FROM menu.json::\".menu.popup.menuitem\""` のように。
+またjq式を書く場合はjq式をダブルクオートでくくる必要があるかもしれません。 `"SELECT * FROM menu.json::\".menu.popup.menuitem\""` のようにエスケープと組み合わせます。
 
 trdsqlのjson出力は中身がjsonであればjsonとして扱うようになっているため、以下のように`-ojson "SELECT * FROM jsonファイル名::(jq式)`とするとjqの代わりにもなります。
 
@@ -121,6 +119,6 @@ trdsql "SELECT * FROM float.json"
 
 https://golang.org/pkg/encoding/json/#Decoder.UseNumber を有効にして Number として扱われるようにしました。
 
-## TSV,PSVを拡張子として認識
+## TSV,PSVを拡張子として認識するように追加
 
 tsvやpsvという拡張子のファイルだった場合は、tsvはTAB区切りのCSV、psvはパイプ(|)区切りのCSVとして扱うようにしました。区切り文字のオプションを付けなくてもよくなります。
