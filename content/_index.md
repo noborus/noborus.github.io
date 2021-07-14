@@ -66,6 +66,10 @@ Terminal Pager ov を client/server化したもの。
 
 ---
 
+### [pgsp](https://github.com/noborus/pgsp)
+
+PostgreSQL の pg_stat_progressを監視、表示するCLIツール
+
 ## 参加しているプロジェクト
 
 ### [jpug-doc](https://github.com/pgsql-jp/jpug-doc)
