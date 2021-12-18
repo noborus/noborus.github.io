@@ -93,12 +93,11 @@ trdsql -oat "SELECT * FROM example.json::\".menu.popup.menuitem\""
 
 jq構文はファイル名の後に`::`でつないだ後や `-ijq`オプションに書くことができます（一行で書く場合、シェルに解釈されるためエスケープが必要な場合があります。ダブルクォーテーションは必要なければ省略できます)。
 
-## JSONをCSVに変換する
+## jqの使用例をtrdsqlで実行する
 
-jqでやる方法がよく紹介されていますが、trdsqlではデフォルトの動作です。
+JSONをCSVに変換するのをjqでやる方法がよく紹介されていますが、trdsqlではデフォルトの動作です。
 
-### [jq コマンドで JSON を CSV に変換する](https://medium.com/veltra-engineering/jq-supports-json-to-csv-fb5c951a9575) の内容をtrdsqlでやってみます。
-
+### [jq コマンドで JSON を CSV に変換する](https://medium.com/veltra-engineering/jq-supports-json-to-csv-fb5c951a9575) の例
 
 ```sample1.json
 [
