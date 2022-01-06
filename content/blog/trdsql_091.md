@@ -1,7 +1,7 @@
 +++
 author = "Noboru Saito"
 title = "trdsql v0.9.1"
-date = "2022-01-08T00:00:00+09:00"
+date = "2022-01-07T00:00:00+09:00"
 description = ""
 tags = [
     "trdsql",
