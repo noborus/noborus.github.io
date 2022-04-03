@@ -20,10 +20,10 @@ You can also download binaries from the [ov](https://github.com/noborus/ov) rele
 but for now it is still recommended to go get and download the latest version.
 
 {{< cmd >}}
-go get -u github.com/noborus/ov
-cd ov
-make install
+go install github.com/noborus/ov@latest
 {{< /cmd >}}
+
+See [ov install](https://github.com/noborus/ov#Install) for other methods.
 
 ## Features
 
@@ -74,25 +74,38 @@ These are the command line options:
 $ ov --help
 {{< /cmd >}}
 ```
-Oviewer is a feature rich pager(such as more/less).
+ov is a feature rich pager(such as more/less).
 It supports various compressed files(gzip, bzip2, zstd, lz4, and xz).
 
 Usage:
   ov [flags]
 
 Flags:
-  -C, --alternate-rows            color to alternate rows
+  -C, --alternate-rows            alternately change the line color
   -i, --case-sensitive            case-sensitive in search
   -d, --column-delimiter string   column delimiter (default ",")
   -c, --column-mode               column mode
-      --config string             config file (default is $HOME/.oviewer.yaml)
+      --completion string         generate completion script [bash|zsh|fish|powershell]
+      --config string             config file (default is $HOME/.ov.yaml)
       --debug                     debug mode
+      --disable-mouse             disable mouse support
+  -e, --exec                      exec command
   -X, --exit-write                output the current screen when exiting
+  -a, --exit-write-after int      NUM after the current lines when exiting
+  -b, --exit-write-before int     NUM before the current lines when exiting
+  -A, --follow-all                follow all
+  -f, --follow-mode               follow mode
   -H, --header int                number of header rows to fix
   -h, --help                      help for ov
+      --help-key                  display key bind information
+      --incsearch                 incremental search (default true)
+  -n, --line-number               line number mode
   -F, --quit-if-one-screen        quit if the output fits on one screen
+      --regexp-search             regular expression search
+      --skip-lines int            skip the number of lines
   -x, --tab-width int             tab stop width (default 8)
   -v, --version                   display version information
+  -T, --watch int                 watch mode interval
   -w, --wrap                      wrap mode (default true)
 ```
 

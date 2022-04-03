@@ -70,6 +70,13 @@ Terminal Pager ov を client/server化したもの。
 
 PostgreSQL の pg_stat_progressを監視、表示するCLIツール
 
+---
+
+### [jpug-doc-tool](https://github.com/noborus/jpug-doc-tool)
+
+PostgreSQLの日本語マニュアル翻訳ツール
+
+---
 ## 参加しているプロジェクト
 
 ### [jpug-doc](https://github.com/pgsql-jp/jpug-doc)
