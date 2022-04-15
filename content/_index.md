@@ -21,10 +21,11 @@ CSV,LTSV,JSON,TBLNファイルにSQLを実行できるツール
 
 ### [ov](https://github.com/noborus/ov) [![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/ov)](https://pkg.go.dev/github.com/noborus/ov)
 
-Terminal Pager 
+Terminal Pager
 
 less,moreの代わりとしても動作する高機能ページャー。
 
+* [ov pages](/ov/)
 * [ovの紹介](blog/oviewer/)
 * [ov(English)](blog/oviewer_en/)
 * [ovの紹介](https://zenn.dev/noborus/articles/2b1087a1274cf41c4c0a)(Zenn)
