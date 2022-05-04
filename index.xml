@@ -12,34 +12,7 @@ JSONの文字列とみなせる箇所がnullの場合は、それほど問題で
 Introducing zqで示されている問題にSQLで解くときにスッキリ書けるようになっています。
 上記の&amp;quot;A Practical Example&amp;quot;は、以下のSQLで解けます。
 SELECT json(author_name)-&amp;gt;&amp;gt;0 AS author_name, count(*) AS count FROM openlibrary.json::.docs WHERE author_name IS NOT NULL AND publish_year IS NOT NULL GROUP BY json(author_name)-&amp;gt;&amp;gt;0 ORDER BY count DESC LIMIT 3; {&amp;quot;author_name&amp;quot;:&amp;quot;S. Stepniak&amp;quot;,&amp;quot;count&amp;quot;:38} {&amp;quot;author_name&amp;quot;:&amp;quot;Władysław Stępniak&amp;quot;,&amp;quot;count&amp;quot;:7} {&amp;quot;author_name&amp;quot;:&amp;quot;Władysław Stępniak&amp;quot;,&amp;quot;count&amp;quot;:4} Unicodeの正規化はPostgreSQLエンジンを使用する場合はnormalize()関数があるため、間に入れれば可能です。SQLite3エンジンを使用する場合は、 別のコマンドで正規化してからパイプで使用する必要があります。
-jq .docs openlibrary.json| uconv norm | trdsql -driver sqlite3 -ijson -ojsonl &amp;quot;SELECT json(author_name)-&amp;gt;&amp;gt;0 AS author_name, count(*) AS count FROM - WHERE author_name IS NOT NULL AND publish_year IS NOT NULL GROUP BY json(author_name)-&amp;gt;&amp;gt;0 ORDER BY count DESC LIMIT 3&amp;quot; NULLオプション追加 また、-inullと-onullオプションを追加しました。-inullはSQLのNULLに変換する文字列を指定し、 -onullはSQLのNULLを指定された文字列に変換します。</description></item><item><title>手っ取り遅くSQLを学ぶ</title><link>https://noborus.github.io/blog/sql/</link><pubDate>Sun, 01 May 2022 10:00:00 +0900</pubDate><guid>https://noborus.github.io/blog/sql/</guid><description>手っ取り遅くSQLを学ぶ 「手っ取り遅くSQLを学ぶ」とは？すぐにSQLを使えるよう学ぶのではなく、まわりくどくSQLを理解して学んでいく方法で解説します。
-「手っ取り早くSQLを学ぶ」と言ったら、よく使うSQLをなるべくシンプルな形にして、実際に試しながら、徐々に応用していく方法だと考えています。 「手っ取り遅くSQLを学ぶ」はその逆で、SQLの記法は後回しにして考え方を解説します。
-まずはテーブル SQLは主にリレーショナル・データベース（RDBMS）で使用されるデータ操作のための言語です。
-SQLを学ぶには、まずテーブルを理解する必要があります。
-テーブルとは、訳すと「表」なので、コンピューターと関係なくても日常でも溢れている表現方法です。 名簿であったり、一覧表など一般に、よく目にします。
-SQLで扱うテーブルは、表全般の中でもう少しルールが定まったものを対象とします。
-他のプログラミング言語と同じく「型を持った値」があります。数値の123や文字列の&amp;rsquo;abc&amp;rsquo;等。 この「型を持った値」を複数持つことができます。これをレコードと言ったり、「行」と言ったりします。
-このレコードが含んでいる値の数と型が一致している集合がテーブルです。 通常は、単純な数合わせではなく、型が一致しているだけでもなく、同じ意味を表しています。これをカラムと言ったり、「列」と言ったりします。 このカラムには名前を付けられることが多いです。「格納」する場合は、あとで取り出す必要があるので名前が必須になります。
-この集合をレコードの配列と考えても良いかもしれませんが、この時点では順序は不動なことに注意が必要です。 他のプログラミングからは、2次元配列で表される場合もありますが、プログラミング言語を理解している人は、構造体の配列と考えた方が良いでしょう。実際にSQLで操作したデータをプログラミング言語で受け取るときには、構造体の配列に変換することがよくあります。
-そして、テーブルの行も列も理論上は0以上無限まで可能です。 実際には上限はデータベースの仕様やコンピューターの限界値に左右されますが、下限は0から可能です。
-行が0というのは、たとえば名簿リストを作成したとして該当者が存在しないことはあるのでよくある話だと思いますが、列が0というのは理論上存在しても現実にはないので、定義はできないようにしているデータベースもあります。
-この「テーブル」単位にしておけば、自分の欲しいデータを取得できると考えて作られたのがリレーショナル・データベース（RDBMS）で、そのための記法がSQLです。
-SQLとは？ リレーショナル・データベースは、SQLを実行できるだけでなくテーブルを効率よく管理するためにいろいろな機能が備わっていますが、主要なSQLはテーブルを操作するため、少し切り離して考えることができます。
-SQLはテーブル（複数でも可）から「1つの」テーブルを作ることを目的としています。
-SQLをすでに知っている人からすると、テーブルを作ると言ったら「CREATE TABLE」と思うかもしれません。 データベースにテーブルを作るという狭い意味ではそうなのですが、その結果がテーブルになるという意味で広い意味では、テーブルを作るという目的であると言えます。
-INSERT/UPDATE/DELETEなどの更新系SQL文は、実行した結果がデータベースに反映されます。
-取得するSQL文と説明されることが多いSELECT文は、実際には取得ではなく、「SELECT」の意味の通り、「選択する」と解釈する方が正しいです。 「SELECT」文により選択された結果が指定されていない場合は、暗黙の了解として結果を取得します。
-3つ以上のテーブルから1つのテーブルを「作る」場合、まず2つのテーブルから1つのテーブルを作成し、作成されたテーブルと残ったテーブルから、1つのテーブルを作成するといった風に考えることで3つ以上のテーブルから1つのテーブルを作成できます。
-数学（というよりも算数）の「3+2+4」を「3+2」してその結果から「5+4」を計算するのと似ています。
-つまりSQLはテーブルとテーブルの計算式と言えます。
-JOIN テーブルの計算式として、一番基本は算数の足し算に相当するテーブルのJOINです。 ただし、テーブルとテーブルのJOINは、むしろ算数の掛け算に似ています。
-まずは列だけ考えてみます。テーブルAとテーブルXをJOINします。
-テーブルA
-A B テーブルX
-X Y テーブルとテーブルのJOINは、双方の「列」はそのまま全部使用します。
-A B X Y 続いて、行のJOINを考えます。
-Aテーブルの1行に対してXテーブルのすべての行に合成します。これをAテーブルのすべての行でおこないます。
-A B 1 3 2 4 X Y 1 8 2 9 Aの1行目とXテーブルを合成</description></item><item><title>第32回 PostgreSQLアンカンファレンス@オンラインで発表しました</title><link>https://noborus.github.io/blog/pgunconf/</link><pubDate>Fri, 01 Apr 2022 09:54:52 +0900</pubDate><guid>https://noborus.github.io/blog/pgunconf/</guid><description>「作ったツール紹介」というタイトルで発表しました https://pgunconf.connpass.com/event/240528/
+jq .docs openlibrary.json| uconv norm | trdsql -driver sqlite3 -ijson -ojsonl &amp;quot;SELECT json(author_name)-&amp;gt;&amp;gt;0 AS author_name, count(*) AS count FROM - WHERE author_name IS NOT NULL AND publish_year IS NOT NULL GROUP BY json(author_name)-&amp;gt;&amp;gt;0 ORDER BY count DESC LIMIT 3&amp;quot; NULLオプション追加 また、-inullと-onullオプションを追加しました。-inullはSQLのNULLに変換する文字列を指定し、 -onullはSQLのNULLを指定された文字列に変換します。</description></item><item><title>第32回 PostgreSQLアンカンファレンス@オンラインで発表しました</title><link>https://noborus.github.io/blog/pgunconf/</link><pubDate>Fri, 01 Apr 2022 09:54:52 +0900</pubDate><guid>https://noborus.github.io/blog/pgunconf/</guid><description>「作ったツール紹介」というタイトルで発表しました https://pgunconf.connpass.com/event/240528/
 自分で作った以下のツールを紹介してます。
 trdsql ov pgsp jpug-doc-tool また、ovの関連でページャーとして、lessとpspgも紹介してます。
 とくに、lessはまだ正式リリース版ではないですが、ヘッダーオプションが追加されるということで、PostgreSQLに限らず全DBのCLIを使っている人にとって、朗報だと思います。
@@ -154,7 +127,7 @@ termbox-go gocui termui termbox-goのimported by tcell系 tcellは、termbox-go�
 さらに元々termbox-goを使用していたgocuiをtcellに変更したawesome-gocui/gocuiも開発されています。
 tcell tcell/views tview cview cbind gowid goban awesome-gocui/gocui tcellのimported by bubbletea系 端末全部を使用するモードしかないtermbox-goとtcellと違い彗星のごとく現われたbubbleteaは現在のプロンプトから対話するような、ちょっとしたプログラムから端末全部を使用するTUIまでサポートしています。
 既に例が豊富に用意されていて、十分に実用に耐えるように思います。
-bubbletea bubbles bubbleteaのimported by その他 はいずれも端末画面をまるまる使用することを前提に作られています。起動すると現在の端末画面は消えて（終了時に戻すことは可能）、新しい画面が表示されます。
+bubbletea bubbles bubbleteaのimported by その他 termbox-goやtcellは、端末画面をまるまる使用することを前提に作られています。起動すると現在の端末画面は消えて（終了時に戻すことは可能）、新しい画面が表示されます。
 現在のshellプロンプトで動作するような対話型プログラムの場合は、termbox-goやtcellでは作ることはできないので、bubbletea系か別のライブラリや自前で実装することになります。
 別のプログラムとしては、対話型のライブラリとして go-promptやlinerがあります。
 また、コンソール上の表示を助けるツールとして色を付けたり、その行のまま表示を変えるプログレスバー的な表示をするライブラリがあります。
