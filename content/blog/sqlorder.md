@@ -58,7 +58,7 @@ SELECT c1%2, c1, c2 FROM test_table ORDER BY c1%2;
 そして、厄介なのはここからです。`ORDER BY`は列番号を使用できる実装が多く存在します。
 これは、一旦SQL-92で標準に入った（その後削除されたらしい）ので、大抵の実装では使えてしまいます。
 
-{{< tweet 1232944202075426816 >}}
+{{< tweet user="noborus" id="1232944202075426816" >}}
 
 ```SQL
 SELECT c1,c2 FROM test_table ORDER BY 1;
@@ -134,6 +134,6 @@ Apple
 
 しかし、そうすると「the results are no longer ordered, as is expected with ORDER BY constant.」はちょっと誤解を招くと思います。
 実際、誤解しましたし。
-{{< tweet 1322178409074618368 >}}
+{{< tweet user="noborus" id="1322178409074618368" >}}
 
 つまり、これは「列番号」ではなく「列番号と解釈されない固定値」（しかし直接、整数を指定すると列番号と解釈されちゃう）ということではないかと。
