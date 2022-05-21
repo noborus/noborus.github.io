@@ -10,6 +10,10 @@ weight = 2
 
 ## Usage
 
-### [psql](/ov/psql/)
+### psql
 
-### [git](/ov/git/)
+[psql](/ov/psql/) settings and usage examples.
+
+### git
+
+[git](/ov/git/) psql settings and usage examples.
