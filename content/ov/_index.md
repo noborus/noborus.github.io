@@ -4,7 +4,7 @@ title = "Feature-rich terminal pager ov"
 date = "2022-05-20"
 +++
 
-[![ov](https://socialify.git.ci/noborus/ov/image?description=1&descriptionEditable=Feature-rich%20terminal%20pager&font=Inter&name=1&owner=1&pattern=Circuit%20Board&stargazers=1&theme=Light)](https://github.com/noborus/ov)
+[![ov](/ov/ov-screen.png)](https://github.com/noborus/ov)
 
 ## Features
 
@@ -25,3 +25,7 @@ Browsing the text will be comfortable with the following specifications.
 ### git
 
 [git](/ov/git/) settings and usage examples.
+
+### watch
+
+[watch](/ov/watch/)

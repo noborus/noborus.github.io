@@ -1,6 +1,6 @@
 ---
 author: "Noboru Saito"
-title: "psql"
+title: "ov-psql"
 date: 2022-05-19T10:00:00+09:00
 tags: ["ov"]
 categories: ["ov"]
@@ -39,3 +39,15 @@ PAGER 'ov -F --section-delimiter "^-"'
 ```
 
 ![\x](/ov/psql-vf.gif)
+
+## unaligned (\a)
+
+Even in unaligned display, it is displayed comfortably by using column highlighting.
+
+The PAGER specification does not change with the following.
+
+```env
+PSQL_PAGER'ov -F -C -d "|" -H1'.
+```
+
+![\a](/ov/psql-alignment.gif)
