@@ -6,6 +6,8 @@ date = "2022-05-20"
 
 [![ov](/ov/ov-screen.png)](https://github.com/noborus/ov)
 
+Please refer to the [github site](https://github.com/noborus/ov) for **installation and settings.**
+
 ## Features
 
 Text viewer that manipulates text in meaningful units with delimiters.
@@ -16,7 +18,8 @@ Browsing the text will be comfortable with the following specifications.
 * Column unit
 * Section unit
 
-## Usage
+
+## Use case
 
 ### psql
 
