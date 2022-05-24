@@ -1,9 +1,10 @@
 ---
 author: "Noboru Saito"
-title: "use ov with git"
+title: "Use ov with git"
 date: 2022-05-19T10:00:00+09:00
 tags: ["ov"]
 categories: ["ov"]
+weight: 2
 ---
 
 Git calls pager when needed.

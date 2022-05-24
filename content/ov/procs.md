@@ -1,9 +1,10 @@
 ---
 author: "Noboru Saito"
-title: "use ov with procs"
+title: "Use ov with procs"
 date: 2022-05-24T09:00:00+09:00
 tags: ["ov"]
 categories: ["ov"]
+weight: 8
 ---
 
 [procs](https://github.com/dalance/procs) supports pager.

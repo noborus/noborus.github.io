@@ -4,6 +4,7 @@ title: "Use ov with mysql"
 date: 2022-05-24T09:00:00+09:00
 tags: ["ov"]
 categories: ["ov"]
+weight: 4
 ---
 
 `ov` can be used as a pager for mysql or MySQL Shell.

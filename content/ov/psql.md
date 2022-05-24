@@ -4,6 +4,7 @@ title: "Use ov with psql"
 date: 2022-05-19T10:00:00+09:00
 tags: ["ov"]
 categories: ["ov"]
+weight: 1
 ---
 
 ## psql
@@ -22,6 +23,11 @@ The following sets the header style of `ov.yaml`.
 StyleHeader:
   Background: "#23274f"
   Bold: true
+StyleColumnHighlight:
+  Foreground: "lightcyan"
+  Reverse: true
+StyleAlternate:
+  Background: "#2a2a2a"
 ```
 
 ![psql](/ov/psql-ov.gif)

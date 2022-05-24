@@ -7,26 +7,3 @@ date = "2022-05-20"
 [![ov](ov-screen.png)](https://github.com/noborus/ov)
 
 Please refer to the [github site](https://github.com/noborus/ov) for **installation and settings.**
-
-## Features
-
-Text viewer that manipulates text in meaningful units with delimiters.
-
-Browsing the text will be comfortable with the following specifications.
-
-* Header
-* Column unit
-* Section unit
-
-## Use case
-
-* [psql](psql/)
-* [git](git/)
-* [watch](watch/)
-* [mysql](mysql/)
-* [pgcli](pgcli/)
-* [mycli](mycli/)
-* [man](man/)
-* [procs](procs/)
-* [bat](bat/)
-* [csv](csv/)

@@ -1,9 +1,10 @@
 ---
 author: "Noboru Saito"
-title: "use ov with bat"
+title: "Use ov with bat"
 date: 2022-05-24T09:00:00+09:00
 tags: ["ov"]
 categories: ["ov"]
+weight: 9
 ---
 
 [bat](https://github.com/sharkdp/bat) supports pager.

@@ -1,9 +1,10 @@
 ---
 author: "Noboru Saito"
-title: "use ov with man"
+title: "Use ov with man"
 date: 2022-05-24T09:00:00+09:00
 tags: ["ov"]
 categories: ["ov"]
+weight: 7
 ---
 
 `ov` can also be used as a man pager.
