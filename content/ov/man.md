@@ -1,0 +1,26 @@
+---
+author: "Noboru Saito"
+title: "ov-man"
+date: 2022-05-24T09:00:00+09:00
+tags: ["ov"]
+categories: ["ov"]
+---
+
+`ov` can also be used as a man pager.
+
+```env
+MANPAGER=ov
+```
+
+In the man page, you can set the color by the `StyleOverStrike` and `StyleOverLine` styles.
+
+![ov-man.png](/ov/ov-man.png)
+
+```yaml
+StyleOverStrike:
+  Foreground: "aqua"
+  Bold: true
+StyleOverLine:
+  Foreground: "red"
+  Underline: true
+```

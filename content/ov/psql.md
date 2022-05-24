@@ -16,6 +16,14 @@ If it fits on the screen, exit the pager(-F).
 PSQL_PAGER 'ov -F -C -d "|" -H1'
 ```
 
+The following sets the header style of `ov.yaml`.
+
+```yaml
+StyleHeader:
+  Background: "#23274f"
+  Bold: true
+```
+
 ![psql](/ov/psql-ov.gif)
 
 ## watch(PostgreSQL 15)
