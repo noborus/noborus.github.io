@@ -1,6 +1,6 @@
 ---
 author: "Noboru Saito"
-title: "ov-csv"
+title: "View csv file with ov"
 date: 2022-05-24T09:00:00+09:00
 tags: ["ov"]
 categories: ["ov"]

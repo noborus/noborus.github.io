@@ -1,6 +1,6 @@
 ---
 author: "Noboru Saito"
-title: "ov-watch"
+title: "Watch files with ov"
 date: 2022-05-22T18:00:00+09:00
 tags: ["ov"]
 categories: ["ov"]

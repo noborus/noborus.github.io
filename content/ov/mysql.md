@@ -1,6 +1,6 @@
 ---
 author: "Noboru Saito"
-title: "ov-mysql"
+title: "Use ov with mysql"
 date: 2022-05-24T09:00:00+09:00
 tags: ["ov"]
 categories: ["ov"]

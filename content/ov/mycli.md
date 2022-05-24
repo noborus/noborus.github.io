@@ -1,6 +1,6 @@
 ---
 author: "Noboru Saito"
-title: "ov-mycli"
+title: "Use ov with mycli"
 date: 2022-05-24T09:00:00+09:00
 tags: ["ov"]
 categories: ["ov"]

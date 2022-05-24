@@ -1,6 +1,6 @@
 ---
 author: "Noboru Saito"
-title: "ov-pgcli"
+title: "Use ov with pgcli"
 date: 2022-05-24T09:00:00+09:00
 tags: ["ov"]
 categories: ["ov"]

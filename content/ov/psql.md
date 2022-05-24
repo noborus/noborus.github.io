@@ -1,6 +1,6 @@
 ---
 author: "Noboru Saito"
-title: "ov-psql"
+title: "Use ov with psql"
 date: 2022-05-19T10:00:00+09:00
 tags: ["ov"]
 categories: ["ov"]
