@@ -1,9 +1,10 @@
 ---
 author: "Noboru Saito"
 title: "How to use section"
-date: 2022-05-26T10:00:00+09:00
+date: 2022-05-26T08:00:00+09:00
 tags: ["ov"]
 categories: ["ov"]
+weight: 99
 ---
 
 `ov` can use a unit called section.
