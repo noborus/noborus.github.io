@@ -44,6 +44,10 @@ PSQL_WATCH_PAGER 'ov --follow-section --section-delimiter "^$"'
 
 ![watch](/ov/psql-watch.gif)
 
+You can operate it even during follow-section.
+
+![watch2](/ov/psql-watch2.gif)
+
 ## expanded output (\x)
 
 Even when displaying in the extended output (\x), if the record delimiter is treated as a section delimiter, the display when moved will be easier to see.
