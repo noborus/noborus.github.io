@@ -73,18 +73,18 @@ trdsqlを`-debug`オプション付きで起動すると詳細が表示されま
 
 ### 設定ファイルが見つからなかった場合
 
-{{< highlight sh "linenos=table,hl_lines=2-4,linenostart=1" >}}
+```console
 trdsql -debug -db pdb "SELECT * FROM testdata/test.csv"
 2019/12/27 11:22:13 configOpen: open /home/noborus/.config/trdsql/config.json: no such file or directory
 2019/12/27 11:22:13 ERROR: db[pdb] does not found
 2019/12/27 11:22:13 driver: sqlite3, dsn: 
 2019/12/27 11:22:13 [SELECT][ ][*][ ][FROM][ ][testdata/test.csv]
 ...（省略）
-{{< / highlight >}}
+```
 
 ### 設定ファイルが見つかった場合
 
-{{< highlight sh "linenos=table,hl_lines=2-5,linenostart=1" >}}
+```console
 trdsql -debug -db pdb "SELECT * FROM testdata/test.csv"
 2019/12/27 11:30:18 config found: config.json.sample
 2019/12/27 11:30:18  [driver: sdb:sqlite3:]
@@ -92,6 +92,6 @@ trdsql -debug -db pdb "SELECT * FROM testdata/test.csv"
 2019/12/27 11:30:18  [driver: mdb:mysql:user:password@/dbname]
 2019/12/27 11:30:18 [SELECT][ ][*][ ][FROM][ ][testdata/test.csv]
 ...（省略）
-{{< / highlight >}}
+```
 
 4行目にある「>」によって、pdbが使用されていることがわかります。

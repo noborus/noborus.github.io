@@ -2,14 +2,14 @@
 author = "Noboru Saito"
 title = "trdsql 目次"
 date = "2019-12-01"
-aliases = ["/blog/00_index/"]
+aliases = ["/trdsql/"]
 menu = "main"
 weight = 2
 +++
 
 CSV,LTSV,JSON,TBLNファイルにSQLを実行できるツールの[trdsql](https://github.com/noborus/trdsql)のドキュメントです。
 
-[trdsql Advent Calendar 2019](https://qiita.com/advent-calendar/2019/trdsql)として書かれています。
+最初は、[trdsql Advent Calendar 2019](https://qiita.com/advent-calendar/2019/trdsql)として書かれました。その後追記しています。
 
 ## 目次
 

@@ -19,7 +19,7 @@ trdsqlのパッケージは、以下の構成になっていて、それぞれ�
 
 簡単なサンプルを示します。
 
-{{< highlight go "linenos=table,linenostart=1" >}}
+```go
 package main
 
 import (
@@ -38,7 +38,7 @@ func main() {
                 log.Fatal(err)
         }
 }
-{{< / highlight >}}
+```
 
 上記のプログラムは/etc/passwdに対してSQL文を実行しています。
 Importer(データベースにインポートするインターフェイス）とExporter(データベースから結果を出力するインターフェイス）を与えてTRDSQLをNewし、Execで実行するのが、おおまかな流れです。
@@ -81,7 +81,6 @@ ImporterとExporterの準備が済んでいれば、ExecでSQLを実際に実行
 
 trdsqlには、参考してファイルからのインポートだけでなく、スライスからインポートする関数が入っています。
 それを利用したサンプルが [_example/slice/](https://github.com/noborus/trdsql/blob/master/_example/slice/main.go "github.com/noborus/trdsql/blob/master/_example/slice/main.go") にあります。
-
 
 また、trdsql packageを利用して[shirou/gopsutil](https://github.com/shirou/gopsutil "github.com/shirou/gopsutil")の結果をSQLで取得できるようにしたものが、
 [noborus/psutilsql](https://github.com/noborus/psutilsql "github.com/noborus/psutilsql") です。
