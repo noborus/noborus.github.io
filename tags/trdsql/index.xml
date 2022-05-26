@@ -101,7 +101,7 @@ C:\Users\{&amp;quot;User&amp;quot;}\AppData\Roaming\trdsql\config.json configフ
 デフォルトの変更だけでなく、ここで定義しておくと trdsqlのオプション -db mdb を指定することにより、簡単にmysqlドライバのエンジンに切り替えられます。
 確認方法 configファイルが無くても動作するため、実際にエンジンが変更されているかわかりにくいことがあります。
 trdsqlを-debugオプション付きで起動すると詳細が表示されますので、そこで確認して下さい。
-設定ファイルが見つからなかった場合 1 2 3 4 5 6 trdsql -debug -db pdb &amp;#34;SELECT * FROM testdata/test.</description></item><item><title>trdsql SQLファイル指定</title><link>https://noborus.github.io/blog/26_file_sql/</link><pubDate>Thu, 26 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/blog/26_file_sql/</guid><description>SQLファイル名指定オプション「-q」 trdsql &amp;ldquo;SQLコマンド&amp;quot;の形式だと、長いSQLを書くのが難しいですし、シェルに対してエスケープしなければならない文字があって見た目もわかりにくい場合があります。
+設定ファイルが見つからなかった場合 trdsql -debug -db pdb &amp;quot;SELECT * FROM testdata/test.</description></item><item><title>trdsql SQLファイル指定</title><link>https://noborus.github.io/blog/26_file_sql/</link><pubDate>Thu, 26 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/blog/26_file_sql/</guid><description>SQLファイル名指定オプション「-q」 trdsql &amp;ldquo;SQLコマンド&amp;quot;の形式だと、長いSQLを書くのが難しいですし、シェルに対してエスケープしなければならない文字があって見た目もわかりにくい場合があります。
 trdsqlではファイルにSQLを書いておき、そのファイルのSQLを実行させるオプションがあります。
 以下のように記述したSQLをtest.sqlで保存しておきます。
 test.sql
@@ -111,7 +111,15 @@ id,name 1,tarou 2,jirou &amp;ldquo;SQLコマンド&amp;rdquo; の代わりに �
 trdsql -ih -oat -q test.sql +----+-------+ | id | name | +----+-------+ | 1 | tarou | | 2 | jirou | +----+-------+</description></item><item><title>trdsql ライブラリ使用</title><link>https://noborus.github.io/blog/25_library/</link><pubDate>Wed, 25 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/blog/25_library/</guid><description>trdsqlは初期の頃は、main packageで構成されていましたが、現在はtrdsql packageをmainから呼び出す構成になっていて、trdsql packageをライブラリとして使用できます。
 trdsqlのパッケージは、以下の構成になっていて、それぞれ呼び出し可能です。
 簡単なサンプルを示します。
-1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 package main import ( &amp;#34;log&amp;#34; &amp;#34;github.com/noborus/trdsql&amp;#34; ) func main() { trd := trdsql.NewTRDSQL( trdsql.NewImporter(trdsql.InDelimiter(&amp;#34;:&amp;#34;)), trdsql.NewExporter(trdsql.NewWriter()), ) err := trd.Exec(&amp;#34;SELECT c1 FROM /etc/passwd&amp;#34;) if err != nil { log.Fatal(err) } } 上記のプログラムは/etc/passwdに対してSQL文を実行しています。 Importer(データベースにインポートするインターフェイス）とExporter(データベースから結果を出力するインターフェイス）を与えてTRDSQLをNewし、Execで実行するのが、おおまかな流れです。</description></item><item><title>trdsql グラフ</title><link>https://noborus.github.io/blog/24_graph/</link><pubDate>Tue, 24 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/blog/24_graph/</guid><description>trdsqlは、グラフ作成機能は持っていないためグラフを作成したいときには別のツールを使用して作成することになります。
+package main import ( &amp;quot;log&amp;quot; &amp;quot;github.com/noborus/trdsql&amp;quot; ) func main() { trd := trdsql.NewTRDSQL( trdsql.NewImporter(trdsql.InDelimiter(&amp;quot;:&amp;quot;)), trdsql.NewExporter(trdsql.NewWriter()), ) err := trd.Exec(&amp;quot;SELECT c1 FROM /etc/passwd&amp;quot;) if err != nil { log.Fatal(err) } } 上記のプログラムは/etc/passwdに対してSQL文を実行しています。 Importer(データベースにインポートするインターフェイス）とExporter(データベースから結果を出力するインターフェイス）を与えてTRDSQLをNewし、Execで実行するのが、おおまかな流れです。
+func NewTRDSQL(im Importer, ex Exporter) *TRDSQL このImporter,Exporterはインターフェイスに沿っていれば、置き換えられます（例えば、SQL内のファイルをインポートするのではなく、独自にインポートするにはImporterのインターフェイスに沿った関数を作成します）。
+Importer デフォルトのImporterは、trdsql.NewImporter()を呼び出せば作成できます。 デフォルトのImporterはtrdsql.Import()でReadOptsのオプションを取ります。ここでフォーマットやその他オプションを渡します。
+SQL文にある「/etc/passwd」をデータベースにインポートして使用するのは、デフォルトの動作のため、区切り文字のみ「:」に変更しています。
+trdsql.Import()はSQL文を受け取り、必要なファイルをデータベースにインポートします。そのときにファイルの形式に合わせたtrdsql.Readerインターフェイス（各CSV,LTSV,JSON,TBLNのReader)からテーブルへインポートされます。
+また、インポートするデータベースによってバルクインサートかCOPYによるインポートを選択してインポートしています。
+Exporter デフォルトのExporterは、trdsql.NewExporter()を呼び出せば作成できます。 SQLでは出力は1つなので、出力する関数（trdsql.NewWriter()）を渡しています。 trdsql.NewWriter()はWriteOptsによりフォーマットと動作のオプションを設定して、実際のWriter関数（CSV、LTSV、JSON、TBLN、AT、VF&amp;hellip;)によりSQLを実行した結果を書き出します。
+Exec ImporterとExporterの準備が済んでいれば、ExecでSQLを実際に実行します。
+データベース接続 トランザクションの開始 Importerでインポートの実行 Exporterで指定したSQLの実行をして出力 トランザクションの終了 データベース切断 参考資料 trdsqlには、参考してファイルからのインポートだけでなく、スライスからインポートする関数が入っています。 それを利用したサンプルが _example/slice/ にあります。</description></item><item><title>trdsql グラフ</title><link>https://noborus.github.io/blog/24_graph/</link><pubDate>Tue, 24 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/blog/24_graph/</guid><description>trdsqlは、グラフ作成機能は持っていないためグラフを作成したいときには別のツールを使用して作成することになります。
 ExcelやLibreOfficeで描画するのが定番でしょうが、ここではmarianogappa/chartでグラフを描画する方法を紹介します。
 marianogappa/chartは、Goで作られていて、や多くのプラットフォームで動作して、標準入力から受け取ったデータをブラウザに描画します。
 複雑なグラフには向いていませんが、簡単なグラフを少ないオプションを指定するだけで描画できます。
