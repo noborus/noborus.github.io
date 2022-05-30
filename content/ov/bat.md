@@ -1,7 +1,7 @@
 ---
 author: "Noboru Saito"
 title: "Use ov with bat"
-date: 2022-05-24T09:00:00+09:00
+date: 2022-05-30T09:00:00+09:00
 tags: ["ov"]
 categories: ["ov"]
 weight: 9
@@ -12,7 +12,7 @@ weight: 9
 You can use it by setting the environment variable PAGER or BAT_PAGER.
 
 ```console
-export BAT_PAGER="ov -F"
+export BAT_PAGER="ov -F -H3"
 ```
 
 `bat` should not be wrapped (`--wrap=never`).
