@@ -46,7 +46,12 @@ SetContent( x int, y int, mainc rune, combc []rune, style Style) 端末上の左
 指定するのはgoのruneなので、マルチバイトであっても1文字として指定できます。
 ただgoのruneは符号化単位なので、Unicodeの結合文字は別文字扱いになります。その結合文字をcombcのrune配列に追加して表現できます。
 そして、styleには、文字色、背景色、反転等のスタイルをtcellの値で渡します。
-SetContent()を使って端末画面分埋めれば自由に描画ができるわけです。</description></item><item><title>GoのTUIで表示が崩れる場合</title><link>https://noborus.github.io/blog/runewidth/</link><pubDate>Mon, 06 Apr 2020 16:10:00 +0900</pubDate><guid>https://noborus.github.io/blog/runewidth/</guid><description>結論 gnome-terminalを使用している場合は、設定の「曖昧幅の文字(W)」と環境変数RUNEWIDTH_EASTASIANを一致させよう。
+SetContent()を使って端末画面分埋めれば自由に描画ができるわけです。
+ただSetContent()を使って描画していくのは、なかなか大変でマルチバイト文字を1文字として扱うことはできますが、日本語等のいわゆる全角幅の文字は次の文字をxを1つとばして置かないと違う文字になってしまいます。
+そのため全角幅を含む文字列を描画する場合はgo-runewidthを使用して、文字幅を調べながら1文字づつ設置していくのが通常の手順になります。
+そして、もう1つ重要なのがイベント管理で、tcellがキー、マウス、リサイズ等のイベントを管理してくれます。そのイベントを受け取ってSetContent()で描画し直せば、論理上アプリケーションが作成できます。
+以下に最小の例をあげます。
+package main import ( &amp;quot;log&amp;quot; &amp;quot;github.</description></item><item><title>GoのTUIで表示が崩れる場合</title><link>https://noborus.github.io/blog/runewidth/</link><pubDate>Mon, 06 Apr 2020 16:10:00 +0900</pubDate><guid>https://noborus.github.io/blog/runewidth/</guid><description>結論 gnome-terminalを使用している場合は、設定の「曖昧幅の文字(W)」と環境変数RUNEWIDTH_EASTASIANを一致させよう。
 Ambiguous width(曖昧幅) ターミナル上のアプリケーション(TUI)では、GUIと違って文字単位で描画されます。 そして1文字の幅は固定されていて、アルファベットは1文字分とすると日本語などは2文字分使用する、いわゆる半角全角の世界です。 ただし、既にUnicode(UTF-8)が標準となっているので、バイト数と文字幅は関係しないようになっています。
 Unicodeでは幅が決まっている文字がほとんどですが、一部に「Ambiguous; 曖昧」とされている文字があります。
 以前は英語圏のアプリケーションではASCIIの範囲内のみを使用していて「Ambiguous」な範囲の文字を使用するのは、それ以外の地域の人だったため、全角幅で問題になることは無かったのですが、Unicodeの使用が拡大するにつれて英語圏の方が作るアプリケーションでも「Ambiguous」な幅の文字が使用されることが増えてきました。
