@@ -30,9 +30,9 @@ categories = [
 Linux/Windows/macOSの場合は、[GitHubのリリースページ](https://github.com/noborus/trdsql/releases "github.com/noborus/trdsql/releases")からバイナリを[ダウンロード](https://github.com/noborus/trdsql/releases "github.com/noborus/trdsql/releases")できます。
 Goで作られていて、他に依存ライブラリがない１バイナリなので、展開してすぐに実行できます。
 
-### [Docker](https://www.docker.com/)
+### Docker
 
-Dockerが使用できる環境であればDockerでも実行できます。[Docker Hub](https://hub.docker.com/)からdocker pullも使用できるので、以下のようにしてpullしてください。
+[Docker](https://www.docker.com/)が使用できる環境であればDockerでも実行できます。[Docker Hub](https://hub.docker.com/)からdocker pullも使用できるので、以下のようにしてpullしてください。
 
 {{< cmd >}}
 docker pull noborus/trdsql
