@@ -47,3 +47,4 @@ CSV,LTSV,JSON,TBLNファイルにSQLを実行できるツールの[trdsql](https
 1. [CASE式](/blog/32_case/)
 1. [圧縮](/blog/33_compression/)
 1. [ファイル名出力](/blog/34_output/)
+2. [jq構文](/blog/35_jq/)
