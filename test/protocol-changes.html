@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>53.10. プロトコル2.0からの変更点の要約</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="protocol-logicalrep-message-formats.html" title="53.9. 論理レプリケーションのメッセージ書式" /><link rel="next" href="source.html" title="第54章 PostgreSQLコーディング規約" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="protocol.html" title="第53章 フロントエンド/バックエンドプロトコル">第53章 フロントエンド/バックエンドプロトコル</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      protocol-changes.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="protocol-logicalrep-message-formats.html" title="53.9. 論理レプリケーションのメッセージ書式">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="protocol.html" title="第53章 フロントエンド/バックエンドプロトコル">上へ</a></td><td width="60%" align="center">53.10. プロトコル2.0からの変更点の要約</td><td width="20%" align="right"> <a accesskey="n" href="source.html" title="第54章 PostgreSQLコーディング規約">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PROTOCOL-CHANGES"><div class="titlepage"><div><div><h2 class="title" style="clear: both">53.10. プロトコル2.0からの変更点の要約</h2></div></div></div><span class="original">
+&lt;title&gt;Summary of Changes since Protocol 2.0&lt;/title&gt;
+</span><p>
+<span class="original">
+This section provides a quick checklist of changes, for the benefit of
+developers trying to update existing client libraries to protocol 3.0.
+</span>
+本節では、既存のクライアントライブラリをプロトコル3.0に更新しようとする開発者向けに、変更点の簡易チェックリストを示します。
+</p><p>
+<span class="original">
+The initial startup packet uses a flexible list-of-strings format
+instead of a fixed format.  Notice that session default values for run-time
+parameters can now be specified directly in the startup packet.  (Actually,
+you could do that before using the &lt;literal&gt;options&lt;/literal&gt; field, but given the
+limited width of &lt;literal&gt;options&lt;/literal&gt; and the lack of any way to quote
+whitespace in the values, it wasn't a very safe technique.)
+</span>
+最初の開始パケットは、固定書式ではなく、柔軟な文字列のリスト書式を使用します。
+実行時パラメータのセッションのデフォルト値が直接開始パケット内に指定できるようになった点に注意してください。
+（実際、以前でも<code class="literal">options</code>フィールドを使用してこれを行うことができましたが、<code class="literal">options</code>には長さに制限があること、および値内の空白文字を引用符でくくる方法がないことから、あまり安全な技法ではありませんでした。）
+</p><p>
+<span class="original">
+All messages now have a length count immediately following the message type
+byte (except for startup packets, which have no type byte).  Also note that
+PasswordMessage now has a type byte.
+</span>
+すべてのメッセージが、メッセージ種類バイトの直後にバイト数を持つようになりました
+（種類バイトがない開始パケットは例外です）。
+また、PasswordMessageが種類バイトを持つようになったことにも注意してください。
+</p><p>
+<span class="original">
+ErrorResponse and NoticeResponse ('&lt;literal&gt;E&lt;/literal&gt;' and '&lt;literal&gt;N&lt;/literal&gt;')
+messages now contain multiple fields, from which the client code can
+assemble an error message of the desired level of verbosity.  Note that
+individual fields will typically not end with a newline, whereas the single
+string sent in the older protocol always did.
+</span>
+ErrorResponseおよびNoticeResponse（'<code class="literal">E</code>'および'<code class="literal">N</code>'）メッセージが複数のフィールドを持つようになりました。
+これを使用して、クライアントコードは、必要な冗長度に合わせて、エラーメッセージを組み立てることができます。
+個々のフィールドが通常改行で終わらないことに注意してください。
+単一の文字列を送信する古いプロトコルでは、常に改行で終わっていました。
+</p><p>
+<span class="original">
+The ReadyForQuery ('&lt;literal&gt;Z&lt;/literal&gt;') message includes a transaction status
+indicator.
+</span>
+ReadyForQuery（'<code class="literal">Z</code>'）メッセージに、トランザクション状態指示子が含まれます。
+</p><p>
+<span class="original">
+The distinction between BinaryRow and DataRow message types is gone; the
+single DataRow message type serves for returning data in all formats.
+Note that the layout of DataRow has changed to make it easier to parse.
+Also, the representation of binary values has changed: it is no longer
+directly tied to the server's internal representation.
+</span>
+BinaryRowとDataRowメッセージ種類間の区別がなくなりました。
+1つのDataRowメッセージ種類で、すべての書式で記述されたデータを返すことができます。
+DataRowのレイアウトが解析しやすいように変更されたことに注意してください。
+またバイナリ値の表現も変更されました。
+もはやサーバの内部表現に直接束縛されません。
+</p><p>
+<span class="original">
+There is a new &lt;quote&gt;extended query&lt;/quote&gt; sub-protocol, which adds the frontend
+message types Parse, Bind, Execute, Describe, Close, Flush, and Sync, and the
+backend message types ParseComplete, BindComplete, PortalSuspended,
+ParameterDescription, NoData, and CloseComplete.  Existing clients do not
+have to concern themselves with this sub-protocol, but making use of it
+might allow improvements in performance or functionality.
+</span>
+新しい<span class="quote">「<span class="quote">拡張問い合わせ</span>」</span>サブプロトコルがあります。
+これにより、フロントエンドメッセージ種類にParse、Execute、Describe、Close、Flush、およびSyncが、バックエンドメッセージ種類にParseComplete、BindComplete、PortalSuspended、ParameterDescription、NoData、およびCloseCompleteが追加されました。
+既存のクライアントは、このサブプロトコルを意識する必要はありませんが、これを使用することで、性能や機能を向上させることができます。
+</p><p>
+<span class="original">
+&lt;command&gt;COPY&lt;/command&gt; data is now encapsulated into CopyData and CopyDone messages.  There
+is a well-defined way to recover from errors during &lt;command&gt;COPY&lt;/command&gt;.  The special
+&lt;quote&gt;&lt;literal&gt;\.&lt;/literal&gt;&lt;/quote&gt; last line is not needed anymore, and is not sent
+during &lt;command&gt;COPY OUT&lt;/command&gt;.
+(It is still recognized as a terminator during &lt;command&gt;COPY IN&lt;/command&gt;, but its use is
+deprecated and will eventually be removed.)  Binary &lt;command&gt;COPY&lt;/command&gt; is supported.
+The CopyInResponse and CopyOutResponse messages include fields indicating
+the number of columns and the format of each column.
+</span>
+<code class="command">COPY</code>データがCopyDataとCopyDoneメッセージにカプセル化されるようになりました。
+<code class="command">COPY</code>中のエラーから復旧するための十分に定義された方法があります。
+特別な<span class="quote">「<span class="quote"><code class="literal">\.</code></span>」</span>という最後の行はもはや不要で、<code class="command">COPY OUT</code>で送信されません。
+（<code class="command">COPY IN</code>ではまだ終端として認識されます。しかし、この使用は廃止予定で、最終的には削除されます。）
+バイナリ<code class="command">COPY</code>がサポートされます。
+CopyInResponseとCopyOutResponseメッセージは、列数と各列の書式を示すフィールドが含まれます。
+</p><p>
+<span class="original">
+The layout of FunctionCall and FunctionCallResponse messages has changed.
+FunctionCall can now support passing NULL arguments to functions.  It also
+can handle passing parameters and retrieving results in either text or
+binary format.  There is no longer any reason to consider FunctionCall a
+potential security hole, since it does not offer direct access to internal
+server data representations.
+</span>
+FunctionCallとFunctionCallResponseメッセージのレイアウトが変更されました。
+FunctionCallは関数へのNULL引数を渡すことができるようになりました。
+また、テキストとバイナリ書式のどちらでもパラメータの引き渡しと結果の取り出しを扱うことができます。
+サーバの内部データ表現への直接アクセスを提供しなくなりましたので、FunctionCallを潜在的なセキュリティホールとみなす理由はもはやありません。
+</p><p>
+<span class="original">
+The backend sends ParameterStatus ('&lt;literal&gt;S&lt;/literal&gt;') messages during connection
+startup for all parameters it considers interesting to the client library.
+Subsequently, a ParameterStatus message is sent whenever the active value
+changes for any of these parameters.
+</span>
+バックエンドは、接続開始時にクライアントライブラリが興味を持つとみなされるすべてのパラメータのためにParameterStatus（'<code class="literal">S</code>'）メッセージを送信します。
+その後、これらのパラメータのいずれかの実際の値が変更された時は常に、ParameterStatusメッセージが送信されます。
+</p><p>
+<span class="original">
+The RowDescription ('&lt;literal&gt;T&lt;/literal&gt;') message carries new table OID and column
+number fields for each column of the described row.  It also shows the format
+code for each column.
+</span>
+RowDescription（'<code class="literal">T</code>'）メッセージは、新規に、記述する各列に対してテーブルのOIDと列番号フィールドを伝えます。
+また各列の書式コードも示します。
+</p><p>
+<span class="original">
+The CursorResponse ('&lt;literal&gt;P&lt;/literal&gt;') message is no longer generated by
+the backend.
+</span>
+CursorResponse（'<code class="literal">P</code>'）メッセージはもはやバックエンドで生成されません。
+</p><p>
+<span class="original">
+The NotificationResponse ('&lt;literal&gt;A&lt;/literal&gt;') message has an additional string
+field, which can carry a &lt;quote&gt;payload&lt;/quote&gt; string passed
+from the &lt;command&gt;NOTIFY&lt;/command&gt; event sender.
+</span>
+NotificationResponse（'<code class="literal">A</code>'）メッセージは、<code class="command">NOTIFY</code>イベントの送信者から渡される<span class="quote">「<span class="quote">ペイロード</span>」</span>文字列を伝えることができる追加文字列フィールドを持ちます。
+</p><p>
+<span class="original">
+The EmptyQueryResponse ('&lt;literal&gt;I&lt;/literal&gt;') message used to include an empty
+string parameter; this has been removed.
+</span>
+EmptyQueryResponse（'<code class="literal">I</code>'）メッセージは、空の文字列パラメータを含めるために使用されていました。
+これは削除されました。
+</p></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="protocol-logicalrep-message-formats.html" title="53.9. 論理レプリケーションのメッセージ書式">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="protocol.html" title="第53章 フロントエンド/バックエンドプロトコル">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="source.html" title="第54章 PostgreSQLコーディング規約">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">53.9. 論理レプリケーションのメッセージ書式 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 第54章 PostgreSQLコーディング規約</td></tr></table></div></body></html>

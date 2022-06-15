@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>ALTER SUBSCRIPTION</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-alterstatistics.html" title="ALTER STATISTICS" /><link rel="next" href="sql-altersystem.html" title="ALTER SYSTEM" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      sql-altersubscription.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-alterstatistics.html" title="ALTER STATISTICS">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">ALTER SUBSCRIPTION</td><td width="20%" align="right"> <a accesskey="n" href="sql-altersystem.html" title="ALTER SYSTEM">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-ALTERSUBSCRIPTION"><div class="titlepage"></div><a id="id-1.9.3.33.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">ALTER SUBSCRIPTION</span></h2><p>ALTER SUBSCRIPTION<span class="original">
+  &lt;refpurpose&gt;change the definition of a subscription&lt;/refpurpose&gt;
+</span> — サブスクリプションの定義を変更する</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
+ALTER SUBSCRIPTION <em class="replaceable"><code>name</code></em> CONNECTION '<em class="replaceable"><code>conninfo</code></em>'
+ALTER SUBSCRIPTION <em class="replaceable"><code>name</code></em> SET PUBLICATION <em class="replaceable"><code>publication_name</code></em> [, ...] [ WITH ( <em class="replaceable"><code>publication_option</code></em> [= <em class="replaceable"><code>value</code></em>] [, ... ] ) ]
+ALTER SUBSCRIPTION <em class="replaceable"><code>name</code></em> ADD PUBLICATION <em class="replaceable"><code>publication_name</code></em> [, ...] [ WITH ( <em class="replaceable"><code>publication_option</code></em> [= <em class="replaceable"><code>value</code></em>] [, ... ] ) ]
+ALTER SUBSCRIPTION <em class="replaceable"><code>name</code></em> DROP PUBLICATION <em class="replaceable"><code>publication_name</code></em> [, ...] [ WITH ( <em class="replaceable"><code>publication_option</code></em> [= <em class="replaceable"><code>value</code></em>] [, ... ] ) ]
+ALTER SUBSCRIPTION <em class="replaceable"><code>name</code></em> REFRESH PUBLICATION [ WITH ( <em class="replaceable"><code>refresh_option</code></em> [= <em class="replaceable"><code>value</code></em>] [, ... ] ) ]
+ALTER SUBSCRIPTION <em class="replaceable"><code>name</code></em> ENABLE
+ALTER SUBSCRIPTION <em class="replaceable"><code>name</code></em> DISABLE
+ALTER SUBSCRIPTION <em class="replaceable"><code>name</code></em> SET ( <em class="replaceable"><code>subscription_parameter</code></em> [= <em class="replaceable"><code>value</code></em>] [, ... ] )
+ALTER SUBSCRIPTION <em class="replaceable"><code>name</code></em> OWNER TO { <em class="replaceable"><code>new_owner</code></em> | CURRENT_ROLE | CURRENT_USER | SESSION_USER }
+ALTER SUBSCRIPTION <em class="replaceable"><code>name</code></em> RENAME TO <em class="replaceable"><code>new_name</code></em>
+</pre></div><div class="refsect1" id="id-1.9.3.33.5"><h2>説明</h2><span class="original">
+  &lt;title&gt;Description&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;command&gt;ALTER SUBSCRIPTION&lt;/command&gt; can change most of the subscription
+   properties that can be specified
+   in &lt;xref linkend="sql-createsubscription"/&gt;.
+</span>
+<code class="command">ALTER SUBSCRIPTION</code>は<a class="xref" href="sql-createsubscription.html" title="CREATE SUBSCRIPTION"><span class="refentrytitle">CREATE SUBSCRIPTION</span></a>で指定できるサブスクリプションの属性のほとんどを変更できます。
+  </p><p>
+<span class="original">
+   You must own the subscription to use &lt;command&gt;ALTER SUBSCRIPTION&lt;/command&gt;.
+   To alter the owner, you must also be a direct or indirect member of the
+   new owning role. The new owner has to be a superuser.
+   (Currently, all subscription owners must be superusers, so the owner checks
+   will be bypassed in practice.  But this might change in the future.)
+</span>
+<code class="command">ALTER SUBSCRIPTION</code>を使用するには、そのサブスクリプションを所有していなければなりません。
+所有者を変更するには、新しい所有ロールの直接的あるいは間接的メンバーでもなければなりません。
+新しい所有者はスーパーユーザである必要があります。
+（現在は、すべてのサブスクリプションの所有者はスーパーユーザでなければならず、そのため所有者のチェックは実際には回避されます。
+しかしこれは将来、変更されるかもしれません。）
+  </p><p>
+<span class="original">
+   When refreshing a publication we remove the relations that are no longer
+   part of the publication and we also remove the table synchronization slots
+   if there are any. It is necessary to remove these slots so that the resources
+   allocated for the subscription on the remote host are released. If due to
+   network breakdown or some other error, &lt;productname&gt;PostgreSQL&lt;/productname&gt;
+   is unable to remove the slots, an ERROR will be reported. To proceed in this
+   situation, the user either needs to retry the operation or disassociate the
+   slot from the subscription and drop the subscription as explained in
+   &lt;xref linkend="sql-dropsubscription"/&gt;.
+</span>
+パブリケーションを更新するときには、もうパブリケーションの一部ではないリレーションを削除し、存在すればテーブル同期スロットも削除します。
+リモートホストでサブスクリプションのために割り当てられたリソースを解放するために、これらのスロットを解放することが必要です。
+ネットワーク切れやその他のエラーにより<span class="productname">PostgreSQL</span>がスロットを削除できなかった場合、ERRORが報告されます。
+この状況で処理を進めるためには、ユーザは操作を再度試みるか、または、スロットをサブスクリプションから切り離し、<a class="xref" href="sql-dropsubscription.html" title="DROP SUBSCRIPTION"><span class="refentrytitle">DROP SUBSCRIPTION</span></a>で説明するようサブスクリプションを削除することが必要です。
+  </p><p>
+<span class="original">
+   Commands &lt;command&gt;ALTER SUBSCRIPTION ... REFRESH PUBLICATION&lt;/command&gt; and
+   &lt;command&gt;ALTER SUBSCRIPTION ... {SET|ADD|DROP} PUBLICATION ...&lt;/command&gt; with refresh
+   option as true cannot be executed inside a transaction block.
+</span>
+コマンド<code class="command">ALTER SUBSCRIPTION ... REFRESH PUBLICATION</code>と更新オプションが真の<code class="command">ALTER SUBSCRIPTION ... {SET|ADD|DROP} PUBLICATION ...</code>は、トランザクションブロック内では実行できません。
+  </p></div><div class="refsect1" id="id-1.9.3.33.6"><h2>パラメータ</h2><span class="original">
+  &lt;title&gt;Parameters&lt;/title&gt;
+</span><div class="variablelist"><dl class="variablelist"><dt><span class="term"><em class="replaceable"><code>name</code></em></span></dt><dd><p>
+<span class="original">
+      The name of a subscription whose properties are to be altered.
+</span>
+属性の変更の対象となるサブスクリプションの名前です。
+     </p></dd><dt><span class="term"><code class="literal">CONNECTION '<em class="replaceable"><code>conninfo</code></em>'</code></span></dt><dd><p>
+<span class="original">
+      This clause alters the connection property originally set by
+      &lt;xref linkend="sql-createsubscription"/&gt;.  See there for more
+      information.
+</span>
+この句では、元は<a class="xref" href="sql-createsubscription.html" title="CREATE SUBSCRIPTION"><span class="refentrytitle">CREATE SUBSCRIPTION</span></a>により設定された接続の属性を変更します。
+詳細な情報はそちらを参照してください。
+     </p></dd><dt><span class="term"><code class="literal">SET PUBLICATION <em class="replaceable"><code>publication_name</code></em></code><br /></span><span class="term"><code class="literal">ADD PUBLICATION <em class="replaceable"><code>publication_name</code></em></code><br /></span><span class="term"><code class="literal">DROP PUBLICATION <em class="replaceable"><code>publication_name</code></em></code></span></dt><dd><p>
+<span class="original">
+      Changes the list of subscribed publications.  &lt;literal&gt;SET&lt;/literal&gt;
+      replaces the entire list of publications with a new list,
+      &lt;literal&gt;ADD&lt;/literal&gt; adds additional publications to the list of
+      publications, and &lt;literal&gt;DROP&lt;/literal&gt; removes the publications from
+      the list of publications.  See &lt;xref linkend="sql-createsubscription"/&gt;
+      for more information.  By default, this command will also act like
+      &lt;literal&gt;REFRESH PUBLICATION&lt;/literal&gt;.
+</span>
+サブスクライブするパブリケーションのリストを変更します。
+<code class="literal">SET</code>はパブリケーションのリスト全体を新しいリストで置き換え、<code class="literal">ADD</code>は追加のパブリケーションをパブリケーションのリストに追加し、<code class="literal">DROP</code>はパブリケーションをパブリケーションのリストから削除します。
+詳細は<a class="xref" href="sql-createsubscription.html" title="CREATE SUBSCRIPTION"><span class="refentrytitle">CREATE SUBSCRIPTION</span></a>を参照してください。
+デフォルトでは、このコマンドは<code class="literal">REFRESH PUBLICATION</code>のような動作もします。
+     </p><p>
+<span class="original">
+      &lt;replaceable&gt;publication_option&lt;/replaceable&gt; specifies additional
+      options for this operation.  The supported options are:
+</span>
+<em class="replaceable"><code>publication_option</code></em>は、この操作についての追加のオプションを指定します。
+以下のオプションがサポートされています。
+
+      </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">refresh</code> (<code class="type">boolean</code>)</span></dt><dd><p>
+<span class="original">
+          When false, the command will not try to refresh table information.
+          &lt;literal&gt;REFRESH PUBLICATION&lt;/literal&gt; should then be executed separately.
+          The default is &lt;literal&gt;true&lt;/literal&gt;.
+</span>
+falseにすると、このコマンドはテーブルを情報を更新しません。
+後で別に<code class="literal">REFRESH PUBLICATION</code>を実行することになります。
+デフォルトは<code class="literal">true</code>です。
+         </p></dd></dl></div><p>
+
+<span class="original">
+      Additionally, the options described under
+      &lt;literal&gt;REFRESH PUBLICATION&lt;/literal&gt; may be specified, to control the
+      implicit refresh operation.
+</span>
+さらに、暗黙の更新動作を制御するために<code class="literal">REFRESH PUBLICATION</code>の項で説明されているオプションを指定できます。
+     </p></dd><dt><span class="term"><code class="literal">REFRESH PUBLICATION</code></span></dt><dd><p>
+<span class="original">
+      Fetch missing table information from publisher.  This will start
+      replication of tables that were added to the subscribed-to publications
+      since the last invocation of &lt;command&gt;REFRESH PUBLICATION&lt;/command&gt; or
+      since &lt;command&gt;CREATE SUBSCRIPTION&lt;/command&gt;.
+</span>
+不足しているテーブル情報をパブリッシャーから取得します。
+最後の<code class="command">REFRESH PUBLICATION</code>、あるいは<code class="command">CREATE SUBSCRIPTION</code>の実行の後でサブスクライブ対象のパブリケーションに追加されたテーブルの複製が、これにより開始されます。
+     </p><p>
+<span class="original">
+      &lt;replaceable&gt;refresh_option&lt;/replaceable&gt; specifies additional options for the
+      refresh operation.  The supported options are:
+</span>
+<em class="replaceable"><code>refresh_option</code></em>は更新(refresh)の操作について追加のオプションを指定します。
+以下のオプションがサポートされています。
+
+      </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">copy_data</code> (<code class="type">boolean</code>)</span></dt><dd><p>
+<span class="original">
+          Specifies whether the existing data in the publications that are
+          being subscribed to should be copied once the replication starts.
+          The default is &lt;literal&gt;true&lt;/literal&gt;.  (Previously subscribed
+          tables are not copied.)
+</span>
+サブスクライブ対象のパブリケーションにある既存のデータが、レプリケーションの開始時にコピーされるかどうかを指定します。
+デフォルトは<code class="literal">true</code>です。
+(以前にサブスクライブされたテーブルはコピーされません。)
+         </p></dd></dl></div></dd><dt><span class="term"><code class="literal">ENABLE</code></span></dt><dd><p>
+<span class="original">
+      Enables the previously disabled subscription, starting the logical
+      replication worker at the end of transaction.
+</span>
+以前に無効化されたサブスクリプションを有効化し、トランザクションの終了時に論理レプリケーションワーカを起動します。
+     </p></dd><dt><span class="term"><code class="literal">DISABLE</code></span></dt><dd><p>
+<span class="original">
+      Disables the running subscription, stopping the logical replication
+      worker at the end of transaction.
+</span>
+実行中のサブスクリプションを無効化し、トランザクションの終了時に論理レプリケーションワーカを停止します。
+     </p></dd><dt><span class="term"><code class="literal">SET ( <em class="replaceable"><code>subscription_parameter</code></em> [= <em class="replaceable"><code>value</code></em>] [, ... ] )</code></span></dt><dd><p>
+<span class="original">
+      This clause alters parameters originally set by
+      &lt;xref linkend="sql-createsubscription"/&gt;.  See there for more
+      information.  The parameters that can be altered
+      are &lt;literal&gt;slot_name&lt;/literal&gt;,
+      &lt;literal&gt;synchronous_commit&lt;/literal&gt;,
+      &lt;literal&gt;binary&lt;/literal&gt;, and
+      &lt;literal&gt;streaming&lt;/literal&gt;.
+</span>
+この句では、元は<a class="xref" href="sql-createsubscription.html" title="CREATE SUBSCRIPTION"><span class="refentrytitle">CREATE SUBSCRIPTION</span></a>により設定されたパラメータを変更します。
+詳細な情報はそちらを参照してください。
+変更できるパラメータは<code class="literal">slot_name</code>、<code class="literal">synchronous_commit</code>、<code class="literal">binary</code>と<code class="literal">streaming</code>です。
+     </p></dd><dt><span class="term"><em class="replaceable"><code>new_owner</code></em></span></dt><dd><p>
+<span class="original">
+      The user name of the new owner of the subscription.
+</span>
+サブスクリプションの新しい所有者のユーザ名です。
+     </p></dd><dt><span class="term"><em class="replaceable"><code>new_name</code></em></span></dt><dd><p>
+<span class="original">
+      The new name for the subscription.
+</span>
+サブスクリプションの新しい名前です。
+     </p></dd></dl></div></div><div class="refsect1" id="id-1.9.3.33.7"><h2>例</h2><span class="original">
+  &lt;title&gt;Examples&lt;/title&gt;
+</span><p>
+<span class="original">
+   Change the publication subscribed by a subscription to
+   &lt;literal&gt;insert_only&lt;/literal&gt;:
+</span>
+サブスクリプションがサブスクライブするパブリケーションを<code class="literal">insert_only</code>に変更します。
+</p><pre class="programlisting">
+ALTER SUBSCRIPTION mysub SET PUBLICATION insert_only;
+</pre><p>
+  </p><p>
+<span class="original">
+   Disable (stop) the subscription:
+</span>
+サブスクリプションを無効化（停止）します。
+</p><pre class="programlisting">
+ALTER SUBSCRIPTION mysub DISABLE;
+</pre></div><div class="refsect1" id="id-1.9.3.33.8"><h2>互換性</h2><span class="original">
+  &lt;title&gt;Compatibility&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;command&gt;ALTER SUBSCRIPTION&lt;/command&gt; is a &lt;productname&gt;PostgreSQL&lt;/productname&gt;
+   extension.
+</span>
+<code class="command">ALTER SUBSCRIPTION</code>は<span class="productname">PostgreSQL</span>の拡張です。
+  </p></div><div class="refsect1" id="id-1.9.3.33.9"><h2>関連項目</h2><span class="original">
+  &lt;title&gt;See Also&lt;/title&gt;
+</span><span class="simplelist"><a class="xref" href="sql-createsubscription.html" title="CREATE SUBSCRIPTION"><span class="refentrytitle">CREATE SUBSCRIPTION</span></a>, <a class="xref" href="sql-dropsubscription.html" title="DROP SUBSCRIPTION"><span class="refentrytitle">DROP SUBSCRIPTION</span></a>, <a class="xref" href="sql-createpublication.html" title="CREATE PUBLICATION"><span class="refentrytitle">CREATE PUBLICATION</span></a>, <a class="xref" href="sql-alterpublication.html" title="ALTER PUBLICATION"><span class="refentrytitle">ALTER PUBLICATION</span></a></span></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-alterstatistics.html" title="ALTER STATISTICS">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-altersystem.html" title="ALTER SYSTEM">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">ALTER STATISTICS </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> ALTER SYSTEM</td></tr></table></div></body></html>

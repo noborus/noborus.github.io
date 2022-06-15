@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>SET CONSTRAINTS</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-set.html" title="SET" /><link rel="next" href="sql-set-role.html" title="SET ROLE" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      sql-set-constraints.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-set.html" title="SET">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">SET CONSTRAINTS</td><td width="20%" align="right"> <a accesskey="n" href="sql-set-role.html" title="SET ROLE">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-SET-CONSTRAINTS"><div class="titlepage"></div><a id="id-1.9.3.174.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">SET CONSTRAINTS</span></h2><p>SET CONSTRAINTS<span class="original">
+  &lt;refpurpose&gt;set constraint check timing for the current transaction&lt;/refpurpose&gt;
+</span> — 現在のトランザクションの制約検査のタイミングを設定する</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
+SET CONSTRAINTS { ALL | <em class="replaceable"><code>name</code></em> [, ...] } { DEFERRED | IMMEDIATE }
+</pre></div><div class="refsect1" id="id-1.9.3.174.5"><h2>説明</h2><span class="original">
+  &lt;title&gt;Description&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;command&gt;SET CONSTRAINTS&lt;/command&gt; sets the behavior of constraint
+   checking within the current transaction. &lt;literal&gt;IMMEDIATE&lt;/literal&gt;
+   constraints are checked at the end of each
+   statement. &lt;literal&gt;DEFERRED&lt;/literal&gt; constraints are not checked until
+   transaction commit.  Each constraint has its own
+   &lt;literal&gt;IMMEDIATE&lt;/literal&gt; or &lt;literal&gt;DEFERRED&lt;/literal&gt; mode.
+</span>
+<code class="command">SET CONSTRAINTS</code>は、現在のトランザクションにおける制約検査の動作を設定します。
+<code class="literal">IMMEDIATE</code>制約は、1つの文の実行が終わるごとに検査されます。
+<code class="literal">DEFERRED</code>制約は、トランザクションがコミットされるまで検査されません。
+全ての制約は、<code class="literal">IMMEDIATE</code>か<code class="literal">DEFERRED</code>のどちらかのモードを持ちます。
+  </p><p>
+<span class="original">
+   Upon creation, a constraint is given one of three
+   characteristics: &lt;literal&gt;DEFERRABLE INITIALLY DEFERRED&lt;/literal&gt;,
+   &lt;literal&gt;DEFERRABLE INITIALLY IMMEDIATE&lt;/literal&gt;, or
+   &lt;literal&gt;NOT DEFERRABLE&lt;/literal&gt;. The third
+   class is always &lt;literal&gt;IMMEDIATE&lt;/literal&gt; and is not affected by the
+   &lt;command&gt;SET CONSTRAINTS&lt;/command&gt; command.  The first two classes start
+   every transaction in the indicated mode, but their behavior can be changed
+   within a transaction by &lt;command&gt;SET CONSTRAINTS&lt;/command&gt;.
+</span>
+制約にはその生成時点で、<code class="literal">DEFERRABLE INITIALLY DEFERRED</code>、<code class="literal">DEFERRABLE INITIALLY IMMEDIATE</code>、<code class="literal">NOT DEFERRABLE</code>の3つのうちのいずれかの性質が与えられます。
+3番目の<code class="literal">NOT DEFERRABLE</code>制約は、常に<code class="literal">IMMEDIATE</code>モードであり、<code class="command">SET CONSTRAINTS</code>コマンドの影響を受けません。
+<code class="literal">DEFERRABLE INITIALLY DEFERRED</code>制約と<code class="literal">DEFERRABLE INITIALLY IMMEDIATE</code>制約の2つは、トランザクションを指定されたモードで開始しますが、トランザクション内で<code class="command">SET CONSTRAINTS</code>を使用するとその振舞いを変更することができます。
+  </p><p>
+<span class="original">
+   &lt;command&gt;SET CONSTRAINTS&lt;/command&gt; with a list of constraint names changes
+   the mode of just those constraints (which must all be deferrable).  Each
+   constraint name can be schema-qualified.  The
+   current schema search path is used to find the first matching name if
+   no schema name is specified.  &lt;command&gt;SET CONSTRAINTS ALL&lt;/command&gt;
+   changes the mode of all deferrable constraints.
+</span>
+<code class="command">SET CONSTRAINTS</code>に制約名のリストをつけて実行すると、指定された制約（これらは全て遅延可能でなければなりません）のみのモードが変更されます。
+制約名はそれぞれスキーマ修飾可能です。
+スキーマ名が指定されていない場合、現在のスキーマ検索パスを使用して、最初に一致する名前を見つけます。
+<code class="command">SET CONSTRAINTS ALL</code>は遅延可能な全ての制約のモードを変更します。
+  </p><p>
+<span class="original">
+   When &lt;command&gt;SET CONSTRAINTS&lt;/command&gt; changes the mode of a constraint
+   from &lt;literal&gt;DEFERRED&lt;/literal&gt;
+   to &lt;literal&gt;IMMEDIATE&lt;/literal&gt;, the new mode takes effect
+   retroactively: any outstanding data modifications that would have
+   been checked at the end of the transaction are instead checked during the
+   execution of the &lt;command&gt;SET CONSTRAINTS&lt;/command&gt; command.
+   If any such constraint is violated, the &lt;command&gt;SET CONSTRAINTS&lt;/command&gt;
+   fails (and does not change the constraint mode).  Thus, &lt;command&gt;SET
+   CONSTRAINTS&lt;/command&gt; can be used to force checking of constraints to
+   occur at a specific point in a transaction.
+</span>
+制約のモードを<code class="literal">DEFERRED</code>から<code class="literal">IMMEDIATE</code>に変更した場合は、新しい制約モードが遡及的に有効になります。
+つまり、トランザクションの終了時に検査される予定だった未検査のデータ変更が、<code class="command">SET CONSTRAINTS</code>コマンドの実行中に検査されます。
+もし、この時に何らかの制約違反があった場合、<code class="command">SET CONSTRAINTS</code>は失敗します
+（そして、制約モードは変更されません）。
+したがって、<code class="command">SET CONSTRAINTS</code>を利用すれば、トランザクションの特定の時点で強制的に制約の検査を実行することができます。
+  </p><p>
+<span class="original">
+   Currently, only &lt;literal&gt;UNIQUE&lt;/literal&gt;, &lt;literal&gt;PRIMARY KEY&lt;/literal&gt;,
+   &lt;literal&gt;REFERENCES&lt;/literal&gt; (foreign key), and &lt;literal&gt;EXCLUDE&lt;/literal&gt;
+   constraints are affected by this setting.
+   &lt;literal&gt;NOT NULL&lt;/literal&gt; and &lt;literal&gt;CHECK&lt;/literal&gt; constraints are
+   always checked immediately when a row is inserted or modified
+   (&lt;emphasis&gt;not&lt;/emphasis&gt; at the end of the statement).
+   Uniqueness and exclusion constraints that have not been declared
+   &lt;literal&gt;DEFERRABLE&lt;/literal&gt; are also checked immediately.
+</span>
+現在<code class="literal">UNIQUE</code>、<code class="literal">PRIMARY KEY</code>、<code class="literal">REFERENCES</code>（外部キー）、<code class="literal">EXCLUDE</code>制約のみがこの設定の影響を受けます。
+<code class="literal">NOT NULL</code>および<code class="literal">CHECK</code>制約は、行が挿入または変更された時に（文の終了時では<span class="emphasis"><em>ありません</em></span>）、常に即座に検査されます。
+<code class="literal">DEFERRABLE</code>宣言されていない一意性制約および排除制約も即座に検査されます。
+  </p><p>
+<span class="original">
+   The firing of triggers that are declared as &lt;quote&gt;constraint triggers&lt;/quote&gt;
+   is also controlled by this setting &amp;mdash; they fire at the same time
+   that the associated constraint should be checked.
+</span>
+また、<span class="quote">「<span class="quote">制約トリガ</span>」</span>として宣言されたトリガの発行もこの設定により制御されます。
+これらは関連する制約が検査されるはずの時に同時に発行されます。
+  </p></div><div class="refsect1" id="id-1.9.3.174.6"><h2>注釈</h2><span class="original">
+  &lt;title&gt;Notes&lt;/title&gt;
+</span><p>
+<span class="original">
+   Because &lt;productname&gt;PostgreSQL&lt;/productname&gt; does not require constraint
+   names to be unique within a schema (but only per-table), it is possible
+   that there is more than one match for a specified constraint name.
+   In this case &lt;command&gt;SET CONSTRAINTS&lt;/command&gt; will act on all matches.
+   For a non-schema-qualified name, once a match or matches have been found in
+   some schema in the search path, schemas appearing later in the path are not
+   searched.
+</span>
+<span class="productname">PostgreSQL</span>では、スキーマ内で制約名が一意となることを要求していません（テーブル単位での一意性のみ要求します）ので、指定した制約名に複数が一致する可能性があります。
+この場合<code class="command">SET CONSTRAINTS</code>は一致するすべてに対して動作します。
+スキーマ修飾がない名前では、検索パス上のあるスキーマに1つまたは複数の一致があると、パス上のそれより後にあるスキーマは検索されません。
+  </p><p>
+<span class="original">
+   This command only alters the behavior of constraints within the
+   current transaction.  Issuing this outside of a transaction block
+   emits a warning and otherwise has no effect.
+</span>
+このコマンドが変更するのは、現在のトランザクション内の制約の動作のみです。
+トランザクションブロックの外部でこのコマンドが実行されても、警告を発するだけで、他には何の効果もありません。
+  </p></div><div class="refsect1" id="id-1.9.3.174.7"><h2>互換性</h2><span class="original">
+  &lt;title&gt;Compatibility&lt;/title&gt;
+</span><p>
+<span class="original">
+   This command complies with the behavior defined in the SQL
+   standard, except for the limitation that, in
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt;, it does not apply to
+   &lt;literal&gt;NOT NULL&lt;/literal&gt; and &lt;literal&gt;CHECK&lt;/literal&gt; constraints.
+   Also, &lt;productname&gt;PostgreSQL&lt;/productname&gt; checks non-deferrable
+   uniqueness constraints immediately, not at end of statement as the
+   standard would suggest.
+</span>
+このコマンドは、標準SQLで定義された動作に準拠しています。
+ただし、<span class="productname">PostgreSQL</span>では<code class="literal">NOT NULL</code>および<code class="literal">CHECK</code>制約に適用できないという制限があります。
+また<span class="productname">PostgreSQL</span>は非遅延一意性制約を、標準が提案する文の終わりにではなく、即座に検査します。
+  </p></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-set.html" title="SET">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-set-role.html" title="SET ROLE">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">SET </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> SET ROLE</td></tr></table></div></body></html>

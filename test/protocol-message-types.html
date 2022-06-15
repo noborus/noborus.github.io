@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>53.6. メッセージのデータ型</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="protocol-logical-replication.html" title="53.5. 論理ストリーミングレプリケーションのプロトコル" /><link rel="next" href="protocol-message-formats.html" title="53.7. メッセージの書式" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="protocol.html" title="第53章 フロントエンド/バックエンドプロトコル">第53章 フロントエンド/バックエンドプロトコル</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      protocol-message-types.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="protocol-logical-replication.html" title="53.5. 論理ストリーミングレプリケーションのプロトコル">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="protocol.html" title="第53章 フロントエンド/バックエンドプロトコル">上へ</a></td><td width="60%" align="center">53.6. メッセージのデータ型</td><td width="20%" align="right"> <a accesskey="n" href="protocol-message-formats.html" title="53.7. メッセージの書式">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PROTOCOL-MESSAGE-TYPES"><div class="titlepage"><div><div><h2 class="title" style="clear: both">53.6. メッセージのデータ型</h2></div></div></div><span class="original">
+&lt;title&gt;Message Data Types&lt;/title&gt;
+</span><p>
+<span class="original">
+This section describes the base data types used in messages.
+</span>
+本節ではメッセージの中で使われる基本的なデータ型を説明します。
+
+</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+        Int<em class="replaceable"><code>n</code></em>(<em class="replaceable"><code>i</code></em>)
+</span></dt><dd><p>
+<span class="original">
+                An &lt;replaceable&gt;n&lt;/replaceable&gt;-bit integer in network byte
+                order (most significant byte first).
+                If &lt;replaceable&gt;i&lt;/replaceable&gt; is specified it
+                is the exact value that will appear, otherwise the value
+                is variable.  Eg. Int16, Int32(42).
+</span>
+ネットワークバイト順（最上位バイトが先頭）における<em class="replaceable"><code>n</code></em>ビットの整数。
+もし<em class="replaceable"><code>i</code></em>が指定されていれば、それがそのまま使われます。
+さもなければ変数です。
+例えばInt16、Int32(42)などです。
+</p></dd><dt><span class="term">
+        Int<em class="replaceable"><code>n</code></em>[<em class="replaceable"><code>k</code></em>]
+</span></dt><dd><p>
+<span class="original">
+                An array of &lt;replaceable&gt;k&lt;/replaceable&gt;
+                &lt;replaceable&gt;n&lt;/replaceable&gt;-bit integers, each in network
+                byte order.  The array length &lt;replaceable&gt;k&lt;/replaceable&gt;
+                is always determined by an earlier field in the message.
+                Eg. Int16[M].
+</span>
+<em class="replaceable"><code>n</code></em>ビット整数の要素数<em class="replaceable"><code>k</code></em>の配列で、それぞれはネットワークバイト順です。
+配列サイズ<em class="replaceable"><code>k</code></em>は常にメッセージの前のフィールドで決定されます。
+例えばInt16[M]です。
+</p></dd><dt><span class="term">
+        String(<em class="replaceable"><code>s</code></em>)
+</span></dt><dd><p>
+<span class="original">
+                A null-terminated string (C-style string).  There is no
+                specific length limitation on strings.
+                If &lt;replaceable&gt;s&lt;/replaceable&gt; is specified it is the exact
+                value that will appear, otherwise the value is variable.
+                Eg. String, String("user").
+</span>
+NULL終端文字列（C様式文字列）。文字列には長さ制限の指定はありません。
+<em class="replaceable"><code>s</code></em>が指定されていれば、それがそのまま使われます。
+さもなければ値は変数です。
+例えばString、String("user")などです。
+</p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+&lt;emphasis&gt;There is no predefined limit&lt;/emphasis&gt; on the length of a string
+that can be returned by the backend.  Good coding strategy for a frontend
+is to use an expandable buffer so that anything that fits in memory can be
+accepted.  If that's not feasible, read the full string and discard trailing
+characters that don't fit into your fixed-size buffer.
+</span>
+バックエンドから返すことができる文字列の長さには<span class="emphasis"><em>事前に定義された制限はありません</em></span>。
+フロントエンドではメモリに収まるものはすべて受け入れられるように拡張可能なバッファを使用するコーディング戦略を勧めます。
+これが実行できないのであれば、文字列全体を読み取り、固定長バッファに合わない後の方の文字を破棄してください。
+</p></div></dd><dt><span class="term">
+        Byte<em class="replaceable"><code>n</code></em>(<em class="replaceable"><code>c</code></em>)
+</span></dt><dd><p>
+<span class="original">
+                Exactly &lt;replaceable&gt;n&lt;/replaceable&gt; bytes.  If the field
+                width &lt;replaceable&gt;n&lt;/replaceable&gt; is not a constant, it is
+                always determinable from an earlier field in the message.
+                If &lt;replaceable&gt;c&lt;/replaceable&gt; is specified it is the exact
+                value.  Eg. Byte2, Byte1('\n').
+</span>
+厳密に<em class="replaceable"><code>n</code></em>バイト。
+フィールド幅<em class="replaceable"><code>n</code></em>が定数でない場合、メッセージの前のフィールドから決定されます。
+<em class="replaceable"><code>c</code></em>が指定されていれば、それがそのまま使われます。
+例えば Byte2、Byte1('\n')などです。
+</p></dd></dl></div><p>
+</p></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="protocol-logical-replication.html" title="53.5. 論理ストリーミングレプリケーションのプロトコル">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="protocol.html" title="第53章 フロントエンド/バックエンドプロトコル">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="protocol-message-formats.html" title="53.7. メッセージの書式">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">53.5. 論理ストリーミングレプリケーションのプロトコル </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 53.7. メッセージの書式</td></tr></table></div></body></html>

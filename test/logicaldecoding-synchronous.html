@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>49.8. ロジカルデコーディングにおける同期レプリケーションのサポート</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="logicaldecoding-writer.html" title="49.7. ロジカルデコーディング出力ライタ" /><link rel="next" href="logicaldecoding-streaming.html" title="49.9. Streaming of Large Transactions for Logical Decoding" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="logicaldecoding.html" title="第49章 ロジカルデコーディング">第49章 ロジカルデコーディング</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      logicaldecoding-synchronous.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="logicaldecoding-writer.html" title="49.7. ロジカルデコーディング出力ライタ">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="logicaldecoding.html" title="第49章 ロジカルデコーディング">上へ</a></td><td width="60%" align="center">49.8. ロジカルデコーディングにおける同期レプリケーションのサポート</td><td width="20%" align="right"> <a accesskey="n" href="logicaldecoding-streaming.html" title="49.9. Streaming of Large Transactions for Logical Decoding">次へ</a></td></tr></table><hr /></div><div class="sect1" id="LOGICALDECODING-SYNCHRONOUS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">49.8. ロジカルデコーディングにおける同期レプリケーションのサポート</h2></div></div></div><span class="original">
+   &lt;title&gt;Synchronous Replication Support for Logical Decoding&lt;/title&gt;
+</span><div class="sect2" id="id-1.8.14.14.2"><div class="titlepage"><div><div><h3 class="title">49.8.1. Overview</h3></div></div></div><p>
+<span class="original">
+     Logical decoding can be used to build
+     &lt;link linkend="synchronous-replication"&gt;synchronous
+     replication&lt;/link&gt; solutions with the same user interface as synchronous
+     replication for &lt;link linkend="streaming-replication"&gt;streaming
+     replication&lt;/link&gt;.  To do this, the streaming replication interface
+     (see &lt;xref linkend="logicaldecoding-walsender"/&gt;) must be used to stream out
+     data. Clients have to send &lt;literal&gt;Standby status update (F)&lt;/literal&gt;
+     (see &lt;xref linkend="protocol-replication"/&gt;) messages, just like streaming
+     replication clients do.
+</span>
+<a class="link" href="warm-standby.html#STREAMING-REPLICATION" title="27.2.5. ストリーミングレプリケーション">ストリーミングレプリケーション</a>における同期レプリケーションと同じユーザインタフェースで、ロジカルデコーディングを使って<a class="link" href="warm-standby.html#SYNCHRONOUS-REPLICATION" title="27.2.8. 同期レプリケーション">同期レプリケーション</a>ソリューションを構築することができます。
+そのためには、ストリーミングレプリケーションインタフェース(<a class="xref" href="logicaldecoding-walsender.html" title="49.3. ストリームレプリケーションプロトコルインタフェース">49.3</a>参照)を使ってデータをストリーム出力します。
+ストリーミングレプリケーションクライアントが行っているのと同じように、<code class="literal">状態の更新</code>(<a class="xref" href="protocol-replication.html" title="53.4. ストリーミングレプリケーションプロトコル">53.4</a>参照)メッセージを送信しなければなりません。
+    </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+      A synchronous replica receiving changes via logical decoding will work in
+      the scope of a single database. Since, in contrast to
+      that, &lt;parameter&gt;synchronous_standby_names&lt;/parameter&gt; currently is
+      server wide, this means this technique will not work properly if more
+      than one database is actively used.
+</span>
+<em class="parameter"><code>synchronous_standby_names</code></em>がサーバ全体に適用されるのに対し、ロジカルデコーディングを通じて変更データを受け取る同期レプリカは、単一のデータベースのスコープの範囲で動作します。
+このことにより、複数のデータベースが同時に使用される環境では、ロジカルデコーディングを使った同期レプリケーションはうまく動きません。
+     </p></div></div><div class="sect2" id="LOGICALDECODING-SYNCHRONOUS-CAVEATS"><div class="titlepage"><div><div><h3 class="title">49.8.2. Caveats</h3></div></div></div><p>
+     In synchronous replication setup, a deadlock can happen, if the transaction
+     has locked [user] catalog tables exclusively. See
+     <a class="xref" href="logicaldecoding-output-plugin.html#LOGICALDECODING-CAPABILITIES" title="49.6.2. 機能">49.6.2</a> for information on user
+     catalog tables. This is because logical decoding of transactions can lock
+     catalog tables to access them. To avoid this users must refrain from taking
+     an exclusive lock on [user] catalog tables. This can happen in the following
+     ways:
+
+     </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+        Issuing an explicit <code class="command">LOCK</code> on <code class="structname">pg_class</code>
+        in a transaction.
+       </p></li><li class="listitem"><p>
+        Perform <code class="command">CLUSTER</code> on <code class="structname">pg_class</code> in
+        a transaction.
+       </p></li><li class="listitem"><p>
+        <code class="command">PREPARE TRANSACTION</code> after <code class="command">LOCK</code> command
+        on <code class="structname">pg_class</code> and allow logical decoding of two-phase
+        transactions.
+       </p></li><li class="listitem"><p>
+        <code class="command">PREPARE TRANSACTION</code> after <code class="command">CLUSTER</code>
+        command on <code class="structname">pg_trigger</code> and allow logical decoding of
+        two-phase transactions. This will lead to deadlock only when published table
+        have a trigger.
+       </p></li><li class="listitem"><p>
+        Executing <code class="command">TRUNCATE</code> on [user] catalog table in a
+        transaction.
+       </p></li></ul></div><p>
+
+     Note that these commands that can cause deadlock apply to not only explicitly
+     indicated system catalog tables above but also to any other [user] catalog
+     table.
+    </p></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="logicaldecoding-writer.html" title="49.7. ロジカルデコーディング出力ライタ">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="logicaldecoding.html" title="第49章 ロジカルデコーディング">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="logicaldecoding-streaming.html" title="49.9. Streaming of Large Transactions for Logical Decoding">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">49.7. ロジカルデコーディング出力ライタ </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 49.9. Streaming of Large Transactions for Logical Decoding</td></tr></table></div></body></html>

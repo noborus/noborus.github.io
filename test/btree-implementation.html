@@ -1,0 +1,373 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>64.4. 実装</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="btree-support-funcs.html" title="64.3. B-Treeサポート関数" /><link rel="next" href="gist.html" title="第65章 GiSTインデックス" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="btree.html" title="第64章 B-Treeインデックス">第64章 B-Treeインデックス</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      btree-implementation.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="btree-support-funcs.html" title="64.3. B-Treeサポート関数">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="btree.html" title="第64章 B-Treeインデックス">上へ</a></td><td width="60%" align="center">64.4. 実装</td><td width="20%" align="right"> <a accesskey="n" href="gist.html" title="第65章 GiSTインデックス">次へ</a></td></tr></table><hr /></div><div class="sect1" id="BTREE-IMPLEMENTATION"><div class="titlepage"><div><div><h2 class="title" style="clear: both">64.4. 実装</h2></div></div></div><span class="original">
+ &lt;title&gt;Implementation&lt;/title&gt;
+</span><p>
+<span class="original">
+  This section covers B-Tree index implementation details that may be
+  of use to advanced users.  See
+  &lt;filename&gt;src/backend/access/nbtree/README&lt;/filename&gt; in the source
+  distribution for a much more detailed, internals-focused description
+  of the B-Tree implementation.
+</span>
+本節では、上級ユーザに役立つかもしれない、B-Treeインデックスの実装の詳細について説明します。
+更なる詳細、B-Tree実装の内部に焦点をあてた記述については、ソース配布物の<code class="filename">src/backend/access/nbtree/README</code>を参照してください。
+ </p><div class="sect2" id="BTREE-STRUCTURE"><div class="titlepage"><div><div><h3 class="title">64.4.1. B-Treeの構造</h3></div></div></div><span class="original">
+  &lt;title&gt;B-Tree Structure&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; B-Tree indexes are
+   multi-level tree structures, where each level of the tree can be
+   used as a doubly-linked list of pages.  A single metapage is stored
+   in a fixed position at the start of the first segment file of the
+   index.  All other pages are either leaf pages or internal pages.
+   Leaf pages are the pages on the lowest level of the tree.  All
+   other levels consist of internal pages.  Each leaf page contains
+   tuples that point to table rows.  Each internal page contains
+   tuples that point to the next level down in the tree.  Typically,
+   over 99% of all pages are leaf pages.  Both internal pages and leaf
+   pages use the standard page format described in &lt;xref
+    linkend="storage-page-layout"/&gt;.
+</span>
+<span class="productname">PostgreSQL</span>のB-Treeインデックスは複数階層のツリー構造で、ツリーの各階層はページの双方向連結リストとして使用できます。
+一つのメタページがインデックスの最初のセグメントファイルの固定位置に格納されます。
+それ以外の全てのページはリーフページか内部ページのいずれかです。
+リーフページはツリーの最下階層にあるページです。
+各リーフページはテーブルの行を指すタプルを含みます。
+各内部ページはツリーの次の下位層を指すタプルを含みます。
+典型的には、全ページの99％以上がリーフページです。
+内部ページとリーフページは共に、<a class="xref" href="storage-page-layout.html" title="70.6. データベースページのレイアウト">70.6</a>に記載されている標準のページ書式を使用します。
+  </p><p>
+<span class="original">
+   New leaf pages are added to a B-Tree index when an existing leaf
+   page cannot fit an incoming tuple.  A &lt;firstterm&gt;page
+    split&lt;/firstterm&gt; operation makes room for items that originally
+   belonged on the overflowing page by moving a portion of the items
+   to a new page.  Page splits must also insert a new
+   &lt;firstterm&gt;downlink&lt;/firstterm&gt; to the new page in the parent page,
+   which may cause the parent to split in turn.  Page splits
+   &lt;quote&gt;cascade upwards&lt;/quote&gt; in a recursive fashion.  When the
+   root page finally cannot fit a new downlink, a &lt;firstterm&gt;root page
+    split&lt;/firstterm&gt; operation takes place.  This adds a new level to
+   the tree structure by creating a new root page that is one level
+   above the original root page.
+</span>
+既存リーフページがやってくるタプルをはめ込むことができないとき、新たなリーフページがB-Treeインデックスに追加されます。
+<em class="firstterm">ページ分割</em>操作は一部のアイテムを新ページに動かすことで、当初は溢れているページに属していたアイテムのために空間を作ります。
+ページ分割は、また、新ページへの新たな<em class="firstterm">ダウンリンク</em>を親ページに挿入しなければなりません。これは親ページの分割を同様に引き起こすかもしれません。
+ページは分割は再帰的に<span class="quote">「<span class="quote">上向きに連鎖</span>」</span>します。
+最終的にルートページが新たなダウンリンクをはめ込みできないときには、<em class="firstterm">ルートページ分割</em>が実施されます。
+これは元のルートページの一つ上の階層に新たなルートページを作ることで、ツリー構造に新しい階層を加えます。
+  </p></div><div class="sect2" id="BTREE-DELETION"><div class="titlepage"><div><div><h3 class="title">64.4.2. Bottom-up Index Deletion</h3></div></div></div><p>
+   B-Tree indexes are not directly aware that under MVCC, there might
+   be multiple extant versions of the same logical table row; to an
+   index, each tuple is an independent object that needs its own index
+   entry.  <span class="quote">「<span class="quote">Version churn</span>」</span> tuples may sometimes
+   accumulate and adversely affect query latency and throughput.  This
+   typically occurs with <code class="command">UPDATE</code>-heavy workloads
+   where most individual updates cannot apply the
+   <acronym class="acronym">HOT</acronym> optimization.  Changing the value of only
+   one column covered by one index during an <code class="command">UPDATE</code>
+   <span class="emphasis"><em>always</em></span> necessitates a new set of index tuples
+   — one for <span class="emphasis"><em>each and every</em></span> index on the
+   table.  Note in particular that this includes indexes that were not
+   <span class="quote">「<span class="quote">logically modified</span>」</span> by the <code class="command">UPDATE</code>.
+   All indexes will need a successor physical index tuple that points
+   to the latest version in the table.  Each new tuple within each
+   index will generally need to coexist with the original
+   <span class="quote">「<span class="quote">updated</span>」</span> tuple for a short period of time (typically
+   until shortly after the <code class="command">UPDATE</code> transaction
+   commits).
+  </p><p>
+   B-Tree indexes incrementally delete version churn index tuples by
+   performing <em class="firstterm">bottom-up index deletion</em> passes.
+   Each deletion pass is triggered in reaction to an anticipated
+   <span class="quote">「<span class="quote">version churn page split</span>」</span>.  This only happens with
+   indexes that are not logically modified by
+   <code class="command">UPDATE</code> statements, where concentrated build up
+   of obsolete versions in particular pages would occur otherwise.  A
+   page split will usually be avoided, though it's possible that
+   certain implementation-level heuristics will fail to identify and
+   delete even one garbage index tuple (in which case a page split or
+   deduplication pass resolves the issue of an incoming new tuple not
+   fitting on a leaf page).  The worst case number of versions that
+   any index scan must traverse (for any single logical row) is an
+   important contributor to overall system responsiveness and
+   throughput.  A bottom-up index deletion pass targets suspected
+   garbage tuples in a single leaf page based on
+   <span class="emphasis"><em>qualitative</em></span> distinctions involving logical
+   rows and versions.  This contrasts with the <span class="quote">「<span class="quote">top-down</span>」</span>
+   index cleanup performed by autovacuum workers, which is triggered
+   when certain <span class="emphasis"><em>quantitative</em></span> table-level
+   thresholds are exceeded (see <a class="xref" href="routine-vacuuming.html#AUTOVACUUM" title="25.1.6. 自動バキュームデーモン">25.1.6</a>).
+  </p><div class="note"><h3 class="title">注記</h3><p>
+    Not all deletion operations that are performed within B-Tree
+    indexes are bottom-up deletion operations.  There is a distinct
+    category of index tuple deletion: <em class="firstterm">simple index tuple
+     deletion</em>.  This is a deferred maintenance operation
+    that deletes index tuples that are known to be safe to delete
+    (those whose item identifier's <code class="literal">LP_DEAD</code> bit is
+    already set).  Like bottom-up index deletion, simple index
+    deletion takes place at the point that a page split is anticipated
+    as a way of avoiding the split.
+   </p><p>
+    Simple deletion is opportunistic in the sense that it can only
+    take place when recent index scans set the
+    <code class="literal">LP_DEAD</code> bits of affected items in passing.
+    Prior to <span class="productname">PostgreSQL</span> 14, the only
+    category of B-Tree deletion was simple deletion.  The main
+    differences between it and bottom-up deletion are that only the
+    former is opportunistically driven by the activity of passing
+    index scans, while only the latter specifically targets version
+    churn from <code class="command">UPDATE</code>s that do not logically modify
+    indexed columns.
+   </p></div><p>
+   Bottom-up index deletion performs the vast majority of all garbage
+   index tuple cleanup for particular indexes with certain workloads.
+   This is expected with any B-Tree index that is subject to
+   significant version churn from <code class="command">UPDATE</code>s that
+   rarely or never logically modify the columns that the index covers.
+   The average and worst case number of versions per logical row can
+   be kept low purely through targeted incremental deletion passes.
+   It's quite possible that the on-disk size of certain indexes will
+   never increase by even one single page/block despite
+   <span class="emphasis"><em>constant</em></span> version churn from
+   <code class="command">UPDATE</code>s.  Even then, an exhaustive <span class="quote">「<span class="quote">clean
+    sweep</span>」</span> by a <code class="command">VACUUM</code> operation (typically
+   run in an autovacuum worker process) will eventually be required as
+   a part of <span class="emphasis"><em>collective</em></span> cleanup of the table and
+   each of its indexes.
+  </p><p>
+   Unlike <code class="command">VACUUM</code>, bottom-up index deletion does not
+   provide any strong guarantees about how old the oldest garbage
+   index tuple may be.  No index can be permitted to retain
+   <span class="quote">「<span class="quote">floating garbage</span>」</span> index tuples that became dead prior
+   to a conservative cutoff point shared by the table and all of its
+   indexes collectively.  This fundamental table-level invariant makes
+   it safe to recycle table <acronym class="acronym">TID</acronym>s.  This is how it
+   is possible for distinct logical rows to reuse the same table
+   <acronym class="acronym">TID</acronym> over time (though this can never happen with
+   two logical rows whose lifetimes span the same
+   <code class="command">VACUUM</code> cycle).
+  </p></div><div class="sect2" id="BTREE-DEDUPLICATION"><div class="titlepage"><div><div><h3 class="title">64.4.3. 重複排除</h3></div></div></div><span class="original">
+  &lt;title&gt;Deduplication&lt;/title&gt;
+</span><p>
+<span class="original">
+   A duplicate is a leaf page tuple (a tuple that points to a table
+   row) where &lt;emphasis&gt;all&lt;/emphasis&gt; indexed key columns have values
+   that match corresponding column values from at least one other leaf
+   page tuple in the same index.  Duplicate tuples are quite common in
+   practice.  B-Tree indexes can use a special, space-efficient
+   representation for duplicates when an optional technique is
+   enabled: &lt;firstterm&gt;deduplication&lt;/firstterm&gt;.
+</span>
+重複とは、同じインデックスで<span class="emphasis"><em>全ての</em></span>インデックスキー列が少なくとも一つの他のリーフページタプルの該当する列の値と一致する値をもっている、リーフページタプル（テーブルの行を指すタプル）です。
+重複タプルは実際によくあります。
+オプションの技法「<em class="firstterm">重複排除</em>」が有効にされているとき、B-Treeインデックスは、特別な重複に対する空間効率の良い表現方法を使用できます。
+  </p><p>
+<span class="original">
+   Deduplication works by periodically merging groups of duplicate
+   tuples together, forming a single &lt;firstterm&gt;posting list&lt;/firstterm&gt; tuple for each
+   group.  The column key value(s) only appear once in this
+   representation.  This is followed by a sorted array of
+   &lt;acronym&gt;TID&lt;/acronym&gt;s that point to rows in the table.  This
+   significantly reduces the storage size of indexes where each value
+   (or each distinct combination of column values) appears several
+   times on average.  The latency of queries can be reduced
+   significantly.  Overall query throughput may increase
+   significantly.  The overhead of routine index vacuuming may also be
+   reduced significantly.
+</span>
+重複排除は重複タプルのグループを定期的に合併して、各グループに対する単一の<em class="firstterm">ポスティングリスト</em>タプルを形成することで機能します。
+この表現方法では列のキー値は一度だけ現れます。
+テーブルの行を指す<acronym class="acronym">TID</acronym>のソートされた配列がこれに続きます。
+概して各値（あるいは列値の異なる組み合わせ）が複数回出現する場合に、これは顕著にインデックスの格納サイズを減らします。
+問い合わせの遅延も顕著に削減できます。
+全体的な問い合わせのスループットも顕著に増加するかもしれません。
+インデックスのバキューム処理のオーバーヘッドも顕著に削減されるかもしれません。
+  </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+    B-Tree deduplication is just as effective with
+    &lt;quote&gt;duplicates&lt;/quote&gt; that contain a NULL value, even though
+    NULL values are never equal to each other according to the
+    &lt;literal&gt;=&lt;/literal&gt; member of any B-Tree operator class.  As far
+    as any part of the implementation that understands the on-disk
+    B-Tree structure is concerned, NULL is just another value from the
+    domain of indexed values.
+</span>
+B-Tree重複排除は、B-Tree演算子クラスの<code class="literal">=</code>項に従ってNULL値が決して互いに等しくならないとしても、NULL値を含む<span class="quote">「<span class="quote">重複</span>」</span>に効果的です。
+ディスク上のB-Tree構造を解するいかなる実装部分に関しても、NULLはまさにインデックス値の定義域以外の一つの値です。
+   </p></div><p>
+<span class="original">
+   The deduplication process occurs lazily, when a new item is
+   inserted that cannot fit on an existing leaf page, though only when
+   index tuple deletion could not free sufficient space for the new
+   item (typically deletion is briefly considered and then skipped
+   over).  Unlike GIN posting list tuples, B-Tree posting list tuples
+   do not need to expand every time a new duplicate is inserted; they
+   are merely an alternative physical representation of the original
+   logical contents of the leaf page.  This design prioritizes
+   consistent performance with mixed read-write workloads.  Most
+   client applications will at least see a moderate performance
+   benefit from using deduplication.  Deduplication is enabled by
+   default.
+</span>
+既存のリーフページにはめ込みできない新たな要素が挿入されたとき、重複排除の処理は怠惰に実行されます。
+これはリーフページの分割を防止（あるいは少なくとも遅延）します。
+GINのポスティングリストのタプルと違って、B-Treeのポスティングリストのタプルは新たな重複が挿入される度に拡張する必要がありません。それらはリーフページの元の論理内容に対する単なる代替の物理表現にすぎません。
+この設計は読み書き混合のワークロードでの性能の一貫性を重視しています。
+ほとんどのクライアントアプリケーションは重複排除を使うことで少なくとも控えめな性能の恩恵を確認することができるでしょう。
+  </p><p>
+<span class="original">
+   &lt;command&gt;CREATE INDEX&lt;/command&gt; and &lt;command&gt;REINDEX&lt;/command&gt;
+   apply deduplication to create posting list tuples, though the
+   strategy they use is slightly different.  Each group of duplicate
+   ordinary tuples encountered in the sorted input taken from the
+   table is merged into a posting list tuple
+   &lt;emphasis&gt;before&lt;/emphasis&gt; being added to the current pending leaf
+   page.  Individual posting list tuples are packed with as many
+   &lt;acronym&gt;TID&lt;/acronym&gt;s as possible.  Leaf pages are written out in
+   the usual way, without any separate deduplication pass.  This
+   strategy is well-suited to &lt;command&gt;CREATE INDEX&lt;/command&gt; and
+   &lt;command&gt;REINDEX&lt;/command&gt; because they are once-off batch
+   operations.
+</span>
+<code class="command">CREATE INDEX</code>と<code class="command">REINDEX</code>は、使用する手順が若干異なりますが、ポスティングリストタプルを作って重複排除を適用します。
+テーブルから取得されてソートされた入力で遭遇した重複した通常タプルの各グループは、現在のペンディングリーフページに追加される<span class="emphasis"><em>前に</em></span>、ポスティングリストタプルにマージされます。
+個別のポスティングリストタプルには、可能な限り多数の<acronym class="acronym">TID</acronym>が詰め込まれます。
+リーフページは、重複排除用の別パスではなく、通常の方法で書き出されます。
+この戦略は<code class="command">CREATE INDEX</code>と<code class="command">REINDEX</code>に良く適合します。これらは1回で終わるバッチ操作であるからです。
+  </p><p>
+<span class="original">
+   Write-heavy workloads that don't benefit from deduplication due to
+   having few or no duplicate values in indexes will incur a small,
+   fixed performance penalty (unless deduplication is explicitly
+   disabled).  The &lt;literal&gt;deduplicate_items&lt;/literal&gt; storage
+   parameter can be used to disable deduplication within individual
+   indexes.  There is never any performance penalty with read-only
+   workloads, since reading posting list tuples is at least as
+   efficient as reading the standard tuple representation.  Disabling
+   deduplication isn't usually helpful.
+</span>
+インデックスの値に重複が無いか殆ど無いために重複排除から利益を得られない、書き込みの多いワークロードには、（重複排除が明示的に無効化されて居ない限り）固定のペナルティによる小さい負荷増があります。
+<code class="literal">deduplicate_items</code>格納パラメータは個別のインデックス内で重複排除を無効化するのに使うことができます。
+ポスティングリストタプルの読み込みは少なくとも通常タプル表現の読み込み程度に効率的であるため、読み込みのみのワークロードで性能ペナルティは一切ありません
+通常は重複排除を無効化することは有益ではありません。
+  </p><p>
+<span class="original">
+   It is sometimes possible for unique indexes (as well as unique
+   constraints) to use deduplication.  This allows leaf pages to
+   temporarily &lt;quote&gt;absorb&lt;/quote&gt; extra version churn duplicates.
+   Deduplication in unique indexes augments bottom-up index deletion,
+   especially in cases where a long-running transactions holds a
+   snapshot that blocks garbage collection.  The goal is to buy time
+   for the bottom-up index deletion strategy to become effective
+   again.  Delaying page splits until a single long-running
+   transaction naturally goes away can allow a bottom-up deletion pass
+   to succeed where an earlier deletion pass failed.
+</span>
+B-Treeインデックスは、MVCC下で同じ論理テーブル行が複数バージョン存在していることを、直接には認識していません。
+インデックスにとっては、各タプルは自身のインデックスエントリを必要とする独立したオブジェクトです。
+<span class="quote">「<span class="quote">バージョン重複</span>」</span>は時に積み重なって問い合わせのレイテンシとスループットに不利に作用するかもしれません。
+これは典型的には、（しばしば一つ以上のインデックス列が変更されて、新たなインデックスタプルバージョンの一式 — <span class="emphasis"><em>それぞれの</em></span>インデックスに対するもの、の設置が必要となるために）大部分の各更新が<acronym class="acronym">HOT</acronym>を適用できない<code class="command">UPDATE</code>が重たいワークロードで発生します。
+実際のところ、B-Treeの重複排除はバージョンの大量発生によるインデックス膨張を改善します。
+一意インデックスのタプルであっても、バージョン重複のため、ディスクに格納されるときに<span class="emphasis"><em>物理的に</em></span>一意とは限らないことに注意してください。
+重複排除の最適化は一意性インデックス内に選択的に適用されます。
+バージョン重複を持つと見られるページが対象となります。
+高位の目標は、起こりうるバージョン大量発生によって生じる<span class="quote">「<span class="quote">不要な</span>」</span>ページ分割の前により多く<code class="command">VACUUM</code>実行を施すことです。
+  </p><div class="tip"><h3 class="title">ヒント</h3><p>
+<span class="original">
+    A special heuristic is applied to determine whether a
+    deduplication pass in a unique index should take place.  It can
+    often skip straight to splitting a leaf page, avoiding a
+    performance penalty from wasting cycles on unhelpful deduplication
+    passes.  If you're concerned about the overhead of deduplication,
+    consider setting &lt;literal&gt;deduplicate_items = off&lt;/literal&gt;
+    selectively.  Leaving deduplication enabled in unique indexes has
+    little downside.
+</span>
+一意性インデックスで重複排除パスを実行すべきかどうかの判断には、特別なヒューリスティックが適用されます。
+これは、しばしばリーフページ分割まで連続してスキップして、無益な重複排除パスでの無駄なサイクルによる性能ペナルティを回避できます。
+重複排除のオーバーヘッドを懸念するなら、選択的に設定<code class="literal">deduplicate_items = off</code>を検討してください。
+一意性インデックスでは重複排除を無効にすることに不都合はありません。
+   </p></div><p>
+<span class="original">
+   Deduplication cannot be used in all cases due to
+   implementation-level restrictions.  Deduplication safety is
+   determined when &lt;command&gt;CREATE INDEX&lt;/command&gt; or
+   &lt;command&gt;REINDEX&lt;/command&gt; is run.
+</span>
+実装レベルの制限により、重複排除は全ての場合に使えるわけではありません。
+重複排除の安全性は<code class="command">CREATE INDEX</code>あるいは<code class="command">REINDEX</code>が実行されたときに決定されます。
+  </p><p>
+<span class="original">
+   Note that deduplication is deemed unsafe and cannot be used in the
+   following cases involving semantically significant differences
+   among equal datums:
+</span>
+等しいデータの間で意味的に明らかな違いを伴う以下の場合には、重複排除は安全でないと見做されて使用できないことに注意してください。
+  </p><p>
+   </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+      &lt;type&gt;text&lt;/type&gt;, &lt;type&gt;varchar&lt;/type&gt;, and &lt;type&gt;char&lt;/type&gt;
+      cannot use deduplication when a
+      &lt;emphasis&gt;nondeterministic&lt;/emphasis&gt; collation is used.  Case
+      and accent differences must be preserved among equal datums.
+</span>
+<span class="emphasis"><em>非決定的な</em></span>照合順序が使われているとき<code class="type">text</code>、<code class="type">varchar</code>、および、<code class="type">char</code>は重複排除を使えません。
+等しいデータの間で大文字小文字やアクセントの違いが維持されなければなりません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      &lt;type&gt;numeric&lt;/type&gt; cannot use deduplication.  Numeric display
+      scale must be preserved among equal datums.
+</span>
+<code class="type">numeric</code>は重複排除を使えません。
+等しいデータの間で数の表示スケールが維持されなければなりません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      &lt;type&gt;jsonb&lt;/type&gt; cannot use deduplication, since the
+      &lt;type&gt;jsonb&lt;/type&gt; B-Tree operator class uses
+      &lt;type&gt;numeric&lt;/type&gt; internally.
+</span>
+<code class="type">jsonb</code>のB-Tree演算子クラスは内部的に<code class="type">numeric</code>を使っているため、<code class="type">jsonb</code>は重複排除を使えません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      &lt;type&gt;float4&lt;/type&gt; and &lt;type&gt;float8&lt;/type&gt; cannot use
+      deduplication.  These types have distinct representations for
+      &lt;literal&gt;-0&lt;/literal&gt; and &lt;literal&gt;0&lt;/literal&gt;, which are
+      nevertheless considered equal.  This difference must be
+      preserved.
+</span>
+<code class="type">float4</code>および<code class="type">float8</code>は重複排除を使えません。
+これらの型は<code class="literal">-0</code>と<code class="literal">0</code>に異なる表現を持ち、にもかかわらずこれらは等しいと見做されます。
+この違いは維持されなければなりません。
+     </p></li></ul></div><p>
+  </p><p>
+<span class="original">
+   There is one further implementation-level restriction that may be
+   lifted in a future version of
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt;:
+</span>
+さらに以下の実装レベルの制限があります。これは<span class="productname">PostgreSQL</span>の将来バージョンで解消されるかもしれません。
+  </p><p>
+   </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+      Container types (such as composite types, arrays, or range
+      types) cannot use deduplication.
+</span>
+コンテナ型（複合型、配列型、あるいは、範囲型など）は、重複排除を使えません。
+     </p></li></ul></div><p>
+  </p><p>
+<span class="original">
+   There is one further implementation-level restriction that applies
+   regardless of the operator class or collation used:
+</span>
+さらに以下の実装レベルの制限があります。これは使われている演算子クラスや照合順序にかかわりなく該当します。
+  </p><p>
+   </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+      &lt;literal&gt;INCLUDE&lt;/literal&gt; indexes can never use deduplication.
+</span>
+      <code class="literal">INCLUDE</code>インデックスには重複排除は使えません。
+     </p></li></ul></div><p>
+  </p></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="btree-support-funcs.html" title="64.3. B-Treeサポート関数">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="btree.html" title="第64章 B-Treeインデックス">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="gist.html" title="第65章 GiSTインデックス">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">64.3. B-Treeサポート関数 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 第65章 GiSTインデックス</td></tr></table></div></body></html>

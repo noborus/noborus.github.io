@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>30.1. 信頼性</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="wal.html" title="第30章 信頼性とログ先行書き込み" /><link rel="next" href="checksums.html" title="30.2. データチェックサム" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="wal.html" title="第30章 信頼性とログ先行書き込み">第30章 信頼性とログ先行書き込み</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      wal-reliability.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="wal.html" title="第30章 信頼性とログ先行書き込み">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="wal.html" title="第30章 信頼性とログ先行書き込み">上へ</a></td><td width="60%" align="center">30.1. 信頼性</td><td width="20%" align="right"> <a accesskey="n" href="checksums.html" title="30.2. データチェックサム">次へ</a></td></tr></table><hr /></div><div class="sect1" id="WAL-RELIABILITY"><div class="titlepage"><div><div><h2 class="title" style="clear: both">30.1. 信頼性</h2></div></div></div><span class="original">
+  &lt;title&gt;Reliability&lt;/title&gt;
+</span><p>
+<span class="original">
+   Reliability is an important property of any serious database
+   system, and &lt;productname&gt;PostgreSQL&lt;/productname&gt; does everything possible to
+   guarantee reliable operation. One aspect of reliable operation is
+   that all data recorded by a committed transaction should be stored
+   in a nonvolatile area that is safe from power loss, operating
+   system failure, and hardware failure (except failure of the
+   nonvolatile area itself, of course).  Successfully writing the data
+   to the computer's permanent storage (disk drive or equivalent)
+   ordinarily meets this requirement.  In fact, even if a computer is
+   fatally damaged, if the disk drives survive they can be moved to
+   another computer with similar hardware and all committed
+   transactions will remain intact.
+</span>
+信頼性は、すべての本格的なデータベースシステムで重要な特性です。
+<span class="productname">PostgreSQL</span>は信頼できる操作を保証するためにできることは何でもします。
+信頼できる操作の一面は、コミットされたトランザクションにより記録されたデータはすべて不揮発性の領域に格納され、電源断、オペレーティングシステムの障害、ハードウェアの障害（当然ですが、不揮発性の領域自体の障害は除きます。）があっても安全であるという点です。
+通常、コンピュータの永続的格納領域（ディスク装置など）へのデータ書き込みの成功がこの条件を満たします。
+実際、コンピュータに致命的な障害が発生したとしても、もしディスク装置が無事ならば、類似のハードウェアを持つ別のコンピュータに移すことができ、コミットされたトランザクションを元通りに復元できます。
+  </p><p>
+<span class="original">
+   While forcing data to the disk platters periodically might seem like
+   a simple operation, it is not. Because disk drives are dramatically
+   slower than main memory and CPUs, several layers of caching exist
+   between the computer's main memory and the disk platters.
+   First, there is the operating system's buffer cache, which caches
+   frequently requested disk blocks and combines disk writes. Fortunately,
+   all operating systems give applications a way to force writes from
+   the buffer cache to disk, and &lt;productname&gt;PostgreSQL&lt;/productname&gt; uses those
+   features.  (See the &lt;xref linkend="guc-wal-sync-method"/&gt; parameter
+   to adjust how this is done.)
+</span>
+データを周期的にディスクプラッタに書き出すことは簡単な操作に思われるかもしれませんが、そうではありません。
+ディスク装置は主メモリ、CPU、コンピュータの主メモリとディスクプラッタの間にある各種のキャッシュ層と比べ非常に低速であるからです。
+まず、オペレーティングシステムのバッファキャッシュが存在します。
+これは頻繁にアクセス要求があるディスクブロックをキャッシュし、ディスクへの書き込みをまとめます。
+好運にもすべてのオペレーティングシステムがバッファキャッシュをディスクに強制書き込みさせる方法をアプリケーションに提供しています。
+<span class="productname">PostgreSQL</span>はこの機能を使用します。
+（これを調整する方法については<a class="xref" href="runtime-config-wal.html#GUC-WAL-SYNC-METHOD">wal_sync_method</a>パラメータを参照してください。）
+  </p><p>
+<span class="original">
+   Next, there might be a cache in the disk drive controller; this is
+   particularly common on &lt;acronym&gt;RAID&lt;/acronym&gt; controller cards. Some of
+   these caches are &lt;firstterm&gt;write-through&lt;/firstterm&gt;, meaning writes are sent
+   to the drive as soon as they arrive. Others are
+   &lt;firstterm&gt;write-back&lt;/firstterm&gt;, meaning data is sent to the drive at
+   some later time. Such caches can be a reliability hazard because the
+   memory in the disk controller cache is volatile, and will lose its
+   contents in a power failure.  Better controller cards have
+   &lt;firstterm&gt;battery-backup units&lt;/firstterm&gt; (&lt;acronym&gt;BBU&lt;/acronym&gt;s), meaning
+   the card has a battery that
+   maintains power to the cache in case of system power loss.  After power
+   is restored the data will be written to the disk drives.
+</span>
+次に、ディスク装置のコントローラキャッシュが存在する可能性があります。
+特に、<acronym class="acronym">RAID</acronym>コントローラカードでは、これは一般的です。
+これらの中には<em class="firstterm">write-through</em>キャッシュがあり、つまり、データが届いた時に即座に書き込みがディスク装置に対して行なわれます。
+他には<em class="firstterm">write-back</em>キャッシュがあり、多少遅れて書き込みがディスク装置に対して行なわれます。
+こうしたキャッシュでは、ディスクコントローラキャッシュが揮発性で、電源障害の際にその内容が失われてしまい、信頼性に関して致命的な問題になる可能性があります。
+より優れたコントローラカードには<em class="firstterm">バッテリバックアップ付き装置</em>(<acronym class="acronym">BBU</acronym>s)があり、システムの電源が落ちた場合もキャッシュに電源を供給します。
+後で電源が復旧した後に、データがディスク装置に書き出されます。
+  </p><p>
+<span class="original">
+   And finally, most disk drives have caches. Some are write-through
+   while some are write-back, and the same concerns about data loss
+   exist for write-back drive caches as for disk controller
+   caches.  Consumer-grade IDE and SATA drives are particularly likely
+   to have write-back caches that will not survive a power failure.  Many
+   solid-state drives (SSD) also have volatile write-back caches.
+</span>
+最後に、ほとんどのディスク装置がキャッシュを持っています。一部はwrite-throughであり、一部はwrite-backです。
+ディスクコントローラキャッシュの場合と同様にwrite-backのディスク装置キャッシュの場合にはデータが損失する恐れがあります。
+一般消費者向けのIDEおよびSATA装置では、電源障害時にデータが残らないwrite-backキャッシュを使用している可能性がとりわけ高いです。
+多くのソリッドステートドライブ(SSD)も同様に揮発性のwrite-backキャッシュを持っています。
+  </p><p>
+<span class="original">
+   These caches can typically be disabled; however, the method for doing
+   this varies by operating system and drive type:
+</span>
+これらのキャッシュは、大抵は無効にできます。しかしながらオペレーティングシステムやドライブの種類によってその方法は異なります。
+  </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+        On &lt;productname&gt;Linux&lt;/productname&gt;, IDE and SATA drives can be queried using
+        &lt;command&gt;hdparm -I&lt;/command&gt;; write caching is enabled if there is
+        a &lt;literal&gt;*&lt;/literal&gt; next to &lt;literal&gt;Write cache&lt;/literal&gt;.  &lt;command&gt;hdparm -W 0&lt;/command&gt;
+        can be used to turn off write caching.  SCSI drives can be queried
+        using &lt;ulink url="http://sg.danny.cz/sg/sdparm.html"&gt;&lt;application&gt;sdparm&lt;/application&gt;&lt;/ulink&gt;.
+        Use &lt;command&gt;sdparm &amp;#045;-get=WCE&lt;/command&gt; to check
+        whether the write cache is enabled and &lt;command&gt;sdparm &amp;#045;-clear=WCE&lt;/command&gt;
+        to disable it.
+</span>
+<span class="productname">Linux</span>上で<code class="command">hdparm -I</code>を使用することでIDEおよびSATAドライブのキャッシュについて調べることができます。
+<code class="literal">Write cache</code>の次に <code class="literal">*</code>があれば書き込みキャッシュが有効になっています。
+<code class="command">hdparm -W 0</code>により書き込みキャッシュを無効にできます。
+SCSIドライブであれば<a class="ulink" href="http://sg.danny.cz/sg/sdparm.html" target="_top"><span class="application">sdparm</span></a>を使うことで調査が可能です。
+<code class="command">sdparm --get=WCE</code>によりキャッシュが有効かどうかの確認ができ、<code class="command">sdparm --clear=WCE</code>により無効にすることができます。
+      </p></li><li class="listitem"><p>
+<span class="original">
+        On &lt;productname&gt;FreeBSD&lt;/productname&gt;, IDE drives can be queried using
+        &lt;command&gt;atacontrol&lt;/command&gt; and write caching turned off using
+        &lt;literal&gt;hw.ata.wc=0&lt;/literal&gt; in &lt;filename&gt;/boot/loader.conf&lt;/filename&gt;;
+        SCSI drives can be queried using &lt;command&gt;camcontrol identify&lt;/command&gt;,
+        and the write cache both queried and changed using
+        &lt;command&gt;sdparm&lt;/command&gt; when available.
+</span>
+<span class="productname">FreeBSD</span>では、IDEドライブに対して<code class="command">atacontrol</code>により確認ができ、そして書き込みキャッシュを無効にするには<code class="filename">/boot/loader.conf</code>の<code class="literal">hw.ata.wc=0</code>を利用します。SCSIドライブに対しては<code class="command">camcontrol identify</code>を確認に使用することができ、<code class="command">sdparm</code>を使用できる場合にはそれを用いて書き込みキャッシュの確認と変更が可能です。
+      </p></li><li class="listitem"><p>
+<span class="original">
+        On &lt;productname&gt;Solaris&lt;/productname&gt;, the disk write cache is controlled by
+        &lt;command&gt;format -e&lt;/command&gt;.
+        (The Solaris &lt;acronym&gt;ZFS&lt;/acronym&gt; file system is safe with disk write-cache
+        enabled because it issues its own disk cache flush commands.)
+</span>
+<span class="productname">Solaris</span>では、ディスクの書き込みキャッシュは<code class="command">format -e</code>で制御できます。
+(Solarisの<acronym class="acronym">ZFS</acronym>ファイルシステムは、独自のディスクキャッシュ書き出しコマンドを発行しているため、ディスクの書き込みキャッシュを有効にしても安全です。)
+      </p></li><li class="listitem"><p>
+<span class="original">
+        On &lt;productname&gt;Windows&lt;/productname&gt;, if &lt;varname&gt;wal_sync_method&lt;/varname&gt; is
+        &lt;literal&gt;open_datasync&lt;/literal&gt; (the default), write caching can be disabled
+        by unchecking &lt;literal&gt;My Computer\Open\&lt;replaceable&gt;disk drive&lt;/replaceable&gt;\Properties\Hardware\Properties\Policies\Enable write caching on the disk&lt;/literal&gt;.
+        Alternatively, set &lt;varname&gt;wal_sync_method&lt;/varname&gt; to
+        &lt;literal&gt;fsync&lt;/literal&gt; or &lt;literal&gt;fsync_writethrough&lt;/literal&gt;, which prevent
+        write caching.
+</span>
+<span class="productname">Windows</span>では、もし<code class="varname">wal_sync_method</code>が<code class="literal">open_datasync</code>(デフォルト)の場合、
+<code class="literal">My Computer\Open\<em class="replaceable"><code>disk drive</code></em>\Properties\Hardware\Properties\Policies\Enable write caching on the disk</code>のチェックを外すことで、書き込みキャッシュを無効にできます。
+もう一つの方法としては、<code class="varname">wal_sync_method</code>を<code class="literal">fsync</code>か<code class="literal">fsync_writethrough</code>に設定し、書き込みキャッシュを使用しないようにします。
+      </p></li><li class="listitem"><p>
+<span class="original">
+        On &lt;productname&gt;macOS&lt;/productname&gt;, write caching can be prevented by
+        setting &lt;varname&gt;wal_sync_method&lt;/varname&gt; to &lt;literal&gt;fsync_writethrough&lt;/literal&gt;.
+</span>
+<span class="productname">macOS</span>では、<code class="varname">wal_sync_method</code>を<code class="literal">fsync_writethrough</code>に設定することで書き込みキャッシュを使用しないようにします。
+      </p></li></ul></div><p>
+<span class="original">
+   Recent SATA drives (those following &lt;acronym&gt;ATAPI-6&lt;/acronym&gt; or later)
+   offer a drive cache flush command (&lt;command&gt;FLUSH CACHE EXT&lt;/command&gt;),
+   while SCSI drives have long supported a similar command
+   &lt;command&gt;SYNCHRONIZE CACHE&lt;/command&gt;.  These commands are not directly
+   accessible to &lt;productname&gt;PostgreSQL&lt;/productname&gt;, but some file systems
+   (e.g., &lt;acronym&gt;ZFS&lt;/acronym&gt;, &lt;acronym&gt;ext4&lt;/acronym&gt;) can use them to flush
+   data to the platters on write-back-enabled drives.  Unfortunately, such
+   file systems behave suboptimally when combined with battery-backup unit
+   (&lt;acronym&gt;BBU&lt;/acronym&gt;) disk controllers.  In such setups, the synchronize
+   command forces all data from the controller cache to the disks,
+   eliminating much of the benefit of the BBU.  You can run the
+   &lt;xref linkend="pgtestfsync"/&gt; program to see
+   if you are affected.  If you are affected, the performance benefits
+   of the BBU can be regained by turning off write barriers in
+   the file system or reconfiguring the disk controller, if that is
+   an option.  If write barriers are turned off, make sure the battery
+   remains functional; a faulty battery can potentially lead to data loss.
+   Hopefully file system and disk controller designers will eventually
+   address this suboptimal behavior.
+</span>
+最近のSATAドライブ(<acronym class="acronym">ATAPI-6</acronym>またはそれ以降)はドライブキャッシュの書き出しコマンド(<code class="command">FLUSH CACHE EXT</code>)を提供している一方、
+SCSIドライブでは従来から類似の<code class="command">SYNCHRONIZE CACHE</code>コマンドをサポートしていました。
+これらのコマンドは、直接<span class="productname">PostgreSQL</span>に発行されませんが、いくつかのファイルシステム(例えば<acronym class="acronym">ZFS</acronym>や<acronym class="acronym">ext4</acronym>)では、
+それらをwrite-backが有効なドライブへデータを書き出すために使います。
+不幸なことに、このようなwriteバリアを持つファイルシステムは、バッテリバックアップ付き装置
+(<acronym class="acronym">BBU</acronym>)のディスクコントローラと組み合わせた際に、好ましい動作をしません。
+このような処理の流れにおいて、同期コマンドはコントローラキャッシュにあるデータを全てディスクへ強制的に書き込みを行うため、
+BBUのメリットの大半を失わせています。<a class="xref" href="pgtestfsync.html" title="pg_test_fsync"><span class="refentrytitle"><span class="application">pg_test_fsync</span></span></a>プログラムを
+使うことで、あなたの環境が影響を受けるかどうかを確認できます。もし影響を受けるようであれば、
+ファイルシステムのwriteバリアを無効にするか、(オプションがあれば)ディスクコントローラを再設定することで、
+BBUによる性能上の効果を得ることできるでしょう。もしwriteバリアを無効にした場合は、バッテリが
+動作していることを確認しておきましょう。バッテリの欠陥はデータロスの可能性に繋がります。
+ファイルシステムやディスクコントローラの設計者が、いずれはこの動作を修正してくれることが望まれます。
+  </p><p>
+<span class="original">
+   When the operating system sends a write request to the storage hardware,
+   there is little it can do to make sure the data has arrived at a truly
+   non-volatile storage area. Rather, it is the
+   administrator's responsibility to make certain that all storage components
+   ensure integrity for both data and file-system metadata.
+   Avoid disk controllers that have non-battery-backed write caches.
+   At the drive level, disable write-back caching if the
+   drive cannot guarantee the data will be written before shutdown.
+   If you use SSDs, be aware that many of these do not honor cache flush
+   commands by default.
+   You can test for reliable I/O subsystem behavior using &lt;ulink
+   url="https://brad.livejournal.com/2116715.html"&gt;&lt;filename&gt;diskchecker.pl&lt;/filename&gt;&lt;/ulink&gt;.
+</span>
+オペレーティングシステムが、ストレージハードウェアに書き込み要求を送信した時、データが不揮発性のストレージ領域に本当に届いたかどうかを確認することはほぼできません。
+ですので、全てのストレージ構成品がデータとファイルシステムのメタデータの整合性を保証することをよく確認しておくことは、管理者の責任です。
+バッテリバックアップされた書き込みキャッシュを持たないコントローラの使用は避けてください。
+装置レベルでは、もし装置が停止前にデータが書き出されることを保証できないのであれば、write-backキャッシュを無効にしてください。
+もしSSDを使っている場合、多くのドライブはデフォルトでキャッシュ書き出しコマンドを無視することに注意して下さい。
+<a class="ulink" href="https://brad.livejournal.com/2116715.html" target="_top"><code class="filename">diskchecker.pl</code></a>を使うことで、I/Oサブシステムの動作の信頼性をテストすることができます。
+  </p><p>
+<span class="original">
+   Another risk of data loss is posed by the disk platter write
+   operations themselves. Disk platters are divided into sectors,
+   commonly 512 bytes each.  Every physical read or write operation
+   processes a whole sector.
+   When a write request arrives at the drive, it might be for some multiple
+   of 512 bytes (&lt;productname&gt;PostgreSQL&lt;/productname&gt; typically writes 8192 bytes, or
+   16 sectors, at a time), and the process of writing could fail due
+   to power loss at any time, meaning some of the 512-byte sectors were
+   written while others were not.  To guard against such failures,
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; periodically writes full page images to
+   permanent WAL storage &lt;emphasis&gt;before&lt;/emphasis&gt; modifying the actual page on
+   disk. By doing this, during crash recovery &lt;productname&gt;PostgreSQL&lt;/productname&gt; can
+   restore partially-written pages from WAL.  If you have file-system software
+   that prevents partial page writes (e.g., ZFS),  you can turn off
+   this page imaging by turning off the &lt;xref
+   linkend="guc-full-page-writes"/&gt; parameter. Battery-Backed Unit
+   (BBU) disk controllers do not prevent partial page writes unless
+   they guarantee that data is written to the BBU as full (8kB) pages.
+</span>
+ディスクプラッタの書き込み操作自体によってもデータ損失が発生することがあります。
+ディスクプラッタは、通常512バイトのセクタに分割されています。
+物理的な読み込み操作、書き込み操作はすべて、セクタ全体を処理します。
+書き込み要求がディスクに達した時、その要求は512バイトの倍数になるでしょう(<span class="productname">PostgreSQL</span>では大抵一度に8192バイトすなわち16セクタを書き込みます)。そして電源断により、任意のタイミングで書き込み処理が失敗することがありえます。これは一部の512バイトのセクタに書き込みが行なわれたのに、残りのセクタには書き込みが行なわれていない状況を意味します。
+こうした問題の対策として、<span class="productname">PostgreSQL</span>は、ディスク上の実際のページを変更する<span class="emphasis"><em>前</em></span>に定期的にページ全体のイメージを永続的なWAL格納領域に書き出します。
+これにより、<span class="productname">PostgreSQL</span>はクラッシュリカバリ時に部分的に書き出されたページをWALから復旧させることができます。
+もし、部分的なページ書き込みを防止できるファイルシステムソフトウェア（例えばZFS）を使うのであれば、<a class="xref" href="runtime-config-wal.html#GUC-FULL-PAGE-WRITES">full_page_writes</a>を無効にしてページイメージ作成を無効にすることができます。バッテリバックアップ付き（BBU）のディスクコントローラでは、フルページ（8kB）がBBUへ書き込まれることを保証できなければ、部分的なページ書き出しを防止できません。
+  </p><p>
+<span class="original">
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; also protects against some kinds of data corruption
+   on storage devices that may occur because of hardware errors or media failure over time,
+   such as reading/writing garbage data.
+</span>
+さらに<span class="productname">PostgreSQL</span>は、ハードウェアエラーや経時変化によるメディア障害により発生する、ごみデータを読み書きしてしまうようなストレージ装置内のある種のデータ破損を防ぎます。
+   </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+      Each individual record in a WAL file is protected by a CRC-32 (32-bit) check
+      that allows us to tell if record contents are correct. The CRC value
+      is set when we write each WAL record and checked during crash recovery,
+      archive recovery and replication.
+</span>
+WALファイルのそれぞれのレコードは、レコードの内容が正確かどうかを伝えるためCRC-32 (32-bit)チェックにより保護されています。
+CRCの値はそれぞれのWALレコードを書き込む時に設定され、クラッシュリカバリ、アーカイブリカバリとレプリケーション時に検証されます。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Data pages are not currently checksummed by default, though full page images
+      recorded in WAL records will be protected; see &lt;link
+      linkend="app-initdb-data-checksums"&gt;&lt;application&gt;initdb&lt;/application&gt;&lt;/link&gt;
+      for details about enabling data checksums.
+</span>
+今のところ、デフォルトではデータページはチェックサム計算はされませんが、WALレコードに記録されているページ全体のイメージは保護されます。
+データチェックサム有効化についての詳細は<a class="link" href="app-initdb.html#APP-INITDB-DATA-CHECKSUMS"><span class="application">initdb</span></a>を参照してください。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Internal data structures such as &lt;filename&gt;pg_xact&lt;/filename&gt;, &lt;filename&gt;pg_subtrans&lt;/filename&gt;, &lt;filename&gt;pg_multixact&lt;/filename&gt;,
+      &lt;filename&gt;pg_serial&lt;/filename&gt;, &lt;filename&gt;pg_notify&lt;/filename&gt;, &lt;filename&gt;pg_stat&lt;/filename&gt;, &lt;filename&gt;pg_snapshots&lt;/filename&gt; are not directly
+      checksummed, nor are pages protected by full page writes. However, where
+      such data structures are persistent, WAL records are written that allow
+      recent changes to be accurately rebuilt at crash recovery and those
+      WAL records are protected as discussed above.
+</span>
+<code class="filename">pg_xact</code>、<code class="filename">pg_subtrans</code>、<code class="filename">pg_multixact</code>、<code class="filename">pg_serial</code>、<code class="filename">pg_notify</code>、<code class="filename">pg_stat</code>、<code class="filename">pg_snapshots</code>のような内部データ構造は直接チェックサム計算もされず、全ページ書き込みによる保護もされていません。
+しかし、そのようなデータ構造が永続する場所では、クラッシュリカバリ時に直近の更新が正確に再構築されるようにWALレコードが書き出され、それらのWALレコードは上記のように保護されます。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Individual state files in &lt;filename&gt;pg_twophase&lt;/filename&gt; are protected by CRC-32.
+</span>
+<code class="filename">pg_twophase</code>にある個別の状態ファイルはCRC-32で保護されています。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Temporary data files used in larger SQL queries for sorts,
+      materializations and intermediate results are not currently checksummed,
+      nor will WAL records be written for changes to those files.
+</span>
+大きな問い合わせの中でソート、具現化、および中間結果用に使用される暫定的なデータファイルは現在チェックサム計算されず、それらのファイルに対する変更もWALレコードに書き込まれません。
+     </p></li></ul></div><p>
+  </p><p>
+<span class="original">
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; does not protect against correctable memory errors
+   and it is assumed you will operate using RAM that uses industry standard
+   Error Correcting Codes (ECC) or better protection.
+</span>
+<span class="productname">PostgreSQL</span>は修復可能なメモリーエラーに対して保護を行いません。業界標準の誤り検出訂正（Error Correcting Codes -ECC-）またはそれ以上の保護付きのRAM使用が想定されています。
+  </p></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="wal.html" title="第30章 信頼性とログ先行書き込み">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="wal.html" title="第30章 信頼性とログ先行書き込み">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="checksums.html" title="30.2. データチェックサム">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第30章 信頼性とログ先行書き込み </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 30.2. データチェックサム</td></tr></table></div></body></html>

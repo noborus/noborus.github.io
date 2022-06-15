@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>19.11. SSHトンネルを使った安全なTCP/IP接続</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="gssapi-enc.html" title="19.10. GSSAPIによる安全なTCP/IP接続" /><link rel="next" href="event-log-registration.html" title="19.12. WindowsにおけるEvent Logの登録" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="runtime.html" title="第19章 サーバの準備と運用">第19章 サーバの準備と運用</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      ssh-tunnels.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="gssapi-enc.html" title="19.10. GSSAPIによる安全なTCP/IP接続">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="runtime.html" title="第19章 サーバの準備と運用">上へ</a></td><td width="60%" align="center">19.11. <span class="application">SSH</span>トンネルを使った安全なTCP/IP接続</td><td width="20%" align="right"> <a accesskey="n" href="event-log-registration.html" title="19.12. WindowsにおけるEvent Logの登録">次へ</a></td></tr></table><hr /></div><div class="sect1" id="SSH-TUNNELS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">19.11. <span class="application">SSH</span>トンネルを使った安全なTCP/IP接続</h2></div></div></div><span class="original">
+  &lt;title&gt;Secure TCP/IP Connections with &lt;application&gt;SSH&lt;/application&gt; Tunnels&lt;/title&gt;
+</span><a id="id-1.6.6.14.2" class="indexterm"></a><p>
+<span class="original">
+   It is possible to use &lt;application&gt;SSH&lt;/application&gt; to encrypt the network
+   connection between clients and a
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; server. Done properly, this
+   provides an adequately secure network connection, even for non-SSL-capable
+   clients.
+</span>
+クライアントと<span class="productname">PostgreSQL</span>サーバ間のネットワーク接続を暗号化するために<span class="application">SSH</span>を使うことができます。
+正しく行えば、SSL機能がクライアントになくても、これで十分に安全なネットワーク接続を行うことができます。
+  </p><p>
+<span class="original">
+   First make sure that an &lt;application&gt;SSH&lt;/application&gt; server is
+   running properly on the same machine as the
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; server and that you can log in using
+   &lt;command&gt;ssh&lt;/command&gt; as some user;  you then can establish a
+   secure tunnel to the remote server.  A secure tunnel listens on a
+   local port and forwards all traffic to a port on the remote machine.
+   Traffic sent to the remote port can arrive on its
+   &lt;literal&gt;localhost&lt;/literal&gt; address, or different bind
+   address if desired;  it does not appear as coming from your
+   local machine.  This command creates a secure tunnel from the client
+   machine to the remote machine &lt;literal&gt;foo.com&lt;/literal&gt;:
+</span>
+まず<span class="application">SSH</span>サーバが<span class="productname">PostgreSQL</span>サーバと同じマシン上で正しく起動していて、<code class="command">ssh</code>を使ってログインできるユーザが存在することを確かめてください。
+リモートサーバへ安全なトンネルを確立することができます。
+安全なトンネルは、ローカルポートをリッスンし、すべてのトラフィックをリモートマシン上のポートに転送します。
+リモートポートに送信されたトラフィックは、<code class="literal">localhost</code>アドレスまたは必要に応じて別のバインドアドレスに到達することができ、ローカルマシンからのトラフィックとは表示されません。
+次のコマンドは、クライアントマシンからリモートマシン<code class="literal">foo.com</code>への安全なトンネルを作成します。
+</p><pre class="programlisting">
+ssh -L 63333:localhost:5432 joe@foo.com
+</pre><p>
+<span class="original">
+   The first number in the &lt;option&gt;-L&lt;/option&gt; argument, 63333, is the
+   local port number of the tunnel; it can be any unused port.  (IANA
+   reserves ports 49152 through 65535 for private use.)  The name or IP
+   address after this is the remote bind address you are connecting to,
+   i.e., &lt;literal&gt;localhost&lt;/literal&gt;, which is the default.  The second
+   number, 5432, is the remote end of the tunnel, e.g., the port number
+   your database server is using.  In order to connect to the database
+   server using this tunnel, you connect to port 63333 on the local
+   machine:
+</span>
+<code class="option">-L</code>引数の1番目の数字（63333）はトンネルのローカル側のポート番号で、未使用のポートを選択することが可能です。（IANAは49152から65535までのポートを私的使用のため予約しています。）
+この後の名前かIPアドレスは、接続先のリモート側のバインドアドレス（デフォルトは<code class="literal">localhost</code>）です。
+2番目の数字（5432）は、トンネルのリモート側のサーバが使用しているポート番号です。
+このトンネルを使ってデータベースサーバに接続するためには、ローカルマシンのポート63333に接続します。
+</p><pre class="programlisting">
+psql -h localhost -p 63333 postgres
+</pre><p>
+<span class="original">
+   To the database server it will then look as though you are
+   user &lt;literal&gt;joe&lt;/literal&gt; on host &lt;literal&gt;foo.com&lt;/literal&gt;
+   connecting to the &lt;literal&gt;localhost&lt;/literal&gt; bind address, and it
+   will use whatever authentication procedure was configured for
+   connections by that user to that bind address.  Note that the server will not
+   think the connection is SSL-encrypted, since in fact it is not
+   encrypted between the
+   &lt;application&gt;SSH&lt;/application&gt; server and the
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; server.  This should not pose any
+   extra security risk because they are on the same machine.
+</span>
+データベースサーバにとっては、ユーザがホスト<code class="literal">foo.com</code>上のユーザ<code class="literal">joe</code>であり、<code class="literal">localhost</code>バインドアドレスに接続しているように見え、そのバインドアドレスに対するそのユーザの接続向けに設定された認証手続きが使用されます。
+実際、<span class="application">SSH</span>サーバと<span class="productname">PostgreSQL</span>サーバとの間は暗号化されていないため、サーバはこの接続がSSLで暗号化されているとみなさないことに注意してください。
+それらが、同じマシン上にあるため、セキュリティ上の危険性が増すことはありません。
+  </p><p>
+<span class="original">
+   In order for the
+   tunnel setup to succeed you must be allowed to connect via
+   &lt;command&gt;ssh&lt;/command&gt; as &lt;literal&gt;joe@foo.com&lt;/literal&gt;, just
+   as if you had attempted to use &lt;command&gt;ssh&lt;/command&gt; to create a
+   terminal session.
+</span>
+トンネルの確立が成功するためには、<code class="command">ssh</code>を使用して端末セッションを作成したのと同様に、<code class="literal">joe@foo.com</code>ユーザが<code class="command">ssh</code>を通して接続することが許可されていなければいけません。
+  </p><p>
+<span class="original">
+   You could also have set up port forwarding as
+</span>
+以下に示すようにポートフォワードを設定することができます。
+</p><pre class="programlisting">
+ssh -L 63333:foo.com:5432 joe@foo.com
+</pre><p>
+<span class="original">
+   but then the database server will see the connection as coming in
+   on its &lt;literal&gt;foo.com&lt;/literal&gt; bind address, which is not opened by
+   the default setting &lt;literal&gt;listen_addresses =
+   'localhost'&lt;/literal&gt;.  This is usually not what you want.
+</span>
+しかしそうすると、データベースサーバはその<code class="literal">foo.com</code>バインドアドレスから接続が来たように判断し、デフォルトの設定である<code class="literal">listen_addresses = 'localhost'</code>では開かれません。
+通常これは好ましいことではありません。
+  </p><p>
+<span class="original">
+   If you have to &lt;quote&gt;hop&lt;/quote&gt; to the database server via some
+   login host, one possible setup could look like this:
+</span>
+どこかのログインホスト経由でデータベースサーバに<span class="quote">「<span class="quote">跳躍</span>」</span>しなければならない場合、以下のようにすることが可能です。
+</p><pre class="programlisting">
+ssh -L 63333:db.foo.com:5432 joe@shell.foo.com
+</pre><p>
+<span class="original">
+   Note that this way the connection
+   from &lt;literal&gt;shell.foo.com&lt;/literal&gt;
+   to &lt;literal&gt;db.foo.com&lt;/literal&gt; will not be encrypted by the SSH
+   tunnel.
+   SSH offers quite a few configuration possibilities when the network
+   is restricted in various ways.  Please refer to the SSH
+   documentation for details.
+</span>
+<code class="literal">shell.foo.com</code>から<code class="literal">db.foo.com</code>へのこのような接続はSSHトンネルで暗号化されません。
+SSHはいろいろな方法でネットワークが制約されているとき、かなりの数の設定可能性を提供しています。
+詳細はSSHの文書を参照してください。
+  </p><div class="tip"><h3 class="title">ヒント</h3><p>
+<span class="original">
+    Several other applications exist that can provide secure tunnels using
+    a procedure similar in concept to the one just described.
+</span>
+ここで説明してきたものと似た概念の手続きを使用して、安全なトンネルを提供可能なアプリケーションが他にもいくつか存在します。
+   </p></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="gssapi-enc.html" title="19.10. GSSAPIによる安全なTCP/IP接続">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="runtime.html" title="第19章 サーバの準備と運用">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="event-log-registration.html" title="19.12. WindowsにおけるEvent Logの登録">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">19.10. GSSAPIによる安全なTCP/IP接続 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 19.12. <span xmlns="http://www.w3.org/1999/xhtml" class="systemitem">Windows</span>における<span xmlns="http://www.w3.org/1999/xhtml" class="application">Event Log</span>の登録</td></tr></table></div></body></html>

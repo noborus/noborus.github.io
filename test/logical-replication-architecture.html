@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>31.5. アーキテクチャ</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="logical-replication-restrictions.html" title="31.4. 制限事項" /><link rel="next" href="logical-replication-monitoring.html" title="31.6. 監視" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="logical-replication.html" title="第31章 論理レプリケーション">第31章 論理レプリケーション</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      logical-replication-architecture.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="logical-replication-restrictions.html" title="31.4. 制限事項">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="logical-replication.html" title="第31章 論理レプリケーション">上へ</a></td><td width="60%" align="center">31.5. アーキテクチャ</td><td width="20%" align="right"> <a accesskey="n" href="logical-replication-monitoring.html" title="31.6. 監視">次へ</a></td></tr></table><hr /></div><div class="sect1" id="LOGICAL-REPLICATION-ARCHITECTURE"><div class="titlepage"><div><div><h2 class="title" style="clear: both">31.5. アーキテクチャ</h2></div></div></div><span class="original">
+  &lt;title&gt;Architecture&lt;/title&gt;
+</span><p>
+<span class="original">
+   Logical replication starts by copying a snapshot of the data on the
+   publisher database.  Once that is done, changes on the publisher are sent
+   to the subscriber as they occur in real time.  The subscriber applies data
+   in the order in which commits were made on the publisher so that
+   transactional consistency is guaranteed for the publications within any
+   single subscription.
+</span>
+論理レプリケーションは、パブリッシャー側のデータベース上のデータのスナップショットをコピーすることから始まります。
+それが完了したあとは、パブリッシャーにおける変更は、発生した時にリアルタイムでサブスクライバーに送られます。
+サブスクライバーはパブリッシャーでコミットが発生した順にデータを適用します。
+そのため、どの単一のサブスクリプションにおいても、パブリケーションに対するトランザクションの一貫性が保証されます。
+  </p><p>
+<span class="original">
+   Logical replication is built with an architecture similar to physical
+   streaming replication (see &lt;xref linkend="streaming-replication"/&gt;).  It is
+   implemented by &lt;quote&gt;walsender&lt;/quote&gt; and &lt;quote&gt;apply&lt;/quote&gt;
+   processes.  The walsender process starts logical decoding (described
+   in &lt;xref linkend="logicaldecoding"/&gt;) of the WAL and loads the standard
+   logical decoding plugin (pgoutput).  The plugin transforms the changes read
+   from WAL to the logical replication protocol
+   (see &lt;xref linkend="protocol-logical-replication"/&gt;) and filters the data
+   according to the publication specification.  The data is then continuously
+   transferred using the streaming replication protocol to the apply worker,
+   which maps the data to local tables and applies the individual changes as
+   they are received, in correct transactional order.
+</span>
+論理レプリケーションは物理ストリーミングレプリケーション(<a class="xref" href="warm-standby.html#STREAMING-REPLICATION" title="27.2.5. ストリーミングレプリケーション">27.2.5</a>参照)と似たアーキテクチャで構成されています。
+<span class="quote">「<span class="quote">WAL送信</span>」</span>プロセスと<span class="quote">「<span class="quote">適用</span>」</span>プロセスで実装されています。
+walsenderプロセスはWALのロジカルデコーディング（<a class="xref" href="logicaldecoding.html" title="第49章 ロジカルデコーディング">第49章</a>に記載）を開始し、標準のロジカルデコーディングプラグイン（pgoutput）をロードします。
+このプラグインは、WALから読み込んだ更新を論理レプリケーションプロトコル（<a class="xref" href="protocol-logical-replication.html" title="53.5. 論理ストリーミングレプリケーションのプロトコル">53.5</a>参照）に変換します。
+そして、パブリケーションの指定にしたがってフィルターします。
+データは次に、ストリーミングレプリケーションプロトコルを使って継続的に適用ワーカーに転送されます。
+適用ワーカーは、データをローカルテーブルにマップし、更新を受信すると正しいトランザクション順に個々の更新を適用します。
+  </p><p>
+<span class="original">
+   The apply process on the subscriber database always runs with
+   &lt;varname&gt;session_replication_role&lt;/varname&gt; set
+   to &lt;literal&gt;replica&lt;/literal&gt;, which produces the usual effects on triggers
+   and constraints.
+</span>
+サブスクライバーデータベースの適用プロセスは、常に<code class="varname">session_replication_role</code>を<code class="literal">replica</code>にセットして実行されます。
+これによりトリガーと制約で通常の効果を生成します。
+  </p><p>
+<span class="original">
+   The logical replication apply process currently only fires row triggers,
+   not statement triggers.  The initial table synchronization, however, is
+   implemented like a &lt;command&gt;COPY&lt;/command&gt; command and thus fires both row
+   and statement triggers for &lt;command&gt;INSERT&lt;/command&gt;.
+</span>
+今のところ、論理レプリケーション適用プロセスは行トリガーだけを起動し、文トリガーは起動しません。
+ただし、初期テーブル同期は<code class="command">COPY</code>コマンドのように実装されているので、<code class="command">INSERT</code>の行と文トリガーの両方を起動します。
+  </p><div class="sect2" id="LOGICAL-REPLICATION-SNAPSHOT"><div class="titlepage"><div><div><h3 class="title">31.5.1. 初期スナップショット</h3></div></div></div><span class="original">
+    &lt;title&gt;Initial Snapshot&lt;/title&gt;
+</span><p>
+<span class="original">
+     The initial data in existing subscribed tables are snapshotted and
+     copied in a parallel instance of a special kind of apply process.
+     This process will create its own replication slot and copy the existing
+     data.  As soon as the copy is finished the table contents will become
+     visible to other backends.  Once existing data is copied, the worker
+     enters synchronization mode, which ensures that the table is brought
+     up to a synchronized state with the main apply process by streaming
+     any changes that happened during the initial data copy using standard
+     logical replication.  During this synchronization phase, the changes
+     are applied and committed in the same order as they happened on the
+     publisher.  Once synchronization is done, control of the
+     replication of the table is given back to the main apply process where
+     replication continues as normal.
+</span>
+既存のサブスクライブされたテーブル中の初期データのスナップショットが取得され、特殊な適用プロセスの並列インスタンスにコピーされます。
+このプロセスは自身のレプリケーションスロットを作成し、既存のデータをコピーします。
+コピーが終わるとすぐにテーブル内容が他のバックエンドから見えるようになります。
+既存のデータのコピーが終わると、ワーカーは同期モードに入ります。
+このモードでは、初期データのコピー中に起こった更新を標準の論理レプリケーションを使ってストリーミングすることにより、テーブルが主適用プロセスと同期状態になることを保証します。
+この同期フェーズの間、パブリッシャで発生したのと同じ順序で変更が適用され、コミットされます。
+ひとたび同期が完了すれば、テーブルのレプリケーションの制御は主適用プロセスに戻され、レプリケーションは通常通り継続されます。
+    </p></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="logical-replication-restrictions.html" title="31.4. 制限事項">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="logical-replication.html" title="第31章 論理レプリケーション">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="logical-replication-monitoring.html" title="31.6. 監視">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">31.4. 制限事項 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 31.6. 監視</td></tr></table></div></body></html>

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>DROP SUBSCRIPTION</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-dropstatistics.html" title="DROP STATISTICS" /><link rel="next" href="sql-droptable.html" title="DROP TABLE" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      sql-dropsubscription.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-dropstatistics.html" title="DROP STATISTICS">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">DROP SUBSCRIPTION</td><td width="20%" align="right"> <a accesskey="n" href="sql-droptable.html" title="DROP TABLE">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-DROPSUBSCRIPTION"><div class="titlepage"></div><a id="id-1.9.3.133.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">DROP SUBSCRIPTION</span></h2><p>DROP SUBSCRIPTION<span class="original">
+  &lt;refpurpose&gt;remove a subscription&lt;/refpurpose&gt;
+</span> — サブスクリプションを削除する</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
+DROP SUBSCRIPTION [ IF EXISTS ] <em class="replaceable"><code>name</code></em> [ CASCADE | RESTRICT ]
+</pre></div><div class="refsect1" id="id-1.9.3.133.5"><h2>説明</h2><span class="original">
+  &lt;title&gt;Description&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;command&gt;DROP SUBSCRIPTION&lt;/command&gt; removes a subscription from the
+   database cluster.
+</span>
+<code class="command">DROP SUBSCRIPTION</code>はデータベースクラスタからサブスクリプションを削除します。
+  </p><p>
+<span class="original">
+   A subscription can only be dropped by a superuser.
+</span>
+スーパーユーザのみがサブスクリプションを削除できます。
+  </p><p>
+<span class="original">
+   &lt;command&gt;DROP SUBSCRIPTION&lt;/command&gt; cannot be executed inside a
+   transaction block if the subscription is associated with a replication
+   slot.  (You can use &lt;command&gt;ALTER SUBSCRIPTION&lt;/command&gt; to unset the
+   slot.)
+</span>
+サブスクリプションがレプリケーションスロットに紐付けられている場合、<code class="command">DROP SUBSCRIPTION</code>をトランザクションブロックの内側で実行することはできません。
+（スロットの設定を解除するには<code class="command">ALTER SUBSCRIPTION</code>を使うことができます。）
+  </p></div><div class="refsect1" id="id-1.9.3.133.6"><h2>パラメータ</h2><span class="original">
+  &lt;title&gt;Parameters&lt;/title&gt;
+</span><div class="variablelist"><dl class="variablelist"><dt><span class="term"><em class="replaceable"><code>name</code></em></span></dt><dd><p>
+<span class="original">
+      The name of a subscription to be dropped.
+</span>
+削除対象のサブスクリプションの名前です。
+     </p></dd><dt><span class="term"><code class="literal">CASCADE</code><br /></span><span class="term"><code class="literal">RESTRICT</code></span></dt><dd><p>
+<span class="original">
+      These key words do not have any effect, since there are no dependencies
+      on subscriptions.
+</span>
+サブスクリプションに依存するものはないので、これらのキーワードは何も効果がありません。
+     </p></dd></dl></div></div><div class="refsect1" id="id-1.9.3.133.7"><h2>注釈</h2><span class="original">
+  &lt;title&gt;Notes&lt;/title&gt;
+</span><p>
+<span class="original">
+   When dropping a subscription that is associated with a replication slot on
+   the remote host (the normal state), &lt;command&gt;DROP SUBSCRIPTION&lt;/command&gt;
+   will connect to the remote host and try to drop the replication slot (and
+   any remaining table synchronization slots) as
+   part of its operation.  This is necessary so that the resources allocated
+   for the subscription on the remote host are released.  If this fails,
+   either because the remote host is not reachable or because the remote
+   replication slot cannot be dropped or does not exist or never existed,
+   the &lt;command&gt;DROP SUBSCRIPTION&lt;/command&gt; command will fail.  To proceed in
+   this situation, disassociate the subscription from the replication slot by
+   executing &lt;literal&gt;ALTER SUBSCRIPTION ... SET (slot_name = NONE)&lt;/literal&gt;.
+   After that, &lt;command&gt;DROP SUBSCRIPTION&lt;/command&gt; will no longer attempt any
+   actions on a remote host.  Note that if the remote replication slot still
+   exists, it (and any related table synchronization slots) should then be
+   dropped manually; otherwise it/they will continue to
+   reserve WAL and might eventually cause the disk to fill up.  See
+   also &lt;xref linkend="logical-replication-subscription-slot"/&gt;.
+</span>
+リモートホストのレプリケーションスロットに紐付けられているサブスクリプション（これが通常の状態です）を削除するとき、<code class="command">DROP SUBSCRIPTION</code>はその操作の一部として、リモートホストに接続し、レプリケーションスロット(と残りのテーブル同期スロット)を削除しようとします。
+リモートホスト上でサブスクリプションに割り当てられたリソースを解放するために、これが必要となります。
+リモートホストに到達できない、あるいはリモートのレプリケーションスロットが削除できない、存在しない、存在したことがない、という理由で削除に失敗した場合、<code class="command">DROP SUBSCRIPTION</code>コマンドは失敗します。
+この状況において先へ進むためには、<code class="literal">ALTER SUBSCRIPTION ... SET (slot_name = NONE)</code>を実行してサブスクリプションとレプリケーションスロットの紐付けを解除してください。
+その後なら<code class="command">DROP SUBSCRIPTION</code>はリモートホスト上で何のアクションも起こそうとしません。
+リモートのレプリケーションスロットがそれでも存在する場合、それ (と関連するテーブル同期スロット) を手作業で削除すべきであることに注意してください。
+そうしなければ、WALを保存し続け、最終的にはディスクを一杯にしてしまうかもしれません。
+<a class="xref" href="logical-replication-subscription.html#LOGICAL-REPLICATION-SUBSCRIPTION-SLOT" title="31.2.1. レプリケーションスロットの管理">31.2.1</a>も参照してください。
+  </p><p>
+<span class="original">
+   If a subscription is associated with a replication slot, then &lt;command&gt;DROP
+   SUBSCRIPTION&lt;/command&gt; cannot be executed inside a transaction block.
+</span>
+サブスクリプションがレプリケーションスロットと紐付けられている場合、<code class="command">DROP SUBSCRIPTION</code>をトランザクションブロックの内側で実行することはできません。
+  </p></div><div class="refsect1" id="id-1.9.3.133.8"><h2>例</h2><span class="original">
+  &lt;title&gt;Examples&lt;/title&gt;
+</span><p>
+<span class="original">
+   Drop a subscription:
+</span>
+サブスクリプションを削除します。
+</p><pre class="programlisting">
+DROP SUBSCRIPTION mysub;
+</pre></div><div class="refsect1" id="id-1.9.3.133.9"><h2>互換性</h2><span class="original">
+  &lt;title&gt;Compatibility&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;command&gt;DROP SUBSCRIPTION&lt;/command&gt; is a &lt;productname&gt;PostgreSQL&lt;/productname&gt;
+   extension.
+</span>
+<code class="command">DROP SUBSCRIPTION</code>は<span class="productname">PostgreSQL</span>の拡張です。
+  </p></div><div class="refsect1" id="id-1.9.3.133.10"><h2>関連項目</h2><span class="original">
+  &lt;title&gt;See Also&lt;/title&gt;
+</span><span class="simplelist"><a class="xref" href="sql-createsubscription.html" title="CREATE SUBSCRIPTION"><span class="refentrytitle">CREATE SUBSCRIPTION</span></a>, <a class="xref" href="sql-altersubscription.html" title="ALTER SUBSCRIPTION"><span class="refentrytitle">ALTER SUBSCRIPTION</span></a></span></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-dropstatistics.html" title="DROP STATISTICS">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-droptable.html" title="DROP TABLE">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">DROP STATISTICS </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> DROP TABLE</td></tr></table></div></body></html>

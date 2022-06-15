@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>54.4. その他のコーディング規約</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="error-style-guide.html" title="54.3. エラーメッセージのスタイルガイド" /><link rel="next" href="nls.html" title="第55章 多言語サポート" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="source.html" title="第54章 PostgreSQLコーディング規約">第54章 PostgreSQLコーディング規約</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      source-conventions.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="error-style-guide.html" title="54.3. エラーメッセージのスタイルガイド">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="source.html" title="第54章 PostgreSQLコーディング規約">上へ</a></td><td width="60%" align="center">54.4. その他のコーディング規約</td><td width="20%" align="right"> <a accesskey="n" href="nls.html" title="第55章 多言語サポート">次へ</a></td></tr></table><hr /></div><div class="sect1" id="SOURCE-CONVENTIONS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">54.4. その他のコーディング規約</h2></div></div></div><span class="original">
+   &lt;title&gt;Miscellaneous Coding Conventions&lt;/title&gt;
+</span><div class="simplesect" id="id-1.10.6.5.2"><div class="titlepage"><div><div><h3 class="title">標準C</h3></div></div></div><span class="original">
+    &lt;title&gt;C Standard&lt;/title&gt;
+</span><p>
+<span class="original">
+     Code in &lt;productname&gt;PostgreSQL&lt;/productname&gt; should only rely on language
+     features available in the C99 standard. That means a conforming
+     C99 compiler has to be able to compile postgres, at least aside
+     from a few platform dependent pieces.
+</span>
+<span class="productname">PostgreSQL</span>のコードはC99の標準で利用可能な言語機能にのみ依存することになっています。
+つまり、C99に準拠したコンパイラであれば、少数のプラットフォーム依存の部分を除けばpostgresをコンパイルできるはずです。
+    </p><p>
+<span class="original">
+     A few features included in the C99 standard are, at this time, not
+     permitted to be used in core &lt;productname&gt;PostgreSQL&lt;/productname&gt;
+     code. This currently includes variable length arrays, intermingled
+     declarations and code, &lt;literal&gt;//&lt;/literal&gt; comments, universal
+     character names. Reasons for that include portability and historical
+     practices.
+</span>
+現時点では、C99の標準に含まれる機能のいくつかは<span class="productname">PostgreSQL</span>のコアコードでは使うことが許可されていません。
+今のところ、可変長配列、型宣言とコードの混在、<code class="literal">//</code>コメント、汎用文字名が含まれます。
+その理由には、移植性と歴史的な慣例が含まれます。
+    </p><p>
+<span class="original">
+     Features from later revisions of the C standard or compiler specific
+     features can be used, if a fallback is provided.
+</span>
+代替策が用意されているのであれば、それより後のバージョンの標準Cの機能、あるいはコンパイラに依存した機能を使用することもできます。
+    </p><p>
+<span class="original">
+     For example &lt;literal&gt;_Static_assert()&lt;/literal&gt; and
+     &lt;literal&gt;__builtin_constant_p&lt;/literal&gt; are currently used, even though
+     they are from newer revisions of the C standard and a
+     &lt;productname&gt;GCC&lt;/productname&gt; extension respectively. If not available
+     we respectively fall back to using a C99 compatible replacement that
+     performs the same checks, but emits rather cryptic messages and do not
+     use &lt;literal&gt;__builtin_constant_p&lt;/literal&gt;.
+</span>
+例えば、<code class="literal">_Static_assert()</code>と<code class="literal">__builtin_constant_p</code>は、それぞれ、標準Cのより新しいバージョン由来、<span class="productname">GCC</span>拡張ですが、現在、使用されています。
+それらが利用できない場合は、それぞれ、同じチェックをする（ただし、やや暗号的なメッセージを発する）C99互換のもので代用し、<code class="literal">__builtin_constant_p</code>は使いません。
+    </p></div><div class="simplesect" id="id-1.10.6.5.3"><div class="titlepage"><div><div><h3 class="title">関数のようなマクロとインライン関数</h3></div></div></div><span class="original">
+    &lt;title&gt;Function-Like Macros and Inline Functions&lt;/title&gt;
+</span><p>
+<span class="original">
+     Both, macros with arguments and &lt;literal&gt;static inline&lt;/literal&gt;
+     functions, may be used. The latter are preferable if there are
+     multiple-evaluation hazards when written as a macro, as e.g., the
+     case with
+</span>
+引数付きのマクロと<code class="literal">static inline</code>の関数のどちらも使用することができます。
+マクロとして記述した場合に、複数回評価されるリスクがあるならば、後者を選択します。
+例えば次のような場合です。
+</p><pre class="programlisting">
+#define Max(x, y)       ((x) &gt; (y) ? (x) : (y))
+</pre><p>
+<span class="original">
+     or when the macro would be very long. In other cases it's only
+     possible to use macros, or at least easier.  For example because
+     expressions of various types need to be passed to the macro.
+</span>
+あるいは、マクロにすると非常に長くなる場合も、インライン関数を選択します。
+その他に、マクロだけしか利用できない、あるいはマクロの方が使いやすい場合があります。
+例えば、マクロに様々な型の式を渡す必要がある場合などです。
+<span class="original"> 訳注：原文は構文的に不完全だが、文脈的に考えて
+     There are other cases where it's only...
+     という意図であると解釈して訳した。
+</span>
+    </p><p>
+<span class="original">
+     When the definition of an inline function references symbols
+     (i.e., variables, functions) that are only available as part of the
+     backend, the function may not be visible when included from frontend
+     code.
+</span>
+インライン関数の定義がバックエンドの一部としてのみ利用可能なシンボル（つまり、変数、関数）を参照する場合、その関数はフロントエンドのコードからインクルードされたときに不可視かもしれません。
+</p><pre class="programlisting">
+#ifndef FRONTEND
+static inline MemoryContext
+MemoryContextSwitchTo(MemoryContext context)
+{
+    MemoryContext old = CurrentMemoryContext;
+
+    CurrentMemoryContext = context;
+    return old;
+}
+#endif   /* FRONTEND */
+</pre><p>
+<span class="original">
+     In this example &lt;literal&gt;CurrentMemoryContext&lt;/literal&gt;, which is only
+     available in the backend, is referenced and the function thus
+     hidden with a &lt;literal&gt;#ifndef FRONTEND&lt;/literal&gt;. This rule
+     exists because some compilers emit references to symbols
+     contained in inline functions even if the function is not used.
+</span>
+この例では、バックエンドのみで利用可能な<code class="literal">CurrentMemoryContext</code>が参照されているため、関数は<code class="literal">#ifndef FRONTEND</code>で隠されています。
+一部のコンパイラはインライン関数に含まれるシンボルの参照を、その関数が使われていなくても吐き出すため、この規則があります。
+    </p></div><div class="simplesect" id="id-1.10.6.5.4"><div class="titlepage"><div><div><h3 class="title">シグナルハンドラの作成</h3></div></div></div><span class="original">
+    &lt;title&gt;Writing Signal Handlers&lt;/title&gt;
+</span><p>
+<span class="original">
+     To be suitable to run inside a signal handler code has to be
+     written very carefully. The fundamental problem is that, unless
+     blocked, a signal handler can interrupt code at any time. If code
+     inside the signal handler uses the same state as code outside
+     chaos may ensue. As an example consider what happens if a signal
+     handler tries to acquire a lock that's already held in the
+     interrupted code.
+</span>
+シグナルハンドラの内部で実行されるのに適切であるためには、注意深くコードを書く必要があります。
+根本的問題は、シグナルハンドラは、ブロックされない限り、いつでもコードに対して割り込むことができるということです。
+シグナルハンドラの内側のコードが、外側のコードと同じ状態を使うと、混沌が発生するかもしれません。
+例えば、シグナルハンドラが、割り込まれたコードで既に保持されているロックを獲得しようとしたら何が起きるか考えてみてください。
+    </p><p>
+<span class="original">
+     Barring special arrangements code in signal handlers may only
+     call async-signal safe functions (as defined in POSIX) and access
+     variables of type &lt;literal&gt;volatile sig_atomic_t&lt;/literal&gt;. A few
+     functions in &lt;command&gt;postgres&lt;/command&gt; are also deemed signal safe, importantly
+     &lt;function&gt;SetLatch()&lt;/function&gt;.
+</span>
+特別に準備された状況を別にすると、シグナルハンドラのコードは、（POSIXで定義される通りの）非同期シグナルで安全な関数だけを呼ぶことができ、型<code class="literal">volatile sig_atomic_t</code>の変数だけにアクセスできます。
+<code class="command">postgres</code>でも、いくつかの関数はシグナルで安全とされており、なかでも重要なのは<code class="function">SetLatch()</code>です。
+    </p><p>
+<span class="original">
+     In most cases signal handlers should do nothing more than note
+     that a signal has arrived, and wake up code running outside of
+     the handler using a latch. An example of such a handler is the
+     following:
+</span>
+ほとんどの場合、シグナルハンドラはシグナルが到着したことを記録し、ハンドラの外部で動作しているコードをラッチを使って呼び起こす以上のことをすべきではありません。
+以下はそのようなハンドラの例です。
+</p><pre class="programlisting">
+static void
+handle_sighup(SIGNAL_ARGS)
+{
+    int         save_errno = errno;
+
+    got_SIGHUP = true;
+    SetLatch(MyLatch);
+
+    errno = save_errno;
+}
+</pre><p>
+<span class="original">
+     &lt;varname&gt;errno&lt;/varname&gt; is saved and restored because
+     &lt;function&gt;SetLatch()&lt;/function&gt; might change it. If that were not done
+     interrupted code that's currently inspecting &lt;varname&gt;errno&lt;/varname&gt; might see the wrong
+     value.
+</span>
+<code class="varname">errno</code>は<code class="function">SetLatch()</code>によって変更されるかもしれないので、保存して、リストアされます。
+そうしなければ、割り込まれたコードが、現在<code class="varname">errno</code>を参照している場合、誤った値を見ることになるかもしれません。
+    </p></div><div class="simplesect" id="id-1.10.6.5.5"><div class="titlepage"><div><div><h3 class="title">関数ポインタの呼び出し</h3></div></div></div><span class="original">
+    &lt;title&gt;Calling Function Pointers&lt;/title&gt;
+</span><p>
+<span class="original">
+     For clarity, it is preferred to explicitly dereference a function pointer
+     when calling the pointed-to function if the pointer is a simple variable,
+     for example:
+</span>
+明快にするため、ポインタが単純な変数である場合に指し示す関数を呼び出すときには、関数ポインタを以下の例のように明示的に参照することが望ましいです。
+</p><pre class="programlisting">
+(*emit_log_hook) (edata);
+</pre><p>
+<span class="original">
+     (even though &lt;literal&gt;emit_log_hook(edata)&lt;/literal&gt; would also work).
+     When the function pointer is part of a structure, then the extra
+     punctuation can and usually should be omitted, for example:
+</span>
+（<code class="literal">emit_log_hook(edata)</code>でも動作するとしても）。
+関数ポインタが構造体の一部であるときには、以下のように、追加的な区切りは省略してよいし、通常は省略すべきです。
+</p><pre class="programlisting">
+paramInfo-&gt;paramFetch(paramInfo, paramId);
+</pre><p>
+    </p></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="error-style-guide.html" title="54.3. エラーメッセージのスタイルガイド">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="source.html" title="第54章 PostgreSQLコーディング規約">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="nls.html" title="第55章 多言語サポート">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">54.3. エラーメッセージのスタイルガイド </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 第55章 多言語サポート</td></tr></table></div></body></html>

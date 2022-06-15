@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>CREATE TRANSFORM</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-createtstemplate.html" title="CREATE TEXT SEARCH TEMPLATE" /><link rel="next" href="sql-createtrigger.html" title="CREATE TRIGGER" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      sql-createtransform.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-createtstemplate.html" title="CREATE TEXT SEARCH TEMPLATE">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">CREATE TRANSFORM</td><td width="20%" align="right"> <a accesskey="n" href="sql-createtrigger.html" title="CREATE TRIGGER">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-CREATETRANSFORM"><div class="titlepage"></div><a id="id-1.9.3.92.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">CREATE TRANSFORM</span></h2><p>CREATE TRANSFORM<span class="original">
+  &lt;refpurpose&gt;define a new transform&lt;/refpurpose&gt;
+</span> — 新しい変換を定義する</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
+CREATE [ OR REPLACE ] TRANSFORM FOR <em class="replaceable"><code>type_name</code></em> LANGUAGE <em class="replaceable"><code>lang_name</code></em> (
+    FROM SQL WITH FUNCTION <em class="replaceable"><code>from_sql_function_name</code></em> [ (<em class="replaceable"><code>argument_type</code></em> [, ...]) ],
+    TO SQL WITH FUNCTION <em class="replaceable"><code>to_sql_function_name</code></em> [ (<em class="replaceable"><code>argument_type</code></em> [, ...]) ]
+);
+</pre></div><div class="refsect1" id="SQL-CREATETRANSFORM-DESCRIPTION"><h2>説明</h2><span class="original">
+  &lt;title&gt;Description&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;command&gt;CREATE TRANSFORM&lt;/command&gt; defines a new transform.
+   &lt;command&gt;CREATE OR REPLACE TRANSFORM&lt;/command&gt; will either create a new
+   transform, or replace an existing definition.
+</span>
+<code class="command">CREATE TRANSFORM</code>は新しい変換を定義します。
+<code class="command">CREATE OR REPLACE TRANSFORM</code>は新しい変換を作成するか、あるいは既存の変換を置換します。
+  </p><p>
+<span class="original">
+   A transform specifies how to adapt a data type to a procedural language.
+   For example, when writing a function in PL/Python using
+   the &lt;type&gt;hstore&lt;/type&gt; type, PL/Python has no prior knowledge how to
+   present &lt;type&gt;hstore&lt;/type&gt; values in the Python environment.  Language
+   implementations usually default to using the text representation, but that
+   is inconvenient when, for example, an associative array or a list would be
+   more appropriate.
+</span>
+変換はデータ型を手続き言語にどのように適合させるかを定義します。
+例えば<code class="type">hstore</code>型を使ってPL/Pythonの関数を書くとき、PL/Pythonは<code class="type">hstore</code>の値をPythonの環境でどのように表現するか、事前の知識がありません。
+言語の実装は通常、デフォルトでテキスト表現を使いますが、これは例えば連想配列やリストの方がより適切な場合には不便です。
+  </p><p>
+<span class="original">
+   A transform specifies two functions:
+</span>
+変換では次の2つの関数を指定します。
+   </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+      A &lt;quote&gt;from SQL&lt;/quote&gt; function that converts the type from the SQL
+      environment to the language.  This function will be invoked on the
+      arguments of a function written in the language.
+</span>
+<span class="quote">「<span class="quote">from SQL</span>」</span>関数では、型をSQL環境から言語へと変換します。
+この関数は、その言語で記述された関数の引数で呼び出されます。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      A &lt;quote&gt;to SQL&lt;/quote&gt; function that converts the type from the
+      language to the SQL environment.  This function will be invoked on the
+      return value of a function written in the language.
+</span>
+<span class="quote">「<span class="quote">to SQL</span>」</span>関数では、型を言語からSQL環境へと変換します。
+この関数は、その言語で記述された関数の戻り値で呼び出されます。
+     </p></li></ul></div><p>
+<span class="original">
+   It is not necessary to provide both of these functions.  If one is not
+   specified, the language-specific default behavior will be used if
+   necessary.  (To prevent a transformation in a certain direction from
+   happening at all, you could also write a transform function that always
+   errors out.)
+</span>
+これらの関数を両方とも提供する必要はありません。
+一方が指定されなければ、必要な時はその言語独自のデフォルトの動作が使われます。
+（ある方向への変換がまったく起きないようにするためには、必ずエラーを発生させる変換関数を作成することもできます。）
+  </p><p>
+<span class="original">
+   To be able to create a transform, you must own and
+   have &lt;literal&gt;USAGE&lt;/literal&gt; privilege on the type, have
+   &lt;literal&gt;USAGE&lt;/literal&gt; privilege on the language, and own and
+   have &lt;literal&gt;EXECUTE&lt;/literal&gt; privilege on the from-SQL and to-SQL
+   functions, if specified.
+</span>
+変換を作成するには、その型を所有し、その<code class="literal">USAGE</code>権限があること、言語の<code class="literal">USAGE</code>権限があること、from-SQL関数あるいはto-SQL関数を指定する場合は、それらを所有し、その<code class="literal">EXECUTE</code>権限があることが必要です。
+  </p></div><div class="refsect1" id="id-1.9.3.92.6"><h2>パラメータ</h2><span class="original">
+  &lt;title&gt;Parameters&lt;/title&gt;
+</span><div class="variablelist"><dl class="variablelist"><dt><span class="term"><em class="replaceable"><code>type_name</code></em></span></dt><dd><p>
+<span class="original">
+       The name of the data type of the transform.
+</span>
+変換の対象となるデータ型の名前です。
+      </p></dd><dt><span class="term"><em class="replaceable"><code>lang_name</code></em></span></dt><dd><p>
+<span class="original">
+       The name of the language of the transform.
+</span>
+変換の対象となる言語の名前です。
+      </p></dd><dt><span class="term"><code class="literal"><em class="replaceable"><code>from_sql_function_name</code></em>[(<em class="replaceable"><code>argument_type</code></em> [, ...])]</code></span></dt><dd><p>
+<span class="original">
+       The name of the function for converting the type from the SQL
+       environment to the language.  It must take one argument of
+       type &lt;type&gt;internal&lt;/type&gt; and return type &lt;type&gt;internal&lt;/type&gt;.  The
+       actual argument will be of the type for the transform, and the function
+       should be coded as if it were.  (But it is not allowed to declare an
+       SQL-level function returning &lt;type&gt;internal&lt;/type&gt; without at
+       least one argument of type &lt;type&gt;internal&lt;/type&gt;.)  The actual return
+       value will be something specific to the language implementation.
+       If no argument list is specified, the function name must be unique in
+       its schema.
+</span>
+型をSQL環境から言語に変換する関数の名前です。
+<code class="type">internal</code>型の引数を1つとり、<code class="type">internal</code>型の値を戻します。
+実引数は変換される型になり、関数はそうであるとしてコーディングされます。
+（しかし、少なくとも1つの<code class="type">internal</code>型の引数がなければ、<code class="type">internal</code>を戻すSQLレベルの関数を宣言することができません。）
+実際の戻り値は、言語の実装に依存したものになります。
+引数リストが指定されない場合、関数名はスキーマ内で一意でなければなりません。
+      </p></dd><dt><span class="term"><code class="literal"><em class="replaceable"><code>to_sql_function_name</code></em>[(<em class="replaceable"><code>argument_type</code></em> [, ...])]</code></span></dt><dd><p>
+<span class="original">
+       The name of the function for converting the type from the language to
+       the SQL environment.  It must take one argument of type
+       &lt;type&gt;internal&lt;/type&gt; and return the type that is the type for the
+       transform.  The actual argument value will be something specific to the
+       language implementation.
+       If no argument list is specified, the function name must be unique in
+       its schema.
+</span>
+型を言語からSQL環境に変換する関数の名前です。
+<code class="type">internal</code>型の引数を1つとり、変換の型であるデータ型を戻します。
+実引数の値は言語の実装に依存したものになります。
+引数リストが指定されない場合、関数名はスキーマ内で一意でなければなりません。
+      </p></dd></dl></div></div><div class="refsect1" id="SQL-CREATETRANSFORM-NOTES"><h2>注釈</h2><span class="original">
+  &lt;title&gt;Notes&lt;/title&gt;
+</span><p>
+<span class="original">
+   Use &lt;link linkend="sql-droptransform"&gt;&lt;command&gt;DROP TRANSFORM&lt;/command&gt;&lt;/link&gt; to remove transforms.
+</span>
+変換を削除するには<a class="link" href="sql-droptransform.html" title="DROP TRANSFORM"><code class="command">DROP TRANSFORM</code></a>を使います。
+  </p></div><div class="refsect1" id="SQL-CREATETRANSFORM-EXAMPLES"><h2>例</h2><span class="original">
+  &lt;title&gt;Examples&lt;/title&gt;
+</span><p>
+<span class="original">
+   To create a transform for type &lt;type&gt;hstore&lt;/type&gt; and language
+   &lt;literal&gt;plpythonu&lt;/literal&gt;, first set up the type and the language:
+</span>
+<code class="type">hstore</code>型で言語<code class="literal">plpythonu</code>の変換を作成するため、まず以下のように型と言語を設定します。
+</p><pre class="programlisting">
+CREATE TYPE hstore ...;
+
+CREATE EXTENSION plpythonu;
+</pre><p>
+   Then create the necessary functions:
+</p><pre class="programlisting">
+CREATE FUNCTION hstore_to_plpython(val internal) RETURNS internal
+LANGUAGE C STRICT IMMUTABLE
+AS ...;
+
+CREATE FUNCTION plpython_to_hstore(val internal) RETURNS hstore
+LANGUAGE C STRICT IMMUTABLE
+AS ...;
+</pre><p>
+<span class="original">
+   And finally create the transform to connect them all together:
+</span>
+そして最後に、それらを互いに接続する変換を以下のように作成します。
+</p><pre class="programlisting">
+CREATE TRANSFORM FOR hstore LANGUAGE plpythonu (
+    FROM SQL WITH FUNCTION hstore_to_plpython(internal),
+    TO SQL WITH FUNCTION plpython_to_hstore(internal)
+);
+</pre><p>
+<span class="original">
+   In practice, these commands would be wrapped up in an extension.
+</span>
+現実には、これらのコマンドは拡張の中にまとめられているでしょう。
+  </p><p>
+<span class="original">
+   The &lt;filename&gt;contrib&lt;/filename&gt; section contains a number of extensions
+   that provide transforms, which can serve as real-world examples.
+</span>
+<code class="filename">contrib</code>の下には変換を提供するいくつかの拡張が含まれており、それらは現実世界での例となります。
+  </p></div><div class="refsect1" id="SQL-CREATETRANSFORM-COMPAT"><h2>互換性</h2><span class="original">
+  &lt;title&gt;Compatibility&lt;/title&gt;
+</span><p>
+<span class="original">
+   This form of &lt;command&gt;CREATE TRANSFORM&lt;/command&gt; is a
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; extension.  There is a &lt;command&gt;CREATE
+   TRANSFORM&lt;/command&gt; command in the &lt;acronym&gt;SQL&lt;/acronym&gt; standard, but it
+   is for adapting data types to client languages.  That usage is not supported
+   by &lt;productname&gt;PostgreSQL&lt;/productname&gt;.
+</span>
+この構文の<code class="command">CREATE TRANSFORM</code>は<span class="productname">PostgreSQL</span>の拡張です。
+標準<acronym class="acronym">SQL</acronym>には<code class="command">CREATE TRANSFORM</code>コマンドがありますが、それはデータ型をクライアントの言語に適合させるためのものです。
+その使用法は<span class="productname">PostgreSQL</span>ではサポートされていません。
+  </p></div><div class="refsect1" id="SQL-CREATETRANSFORM-SEEALSO"><h2>関連項目</h2><span class="original">
+  &lt;title&gt;See Also&lt;/title&gt;
+</span><p>
+   <a class="xref" href="sql-createfunction.html" title="CREATE FUNCTION"><span class="refentrytitle">CREATE FUNCTION</span></a>,
+   <a class="xref" href="sql-createlanguage.html" title="CREATE LANGUAGE"><span class="refentrytitle">CREATE LANGUAGE</span></a>,
+   <a class="xref" href="sql-createtype.html" title="CREATE TYPE"><span class="refentrytitle">CREATE TYPE</span></a>,
+   <a class="xref" href="sql-droptransform.html" title="DROP TRANSFORM"><span class="refentrytitle">DROP TRANSFORM</span></a>
+  </p></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-createtstemplate.html" title="CREATE TEXT SEARCH TEMPLATE">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-createtrigger.html" title="CREATE TRIGGER">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">CREATE TEXT SEARCH TEMPLATE </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> CREATE TRIGGER</td></tr></table></div></body></html>

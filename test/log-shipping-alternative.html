@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>26.4. この他のログシッピングの方法</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="warm-standby-failover.html" title="26.3. フェイルオーバー" /><link rel="next" href="hot-standby.html" title="26.5. ホットスタンバイ" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 13.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="high-availability.html" title="第26章 高可用性、負荷分散およびレプリケーション">第26章 高可用性、負荷分散およびレプリケーション</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 13.1 &#10;                      log-shipping-alternative.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="warm-standby-failover.html" title="26.3. フェイルオーバー">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="high-availability.html" title="第26章 高可用性、負荷分散およびレプリケーション">上へ</a></td><td width="60%" align="center">26.4. この他のログシッピングの方法</td><td width="20%" align="right"> <a accesskey="n" href="hot-standby.html" title="26.5. ホットスタンバイ">次へ</a></td></tr></table><hr /></div><div class="sect1" id="LOG-SHIPPING-ALTERNATIVE"><div class="titlepage"><div><div><h2 class="title" style="clear: both">26.4. この他のログシッピングの方法</h2></div></div></div><span class="original">
+   &lt;title&gt;Alternative Method for Log Shipping&lt;/title&gt;
+</span><p>
+<span class="original">
+    An alternative to the built-in standby mode described in the previous
+    sections is to use a &lt;varname&gt;restore_command&lt;/varname&gt; that polls the archive location.
+    This was the only option available in versions 8.4 and below. See the
+    &lt;xref linkend="pgstandby"/&gt; module for a reference implementation of this.
+</span>
+これまでの節で説明した組み込みのスタンバイモードの他の方法として、アーカイブ場所を順次問い合わせる<code class="varname">restore_command</code>を使用する方法があります。
+これはバージョン8.4以前では唯一の利用可能な選択肢でした。
+このリファレンス実装として<a class="xref" href="pgstandby.html" title="pg_standby"><span class="refentrytitle"><span class="application">pg_standby</span></span></a>を参照してください。
+   </p><p>
+<span class="original">
+    Note that in this mode, the server will apply WAL one file at a
+    time, so if you use the standby server for queries (see Hot Standby),
+    there is a delay between an action in the master and when the
+    action becomes visible in the standby, corresponding to the time it takes
+    to fill up the WAL file. &lt;varname&gt;archive_timeout&lt;/varname&gt; can be used to make that delay
+    shorter. Also note that you can't combine streaming replication with
+    this method.
+</span>
+このモードでは、サーバは1度に1つのWALファイルを適用することに注意してください。
+このため問い合わせ用にスタンバイサーバを使用する場合(ホットスタンバイを参照)、マスタにおける動作とそれがスタンバイで可視になるまでの間に、WALファイルをみたすために必要とする時間に相当する、遅延が存在します。
+<code class="varname">archive_timeout</code>を使用して遅延を短くすることができます。
+また、この方法とストリーミングレプリケーションと組み合わせることができないことにも注意してください。
+   </p><p>
+<span class="original">
+    The operations that occur on both primary and standby servers are
+    normal continuous archiving and recovery tasks. The only point of
+    contact between the two database servers is the archive of WAL files
+    that both share: primary writing to the archive, standby reading from
+    the archive. Care must be taken to ensure that WAL archives from separate
+    primary servers do not become mixed together or confused. The archive
+    need not be large if it is only required for standby operation.
+</span>
+プライマリおよびスタンバイサーバの両方で発生する操作は通常の継続的なアーカイブ処理とリカバリ処理です。
+2つのデータベースサーバが連携する唯一の点は、両者が共有するWALファイルのアーカイブです。
+プライマリがアーカイブに書き出し、スタンバイがアーカイブから読み取ります。
+注意して他のプライマリサーバ由来のWALアーカイブが混在しないことを確実にしなければなりません。
+さもないと混乱が発生します。
+スタンバイ操作でのみ必要なものですので、アーカイブは必ずしも巨大になりません。
+   </p><p>
+<span class="original">
+    The magic that makes the two loosely coupled servers work together is
+    simply a &lt;varname&gt;restore_command&lt;/varname&gt; used on the standby that,
+    when asked for the next WAL file, waits for it to become available from
+    the primary. Normal recovery
+    processing would request a file from the WAL archive, reporting failure
+    if the file was unavailable.  For standby processing it is normal for
+    the next WAL file to be unavailable, so the standby must wait for
+    it to appear. For files ending in
+    &lt;literal&gt;.history&lt;/literal&gt; there is no need to wait, and a non-zero return
+    code must be returned. A waiting &lt;varname&gt;restore_command&lt;/varname&gt; can be
+    written as a custom script that loops after polling for the existence of
+    the next WAL file. There must also be some way to trigger failover, which
+    should interrupt the &lt;varname&gt;restore_command&lt;/varname&gt;, break the loop and
+    return a file-not-found error to the standby server. This ends recovery
+    and the standby will then come up as a normal server.
+</span>
+2つの疎結合サーバを協調させる秘訣は簡単で、スタンバイサーバにて使用される<code class="varname">restore_command</code>です。
+これは次のWALファイルを問い合わせ、それをプライマリから利用可能になるまで待機します。
+通常のリカバリ処理はWALアーカイブからファイルを要求し、ファイルが利用できなければ失敗を報告します。
+スタンバイ処理では、次のWALファイルを入手できないことは異常ではありませんので、スタンバイは利用可能になるまで待機しなければなりません。
+<code class="literal">.history</code>で終わるファイルについては、待機する必要はなく、非ゼロの終了コードを返さなければなりません。
+<code class="varname">restore_command</code>を待機させるには、次のWALファイルの存在を確認した後にループする独自のスクリプトを作成することで実現できます。
+また、<code class="varname">restore_command</code>に割り込み、ループを終了させ、ファイルが存在しないというエラーをスタンバイサーバに返す、フェイルオーバーを発生させる何らかの方法がなければなりません。
+これがリカバリ処理を停止しますので、スタンバイサーバは通常のサーバになります。
+   </p><p>
+<span class="original">
+    Pseudocode for a suitable &lt;varname&gt;restore_command&lt;/varname&gt; is:
+</span>
+<code class="varname">restore_command</code>の擬似コードの一例は以下です。
+</p><pre class="programlisting">
+triggered = false;
+while (!NextWALFileReady() &amp;&amp; !triggered)
+{
+    sleep(100000L);         /* wait for ~0.1 sec */
+    if (CheckForExternalTrigger())
+        triggered = true;
+}
+if (!triggered)
+        CopyWALFileForRecovery();
+</pre><p>
+   </p><p>
+<span class="original">
+    A working example of a waiting &lt;varname&gt;restore_command&lt;/varname&gt; is provided
+    in the &lt;xref linkend="pgstandby"/&gt; module. It
+    should be used as a reference on how to correctly implement the logic
+    described above. It can also be extended as needed to support specific
+    configurations and environments.
+</span>
+待機を行う<code class="varname">restore_command</code>の実例は<a class="xref" href="pgstandby.html" title="pg_standby"><span class="refentrytitle"><span class="application">pg_standby</span></span></a>モジュール内で提供されています。
+これは上記のロジックをどのように正確に実装するかについての参照として使用すべきです。
+また、これを特定の設定または環境をサポートするため必要に応じて拡張することができます。
+   </p><p>
+<span class="original">
+    The method for triggering failover is an important part of planning
+    and design. One potential option is the &lt;varname&gt;restore_command&lt;/varname&gt;
+    command.  It is executed once for each WAL file, but the process
+    running the &lt;varname&gt;restore_command&lt;/varname&gt; is created and dies for
+    each file, so there is no daemon or server process, and
+    signals or a signal handler cannot be used. Therefore, the
+    &lt;varname&gt;restore_command&lt;/varname&gt; is not suitable to trigger failover.
+    It is possible to use a simple timeout facility, especially if
+    used in conjunction with a known &lt;varname&gt;archive_timeout&lt;/varname&gt;
+    setting on the primary. However, this is somewhat error prone
+    since a network problem or busy primary server might be sufficient
+    to initiate failover. A notification mechanism such as the explicit
+    creation of a trigger file is ideal, if this can be arranged.
+</span>
+フェイルオーバーを通知する手段は計画・設計段階で重要な部分です。
+考えられる選択肢の1つは<code class="varname">restore_command</code>です。
+これは各WALファイルに対して1度実行されるものですが、<code class="varname">restore_command</code>を実行するプロセスは各ファイルに対して起動・終了します。
+このようにデーモンやサーバプロセスはありませんので、シグナルやシグナルハンドラを使用することはできません。
+したがって、<code class="varname">restore_command</code>はフェイルオーバーの通知には適していません。
+特にプライマリサーバ上の既知の<code class="varname">archive_timeout</code>設定と連係して使用できるならば、単純なタイムアウト機能を使用することができます。
+しかし、これはネットワーク障害や高負荷なプライマリサーバによりフェイルオーバーが始まってしまうため、どちらかというとエラーになりやすいものです。
+実現可能ならば、明示的な通知用ファイルの作成などの通知機構の方が理想的です。
+   </p><div class="sect2" id="WARM-STANDBY-CONFIG"><div class="titlepage"><div><div><h3 class="title">26.4.1. 実装</h3></div></div></div><span class="original">
+   &lt;title&gt;Implementation&lt;/title&gt;
+</span><p>
+<span class="original">
+    The short procedure for configuring a standby server using this alternative
+    method is as follows. For
+    full details of each step, refer to previous sections as noted.
+</span>
+この代替方式を使用してスタンバイサーバを構築する短めの手順を以下に示します。
+各段階の詳細については、注記していますので、前の節を参照してください。
+    </p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p>
+<span class="original">
+       Set up primary and standby systems as nearly identical as
+       possible, including two identical copies of
+       &lt;productname&gt;PostgreSQL&lt;/productname&gt; at the same release level.
+</span>
+できる限り同じようにプライマリシステムとスタンバイシステムを設定してください。
+同じリリースレベルの<span class="productname">PostgreSQL</span>の同一コピーの導入も含みます。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       Set up continuous archiving from the primary to a WAL archive
+       directory on the standby server. Ensure that
+       &lt;xref linkend="guc-archive-mode"/&gt;,
+       &lt;xref linkend="guc-archive-command"/&gt; and
+       &lt;xref linkend="guc-archive-timeout"/&gt;
+       are set appropriately on the primary
+       (see &lt;xref linkend="backup-archiving-wal"/&gt;).
+</span>
+プライマリサーバで、継続的アーカイブをスタンバイサーバ上のディレクトリ上にWALをアーカイブするように設定してください。
+プライマリサーバで、<a class="xref" href="runtime-config-wal.html#GUC-ARCHIVE-MODE">archive_mode</a>、<a class="xref" href="runtime-config-wal.html#GUC-ARCHIVE-COMMAND">archive_command</a>および<a class="xref" href="runtime-config-wal.html#GUC-ARCHIVE-TIMEOUT">archive_timeout</a>が適切に設定されていることを確認してください（<a class="xref" href="continuous-archiving.html#BACKUP-ARCHIVING-WAL" title="25.3.1. WALアーカイブの設定">25.3.1</a>を参照してください）。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       Make a base backup of the primary server (see &lt;xref
+       linkend="backup-base-backup"/&gt;), and load this data onto the standby.
+</span>
+プライマリサーバでベースバックアップを作成（<a class="xref" href="continuous-archiving.html#BACKUP-BASE-BACKUP" title="25.3.2. ベースバックアップの作成">25.3.2</a>を参照してください）し、スタンバイサーバでこのデータをロードしてください。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       Begin recovery on the standby server from the local WAL
+       archive, using &lt;varname&gt;restore_command&lt;/varname&gt; that waits
+       as described previously (see &lt;xref linkend="backup-pitr-recovery"/&gt;).
+</span>
+スタンバイサーバで、上記の通り待機を行う<code class="varname">restore_command</code>を使用して、ローカルなWALアーカイブからリカバリ処理を実行してください（<a class="xref" href="continuous-archiving.html#BACKUP-PITR-RECOVERY" title="25.3.4. 継続的アーカイブによるバックアップを使用した復旧">25.3.4</a>を参照してください）。
+      </p></li></ol></div><p>
+   </p><p>
+<span class="original">
+    Recovery treats the WAL archive as read-only, so once a WAL file has
+    been copied to the standby system it can be copied to tape at the same
+    time as it is being read by the standby database server.
+    Thus, running a standby server for high availability can be performed at
+    the same time as files are stored for longer term disaster recovery
+    purposes.
+</span>
+リカバリ処理はWALアーカイブを読み取り専用として扱います。
+このため、WALファイルがスタンバイシステムにコピーされた後、スタンバイデータベースサーバによる読み取りと同時にWALファイルをテープにコピーすることができます。
+このように、高可用性スタンバイサーバの実行を、災害からのリカバリを目的とした長期的な保管と同時に行うことができます。
+   </p><p>
+<span class="original">
+    For testing purposes, it is possible to run both primary and standby
+    servers on the same system. This does not provide any worthwhile
+    improvement in server robustness, nor would it be described as HA.
+</span>
+試験のためにプライマリサーバとスタンバイサーバを同じシステムで稼動させることができます。
+これによりサーバ堅牢性が向上することも、高可用性と呼べることもありません。
+   </p></div><div class="sect2" id="WARM-STANDBY-RECORD"><div class="titlepage"><div><div><h3 class="title">26.4.2. レコードベースのログシッピング</h3></div></div></div><span class="original">
+   &lt;title&gt;Record-Based Log Shipping&lt;/title&gt;
+</span><p>
+<span class="original">
+    It is also possible to implement record-based log shipping using this
+    alternative method, though this requires custom development, and changes
+    will still only become visible to hot standby queries after a full WAL
+    file has been shipped.
+</span>
+この代替手法を用いたレコード単位のログシッピングの実装も可能ですが、利用者側の開発が必要です。
+さらに、完全なWALファイルが転送された後のみで、変更がホットスタンバイ問い合わせで可視になります。
+   </p><p>
+<span class="original">
+    An external program can call the &lt;function&gt;pg_walfile_name_offset()&lt;/function&gt;
+    function (see &lt;xref linkend="functions-admin"/&gt;)
+    to find out the file name and the exact byte offset within it of
+    the current end of WAL.  It can then access the WAL file directly
+    and copy the data from the last known end of WAL through the current end
+    over to the standby servers.  With this approach, the window for data
+    loss is the polling cycle time of the copying program, which can be very
+    small, and there is no wasted bandwidth from forcing partially-used
+    segment files to be archived.  Note that the standby servers'
+    &lt;varname&gt;restore_command&lt;/varname&gt; scripts can only deal with whole WAL files,
+    so the incrementally copied data is not ordinarily made available to
+    the standby servers.  It is of use only when the primary dies &amp;mdash;
+    then the last partial WAL file is fed to the standby before allowing
+    it to come up.  The correct implementation of this process requires
+    cooperation of the &lt;varname&gt;restore_command&lt;/varname&gt; script with the data
+    copying program.
+</span>
+外部プログラムは<code class="function">pg_walfile_name_offset()</code>関数（<a class="xref" href="functions-admin.html" title="9.27. システム管理関数">9.27</a>を参照）を呼び出して、WALの現在の終了点のファイル名と正確なバイトオフセットを見つけ出すことができます。
+そして、WALファイルに直接アクセスし、直前の既知のWAL終了点から現在の終了点までのデータをスタンバイサーバにコピーすることができます。
+この方法では、データ損失期間はコピー処理プログラムの実行周期となります。
+非常に短くすることができますし、部分的に使用されたセグメントファイルを強制的にアーカイブするため無駄な帯域もありません。
+スタンバイサーバの<code class="varname">restore_command</code>スクリプトがWALファイル全体しか扱うことができないことに注意してください。
+このため、逐次的にコピーしたデータは通常はスタンバイサーバで利用することができません。
+プライマリサーバが停止した時のみこれを使用します。
+その場合、プライマリサーバが立ち上がる前に、最後の部分的なWALファイルがセカンダリサーバに渡されます。
+この処理の正しい実装では、データコピープログラムと<code class="varname">restore_command</code>スクリプトとの連係が必要です。
+   </p><p>
+<span class="original">
+    Starting with &lt;productname&gt;PostgreSQL&lt;/productname&gt; version 9.0, you can use
+    streaming replication (see &lt;xref linkend="streaming-replication"/&gt;) to
+    achieve the same benefits with less effort.
+</span>
+<span class="productname">PostgreSQL</span>バージョン9.0から、同じ利点をより少ない設定で実現できるストリーミングレプリケーション(<a class="xref" href="warm-standby.html#STREAMING-REPLICATION" title="26.2.5. ストリーミングレプリケーション">26.2.5</a>参照)を使用することができます。
+   </p></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="warm-standby-failover.html" title="26.3. フェイルオーバー">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="high-availability.html" title="第26章 高可用性、負荷分散およびレプリケーション">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="hot-standby.html" title="26.5. ホットスタンバイ">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">26.3. フェイルオーバー </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 13.1文書">ホーム</a></td><td width="40%" align="right" valign="top"> 26.5. ホットスタンバイ</td></tr></table></div></body></html>

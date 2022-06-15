@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>5.3. 生成列</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="ddl-default.html" title="5.2. デフォルト値" /><link rel="next" href="ddl-constraints.html" title="5.4. 制約" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="ddl.html" title="第5章 データ定義">第5章 データ定義</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      ddl-generated-columns.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="ddl-default.html" title="5.2. デフォルト値">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="ddl.html" title="第5章 データ定義">上へ</a></td><td width="60%" align="center">5.3. 生成列</td><td width="20%" align="right"> <a accesskey="n" href="ddl-constraints.html" title="5.4. 制約">次へ</a></td></tr></table><hr /></div><div class="sect1" id="DDL-GENERATED-COLUMNS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">5.3. 生成列</h2></div></div></div><span class="original">
+  &lt;title&gt;Generated Columns&lt;/title&gt;
+</span><a id="id-1.5.4.5.2" class="indexterm"></a><p>
+<span class="original">
+   A generated column is a special column that is always computed from other
+   columns.  Thus, it is for columns what a view is for tables.  There are two
+   kinds of generated columns: stored and virtual.  A stored generated column
+   is computed when it is written (inserted or updated) and occupies storage
+   as if it were a normal column.  A virtual generated column occupies no
+   storage and is computed when it is read.  Thus, a virtual generated column
+   is similar to a view and a stored generated column is similar to a
+   materialized view (except that it is always updated automatically).
+   PostgreSQL currently implements only stored generated columns.
+</span>
+生成列は常に他の列から計算される特別な列です。
+ですから、これは列におけるテーブルに対するビューのようなものです。
+生成列には格納と仮想の2種類があります。
+格納生成列はそれが書かれた（挿入または更新）時に計算され、あたかも通常の列のようにストレージが割当てられます。
+仮想列にはストレージは割り当てられず、列が読み出された時に計算されます。
+つまり、仮想生成列はビューに似ており、格納生成列はマテリアライズドビューに似ています。（常に自動的に更新される点は除きます。）
+今の所PostgreSQLは格納生成列のみを実装しています。
+  </p><p>
+<span class="original">
+   To create a generated column, use the &lt;literal&gt;GENERATED ALWAYS
+   AS&lt;/literal&gt; clause in &lt;command&gt;CREATE TABLE&lt;/command&gt;, for example:
+</span>
+生成列を作るには、<code class="command">CREATE TABLE</code>で<code class="literal">GENERATED ALWAYS AS</code>節を使ってください。例を示します。
+</p><pre class="programlisting">
+CREATE TABLE people (
+    ...,
+    height_cm numeric,
+    height_in numeric <span class="emphasis"><strong>GENERATED ALWAYS AS (height_cm / 2.54) STORED</strong></span>
+);
+</pre><p>
+<span class="original">
+   The keyword &lt;literal&gt;STORED&lt;/literal&gt; must be specified to choose the
+   stored kind of generated column.  See &lt;xref linkend="sql-createtable"/&gt; for
+   more details.
+</span>
+種類を格納生成列として選択するためにキーワード<code class="literal">STORED</code>を選択する必要があります。
+より詳しくは<a class="xref" href="sql-createtable.html" title="CREATE TABLE"><span class="refentrytitle">CREATE TABLE</span></a>をご覧ください。
+  </p><p>
+<span class="original">
+   A generated column cannot be written to directly.  In
+   &lt;command&gt;INSERT&lt;/command&gt; or &lt;command&gt;UPDATE&lt;/command&gt; commands, a value
+   cannot be specified for a generated column, but the keyword
+   &lt;literal&gt;DEFAULT&lt;/literal&gt; may be specified.
+</span>
+生成列には直接書き込みができません。
+<code class="command">INSERT</code>あるいは<code class="command">UPDATE</code>コマンドでは値を生成列には指定できませんが、キーワード<code class="literal">DEFAULT</code>が指定できます。
+  </p><p>
+<span class="original">
+   Consider the differences between a column with a default and a generated
+   column.  The column default is evaluated once when the row is first
+   inserted if no other value was provided; a generated column is updated
+   whenever the row changes and cannot be overridden.  A column default may
+   not refer to other columns of the table; a generation expression would
+   normally do so.  A column default can use volatile functions, for example
+   &lt;literal&gt;random()&lt;/literal&gt; or functions referring to the current time;
+   this is not allowed for generated columns.
+</span>
+デフォルトを備えた列と生成列の違いを考えてみましょう。
+列のデフォルトは、他に値が指定されないときに、最初に行が挿入された時に一度だけ評価されます。
+生成列は、行が変更された時に常に更新され、上書きはできません。
+デフォルトを備えた列はテーブルの他の列を参照することはできませんが、生成式は通常それを行います。
+デフォルトを備えた列は揮発性の関数、たとえば<code class="literal">random()</code>や現在時刻を参照する関数を使用できますが、これは生成列では許されていません。
+  </p><p>
+<span class="original">
+   Several restrictions apply to the definition of generated columns and
+   tables involving generated columns:
+</span>
+生成列の定義と生成列を伴うテーブルには以下の制限が適用されます。
+
+   </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+      The generation expression can only use immutable functions and cannot
+      use subqueries or reference anything other than the current row in any
+      way.
+</span>
+生成式は不変関数のみが使用でき、副問合せ、あるいは現在の行以外へのいかなる参照も使用できません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      A generation expression cannot reference another generated column.
+</span>
+生成式はほかの生成列を参照できません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      A generation expression cannot reference a system column, except
+      &lt;varname&gt;tableoid&lt;/varname&gt;.
+</span>
+生成式は<code class="varname">tableoid</code>以外のシステム列を参照できません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      A generated column cannot have a column default or an identity definition.
+</span>
+生成列は列デフォルトも識別定義も持てません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      A generated column cannot be part of a partition key.
+</span>
+生成列はパーティションキーの一部にはなれません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Foreign tables can have generated columns.  See &lt;xref
+      linkend="sql-createforeigntable"/&gt; for details.
+</span>
+外部テーブルは生成列を持つことができます。
+詳細は<a class="xref" href="sql-createforeigntable.html" title="CREATE FOREIGN TABLE"><span class="refentrytitle">CREATE FOREIGN TABLE</span></a>をご覧ください。
+     </p></li><li class="listitem"><span class="original">
+     &lt;para&gt;For inheritance:&lt;/para&gt;
+</span><p>継承の場合：</p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: circle; "><li class="listitem"><p>
+<span class="original">
+        If a parent column is a generated column, a child column must also be
+        a generated column using the same expression.  In the definition of
+        the child column, leave off the &lt;literal&gt;GENERATED&lt;/literal&gt; clause,
+        as it will be copied from the parent.
+</span>
+親列が生成列なら、子列もまた同じ式を用いた生成列でなければなりません。
+子列の定義では<code class="literal">GENERATED</code>節は親列からコピーされるので、指定しないでください。
+       </p></li><li class="listitem"><p>
+<span class="original">
+        In case of multiple inheritance, if one parent column is a generated
+        column, then all parent columns must be generated columns and with the
+        same expression.
+</span>
+多重継承では、一つの親列が生成列なら、すべての親列は同じ式による生成列でなければなりません。
+       </p></li><li class="listitem"><p>
+<span class="original">
+        If a parent column is not a generated column, a child column may be
+        defined to be a generated column or not.
+</span>
+親列が生成列でなければ、子列は生成列として定義されるかもしれませんし、されないかもしれません。
+       </p></li></ul></div></li></ul></div><p>
+  </p><p>
+<span class="original">
+   Additional considerations apply to the use of generated columns.
+</span>
+生成列の利用の際には以下の追加の考慮が必要です。
+   </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+      Generated columns maintain access privileges separately from their
+      underlying base columns.  So, it is possible to arrange it so that a
+      particular role can read from a generated column but not from the
+      underlying base columns.
+</span>
+生成列は元になる基底列とは別にアクセス権限を維持します。
+ですから、ある特定のロールが生成列を読み出しつつも、元になる基底列からは読み出さないように調整することが可能です。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Generated columns are, conceptually, updated after
+      &lt;literal&gt;BEFORE&lt;/literal&gt; triggers have run.  Therefore, changes made to
+      base columns in a &lt;literal&gt;BEFORE&lt;/literal&gt; trigger will be reflected in
+      generated columns.  But conversely, it is not allowed to access
+      generated columns in &lt;literal&gt;BEFORE&lt;/literal&gt; triggers.
+</span>
+概念的には、生成列は<code class="literal">BEFORE</code>トリガが走った後に更新されます。
+ですから、<code class="literal">BEFORE</code>トリガの中で基底列に加えられた変更は生成列に反映されます。
+しかし逆に生成列を<code class="literal">BEFORE</code>トリガの中でアクセスすることは許されません。
+     </p></li></ul></div><p>
+  </p></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ddl-default.html" title="5.2. デフォルト値">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="ddl.html" title="第5章 データ定義">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="ddl-constraints.html" title="5.4. 制約">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">5.2. デフォルト値 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 5.4. 制約</td></tr></table></div></body></html>

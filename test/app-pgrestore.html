@@ -1,0 +1,895 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>pg_restore</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="app-pgrecvlogical.html" title="pg_recvlogical" /><link rel="next" href="app-pgverifybackup.html" title="pg_verifybackup" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="reference-client.html" title="PostgreSQLクライアントアプリケーション">PostgreSQLクライアントアプリケーション</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      app-pgrestore.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="app-pgrecvlogical.html" title="pg_recvlogical">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="reference-client.html" title="PostgreSQLクライアントアプリケーション">上へ</a></td><td width="60%" align="center"><span class="application">pg_restore</span></td><td width="20%" align="right"> <a accesskey="n" href="app-pgverifybackup.html" title="pg_verifybackup">次へ</a></td></tr></table><hr /></div><div class="refentry" id="APP-PGRESTORE"><div class="titlepage"></div><a id="id-1.9.4.18.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle"><span class="application">pg_restore</span></span></h2><p>pg_restore — 
+<span class="original">
+   restore a &lt;productname&gt;PostgreSQL&lt;/productname&gt; database from an
+   archive file created by &lt;application&gt;pg_dump&lt;/application&gt;
+</span>
+<span class="application">pg_dump</span>によって作成されたアーカイブファイルから<span class="productname">PostgreSQL</span>データベースをリストアする
+  </p></div><div class="refsynopsisdiv"><h2>概要</h2><div class="cmdsynopsis"><p id="id-1.9.4.18.4.1"><code class="command">pg_restore</code> [<em class="replaceable"><code>connection-option</code></em>...] [<em class="replaceable"><code>option</code></em>...] [<em class="replaceable"><code>filename</code></em>]</p></div></div><div class="refsect1" id="APP-PGRESTORE-DESCRIPTION"><h2>説明</h2><span class="original">
+  &lt;title&gt;Description&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;application&gt;pg_restore&lt;/application&gt; is a utility for restoring a
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; database from an archive
+   created by &lt;xref linkend="app-pgdump"/&gt; in one of the non-plain-text
+   formats.  It will issue the commands necessary to reconstruct the
+   database to the state it was in at the time it was saved.  The
+   archive files also allow &lt;application&gt;pg_restore&lt;/application&gt; to
+   be selective about what is restored, or even to reorder the items
+   prior to being restored. The archive files are designed to be
+   portable across architectures.
+</span>
+<span class="application">pg_restore</span>は、<a class="xref" href="app-pgdump.html" title="pg_dump"><span class="refentrytitle"><span class="application">pg_dump</span></span></a>によって作成された平文形式以外のアーカイブファイルを使って、<span class="productname">PostgreSQL</span>データベースをリストアするためのユーティリティです。
+このコマンドは、データベースを再構成して保存された時点の状態にするために必要なコマンドを発行します。
+また、<span class="application">pg_restore</span>は、アーカイブファイルから、リストアする内容を選択したり、リストアする前にアイテムの並び替えを行うこともできます。
+アーカイブファイルはアーキテクチャに依存しない移植性を持つように設計されています。
+  </p><p>
+<span class="original">
+   &lt;application&gt;pg_restore&lt;/application&gt; can operate in two modes.
+   If a database name is specified, &lt;application&gt;pg_restore&lt;/application&gt;
+   connects to that database and restores archive contents directly into
+   the database.  Otherwise, a script containing the SQL
+   commands necessary to rebuild the database is created and written
+   to a file or standard output.  This script output is equivalent to
+   the plain text output format of &lt;application&gt;pg_dump&lt;/application&gt;.
+   Some of the options controlling the output are therefore analogous to
+   &lt;application&gt;pg_dump&lt;/application&gt; options.
+</span>
+<span class="application">pg_restore</span>の操作には2つのモードがあります。
+データベース名が指定された場合、<span class="application">pg_restore</span>はそのデータベースに接続し、アーカイブを直接そのデータベースにリストアします。
+データベース名が指定されなかった場合は、データベースを再構築するために必要となるSQLコマンドが含まれたスクリプトが作成されます（ファイルもしくは標準出力に書き出されます）。
+このスクリプトの出力は<span class="application">pg_dump</span>の平文形式の出力と同じです。
+従って、出力を制御するオプションの中には、<span class="application">pg_dump</span>のオプションに類似したものがあります。
+  </p><p>
+<span class="original">
+   Obviously, &lt;application&gt;pg_restore&lt;/application&gt; cannot restore information
+   that is not present in the archive file.  For instance, if the
+   archive was made using the &lt;quote&gt;dump data as
+   &lt;command&gt;INSERT&lt;/command&gt; commands&lt;/quote&gt; option,
+   &lt;application&gt;pg_restore&lt;/application&gt; will not be able to load the data
+   using &lt;command&gt;COPY&lt;/command&gt; statements.
+</span>
+当然ながら、<span class="application">pg_restore</span>によって、アーカイブファイルに存在しない情報をリストアすることはできません。
+例えば、アーカイブが<span class="quote">「<span class="quote"><code class="command">INSERT</code>コマンドの形式でデータダンプ</span>」</span>を行うオプションを使用して作成されたものであった場合、<span class="application">pg_restore</span>は<code class="command">COPY</code>文を使用してデータを読み込むことはできません。
+  </p></div><div class="refsect1" id="APP-PGRESTORE-OPTIONS"><h2>オプション</h2><span class="original">
+  &lt;title&gt;Options&lt;/title&gt;
+</span><p>
+<span class="original">
+    &lt;application&gt;pg_restore&lt;/application&gt; accepts the following command
+    line arguments.
+</span>
+<span class="application">pg_restore</span>は以下のコマンドライン引数を受け付けます。
+
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><em class="replaceable"><code>filename</code></em></span></dt><dd><p>
+<span class="original">
+       Specifies the location of the archive file (or directory, for a
+       directory-format archive) to be restored.
+       If not specified, the standard input is used.
+</span>
+リストアするアーカイブファイル（ディレクトリ書式アーカイブの場合はディレクトリ）の場所を指定します。
+指定がない場合は、標準入力が使用されます。
+       </p></dd><dt><span class="term"><code class="option">-a</code><br /></span><span class="term"><code class="option">--data-only</code></span></dt><dd><p>
+<span class="original">
+        Restore only the data, not the schema (data definitions).
+        Table data, large objects, and sequence values are restored,
+        if present in the archive.
+</span>
+データのみをリストアし、スキーマ（データ定義）はリストアしません。
+アーカイブ内にある、テーブルデータ、ラージオブジェクト、シーケンス値がリストアされます。
+       </p><p>
+<span class="original">
+        This option is similar to, but for historical reasons not identical
+        to, specifying &lt;option&gt;&amp;#045;&amp;#045;section=data&lt;/option&gt;.
+</span>
+このオプションは<code class="option">--section=data</code>を指定することと似ていますが、歴史的な理由により同一ではありません。
+       </p></dd><dt><span class="term"><code class="option">-c</code><br /></span><span class="term"><code class="option">--clean</code></span></dt><dd><p>
+<span class="original">
+        Clean (drop) database objects before recreating them.
+        (Unless &lt;option&gt;&amp;#045;&amp;#045;if-exists&lt;/option&gt; is used,
+        this might generate some harmless error messages, if any objects
+        were not present in the destination database.)
+</span>
+再作成前にデータベースオブジェクトを整理（削除）します。
+（<code class="option">--if-exists</code>が使われなければ、対象のデータベースの中にオブジェクトがない場合に、害のないメッセージをいくつか出力するかもしれません。）
+       </p></dd><dt><span class="term"><code class="option">-C</code><br /></span><span class="term"><code class="option">--create</code></span></dt><dd><p>
+<span class="original">
+        Create the database before restoring into it.
+        If &lt;option&gt;&amp;#045;-clean&lt;/option&gt; is also specified, drop and
+        recreate the target database before connecting to it.
+</span>
+リストア前にデータベースを作成します。
+<code class="option">--clean</code>も同時に指定されている場合、接続する前に対象データベースを削除し再作成します。
+       </p><p>
+<span class="original">
+        With &lt;option&gt;-&amp;#045;create&lt;/option&gt;, &lt;application&gt;pg_restore&lt;/application&gt;
+        also restores the database's comment if any, and any configuration
+        variable settings that are specific to this database, that is,
+        any &lt;command&gt;ALTER DATABASE ... SET ...&lt;/command&gt;
+        and &lt;command&gt;ALTER ROLE ... IN DATABASE ... SET ...&lt;/command&gt;
+        commands that mention this database.
+        Access privileges for the database itself are also restored,
+        unless &lt;option&gt;-&amp;#045;no-acl&lt;/option&gt; is specified.
+</span>
+<code class="option">--create</code>では、<span class="application">pg_restore</span>は、もしあるならデータベースのコメントもリストアします。また、あらゆる設定変数の当データベースに対する設定、すなわち、このデータベースを対象にした<code class="command">ALTER DATABASE ... SET ...</code>と<code class="command">ALTER ROLE ... IN DATABASE ... SET ...</code>コマンドもリストアします。
+<code class="option">--no-acl</code>が指定されていない限り、データベース自体に対するアクセス権限もリストアされます。
+       </p><p>
+<span class="original">
+        When this option is used, the database named with &lt;option&gt;-d&lt;/option&gt;
+        is used only to issue the initial &lt;command&gt;DROP DATABASE&lt;/command&gt; and
+        &lt;command&gt;CREATE DATABASE&lt;/command&gt; commands.  All data is restored into the
+        database name that appears in the archive.
+</span>
+このオプションがある場合、<code class="option">-d</code>で指定したデータベースは最初の<code class="command">DROP DATABASE</code>と<code class="command">CREATE DATABASE</code>コマンドの発行時にのみ使用されます。
+そして、すべてのデータはアーカイブ内に記述された名前のデータベースにリストアされます。
+       </p></dd><dt><span class="term"><code class="option">-d <em class="replaceable"><code>dbname</code></em></code><br /></span><span class="term"><code class="option">--dbname=<em class="replaceable"><code>dbname</code></em></code></span></dt><dd><p>
+<span class="original">
+        Connect to database &lt;replaceable
+        class="parameter"&gt;dbname&lt;/replaceable&gt; and restore directly
+        into the database.  The &lt;replaceable&gt;dbname&lt;/replaceable&gt; can
+        be a &lt;link linkend="libpq-connstring"&gt;connection string&lt;/link&gt;.
+        If so, connection string parameters will override any conflicting
+        command line options.
+</span>
+<em class="replaceable"><code>dbname</code></em>データベースに接続し、このデータベースに直接リストアします。
+<em class="replaceable"><code>dbname</code></em>は<a class="link" href="libpq-connect.html#LIBPQ-CONNSTRING" title="34.1.1. 接続文字列">接続文字列</a>でも構いません。
+その場合、接続文字列パラメータは衝突するコマンドラインオプションよりも優先します。
+       </p></dd><dt><span class="term"><code class="option">-e</code><br /></span><span class="term"><code class="option">--exit-on-error</code></span></dt><dd><p>
+<span class="original">
+        Exit if an error is encountered while sending SQL commands to
+        the database. The default is to continue and to display a count of
+        errors at the end of the restoration.
+</span>
+データベースにSQLコマンドを送信中にエラーが発生した場合、処理を終了します。
+デフォルトでは、処理を続行し、リストア処理の最後に発生したエラーの数を表示します。
+       </p></dd><dt><span class="term"><code class="option">-f <em class="replaceable"><code>filename</code></em></code><br /></span><span class="term"><code class="option">--file=<em class="replaceable"><code>filename</code></em></code></span></dt><dd><p>
+<span class="original">
+        Specify output file for generated script, or for the listing
+        when used with &lt;option&gt;-l&lt;/option&gt;. Use &lt;literal&gt;-&lt;/literal&gt;
+        for &lt;systemitem&gt;stdout&lt;/systemitem&gt;.
+</span>
+作成するスクリプト（<code class="option">-l</code>を使用した場合はアーカイブの一覧）の出力ファイルを指定します。
+<span class="systemitem">stdout</span>(標準出力)に出力するには<code class="literal">-</code>を使ってください。
+       </p></dd><dt><span class="term"><code class="option">-F <em class="replaceable"><code>format</code></em></code><br /></span><span class="term"><code class="option">--format=<em class="replaceable"><code>format</code></em></code></span></dt><dd><p>
+<span class="original">
+        Specify format of the archive.  It is not necessary to specify
+        the format, since &lt;application&gt;pg_restore&lt;/application&gt; will
+        determine the format automatically. If specified, it can be
+        one of the following:
+</span>
+アーカイブの形式を指定します。
+<span class="application">pg_restore</span>は形式を自動認識するので、このオプションは必須ではありません。
+指定する値は以下のいずれかになります。
+
+       </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">c</code><br /></span><span class="term"><code class="literal">custom</code></span></dt><dd><p>
+<span class="original">
+           The archive is in the custom format of
+           &lt;application&gt;pg_dump&lt;/application&gt;.
+</span>
+アーカイブが<span class="application">pg_dump</span>のカスタム形式であることを表します。
+          </p></dd><dt><span class="term"><code class="literal">d</code><br /></span><span class="term"><code class="literal">directory</code></span></dt><dd><p>
+<span class="original">
+           The archive is a directory archive.
+</span>
+アーカイブがディレクトリアーカイブであることを表します。
+          </p></dd><dt><span class="term"><code class="literal">t</code><br /></span><span class="term"><code class="literal">tar</code></span></dt><dd><p>
+<span class="original">
+           The archive is a &lt;command&gt;tar&lt;/command&gt; archive.
+</span>
+アーカイブが<code class="command">tar</code>アーカイブであることを表します。
+          </p></dd></dl></div></dd><dt><span class="term"><code class="option">-I <em class="replaceable"><code>index</code></em></code><br /></span><span class="term"><code class="option">--index=<em class="replaceable"><code>index</code></em></code></span></dt><dd><p>
+<span class="original">
+        Restore definition of named index only.  Multiple indexes
+        may be specified with multiple &lt;option&gt;-I&lt;/option&gt; switches.
+</span>
+指定したインデックスの定義のみをリストアします。
+複数の<code class="option">-I</code>スイッチをつけることで複数のインデックスを指定できます。
+       </p></dd><dt><span class="term"><code class="option">-j <em class="replaceable"><code>number-of-jobs</code></em></code><br /></span><span class="term"><code class="option">--jobs=<em class="replaceable"><code>number-of-jobs</code></em></code></span></dt><dd><p>
+<span class="original">
+        Run the most time-consuming steps
+        of &lt;application&gt;pg_restore&lt;/application&gt; &amp;mdash; those that load data,
+        create indexes, or create constraints &amp;mdash; concurrently, using up
+        to &lt;replaceable class="parameter"&gt;number-of-jobs&lt;/replaceable&gt;
+        concurrent sessions.  This option can dramatically reduce the time
+        to restore a large database to a server running on a
+        multiprocessor machine.  This option is ignored when emitting a script
+        rather than connecting directly to a database server.
+</span>
+<span class="application">pg_restore</span>のもっとも時間がかかる部分、つまり、データのロード、インデックスの作成、制約の作成部分を最大<em class="replaceable"><code>number-of-jobs</code></em>の並行セッションを使用して実行します。
+このオプションは、複数プロセッサマシンで稼働するサーバに大規模なデータベースをリストアする時間を劇的に減らすことができます。
+データベースサーバに直接接続するのではなくスクリプトを生成する場合には、このオプションは無視されます。
+       </p><p>
+<span class="original">
+        Each job is one process or one thread, depending on the
+        operating system, and uses a separate connection to the
+        server.
+</span>
+各ジョブは1プロセスまたは1スレッド(オペレーティングシステムに依存)です。
+各ジョブはサーバへの別々の接続を使用します。
+       </p><p>
+<span class="original">
+        The optimal value for this option depends on the hardware
+        setup of the server, of the client, and of the network.
+        Factors include the number of CPU cores and the disk setup.  A
+        good place to start is the number of CPU cores on the server,
+        but values larger than that can also lead to faster restore
+        times in many cases.  Of course, values that are too high will
+        lead to decreased performance because of thrashing.
+</span>
+このオプションの最適値はサーバ、クライアント、ネットワークのハードウェア構成に依存します。
+要素にはCPUコア数やディスク構成も含まれます。
+試行する最初の値としてサーバのCPUコア数を勧めます。
+しかし、多くの場合これより大きな値でもリストア時間を高速化することができます。
+当然ながらあまりに大きな値を使用すると、スラッシングのために性能が劣化することになります。
+       </p><p>
+<span class="original">
+        Only the custom and directory archive formats are supported
+        with this option.
+        The input must be a regular file or directory (not, for example, a
+        pipe or standard input).  Also, multiple
+        jobs cannot be used together with the
+        option &lt;option&gt;&amp;#045;-single-transaction&lt;/option&gt;.
+</span>
+カスタムアーカイブ書式およびディレクトリアーカイブ書式のみがこのオプションをサポートします。
+入力ファイルは通常のファイルまたはディレクトリでなければなりません（例えばパイプや標準入力はいけません）。
+また、複数ジョブは<code class="option">--single-transaction</code>オプションといっしょに使用することはできません。
+       </p></dd><dt><span class="term"><code class="option">-l</code><br /></span><span class="term"><code class="option">--list</code></span></dt><dd><p>
+<span class="original">
+        List the table of contents of the archive. The output of this operation
+        can be used as input to the &lt;option&gt;-L&lt;/option&gt; option.  Note that
+        if filtering switches such as &lt;option&gt;-n&lt;/option&gt; or &lt;option&gt;-t&lt;/option&gt; are
+        used with &lt;option&gt;-l&lt;/option&gt;, they will restrict the items listed.
+</span>
+アーカイブの内容を一覧表として出力します。
+このコマンドが出力する一覧は、<code class="option">-L</code>オプションに対する入力として使用することができます。
+<code class="option">-n</code>や<code class="option">-t</code>などのフィルタオプションを<code class="option">-l</code>といっしょに使用すると、一覧出力する項目が制限されます。
+       </p></dd><dt><span class="term"><code class="option">-L <em class="replaceable"><code>list-file</code></em></code><br /></span><span class="term"><code class="option">--use-list=<em class="replaceable"><code>list-file</code></em></code></span></dt><dd><p>
+<span class="original">
+        Restore only those archive elements that are listed in &lt;replaceable
+        class="parameter"&gt;list-file&lt;/replaceable&gt;, and restore them in the
+        order they appear in the file.  Note that
+        if filtering switches such as &lt;option&gt;-n&lt;/option&gt; or &lt;option&gt;-t&lt;/option&gt; are
+        used with &lt;option&gt;-L&lt;/option&gt;, they will further restrict the items restored.
+</span>
+<em class="replaceable"><code>list-file</code></em>内で指定したアーカイブ要素のみをリストアします。
+また、それらはそのファイルの出現順にリストアされます。
+<code class="option">-n</code>や<code class="option">-t</code>などのフィルタオプションを<code class="option">-L</code>といっしょに使用すると、リストアする項目がさらに制限されます。
+       </p><span class="original">
+       &lt;para&gt;&lt;replaceable class="parameter"&gt;list-file&lt;/replaceable&gt; is normally created by
+        editing the output of a previous &lt;option&gt;-l&lt;/option&gt; operation.
+        Lines can be moved or removed, and can also
+        be commented out by placing a semicolon (&lt;literal&gt;;&lt;/literal&gt;) at the
+        start of the line.  See below for examples.
+</span><p><em class="replaceable"><code>list-file</code></em>は通常、事前に行った<code class="option">-l</code>操作の出力を編集して作成されます。
+行の移動や削除、または、行の先頭にセミコロン(<code class="literal">;</code>)を付けてコメントアウトすることが可能です。
+後述の例を参照してください。
+       </p></dd><dt><span class="term"><code class="option">-n <em class="replaceable"><code>schema</code></em></code><br /></span><span class="term"><code class="option">--schema=<em class="replaceable"><code>schema</code></em></code></span></dt><dd><p>
+<span class="original">
+        Restore only objects that are in the named schema.  Multiple schemas
+        may be specified with multiple &lt;option&gt;-n&lt;/option&gt; switches.  This can be
+        combined with the &lt;option&gt;-t&lt;/option&gt; option to restore just a
+        specific table.
+</span>
+指定されたスキーマ内のオブジェクトのみをリストアします。
+複数の<code class="option">-n</code>スイッチをつけることで複数のスキーマを指定できます。
+これは特定のテーブルのみをリストアするために<code class="option">-t</code>オプションと組み合わせることができます。
+       </p></dd><dt><span class="term"><code class="option">-N <em class="replaceable"><code>schema</code></em></code><br /></span><span class="term"><code class="option">--exclude-schema=<em class="replaceable"><code>schema</code></em></code></span></dt><dd><p>
+<span class="original">
+        Do not restore objects that are in the named schema.  Multiple schemas
+        to be excluded may be specified with multiple &lt;option&gt;-N&lt;/option&gt; switches.
+</span>
+指定したスキーマ内にあるオブジェクトをリストアしません。
+<code class="option">-N</code>オプションを複数回指定することで、複数のスキーマを除外することができます。
+       </p><p>
+<span class="original">
+        When both &lt;option&gt;-n&lt;/option&gt; and &lt;option&gt;-N&lt;/option&gt; are given for the same
+        schema name, the &lt;option&gt;-N&lt;/option&gt; switch wins and the schema is excluded.
+</span>
+同じスキーマ名が<code class="option">-n</code>と<code class="option">-N</code>の両方で指定された場合は、<code class="option">-N</code>オプションが優先し、そのスキーマは除外されます。
+       </p></dd><dt><span class="term"><code class="option">-O</code><br /></span><span class="term"><code class="option">--no-owner</code></span></dt><dd><p>
+<span class="original">
+        Do not output commands to set
+        ownership of objects to match the original database.
+        By default, &lt;application&gt;pg_restore&lt;/application&gt; issues
+        &lt;command&gt;ALTER OWNER&lt;/command&gt; or
+        &lt;command&gt;SET SESSION AUTHORIZATION&lt;/command&gt;
+        statements to set ownership of created schema elements.
+        These statements will fail unless the initial connection to the
+        database is made by a superuser
+        (or the same user that owns all of the objects in the script).
+        With &lt;option&gt;-O&lt;/option&gt;, any user name can be used for the
+        initial connection, and this user will own all the created objects.
+</span>
+オブジェクトの所有者を元のデータベースに合わせるためのコマンドを出力しません。
+デフォルトでは、<span class="application">pg_restore</span>は、<code class="command">ALTER OWNER</code>または<code class="command">SET SESSION AUTHORIZATION</code>を発行して、作成したスキーマ要素の所有者を設定します。
+データベースに最初に接続したのがスーパーユーザ（もしくは、そのスクリプト内の全てのオブジェクトを所有するユーザ）でない場合、これらの文は失敗します。
+<code class="option">-O</code>を付与すると、初期接続に任意のユーザ名を使用できるようになります。ただし、この場合は、全てのオブジェクトの所有者がリストアしたユーザになります。
+       </p></dd><dt><span class="term"><code class="option">-P <em class="replaceable"><code>function-name(argtype [, ...])</code></em></code><br /></span><span class="term"><code class="option">--function=<em class="replaceable"><code>function-name(argtype [, ...])</code></em></code></span></dt><dd><p>
+<span class="original">
+        Restore the named function only.  Be careful to spell the function
+        name and arguments exactly as they appear in the dump file's table
+        of contents.  Multiple functions may be specified with multiple
+        &lt;option&gt;-P&lt;/option&gt; switches.
+</span>
+指定した関数のみをリストアします。
+関数や引数の名前は、ダンプファイルの一覧で出力される通りのスペルで正確に入力するよう注意してください。
+複数の<code class="option">-P</code>スイッチをつけることで複数の関数を指定できます。
+       </p></dd><dt><span class="term"><code class="option">-R</code><br /></span><span class="term"><code class="option">--no-reconnect</code></span></dt><dd><p>
+<span class="original">
+        This option is obsolete but still accepted for backwards
+        compatibility.
+</span>
+このオプションは廃止されました。後方互換性を保持するために受け入れられています。
+       </p></dd><dt><span class="term"><code class="option">-s</code><br /></span><span class="term"><code class="option">--schema-only</code></span></dt><dd><p>
+<span class="original">
+        Restore only the schema (data definitions), not data,
+        to the extent that schema entries are present in the archive.
+</span>
+アーカイブ内にあるスキーマ項目の範囲でスキーマ（データ定義）のみをリストアし、データ（テーブルの内容）をリストアしません。
+
+       </p><p>
+<span class="original">
+        This option is the inverse of &lt;option&gt;&amp;#045;&amp;#045;data-only&lt;/option&gt;.
+        It is similar to, but for historical reasons not identical to,
+        specifying
+        &lt;option&gt;&amp;#045;&amp;#045;section=pre-data &amp;#045;&amp;#045;section=post-data&lt;/option&gt;.
+</span>
+このオプションは<code class="option">--data-only</code>の逆です。
+このオプションは<code class="option">--section=pre-data --section=post-data</code>を指定することと似ていますが、歴史的な理由により同一ではありません。
+       </p><p>
+<span class="original">
+        (Do not confuse this with the &lt;option&gt;&amp;#045;&amp;#045;schema&lt;/option&gt; option, which
+        uses the word &lt;quote&gt;schema&lt;/quote&gt; in a different meaning.)
+</span>
+（これと<code class="option">--schema</code>オプションと混同しないでください。<span class="quote">「<span class="quote">schema</span>」</span>という単語を異なる意味で使用しています。）
+       </p></dd><dt><span class="term"><code class="option">-S <em class="replaceable"><code>username</code></em></code><br /></span><span class="term"><code class="option">--superuser=<em class="replaceable"><code>username</code></em></code></span></dt><dd><p>
+<span class="original">
+        Specify the superuser user name to use when disabling triggers.
+        This is relevant only if &lt;option&gt;&amp;#045;&amp;#045;disable-triggers&lt;/option&gt; is used.
+</span>
+トリガを無効にする場合に使用する、スーパーユーザのユーザ名を指定します。
+これは<code class="option">--disable-triggers</code>を使う場合にのみ使用されます。
+       </p></dd><dt><span class="term"><code class="option">-t <em class="replaceable"><code>table</code></em></code><br /></span><span class="term"><code class="option">--table=<em class="replaceable"><code>table</code></em></code></span></dt><dd><p>
+<span class="original">
+        Restore definition and/or data of only the named table.
+        For this purpose, &lt;quote&gt;table&lt;/quote&gt; includes views, materialized views,
+        sequences, and foreign tables.  Multiple tables
+        can be selected by writing multiple &lt;option&gt;-t&lt;/option&gt; switches.
+        This option can be combined with the &lt;option&gt;-n&lt;/option&gt; option to
+        specify table(s) in a particular schema.
+</span>
+指定されたテーブルのみについて、定義、データまたはその両方をリストアします。
+この目的において、<span class="quote">「<span class="quote">テーブル</span>」</span>にはビュー、マテリアライズドビュー、シーケンス、外部テーブルが含まれます。
+複数の<code class="option">-t</code>スイッチを指定することで複数のテーブルを指定することができます。
+<code class="option">-n</code>オプションと組み合わせることでスキーマを指定することができます。
+       </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+         When &lt;option&gt;-t&lt;/option&gt; is specified, &lt;application&gt;pg_restore&lt;/application&gt;
+         makes no attempt to restore any other database objects that the
+         selected table(s) might depend upon.  Therefore, there is no
+         guarantee that a specific-table restore into a clean database will
+         succeed.
+</span>
+<code class="option">-t</code>が指定された場合、<span class="application">pg_restore</span>は選択されたテーブルが依存するその他のデータベースオブジェクトについてリストアしようとはしません。
+そのため、初期化されたデータベースに特定のテーブルをリストアすることが成功する保証はありません。
+        </p></div><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+         This flag does not behave identically to the &lt;option&gt;-t&lt;/option&gt;
+         flag of &lt;application&gt;pg_dump&lt;/application&gt;.  There is not currently
+         any provision for wild-card matching in &lt;application&gt;pg_restore&lt;/application&gt;,
+         nor can you include a schema name within its &lt;option&gt;-t&lt;/option&gt;.
+         And, while &lt;application&gt;pg_dump&lt;/application&gt;'s &lt;option&gt;-t&lt;/option&gt;
+         flag will also dump subsidiary objects (such as indexes) of the
+         selected table(s),
+         &lt;application&gt;pg_restore&lt;/application&gt;'s &lt;option&gt;-t&lt;/option&gt;
+         flag does not include such subsidiary objects.
+</span>
+このフラグは<span class="application">pg_dump</span>の<code class="option">-t</code>フラグと同じ動作をするわけではありません。
+現在のところ、<span class="application">pg_restore</span>でワイルドカードマッチを提供する予定はありませんし、<code class="option">-t</code>でスキーマ名を含めることもできません。
+加えて、<span class="application">pg_dump</span>の<code class="option">-t</code>フラグは選択されたテーブルの（インデックスなどの）従属オブジェクトもダンプしますが、<span class="application">pg_restore</span>の<code class="option">-t</code>フラグではそのような従属オブジェクトを含めません。
+        </p></div><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+         In versions prior to &lt;productname&gt;PostgreSQL&lt;/productname&gt; 9.6, this flag
+         matched only tables, not any other type of relation.
+</span>
+<span class="productname">PostgreSQL</span>の9.6より前のバージョンでは、このフラグはテーブルにのみマッチし、その他の種類のリレーションとはマッチしませんでした。
+        </p></div></dd><dt><span class="term"><code class="option">-T <em class="replaceable"><code>trigger</code></em></code><br /></span><span class="term"><code class="option">--trigger=<em class="replaceable"><code>trigger</code></em></code></span></dt><dd><p>
+<span class="original">
+        Restore named trigger only.  Multiple triggers may be specified with
+        multiple &lt;option&gt;-T&lt;/option&gt; switches.
+</span>
+指定されたトリガだけをリストアします。
+複数の<code class="option">-T</code>スイッチをつけることで、複数のトリガを指定できます。
+       </p></dd><dt><span class="term"><code class="option">-v</code><br /></span><span class="term"><code class="option">--verbose</code></span></dt><dd><p>
+<span class="original">
+        Specifies verbose mode.  This will cause
+        &lt;application&gt;pg_restore&lt;/application&gt; to output detailed object
+        comments and start/stop times to the output file, and progress
+        messages to standard error.
+        Repeating the option causes additional debug-level messages
+        to appear on standard error.
+</span>
+冗長モードを指定します。
+これを指定すると、<span class="application">pg_restore</span>は詳細なオブジェクトコメント、開始時刻と終了時刻を出力ファイルに、進行メッセージを標準エラーに出力するようになります。
+オプションを繰り返すと、追加のデバッグレベルメッセージが標準エラーに現れます。
+       </p></dd><dt><span class="term"><code class="option">-V</code><br /></span><span class="term"><code class="option">--version</code></span></dt><dd><p>
+<span class="original">
+       Print the &lt;application&gt;pg_restore&lt;/application&gt; version and exit.
+</span>
+<span class="application">pg_restore</span>のバージョンを表示し、終了します。
+       </p></dd><dt><span class="term"><code class="option">-x</code><br /></span><span class="term"><code class="option">--no-privileges</code><br /></span><span class="term"><code class="option">--no-acl</code></span></dt><dd><p>
+<span class="original">
+        Prevent restoration of access privileges (grant/revoke commands).
+</span>
+アクセス権限（grant/revokeコマンド）のリストアを行いません。
+       </p></dd><dt><span class="term"><code class="option">-1</code><br /></span><span class="term"><code class="option">--single-transaction</code></span></dt><dd><p>
+<span class="original">
+        Execute the restore as a single transaction (that is, wrap the
+        emitted commands in &lt;command&gt;BEGIN&lt;/command&gt;/&lt;command&gt;COMMIT&lt;/command&gt;).  This
+        ensures that either all the commands complete successfully, or no
+        changes are applied. This option implies
+        &lt;option&gt;&amp;#045;&amp;#045;exit-on-error&lt;/option&gt;.
+</span>
+リストアを単一トランザクションとして実行します（つまり発行するコマンドを<code class="command">BEGIN</code>/<code class="command">COMMIT</code>で囲みます）。
+これにより確実に、すべてのコマンドが完全に成功するか、まったく変更がなされないかのどちらかになります。
+このオプションは<code class="option">--exit-on-error</code>を意味します。
+       </p></dd><dt><span class="term"><code class="option">--disable-triggers</code></span></dt><dd><p>
+<span class="original">
+        This option is relevant only when performing a data-only restore.
+        It instructs &lt;application&gt;pg_restore&lt;/application&gt; to execute commands
+        to temporarily disable triggers on the target tables while
+        the data is reloaded.  Use this if you have referential
+        integrity checks or other triggers on the tables that you
+        do not want to invoke during data reload.
+</span>
+このオプションは、データのみのダンプからリストアする際にしか適用されません。
+データの再ロード中、<span class="application">pg_restore</span>に対し、対象テーブル上のトリガを一時的に無効にするコマンドを実行するよう指示します。
+このオプションは、データの再ロード中には呼び出したくない参照整合性検査やその他のトリガがある場合に使用します。
+       </p><p>
+<span class="original">
+        Presently, the commands emitted for
+        &lt;option&gt;&amp;#045;&amp;#045;disable-triggers&lt;/option&gt; must be done as superuser.  So you
+        should also specify a superuser name with &lt;option&gt;-S&lt;/option&gt; or,
+        preferably, run &lt;application&gt;pg_restore&lt;/application&gt; as a
+        &lt;productname&gt;PostgreSQL&lt;/productname&gt; superuser.
+</span>
+現在のところ、<code class="option">--disable-triggers</code>が生成するコマンドを実行するのは、スーパーユーザでなければなりません。
+そのため、<code class="option">-S</code>でスーパーユーザの名前を指定するか、あるいは、可能であれば、<span class="productname">PostgreSQL</span>のスーパーユーザ権限で<span class="application">pg_restore</span>を実行する必要があります。
+       </p></dd><dt><span class="term"><code class="option">--enable-row-security</code></span></dt><dd><p>
+<span class="original">
+        This option is relevant only when restoring the contents of a table
+        which has row security.  By default, &lt;application&gt;pg_restore&lt;/application&gt; will set
+        &lt;xref linkend="guc-row-security"/&gt; to off, to ensure
+        that all data is restored in to the table.  If the user does not have
+        sufficient privileges to bypass row security, then an error is thrown.
+        This parameter instructs &lt;application&gt;pg_restore&lt;/application&gt; to set
+        &lt;xref linkend="guc-row-security"/&gt; to on instead, allowing the user to attempt to restore
+        the contents of the table with row security enabled.  This might still
+        fail if the user does not have the right to insert the rows from the
+        dump into the table.
+</span>
+このオプションは、行セキュリティのあるテーブルの内容をリストアするときにのみ意味を持ちます。
+デフォルトでは<span class="application">pg_restore</span>は<a class="xref" href="runtime-config-client.html#GUC-ROW-SECURITY">row_security</a>をoffに設定し、すべてのデータが確実にテーブルにリストアされるようにします。
+ユーザが行セキュリティを回避できるだけの十分な権限がないときはエラーが発生します。
+このパラメータは<span class="application">pg_restore</span>が<a class="xref" href="runtime-config-client.html#GUC-ROW-SECURITY">row_security</a>をonに設定するようにし、ユーザが行セキュリティが有効なテーブルの内容をリストアできるようにします。
+それでも、ユーザがダンプからテーブルに行を挿入する権限を持っていなければ、これは失敗します。
+       </p><p>
+<span class="original">
+        Note that this option currently also requires the dump be in &lt;command&gt;INSERT&lt;/command&gt;
+        format, as &lt;command&gt;COPY FROM&lt;/command&gt; does not support row security.
+</span>
+<code class="command">COPY FROM</code>は行セキュリティをサポートしないので、このオプションは今のところ、ダンプが<code class="command">INSERT</code>形式である必要があることに注意してください。
+       </p></dd><dt><span class="term"><code class="option">--if-exists</code></span></dt><dd><p>
+<span class="original">
+        Use conditional commands (i.e., add an &lt;literal&gt;IF EXISTS&lt;/literal&gt;
+        clause) to drop database objects.  This option is not valid
+        unless &lt;option&gt;&amp;#045;&amp;#045;clean&lt;/option&gt; is also specified.
+</span>
+データベースオブジェクトを削除するときに、条件コマンドを使います（つまり<code class="literal">IF EXISTS</code>句を追加します）。
+このオプションは、<code class="option">--clean</code>も指定されているのでなければ有効にはなりません。
+       </p></dd><dt><span class="term"><code class="option">--no-comments</code></span></dt><dd><p>
+<span class="original">
+        Do not output commands to restore comments, even if the archive
+        contains them.
+</span>
+たとえアーカイブにコメントが含まれていても、コメントをリストアするコマンドを出力しません。
+       </p></dd><dt><span class="term"><code class="option">--no-data-for-failed-tables</code></span></dt><dd><p>
+<span class="original">
+        By default, table data is restored even if the creation command
+        for the table failed (e.g., because it already exists).
+        With this option, data for such a table is skipped.
+        This behavior is useful if the target database already
+        contains the desired table contents.  For example,
+        auxiliary tables for &lt;productname&gt;PostgreSQL&lt;/productname&gt; extensions
+        such as &lt;productname&gt;PostGIS&lt;/productname&gt; might already be loaded in
+        the target database; specifying this option prevents duplicate
+        or obsolete data from being loaded into them.
+</span>
+デフォルトでは、関連するテーブルの作成に失敗した（たとえば、既に存在するなどの理由により）としてもテーブルデータオブジェクトはリストアされます。
+このオプションにより、こうしたテーブルデータは単に無視されるようになります。
+これは対象のデータベースに目的のテーブルの中身が含まれている時に便利です。
+たとえば<span class="productname">PostGIS</span>などの<span class="productname">PostgreSQL</span>拡張用の補助テーブルが既に対象のデータベース内に存在する可能性があります。
+このオプションを指定すれば、二重ロードや古いデータのロードを防ぐことができます。
+
+       </p><p>
+<span class="original">
+        This option is effective only when restoring directly into a
+        database, not when producing SQL script output.
+</span>
+このオプションは直接データベースにリストアする時にのみ有効で、SQLスクリプト出力を生成する時は無効です。
+       </p></dd><dt><span class="term"><code class="option">--no-publications</code></span></dt><dd><p>
+<span class="original">
+        Do not output commands to restore publications, even if the archive
+        contains them.
+</span>
+アーカイブにパブリケーションが含まれていたとしても、それをリストアするコマンドを出力しません。
+       </p></dd><dt><span class="term"><code class="option">--no-security-labels</code></span></dt><dd><p>
+<span class="original">
+        Do not output commands to restore security labels,
+        even if the archive contains them.
+</span>
+アーカイブにセキュリティラベルが含まれている場合であっても、セキュリティラベルを戻すコマンドを出力しません。
+       </p></dd><dt><span class="term"><code class="option">--no-subscriptions</code></span></dt><dd><p>
+<span class="original">
+        Do not output commands to restore subscriptions, even if the archive
+        contains them.
+</span>
+アーカイブにサブスクリプションが含まれていたとしても、それをリストアするコマンドを出力しません。
+       </p></dd><dt><span class="term"><code class="option">--no-tablespaces</code></span></dt><dd><p>
+<span class="original">
+        Do not output commands to select tablespaces.
+        With this option, all objects will be created in whichever
+        tablespace is the default during restore.
+</span>
+テーブル空間を選択するコマンドを出力しません。
+このオプションを付けると、すべてのオブジェクトはリストア時にデフォルトとなっているテーブル空間内に作成されます。
+       </p></dd><dt><span class="term"><code class="option">--section=<em class="replaceable"><code>sectionname</code></em></code></span></dt><dd><p>
+<span class="original">
+          Only restore the named section. The section name can be
+          &lt;option&gt;pre-data&lt;/option&gt;, &lt;option&gt;data&lt;/option&gt;, or &lt;option&gt;post-data&lt;/option&gt;.
+          This option can be specified more than once to select multiple
+          sections. The default is to restore all sections.
+</span>
+指定された部分のみをリストアします。
+部分名は<code class="option">pre-data</code>、<code class="option">data</code>、<code class="option">post-data</code>のいずれかを取ることができます。
+複数の部分を選択するために、このオプションを複数指定することができます。
+デフォルトではすべての部分をリストアします。
+         </p><p>
+<span class="original">
+          The data section contains actual table data as well as large-object
+          definitions.
+          Post-data items consist of definitions of indexes, triggers, rules
+          and constraints other than validated check constraints.
+          Pre-data items consist of all other data definition items.
+</span>
+data部分には、実際のテーブルデータやラージオブジェクト定義が含まれます。
+post-data項目は、インデックス定義、トリガ定義、ルール定義、有効化された検査制約以外の制約定義から構成されます。
+pre-data項目は、他のすべてのデータ定義項目から構成されます。
+         </p></dd><dt><span class="term"><code class="option">--strict-names</code></span></dt><dd><p>
+<span class="original">
+        Require that each schema
+        (&lt;option&gt;-n&lt;/option&gt;/&lt;option&gt;&amp;#045;-schema&lt;/option&gt;) and table
+        (&lt;option&gt;-t&lt;/option&gt;/&lt;option&gt;&amp;#045;-table&lt;/option&gt;) qualifier match at
+        least one schema/table in the backup file.
+</span>
+スキーマ指定(<code class="option">-n</code>/<code class="option">--schema</code>)およびテーブル指定(<code class="option">-t</code>/<code class="option">--table</code>)がバックアップファイル内の少なくとも1つのスキーマあるいはテーブルにマッチすることを必要とします。
+       </p></dd><dt><span class="term"><code class="option">--use-set-session-authorization</code></span></dt><dd><p>
+<span class="original">
+        Output SQL-standard &lt;command&gt;SET SESSION AUTHORIZATION&lt;/command&gt; commands
+        instead of &lt;command&gt;ALTER OWNER&lt;/command&gt; commands to determine object
+        ownership.  This makes the dump more standards-compatible, but
+        depending on the history of the objects in the dump, might not restore
+        properly.
+</span>
+<code class="command">ALTER OWNER</code>コマンドの代わりに、標準SQLの<code class="command">SET SESSION AUTHORIZATION</code>コマンドを出力して、オブジェクトの所有権を決定します。
+これにより、ダンプの標準への互換性が高まりますが、ダンプ内のオブジェクトの履歴によっては正しくリストアされない可能性が生じます。
+       </p></dd><dt><span class="term"><code class="option">-?</code><br /></span><span class="term"><code class="option">--help</code></span></dt><dd><p>
+<span class="original">
+       Show help about &lt;application&gt;pg_restore&lt;/application&gt; command line
+       arguments, and exit.
+</span>
+<span class="application">pg_restore</span>コマンドライン引数の使用方法を表示し、終了します。
+       </p></dd></dl></div><p>
+
+   </p><p>
+<span class="original">
+    &lt;application&gt;pg_restore&lt;/application&gt; also accepts
+    the following command line arguments for connection parameters:
+</span>
+<span class="application">pg_restore</span>はさらに以下のコマンドライン引数を接続パラメータとして受け付けます。
+
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="option">-h <em class="replaceable"><code>host</code></em></code><br /></span><span class="term"><code class="option">--host=<em class="replaceable"><code>host</code></em></code></span></dt><dd><p>
+<span class="original">
+        Specifies the host name of the machine on which the server is
+        running.  If the value begins with a slash, it is used as the
+        directory for the Unix domain socket. The default is taken
+        from the &lt;envar&gt;PGHOST&lt;/envar&gt; environment variable, if set,
+        else a Unix domain socket connection is attempted.
+</span>
+サーバが稼働しているマシンのホスト名を指定します。
+この値がスラッシュから始まる場合、Unixドメインソケット用のディレクトリとして使用されます。
+デフォルトは、設定されていれば環境変数<code class="envar">PGHOST</code>から取得されます。
+設定されていなければ、Unixドメインソケット接続とみなされます。
+       </p></dd><dt><span class="term"><code class="option">-p <em class="replaceable"><code>port</code></em></code><br /></span><span class="term"><code class="option">--port=<em class="replaceable"><code>port</code></em></code></span></dt><dd><p>
+<span class="original">
+        Specifies the TCP port or local Unix domain socket file
+        extension on which the server is listening for connections.
+        Defaults to the &lt;envar&gt;PGPORT&lt;/envar&gt; environment variable, if
+        set, or a compiled-in default.
+</span>
+サーバが接続を監視するTCPポートもしくはローカルUnixドメインソケットファイルの拡張子を指定します。
+デフォルトは、設定されている場合、環境変数<code class="envar">PGPORT</code>の値となります。設定されていなければ、コンパイル時のデフォルト値となります。
+        </p></dd><dt><span class="term"><code class="option">-U <em class="replaceable"><code>username</code></em></code><br /></span><span class="term"><code class="option">--username=<em class="replaceable"><code>username</code></em></code></span></dt><dd><p>
+<span class="original">
+        User name to connect as.
+</span>
+接続ユーザ名です。
+       </p></dd><dt><span class="term"><code class="option">-w</code><br /></span><span class="term"><code class="option">--no-password</code></span></dt><dd><p>
+<span class="original">
+        Never issue a password prompt.  If the server requires
+        password authentication and a password is not available by
+        other means such as a &lt;filename&gt;.pgpass&lt;/filename&gt; file, the
+        connection attempt will fail.  This option can be useful in
+        batch jobs and scripts where no user is present to enter a
+        password.
+</span>
+パスワードの入力を促しません。
+サーバがパスワード認証を必要とし、かつ、<code class="filename">.pgpass</code>ファイルなどの他の方法が利用できない場合、接続試行は失敗します。
+バッチジョブやスクリプトなどパスワードを入力するユーザが存在しない場合にこのオプションは有用かもしれません。
+       </p></dd><dt><span class="term"><code class="option">-W</code><br /></span><span class="term"><code class="option">--password</code></span></dt><dd><p>
+<span class="original">
+        Force &lt;application&gt;pg_restore&lt;/application&gt; to prompt for a
+        password before connecting to a database.
+</span>
+データベースに接続する前に、<span class="application">pg_restore</span>は強制的にパスワード入力を促します。
+       </p><p>
+<span class="original">
+        This option is never essential, since
+        &lt;application&gt;pg_restore&lt;/application&gt; will automatically prompt
+        for a password if the server demands password authentication.
+        However, &lt;application&gt;pg_restore&lt;/application&gt; will waste a
+        connection attempt finding out that the server wants a password.
+        In some cases it is worth typing &lt;option&gt;-W&lt;/option&gt; to avoid the extra
+        connection attempt.
+</span>
+サーバがパスワード認証を要求する場合<span class="application">pg_restore</span>は自動的にパスワード入力を促しますので、これが重要になることはありません。
+しかし、<span class="application">pg_restore</span>は、サーバにパスワードが必要かどうかを判断するための接続試行を無駄に行います。
+こうした余計な接続試行を防ぐために<code class="option">-W</code>の入力が有意となる場合もあります。
+       </p></dd><dt><span class="term"><code class="option">--role=<em class="replaceable"><code>rolename</code></em></code></span></dt><dd><p>
+<span class="original">
+        Specifies a role name to be used to perform the restore.
+        This option causes &lt;application&gt;pg_restore&lt;/application&gt; to issue a
+        &lt;command&gt;SET ROLE&lt;/command&gt; &lt;replaceable class="parameter"&gt;rolename&lt;/replaceable&gt;
+        command after connecting to the database. It is useful when the
+        authenticated user (specified by &lt;option&gt;-U&lt;/option&gt;) lacks privileges
+        needed by &lt;application&gt;pg_restore&lt;/application&gt;, but can switch to a role with
+        the required rights.  Some installations have a policy against
+        logging in directly as a superuser, and use of this option allows
+        restores to be performed without violating the policy.
+</span>
+リストアを実行する際に使用するロール名を指定します。
+このオプションにより<span class="application">pg_restore</span>はデータベースに接続した後に<code class="command">SET ROLE</code> <em class="replaceable"><code>rolename</code></em>コマンドを発行するようになります。
+認証に使用したユーザ（<code class="option">-U</code>で指定されたユーザ）が<span class="application">pg_restore</span>で必要とされる権限を持たないが、必要な権限を持つロールに切り替えることができる場合に有用です。
+一部のインストレーションではスーパーユーザとして直接ログインさせないポリシーを取ることがありますが、このオプションを使用することでポリシーに反することなくリストアを行うことができます。
+       </p></dd></dl></div><p>
+   </p></div><div class="refsect1" id="id-1.9.4.18.7"><h2>環境</h2><span class="original">
+  &lt;title&gt;Environment&lt;/title&gt;
+</span><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="envar">PGHOST</code><br /></span><span class="term"><code class="envar">PGOPTIONS</code><br /></span><span class="term"><code class="envar">PGPORT</code><br /></span><span class="term"><code class="envar">PGUSER</code></span></dt><dd><p>
+<span class="original">
+      Default connection parameters
+</span>
+      デフォルトの接続パラメータです。
+     </p></dd><dt><span class="term"><code class="envar">PG_COLOR</code></span></dt><dd><p>
+<span class="original">
+      Specifies whether to use color in diagnostic messages. Possible values
+      are &lt;literal&gt;always&lt;/literal&gt;, &lt;literal&gt;auto&lt;/literal&gt; and
+      &lt;literal&gt;never&lt;/literal&gt;.
+</span>
+診断メッセージで色を使うかどうかを指定します。
+可能な値は<code class="literal">always</code>、<code class="literal">auto</code>、<code class="literal">never</code>です。
+     </p></dd></dl></div><p>
+<span class="original">
+   This utility, like most other &lt;productname&gt;PostgreSQL&lt;/productname&gt; utilities,
+   also uses the environment variables supported by &lt;application&gt;libpq&lt;/application&gt;
+   (see &lt;xref linkend="libpq-envars"/&gt;).  However, it does not read
+   &lt;envar&gt;PGDATABASE&lt;/envar&gt; when a database name is not supplied.
+</span>
+また、このユーティリティは、他のほとんどの<span class="productname">PostgreSQL</span>ユーティリティと同様、<span class="application">libpq</span>でサポートされる環境変数を使用します（<a class="xref" href="libpq-envars.html" title="34.15. 環境変数">34.15</a>を参照してください）。
+しかしデータベース名が指定されていない場合は<code class="envar">PGDATABASE</code>は読み取られません。
+  </p></div><div class="refsect1" id="APP-PGRESTORE-DIAGNOSTICS"><h2>診断</h2><span class="original">
+  &lt;title&gt;Diagnostics&lt;/title&gt;
+</span><p>
+<span class="original">
+   When a direct database connection is specified using the
+   &lt;option&gt;-d&lt;/option&gt; option, &lt;application&gt;pg_restore&lt;/application&gt;
+   internally executes &lt;acronym&gt;SQL&lt;/acronym&gt; statements. If you have
+   problems running &lt;application&gt;pg_restore&lt;/application&gt;, make sure
+   you are able to select information from the database using, for
+   example, &lt;xref linkend="app-psql"/&gt;.  Also, any default connection
+   settings and environment variables used by the
+   &lt;application&gt;libpq&lt;/application&gt; front-end library will apply.
+</span>
+<code class="option">-d</code>オプションによってデータベースに直接接続するよう指定されている場合、<span class="application">pg_restore</span>は内部で<acronym class="acronym">SQL</acronym>文を実行します。
+<span class="application">pg_restore</span>の実行時に問題が発生する場合は、<a class="xref" href="app-psql.html" title="psql"><span class="refentrytitle"><span class="application">psql</span></span></a>などを使用して、そのデータベースから情報を選択できることを確認してください。
+また、<span class="application">libpq</span>フロントエンドライブラリで使用されるデフォルト接続設定や環境変数もすべて適用されます。
+  </p></div><div class="refsect1" id="APP-PGRESTORE-NOTES"><h2>注釈</h2><span class="original">
+  &lt;title&gt;Notes&lt;/title&gt;
+</span><p>
+<span class="original">
+   If your installation has any local additions to the
+   &lt;literal&gt;template1&lt;/literal&gt; database, be careful to load the output of
+   &lt;application&gt;pg_restore&lt;/application&gt; into a truly empty database;
+   otherwise you are likely to get errors due to duplicate definitions
+   of the added objects.  To make an empty database without any local
+   additions, copy from &lt;literal&gt;template0&lt;/literal&gt; not &lt;literal&gt;template1&lt;/literal&gt;, for example:
+</span>
+<code class="literal">template1</code>データベースに対し独自の変更を行っている場合、<span class="application">pg_restore</span>の出力は、確実に空のデータベースにロードするよう注意してください。
+そうしないと、おそらく追加されたオブジェクトの重複定義によってエラーが発生します。
+独自の追加が反映されていない空のデータベースを作成するには、<code class="literal">template1</code>ではなく<code class="literal">template0</code>をコピーしてください。
+以下に例を示します。
+</p><pre class="programlisting">
+CREATE DATABASE foo WITH TEMPLATE template0;
+</pre><p>
+  </p><p>
+<span class="original">
+   The limitations of &lt;application&gt;pg_restore&lt;/application&gt; are detailed below.
+</span>
+<span class="application">pg_restore</span>の制限を以下に示します。
+
+   </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+      When restoring data to a pre-existing table and the option
+      &lt;option&gt;&amp;#045;&amp;#045;disable-triggers&lt;/option&gt; is used,
+      &lt;application&gt;pg_restore&lt;/application&gt; emits commands
+      to disable triggers on user tables before inserting the data, then emits commands to
+      re-enable them after the data has been inserted.  If the restore is stopped in the
+      middle, the system catalogs might be left in the wrong state.
+</span>
+既存のテーブルにデータをリストアする際に<code class="option">--disable-triggers</code>オプションを使用すると、<span class="application">pg_restore</span>は、データを挿入する前に、ユーザテーブル上のトリガを無効にするコマンドを発行し、データの挿入が完了した後で、それらを再び有効にする問い合わせを発行します。
+リストアが途中で停止した場合、システムカタログが不適切な状態のままになっている可能性があります。
+     </p></li><li class="listitem"><span class="original">
+     &lt;para&gt;&lt;application&gt;pg_restore&lt;/application&gt; cannot restore large objects
+      selectively;  for instance, only those for a specific table.  If
+      an archive contains large objects, then all large objects will be
+      restored, or none of them if they are excluded via &lt;option&gt;-L&lt;/option&gt;,
+      &lt;option&gt;-t&lt;/option&gt;, or other options.
+</span><p><span class="application">pg_restore</span>は特定のテーブルのみのラージオブジェクトなどといった、ラージオブジェクトを選択してリストアすることはできません。
+アーカイブにラージオブジェクトが含まれる場合、すべてのラージオブジェクトをリストアします。
+もし<code class="option">-L</code>、<code class="option">-t</code>などのオプションで除外が指定されていた場合は、全くリストアしません。
+     </p></li></ul></div><p>
+  </p><p>
+<span class="original">
+   See also the &lt;xref linkend="app-pgdump"/&gt; documentation for details on
+   limitations of &lt;application&gt;pg_dump&lt;/application&gt;.
+</span>
+<span class="application">pg_dump</span>の制限についての詳細は、<a class="xref" href="app-pgdump.html" title="pg_dump"><span class="refentrytitle"><span class="application">pg_dump</span></span></a>の文書も参照してください。
+  </p><p>
+<span class="original">
+   Once restored, it is wise to run &lt;command&gt;ANALYZE&lt;/command&gt; on each
+   restored table so the optimizer has useful statistics; see
+   &lt;xref linkend="vacuum-for-statistics"/&gt; and
+   &lt;xref linkend="autovacuum"/&gt; for more information.
+</span>
+リストア後は、オプティマイザが有用な統計情報を持つように、リストアしたテーブルそれぞれに対して<code class="command">ANALYZE</code>を実行することをお勧めします。
+詳しくは<a class="xref" href="routine-vacuuming.html#VACUUM-FOR-STATISTICS" title="25.1.3. プランナ用の統計情報の更新">25.1.3</a>および<a class="xref" href="routine-vacuuming.html#AUTOVACUUM" title="25.1.6. 自動バキュームデーモン">25.1.6</a>を参照してください。
+  </p></div><div class="refsect1" id="APP-PGRESTORE-EXAMPLES"><h2>例</h2><span class="original">
+  &lt;title&gt;Examples&lt;/title&gt;
+</span><p>
+<span class="original">
+   Assume we have dumped a database called &lt;literal&gt;mydb&lt;/literal&gt; into a
+   custom-format dump file:
+</span>
+<code class="literal">mydb</code>という名前のデータベースをカスタム形式のダンプファイルにダンプしているものと仮定します。
+
+</p><pre class="screen">
+<code class="prompt">$</code> <strong class="userinput"><code>pg_dump -Fc mydb &gt; db.dump</code></strong>
+</pre><p>
+  </p><p>
+<span class="original">
+   To drop the database and recreate it from the dump:
+</span>
+データベースを削除し、ダンプファイルから再作成します。
+
+</p><pre class="screen">
+<code class="prompt">$</code> <strong class="userinput"><code>dropdb mydb</code></strong>
+<code class="prompt">$</code> <strong class="userinput"><code>pg_restore -C -d postgres db.dump</code></strong>
+</pre><p>
+
+<span class="original">
+   The database named in the &lt;option&gt;-d&lt;/option&gt; switch can be any database existing
+   in the cluster; &lt;application&gt;pg_restore&lt;/application&gt; only uses it to issue the
+   &lt;command&gt;CREATE DATABASE&lt;/command&gt; command for &lt;literal&gt;mydb&lt;/literal&gt;.  With
+   &lt;option&gt;-C&lt;/option&gt;, data is always restored into the database name that appears
+   in the dump file.
+</span>
+<code class="option">-d</code>オプションのデータベース名は、クラスタに存在する任意のデータベースで良いです。
+<span class="application">pg_restore</span>は、<code class="literal">mydb</code>に対する<code class="command">CREATE DATABASE</code>コマンドを発行するためだけに、このデータベース名を使用します。
+<code class="option">-C</code>を付けると、データは常にダンプファイル内に記載された名前のデータベースにリストアされます。
+  </p><p>
+<span class="original">
+   To reload the dump into a new database called &lt;literal&gt;newdb&lt;/literal&gt;:
+</span>
+<code class="literal">newdb</code>という新しいデータベースにダンプファイルをリストアします。
+
+</p><pre class="screen">
+<code class="prompt">$</code> <strong class="userinput"><code>createdb -T template0 newdb</code></strong>
+<code class="prompt">$</code> <strong class="userinput"><code>pg_restore -d newdb db.dump</code></strong>
+</pre><p>
+
+<span class="original">
+   Notice we don't use &lt;option&gt;-C&lt;/option&gt;, and instead connect directly to the
+   database to be restored into.  Also note that we clone the new database
+   from &lt;literal&gt;template0&lt;/literal&gt; not &lt;literal&gt;template1&lt;/literal&gt;, to ensure it is
+   initially empty.
+</span>
+<code class="option">-C</code>を使用していないことに注意してください。
+代わりにリストアするデータベースに直接接続しています。
+また、新しいデータベースを<code class="literal">template1</code>ではなく<code class="literal">template0</code>からコピーして作成している点にも注意してください。
+確実に初期状態を空にするためです。
+  </p><p>
+<span class="original">
+   To reorder database items, it is first necessary to dump the table of
+   contents of the archive:
+</span>
+データベースのアイテムを並び換えるには、まずこのアーカイブの内容の一覧をダンプしなければなりません。
+</p><pre class="screen">
+<code class="prompt">$</code> <strong class="userinput"><code>pg_restore -l db.dump &gt; db.list</code></strong>
+</pre><p>
+<span class="original">
+   The listing file consists of a header and one line for each item, e.g.:
+</span>
+一覧ファイルは、ヘッダと各アイテムを1行で表したものから構成されます。
+
+</p><pre class="programlisting">
+;
+; Archive created at Mon Sep 14 13:55:39 2009
+;     dbname: DBDEMOS
+;     TOC Entries: 81
+;     Compression: 9
+;     Dump Version: 1.10-0
+;     Format: CUSTOM
+;     Integer: 4 bytes
+;     Offset: 8 bytes
+;     Dumped from database version: 8.3.5
+;     Dumped by pg_dump version: 8.3.8
+;
+;
+; Selected TOC Entries:
+;
+3; 2615 2200 SCHEMA - public pasha
+1861; 0 0 COMMENT - SCHEMA public pasha
+1862; 0 0 ACL - public pasha
+317; 1247 17715 TYPE public composite pasha
+319; 1247 25899 DOMAIN public domain0 pasha
+</pre><p>
+<span class="original">
+   Semicolons start a comment, and the numbers at the start of lines refer to the
+   internal archive ID assigned to each item.
+</span>
+セミコロンで始まる行はコメントです。
+行の先頭の番号は、各アイテムに割り当てられた内部アーカイブIDを示します。
+
+  </p><p>
+<span class="original">
+   Lines in the file can be commented out, deleted, and reordered. For example:
+</span>
+このファイルの各行に対して、コメントアウト、削除、並び替えを行うことができます。
+以下に例を示します。
+
+</p><pre class="programlisting">
+10; 145433 TABLE map_resolutions postgres
+;2; 145344 TABLE species postgres
+;4; 145359 TABLE nt_header postgres
+6; 145402 TABLE species_records postgres
+;8; 145416 TABLE ss_old postgres
+</pre><p>
+<span class="original">
+   could be used as input to &lt;application&gt;pg_restore&lt;/application&gt; and would only restore
+   items 10 and 6, in that order:
+</span>
+このファイルを<code class="command">pg_restore</code>の入力として利用すれば、アイテム10と6だけを、この順番でリストアすることができます。
+</p><pre class="screen">
+<code class="prompt">$</code> <strong class="userinput"><code>pg_restore -L db.list db.dump</code></strong>
+</pre></div><div class="refsect1" id="id-1.9.4.18.11"><h2>関連項目</h2><span class="original">
+  &lt;title&gt;See Also&lt;/title&gt;
+</span><span class="simplelist"><a class="xref" href="app-pgdump.html" title="pg_dump"><span class="refentrytitle"><span class="application">pg_dump</span></span></a>, <a class="xref" href="app-pg-dumpall.html" title="pg_dumpall"><span class="refentrytitle"><span class="application">pg_dumpall</span></span></a>, <a class="xref" href="app-psql.html" title="psql"><span class="refentrytitle"><span class="application">psql</span></span></a></span></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="app-pgrecvlogical.html" title="pg_recvlogical">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="reference-client.html" title="PostgreSQLクライアントアプリケーション">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="app-pgverifybackup.html" title="pg_verifybackup">次へ</a></td></tr><tr><td width="40%" align="left" valign="top"><span xmlns="http://www.w3.org/1999/xhtml" class="application">pg_recvlogical</span> </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> <span xmlns="http://www.w3.org/1999/xhtml" class="application">pg_verifybackup</span></td></tr></table></div></body></html>

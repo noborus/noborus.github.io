@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>32.1. JITコンパイルとは何か？</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="jit.html" title="第32章 実行時コンパイル(JIT)" /><link rel="next" href="jit-decision.html" title="32.2. どんなときにJITを使うべきか？" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="jit.html" title="第32章 実行時コンパイル(JIT)">第32章 実行時コンパイル(<acronym class="acronym">JIT</acronym>)</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      jit-reason.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="jit.html" title="第32章 実行時コンパイル(JIT)">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="jit.html" title="第32章 実行時コンパイル(JIT)">上へ</a></td><td width="60%" align="center">32.1. <acronym class="acronym">JIT</acronym>コンパイルとは何か？</td><td width="20%" align="right"> <a accesskey="n" href="jit-decision.html" title="32.2. どんなときにJITを使うべきか？">次へ</a></td></tr></table><hr /></div><div class="sect1" id="JIT-REASON"><div class="titlepage"><div><div><h2 class="title" style="clear: both">32.1. <acronym class="acronym">JIT</acronym>コンパイルとは何か？</h2></div></div></div><span class="original">
+  &lt;title&gt;What Is &lt;acronym&gt;JIT&lt;/acronym&gt; compilation?&lt;/title&gt;
+</span><p>
+<span class="original">
+   Just-in-Time (&lt;acronym&gt;JIT&lt;/acronym&gt;) compilation is the process of turning
+   some form of interpreted program evaluation into a native program, and
+   doing so at run time.
+   For example, instead of using general-purpose code that can evaluate
+   arbitrary SQL expressions to evaluate a particular SQL predicate
+   like &lt;literal&gt;WHERE a.col = 3&lt;/literal&gt;, it is possible to generate a
+   function that is specific to that expression and can be natively executed
+   by the CPU, yielding a speedup.
+</span>
+実行時(<acronym class="acronym">JIT</acronym>)コンパイルとは、ある形式のインタプリタプログラムの評価をネイティブプログラムに変換する過程であり、かつそれを実行時に行うことを指します。
+たとえば、<code class="literal">WHERE a.col = 3</code>のような特定のSQL述語を評価するために、任意のSQL式を評価できる汎用目的のコードを使う代わりに、その式専用の関数を生成し、CPUによってネイティブに実行して速度向上をもたらすことができます。
+  </p><p>
+<span class="original">
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; has builtin support to perform
+   &lt;acronym&gt;JIT&lt;/acronym&gt; compilation using &lt;ulink
+   url="https://llvm.org/"&gt;&lt;productname&gt;LLVM&lt;/productname&gt;&lt;/ulink&gt; when
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; is built with
+   &lt;link linkend="configure-with-llvm"&gt;&lt;literal&gt;&amp;#045;&amp;#045;with-llvm&lt;/literal&gt;&lt;/link&gt;.
+</span>
+<span class="productname">PostgreSQL</span>が<a class="link" href="install-procedure.html#CONFIGURE-WITH-LLVM"><code class="literal">--with-llvm</code></a>でビルドされている場合、<span class="productname">PostgreSQL</span>には<a class="ulink" href="https://llvm.org/" target="_top"><span class="productname">LLVM</span></a>を使って<acronym class="acronym">JIT</acronym>コンパイルを実行するためのサポートが組み込まれます。
+  </p><p>
+<span class="original">
+   See &lt;filename&gt;src/backend/jit/README&lt;/filename&gt; for further details.
+</span>
+さらなる詳細は<code class="filename">src/backend/jit/README</code>をご覧ください。
+  </p><div class="sect2" id="JIT-ACCELERATED-OPERATIONS"><div class="titlepage"><div><div><h3 class="title">32.1.1. <acronym class="acronym">JIT</acronym>により高速化される処理</h3></div></div></div><span class="original">
+   &lt;title&gt;&lt;acronym&gt;JIT&lt;/acronym&gt; Accelerated Operations&lt;/title&gt;
+</span><p>
+<span class="original">
+    Currently &lt;productname&gt;PostgreSQL&lt;/productname&gt;'s &lt;acronym&gt;JIT&lt;/acronym&gt;
+    implementation has support for accelerating expression evaluation and
+    tuple deforming.  Several other operations could be accelerated in the
+    future.
+</span>
+今の所、<span class="productname">PostgreSQL</span>の<acronym class="acronym">JIT</acronym>実装は、式評価とタプルデフォーミング(tuple deforming)の高速化をサポートしています。
+将来は他の操作も高速化されるかも知れません。
+   </p><p>
+<span class="original">
+    Expression evaluation is used to evaluate &lt;literal&gt;WHERE&lt;/literal&gt;
+    clauses, target lists, aggregates and projections. It can be accelerated
+    by generating code specific to each case.
+</span>
+式評価は、<code class="literal">WHERE</code>句、ターゲットリスト、集約、射影を評価するために使用されます。
+それぞれのケースに応じたコードを生成することによって高速化することができます。
+   </p><p>
+<span class="original">
+    Tuple deforming is the process of transforming an on-disk tuple (see &lt;xref
+    linkend="storage-tuple-layout"/&gt;) into its in-memory representation.
+    It can be accelerated by creating a function specific to the table layout
+    and the number of columns to be extracted.
+</span>
+タプルデフォーミングは、ディスク上のタプル(<a class="xref" href="storage-page-layout.html#STORAGE-TUPLE-LAYOUT" title="70.6.1. テーブル行のレイアウト">70.6.1</a>参照)をメモリ上の表現に変換する処理です。
+これはテーブルレイアウトと抽出するカラム数に特化した関数を作ることによって高速化可能です。
+   </p></div><div class="sect2" id="JIT-INLINING"><div class="titlepage"><div><div><h3 class="title">32.1.2. インライン展開(Inlining)</h3></div></div></div><span class="original">
+   &lt;title&gt;Inlining&lt;/title&gt;
+</span><p>
+<span class="original">
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; is very extensible and allows new
+    data types, functions, operators and other database objects to be defined;
+    see &lt;xref linkend="extend"/&gt;. In fact the built-in objects are implemented
+    using nearly the same mechanisms.  This extensibility implies some
+    overhead, for example due to function calls (see &lt;xref linkend="xfunc"/&gt;).
+    To reduce that overhead, &lt;acronym&gt;JIT&lt;/acronym&gt; compilation can inline the
+    bodies of small functions into the expressions using them. That allows a
+    significant percentage of the overhead to be optimized away.
+</span>
+<span class="productname">PostgreSQL</span>は拡張性が高く、新しいデータ型、関数、演算子、その他のデータベースオブジェクトを定義することが可能です。
+<a class="xref" href="extend.html" title="第38章 SQLの拡張">第38章</a>を参照してください。
+実際、組み込みオブジェクトは似た機構を使って実装されています。
+この拡張性は、たとえば関数呼び出し(<a class="xref" href="xfunc.html" title="38.3. ユーザ定義関数">38.3</a>参照)により、幾分のオーバーヘッドをもたらします。
+このオーバーヘッドを軽減するために、<acronym class="acronym">JIT</acronym>コンパイルは、小さな関数の本体をそれを使っている式にインライン展開することができます。
+これにより、オーバーヘッドのかなりの部分を最適化によって解消することができます。
+   </p></div><div class="sect2" id="JIT-OPTIMIZATION"><div class="titlepage"><div><div><h3 class="title">32.1.3. 最適化</h3></div></div></div><span class="original">
+   &lt;title&gt;Optimization&lt;/title&gt;
+</span><p>
+<span class="original">
+    &lt;productname&gt;LLVM&lt;/productname&gt; has support for optimizing generated
+    code. Some of the optimizations are cheap enough to be performed whenever
+    &lt;acronym&gt;JIT&lt;/acronym&gt; is used, while others are only beneficial for
+    longer-running queries.
+    See &lt;ulink url="https://llvm.org/docs/Passes.html#transform-passes"/&gt; for
+    more details about optimizations.
+</span>
+<span class="productname">LLVM</span>は、生成したコードの最適化をサポートしています。
+ある最適化は<acronym class="acronym">JIT</acronym>が使用される際に常に適用できるほど安価ですが、長時間実行する問い合わせのときだけ有利になるようなものもあります。
+最適化についてのさらなる詳細は、<a class="ulink" href="https://llvm.org/docs/Passes.html#transform-passes" target="_top">https://llvm.org/docs/Passes.html#transform-passes</a>をご覧ください。
+   </p></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="jit.html" title="第32章 実行時コンパイル(JIT)">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="jit.html" title="第32章 実行時コンパイル(JIT)">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="jit-decision.html" title="32.2. どんなときにJITを使うべきか？">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第32章 実行時コンパイル(<acronym xmlns="http://www.w3.org/1999/xhtml" class="acronym">JIT</acronym>) </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 32.2. どんなときに<acronym xmlns="http://www.w3.org/1999/xhtml" class="acronym">JIT</acronym>を使うべきか？</td></tr></table></div></body></html>

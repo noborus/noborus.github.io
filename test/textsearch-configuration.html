@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>12.7. 設定例</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="textsearch-dictionaries.html" title="12.6. 辞書" /><link rel="next" href="textsearch-debugging.html" title="12.8. テキスト検索のテストとデバッグ" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="textsearch.html" title="第12章 全文検索">第12章 全文検索</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      textsearch-configuration.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="textsearch-dictionaries.html" title="12.6. 辞書">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="textsearch.html" title="第12章 全文検索">上へ</a></td><td width="60%" align="center">12.7. 設定例</td><td width="20%" align="right"> <a accesskey="n" href="textsearch-debugging.html" title="12.8. テキスト検索のテストとデバッグ">次へ</a></td></tr></table><hr /></div><div class="sect1" id="TEXTSEARCH-CONFIGURATION"><div class="titlepage"><div><div><h2 class="title" style="clear: both">12.7. 設定例</h2></div></div></div><span class="original">
+  &lt;title&gt;Configuration Example&lt;/title&gt;
+</span><p>
+<span class="original">
+    A text search configuration specifies all options necessary to transform a
+    document into a &lt;type&gt;tsvector&lt;/type&gt;: the parser to use to break text
+    into tokens, and the dictionaries to use to transform each token into a
+    lexeme.  Every call of
+    &lt;function&gt;to_tsvector&lt;/function&gt; or &lt;function&gt;to_tsquery&lt;/function&gt;
+    needs a text search configuration to perform its processing.
+    The configuration parameter
+    &lt;xref linkend="guc-default-text-search-config"/&gt;
+    specifies the name of the default configuration, which is the
+    one used by text search functions if an explicit configuration
+    parameter is omitted.
+    It can be set in &lt;filename&gt;postgresql.conf&lt;/filename&gt;, or set for an
+    individual session using the &lt;command&gt;SET&lt;/command&gt; command.
+</span>
+テキスト検索設定は、文書を<code class="type">tsvector</code>に変換する必要なすべてのオプションを指定します。すなわち、テキストをトークンに分解するパーサ、そしてトークンを語彙素に変換する辞書です。<code class="function">to_tsvector</code>または<code class="function">to_tsquery</code>を呼び出すたびに、処理を進めるためにテキスト検索設定が必要になります。設定パラメータの<a class="xref" href="runtime-config-client.html#GUC-DEFAULT-TEXT-SEARCH-CONFIG">default_text_search_config</a>は、デフォルトの設定を指定します。これは、明示的な設定が省略されたときにテキスト検索関数が使用します。<code class="filename">postgresql.conf</code>に設定するか、個々のセッションで<code class="command">SET</code>コマンドを使って設定できます。
+   </p><p>
+<span class="original">
+    Several predefined text search configurations are available, and
+    you can create custom configurations easily.  To facilitate management
+    of text search objects, a set of &lt;acronym&gt;SQL&lt;/acronym&gt; commands
+    is available, and there are several &lt;application&gt;psql&lt;/application&gt; commands that display information
+    about text search objects (&lt;xref linkend="textsearch-psql"/&gt;).
+</span>
+既定のテキスト検索設定がいくつか利用できます。また、カスタム設定を作るのも容易です。テキスト検索オブジェクトを管理する機能を実現するために、<acronym class="acronym">SQL</acronym>コマンドが一通り用意されています。テキスト検索オブジェクトに関する情報を表示する<span class="application">psql</span>コマンドもいくつか用意されています(<a class="xref" href="textsearch-psql.html" title="12.10. psqlサポート">12.10</a>)。
+   </p><p>
+<span class="original">
+    As an example we will create a configuration
+    &lt;literal&gt;pg&lt;/literal&gt;, starting by duplicating the built-in
+    &lt;literal&gt;english&lt;/literal&gt; configuration:
+</span>
+例として、組み込みの<code class="literal">english</code>設定のコピーを用いて、新しい<code class="literal">pg</code>設定を作ります。
+
+</p><pre class="programlisting">
+CREATE TEXT SEARCH CONFIGURATION public.pg ( COPY = pg_catalog.english );
+</pre><p>
+   </p><p>
+<span class="original">
+    We will use a PostgreSQL-specific synonym list
+    and store it in &lt;filename&gt;$SHAREDIR/tsearch_data/pg_dict.syn&lt;/filename&gt;.
+    The file contents look like:
+</span>
+PostgreSQL固有の同義語リストを使い、それを<code class="filename">$SHAREDIR/tsearch_data/pg_dict.syn</code>に格納します。ファイルの内容は以下のようになります。
+
+</p><pre class="programlisting">
+postgres    pg
+pgsql       pg
+postgresql  pg
+</pre><p>
+
+<span class="original">
+    We define the synonym dictionary like this:
+</span>
+同義語辞書を次のように定義します。
+
+</p><pre class="programlisting">
+CREATE TEXT SEARCH DICTIONARY pg_dict (
+    TEMPLATE = synonym,
+    SYNONYMS = pg_dict
+);
+</pre><p>
+
+<span class="original">
+    Next we register the &lt;productname&gt;Ispell&lt;/productname&gt; dictionary
+    &lt;literal&gt;english_ispell&lt;/literal&gt;, which has its own configuration files:
+</span>
+次に、<span class="productname">Ispell</span>辞書の<code class="literal">english_ispell</code>を登録します。これにはそれ自身の設定があります。
+
+</p><pre class="programlisting">
+CREATE TEXT SEARCH DICTIONARY english_ispell (
+    TEMPLATE = ispell,
+    DictFile = english,
+    AffFile = english,
+    StopWords = english
+);
+</pre><p>
+
+<span class="original">
+    Now we can set up the mappings for words in configuration
+    &lt;literal&gt;pg&lt;/literal&gt;:
+</span>
+ここで、<code class="literal">pg</code>設定に単語用のマッピングを設定します。
+
+</p><pre class="programlisting">
+ALTER TEXT SEARCH CONFIGURATION pg
+    ALTER MAPPING FOR asciiword, asciihword, hword_asciipart,
+                      word, hword, hword_part
+    WITH pg_dict, english_ispell, english_stem;
+</pre><p>
+
+<span class="original">
+    We choose not to index or search some token types that the built-in
+    configuration does handle:
+</span>
+組み込み設定が扱っているいくつかのトークンに関しては、インデックス付けと検索に扱わないことにします。
+
+</p><pre class="programlisting">
+ALTER TEXT SEARCH CONFIGURATION pg
+    DROP MAPPING FOR email, url, url_path, sfloat, float;
+</pre><p>
+   </p><p>
+<span class="original">
+    Now we can test our configuration:
+</span>
+これでここまで作った設定を試すことができます。
+
+</p><pre class="programlisting">
+SELECT * FROM ts_debug('public.pg', '
+PostgreSQL, the highly scalable, SQL compliant, open source object-relational
+database management system, is now undergoing beta testing of the next
+version of our software.
+');
+</pre><p>
+   </p><p>
+<span class="original">
+    The next step is to set the session to use the new configuration, which was
+    created in the &lt;literal&gt;public&lt;/literal&gt; schema:
+</span>
+次に、セッションの中で新しい設定を使うようにします。この設定は、<code class="literal">public</code>スキーマの中に作られています。
+
+</p><pre class="screen">
+=&gt; \dF
+   List of text search configurations
+ Schema  | Name | Description
+---------+------+-------------
+ public  | pg   |
+
+SET default_text_search_config = 'public.pg';
+SET
+
+SHOW default_text_search_config;
+ default_text_search_config
+----------------------------
+ public.pg
+</pre><p>
+  </p></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="textsearch-dictionaries.html" title="12.6. 辞書">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="textsearch.html" title="第12章 全文検索">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="textsearch-debugging.html" title="12.8. テキスト検索のテストとデバッグ">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">12.6. 辞書 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 12.8. テキスト検索のテストとデバッグ</td></tr></table></div></body></html>

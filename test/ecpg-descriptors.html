@@ -1,0 +1,1100 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>36.7. 記述子領域の使用</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="ecpg-pgtypes.html" title="36.6. pgtypes ライブラリ" /><link rel="next" href="ecpg-errors.html" title="36.8. エラー処理" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="ecpg.html" title="第36章 ECPG — C言語による埋め込みSQL">第36章 <span class="application">ECPG</span> — C言語による埋め込み<acronym class="acronym">SQL</acronym></a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      ecpg-descriptors.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="ecpg-pgtypes.html" title="36.6. pgtypes ライブラリ">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="ecpg.html" title="第36章 ECPG — C言語による埋め込みSQL">上へ</a></td><td width="60%" align="center">36.7. 記述子領域の使用</td><td width="20%" align="right"> <a accesskey="n" href="ecpg-errors.html" title="36.8. エラー処理">次へ</a></td></tr></table><hr /></div><div class="sect1" id="ECPG-DESCRIPTORS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">36.7. 記述子領域の使用</h2></div></div></div><span class="original">
+  &lt;title&gt;Using Descriptor Areas&lt;/title&gt;
+</span><p>
+<span class="original">
+   An SQL descriptor area is a more sophisticated method for processing
+   the result of a &lt;command&gt;SELECT&lt;/command&gt;, &lt;command&gt;FETCH&lt;/command&gt; or
+   a &lt;command&gt;DESCRIBE&lt;/command&gt; statement. An SQL descriptor area groups
+   the data of one row of data together with metadata items into one
+   data structure.  The metadata is particularly useful when executing
+   dynamic SQL statements, where the nature of the result columns might
+   not be known ahead of time. PostgreSQL provides two ways to use
+   Descriptor Areas: the named SQL Descriptor Areas and the C-structure
+   SQLDAs.
+</span>
+SQL記述子領域は<code class="command">SELECT</code>、<code class="command">FETCH</code>、<code class="command">DESCRIBE</code>文の結果を処理する、より洗練された手法です。
+SQL記述子領域は1行のデータをメタデータ項目と一緒に1つのデータ構造体としてグループ化します。
+特に動的SQL文を実行する場合は結果列の性質が前もってわかりませんので、メタデータが有用です。
+PostgreSQLは記述子領域を使用するための2つの方法、名前付きSQL記述子領域とC構造化SQLDA、を提供します。
+  </p><div class="sect2" id="ECPG-NAMED-DESCRIPTORS"><div class="titlepage"><div><div><h3 class="title">36.7.1. 名前付きSQL記述子領域</h3></div></div></div><span class="original">
+   &lt;title&gt;Named SQL Descriptor Areas&lt;/title&gt;
+</span><p>
+<span class="original">
+    A named SQL descriptor area consists of a header, which contains
+    information concerning the entire descriptor, and one or more item
+    descriptor areas, which basically each describe one column in the
+    result row.
+</span>
+名前付きSQL記述子領域は、記述子全体に関する情報を持つヘッダと、基本的に結果行内の1つの列を記述する、1つ以上の項目記述子領域から構成されます。
+   </p><p>
+<span class="original">
+    Before you can use an SQL descriptor area, you need to allocate one:
+</span>
+SQL記述子領域を使用可能にするためには、それを以下のように割り当てなければなりません。
+</p><pre class="programlisting">
+EXEC SQL ALLOCATE DESCRIPTOR <em class="replaceable"><code>identifier</code></em>;
+</pre><p>
+<span class="original">
+    The identifier serves as the &lt;quote&gt;variable name&lt;/quote&gt; of the
+    descriptor area.  &lt;!&amp;#045;- The scope of the allocated descriptor is WHAT?. &amp;#045;-&gt;
+    When you don't need the descriptor anymore, you should deallocate
+    it:
+</span>
+この識別子は記述子領域の<span class="quote">「<span class="quote">変数名</span>」</span>として使用されます。
+<span class="original"> 割り当てられた記述子のスコープは何でしょう? </span>
+記述子が不要になったら、以下のように解放してください。
+</p><pre class="programlisting">
+EXEC SQL DEALLOCATE DESCRIPTOR <em class="replaceable"><code>identifier</code></em>;
+</pre><p>
+   </p><p>
+<span class="original">
+    To use a descriptor area, specify it as the storage target in an
+    &lt;literal&gt;INTO&lt;/literal&gt; clause, instead of listing host variables:
+</span>
+記述子領域を使用するには、<code class="literal">INTO</code>句内の格納対象として、ホスト変数を列挙するのではなく、記述子領域を指定してください。
+</p><pre class="programlisting">
+EXEC SQL FETCH NEXT FROM mycursor INTO SQL DESCRIPTOR mydesc;
+</pre><p>
+<span class="original">
+    If the result set is empty, the Descriptor Area will still contain
+    the metadata from the query, i.e., the field names.
+</span>
+結果セットが空の場合であっても、記述子領域には問い合わせのメタデータ、つまりフィールド名、が含まれます。
+   </p><p>
+<span class="original">
+    For not yet executed prepared queries, the &lt;command&gt;DESCRIBE&lt;/command&gt;
+    statement can be used to get the metadata of the result set:
+</span>
+まだ実行されていないプリペアド問い合わせでは、結果セットのメタデータを入手するために<code class="command">DESCRIBE</code>を使用することができます。
+</p><pre class="programlisting">
+EXEC SQL BEGIN DECLARE SECTION;
+char *sql_stmt = "SELECT * FROM table1";
+EXEC SQL END DECLARE SECTION;
+
+EXEC SQL PREPARE stmt1 FROM :sql_stmt;
+EXEC SQL DESCRIBE stmt1 INTO SQL DESCRIPTOR mydesc;
+</pre><p>
+   </p><p>
+<span class="original">
+    Before PostgreSQL 9.0, the &lt;literal&gt;SQL&lt;/literal&gt; keyword was optional,
+    so using &lt;literal&gt;DESCRIPTOR&lt;/literal&gt; and &lt;literal&gt;SQL DESCRIPTOR&lt;/literal&gt;
+    produced named SQL Descriptor Areas. Now it is mandatory, omitting
+    the &lt;literal&gt;SQL&lt;/literal&gt; keyword produces SQLDA Descriptor Areas,
+    see &lt;xref linkend="ecpg-sqlda-descriptors"/&gt;.
+</span>
+PostgreSQL 9.0より前では、<code class="literal">SQL</code>キーワードは省略可能でした。
+このため<code class="literal">DESCRIPTOR</code>および<code class="literal">SQL DESCRIPTOR</code>は名前付きSQL記述子領域を生成しました。
+これは強制事項になり、<code class="literal">SQL</code>キーワードを省略すると、SQLDA記述子領域を生成します。
+<a class="xref" href="ecpg-descriptors.html#ECPG-SQLDA-DESCRIPTORS" title="36.7.2. SQLDA記述子領域">36.7.2</a>を参照してください。
+   </p><p>
+<span class="original">
+    In &lt;command&gt;DESCRIBE&lt;/command&gt; and &lt;command&gt;FETCH&lt;/command&gt; statements,
+    the &lt;literal&gt;INTO&lt;/literal&gt; and &lt;literal&gt;USING&lt;/literal&gt; keywords can be
+    used to similarly: they produce the result set and the metadata in a
+    Descriptor Area.
+</span>
+<code class="command">DESCRIBE</code>および<code class="command">FETCH</code>文では、<code class="literal">INTO</code>および<code class="literal">USING</code>キーワードを同じように使用することができます。
+これらは結果セットと記述子領域内のメタデータを生成します。
+   </p><p>
+<span class="original">
+    Now how do you get the data out of the descriptor area?  You can
+    think of the descriptor area as a structure with named fields.  To
+    retrieve the value of a field from the header and store it into a
+    host variable, use the following command:
+</span>
+さて、どうやって記述子領域からデータを取り出すのでしょうか。
+この記述子領域を名前付きフィールドを持つ構造体とみなすことができます。
+ヘッダからフィールド値を取り出し、それをホスト変数に格納するには、以下のコマンドを使用します。
+</p><pre class="programlisting">
+EXEC SQL GET DESCRIPTOR <em class="replaceable"><code>name</code></em> :<em class="replaceable"><code>hostvar</code></em> = <em class="replaceable"><code>field</code></em>;
+</pre><p>
+<span class="original">
+    Currently, there is only one header field defined:
+    &lt;replaceable&gt;COUNT&lt;/replaceable&gt;, which tells how many item
+    descriptor areas exist (that is, how many columns are contained in
+    the result).  The host variable needs to be of an integer type.  To
+    get a field from the item descriptor area, use the following
+    command:
+</span>
+今のところ、<em class="replaceable"><code>COUNT</code></em>というヘッダフィールドが1つだけ定義されています。
+これは、記述子領域に存在する項目数を表すものです
+（つまり、結果内に含まれる列数です）。
+このホスト変数は整数型でなければなりません。
+項目記述子領域からフィールドを取り出すには、以下のコマンドを使用します。
+</p><pre class="programlisting">
+EXEC SQL GET DESCRIPTOR <em class="replaceable"><code>name</code></em> VALUE <em class="replaceable"><code>num</code></em> :<em class="replaceable"><code>hostvar</code></em> = <em class="replaceable"><code>field</code></em>;
+</pre><p>
+<span class="original">
+    &lt;replaceable&gt;num&lt;/replaceable&gt; can be a literal integer or a host
+    variable containing an integer. Possible fields are:
+</span>
+<em class="replaceable"><code>num</code></em>はリテラル整数、もしくは整数を持つホスト変数を取ることができます。
+取り得るフィールドは以下の通りです。
+
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">CARDINALITY</code> (整数)</span></dt><dd><p>
+<span class="original">
+        number of rows in the result set
+</span>
+結果セット内の行数です。
+       </p></dd><dt><span class="term"><code class="literal">DATA</code></span></dt><dd><p>
+<span class="original">
+        actual data item (therefore, the data type of this field
+        depends on the query)
+</span>
+実際のデータ項目です
+（したがってこのフィールドのデータ型は問い合わせに依存します）。
+       </p></dd><dt><span class="term"><code class="literal">DATETIME_INTERVAL_CODE</code> (整数)</span></dt><dd><p>
+<span class="original">
+        When &lt;literal&gt;TYPE&lt;/literal&gt; is &lt;literal&gt;9&lt;/literal&gt;,
+        &lt;literal&gt;DATETIME_INTERVAL_CODE&lt;/literal&gt; will have a value of
+        &lt;literal&gt;1&lt;/literal&gt; for &lt;literal&gt;DATE&lt;/literal&gt;,
+        &lt;literal&gt;2&lt;/literal&gt; for &lt;literal&gt;TIME&lt;/literal&gt;,
+        &lt;literal&gt;3&lt;/literal&gt; for &lt;literal&gt;TIMESTAMP&lt;/literal&gt;,
+        &lt;literal&gt;4&lt;/literal&gt; for &lt;literal&gt;TIME WITH TIME ZONE&lt;/literal&gt;, or
+        &lt;literal&gt;5&lt;/literal&gt; for &lt;literal&gt;TIMESTAMP WITH TIME ZONE&lt;/literal&gt;.
+</span>
+<code class="literal">TYPE</code>が<code class="literal">9</code>の場合、<code class="literal">DATETIME_INTERVAL_CODE</code>は、<code class="literal">DATE</code>では<code class="literal">1</code>、<code class="literal">TIME</code>では<code class="literal">2</code>、<code class="literal">TIMESTAMP</code>では<code class="literal">3</code>、<code class="literal">TIME WITH TIME ZONE</code>では<code class="literal">4</code>、<code class="literal">TIMESTAMP WITH TIME ZONE</code>では<code class="literal">5</code>という値を取ります。
+       </p></dd><dt><span class="term"><code class="literal">DATETIME_INTERVAL_PRECISION</code> (整数)</span></dt><dd><p>
+<span class="original">
+        not implemented
+</span>
+未実装です。
+       </p></dd><dt><span class="term"><code class="literal">INDICATOR</code> (整数)</span></dt><dd><p>
+<span class="original">
+        the indicator (indicating a null value or a value truncation)
+</span>
+（NULL値や値の切り詰めを示す）指示子です。
+       </p></dd><dt><span class="term"><code class="literal">KEY_MEMBER</code> (整数)</span></dt><dd><p>
+<span class="original">
+        not implemented
+</span>
+実装されていません。
+       </p></dd><dt><span class="term"><code class="literal">LENGTH</code> (整数)</span></dt><dd><p>
+<span class="original">
+        length of the datum in characters
+</span>
+データの文字列の長さです。
+       </p></dd><dt><span class="term"><code class="literal">NAME</code> (文字列)</span></dt><dd><p>
+<span class="original">
+        name of the column
+</span>
+列名です。
+       </p></dd><dt><span class="term"><code class="literal">NULLABLE</code> (整数)</span></dt><dd><p>
+<span class="original">
+        not implemented
+</span>
+実装されていません。
+       </p></dd><dt><span class="term"><code class="literal">OCTET_LENGTH</code> (整数)</span></dt><dd><p>
+<span class="original">
+        length of the character representation of the datum in bytes
+</span>
+データの文字表現のバイト長です。
+       </p></dd><dt><span class="term"><code class="literal">PRECISION</code> (整数)</span></dt><dd><p>
+<span class="original">
+        precision (for type &lt;type&gt;numeric&lt;/type&gt;)
+</span>
+（<code class="type">numeric</code>型用の）精度です。
+       </p></dd><dt><span class="term"><code class="literal">RETURNED_LENGTH</code> (整数)</span></dt><dd><p>
+<span class="original">
+        length of the datum in characters
+</span>
+データの文字数です。
+       </p></dd><dt><span class="term"><code class="literal">RETURNED_OCTET_LENGTH</code> (整数)</span></dt><dd><p>
+<span class="original">
+        length of the character representation of the datum in bytes
+</span>
+データの文字表現のバイト長です。
+       </p></dd><dt><span class="term"><code class="literal">SCALE</code> (整数)</span></dt><dd><p>
+<span class="original">
+        scale (for type &lt;type&gt;numeric&lt;/type&gt;)
+</span>
+（<code class="type">numeric</code>型用の）桁です。
+       </p></dd><dt><span class="term"><code class="literal">TYPE</code> (整数)</span></dt><dd><p>
+<span class="original">
+        numeric code of the data type of the column
+</span>
+列のデータ型の数値コードです。
+       </p></dd></dl></div><p>
+   </p><p>
+<span class="original">
+    In &lt;command&gt;EXECUTE&lt;/command&gt;, &lt;command&gt;DECLARE&lt;/command&gt; and &lt;command&gt;OPEN&lt;/command&gt;
+    statements, the effect of the &lt;literal&gt;INTO&lt;/literal&gt; and &lt;literal&gt;USING&lt;/literal&gt;
+    keywords are different. A Descriptor Area can also be manually built to
+    provide the input parameters for a query or a cursor and
+    &lt;literal&gt;USING SQL DESCRIPTOR &lt;replaceable&gt;name&lt;/replaceable&gt;&lt;/literal&gt;
+    is the way to pass the input parameters into a parameterized query. The statement
+    to build a named SQL Descriptor Area is below:
+</span>
+<code class="command">EXECUTE</code>、<code class="command">DECLARE</code>および<code class="command">OPEN</code>文では、<code class="literal">INTO</code>および<code class="literal">USING</code>の効果は異なります。
+また、問い合わせやカーソル用の入力パラメータを提供するために記述子領域は手作業で構築することができます。
+<code class="literal">USING SQL DESCRIPTOR <em class="replaceable"><code>name</code></em></code>は入力パラメータとパラメータ付きの問い合わせに渡す方法です。
+名前付きSQL記述子領域を構築するSQL文は以下の通りです。
+</p><pre class="programlisting">
+EXEC SQL SET DESCRIPTOR <em class="replaceable"><code>name</code></em> VALUE <em class="replaceable"><code>num</code></em> <em class="replaceable"><code>field</code></em> = :<em class="replaceable"><code>hostvar</code></em>;
+</pre><p>
+   </p><p>
+<span class="original">
+    PostgreSQL supports retrieving more that one record in one &lt;command&gt;FETCH&lt;/command&gt;
+    statement and storing the data in host variables in this case assumes that the
+    variable is an array. E.g.:
+</span>
+PostgreSQLは、1つの<code class="command">FETCH</code>文内の1レコードを複数取り出し、ホスト変数に格納することをサポートします。
+この場合ホスト変数は配列であると仮定されます。
+</p><pre class="programlisting">
+EXEC SQL BEGIN DECLARE SECTION;
+int id[5];
+EXEC SQL END DECLARE SECTION;
+
+EXEC SQL FETCH 5 FROM mycursor INTO SQL DESCRIPTOR mydesc;
+
+EXEC SQL GET DESCRIPTOR mydesc VALUE 1 :id = DATA;
+</pre><p>
+
+   </p></div><div class="sect2" id="ECPG-SQLDA-DESCRIPTORS"><div class="titlepage"><div><div><h3 class="title">36.7.2. SQLDA記述子領域</h3></div></div></div><span class="original">
+   &lt;title&gt;SQLDA Descriptor Areas&lt;/title&gt;
+</span><p>
+<span class="original">
+    An SQLDA Descriptor Area is a C language structure which can be also used
+    to get the result set and the metadata of a query. One structure stores one
+    record from the result set.
+</span>
+SQLDA記述子領域は、問い合わせの結果セットとメタデータを取り出すために使用可能なC言語の構造体です。
+1つの構造体には結果セットの1レコードが格納されます。
+</p><pre class="programlisting">
+EXEC SQL include sqlda.h;
+sqlda_t         *mysqlda;
+
+EXEC SQL FETCH 3 FROM mycursor INTO DESCRIPTOR mysqlda;
+</pre><p>
+<span class="original">
+    Note that the &lt;literal&gt;SQL&lt;/literal&gt; keyword is omitted. The paragraphs about
+    the use cases of the &lt;literal&gt;INTO&lt;/literal&gt; and &lt;literal&gt;USING&lt;/literal&gt;
+    keywords in &lt;xref linkend="ecpg-named-descriptors"/&gt; also apply here with an addition.
+    In a &lt;command&gt;DESCRIBE&lt;/command&gt; statement the &lt;literal&gt;DESCRIPTOR&lt;/literal&gt;
+    keyword can be completely omitted if the &lt;literal&gt;INTO&lt;/literal&gt; keyword is used:
+</span>
+<code class="literal">SQL</code>キーワードが省略されていることに注意してください。
+<a class="xref" href="ecpg-descriptors.html#ECPG-NAMED-DESCRIPTORS" title="36.7.1. 名前付きSQL記述子領域">36.7.1</a>の<code class="literal">INTO</code>および<code class="literal">USING</code>の使用状況に関する段落はここで多少追加して適用します。
+<code class="command">DESCRIBE</code>文では、<code class="literal">INTO</code>が使用されている場合<code class="literal">DESCRIPTOR</code>キーワードは完全に省略可能です。
+</p><pre class="programlisting">
+EXEC SQL DESCRIBE prepared_statement INTO mysqlda;
+</pre><p>
+   </p><div class="procedure"><p>
+<span class="original">
+      The general flow of a program that uses SQLDA is:
+</span>
+SQLDAを使用するプログラムの一般的な流れは以下の通りです。
+     </p><span class="original">
+     &lt;step&gt;&lt;simpara&gt;Prepare a query, and declare a cursor for it.&lt;/simpara&gt;&lt;/step&gt;
+     &lt;step&gt;&lt;simpara&gt;Declare an SQLDA for the result rows.&lt;/simpara&gt;&lt;/step&gt;
+     &lt;step&gt;&lt;simpara&gt;Declare an SQLDA for the input parameters, and initialize them (memory allocation, parameter settings).&lt;/simpara&gt;&lt;/step&gt;
+     &lt;step&gt;&lt;simpara&gt;Open a cursor with the input SQLDA.&lt;/simpara&gt;&lt;/step&gt;
+     &lt;step&gt;&lt;simpara&gt;Fetch rows from the cursor, and store them into an output SQLDA.&lt;/simpara&gt;&lt;/step&gt;
+     &lt;step&gt;&lt;simpara&gt;Read values from the output SQLDA into the host variables (with conversion if necessary).&lt;/simpara&gt;&lt;/step&gt;
+     &lt;step&gt;&lt;simpara&gt;Close the cursor.&lt;/simpara&gt;&lt;/step&gt;
+     &lt;step&gt;&lt;simpara&gt;Free the memory area allocated for the input SQLDA.&lt;/simpara&gt;&lt;/step&gt;
+</span><ol class="procedure" type="1"><li class="step"><p>問い合わせをプリペアし、そのカーソルを宣言します。</p></li><li class="step"><p>結果セット用のSQLDAを宣言します。</p></li><li class="step"><p>入力パラメータ用のSQLDAを宣言し、初期化（メモリ割り当て、パラメータの設定）します。</p></li><li class="step"><p>入力用SQLDAでカーソルを開きます。</p></li><li class="step"><p>カーソルから行を取り出し、出力用SQLDAに格納します。</p></li><li class="step"><p>出力用SQLDAから値をホスト変数に（必要に応じて変換を行い）読み取ります。</p></li><li class="step"><p>カーソルを閉じます。</p></li><li class="step"><p>入力用SQLDAに割り当てられたメモリ領域を解放します。</p></li></ol></div><div class="sect3" id="id-1.7.5.13.4.4"><div class="titlepage"><div><div><h4 class="title">36.7.2.1. SQLDAのデータ構造</h4></div></div></div><span class="original">
+    &lt;title&gt;SQLDA Data Structure&lt;/title&gt;
+</span><p>
+<span class="original">
+     SQLDA uses three data structure
+     types: &lt;type&gt;sqlda_t&lt;/type&gt;, &lt;type&gt;sqlvar_t&lt;/type&gt;,
+     and &lt;type&gt;struct sqlname&lt;/type&gt;.
+</span>
+SQLDAは<code class="type">sqlda_t</code>、<code class="type">sqlvar_t</code>、<code class="type">struct sqlname</code>という３つの種類のデータ構造を使用します。
+    </p><div class="tip"><h3 class="title">ヒント</h3><p>
+<span class="original">
+      PostgreSQL's SQLDA has a similar data structure to the one in
+      IBM DB2 Universal Database, so some technical information on
+      DB2's SQLDA could help understanding PostgreSQL's one better.
+</span>
+PostgreSQLのSQLDAはIBM DB2ユニバーサルデータベースのものと似たデータ構造を持ちます。
+このため、DB2のSQLDAに関する技術情報の一部はPostgreSQLのSQLDAの理解のより良い助けになるでしょう。
+     </p></div><div class="sect4" id="ECPG-SQLDA-SQLDA"><div class="titlepage"><div><div><h5 class="title">36.7.2.1.1. sqlda_t構造体</h5></div></div></div><span class="original">
+     &lt;title&gt;sqlda_t Structure&lt;/title&gt;
+</span><p>
+<span class="original">
+      The structure type &lt;type&gt;sqlda_t&lt;/type&gt; is the type of the
+      actual SQLDA.  It holds one record.  And two or
+      more &lt;type&gt;sqlda_t&lt;/type&gt; structures can be connected in a
+      linked list with the pointer in
+      the &lt;structfield&gt;desc_next&lt;/structfield&gt; field, thus
+      representing an ordered collection of rows.  So, when two or
+      more rows are fetched, the application can read them by
+      following the &lt;structfield&gt;desc_next&lt;/structfield&gt; pointer in
+      each &lt;type&gt;sqlda_t&lt;/type&gt; node.
+</span>
+<code class="type">sqlda_t</code>構造体は実際のSQLDAの型です。
+これは１つのレコードを保持します。
+そして２つ以上の<code class="type">sqlda_t</code>構造体を<code class="structfield">desc_next</code>フィールド内においてポインタを使ってリンクリスト内でつなげることができます。
+こうして行の順序付き集合を表現します。
+このため、２つ以上の行を取り出す時、アプリケーションは各<code class="type">sqlda_t</code>ノードの<code class="structfield">desc_next</code>ポインタを追うことでそれらを読み取ることができます。
+     </p><p>
+<span class="original">
+      The definition of &lt;type&gt;sqlda_t&lt;/type&gt; is:
+</span>
+<code class="type">sqlda_t</code>の定義は以下の通りです。
+</p><pre class="programlisting">
+struct sqlda_struct
+{
+    char            sqldaid[8];
+    long            sqldabc;
+    short           sqln;
+    short           sqld;
+    struct sqlda_struct *desc_next;
+    struct sqlvar_struct sqlvar[1];
+};
+
+typedef struct sqlda_struct sqlda_t;
+</pre><p>
+
+<span class="original">
+      The meaning of the fields is:
+</span>
+フィールドの意味は以下の通りです。
+
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">sqldaid</code></span></dt><dd><p>
+<span class="original">
+        It contains the literal string &lt;literal&gt;"SQLDA  "&lt;/literal&gt;.
+</span>
+ここには<code class="literal">"SQLDA  "</code>文字列リテラルが含まれます。
+       </p></dd><dt><span class="term"><code class="literal">sqldabc</code></span></dt><dd><p>
+<span class="original">
+        It contains the size of the allocated space in bytes.
+</span>
+ここにはバイト単位の割り当てられた領域のサイズが含まれます。
+       </p></dd><dt><span class="term"><code class="literal">sqln</code></span></dt><dd><p>
+<span class="original">
+        It contains the number of input parameters for a parameterized query in
+        case it's passed into &lt;command&gt;OPEN&lt;/command&gt;, &lt;command&gt;DECLARE&lt;/command&gt; or
+        &lt;command&gt;EXECUTE&lt;/command&gt; statements using the &lt;literal&gt;USING&lt;/literal&gt;
+        keyword. In case it's used as output of &lt;command&gt;SELECT&lt;/command&gt;,
+        &lt;command&gt;EXECUTE&lt;/command&gt; or &lt;command&gt;FETCH&lt;/command&gt; statements,
+        its value is the same as &lt;literal&gt;sqld&lt;/literal&gt;
+        statement
+</span>
+<code class="literal">USING</code>キーワードを使用して<code class="command">OPEN</code>、<code class="command">DECLARE</code>、<code class="command">EXECUTE</code>文に渡される場合、ここにはパラメータ付き問い合わせの入力パラメータ数が含まれます。
+<code class="command">SELECT</code>、<code class="command">EXECUTE</code>、<code class="command">FETCH</code>文の出力として使用される場合、この値は<code class="literal">sqld</code>文と同じです。
+       </p></dd><dt><span class="term"><code class="literal">sqld</code></span></dt><dd><p>
+<span class="original">
+        It contains the number of fields in a result set.
+</span>
+ここには結果セットのフィールド数が含まれます。
+       </p></dd><dt><span class="term"><code class="literal">desc_next</code></span></dt><dd><p>
+<span class="original">
+        If the query returns more than one record, multiple linked
+        SQLDA structures are returned, and &lt;literal&gt;desc_next&lt;/literal&gt; holds
+        a pointer to the next entry in the list.
+</span>
+問い合わせが複数のレコードを返す場合、複数結び付いたSQLDA構造体が返されます。
+<code class="literal">desc_next</code>にリスト内の次の項目を指し示すポインタが保持されます。
+       </p></dd><dt><span class="term"><code class="literal">sqlvar</code></span></dt><dd><p>
+<span class="original">
+        This is the array of the columns in the result set.
+</span>
+これは結果セット内の列の配列です。
+       </p></dd></dl></div><p>
+     </p></div><div class="sect4" id="ECPG-SQLDA-SQLVAR"><div class="titlepage"><div><div><h5 class="title">36.7.2.1.2. sqlvar_t構造体</h5></div></div></div><span class="original">
+     &lt;title&gt;sqlvar_t Structure&lt;/title&gt;
+</span><p>
+<span class="original">
+      The structure type &lt;type&gt;sqlvar_t&lt;/type&gt; holds a column value
+      and metadata such as type and length. The definition of the type
+      is:
+</span>
+<code class="type">sqlvar_t</code>構造体は列の値と型や長さなどのメタデータを保持します。
+この型の定義は以下の通りです。
+
+</p><pre class="programlisting">
+struct sqlvar_struct
+{
+    short          sqltype;
+    short          sqllen;
+    char          *sqldata;
+    short         *sqlind;
+    struct sqlname sqlname;
+};
+
+typedef struct sqlvar_struct sqlvar_t;
+</pre><p>
+
+<span class="original">
+      The meaning of the fields is:
+</span>
+フィールドの意味は以下の通りです。
+
+        </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">sqltype</code></span></dt><dd><p>
+<span class="original">
+            Contains the type identifier of the field. For values,
+            see &lt;literal&gt;enum ECPGttype&lt;/literal&gt; in &lt;literal&gt;ecpgtype.h&lt;/literal&gt;.
+</span>
+ここにはフィールドの型識別子が含まれます。
+値については<code class="literal">ecpgtype.h</code>の<code class="literal">enum ECPGttype</code>を参照してください。
+           </p></dd><dt><span class="term"><code class="literal">sqllen</code></span></dt><dd><p>
+<span class="original">
+            Contains the binary length of the field. e.g., 4 bytes for &lt;type&gt;ECPGt_int&lt;/type&gt;.
+</span>
+フィールドのバイナリ長が含まれます。
+例えば<code class="type">ECPGt_int</code>では4バイトです。
+           </p></dd><dt><span class="term"><code class="literal">sqldata</code></span></dt><dd><p>
+<span class="original">
+            Points to the data.  The format of the data is described
+            in &lt;xref linkend="ecpg-variables-type-mapping"/&gt;.
+</span>
+データそのものを指し示します。
+データ書式は<a class="xref" href="ecpg-variables.html#ECPG-VARIABLES-TYPE-MAPPING" title="36.4.4. データ型の対応">36.4.4</a>で説明します。
+           </p></dd><dt><span class="term"><code class="literal">sqlind</code></span></dt><dd><p>
+<span class="original">
+            Points to the null indicator.  0 means not null, -1 means
+            null.
+</span>
+データのNULL指示子を指し示します。
+0は非NULLを、-1はNULLを意味します。
+           </p></dd><dt><span class="term"><code class="literal">sqlname</code></span></dt><dd><p>
+<span class="original">
+            The name of the field.
+</span>
+フィールドの名前です。
+           </p></dd></dl></div><p>
+     </p></div><div class="sect4" id="ECPG-SQLDA-SQLNAME"><div class="titlepage"><div><div><h5 class="title">36.7.2.1.3. struct sqlname構造体</h5></div></div></div><span class="original">
+     &lt;title&gt;struct sqlname Structure&lt;/title&gt;
+</span><p>
+<span class="original">
+      A &lt;type&gt;struct sqlname&lt;/type&gt; structure holds a column name.  It
+      is used as a member of the &lt;type&gt;sqlvar_t&lt;/type&gt; structure.  The
+      definition of the structure is:
+</span>
+<code class="type">struct sqlname</code>構造体は列名を保持します。
+<code class="type">sqlvar_t</code>構造体のメンバとして使用されます。
+構造体の定義は以下の通りです。
+</p><pre class="programlisting">
+#define NAMEDATALEN 64
+
+struct sqlname
+{
+        short           length;
+        char            data[NAMEDATALEN];
+};
+</pre><p>
+<span class="original">
+      The meaning of the fields is:
+</span>
+フィールドの意味は以下の通りです。
+            </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">length</code></span></dt><dd><p>
+<span class="original">
+                 Contains the length of the field name.
+</span>
+フィールド名の長さが含まれます。
+                </p></dd><dt><span class="term"><code class="literal">data</code></span></dt><dd><p>
+<span class="original">
+                 Contains the actual field name.
+</span>
+実際のフィールド名が含まれます。
+                </p></dd></dl></div><p>
+     </p></div></div><div class="sect3" id="ECPG-SQLDA-OUTPUT"><div class="titlepage"><div><div><h4 class="title">36.7.2.2. SQLDAを使用した結果セットの取り出し</h4></div></div></div><span class="original">
+    &lt;title&gt;Retrieving a Result Set Using an SQLDA&lt;/title&gt;
+</span><div class="procedure"><p>
+<span class="original">
+      The general steps to retrieve a query result set through an
+      SQLDA are:
+</span>
+SQLDAを通して問い合わせの結果を取り出す一般的な手順は以下に示します。
+     </p><span class="original">
+     &lt;step&gt;&lt;simpara&gt;Declare an &lt;type&gt;sqlda_t&lt;/type&gt; structure to receive the result set.&lt;/simpara&gt;&lt;/step&gt;
+     &lt;step&gt;&lt;simpara&gt;Execute &lt;command&gt;FETCH&lt;/command&gt;/&lt;command&gt;EXECUTE&lt;/command&gt;/&lt;command&gt;DESCRIBE&lt;/command&gt; commands to process a query specifying the declared SQLDA.&lt;/simpara&gt;&lt;/step&gt;
+     &lt;step&gt;&lt;simpara&gt;Check the number of records in the result set by looking at &lt;structfield&gt;sqln&lt;/structfield&gt;, a member of the &lt;type&gt;sqlda_t&lt;/type&gt; structure.&lt;/simpara&gt;&lt;/step&gt;
+     &lt;step&gt;&lt;simpara&gt;Get the values of each column from &lt;literal&gt;sqlvar[0]&lt;/literal&gt;, &lt;literal&gt;sqlvar[1]&lt;/literal&gt;, etc., members of the &lt;type&gt;sqlda_t&lt;/type&gt; structure.&lt;/simpara&gt;&lt;/step&gt;
+     &lt;step&gt;&lt;simpara&gt;Go to next row (&lt;type&gt;sqlda_t&lt;/type&gt; structure) by following the &lt;structfield&gt;desc_next&lt;/structfield&gt; pointer, a member of the &lt;type&gt;sqlda_t&lt;/type&gt; structure.&lt;/simpara&gt;&lt;/step&gt;
+     &lt;step&gt;&lt;simpara&gt;Repeat above as you need.&lt;/simpara&gt;&lt;/step&gt;
+</span><ol class="procedure" type="1"><li class="step"><p>結果セットを受けとるための<code class="type">sqlda_t</code>構造体を宣言します。</p></li><li class="step"><p>宣言したSQLDAを指定した問い合わせを処理するために<code class="command">FETCH</code>/<code class="command">EXECUTE</code>/<code class="command">DESCRIBE</code>を実行します。</p></li><li class="step"><p><code class="type">sqlda_t</code>構造体のメンバ<code class="structfield">sqln</code>を検索することにより結果セット内のレコード数を検査します。</p></li><li class="step"><p><code class="type">sqlda_t</code>構造体のメンバ<code class="literal">sqlvar[0]</code>、<code class="literal">sqlvar[1]</code>などから各列の値を入手します。</p></li><li class="step"><p><code class="type">sqlda_t</code>構造体のメンバ<code class="structfield">desc_next</code>ポインタを追い、次の行（<code class="type">sqlda_t</code>構造体）に進みます。</p></li><li class="step"><p>必要なだけ上を繰り返します。</p></li></ol></div><p>
+<span class="original">
+     Here is an example retrieving a result set through an SQLDA.
+</span>
+以下にSQLDAを通して結果セットを取り出す例を示します。
+    </p><p>
+<span class="original">
+     First, declare a &lt;type&gt;sqlda_t&lt;/type&gt; structure to receive the result set.
+</span>
+まず、結果セットを受け取る<code class="type">sqlda_t</code>構造体を宣言します。
+</p><pre class="programlisting">
+sqlda_t *sqlda1;
+</pre><p>
+    </p><p>
+<span class="original">
+     Next, specify the SQLDA in a command.  This is
+     a &lt;command&gt;FETCH&lt;/command&gt; command example.
+</span>
+次にコマンド内にSQLDAを指定します。
+以下は<code class="command">FETCH</code>コマンドの例です。
+</p><pre class="programlisting">
+EXEC SQL FETCH NEXT FROM cur1 INTO DESCRIPTOR sqlda1;
+</pre><p>
+    </p><p>
+<span class="original">
+     Run a loop following the linked list to retrieve the rows.
+</span>
+行を取り出すためにリンクリストを追うループを実行します。
+</p><pre class="programlisting">
+sqlda_t *cur_sqlda;
+
+for (cur_sqlda = sqlda1;
+     cur_sqlda != NULL;
+     cur_sqlda = cur_sqlda-&gt;desc_next)
+{
+    ...
+}
+</pre><p>
+    </p><p>
+<span class="original">
+     Inside the loop, run another loop to retrieve each column data
+     (&lt;type&gt;sqlvar_t&lt;/type&gt; structure) of the row.
+</span>
+ループの内側では、行の列データ（<code class="type">sqlvar_t</code>構造体）それぞれを取り出す別のループを実行します。
+</p><pre class="programlisting">
+for (i = 0; i &lt; cur_sqlda-&gt;sqld; i++)
+{
+    sqlvar_t v = cur_sqlda-&gt;sqlvar[i];
+    char *sqldata = v.sqldata;
+    short sqllen  = v.sqllen;
+    ...
+}
+</pre><p>
+    </p><p>
+<span class="original">
+     To get a column value, check the &lt;structfield&gt;sqltype&lt;/structfield&gt; value,
+     a member of the &lt;type&gt;sqlvar_t&lt;/type&gt; structure.  Then, switch
+     to an appropriate way, depending on the column type, to copy
+     data from the &lt;structfield&gt;sqlvar&lt;/structfield&gt; field to a host variable.
+</span>
+列の値を入手するために、<code class="type">sqlvar_t</code>構造体のメンバ<code class="structfield">sqltype</code>の値を検査します。
+そして、列の型に応じて、<code class="structfield">sqlvar</code>フィールドからホスト変数にデータをコピーするための適切な方法に切り替えます。
+</p><pre class="programlisting">
+char var_buf[1024];
+
+switch (v.sqltype)
+{
+    case ECPGt_char:
+        memset(&amp;var_buf, 0, sizeof(var_buf));
+        memcpy(&amp;var_buf, sqldata, (sizeof(var_buf) &lt;= sqllen ? sizeof(var_buf) - 1 : sqllen));
+        break;
+
+<span class="original">
+    case ECPGt_int: /* integer */
+</span>
+    case ECPGt_int: /* 整数 */
+        memcpy(&amp;intval, sqldata, sqllen);
+        snprintf(var_buf, sizeof(var_buf), "%d", intval);
+        break;
+
+    ...
+}
+</pre><p>
+    </p></div><div class="sect3" id="ECPG-SQLDA-INPUT"><div class="titlepage"><div><div><h4 class="title">36.7.2.3. SQLDAを使用した問い合わせパラメータ渡し</h4></div></div></div><span class="original">
+    &lt;title&gt;Passing Query Parameters Using an SQLDA&lt;/title&gt;
+</span><div class="procedure"><p>
+<span class="original">
+      The general steps to use an SQLDA to pass input
+      parameters to a prepared query are:
+</span>
+プリペアド問い合わせに入力パラメータを渡すためにSQLDAを使用する、一般的な手順は以下の通りです。
+     </p><span class="original">
+     &lt;step&gt;&lt;simpara&gt;Create a prepared query (prepared statement)&lt;/simpara&gt;&lt;/step&gt;
+     &lt;step&gt;&lt;simpara&gt;Declare an sqlda_t structure as an input SQLDA.&lt;/simpara&gt;&lt;/step&gt;
+     &lt;step&gt;&lt;simpara&gt;Allocate memory area (as sqlda_t structure) for the input SQLDA.&lt;/simpara&gt;&lt;/step&gt;
+     &lt;step&gt;&lt;simpara&gt;Set (copy) input values in the allocated memory.&lt;/simpara&gt;&lt;/step&gt;
+     &lt;step&gt;&lt;simpara&gt;Open a cursor with specifying the input SQLDA.&lt;/simpara&gt;&lt;/step&gt;
+</span><ol class="procedure" type="1"><li class="step"><p>プリペアド問い合わせ（プリペアド文）を作成します。</p></li><li class="step"><p>入力用SQLDAとしてsqlda_t構造体を宣言します。</p></li><li class="step"><p>入力用SQLDA用にメモリ領域を（sqlda_t構造体として）割り当てます。</p></li><li class="step"><p>割り当てたメモリに入力値を設定（コピー）します。</p></li><li class="step"><p>入力用SQLDAを指定してカーソルを開きます。</p></li></ol></div><p>
+<span class="original">
+     Here is an example.
+</span>
+以下に例を示します。
+    </p><p>
+<span class="original">
+     First, create a prepared statement.
+</span>
+まずプリペアド文を作成します。
+</p><pre class="programlisting">
+EXEC SQL BEGIN DECLARE SECTION;
+char query[1024] = "SELECT d.oid, * FROM pg_database d, pg_stat_database s WHERE d.oid = s.datid AND (d.datname = ? OR d.oid = ?)";
+EXEC SQL END DECLARE SECTION;
+
+EXEC SQL PREPARE stmt1 FROM :query;
+</pre><p>
+    </p><p>
+<span class="original">
+     Next, allocate memory for an SQLDA, and set the number of input
+     parameters in &lt;structfield&gt;sqln&lt;/structfield&gt;, a member variable of
+     the &lt;type&gt;sqlda_t&lt;/type&gt; structure.  When two or more input
+     parameters are required for the prepared query, the application
+     has to allocate additional memory space which is calculated by
+     (nr. of params - 1) * sizeof(sqlvar_t).  The example shown here
+     allocates memory space for two input parameters.
+</span>
+次にSQLDA用にメモリを割り当て、<code class="type">sqlda_t</code>構造体のメンバ変数<code class="structfield">sqln</code>に入力パラメータ数を設定します。
+プリペアド問い合わせで２つ以上の入力パラメータが必要な場合、アプリケーションは(パラメータ数 - 1) * sizeof(sqlvar_t)で計算される追加のメモリ空間を割り当てなければなりません。
+ここで示す例では２つの入力パラメータ用にメモリ空間を割り当てます。
+</p><pre class="programlisting">
+sqlda_t *sqlda2;
+
+sqlda2 = (sqlda_t *) malloc(sizeof(sqlda_t) + sizeof(sqlvar_t));
+memset(sqlda2, 0, sizeof(sqlda_t) + sizeof(sqlvar_t));
+
+<span class="original">
+sqlda2-&gt;sqln = 2; /* number of input variables */
+</span>
+sqlda2-&gt;sqln = 2; /* 入力変数の個数 */
+</pre><p>
+    </p><p>
+<span class="original">
+     After memory allocation, store the parameter values into the
+     &lt;literal&gt;sqlvar[]&lt;/literal&gt; array.  (This is same array used for
+     retrieving column values when the SQLDA is receiving a result
+     set.)  In this example, the input parameters
+     are &lt;literal&gt;"postgres"&lt;/literal&gt;, having a string type,
+     and &lt;literal&gt;1&lt;/literal&gt;, having an integer type.
+</span>
+メモリを割り当てた後、<code class="literal">sqlvar[]</code>配列にパラメータ値を格納します。
+（これは、SQLDAが結果セットを受け取る時に列値を取り出すために使用した配列と同じです。）
+この例では、入力パラメータは文字列型を持つ<code class="literal">"postgres"</code>と整数型を持つ<code class="literal">1</code>です。
+</p><pre class="programlisting">
+sqlda2-&gt;sqlvar[0].sqltype = ECPGt_char;
+sqlda2-&gt;sqlvar[0].sqldata = "postgres";
+sqlda2-&gt;sqlvar[0].sqllen  = 8;
+
+int intval = 1;
+sqlda2-&gt;sqlvar[1].sqltype = ECPGt_int;
+sqlda2-&gt;sqlvar[1].sqldata = (char *) &amp;intval;
+sqlda2-&gt;sqlvar[1].sqllen  = sizeof(intval);
+</pre><p>
+    </p><p>
+<span class="original">
+     By opening a cursor and specifying the SQLDA that was set up
+     beforehand, the input parameters are passed to the prepared
+     statement.
+</span>
+ここまでで設定したSQLDAを指定するカーソルを開くことで、入力パラメータはプリペアド文に渡されます。
+</p><pre class="programlisting">
+EXEC SQL OPEN cur1 USING DESCRIPTOR sqlda2;
+</pre><p>
+    </p><p>
+<span class="original">
+     Finally, after using input SQLDAs, the allocated memory space
+     must be freed explicitly, unlike SQLDAs used for receiving query
+     results.
+</span>
+最後に、問い合わせ結果を受け取るために使用するSQLDAとは異なり、入力用SQLDAの使用後、割り当てたメモリ空間を明示的に解放しなければなりません。
+</p><pre class="programlisting">
+free(sqlda2);
+</pre><p>
+    </p></div><div class="sect3" id="ECPG-SQLDA-EXAMPLE"><div class="titlepage"><div><div><h4 class="title">36.7.2.4. SQLDAを使用するサンプルアプリケーション</h4></div></div></div><span class="original">
+    &lt;title&gt;A Sample Application Using SQLDA&lt;/title&gt;
+</span><p>
+<span class="original">
+     Here is an example program, which describes how to fetch access
+     statistics of the databases, specified by the input parameters,
+     from the system catalogs.
+</span>
+以下に、システムカタログから入力パラメータにより指定されたデータベースの統計情報にアクセスし取り出す方法を示す、プログラム例を示します。
+    </p><p>
+<span class="original">
+     This application joins two system tables, pg_database and
+     pg_stat_database on the database OID, and also fetches and shows
+     the database statistics which are retrieved by two input
+     parameters (a database &lt;literal&gt;postgres&lt;/literal&gt;, and OID &lt;literal&gt;1&lt;/literal&gt;).
+</span>
+このアプリケーションは、pg_databaseとpg_stat_databaseシステムテーブルをデータベースOIDで結合し、２つの入力パラメータ（データベース<code class="literal">postgres</code>とOID<code class="literal">1</code>）により取り出されるデータベース統計情報を読み取り、表示します。
+    </p><p>
+<span class="original">
+     First, declare an SQLDA for input and an SQLDA for output.
+</span>
+まず、入力用のSQLDAと出力用のSQLDAを宣言します。
+</p><pre class="programlisting">
+EXEC SQL include sqlda.h;
+
+<span class="original">
+sqlda_t *sqlda1; /* an output descriptor */
+sqlda_t *sqlda2; /* an input descriptor  */
+</span>
+sqlda_t *sqlda1; /* 出力記述子 */
+sqlda_t *sqlda2; /* 入力記述子 */
+</pre><p>
+    </p><p>
+<span class="original">
+     Next, connect to the database, prepare a statement, and declare a
+     cursor for the prepared statement.
+</span>
+次に、データベースに接続し、プリペアド文を作成し、プリペアド文用のカーソルを宣言します。
+</p><pre class="programlisting">
+int
+main(void)
+{
+    EXEC SQL BEGIN DECLARE SECTION;
+    char query[1024] = "SELECT d.oid,* FROM pg_database d, pg_stat_database s WHERE d.oid=s.datid AND ( d.datname=? OR d.oid=? )";
+    EXEC SQL END DECLARE SECTION;
+
+    EXEC SQL CONNECT TO testdb AS con1 USER testuser;
+    EXEC SQL SELECT pg_catalog.set_config('search_path', '', false); EXEC SQL COMMIT;
+
+    EXEC SQL PREPARE stmt1 FROM :query;
+    EXEC SQL DECLARE cur1 CURSOR FOR stmt1;
+</pre><p>
+    </p><p>
+<span class="original">
+     Next, put some values in the input SQLDA for the input
+     parameters.  Allocate memory for the input SQLDA, and set the
+     number of input parameters to &lt;literal&gt;sqln&lt;/literal&gt;.  Store
+     type, value, and value length into &lt;literal&gt;sqltype&lt;/literal&gt;,
+     &lt;literal&gt;sqldata&lt;/literal&gt;, and &lt;literal&gt;sqllen&lt;/literal&gt; in the
+     &lt;literal&gt;sqlvar&lt;/literal&gt; structure.
+</span>
+次に、入力パラメータのために入力用SQLDA内にいくつかの値を格納します。
+入力用SQLDAのためのメモリを割り当て、入力パラメータの個数を<code class="literal">sqln</code>に設定します。
+型、値、値の長さを<code class="literal">sqlvar</code>構造体内の<code class="literal">sqltype</code>、<code class="literal">sqldata</code>、<code class="literal">sqllen</code>に格納します。
+
+</p><pre class="programlisting">
+<span class="original">
+    /* Create SQLDA structure for input parameters. */
+</span>
+    /* 入力パラメータ用のSQLDA構造体を作成する。 */
+    sqlda2 = (sqlda_t *) malloc(sizeof(sqlda_t) + sizeof(sqlvar_t));
+    memset(sqlda2, 0, sizeof(sqlda_t) + sizeof(sqlvar_t));
+<span class="original">
+    sqlda2-&gt;sqln = 2; /* number of input variables */
+</span>
+    sqlda2-&gt;sqln = 2; /* 入力変数の数 */
+
+    sqlda2-&gt;sqlvar[0].sqltype = ECPGt_char;
+    sqlda2-&gt;sqlvar[0].sqldata = "postgres";
+    sqlda2-&gt;sqlvar[0].sqllen  = 8;
+
+    intval = 1;
+    sqlda2-&gt;sqlvar[1].sqltype = ECPGt_int;
+    sqlda2-&gt;sqlvar[1].sqldata = (char *)&amp;intval;
+    sqlda2-&gt;sqlvar[1].sqllen  = sizeof(intval);
+</pre><p>
+    </p><p>
+<span class="original">
+     After setting up the input SQLDA, open a cursor with the input
+     SQLDA.
+</span>
+入力用SQLDAを設定し終えた後、入力用SQLDAを付けたカーソルを開きます。
+
+</p><pre class="programlisting">
+<span class="original">
+    /* Open a cursor with input parameters. */
+</span>
+    /* 入力パラメータ付きでカーソルを開く。 */
+    EXEC SQL OPEN cur1 USING DESCRIPTOR sqlda2;
+</pre><p>
+    </p><p>
+<span class="original">
+     Fetch rows into the output SQLDA from the opened cursor.
+     (Generally, you have to call &lt;command&gt;FETCH&lt;/command&gt; repeatedly
+     in the loop, to fetch all rows in the result set.)
+</span>
+開いたカーソルから出力用SQLDA内に行を取り込みます。
+（一般的に結果セット内の行をすべて取り込むためには、ループ内で<code class="command">FETCH</code>を繰り返し呼び出さなければなりません。）
+</p><pre class="programlisting">
+    while (1)
+    {
+        sqlda_t *cur_sqlda;
+
+<span class="original">
+        /* Assign descriptor to the cursor  */
+</span>
+        /* 記述子をカーソルに割り当てる */
+        EXEC SQL FETCH NEXT FROM cur1 INTO DESCRIPTOR sqlda1;
+</pre><p>
+    </p><p>
+<span class="original">
+     Next, retrieve the fetched records from the SQLDA, by following
+     the linked list of the &lt;type&gt;sqlda_t&lt;/type&gt; structure.
+</span>
+次に、<code class="type">sqlda_t</code>構造体のリンクリストを追うことで、SQLDAから取り込んだレコードを取り出します。
+</p><pre class="programlisting">
+    for (cur_sqlda = sqlda1 ;
+         cur_sqlda != NULL ;
+         cur_sqlda = cur_sqlda-&gt;desc_next)
+    {
+        ...
+</pre><p>
+    </p><p>
+<span class="original">
+     Read each columns in the first record.  The number of columns is
+     stored in &lt;structfield&gt;sqld&lt;/structfield&gt;, the actual data of the first
+     column is stored in &lt;literal&gt;sqlvar[0]&lt;/literal&gt;, both members of
+     the &lt;type&gt;sqlda_t&lt;/type&gt; structure.
+</span>
+最初のレコードから各列を読み取ります。
+列数は<code class="structfield">sqld</code>に、最初の列の実データは<code class="literal">sqlvar[0]</code>に格納されています。
+どちらも<code class="type">sqlda_t</code>構造体のメンバです。
+
+</p><pre class="programlisting">
+<span class="original">
+        /* Print every column in a row. */
+</span>
+        /* 1行の列をすべて表示する。 */
+        for (i = 0; i &lt; sqlda1-&gt;sqld; i++)
+        {
+            sqlvar_t v = sqlda1-&gt;sqlvar[i];
+            char *sqldata = v.sqldata;
+            short sqllen  = v.sqllen;
+
+            strncpy(name_buf, v.sqlname.data, v.sqlname.length);
+            name_buf[v.sqlname.length] = '\0';
+</pre><p>
+    </p><p>
+<span class="original">
+     Now, the column data is stored in the variable &lt;varname&gt;v&lt;/varname&gt;.
+     Copy every datum into host variables, looking
+     at &lt;literal&gt;v.sqltype&lt;/literal&gt; for the type of the column.
+</span>
+ここで、列データが<code class="varname">v</code>変数内に格納されました。
+列の型について<code class="literal">v.sqltype</code>を検索しながら、すべてのデータをホスト変数にコピーします。
+</p><pre class="programlisting">
+            switch (v.sqltype) {
+                int intval;
+                double doubleval;
+                unsigned long long int longlongval;
+
+                case ECPGt_char:
+                    memset(&amp;var_buf, 0, sizeof(var_buf));
+                    memcpy(&amp;var_buf, sqldata, (sizeof(var_buf) &lt;= sqllen ? sizeof(var_buf)-1 : sqllen));
+                    break;
+
+<span class="original">
+                case ECPGt_int: /* integer */
+</span>
+                case ECPGt_int: /* 整数 */
+                    memcpy(&amp;intval, sqldata, sqllen);
+                    snprintf(var_buf, sizeof(var_buf), "%d", intval);
+                    break;
+
+                ...
+
+                default:
+                    ...
+            }
+
+            printf("%s = %s (type: %d)\n", name_buf, var_buf, v.sqltype);
+        }
+</pre><p>
+    </p><p>
+<span class="original">
+     Close the cursor after processing all of records, and disconnect
+     from the database.
+</span>
+すべてのレコードを処理した後カーソルを閉じ、データベースとの接続を切断します。
+</p><pre class="programlisting">
+    EXEC SQL CLOSE cur1;
+    EXEC SQL COMMIT;
+
+    EXEC SQL DISCONNECT ALL;
+</pre><p>
+    </p><p>
+<span class="original">
+     The whole program is shown
+     in &lt;xref linkend="ecpg-sqlda-example-example"/&gt;.
+</span>
+プログラム全体を<a class="xref" href="ecpg-descriptors.html#ECPG-SQLDA-EXAMPLE-EXAMPLE" title="例36.1 SQLDAプログラムの例">例 36.1</a>に示します。
+    </p><div class="example" id="ECPG-SQLDA-EXAMPLE-EXAMPLE"><p class="title"><strong>例36.1 SQLDAプログラムの例</strong></p><div class="example-contents"><span class="original">
+     &lt;title&gt;Example SQLDA Program&lt;/title&gt;
+</span><pre class="programlisting">
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;unistd.h&gt;
+
+EXEC SQL include sqlda.h;
+
+<span class="original">
+sqlda_t *sqlda1; /* descriptor for output */
+sqlda_t *sqlda2; /* descriptor for input */
+</span>
+sqlda_t *sqlda1; /* 出力記述子 */
+sqlda_t *sqlda2; /* 入力記述子 */
+
+EXEC SQL WHENEVER NOT FOUND DO BREAK;
+EXEC SQL WHENEVER SQLERROR STOP;
+
+int
+main(void)
+{
+    EXEC SQL BEGIN DECLARE SECTION;
+    char query[1024] = "SELECT d.oid,* FROM pg_database d, pg_stat_database s WHERE d.oid=s.datid AND ( d.datname=? OR d.oid=? )";
+
+    int intval;
+    unsigned long long int longlongval;
+    EXEC SQL END DECLARE SECTION;
+
+    EXEC SQL CONNECT TO uptimedb AS con1 USER uptime;
+    EXEC SQL SELECT pg_catalog.set_config('search_path', '', false); EXEC SQL COMMIT;
+
+    EXEC SQL PREPARE stmt1 FROM :query;
+    EXEC SQL DECLARE cur1 CURSOR FOR stmt1;
+
+<span class="original">
+    /* Create an SQLDA structure for an input parameter */
+</span>
+    /* 入力パラメータ用のSQLDA構造体を作成する */
+    sqlda2 = (sqlda_t *)malloc(sizeof(sqlda_t) + sizeof(sqlvar_t));
+    memset(sqlda2, 0, sizeof(sqlda_t) + sizeof(sqlvar_t));
+<span class="original">
+    sqlda2-&gt;sqln = 2; /* a number of input variables */
+</span>
+    sqlda2-&gt;sqln = 2; /* 入力変数の数 */
+
+    sqlda2-&gt;sqlvar[0].sqltype = ECPGt_char;
+    sqlda2-&gt;sqlvar[0].sqldata = "postgres";
+    sqlda2-&gt;sqlvar[0].sqllen  = 8;
+
+    intval = 1;
+    sqlda2-&gt;sqlvar[1].sqltype = ECPGt_int;
+    sqlda2-&gt;sqlvar[1].sqldata = (char *) &amp;intval;
+    sqlda2-&gt;sqlvar[1].sqllen  = sizeof(intval);
+
+<span class="original">
+    /* Open a cursor with input parameters. */
+</span>
+    /* 入力パラメータ付きでカーソルを開く。 */
+    EXEC SQL OPEN cur1 USING DESCRIPTOR sqlda2;
+
+    while (1)
+    {
+        sqlda_t *cur_sqlda;
+
+<span class="original">
+        /* Assign descriptor to the cursor  */
+</span>
+        /* 記述子をカーソルに割り当てる */
+        EXEC SQL FETCH NEXT FROM cur1 INTO DESCRIPTOR sqlda1;
+
+        for (cur_sqlda = sqlda1 ;
+             cur_sqlda != NULL ;
+             cur_sqlda = cur_sqlda-&gt;desc_next)
+        {
+            int i;
+            char name_buf[1024];
+            char var_buf[1024];
+
+<span class="original">
+            /* Print every column in a row. */
+</span>
+            /* 1行の列をすべて表示する。 */
+            for (i=0 ; i&lt;cur_sqlda-&gt;sqld ; i++)
+            {
+                sqlvar_t v = cur_sqlda-&gt;sqlvar[i];
+                char *sqldata = v.sqldata;
+                short sqllen  = v.sqllen;
+
+                strncpy(name_buf, v.sqlname.data, v.sqlname.length);
+                name_buf[v.sqlname.length] = '\0';
+
+                switch (v.sqltype)
+                {
+                    case ECPGt_char:
+                        memset(&amp;var_buf, 0, sizeof(var_buf));
+                        memcpy(&amp;var_buf, sqldata, (sizeof(var_buf)&lt;=sqllen ? sizeof(var_buf)-1 : sqllen) );
+                        break;
+
+<span class="original">
+                    case ECPGt_int: /* integer */
+</span>
+                    case ECPGt_int: /* 整数 */
+                        memcpy(&amp;intval, sqldata, sqllen);
+                        snprintf(var_buf, sizeof(var_buf), "%d", intval);
+                        break;
+
+                    case ECPGt_long_long: /* bigint */
+                        memcpy(&amp;longlongval, sqldata, sqllen);
+                        snprintf(var_buf, sizeof(var_buf), "%lld", longlongval);
+                        break;
+
+                    default:
+                    {
+                        int i;
+                        memset(var_buf, 0, sizeof(var_buf));
+                        for (i = 0; i &lt; sqllen; i++)
+                        {
+                            char tmpbuf[16];
+                            snprintf(tmpbuf, sizeof(tmpbuf), "%02x ", (unsigned char) sqldata[i]);
+                            strncat(var_buf, tmpbuf, sizeof(var_buf));
+                        }
+                    }
+                        break;
+                }
+
+                printf("%s = %s (type: %d)\n", name_buf, var_buf, v.sqltype);
+            }
+
+            printf("\n");
+        }
+    }
+
+    EXEC SQL CLOSE cur1;
+    EXEC SQL COMMIT;
+
+    EXEC SQL DISCONNECT ALL;
+
+    return 0;
+}
+</pre><p>
+<span class="original">
+      The output of this example should look something like the
+      following (some numbers will vary).
+</span>
+この例の出力は以下のようなものになるはずです（一部の数値は変動します）。
+     </p><pre class="screen">
+oid = 1 (type: 1)
+datname = template1 (type: 1)
+datdba = 10 (type: 1)
+encoding = 0 (type: 5)
+datistemplate = t (type: 1)
+datallowconn = t (type: 1)
+datconnlimit = -1 (type: 5)
+datlastsysoid = 11510 (type: 1)
+datfrozenxid = 379 (type: 1)
+dattablespace = 1663 (type: 1)
+datconfig =  (type: 1)
+datacl = {=c/uptime,uptime=CTc/uptime} (type: 1)
+datid = 1 (type: 1)
+datname = template1 (type: 1)
+numbackends = 0 (type: 5)
+xact_commit = 113606 (type: 9)
+xact_rollback = 0 (type: 9)
+blks_read = 130 (type: 9)
+blks_hit = 7341714 (type: 9)
+tup_returned = 38262679 (type: 9)
+tup_fetched = 1836281 (type: 9)
+tup_inserted = 0 (type: 9)
+tup_updated = 0 (type: 9)
+tup_deleted = 0 (type: 9)
+
+oid = 11511 (type: 1)
+datname = postgres (type: 1)
+datdba = 10 (type: 1)
+encoding = 0 (type: 5)
+datistemplate = f (type: 1)
+datallowconn = t (type: 1)
+datconnlimit = -1 (type: 5)
+datlastsysoid = 11510 (type: 1)
+datfrozenxid = 379 (type: 1)
+dattablespace = 1663 (type: 1)
+datconfig =  (type: 1)
+datacl =  (type: 1)
+datid = 11511 (type: 1)
+datname = postgres (type: 1)
+numbackends = 0 (type: 5)
+xact_commit = 221069 (type: 9)
+xact_rollback = 18 (type: 9)
+blks_read = 1176 (type: 9)
+blks_hit = 13943750 (type: 9)
+tup_returned = 77410091 (type: 9)
+tup_fetched = 3253694 (type: 9)
+tup_inserted = 0 (type: 9)
+tup_updated = 0 (type: 9)
+tup_deleted = 0 (type: 9)
+</pre></div></div><br class="example-break" /></div></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ecpg-pgtypes.html" title="36.6. pgtypes ライブラリ">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="ecpg.html" title="第36章 ECPG — C言語による埋め込みSQL">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="ecpg-errors.html" title="36.8. エラー処理">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">36.6. pgtypes ライブラリ </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 36.8. エラー処理</td></tr></table></div></body></html>
