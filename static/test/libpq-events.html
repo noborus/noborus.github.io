@@ -1,0 +1,647 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>34.14. イベントシステム</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="libpq-notice-processing.html" title="34.13. 警告処理" /><link rel="next" href="libpq-envars.html" title="34.15. 環境変数" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="libpq.html" title="第34章 libpq — C ライブラリ">第34章 <span class="application">libpq</span> — C ライブラリ</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      libpq-events.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="libpq-notice-processing.html" title="34.13. 警告処理">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="libpq.html" title="第34章 libpq — C ライブラリ">上へ</a></td><td width="60%" align="center">34.14. イベントシステム</td><td width="20%" align="right"> <a accesskey="n" href="libpq-envars.html" title="34.15. 環境変数">次へ</a></td></tr></table><hr /></div><div class="sect1" id="LIBPQ-EVENTS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">34.14. イベントシステム</h2></div></div></div><span class="original">
+  &lt;title&gt;Event System&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;application&gt;libpq&lt;/application&gt;'s event system is designed to notify
+   registered event handlers about interesting
+   &lt;application&gt;libpq&lt;/application&gt; events, such as the creation or
+   destruction of &lt;structname&gt;PGconn&lt;/structname&gt; and
+   &lt;structname&gt;PGresult&lt;/structname&gt; objects.  A principal use case is that
+   this allows applications to associate their own data with a
+   &lt;structname&gt;PGconn&lt;/structname&gt; or &lt;structname&gt;PGresult&lt;/structname&gt;
+   and ensure that that data is freed at an appropriate time.
+</span>
+<span class="application">libpq</span>のイベントシステムは、<code class="structname">PGconn</code>および<code class="structname">PGresult</code>オブジェクトの作成と削除のような関心を引く<span class="application">libpq</span>イベントについて登録されたイベントハンドラに通知を行うため設計されています。
+主たる使用状況は、アプリケーションがそれ自身のデータを<code class="structname">PGconn</code>または<code class="structname">PGresult</code>と提携させ、データが適切な時間に解放されることを保証するものです。
+  </p><p>
+<span class="original">
+   Each registered event handler is associated with two pieces of data,
+   known to &lt;application&gt;libpq&lt;/application&gt; only as opaque &lt;literal&gt;void *&lt;/literal&gt;
+   pointers.  There is a &lt;firstterm&gt;pass-through&lt;/firstterm&gt; pointer that is provided
+   by the application when the event handler is registered with a
+   &lt;structname&gt;PGconn&lt;/structname&gt;.  The pass-through pointer never changes for the
+   life of the &lt;structname&gt;PGconn&lt;/structname&gt; and all &lt;structname&gt;PGresult&lt;/structname&gt;s
+   generated from it; so if used, it must point to long-lived data.
+   In addition there is an &lt;firstterm&gt;instance data&lt;/firstterm&gt; pointer, which starts
+   out &lt;symbol&gt;NULL&lt;/symbol&gt; in every &lt;structname&gt;PGconn&lt;/structname&gt; and &lt;structname&gt;PGresult&lt;/structname&gt;.
+   This pointer can be manipulated using the
+   &lt;xref linkend="libpq-PQinstanceData"/&gt;,
+   &lt;xref linkend="libpq-PQsetInstanceData"/&gt;,
+   &lt;xref linkend="libpq-PQresultInstanceData"/&gt; and
+   &lt;function&gt;PQsetResultInstanceData&lt;/function&gt; functions.  Note that
+   unlike the pass-through pointer, instance data of a &lt;structname&gt;PGconn&lt;/structname&gt;
+   is not automatically inherited by &lt;structname&gt;PGresult&lt;/structname&gt;s created from
+   it.  &lt;application&gt;libpq&lt;/application&gt; does not know what pass-through
+   and instance data pointers point to (if anything) and will never attempt
+   to free them &amp;mdash; that is the responsibility of the event handler.
+</span>
+それぞれの登録されたイベントハンドラは、<span class="application">libpq</span>からは曖昧とした<code class="literal">void *</code>ポインタとしてだけ知られる２つのデータの断片と提携します。
+イベントハンドラが<code class="structname">PGconn</code>で登録された時にアプリケーションが提供する<em class="firstterm">通過地点</em>ポインタがあります。
+通過地点ポインタは<code class="structname">PGconn</code>やそれから生成されたすべての（複数の）<code class="structname">PGresult</code>が有効な間決して変わることはありません。
+したがって使用された場合、長期間生存しているデータを指し示します。
+さらに、<em class="firstterm">インスタンスデータ</em>ポインタがあって、それはすべての<code class="structname">PGconn</code>と<code class="structname">PGresult</code>で<code class="symbol">NULL</code>から開始します。
+ポインタは、<a class="xref" href="libpq-events.html#LIBPQ-PQINSTANCEDATA"><code class="function">PQinstanceData</code></a>、<a class="xref" href="libpq-events.html#LIBPQ-PQSETINSTANCEDATA"><code class="function">PQsetInstanceData</code></a>、<a class="xref" href="libpq-events.html#LIBPQ-PQRESULTINSTANCEDATA"><code class="function">PQresultInstanceData</code></a>および<code class="function">PQsetResultInstanceData</code>関数を使って操作することができます。
+通過地点ポインタとは異なり、<code class="structname">PGconn</code>のインスタンスデータはそれから作成された<code class="structname">PGresult</code>により自動的に継承されません。
+<span class="application">libpq</span>は通過地点とインスタンスデータポインタが（もしあったとしても）何を指し示すのか判らず、決して解放しようとは試みません。
+それはイベントハンドラの責任です。
+  </p><div class="sect2" id="LIBPQ-EVENTS-TYPES"><div class="titlepage"><div><div><h3 class="title">34.14.1. イベントの種類</h3></div></div></div><span class="original">
+   &lt;title&gt;Event Types&lt;/title&gt;
+</span><p>
+<span class="original">
+    The enum &lt;literal&gt;PGEventId&lt;/literal&gt; names the types of events handled by
+    the event system.  All its values have names beginning with
+    &lt;literal&gt;PGEVT&lt;/literal&gt;.  For each event type, there is a corresponding
+    event info structure that carries the parameters passed to the event
+    handlers.  The event types are:
+</span>
+<code class="literal">PGEventId</code>列挙はイベントシステムにより処理されるイベントの種類に名前をつけます。
+その値はすべて<code class="literal">PGEVT</code>で始まる名前を持っています。
+それぞれのイベントの種類に対し、イベントハンドラに渡されるパラメータを運ぶ関連したイベント情報構造体があります。
+イベントの種類を以下に示します。
+   </p><div class="variablelist"><dl class="variablelist"><dt id="LIBPQ-PGEVT-REGISTER"><span class="term"><code class="literal">PGEVT_REGISTER</code></span></dt><dd><p>
+<span class="original">
+       The register event occurs when &lt;xref linkend="libpq-PQregisterEventProc"/&gt;
+       is called.  It is the ideal time to initialize any
+       &lt;literal&gt;instanceData&lt;/literal&gt; an event procedure may need.  Only one
+       register event will be fired per event handler per connection.  If the
+       event procedure fails, the registration is aborted.
+</span>
+登録イベントは<a class="xref" href="libpq-events.html#LIBPQ-PQREGISTEREVENTPROC"><code class="function">PQregisterEventProc</code></a>が呼ばれたとき発生します。
+イベントプロシージャが必要とするかもしれない任意の<code class="literal">instanceData</code>を初期化するために、これは理想的な時間です。
+接続毎、イベントハンドラ毎でたった１つの登録イベントが発行されます。
+イベントプロシージャが失敗すると、登録は中止されます。
+
+</p><pre class="synopsis">
+typedef struct
+{
+    PGconn *conn;
+} PGEventRegister;
+</pre><p>
+
+<span class="original">
+       When a &lt;literal&gt;PGEVT_REGISTER&lt;/literal&gt; event is received, the
+       &lt;parameter&gt;evtInfo&lt;/parameter&gt; pointer should be cast to a
+       &lt;structname&gt;PGEventRegister *&lt;/structname&gt;.  This structure contains a
+       &lt;structname&gt;PGconn&lt;/structname&gt; that should be in the
+       &lt;literal&gt;CONNECTION_OK&lt;/literal&gt; status; guaranteed if one calls
+       &lt;xref linkend="libpq-PQregisterEventProc"/&gt; right after obtaining a good
+       &lt;structname&gt;PGconn&lt;/structname&gt;.  When returning a failure code, all
+       cleanup must be performed as no &lt;literal&gt;PGEVT_CONNDESTROY&lt;/literal&gt;
+       event will be sent.
+</span>
+<code class="literal">PGEVT_REGISTER</code>イベントが受け取られると、<em class="parameter"><code>evtInfo</code></em>ポインタは<code class="structname">PGEventRegister *</code>にキャストされなければなりません。
+この構造体は<code class="literal">CONNECTION_OK</code>状態ではなくてはならない<code class="structname">PGconn</code>を含んでいます。
+そしてそれは、効果のある<code class="structname">PGconn</code>を取得した直後、<a class="xref" href="libpq-events.html#LIBPQ-PQREGISTEREVENTPROC"><code class="function">PQregisterEventProc</code></a>を呼び出せば、保証されます。
+失敗コードを返すとき、<code class="literal">PGEVT_CONNDESTROY</code>イベントが送られないので、すべての消去が実行されなければなりません。
+      </p></dd><dt id="LIBPQ-PGEVT-CONNRESET"><span class="term"><code class="literal">PGEVT_CONNRESET</code></span></dt><dd><p>
+<span class="original">
+       The connection reset event is fired on completion of
+       &lt;xref linkend="libpq-PQreset"/&gt; or &lt;function&gt;PQresetPoll&lt;/function&gt;.  In
+       both cases, the event is only fired if the reset was successful.  If
+       the event procedure fails, the entire connection reset will fail; the
+       &lt;structname&gt;PGconn&lt;/structname&gt; is put into
+       &lt;literal&gt;CONNECTION_BAD&lt;/literal&gt; status and
+       &lt;function&gt;PQresetPoll&lt;/function&gt; will return
+       &lt;literal&gt;PGRES_POLLING_FAILED&lt;/literal&gt;.
+</span>
+接続初期化イベントは<a class="xref" href="libpq-connect.html#LIBPQ-PQRESET"><code class="function">PQreset</code></a>または<code class="function">PQresetPoll</code>の完了時点で発行されます。
+どちらの場合も、初期化が成功したときのみ発行されます。
+イベントプロシージャが失敗すると、接続初期化全体が失敗します。
+<code class="structname">PGconn</code>は<code class="literal">CONNECTION_BAD</code>状態になり、<code class="function">PQresetPoll</code>は<code class="literal">PGRES_POLLING_FAILED</code>を返します。
+
+</p><pre class="synopsis">
+typedef struct
+{
+    PGconn *conn;
+} PGEventConnReset;
+</pre><p>
+
+<span class="original">
+       When a &lt;literal&gt;PGEVT_CONNRESET&lt;/literal&gt; event is received, the
+       &lt;parameter&gt;evtInfo&lt;/parameter&gt; pointer should be cast to a
+       &lt;structname&gt;PGEventConnReset *&lt;/structname&gt;.  Although the contained
+       &lt;structname&gt;PGconn&lt;/structname&gt; was just reset, all event data remains
+       unchanged.  This event should be used to reset/reload/requery any
+       associated &lt;literal&gt;instanceData&lt;/literal&gt;.  Note that even if the
+       event procedure fails to process &lt;literal&gt;PGEVT_CONNRESET&lt;/literal&gt;, it will
+       still receive a &lt;literal&gt;PGEVT_CONNDESTROY&lt;/literal&gt; event when the connection
+       is closed.
+</span>
+<code class="literal">PGEVT_CONNRESET</code>イベントが受け取られた時、<em class="parameter"><code>evtInfo</code></em>ポインタは<code class="structname">PGEventConnReset *</code>にキャストされなければなりません。
+含まれた<code class="structname">PGconn</code>は単に初期化されますが、すべてのイベントデータは変更されずに残ります。
+このイベントはすべての関連した<code class="literal">instanceData</code>の初期化・再読み込み・再問い合わせに使用されなければなりません。
+イベントプロシージャが<code class="literal">PGEVT_CONNRESET</code>処理に失敗したとしても、接続が閉じられた時<code class="literal">PGEVT_CONNDESTROY</code>イベントを依然として受け付けることに注意してください。
+      </p></dd><dt id="LIBPQ-PGEVT-CONNDESTROY"><span class="term"><code class="literal">PGEVT_CONNDESTROY</code></span></dt><dd><p>
+<span class="original">
+       The connection destroy event is fired in response to
+       &lt;xref linkend="libpq-PQfinish"/&gt;.  It is the event procedure's
+       responsibility to properly clean up its event data as libpq has no
+       ability to manage this memory.  Failure to clean up will lead
+       to memory leaks.
+</span>
+接続破棄イベントは<a class="xref" href="libpq-connect.html#LIBPQ-PQFINISH"><code class="function">PQfinish</code></a>に対応して発行されます。
+libpqはこのメモリを管理する機能がありませんので、そのイベントデータを的確に消去するのはイベントプロシージャの責任です。
+消去の失敗はメモリーリークに通じます。
+
+</p><pre class="synopsis">
+typedef struct
+{
+    PGconn *conn;
+} PGEventConnDestroy;
+</pre><p>
+
+<span class="original">
+       When a &lt;literal&gt;PGEVT_CONNDESTROY&lt;/literal&gt; event is received, the
+       &lt;parameter&gt;evtInfo&lt;/parameter&gt; pointer should be cast to a
+       &lt;structname&gt;PGEventConnDestroy *&lt;/structname&gt;.  This event is fired
+       prior to &lt;xref linkend="libpq-PQfinish"/&gt; performing any other cleanup.
+       The return value of the event procedure is ignored since there is no
+       way of indicating a failure from &lt;xref linkend="libpq-PQfinish"/&gt;.  Also,
+       an event procedure failure should not abort the process of cleaning up
+       unwanted memory.
+</span>
+<code class="literal">PGEVT_CONNDESTROY</code>イベントが受け取られた時、<em class="parameter"><code>evtInfo</code></em>ポインタは<code class="structname">PGEventConnDestroy *</code>にキャストされなければなりません。
+このイベントは<a class="xref" href="libpq-connect.html#LIBPQ-PQFINISH"><code class="function">PQfinish</code></a>が他のすべての消去を行う前に発行されます。
+イベントプロシージャの戻り値は、<a class="xref" href="libpq-connect.html#LIBPQ-PQFINISH"><code class="function">PQfinish</code></a>から失敗を示唆する方法がないので無視されます。
+同時に、イベントプロシージャの失敗が不要なメモリ消去処理を中止してはなりません。
+      </p></dd><dt id="LIBPQ-PGEVT-RESULTCREATE"><span class="term"><code class="literal">PGEVT_RESULTCREATE</code></span></dt><dd><p>
+<span class="original">
+       The result creation event is fired in response to any query execution
+       function that generates a result, including
+       &lt;xref linkend="libpq-PQgetResult"/&gt;.  This event will only be fired after
+       the result has been created successfully.
+</span>
+結果作成イベントは、<a class="xref" href="libpq-async.html#LIBPQ-PQGETRESULT"><code class="function">PQgetResult</code></a>を含み、結果を生成する任意の問い合わせ実行関数に対応して発行されます。
+このイベントは結果が成功裏に作成されたときのみ発行されます。
+
+</p><pre class="synopsis">
+typedef struct
+{
+    PGconn *conn;
+    PGresult *result;
+} PGEventResultCreate;
+</pre><p>
+
+<span class="original">
+       When a &lt;literal&gt;PGEVT_RESULTCREATE&lt;/literal&gt; event is received, the
+       &lt;parameter&gt;evtInfo&lt;/parameter&gt; pointer should be cast to a
+       &lt;structname&gt;PGEventResultCreate *&lt;/structname&gt;.  The
+       &lt;parameter&gt;conn&lt;/parameter&gt; is the connection used to generate the
+       result.  This is the ideal place to initialize any
+       &lt;literal&gt;instanceData&lt;/literal&gt; that needs to be associated with the
+       result.  If the event procedure fails, the result will be cleared and
+       the failure will be propagated.  The event procedure must not try to
+       &lt;xref linkend="libpq-PQclear"/&gt; the result object for itself.  When returning a
+       failure code, all cleanup must be performed as no
+       &lt;literal&gt;PGEVT_RESULTDESTROY&lt;/literal&gt; event will be sent.
+</span>
+<code class="literal">PGEVT_RESULTCREATE</code>イベントが受け取られた時、<em class="parameter"><code>evtInfo</code></em>ポインタは<code class="structname">PGEventResultCreate *</code>にキャストされなければなりません。
+<em class="parameter"><code>conn</code></em>は結果を生成するために使われた接続です。
+これは、結果と関連しなければならないすべての<code class="literal">instanceData</code>を初期化するために、理想的な場所です。
+イベントプロシージャが失敗すると、結果は消去され、失敗が伝播します。
+イベントプロシージャはそれ自身の結果オブジェクトを<a class="xref" href="libpq-exec.html#LIBPQ-PQCLEAR"><code class="function">PQclear</code></a>しようと試みてはいけません。
+失敗コードを返す時、<code class="literal">PGEVT_RESULTDESTROY</code>イベントは送られないのですべての消去が行われなくてはなりません。
+      </p></dd><dt id="LIBPQ-PGEVT-RESULTCOPY"><span class="term"><code class="literal">PGEVT_RESULTCOPY</code></span></dt><dd><p>
+<span class="original">
+       The result copy event is fired in response to
+       &lt;xref linkend="libpq-PQcopyResult"/&gt;.  This event will only be fired after
+       the copy is complete.  Only event procedures that have
+       successfully handled the &lt;literal&gt;PGEVT_RESULTCREATE&lt;/literal&gt;
+       or &lt;literal&gt;PGEVT_RESULTCOPY&lt;/literal&gt; event for the source result
+       will receive &lt;literal&gt;PGEVT_RESULTCOPY&lt;/literal&gt; events.
+</span>
+結果コピーイベントは<a class="xref" href="libpq-misc.html#LIBPQ-PQCOPYRESULT"><code class="function">PQcopyResult</code></a>の応答として発行されます。
+このイベントはコピーが完了した後にのみ発行されます。
+元の結果に対する<code class="literal">PGEVT_RESULTCREATE</code>もしくは<code class="literal">PGEVT_RESULTCOPY</code>イベントを成功裏に処理したイベントプロシージャのみ、<code class="literal">PGEVT_RESULTCOPY</code>イベントを受け取ります。
+
+</p><pre class="synopsis">
+typedef struct
+{
+    const PGresult *src;
+    PGresult *dest;
+} PGEventResultCopy;
+</pre><p>
+
+<span class="original">
+       When a &lt;literal&gt;PGEVT_RESULTCOPY&lt;/literal&gt; event is received, the
+       &lt;parameter&gt;evtInfo&lt;/parameter&gt; pointer should be cast to a
+       &lt;structname&gt;PGEventResultCopy *&lt;/structname&gt;.  The
+       &lt;parameter&gt;src&lt;/parameter&gt; result is what was copied while the
+       &lt;parameter&gt;dest&lt;/parameter&gt; result is the copy destination.  This event
+       can be used to provide a deep copy of &lt;literal&gt;instanceData&lt;/literal&gt;,
+       since &lt;literal&gt;PQcopyResult&lt;/literal&gt; cannot do that.  If the event
+       procedure fails, the entire copy operation will fail and the
+       &lt;parameter&gt;dest&lt;/parameter&gt; result will be cleared.   When returning a
+       failure code, all cleanup must be performed as no
+       &lt;literal&gt;PGEVT_RESULTDESTROY&lt;/literal&gt; event will be sent for the
+       destination result.
+</span>
+<code class="literal">PGEVT_RESULTCOPY</code>イベントが受け取られた時、<em class="parameter"><code>evtInfo</code></em>ポインタは<code class="structname">PGEventResultCopy *</code>にキャストされなければなりません。
+<em class="parameter"><code>src</code></em>結果はコピーされるものであり、一方で<em class="parameter"><code>dest</code></em>結果はコピー先です。
+このイベントは<code class="literal">instanceData</code>のディープコピーを提供するために使用されます。
+<code class="literal">PQcopyResult</code>ではこれを行うことができないためです。
+もしイベントプロシージャが失敗すると、コピー操作全体は失敗になり、<em class="parameter"><code>dest</code></em>結果は消去されます。
+失敗コードを返す時、<code class="literal">PGEVT_RESULTDESTROY</code>イベントがコピー先の結果に対し送られないため、すべての消去を行われなければなりません。
+      </p></dd><dt id="LIBPQ-PGEVT-RESULTDESTROY"><span class="term"><code class="literal">PGEVT_RESULTDESTROY</code></span></dt><dd><p>
+<span class="original">
+       The result destroy event is fired in response to a
+       &lt;xref linkend="libpq-PQclear"/&gt;.  It is the event procedure's
+       responsibility to properly clean up its event data as libpq has no
+       ability to manage this memory.  Failure to clean up will lead
+       to memory leaks.
+</span>
+結果破棄イベントは<a class="xref" href="libpq-exec.html#LIBPQ-PQCLEAR"><code class="function">PQclear</code></a>に対応して発行されます。
+libpqはこのメモリを管理する機能がありませんので、そのイベントデータを的確に消去するのはイベントプロシージャの責任です。
+消去の失敗はメモリーリークに通じます。
+
+</p><pre class="synopsis">
+typedef struct
+{
+    PGresult *result;
+} PGEventResultDestroy;
+</pre><p>
+
+<span class="original">
+       When a &lt;literal&gt;PGEVT_RESULTDESTROY&lt;/literal&gt; event is received, the
+       &lt;parameter&gt;evtInfo&lt;/parameter&gt; pointer should be cast to a
+       &lt;structname&gt;PGEventResultDestroy *&lt;/structname&gt;.  This event is fired
+       prior to &lt;xref linkend="libpq-PQclear"/&gt; performing any other cleanup.
+       The return value of the event procedure is ignored since there is no
+       way of indicating a failure from &lt;xref linkend="libpq-PQclear"/&gt;.  Also,
+       an event procedure failure should not abort the process of cleaning up
+       unwanted memory.
+</span>
+<code class="literal">PGEVT_RESULTDESTROY</code>が受け取られた時、<em class="parameter"><code>evtInfo</code></em>ポインタは<code class="structname">PGEventResultDestroy *</code>にキャストされなければなりません。
+このイベントは<a class="xref" href="libpq-exec.html#LIBPQ-PQCLEAR"><code class="function">PQclear</code></a>がその他の消去を行う以前に起動されなければなりません。
+イベントプロシージャの戻り値は、<a class="xref" href="libpq-exec.html#LIBPQ-PQCLEAR"><code class="function">PQclear</code></a>から失敗を示唆する方法がないので無視されます。
+同時に、イベントプロシージャの失敗が不要なメモリ消去処理を中止してはなりません。
+      </p></dd></dl></div></div><div class="sect2" id="LIBPQ-EVENTS-PROC"><div class="titlepage"><div><div><h3 class="title">34.14.2. イベントコールバックプロシージャ</h3></div></div></div><span class="original">
+   &lt;title&gt;Event Callback Procedure&lt;/title&gt;
+</span><div class="variablelist"><dl class="variablelist"><dt id="LIBPQ-PGEVENTPROC"><span class="term"><code class="literal">PGEventProc</code><a id="id-1.7.3.21.5.2.1.1.2" class="indexterm"></a></span></dt><dd><p>
+<span class="original">
+       &lt;literal&gt;PGEventProc&lt;/literal&gt; is a typedef for a pointer to an
+       event procedure, that is, the user callback function that receives
+       events from libpq.  The signature of an event procedure must be
+</span>
+<code class="literal">PGEventProc</code>はイベントプロシージャへのポインタに対するtypedefです。
+つまり、libpqからイベントを受け取るユーザコールバック関数です。
+イベントプロシージャのシグネチャは以下でなければなりません。
+
+</p><pre class="synopsis">
+int eventproc(PGEventId evtId, void *evtInfo, void *passThrough)
+</pre><p>
+
+<span class="original">
+       The &lt;parameter&gt;evtId&lt;/parameter&gt; parameter indicates which
+       &lt;literal&gt;PGEVT&lt;/literal&gt; event occurred.  The
+       &lt;parameter&gt;evtInfo&lt;/parameter&gt; pointer must be cast to the appropriate
+       structure type to obtain further information about the event.
+       The &lt;parameter&gt;passThrough&lt;/parameter&gt; parameter is the pointer
+       provided to &lt;xref linkend="libpq-PQregisterEventProc"/&gt; when the event
+       procedure was registered.  The function should return a non-zero value
+       if it succeeds and zero if it fails.
+</span>
+<em class="parameter"><code>evtId</code></em>パラメータはどの<code class="literal">PGEVT</code>イベントが発生したかを示します。
+<em class="parameter"><code>evtInfo</code></em>ポインタは、イベントに対する追加情報を入手するため適切な構造体型にキャストされなければなりません。
+<em class="parameter"><code>passThrough</code></em>パラメータは、イベントプロシージャが登録された時、<code class="function">PQregisterEventProc</code>に提供されるポインタです。
+関数は成功した場合非ゼロを、失敗した場合ゼロを返さなければなりません。
+      </p><p>
+<span class="original">
+       A particular event procedure can be registered only once in any
+       &lt;structname&gt;PGconn&lt;/structname&gt;.  This is because the address of the procedure
+       is used as a lookup key to identify the associated instance data.
+</span>
+特定のイベントプロシージャは任意の<code class="structname">PGconn</code>において一回だけ登録できます。
+これは、プロシージャのアドレスが関連するインスタンスデータを特定する検索キーとして用いられるからです。
+      </p><div class="caution"><h3 class="title">注意</h3><p>
+<span class="original">
+        On Windows, functions can have two different addresses: one visible
+        from outside a DLL and another visible from inside the DLL.  One
+        should be careful that only one of these addresses is used with
+        &lt;application&gt;libpq&lt;/application&gt;'s event-procedure functions, else confusion will
+        result.  The simplest rule for writing code that will work is to
+        ensure that event procedures are declared &lt;literal&gt;static&lt;/literal&gt;.  If the
+        procedure's address must be available outside its own source file,
+        expose a separate function to return the address.
+</span>
+Windowsにおいて、関数は２つの異なるアドレスを持つことができます。
+外部から可視のDLLと内部から可視のDLLです。
+<span class="application">libpq</span>のイベントプロシージャ関数ではこれらのアドレスのうちの１つだけが使用されることに注意してください。
+さもないと、混乱が起きます。
+正常に機能するコードを書く最も単純な規則は、イベントプロシージャが<code class="literal">static</code>として宣言されることを確実にすることです。
+もし、プロシージャのアドレスがそれ自身のファイルの外部から有効とならなければならない場合、アドレスを返すため別の関数を公開します。
+       </p></div></dd></dl></div></div><div class="sect2" id="LIBPQ-EVENTS-FUNCS"><div class="titlepage"><div><div><h3 class="title">34.14.3. イベントサポート関数</h3></div></div></div><span class="original">
+   &lt;title&gt;Event Support Functions&lt;/title&gt;
+</span><div class="variablelist"><dl class="variablelist"><dt id="LIBPQ-PQREGISTEREVENTPROC"><span class="term"><code class="function">PQregisterEventProc</code><a id="id-1.7.3.21.6.2.1.1.2" class="indexterm"></a></span></dt><dd><p>
+<span class="original">
+       Registers an event callback procedure with libpq.
+</span>
+libpqでイベントコールバックプロシージャを登録します。
+
+</p><pre class="synopsis">
+int PQregisterEventProc(PGconn *conn, PGEventProc proc,
+                        const char *name, void *passThrough);
+</pre><p>
+      </p><p>
+<span class="original">
+       An event procedure must be registered once on each
+       &lt;structname&gt;PGconn&lt;/structname&gt; you want to receive events about.  There is no
+       limit, other than memory, on the number of event procedures that
+       can be registered with a connection.  The function returns a non-zero
+       value if it succeeds and zero if it fails.
+</span>
+そのイベントを取得したいそれぞれの<code class="structname">PGconn</code>で１回イベントプロシージャは登録されなければなりません。
+一つの接続に登録できるイベントプロシージャの数には、メモリ以外の制限はありません。
+関数は成功した場合非ゼロ、失敗の場合ゼロを返します。
+      </p><p>
+<span class="original">
+       The &lt;parameter&gt;proc&lt;/parameter&gt; argument will be called when a libpq
+       event is fired.  Its memory address is also used to lookup
+       &lt;literal&gt;instanceData&lt;/literal&gt;.  The &lt;parameter&gt;name&lt;/parameter&gt;
+       argument is used to refer to the event procedure in error messages.
+       This value cannot be &lt;symbol&gt;NULL&lt;/symbol&gt; or a zero-length string.  The name string is
+       copied into the &lt;structname&gt;PGconn&lt;/structname&gt;, so what is passed need not be
+       long-lived.  The &lt;parameter&gt;passThrough&lt;/parameter&gt; pointer is passed
+       to the &lt;parameter&gt;proc&lt;/parameter&gt; whenever an event occurs. This
+       argument can be &lt;symbol&gt;NULL&lt;/symbol&gt;.
+</span>
+libpqイベントが発行されたとき<em class="parameter"><code>proc</code></em>引数が呼ばれます。
+そのメモリアドレスは<code class="literal">instanceData</code>を検索するのにも使用されます。
+<em class="parameter"><code>name</code></em>引数はエラーメッセージ内でイベントプロシージャを参照するために使用されます。
+この値は<code class="symbol">NULL</code>もしくは空文字列であってはなりません。
+このname文字列は<code class="structname">PGconn</code>にコピーされますので、渡されたものは長寿命である必要がありません。
+<em class="parameter"><code>passThrough</code></em>ポインタはイベントが発生した時はいつでも<em class="parameter"><code>proc</code></em>に渡されます。
+この引数は<code class="symbol">NULL</code>であっても構いません。
+      </p></dd><dt id="LIBPQ-PQSETINSTANCEDATA"><span class="term"><code class="function">PQsetInstanceData</code><a id="id-1.7.3.21.6.2.2.1.2" class="indexterm"></a></span></dt><dd><p>
+<span class="original">
+       Sets the connection &lt;parameter&gt;conn&lt;/parameter&gt;'s &lt;literal&gt;instanceData&lt;/literal&gt;
+       for procedure &lt;parameter&gt;proc&lt;/parameter&gt; to &lt;parameter&gt;data&lt;/parameter&gt;.  This
+       returns non-zero for success and zero for failure.  (Failure is
+       only possible if &lt;parameter&gt;proc&lt;/parameter&gt; has not been properly
+       registered in &lt;parameter&gt;conn&lt;/parameter&gt;.)
+</span>
+<em class="parameter"><code>proc</code></em>プロシージャに対する<em class="parameter"><code>conn</code></em>接続の<code class="literal">instanceData</code>を<em class="parameter"><code>data</code></em>に設定します。
+成功の場合非ゼロ、失敗の場合ゼロが返ります。
+（<em class="parameter"><code>conn</code></em>で<em class="parameter"><code>proc</code></em>が正しく登録されていない場合のみ失敗する可能性があります。）
+
+</p><pre class="synopsis">
+int PQsetInstanceData(PGconn *conn, PGEventProc proc, void *data);
+</pre><p>
+      </p></dd><dt id="LIBPQ-PQINSTANCEDATA"><span class="term"><code class="function">PQinstanceData</code><a id="id-1.7.3.21.6.2.3.1.2" class="indexterm"></a></span></dt><dd><p>
+<span class="original">
+       Returns the
+       connection &lt;parameter&gt;conn&lt;/parameter&gt;'s &lt;literal&gt;instanceData&lt;/literal&gt;
+       associated with procedure &lt;parameter&gt;proc&lt;/parameter&gt;,
+       or &lt;symbol&gt;NULL&lt;/symbol&gt; if there is none.
+</span>
+<em class="parameter"><code>proc</code></em>プロシージャに関連した<em class="parameter"><code>conn</code></em>接続の<code class="literal">instanceData</code>、または存在しなければ<code class="symbol">NULL</code>を返します。
+
+</p><pre class="synopsis">
+void *PQinstanceData(const PGconn *conn, PGEventProc proc);
+</pre><p>
+      </p></dd><dt id="LIBPQ-PQRESULTSETINSTANCEDATA"><span class="term"><code class="function">PQresultSetInstanceData</code><a id="id-1.7.3.21.6.2.4.1.2" class="indexterm"></a></span></dt><dd><p>
+<span class="original">
+       Sets the result's &lt;literal&gt;instanceData&lt;/literal&gt;
+       for &lt;parameter&gt;proc&lt;/parameter&gt; to &lt;parameter&gt;data&lt;/parameter&gt;.  This returns
+       non-zero for success and zero for failure.  (Failure is only
+       possible if &lt;parameter&gt;proc&lt;/parameter&gt; has not been properly registered
+       in the result.)
+</span>
+<em class="parameter"><code>proc</code></em>に対する結果の<code class="literal">instanceData</code>を<em class="parameter"><code>data</code></em>に設定します。
+成功の場合非ゼロ、失敗の場合ゼロが返ります。
+（結果で<em class="parameter"><code>proc</code></em>正しく登録されていない場合のみ失敗する可能性があります。）
+
+</p><pre class="synopsis">
+int PQresultSetInstanceData(PGresult *res, PGEventProc proc, void *data);
+</pre><p>
+      </p><p>
+<span class="original">
+       Beware that any storage represented by &lt;parameter&gt;data&lt;/parameter&gt;
+       will not be accounted for by &lt;xref linkend="libpq-PQresultMemorySize"/&gt;,
+       unless it is allocated using &lt;xref linkend="libpq-PQresultAlloc"/&gt;.
+       (Doing so is recommendable because it eliminates the need to free
+       such storage explicitly when the result is destroyed.)
+</span>
+<em class="parameter"><code>data</code></em>で示された領域は、<a class="xref" href="libpq-misc.html#LIBPQ-PQRESULTALLOC"><code class="function">PQresultAlloc</code></a>を使って割り当てたのでない限り、<a class="xref" href="libpq-misc.html#LIBPQ-PQRESULTMEMORYSIZE"><code class="function">PQresultMemorySize</code></a>では考慮されないことに注意してください。
+(結果を破棄する時に、領域を明示的に解放する必要がなくなりますので、<a class="xref" href="libpq-misc.html#LIBPQ-PQRESULTALLOC"><code class="function">PQresultAlloc</code></a>を使って割り当てるのがお勧めです。)
+      </p></dd><dt id="LIBPQ-PQRESULTINSTANCEDATA"><span class="term"><code class="function">PQresultInstanceData</code><a id="id-1.7.3.21.6.2.5.1.2" class="indexterm"></a></span></dt><dd><p>
+<span class="original">
+       Returns the result's &lt;literal&gt;instanceData&lt;/literal&gt; associated with &lt;parameter&gt;proc&lt;/parameter&gt;, or &lt;symbol&gt;NULL&lt;/symbol&gt;
+       if there is none.
+</span>
+<em class="parameter"><code>proc</code></em>に関連した結果の<code class="literal">instanceData</code>、または存在しなければ<code class="symbol">NULL</code>を返します。
+
+</p><pre class="synopsis">
+void *PQresultInstanceData(const PGresult *res, PGEventProc proc);
+</pre><p>
+      </p></dd></dl></div></div><div class="sect2" id="LIBPQ-EVENTS-EXAMPLE"><div class="titlepage"><div><div><h3 class="title">34.14.4. イベント事例</h3></div></div></div><span class="original">
+   &lt;title&gt;Event Example&lt;/title&gt;
+</span><p>
+<span class="original">
+    Here is a skeleton example of managing private data associated with
+    libpq connections and results.
+</span>
+以下にlibpq接続と結果に関連したプライベートデータを管理する例の大枠を示します。
+   </p><pre class="programlisting">
+
+<span class="original">
+/* required header for libpq events (note: includes libpq-fe.h) */
+</span>
+/* libpqイベントに必要なヘッダ（覚書：libpq-fe.hのインクルード) */
+#include &lt;libpq-events.h&gt;
+
+<span class="original">
+/* The instanceData */
+</span>
+/* instanceData */
+typedef struct
+{
+    int n;
+    char *str;
+} mydata;
+
+/* PGEventProc */
+static int myEventProc(PGEventId evtId, void *evtInfo, void *passThrough);
+
+int
+main(void)
+{
+    mydata *data;
+    PGresult *res;
+    PGconn *conn =
+        PQconnectdb("dbname=postgres options=-csearch_path=");
+
+    if (PQstatus(conn) != CONNECTION_OK)
+    {
+        /* PQerrorMessage's result includes a trailing newline */
+        fprintf(stderr, "%s", PQerrorMessage(conn));
+        PQfinish(conn);
+        return 1;
+    }
+
+<span class="original">
+    /* called once on any connection that should receive events.
+     * Sends a PGEVT_REGISTER to myEventProc.
+     */
+</span>
+    /* イベントを受け取るべきすべての接続で１回呼ばれる
+     * myEventProcにPGEVT_REGISTERを送る
+     */
+    if (!PQregisterEventProc(conn, myEventProc, "mydata_proc", NULL))
+    {
+        fprintf(stderr, "Cannot register PGEventProc\n");
+        PQfinish(conn);
+        return 1;
+    }
+
+<span class="original">
+    /* conn instanceData is available */
+</span>
+    /* conn instanceDataが有効 */
+    data = PQinstanceData(conn, myEventProc);
+
+<span class="original">
+    /* Sends a PGEVT_RESULTCREATE to myEventProc */
+</span>
+    /* myEventProcにPGEVT_RESULTCREATEを送る */
+    res = PQexec(conn, "SELECT 1 + 1");
+
+<span class="original">
+    /* result instanceData is available */
+</span>
+    /* 結果 instanceDataが有効 */
+    data = PQresultInstanceData(res, myEventProc);
+
+<span class="original">
+    /* If PG_COPYRES_EVENTS is used, sends a PGEVT_RESULTCOPY to myEventProc */
+</span>
+    /* PG_COPYRES_EVENTSが使われた場合、PGEVT_RESULTCOPYをmyEventProcに送る */
+    res_copy = PQcopyResult(res, PG_COPYRES_TUPLES | PG_COPYRES_EVENTS);
+
+<span class="original">
+    /* result instanceData is available if PG_COPYRES_EVENTS was
+     * used during the PQcopyResult call.
+     */
+</span>
+    /* PQcopyResult呼び出しの過程でPG_COPYRES_EVENTSが使用された場合、
+     * 結果 instanceDataが有効
+     */
+    data = PQresultInstanceData(res_copy, myEventProc);
+
+<span class="original">
+    /* Both clears send a PGEVT_RESULTDESTROY to myEventProc */
+</span>
+    /* 双方のclearがPGEVT_RESULTDESTROYをmyEventProcに送る */
+    PQclear(res);
+    PQclear(res_copy);
+
+<span class="original">
+    /* Sends a PGEVT_CONNDESTROY to myEventProc */
+</span>
+    /* PGEVT_CONNDESTROYをmyEventProcに送る */
+    PQfinish(conn);
+
+    return 0;
+}
+
+static int
+myEventProc(PGEventId evtId, void *evtInfo, void *passThrough)
+{
+    switch (evtId)
+    {
+        case PGEVT_REGISTER:
+        {
+            PGEventRegister *e = (PGEventRegister *)evtInfo;
+            mydata *data = get_mydata(e-&gt;conn);
+
+<span class="original">
+            /* associate app specific data with connection */
+</span>
+            /* アプリ特有のデータを接続に関連付ける */
+            PQsetInstanceData(e-&gt;conn, myEventProc, data);
+            break;
+        }
+
+        case PGEVT_CONNRESET:
+        {
+            PGEventConnReset *e = (PGEventConnReset *)evtInfo;
+            mydata *data = PQinstanceData(e-&gt;conn, myEventProc);
+
+            if (data)
+              memset(data, 0, sizeof(mydata));
+            break;
+        }
+
+        case PGEVT_CONNDESTROY:
+        {
+            PGEventConnDestroy *e = (PGEventConnDestroy *)evtInfo;
+            mydata *data = PQinstanceData(e-&gt;conn, myEventProc);
+
+<span class="original">
+            /* free instance data because the conn is being destroyed */
+</span>
+            /* connが破棄されたのでインスタンスデータを解放 */
+            if (data)
+              free_mydata(data);
+            break;
+        }
+
+        case PGEVT_RESULTCREATE:
+        {
+            PGEventResultCreate *e = (PGEventResultCreate *)evtInfo;
+            mydata *conn_data = PQinstanceData(e-&gt;conn, myEventProc);
+            mydata *res_data = dup_mydata(conn_data);
+
+<span class="original">
+            /* associate app specific data with result (copy it from conn) */
+</span>
+            /* アプリ特有のデータを結果と（connから複写して）関連付ける */
+            PQsetResultInstanceData(e-&gt;result, myEventProc, res_data);
+            break;
+        }
+
+        case PGEVT_RESULTCOPY:
+        {
+            PGEventResultCopy *e = (PGEventResultCopy *)evtInfo;
+            mydata *src_data = PQresultInstanceData(e-&gt;src, myEventProc);
+            mydata *dest_data = dup_mydata(src_data);
+
+<span class="original">
+            /* associate app specific data with result (copy it from a result) */
+</span>
+            /* アプリ特有のデータを結果と（結果から複写して）関連付ける */
+            PQsetResultInstanceData(e-&gt;dest, myEventProc, dest_data);
+            break;
+        }
+
+        case PGEVT_RESULTDESTROY:
+        {
+            PGEventResultDestroy *e = (PGEventResultDestroy *)evtInfo;
+            mydata *data = PQresultInstanceData(e-&gt;result, myEventProc);
+
+<span class="original">
+            /* free instance data because the result is being destroyed */
+</span>
+            /* 結果が破棄されたためインスタンスデータを解放 */
+            if (data)
+              free_mydata(data);
+            break;
+        }
+
+<span class="original">
+        /* unknown event ID, just return true. */
+</span>
+        /* 未知のイベント識別子。単にtrueを返す */
+        default:
+            break;
+    }
+
+<span class="original">
+    return true; /* event processing succeeded */
+</span>
+    return true; /* イベント処理成功 */
+}
+
+</pre></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="libpq-notice-processing.html" title="34.13. 警告処理">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="libpq.html" title="第34章 libpq — C ライブラリ">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="libpq-envars.html" title="34.15. 環境変数">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">34.13. 警告処理 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 34.15. 環境変数</td></tr></table></div></body></html>

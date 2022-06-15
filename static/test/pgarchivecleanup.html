@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>pg_archivecleanup</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="app-initdb.html" title="initdb" /><link rel="next" href="app-pgchecksums.html" title="pg_checksums" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="reference-server.html" title="PostgreSQLサーバアプリケーション">PostgreSQLサーバアプリケーション</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      pgarchivecleanup.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="app-initdb.html" title="initdb">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="reference-server.html" title="PostgreSQLサーバアプリケーション">上へ</a></td><td width="60%" align="center"><span class="application">pg_archivecleanup</span></td><td width="20%" align="right"> <a accesskey="n" href="app-pgchecksums.html" title="pg_checksums">次へ</a></td></tr></table><hr /></div><div class="refentry" id="PGARCHIVECLEANUP"><div class="titlepage"></div><a id="id-1.9.5.4.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle"><span class="application">pg_archivecleanup</span></span></h2><p>pg_archivecleanup<span class="original">
+  &lt;refpurpose&gt;clean up &lt;productname&gt;PostgreSQL&lt;/productname&gt; WAL archive files&lt;/refpurpose&gt;
+</span> — <span class="productname">PostgreSQL</span> WALアーカイブファイルを消去する</p></div><div class="refsynopsisdiv"><h2>概要</h2><div class="cmdsynopsis"><p id="id-1.9.5.4.4.1"><code class="command">pg_archivecleanup</code> [<em class="replaceable"><code>option</code></em>...]  <em class="replaceable"><code>archivelocation</code></em>   <em class="replaceable"><code>oldestkeptwalfile</code></em> </p></div></div><div class="refsect1" id="id-1.9.5.4.5"><h2>説明</h2><span class="original">
+  &lt;title&gt;Description&lt;/title&gt;
+</span><p>
+<span class="original">
+  &lt;application&gt;pg_archivecleanup&lt;/application&gt; is designed to be used as an
+  &lt;literal&gt;archive_cleanup_command&lt;/literal&gt; to clean up WAL file archives when
+  running as a standby server (see &lt;xref linkend="warm-standby"/&gt;).
+  &lt;application&gt;pg_archivecleanup&lt;/application&gt; can also be used as a standalone program to
+  clean WAL file archives.
+</span>
+<span class="application">pg_archivecleanup</span>は、スタンバイサーバとして動作している際のWALファイルのアーカイブを消去するための<code class="literal">archive_cleanup_command</code>として使用されるように設計されています（<a class="xref" href="warm-standby.html" title="27.2. ログシッピングスタンバイサーバ">27.2</a>参照）。
+同時に、<span class="application">pg_archivecleanup</span>はWALファイルのアーカイブを消去するためのスタンドアローンのプログラムとしても利用することができます。
+ </p><p>
+<span class="original">
+   To configure a standby
+   server to use &lt;application&gt;pg_archivecleanup&lt;/application&gt;, put this into its
+   &lt;filename&gt;postgresql.conf&lt;/filename&gt; configuration file:
+</span>
+<span class="application">pg_archivecleanup</span>を使うためにスタンバイサーバを設定するには、以下を<code class="filename">postgresql.conf</code>設定ファイルに記述します。
+</p><pre class="programlisting">
+archive_cleanup_command = 'pg_archivecleanup <em class="replaceable"><code>archivelocation</code></em> %r'
+</pre><p>
+<span class="original">
+   where &lt;replaceable&gt;archivelocation&lt;/replaceable&gt; is the directory from which WAL segment
+   files should be removed.
+</span>
+<em class="replaceable"><code>archivelocation</code></em>は、WALセグメントファイルを削除するディレクトリです。
+  </p><p>
+<span class="original">
+   When used within &lt;xref linkend="guc-archive-cleanup-command"/&gt;, all WAL files
+   logically preceding the value of the &lt;literal&gt;%r&lt;/literal&gt; argument will be removed
+   from &lt;replaceable&gt;archivelocation&lt;/replaceable&gt;. This minimizes the number of files
+   that need to be retained, while preserving crash-restart capability.  Use of
+   this parameter is appropriate if the &lt;replaceable&gt;archivelocation&lt;/replaceable&gt; is a
+   transient staging area for this particular standby server, but
+   &lt;emphasis&gt;not&lt;/emphasis&gt; when the &lt;replaceable&gt;archivelocation&lt;/replaceable&gt; is intended as a
+   long-term WAL archive area, or when multiple standby servers are recovering
+   from the same archive location.
+</span>
+<a class="xref" href="runtime-config-wal.html#GUC-ARCHIVE-CLEANUP-COMMAND">archive_cleanup_command</a>で使用される場合、論理的に<code class="literal">%r</code>より前のすべてのWALファイルは<em class="replaceable"><code>archivelocation</code></em>から削除されます。
+これによって、クラッシュ—リスタートの機能を維持するための、保持しなければならないファイル数を最小限にします。
+このパラメータの使用は、<em class="replaceable"><code>archivelocation</code></em>がスタンバイサーバにおいて短期的な保存場所となっている場合には適切ですが、<em class="replaceable"><code>archivelocation</code></em>を長期的なWALアーカイブ領域として使っている場合、または複数のスタンバイサーバが同一のアーカイブログの場所からリカバリしている場合には<span class="emphasis"><em>適切ではありません</em></span>。
+  </p><p>
+<span class="original">
+   When used as a standalone program all WAL files logically preceding the
+   &lt;replaceable&gt;oldestkeptwalfile&lt;/replaceable&gt; will be removed from &lt;replaceable&gt;archivelocation&lt;/replaceable&gt;.
+   In this mode, if you specify a &lt;filename&gt;.partial&lt;/filename&gt; or &lt;filename&gt;.backup&lt;/filename&gt;
+   file name, then only the file prefix will be used as the
+   &lt;replaceable&gt;oldestkeptwalfile&lt;/replaceable&gt;. This treatment of &lt;filename&gt;.backup&lt;/filename&gt;
+   file name allows you to remove
+   all WAL files archived prior to a specific base backup without error.
+   For example, the following example will remove all files older than
+   WAL file name &lt;filename&gt;000000010000003700000010&lt;/filename&gt;:
+</span>
+スタンドアローンプログラムとして使用される場合、<em class="replaceable"><code>oldestkeptwalfile</code></em>より論理的に前のWALファイルは、すべて<em class="replaceable"><code>archivelocation</code></em>から削除されます。
+このモードでは、<code class="filename">.partial</code>または<code class="filename">.backup</code>のファイル名が指定されると、そのプレフィックス部だけが<em class="replaceable"><code>oldestkeptwalfile</code></em>として使用されます。
+この<code class="filename">.backup</code>のファイル名の処置により、エラーを起こすことなく特定のベースバックアップより前のすべてのWALファイルを削除することを可能にします。
+以下の例は、<code class="filename">000000010000003700000010</code>より古いすべてのファイルを削除する実例です。
+</p><pre class="programlisting">
+pg_archivecleanup -d archive 000000010000003700000010.00000020.backup
+
+pg_archivecleanup:  keep WAL file "archive/000000010000003700000010" and later
+pg_archivecleanup:  removing file "archive/00000001000000370000000F"
+pg_archivecleanup:  removing file "archive/00000001000000370000000E"
+</pre><p>
+  </p><p>
+<span class="original">
+   &lt;application&gt;pg_archivecleanup&lt;/application&gt; assumes that
+   &lt;replaceable&gt;archivelocation&lt;/replaceable&gt; is a directory readable and writable by the
+   server-owning user.
+</span>
+<span class="application">pg_archivecleanup</span>は、<em class="replaceable"><code>archivelocation</code></em>がサーバを実行しているユーザによって読み書き可能なディレクトリであるものと仮定しています。
+  </p></div><div class="refsect1" id="id-1.9.5.4.6"><h2>オプション</h2><span class="original">
+  &lt;title&gt;Options&lt;/title&gt;
+</span><p>
+<span class="original">
+    &lt;application&gt;pg_archivecleanup&lt;/application&gt; accepts the following command-line arguments:
+</span>
+<span class="application">pg_archivecleanup</span>は、以下のコマンドライン引数を受け付けます。
+
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="option">-d</code></span></dt><dd><p>
+<span class="original">
+        Print lots of debug logging output on &lt;filename&gt;stderr&lt;/filename&gt;.
+</span>
+<code class="filename">stderr</code>に大量のデバッグログを出力します。
+       </p></dd><dt><span class="term"><code class="option">-n</code></span></dt><dd><p>
+<span class="original">
+        Print the names of the files that would have been removed on &lt;filename&gt;stdout&lt;/filename&gt; (performs a dry run).
+</span>
+削除されるファイルの名前を<code class="filename">stdout</code>に出力します(実際には削除しません).
+       </p></dd><dt><span class="term"><code class="option">-V</code><br /></span><span class="term"><code class="option">--version</code></span></dt><dd><p>
+<span class="original">
+        Print the &lt;application&gt;pg_archivecleanup&lt;/application&gt; version and exit.
+</span>
+<span class="application">pg_archivecleanup</span>のバージョンを表示して終了します。
+       </p></dd><dt><span class="term"><code class="option">-x</code> <em class="replaceable"><code>extension</code></em></span></dt><dd><p>
+<span class="original">
+        Provide an extension
+        that will be stripped from all file names before deciding if they
+        should be deleted.  This is typically useful for cleaning up archives
+        that have been compressed during storage, and therefore have had an
+        extension added by the compression program.  For example: &lt;literal&gt;-x
+        .gz&lt;/literal&gt;.
+</span>
+削除するファイルを決定する前にファイル名から取り除かれる拡張子を指定します。
+保存時に圧縮され、そのため圧縮プログラムにより拡張子を付けられたアーカイブを消去するのに特に役に立ちます。
+例: <code class="literal">-x.gz</code>
+       </p></dd><dt><span class="term"><code class="option">-?</code><br /></span><span class="term"><code class="option">--help</code></span></dt><dd><p>
+<span class="original">
+        Show help about &lt;application&gt;pg_archivecleanup&lt;/application&gt; command line
+        arguments, and exit.
+</span>
+<span class="application">pg_archivecleanup</span>のコマンドライン引数に関するヘルプを表示して終了します。
+       </p></dd></dl></div><p>
+   </p></div><div class="refsect1" id="id-1.9.5.4.7"><h2>環境</h2><span class="original">
+  &lt;title&gt;Environment&lt;/title&gt;
+</span><p>
+<span class="original">
+   The environment variable &lt;envar&gt;PG_COLOR&lt;/envar&gt; specifies whether to use
+   color in diagnostic messages. Possible values are
+   &lt;literal&gt;always&lt;/literal&gt;, &lt;literal&gt;auto&lt;/literal&gt; and
+   &lt;literal&gt;never&lt;/literal&gt;.
+</span>
+環境変数<code class="envar">PG_COLOR</code>は診断メッセージで色を使うかどうかを指定します。
+可能な値は<code class="literal">always</code>、<code class="literal">auto</code>、<code class="literal">never</code>です。
+  </p></div><div class="refsect1" id="id-1.9.5.4.8"><h2>注釈</h2><span class="original">
+  &lt;title&gt;Notes&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;application&gt;pg_archivecleanup&lt;/application&gt; is designed to work with
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; 8.0 and later when used as a standalone utility,
+   or with &lt;productname&gt;PostgreSQL&lt;/productname&gt; 9.0 and later when used as an
+   archive cleanup command.
+</span>
+<span class="application">pg_archivecleanup</span>は、<span class="productname">PostgreSQL</span> 8.0 とそれ以降において、スタンドアローンユーティリティとして動作するように設計されています。
+また、<span class="productname">PostgreSQL</span> 9.0 とそれ以降においてはアーカイブのクリーンナップコマンドとして動作するように設計されています。
+  </p><p>
+<span class="original">
+   &lt;application&gt;pg_archivecleanup&lt;/application&gt; is written in C and has an
+   easy-to-modify source code, with specifically designated sections to modify
+   for your own needs
+</span>
+<span class="application">pg_archivecleanup</span>はC言語で書かれており、必要に応じて修正すべき部分が明確に示されているので、修正の容易なソースコードとなっています。
+  </p></div><div class="refsect1" id="id-1.9.5.4.9"><h2>例</h2><span class="original">
+  &lt;title&gt;Examples&lt;/title&gt;
+</span><span class="original">
+  &lt;para&gt;On Linux or Unix systems, you might use:
+</span><p>LinuxやUnixのシステムでは、以下のように使います。
+</p><pre class="programlisting">
+archive_cleanup_command = 'pg_archivecleanup -d /mnt/standby/archive %r 2&gt;&gt;cleanup.log'
+</pre><p>
+<span class="original">
+   where the archive directory is physically located on the standby server,
+   so that the &lt;varname&gt;archive_command&lt;/varname&gt; is accessing it across NFS,
+   but the files are local to the standby.
+   This will:
+</span>
+アーカイブディレクトリは物理的にはスタンバイサーバ上に配置されていますので、<code class="varname">archive_command</code>はNFSを経由してアーカイブディレクトリにアクセスしますが、それらのファイルはスタンバイサーバにとってはローカルファイルです。
+この設定では、
+  </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+     produce debugging output in &lt;filename&gt;cleanup.log&lt;/filename&gt;
+</span>
+デバッグ出力を<code class="filename">cleanup.log</code>に生成します。
+    </p></li><li class="listitem"><p>
+<span class="original">
+     remove no-longer-needed files from the archive directory
+</span>
+アーカイブディレクトリの中から、不要になったファイルを削除します。
+    </p></li></ul></div></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="app-initdb.html" title="initdb">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="reference-server.html" title="PostgreSQLサーバアプリケーション">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="app-pgchecksums.html" title="pg_checksums">次へ</a></td></tr><tr><td width="40%" align="left" valign="top"><span xmlns="http://www.w3.org/1999/xhtml" class="application">initdb</span> </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> <span xmlns="http://www.w3.org/1999/xhtml" class="application">pg_checksums</span></td></tr></table></div></body></html>

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>15.1. パラレルクエリはどのように動くのか</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="parallel-query.html" title="第15章 パラレルクエリ" /><link rel="next" href="when-can-parallel-query-be-used.html" title="15.2. どのような時にパラレルクエリは使用できるのか？" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="parallel-query.html" title="第15章 パラレルクエリ">第15章 パラレルクエリ</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      how-parallel-query-works.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="parallel-query.html" title="第15章 パラレルクエリ">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="parallel-query.html" title="第15章 パラレルクエリ">上へ</a></td><td width="60%" align="center">15.1. パラレルクエリはどのように動くのか</td><td width="20%" align="right"> <a accesskey="n" href="when-can-parallel-query-be-used.html" title="15.2. どのような時にパラレルクエリは使用できるのか？">次へ</a></td></tr></table><hr /></div><div class="sect1" id="HOW-PARALLEL-QUERY-WORKS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">15.1. パラレルクエリはどのように動くのか</h2></div></div></div><span class="original">
+  &lt;title&gt;How Parallel Query Works&lt;/title&gt;
+</span><p>
+<span class="original">
+    When the optimizer determines that parallel query is the fastest execution
+    strategy for a particular query, it will create a query plan that includes
+    a &lt;firstterm&gt;Gather&lt;/firstterm&gt; or &lt;firstterm&gt;Gather Merge&lt;/firstterm&gt;
+    node.  Here is a simple example:
+</span>
+あるクエリの最速の実行戦略がパラレルクエリであるとオプティマイザが決定すると、<em class="firstterm">Gather</em>または<em class="firstterm">Gather Merge</em>ノードを含むクエリプランを作成します。
+単純な例を示します。
+
+</p><pre class="screen">
+EXPLAIN SELECT * FROM pgbench_accounts WHERE filler LIKE '%x%';
+                                     QUERY PLAN                                      
+-------------------------------------------------------------------​------------------
+ Gather  (cost=1000.00..217018.43 rows=1 width=97)
+   Workers Planned: 2
+   -&gt;  Parallel Seq Scan on pgbench_accounts  (cost=0.00..216018.33 rows=1 width=97)
+         Filter: (filler ~~ '%x%'::text)
+(4 rows)
+</pre><p>
+   </p><p>
+<span class="original">
+    In all cases, the &lt;literal&gt;Gather&lt;/literal&gt; or
+    &lt;literal&gt;Gather Merge&lt;/literal&gt; node will have exactly one
+    child plan, which is the portion of the plan that will be executed in
+    parallel.  If the &lt;literal&gt;Gather&lt;/literal&gt; or &lt;literal&gt;Gather Merge&lt;/literal&gt; node is
+    at the very top of the plan tree, then the entire query will execute in
+    parallel.  If it is somewhere else in the plan tree, then only the portion
+    of the plan below it will run in parallel.  In the example above, the
+    query accesses only one table, so there is only one plan node other than
+    the &lt;literal&gt;Gather&lt;/literal&gt; node itself; since that plan node is a child of the
+    &lt;literal&gt;Gather&lt;/literal&gt; node, it will run in parallel.
+</span>
+どの場合でも、<code class="literal">Gather</code>または<code class="literal">Gather Merge</code>ノードは、正確に一つの子ノードを持ちます。
+子プランは、プランの中で並列に実行される部分です。
+<code class="literal">Gather</code>または<code class="literal">Gather Merge</code>ノードがプランツリーの中で最上位にある場合は、クエリ全体が並列に実行されます。
+<code class="literal">Gather</code>または<code class="literal">Gather Merge</code>ノードがプランツリーの他の部分にある場合は、その部分だけが並列に実行されます。
+上の例では、クエリはただ一つのテーブルにアクセスするので、<code class="literal">Gather</code>ノード自身以外では、たった一つのプランノードだけが存在します。
+そのプランノードは<code class="literal">Gather</code>ノードの子ノードなので、並列に実行されます。
+   </p><p>
+<span class="original">
+    &lt;link linkend="using-explain"&gt;Using EXPLAIN&lt;/link&gt;, you can see the number of
+    workers chosen by the planner.  When the &lt;literal&gt;Gather&lt;/literal&gt; node is reached
+    during query execution, the process that is implementing the user's
+    session will request a number of &lt;link linkend="bgworker"&gt;background
+    worker processes&lt;/link&gt; equal to the number
+    of workers chosen by the planner.  The number of background workers that
+    the planner will consider using is limited to at most
+    &lt;xref linkend="guc-max-parallel-workers-per-gather"/&gt;.  The total number
+    of background workers that can exist at any one time is limited by both
+    &lt;xref linkend="guc-max-worker-processes"/&gt; and
+    &lt;xref linkend="guc-max-parallel-workers"/&gt;.  Therefore, it is possible for a
+    parallel query to run with fewer workers than planned, or even with
+    no workers at all.  The optimal plan may depend on the number of workers
+    that are available, so this can result in poor query performance.  If this
+    occurrence is frequent, consider increasing
+    &lt;varname&gt;max_worker_processes&lt;/varname&gt; and &lt;varname&gt;max_parallel_workers&lt;/varname&gt;
+    so that more workers can be run simultaneously or alternatively reducing
+    &lt;varname&gt;max_parallel_workers_per_gather&lt;/varname&gt; so that the planner
+    requests fewer workers.
+</span>
+<a class="link" href="using-explain.html" title="14.1. EXPLAINの利用">EXPLAINを使って</a>、プランナが選択したワーカーの数を見ることができます。
+クエリの実行中に<code class="literal">Gather</code>ノードに到達すると、ユーザのセッションに対応しているプロセスは、プランナが選択したワーカーと同じ数の<a class="link" href="bgworker.html" title="第48章 バックグラウンドワーカプロセス">バックグラウンドワーカープロセス</a>を要求します。
+プランナが使用を検討するバックグラウンドワーカーの数は、最大でも<a class="xref" href="runtime-config-resource.html#GUC-MAX-PARALLEL-WORKERS-PER-GATHER">max_parallel_workers_per_gather</a>に制限されます。
+ある時点で存在できるバックグラウンドワーカーの数は、<a class="xref" href="runtime-config-resource.html#GUC-MAX-WORKER-PROCESSES">max_worker_processes</a>と<a class="xref" href="runtime-config-resource.html#GUC-MAX-PARALLEL-WORKERS">max_parallel_workers</a>の両方を満たすように制限されます。
+ですから、あるパラレルクエリが、プラン時よりも少ない数のワーカープロセスによって実行されたり、まったくワーカープロセスなしに実行されることがあり得ます。
+最適なプランは利用可能なワーカーの数に依存することもあるので、これは低い性能をもたらす結果になるかもしれません。
+これがしばしば起こるようなら、<code class="varname">max_worker_processes</code>と<code class="varname">max_parallel_workers</code>を増やしてより多くのワーカーが同時に実行できるようにするか、 <code class="varname">max_parallel_workers_per_gather</code>を減らして、プランナがより少ない数のワーカーを要求するようにすることを考慮してください。
+   </p><p>
+<span class="original">
+    Every background worker process that is successfully started for a given
+    parallel query will execute the parallel portion of the plan.  The leader
+    will also execute that portion of the plan, but it has an additional
+    responsibility: it must also read all of the tuples generated by the
+    workers.  When the parallel portion of the plan generates only a small
+    number of tuples, the leader will often behave very much like an additional
+    worker, speeding up query execution.  Conversely, when the parallel portion
+    of the plan generates a large number of tuples, the leader may be almost
+    entirely occupied with reading the tuples generated by the workers and
+    performing any further processing steps that are required by plan nodes
+    above the level of the &lt;literal&gt;Gather&lt;/literal&gt; node or
+    &lt;literal&gt;Gather Merge&lt;/literal&gt; node.  In such cases, the leader will
+    do very little of the work of executing the parallel portion of the plan.
+</span>
+与えられたパラレルクエリから起動されたすべてのバックグラウンドワーカープロセスは、そのプランの一部を実行します。
+リーダーはそうしたプランの部分を実行するだけでなく、追加の任務が与えられます。
+つまり、ワーカーが生成したすべてのタプルを読み込まなければなりません。
+プラン中のパラレル部分が少数のタプルしか生成しない場合は、リーダーは追加のワーカーとほぼ同じように振る舞い、クエリの実行を高速化します。
+反対にプラン中のパラレル部分が大量のタプルを生成する場合は、リーダーはワーカーが生成したタプルの読み込みと、<code class="literal">Gather</code>ノードあるいは<code class="literal">Gather Merge</code>より上位のプランノードが要求する追加の処理ステップに忙殺されるかもしれません。
+そのような場合は、リーダーはプランの並列実行部分のごく一部しか処理しません。
+   </p><p>
+<span class="original">
+    When the node at the top of the parallel portion of the plan is
+    &lt;literal&gt;Gather Merge&lt;/literal&gt; rather than &lt;literal&gt;Gather&lt;/literal&gt;, it indicates that
+    each process executing the parallel portion of the plan is producing
+    tuples in sorted order, and that the leader is performing an
+    order-preserving merge.  In contrast, &lt;literal&gt;Gather&lt;/literal&gt; reads tuples
+    from the workers in whatever order is convenient, destroying any sort
+    order that may have existed.
+</span>
+プランの並列部分の最上位ノードが<code class="literal">Gather</code>ではなくて<code class="literal">Gather Merge</code>なら、プランの並列部分を実行する各プロセスはタプルをソート順に生成し、リーダーはソート順を保存するマージを実行していることを意味します。
+対照的に、<code class="literal">Gather</code>は、ワーカーから都合の良い順でタプルを読み込むので、ソート順が存在しているとしても、それを壊してしまいます。
+   </p></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="parallel-query.html" title="第15章 パラレルクエリ">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="parallel-query.html" title="第15章 パラレルクエリ">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="when-can-parallel-query-be-used.html" title="15.2. どのような時にパラレルクエリは使用できるのか？">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第15章 パラレルクエリ </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 15.2. どのような時にパラレルクエリは使用できるのか？</td></tr></table></div></body></html>

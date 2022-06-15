@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>40.1. イベントトリガ動作の概要</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="event-triggers.html" title="第40章 イベントトリガ" /><link rel="next" href="event-trigger-matrix.html" title="40.2. イベントトリガ起動マトリクス" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="event-triggers.html" title="第40章 イベントトリガ">第40章 イベントトリガ</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      event-trigger-definition.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="event-triggers.html" title="第40章 イベントトリガ">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="event-triggers.html" title="第40章 イベントトリガ">上へ</a></td><td width="60%" align="center">40.1. イベントトリガ動作の概要</td><td width="20%" align="right"> <a accesskey="n" href="event-trigger-matrix.html" title="40.2. イベントトリガ起動マトリクス">次へ</a></td></tr></table><hr /></div><div class="sect1" id="EVENT-TRIGGER-DEFINITION"><div class="titlepage"><div><div><h2 class="title" style="clear: both">40.1. イベントトリガ動作の概要</h2></div></div></div><span class="original">
+   &lt;title&gt;Overview of Event Trigger Behavior&lt;/title&gt;
+</span><p>
+<span class="original">
+     An event trigger fires whenever the event with which it is associated
+     occurs in the database in which it is defined. Currently, the only
+     supported events are
+     &lt;literal&gt;ddl_command_start&lt;/literal&gt;,
+     &lt;literal&gt;ddl_command_end&lt;/literal&gt;,
+     &lt;literal&gt;table_rewrite&lt;/literal&gt;
+     and &lt;literal&gt;sql_drop&lt;/literal&gt;.
+     Support for additional events may be added in future releases.
+</span>
+イベントトリガは、関連づけられたイベントが、定義されたデータベースで起こるたびに実行されます。
+現在の所サポートされているイベントは、<code class="literal">ddl_command_start</code>、<code class="literal">ddl_command_end</code>、<code class="literal">table_rewrite</code>、<code class="literal">sql_drop</code>です。
+今後のリリースで新たなイベントが追加されるかもしれません。
+   </p><p>
+<span class="original">
+     The &lt;literal&gt;ddl_command_start&lt;/literal&gt; event occurs just before the
+     execution of a &lt;literal&gt;CREATE&lt;/literal&gt;, &lt;literal&gt;ALTER&lt;/literal&gt;, &lt;literal&gt;DROP&lt;/literal&gt;,
+     &lt;literal&gt;SECURITY LABEL&lt;/literal&gt;,
+     &lt;literal&gt;COMMENT&lt;/literal&gt;, &lt;literal&gt;GRANT&lt;/literal&gt; or &lt;literal&gt;REVOKE&lt;/literal&gt;
+     command.  No check whether the affected object exists or doesn't exist is
+     performed before the event trigger fires.
+     As an exception, however, this event does not occur for
+     DDL commands targeting shared objects &amp;mdash; databases, roles, and tablespaces
+     &amp;mdash; or for commands targeting event triggers themselves.  The event trigger
+     mechanism does not support these object types.
+     &lt;literal&gt;ddl_command_start&lt;/literal&gt; also occurs just before the execution of a
+     &lt;literal&gt;SELECT INTO&lt;/literal&gt; command, since this is equivalent to
+     &lt;literal&gt;CREATE TABLE AS&lt;/literal&gt;.
+</span>
+<code class="literal">ddl_command_start</code>イベントは、<code class="literal">CREATE</code>、<code class="literal">ALTER</code>、<code class="literal">DROP</code>、<code class="literal">SECURITY LABEL</code>、<code class="literal">COMMENT</code>、<code class="literal">GRANT</code>、<code class="literal">REVOKE</code>コマンドの実行の直前に発生します。
+影響するオブジェクトが存在するかどうかのチェックはイベントトリガが実行されるまで行われません。
+しかしながら例外として、共有オブジェクト — データベース、ロール、テーブルスペース — を対象としているDDLコマンド、もしくは、イベントトリガ自体をターゲットにしたコマンドに対してのイベントは起こりません。
+<code class="literal">ddl_command_start</code>はまた、<code class="literal">SELECT INTO</code>コマンドの実行直前にも発生します。このコマンドは<code class="literal">CREATE TABLE AS</code>コマンドと同等だからです。
+   </p><p>
+<span class="original">
+    The &lt;literal&gt;ddl_command_end&lt;/literal&gt; event occurs just after the execution of
+    this same set of commands.  To obtain more details on the &lt;acronym&gt;DDL&lt;/acronym&gt;
+    operations that took place, use the set-returning function
+    &lt;literal&gt;pg_event_trigger_ddl_commands()&lt;/literal&gt; from the
+    &lt;literal&gt;ddl_command_end&lt;/literal&gt; event trigger code (see
+    &lt;xref linkend="functions-event-triggers"/&gt;).  Note that the trigger fires
+    after the actions have taken place (but before the transaction commits),
+    and thus the system catalogs can be read as already changed.
+</span>
+<code class="literal">ddl_command_end</code>イベントは、ddl_command_startイベントが対象とする同様のコマンドの実行後に発生します。
+発生した<acronym class="acronym">DDL</acronym>操作のより詳細を取得するには、<code class="literal">ddl_command_end</code>イベントトリガコード(<a class="xref" href="functions-event-triggers.html" title="9.29. イベントトリガ関数">9.29</a>を参照してください)で集合を返す関数<code class="literal">pg_event_trigger_ddl_commands()</code>を使ってください。
+トリガはアクションが起きた後(ただし、トランザクションのコミットの前)に起動し、システムカタログは既に変更されたものとして読まれることに注意してください。
+   </p><p>
+<span class="original">
+    The &lt;literal&gt;sql_drop&lt;/literal&gt; event occurs just before the
+    &lt;literal&gt;ddl_command_end&lt;/literal&gt; event trigger for any operation that drops
+    database objects.  To list the objects that have been dropped, use the
+    set-returning function &lt;literal&gt;pg_event_trigger_dropped_objects()&lt;/literal&gt; from the
+    &lt;literal&gt;sql_drop&lt;/literal&gt; event trigger code (see
+    &lt;xref linkend="functions-event-triggers"/&gt;). Note that
+    the trigger is executed after the objects have been deleted from the
+    system catalogs, so it's not possible to look them up anymore.
+</span>
+<code class="literal">sql_drop</code>イベントは、データベースオブジェクトを削除する命令に対する<code class="literal">ddl_command_end</code>イベントトリガの直前に発生します。
+削除されたオブジェクトを一覧として出力するために、<code class="literal">sql_drop</code>イベントトリガコード(<a class="xref" href="functions-event-triggers.html" title="9.29. イベントトリガ関数">9.29</a>を参照してください)から<code class="literal">pg_event_trigger_dropped_objects()</code>という集合を返す関数を使用します。
+トリガはオブジェクトがシステムカタログから削除された後に実行されるため、以後、そのオブジェクトを見ることができないことに注意してください。
+   </p><p>
+<span class="original">
+    The &lt;literal&gt;table_rewrite&lt;/literal&gt; event occurs just before a table is
+    rewritten by some actions of the commands &lt;literal&gt;ALTER TABLE&lt;/literal&gt; and
+    &lt;literal&gt;ALTER TYPE&lt;/literal&gt;.  While other
+    control statements are available to rewrite a table,
+    like &lt;literal&gt;CLUSTER&lt;/literal&gt; and &lt;literal&gt;VACUUM&lt;/literal&gt;,
+    the &lt;literal&gt;table_rewrite&lt;/literal&gt; event is not triggered by them.
+</span>
+コマンド<code class="literal">ALTER TABLE</code>や<code class="literal">ALTER TYPE</code>のアクションによりテーブルが書き換えられる直前に、<code class="literal">table_rewrite</code>イベントは発生します。
+<code class="literal">CLUSTER</code>や<code class="literal">VACUUM</code>のような他の制御文でもテーブルを書き換えられますが、それらでは<code class="literal">table_rewrite</code>イベントは引き起こされません。
+   </p><p>
+<span class="original">
+     Event triggers (like other functions) cannot be executed in an aborted
+     transaction.  Thus, if a DDL command fails with an error, any associated
+     &lt;literal&gt;ddl_command_end&lt;/literal&gt; triggers will not be executed.  Conversely,
+     if a &lt;literal&gt;ddl_command_start&lt;/literal&gt; trigger fails with an error, no
+     further event triggers will fire, and no attempt will be made to execute
+     the command itself.  Similarly, if a &lt;literal&gt;ddl_command_end&lt;/literal&gt; trigger
+     fails with an error, the effects of the DDL statement will be rolled
+     back, just as they would be in any other case where the containing
+     transaction aborts.
+</span>
+イベントトリガは（他の関数のように）中断したトランザクションでは実行されません。
+従って、DDLコマンドがエラーで失敗した場合、関連する<code class="literal">ddl_command_end</code>トリガは実行されません。
+逆に、もし<code class="literal">ddl_command_start</code>トリガがエラーで失敗した場合、他のイベントトリガは起動されず、コマンド自体も実行されません。
+同様に、もし<code class="literal">ddl_command_end</code>トリガがエラーで失敗した場合、それを含むトランザクションが失敗した場合のようにDDL文はロールバックされます。
+   </p><p>
+<span class="original">
+     For a complete list of commands supported by the event trigger mechanism,
+     see &lt;xref linkend="event-trigger-matrix"/&gt;.
+</span>
+イベントトリガでサポートされているコマンドの一覧は、<a class="xref" href="event-trigger-matrix.html" title="40.2. イベントトリガ起動マトリクス">40.2</a>を参照してください。
+   </p><p>
+<span class="original">
+     Event triggers are created using the command &lt;xref linkend="sql-createeventtrigger"/&gt;.
+     In order to create an event trigger, you must first create a function with
+     the special return type &lt;literal&gt;event_trigger&lt;/literal&gt;.  This function
+     need not (and may not) return a value; the return type serves merely as
+     a signal that the function is to be invoked as an event trigger.
+</span>
+イベントトリガは、コマンド<a class="xref" href="sql-createeventtrigger.html" title="CREATE EVENT TRIGGER"><span class="refentrytitle">CREATE EVENT TRIGGER</span></a>を使用して作成されます。
+イベントトリガを作成するために、まず特別な型<code class="literal">event_trigger</code>を返す関数を作る必要があります。
+この関数は値を返す必要はありません。というのも、その戻り値型は単にシグナルとして、その関数がイベントトリガを呼び出していることを示しているだけだからです。
+   </p><p>
+<span class="original">
+     If more than one event trigger is defined for a particular event, they will
+     fire in alphabetical order by trigger name.
+</span>
+特定のイベントに対して複数のイベントトリガが定義された場合、トリガ名のアルファベット順で起動されます。
+   </p><p>
+<span class="original">
+     A trigger definition can also specify a &lt;literal&gt;WHEN&lt;/literal&gt;
+     condition so that, for example, a &lt;literal&gt;ddl_command_start&lt;/literal&gt;
+     trigger can be fired only for particular commands which the user wishes
+     to intercept. A common use of such triggers is to restrict the range of
+     DDL operations which users may perform.
+</span>
+トリガ定義は<code class="literal">WHEN</code>条件で特定されます。そのため、例えば<code class="literal">ddl_command_start</code>トリガはユーザが望む特定のコマンドのみを契機に実行させることができます。
+このようなトリガの一般的な使い方として、ユーザが実行するかもしれないDDL文の範囲を狭めることができます。
+   </p></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="event-triggers.html" title="第40章 イベントトリガ">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="event-triggers.html" title="第40章 イベントトリガ">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="event-trigger-matrix.html" title="40.2. イベントトリガ起動マトリクス">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第40章 イベントトリガ </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 40.2. イベントトリガ起動マトリクス</td></tr></table></div></body></html>

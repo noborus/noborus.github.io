@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>60.1. 複雑な最適化問題としての問い合わせ処理</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="geqo.html" title="第60章 遺伝的問い合わせ最適化" /><link rel="next" href="geqo-intro2.html" title="60.2. 遺伝的アルゴリズム" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="geqo.html" title="第60章 遺伝的問い合わせ最適化">第60章 遺伝的問い合わせ最適化</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      geqo-intro.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="geqo.html" title="第60章 遺伝的問い合わせ最適化">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="geqo.html" title="第60章 遺伝的問い合わせ最適化">上へ</a></td><td width="60%" align="center">60.1. 複雑な最適化問題としての問い合わせ処理</td><td width="20%" align="right"> <a accesskey="n" href="geqo-intro2.html" title="60.2. 遺伝的アルゴリズム">次へ</a></td></tr></table><hr /></div><div class="sect1" id="GEQO-INTRO"><div class="titlepage"><div><div><h2 class="title" style="clear: both">60.1. 複雑な最適化問題としての問い合わせ処理</h2></div></div></div><span class="original">
+   &lt;title&gt;Query Handling as a Complex Optimization Problem&lt;/title&gt;
+</span><p>
+<span class="original">
+    Among all relational operators the most difficult one to process
+    and optimize is the &lt;firstterm&gt;join&lt;/firstterm&gt;. The number of
+    possible query plans grows exponentially with the
+    number of joins in the query. Further optimization effort is
+    caused by the support of a variety of &lt;firstterm&gt;join
+    methods&lt;/firstterm&gt; (e.g., nested loop, hash join, merge join in
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt;) to process individual joins
+    and a diversity of &lt;firstterm&gt;indexes&lt;/firstterm&gt; (e.g.,
+    B-tree, hash, GiST and GIN in &lt;productname&gt;PostgreSQL&lt;/productname&gt;) as
+    access paths for relations.
+</span>
+リレーショナル演算子の中で、処理と最適化が一番難しいのは<em class="firstterm">結合</em>です。
+実行可能な問い合わせ計画の数は問い合わせの中に含まれる結合の数によって指数関数的に増加します。
+個々の結合や、多様な<em class="firstterm">インデックス</em>（例えば<span class="productname">PostgreSQL</span>のB-tree、ハッシュ、GiST、GINなど）をリレーションのアクセスパスとして処理するため、様々な<em class="firstterm">結合メソッド</em>（例えば<span class="productname">PostgreSQL</span>のネステッドループ、ハッシュ結合、マージ結合など）を提供することが、さらなる最適化を行わなければならない腐心の原因となっています。
+   </p><p>
+<span class="original">
+    The normal &lt;productname&gt;PostgreSQL&lt;/productname&gt; query optimizer
+    performs a &lt;firstterm&gt;near-exhaustive search&lt;/firstterm&gt; over the
+    space of alternative strategies. This algorithm, first introduced
+    in IBM's System R database, produces a near-optimal join order,
+    but can take an enormous amount of time and memory space when the
+    number of joins in the query grows large. This makes the ordinary
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; query optimizer
+    inappropriate for queries that join a large number of tables.
+</span>
+通常の<span class="productname">PostgreSQL</span>問い合わせオプティマイザは、候補ストラテジ空間にわたって<em class="firstterm">しらみつぶしに近い検索</em>を行います。
+IBMのSystem Rデータベースで初めて導入された、このアルゴリズムはほぼ最適な結合順を生成しますが、問い合わせ内の結合数が増えると膨大な処理時間とメモリ空間を必要とします。
+このため、通常の<span class="productname">PostgreSQL</span>問い合わせオプティマイザは結合するテーブル数の多い問い合わせには向いていません。
+   </p><p>
+<span class="original">
+    The Institute of Automatic Control at the University of Mining and
+    Technology, in Freiberg, Germany, encountered some problems when
+    it wanted to use &lt;productname&gt;PostgreSQL&lt;/productname&gt; as the
+    backend for a decision support knowledge based system for the
+    maintenance of an electrical power grid. The DBMS needed to handle
+    large join queries for the inference machine of the knowledge
+    based system. The number of joins in these queries made using the
+    normal query optimizer infeasible.
+</span>
+ドイツ、フライブルグにあるUniversity of Mining and TechnologyのInstitute of Automatic Controlでは、送電網の保守のための意志決定知識ベースシステムのためのバックエンドとして<span class="productname">PostgreSQL</span> DBMSを使おうとしたため問題が起こりました。
+そのDBMSは知識ベースシステムの推論マシンのために、大規模な結合の問い合わせを処理する必要があったのです。
+こうした問い合わせに含まれる結合数を行うことは、通常の問い合わせオプティマイザでは実現不可能でした。
+   </p><p>
+<span class="original">
+    In the following we describe the implementation of a
+    &lt;firstterm&gt;genetic algorithm&lt;/firstterm&gt; to solve the join
+    ordering problem in a manner that is efficient for queries
+    involving large numbers of joins.
+</span>
+以下では、多数の結合を持つ問い合わせを効率的に行うことができるように、結合順問題を解決する<em class="firstterm">遺伝的アルゴリズム</em>の実装を説明します。
+   </p></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="geqo.html" title="第60章 遺伝的問い合わせ最適化">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="geqo.html" title="第60章 遺伝的問い合わせ最適化">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="geqo-intro2.html" title="60.2. 遺伝的アルゴリズム">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第60章 遺伝的問い合わせ最適化 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 60.2. 遺伝的アルゴリズム</td></tr></table></div></body></html>

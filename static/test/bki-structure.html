@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>71.5. BKIファイルのブートストラップの構成</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="bki-commands.html" title="71.4. BKIコマンド" /><link rel="next" href="bki-example.html" title="71.6. BKIの例" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="bki.html" title="第71章 システムカタログの宣言と初期内容">第71章 システムカタログの宣言と初期内容</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      bki-structure.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="bki-commands.html" title="71.4. BKIコマンド">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="bki.html" title="第71章 システムカタログの宣言と初期内容">上へ</a></td><td width="60%" align="center">71.5. <acronym class="acronym">BKI</acronym>ファイルのブートストラップの構成</td><td width="20%" align="right"> <a accesskey="n" href="bki-example.html" title="71.6. BKIの例">次へ</a></td></tr></table><hr /></div><div class="sect1" id="BKI-STRUCTURE"><div class="titlepage"><div><div><h2 class="title" style="clear: both">71.5. <acronym class="acronym">BKI</acronym>ファイルのブートストラップの構成</h2></div></div></div><span class="original">
+  &lt;title&gt;Structure of the Bootstrap &lt;acronym&gt;BKI&lt;/acronym&gt; File&lt;/title&gt;
+</span><p>
+<span class="original">
+   The &lt;literal&gt;open&lt;/literal&gt; command cannot be used until the tables it uses
+   exist and have entries for the table that is to be opened.
+   (These minimum tables are &lt;structname&gt;pg_class&lt;/structname&gt;,
+   &lt;structname&gt;pg_attribute&lt;/structname&gt;, &lt;structname&gt;pg_proc&lt;/structname&gt;, and
+   &lt;structname&gt;pg_type&lt;/structname&gt;.)   To allow those tables themselves to be filled,
+   &lt;literal&gt;create&lt;/literal&gt; with the &lt;literal&gt;bootstrap&lt;/literal&gt; option implicitly opens
+   the created table for data insertion.
+</span>
+<code class="literal">open</code>コマンドは、テーブルが、使用するテーブルが存在し、開かれるテーブルに対しエントリを所有するまで使用できません。（これら最小限度のテーブルは、<code class="structname">pg_class</code>、<code class="structname">pg_attribute</code>、<code class="structname">pg_proc</code>、および<code class="structname">pg_type</code>です。）これらのテーブル自体が充填されるようにするには、<code class="literal">bootstrap</code>オプションを伴った<code class="literal">create</code>が明示的にデータの挿入のために作成されたテーブルを開きます。
+  </p><p>
+<span class="original">
+   Also, the &lt;literal&gt;declare index&lt;/literal&gt; and &lt;literal&gt;declare toast&lt;/literal&gt;
+   commands cannot be used until the system catalogs they need have been
+   created and filled in.
+</span>
+また、必要とするシステムカタログが作成され、値が設定されるまで、<code class="literal">declare index</code>および<code class="literal">declare toast</code>コマンドは使用できません。
+  </p><p>
+<span class="original">
+   Thus, the structure of the &lt;filename&gt;postgres.bki&lt;/filename&gt; file has to
+   be:
+</span>
+従い、<code class="filename">postgres.bki</code>の構造は以下でなければなりません。
+   </p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p>
+<span class="original">
+      &lt;literal&gt;create bootstrap&lt;/literal&gt; one of the critical tables
+</span>
+      1つの重要なテーブルを<code class="literal">create bootstrap</code>
+     </p></li><li class="listitem"><p>
+<span class="original">
+      &lt;literal&gt;insert&lt;/literal&gt; data describing at least the critical tables
+</span>
+      少なくとも重要なテーブルを記述するデータを<code class="literal">insert</code>
+     </p></li><li class="listitem"><p>
+      <code class="literal">close</code>
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Repeat for the other critical tables.
+</span>
+      その他の重要テーブルに対して反復。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      &lt;literal&gt;create&lt;/literal&gt; (without &lt;literal&gt;bootstrap&lt;/literal&gt;) a noncritical table
+</span>
+      重要でないテーブルを（<code class="literal">bootstrap</code>無しで）<code class="literal">create</code>
+     </p></li><li class="listitem"><p>
+      <code class="literal">open</code>
+     </p></li><li class="listitem"><p>
+<span class="original">
+      &lt;literal&gt;insert&lt;/literal&gt; desired data
+</span>
+      求められるデータの<code class="literal">insert</code>
+     </p></li><li class="listitem"><p>
+      <code class="literal">close</code>
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Repeat for the other noncritical tables.
+</span>
+     その他の重要でないテーブルに対して反復。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Define indexes and toast tables.
+</span>
+      インデックスおよびTOASTテーブルの定義。
+     </p></li><li class="listitem"><p>
+      <code class="literal">build indices</code>
+     </p></li></ol></div><p>
+  </p><p>
+<span class="original">
+   There are doubtless other, undocumented ordering dependencies.
+</span>
+他にも確かに、ドキュメント化されていない順序に関する依存性があります。
+  </p></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="bki-commands.html" title="71.4. BKIコマンド">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="bki.html" title="第71章 システムカタログの宣言と初期内容">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="bki-example.html" title="71.6. BKIの例">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">71.4. <acronym xmlns="http://www.w3.org/1999/xhtml" class="acronym">BKI</acronym>コマンド </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 71.6. BKIの例</td></tr></table></div></body></html>

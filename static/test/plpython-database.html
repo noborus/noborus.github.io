@@ -1,0 +1,377 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>46.7. データベースアクセス</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="plpython-trigger.html" title="46.6. トリガ関数" /><link rel="next" href="plpython-subtransaction.html" title="46.8. 明示的サブトランザクション" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="plpython.html" title="第46章 PL/Python — Python手続き言語">第46章 PL/Python — Python手続き言語</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      plpython-database.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="plpython-trigger.html" title="46.6. トリガ関数">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="plpython.html" title="第46章 PL/Python — Python手続き言語">上へ</a></td><td width="60%" align="center">46.7. データベースアクセス</td><td width="20%" align="right"> <a accesskey="n" href="plpython-subtransaction.html" title="46.8. 明示的サブトランザクション">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PLPYTHON-DATABASE"><div class="titlepage"><div><div><h2 class="title" style="clear: both">46.7. データベースアクセス</h2></div></div></div><span class="original">
+  &lt;title&gt;Database Access&lt;/title&gt;
+</span><p>
+<span class="original">
+   The PL/Python language module automatically imports a Python module
+   called &lt;literal&gt;plpy&lt;/literal&gt;.  The functions and constants in
+   this module are available to you in the Python code as
+   &lt;literal&gt;plpy.&lt;replaceable&gt;foo&lt;/replaceable&gt;&lt;/literal&gt;.
+</span>
+PL/Python言語モジュールは自動的に<code class="literal">plpy</code>というPythonモジュールをインポートします。
+このモジュールの関数と定数は、<code class="literal">plpy.<em class="replaceable"><code>foo</code></em></code>のように作成したPythonコードから使用することができます。
+  </p><div class="sect2" id="id-1.8.11.15.3"><div class="titlepage"><div><div><h3 class="title">46.7.1. データベースアクセス関数</h3></div></div></div><span class="original">
+    &lt;title&gt;Database Access Functions&lt;/title&gt;
+</span><p>
+<span class="original">
+   The &lt;literal&gt;plpy&lt;/literal&gt; module provides several functions to execute
+   database commands:
+</span>
+<code class="literal">plpy</code>モジュールはデータベースコマンドを実行するために数個の関数を用意しています。
+  </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">plpy.<code class="function">execute</code>(<em class="replaceable"><code>query</code></em> [, <em class="replaceable"><code>max-rows</code></em>])</code></span></dt><dd><p>
+<span class="original">
+      Calling &lt;function&gt;plpy.execute&lt;/function&gt; with a query string and an
+      optional row limit argument causes that query to be run and the result to
+      be returned in a result object.
+</span>
+<code class="function">plpy.execute</code>を、問い合わせ文字列および省略可能な行数制限引数を付けて呼び出すと、問い合わせが実行され、結果オブジェクトとして問い合わせ結果が返ります。
+     </p><p>
+<span class="original">
+      The result object emulates a list or dictionary object.  The result
+      object can be accessed by row number and column name.  For example:
+</span>
+結果オブジェクトはリストもしくは辞書オブジェクトをエミュレートします。
+結果オブジェクトは、行番号や列名によってアクセスすることができます。
+例を示します。
+</p><pre class="programlisting">
+rv = plpy.execute("SELECT * FROM my_table", 5)
+</pre><p>
+<span class="original">
+      returns up to 5 rows from &lt;literal&gt;my_table&lt;/literal&gt;.  If
+      &lt;literal&gt;my_table&lt;/literal&gt; has a column
+      &lt;literal&gt;my_column&lt;/literal&gt;, it would be accessed as:
+</span>
+これは、<code class="literal">my_table</code>から5行までを返します。
+<code class="literal">my_table</code>に<code class="literal">my_column</code>列が存在する場合、その列には以下のようにアクセスできます。
+</p><pre class="programlisting">
+foo = rv[i]["my_column"]
+</pre><p>
+<span class="original">
+      The number of rows returned can be obtained using the built-in
+      &lt;function&gt;len&lt;/function&gt; function.
+</span>
+戻った行数はビルトイン<code class="function">len</code>関数を使用して取得できます。
+     </p><p>
+<span class="original">
+      The result object has these additional methods:
+</span>
+結果オブジェクトには以下のメソッドが追加されています。
+      </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal"><code class="function">nrows</code>()</code></span></dt><dd><p>
+<span class="original">
+          Returns the number of rows processed by the command.  Note that this
+          is not necessarily the same as the number of rows returned.  For
+          example, an &lt;command&gt;UPDATE&lt;/command&gt; command will set this value but
+          won't return any rows (unless &lt;literal&gt;RETURNING&lt;/literal&gt; is used).
+</span>
+コマンドによる処理の行数を返します。
+戻った行数と同じとは限らないことに注意してください。
+例えば、<code class="command">UPDATE</code>コマンドではゼロでない値を返しますが、行を戻すことはありません（<code class="literal">RETURNING</code>を使用したときは別です）。
+         </p></dd><dt><span class="term"><code class="literal"><code class="function">status</code>()</code></span></dt><dd><p>
+<span class="original">
+          The &lt;function&gt;SPI_execute()&lt;/function&gt; return value.
+</span>
+<code class="function">SPI_execute()</code>関数の戻り値を返します。
+         </p></dd><dt><span class="term"><code class="literal"><code class="function">colnames</code>()</code><br /></span><span class="term"><code class="literal"><code class="function">coltypes</code>()</code><br /></span><span class="term"><code class="literal"><code class="function">coltypmods</code>()</code></span></dt><dd><p>
+<span class="original">
+          Return a list of column names, list of column type OIDs, and list of
+          type-specific type modifiers for the columns, respectively.
+</span>
+各々、列名のリスト、列の型OIDのリスト、列に関する型独自の型修飾子のリストを返します。
+         </p><p>
+<span class="original">
+          These methods raise an exception when called on a result object from
+          a command that did not produce a result set, e.g.,
+          &lt;command&gt;UPDATE&lt;/command&gt; without &lt;literal&gt;RETURNING&lt;/literal&gt;, or
+          &lt;command&gt;DROP TABLE&lt;/command&gt;.  But it is OK to use these methods on
+          a result set containing zero rows.
+</span>
+<code class="literal">RETURNING</code>を持たない<code class="command">UPDATE</code>や<code class="command">DROP TABLE</code>など、結果セットを生成しないコマンドによる結果オブジェクトに対して呼び出された場合、これらのメソッドは例外を発生します。
+しかし、ゼロ行の結果セットに対してこれらのメソッドを使用することには問題ありません。
+         </p></dd><dt><span class="term"><code class="literal"><code class="function">__str__</code>()</code></span></dt><dd><p>
+<span class="original">
+          The standard &lt;literal&gt;__str__&lt;/literal&gt; method is defined so that it
+          is possible for example to debug query execution results
+          using &lt;literal&gt;plpy.debug(rv)&lt;/literal&gt;.
+</span>
+標準の<code class="literal">__str__</code>メソッドが定義されていますので、例えば問い合わせの実行結果を<code class="literal">plpy.debug(rv)</code>を使ってデバッグできます。
+         </p></dd></dl></div><p>
+     </p><p>
+<span class="original">
+      The result object can be modified.
+</span>
+結果オブジェクトは変更できます。
+     </p><p>
+<span class="original">
+      Note that calling &lt;literal&gt;plpy.execute&lt;/literal&gt; will cause the entire
+      result set to be read into memory.  Only use that function when you are
+      sure that the result set will be relatively small.  If you don't want to
+      risk excessive memory usage when fetching large results,
+      use &lt;literal&gt;plpy.cursor&lt;/literal&gt; rather
+      than &lt;literal&gt;plpy.execute&lt;/literal&gt;.
+</span>
+<code class="literal">plpy.execute</code>を呼び出すことにより、結果セット全体がメモリ内に読み込まれることに注意してください。
+結果セットが比較的小さいことが確実な場合だけ、この関数を使用してください。
+大規模な結果を取り込む場合の過度のメモリ使用に関する危険を回避したい場合は、<code class="literal">plpy.execute</code>ではなく<code class="literal">plpy.cursor</code>を使用してください。
+     </p></dd><dt><span class="term"><code class="literal">plpy.<code class="function">prepare</code>(<em class="replaceable"><code>query</code></em> [, <em class="replaceable"><code>argtypes</code></em>])</code><br /></span><span class="term"><code class="literal">plpy.<code class="function">execute</code>(<em class="replaceable"><code>plan</code></em> [, <em class="replaceable"><code>arguments</code></em> [, <em class="replaceable"><code>max-rows</code></em>]])</code></span></dt><dd><p>
+<span class="original">
+      &lt;indexterm&gt;&lt;primary&gt;preparing a query&lt;/primary&gt;&lt;secondary&gt;in PL/Python&lt;/secondary&gt;&lt;/indexterm&gt;
+      &lt;function&gt;plpy.prepare&lt;/function&gt; prepares the execution plan for a
+      query.  It is called with a query string and a list of parameter types,
+      if you have parameter references in the query.  For example:
+</span>
+<a id="id-1.8.11.15.3.3.2.3.1.1" class="indexterm"></a>
+<code class="function">plpy.prepare</code>は問い合わせの実行計画を準備します。
+問い合わせ内にパラメータ参照がある場合、問い合わせ文字列および引数型のリストとともに呼び出されます。
+例を示します。
+</p><pre class="programlisting">
+plan = plpy.prepare("SELECT last_name FROM my_users WHERE first_name = $1", ["text"])
+</pre><p>
+<span class="original">
+      &lt;literal&gt;text&lt;/literal&gt; is the type of the variable you will be passing
+      for &lt;literal&gt;$1&lt;/literal&gt;.  The second argument is optional if you don't
+      want to pass any parameters to the query.
+</span>
+<code class="literal">text</code>は<code class="literal">$1</code>として渡される変数の型です。
+問い合わせにパラメータを渡さない場合、2番目の引数は省略可能です。
+     </p><p>
+<span class="original">
+      After preparing a statement, you use a variant of the
+      function &lt;function&gt;plpy.execute&lt;/function&gt; to run it:
+</span>
+文を準備した後、それを実行するために関数<code class="function">plpy.execute</code>の亜種を使用します。
+</p><pre class="programlisting">
+rv = plpy.execute(plan, ["name"], 5)
+</pre><p>
+<span class="original">
+      Pass the plan as the first argument (instead of the query string), and a
+      list of values to substitute into the query as the second argument.  The
+      second argument is optional if the query does not expect any parameters.
+      The third argument is the optional row limit as before.
+</span>
+実行計画を（問い合わせ文字列ではなく）最初の引数として渡してください。
+問い合わせに代入する値のリストを、2番目の引数として渡してください。
+問い合わせにパラメータがない場合、2番目の引数は省略可能です。
+3番目の引数は、前に述べた省略可能な行数制限引数です。
+     </p><p>
+<span class="original">
+      Alternatively, you can call the &lt;function&gt;execute&lt;/function&gt; method on
+      the plan object:
+</span>
+代わりに、計画オブジェクトの<code class="function">execute</code>メソッドを呼び出すことができます。
+</p><pre class="programlisting">
+rv = plan.execute(["name"], 5)
+</pre><p>
+     </p><p>
+<span class="original">
+      Query parameters and result row fields are converted between PostgreSQL
+      and Python data types as described in &lt;xref linkend="plpython-data"/&gt;.
+</span>
+問い合わせパラメータおよび結果行のフィールドは<a class="xref" href="plpython-data.html" title="46.3. データ値">46.3</a>で示した通り、PostgreSQLとPythonのデータ型の間で変換されます。
+     </p><p>
+<span class="original">
+      When you prepare a plan using the PL/Python module it is automatically
+      saved.  Read the SPI documentation (&lt;xref linkend="spi"/&gt;) for a
+      description of what this means.  In order to make effective use of this
+      across function calls one needs to use one of the persistent storage
+      dictionaries &lt;literal&gt;SD&lt;/literal&gt; or &lt;literal&gt;GD&lt;/literal&gt; (see
+      &lt;xref linkend="plpython-sharing"/&gt;). For example:
+</span>
+PL/Pythonモジュールを使用して準備した計画は自動的に保存されます。
+これが何を意味するのかについてはSPIの文書（<a class="xref" href="spi.html" title="第47章 サーバプログラミングインタフェース">第47章</a>）を参照してください。
+これを複数呼び出しにおいて効果的に使用するためには、永続的な格納用辞書である<code class="literal">SD</code>または<code class="literal">GD</code>（<a class="xref" href="plpython-sharing.html" title="46.4. データの共有">46.4</a>を参照）のいずれかを使用する必要があります。
+例を示します。
+</p><pre class="programlisting">
+CREATE FUNCTION usesavedplan() RETURNS trigger AS $$
+    if "plan" in SD:
+        plan = SD["plan"]
+    else:
+        plan = plpy.prepare("SELECT 1")
+        SD["plan"] = plan
+    # rest of function
+$$ LANGUAGE plpythonu;
+</pre><p>
+     </p></dd><dt><span class="term"><code class="literal">plpy.<code class="function">cursor</code>(<em class="replaceable"><code>query</code></em>)</code><br /></span><span class="term"><code class="literal">plpy.<code class="function">cursor</code>(<em class="replaceable"><code>plan</code></em> [, <em class="replaceable"><code>arguments</code></em>])</code></span></dt><dd><p>
+<span class="original">
+      The &lt;literal&gt;plpy.cursor&lt;/literal&gt; function accepts the same arguments
+      as &lt;literal&gt;plpy.execute&lt;/literal&gt; (except for the row limit) and returns
+      a cursor object, which allows you to process large result sets in smaller
+      chunks.  As with &lt;literal&gt;plpy.execute&lt;/literal&gt;, either a query string
+      or a plan object along with a list of arguments can be used, or
+      the &lt;function&gt;cursor&lt;/function&gt; function can be called as a method of
+      the plan object.
+</span>
+<code class="literal">plpy.cursor</code>関数は<code class="literal">plpy.execute</code>と同じ引数を受け取り（行数制限引数を除いた）カーソルオブジェクトとして返します。
+これにより大規模な結果セットをより小さな塊の中で処理することができます。
+<code class="literal">plpy.execute</code>の場合と同様、問い合わせ文字列または引数リスト付きの計画オブジェクトを使用できますし、計画オブジェクトのメソッドとして<code class="function">cursor</code>関数を呼ぶことができます。
+     </p><p>
+<span class="original">
+      The cursor object provides a &lt;literal&gt;fetch&lt;/literal&gt; method that accepts
+      an integer parameter and returns a result object.  Each time you
+      call &lt;literal&gt;fetch&lt;/literal&gt;, the returned object will contain the next
+      batch of rows, never larger than the parameter value.  Once all rows are
+      exhausted, &lt;literal&gt;fetch&lt;/literal&gt; starts returning an empty result
+      object.  Cursor objects also provide an
+      &lt;ulink url="https://docs.python.org/library/stdtypes.html#iterator-types"&gt;iterator
+      interface&lt;/ulink&gt;, yielding one row at a time until all rows are
+      exhausted.  Data fetched that way is not returned as result objects, but
+      rather as dictionaries, each dictionary corresponding to a single result
+      row.
+</span>
+カーソルオブジェクトは、整数パラメータを受付け、結果オブジェクトを返す<code class="literal">fetch</code>メソッドを提供します。
+<code class="literal">fetch</code>を呼び出す度に、返されるオブジェクトには次の一群の行が含まれます。
+この行数はパラメータ値より多くなることはありません。
+全ての行が出し尽くされると、<code class="literal">fetch</code>は空の結果オブジェクトを返すようになります。
+カーソルオブジェクトはまた、すべての行を出し尽くすまで一度に１行を生成する<a class="ulink" href="https://docs.python.org/library/stdtypes.html#iterator-types" target="_top">イテレータインタフェース</a>を提供します。
+この方法で取り出されたデータは結果オブジェクトとしては返されず、１つの辞書が単一の結果行に対応する辞書群として返されます。
+     </p><p>
+<span class="original">
+      An example of two ways of processing data from a large table is:
+</span>
+大きなテーブルのデータを処理する、2つの方法の例を示します。
+</p><pre class="programlisting">
+CREATE FUNCTION count_odd_iterator() RETURNS integer AS $$
+odd = 0
+for row in plpy.cursor("select num from largetable"):
+    if row['num'] % 2:
+         odd += 1
+return odd
+$$ LANGUAGE plpythonu;
+
+CREATE FUNCTION count_odd_fetch(batch_size integer) RETURNS integer AS $$
+odd = 0
+cursor = plpy.cursor("select num from largetable")
+while True:
+    rows = cursor.fetch(batch_size)
+    if not rows:
+        break
+    for row in rows:
+        if row['num'] % 2:
+            odd += 1
+return odd
+$$ LANGUAGE plpythonu;
+
+CREATE FUNCTION count_odd_prepared() RETURNS integer AS $$
+odd = 0
+plan = plpy.prepare("select num from largetable where num % $1 &lt;&gt; 0", ["integer"])
+<span class="original">
+rows = list(plpy.cursor(plan, [2]))  # or: = list(plan.cursor([2]))
+</span>
+rows = list(plpy.cursor(plan, [2]))  # または = list(plan.cursor([2]))
+
+return len(rows)
+$$ LANGUAGE plpythonu;
+</pre><p>
+     </p><p>
+<span class="original">
+      Cursors are automatically disposed of.  But if you want to explicitly
+      release all resources held by a cursor, use the &lt;literal&gt;close&lt;/literal&gt;
+      method.  Once closed, a cursor cannot be fetched from anymore.
+</span>
+カーソルは自動的に処分されます。
+しかし、カーソルが保有していた資源を明示的に解放したい場合は、<code class="literal">close</code>メソッドを使用してください。
+閉じた後、カーソルからこれ以上取り込むことはできません。
+     </p><div class="tip"><h3 class="title">ヒント</h3><p>
+<span class="original">
+        Do not confuse objects created by &lt;literal&gt;plpy.cursor&lt;/literal&gt; with
+        DB-API cursors as defined by
+        the &lt;ulink url="https://www.python.org/dev/peps/pep-0249/"&gt;Python
+        Database API specification&lt;/ulink&gt;.  They don't have anything in common
+        except for the name.
+</span>
+<code class="literal">plpy.cursor</code>によって作成されたオブジェクトと、<a class="ulink" href="https://www.python.org/dev/peps/pep-0249/" target="_top">PythonデータベースAPI仕様</a>において定義されたDB-APIカーソルとを混同しないでください。
+名称以外の共通点はありません。
+      </p></div></dd></dl></div></div><div class="sect2" id="PLPYTHON-TRAPPING"><div class="titlepage"><div><div><h3 class="title">46.7.2. エラーの捕捉</h3></div></div></div><span class="original">
+   &lt;title&gt;Trapping Errors&lt;/title&gt;
+</span><p>
+<span class="original">
+    Functions accessing the database might encounter errors, which
+    will cause them to abort and raise an exception.  Both
+    &lt;function&gt;plpy.execute&lt;/function&gt; and
+    &lt;function&gt;plpy.prepare&lt;/function&gt; can raise an instance of a subclass of
+    &lt;literal&gt;plpy.SPIError&lt;/literal&gt;, which by default will terminate
+    the function.  This error can be handled just like any other
+    Python exception, by using the &lt;literal&gt;try/except&lt;/literal&gt;
+    construct.  For example:
+</span>
+データベースにアクセスする関数はエラーに遭遇し、エラーが関数をアボートして例外を発生させる原因となります。
+<code class="function">plpy.execute</code>および<code class="function">plpy.prepare</code>は、デフォルトでは関数を終了させる<code class="literal">plpy.SPIError</code>のサブクラスのインスタンスを発生させることができます。
+このエラーは、<code class="literal">try/except</code>構文を使用して、Pythonの他の例外と同様に処理できます。
+例を示します。
+</p><pre class="programlisting">
+CREATE FUNCTION try_adding_joe() RETURNS text AS $$
+    try:
+        plpy.execute("INSERT INTO users(username) VALUES ('joe')")
+    except plpy.SPIError:
+<span class="original">
+        return "something went wrong"
+</span>
+        "うまくいかなかった" を返す
+    else:
+<span class="original">
+        return "Joe added"
+</span>
+        "Joeが追加された" を返す
+$$ LANGUAGE plpythonu;
+</pre><p>
+   </p><p>
+<span class="original">
+    The actual class of the exception being raised corresponds to the
+    specific condition that caused the error.  Refer
+    to &lt;xref linkend="errcodes-table"/&gt; for a list of possible
+    conditions.  The module
+    &lt;literal&gt;plpy.spiexceptions&lt;/literal&gt; defines an exception class
+    for each &lt;productname&gt;PostgreSQL&lt;/productname&gt; condition, deriving
+    their names from the condition name.  For
+    instance, &lt;literal&gt;division_by_zero&lt;/literal&gt;
+    becomes &lt;literal&gt;DivisionByZero&lt;/literal&gt;, &lt;literal&gt;unique_violation&lt;/literal&gt;
+    becomes &lt;literal&gt;UniqueViolation&lt;/literal&gt;, &lt;literal&gt;fdw_error&lt;/literal&gt;
+    becomes &lt;literal&gt;FdwError&lt;/literal&gt;, and so on.  Each of these
+    exception classes inherits from &lt;literal&gt;SPIError&lt;/literal&gt;.  This
+    separation makes it easier to handle specific errors, for
+    instance:
+</span>
+発生される例外の実クラスはエラーを引き起こした特定の条件と対応します。
+<a class="xref" href="errcodes-appendix.html#ERRCODES-TABLE" title="表A.1 PostgreSQLエラーコード">表 A.1</a>にあり得る条件のリストがありますので参照してください。
+<code class="literal">plpy.spiexceptions</code>モジュールは<span class="productname">PostgreSQL</span>の条件それぞれに対して、その条件名に因んだ名前の例外クラスを定義しています。
+例えば<code class="literal">division_by_zero</code>は<code class="literal">DivisionByZero</code>、<code class="literal">unique_violation</code>は<code class="literal">UniqueViolation</code>に、<code class="literal">fdw_error</code>は<code class="literal">FdwError</code>などのようになります。
+これらの例外クラスはそれぞれ<code class="literal">SPIError</code>を継承したものです。
+このように分離することで特定のエラーをより簡単に扱うことができるようになります。
+以下に例を示します。
+</p><pre class="programlisting">
+CREATE FUNCTION insert_fraction(numerator int, denominator int) RETURNS text AS $$
+from plpy import spiexceptions
+try:
+    plan = plpy.prepare("INSERT INTO fractions (frac) VALUES ($1 / $2)", ["int", "int"])
+    plpy.execute(plan, [numerator, denominator])
+except spiexceptions.DivisionByZero:
+    return "denominator cannot equal zero"
+except spiexceptions.UniqueViolation:
+    return "already have that fraction"
+except plpy.SPIError as e:
+    return "other error, SQLSTATE %s" % e.sqlstate
+else:
+    return "fraction inserted"
+$$ LANGUAGE plpythonu;
+</pre><p>
+<span class="original">
+    Note that because all exceptions from
+    the &lt;literal&gt;plpy.spiexceptions&lt;/literal&gt; module inherit
+    from &lt;literal&gt;SPIError&lt;/literal&gt;, an &lt;literal&gt;except&lt;/literal&gt;
+    clause handling it will catch any database access error.
+</span>
+<code class="literal">plpy.spiexceptions</code>モジュールからの全ての例外は<code class="literal">SPIError</code>を継承するため、例外を処理する<code class="literal">except</code>句は全てのデータベースアクセスエラーを捕捉することに注意してください。
+   </p><p>
+<span class="original">
+    As an alternative way of handling different error conditions, you
+    can catch the &lt;literal&gt;SPIError&lt;/literal&gt; exception and determine
+    the specific error condition inside the &lt;literal&gt;except&lt;/literal&gt;
+    block by looking at the &lt;literal&gt;sqlstate&lt;/literal&gt; attribute of
+    the exception object.  This attribute is a string value containing
+    the &lt;quote&gt;SQLSTATE&lt;/quote&gt; error code.  This approach provides
+    approximately the same functionality
+</span>
+異なったエラー条件を処理する代りの方法として、<code class="literal">SPIError</code>例外を捕捉して、例外オブジェクトの<code class="literal">sqlstate</code>属性を調べることにより、<code class="literal">except</code>ブロック内部の明細なエラー条件を決定できます。
+この属性は<span class="quote">「<span class="quote">SQLSTATE</span>」</span>エラーコードを含む文字列値です。
+この方法は、ほぼ同じ機能を提供します。
+   </p></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="plpython-trigger.html" title="46.6. トリガ関数">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="plpython.html" title="第46章 PL/Python — Python手続き言語">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="plpython-subtransaction.html" title="46.8. 明示的サブトランザクション">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">46.6. トリガ関数 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 46.8. 明示的サブトランザクション</td></tr></table></div></body></html>

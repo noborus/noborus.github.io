@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>CLUSTER</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-close.html" title="CLOSE" /><link rel="next" href="sql-comment.html" title="COMMENT" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      sql-cluster.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-close.html" title="CLOSE">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">CLUSTER</td><td width="20%" align="right"> <a accesskey="n" href="sql-comment.html" title="COMMENT">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-CLUSTER"><div class="titlepage"></div><a id="id-1.9.3.51.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">CLUSTER</span></h2><p>CLUSTER<span class="original">
+  &lt;refpurpose&gt;cluster a table according to an index&lt;/refpurpose&gt;
+</span> — インデックスに従ってテーブルをクラスタ化する</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
+CLUSTER [VERBOSE] <em class="replaceable"><code>table_name</code></em> [ USING <em class="replaceable"><code>index_name</code></em> ]
+CLUSTER ( <em class="replaceable"><code>option</code></em> [, ...] ) <em class="replaceable"><code>table_name</code></em> [ USING <em class="replaceable"><code>index_name</code></em> ]
+CLUSTER [VERBOSE]
+
+<span class="phrase">where <em class="replaceable"><code>option</code></em> can be one of:</span>
+
+    VERBOSE [ <em class="replaceable"><code>boolean</code></em> ]
+</pre></div><div class="refsect1" id="id-1.9.3.51.5"><h2>説明</h2><span class="original">
+  &lt;title&gt;Description&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;command&gt;CLUSTER&lt;/command&gt; instructs &lt;productname&gt;PostgreSQL&lt;/productname&gt;
+   to cluster the table specified
+   by &lt;replaceable class="parameter"&gt;table_name&lt;/replaceable&gt;
+   based on the index specified by
+   &lt;replaceable class="parameter"&gt;index_name&lt;/replaceable&gt;. The index must
+   already have been defined on
+   &lt;replaceable class="parameter"&gt;table_name&lt;/replaceable&gt;.
+</span>
+<code class="command">CLUSTER</code>は、<em class="replaceable"><code>index_name</code></em>で指定されたインデックスに基づき、<em class="replaceable"><code>table_name</code></em>で指定されたテーブルをクラスタ化するように、<span class="productname">PostgreSQL</span>に指示します。
+このインデックスは前もって<em class="replaceable"><code>table_name</code></em>上に定義されていなければなりません。
+  </p><p>
+<span class="original">
+   When a table is clustered, it is physically reordered
+   based on the index information. Clustering is a one-time operation:
+   when the table is subsequently updated, the changes are
+   not clustered.  That is, no attempt is made to store new or
+   updated rows according to their index order.  (If one wishes, one can
+   periodically recluster by issuing the command again.  Also, setting
+   the table's &lt;literal&gt;fillfactor&lt;/literal&gt; storage parameter to less than
+   100% can aid in preserving cluster ordering during updates, since updated
+   rows are kept on the same page if enough space is available there.)
+</span>
+テーブルがクラスタ化されると、それぞれのテーブルはインデックス情報に基づいて物理的に並べ直されます。
+クラスタ化は、1回限りの操作です。
+クラスタ化後にテーブルが更新されても、その変更はクラスタ化されません。
+つまり、新規に追加された行や更新された行は、インデックス順には保管されません。
+（インデックス順に保管したい場合は、コマンドを再度入力し、定期的に再クラスタ化を行います。
+また、更新される行は十分な領域が利用可能ならば同一ページ内に保持されますので、テーブルの<code class="literal">fillfactor</code>格納パラメータを100%より小さく設定することで、更新処理中のクラスタ順序付けを保護するのに役に立ちます。）
+  </p><p>
+<span class="original">
+   When a table is clustered, &lt;productname&gt;PostgreSQL&lt;/productname&gt;
+   remembers which index it was clustered by.  The form
+   &lt;command&gt;CLUSTER &lt;replaceable class="parameter"&gt;table_name&lt;/replaceable&gt;&lt;/command&gt;
+   reclusters the table using the same index as before.  You can also
+   use the &lt;literal&gt;CLUSTER&lt;/literal&gt; or &lt;literal&gt;SET WITHOUT CLUSTER&lt;/literal&gt;
+   forms of &lt;link linkend="sql-altertable"&gt;&lt;command&gt;ALTER TABLE&lt;/command&gt;&lt;/link&gt; to set the index to be used for
+   future cluster operations, or to clear any previous setting.
+</span>
+テーブルがクラスタ化されると、<span class="productname">PostgreSQL</span>はクラスタ化に使用されたインデックスを記録します。
+<code class="command">CLUSTER <em class="replaceable"><code>table_name</code></em></code>という構文によって、以前と同じインデックスを使用してテーブルを再クラスタ化します。
+また<a class="link" href="sql-altertable.html" title="ALTER TABLE"><code class="command">ALTER TABLE</code></a>の<code class="literal">CLUSTER</code>もしくは<code class="literal">SET WITHOUT CLUSTER</code>構文を使用して、将来のクラスタ化操作で使用するインデックスを設定したり、過去の設定を取り消すことができます。
+  </p><p>
+<span class="original">
+   &lt;command&gt;CLUSTER&lt;/command&gt; without any parameter reclusters all the
+   previously-clustered tables in the current database that the calling user
+   owns, or all such tables if called by a superuser.  This
+   form of &lt;command&gt;CLUSTER&lt;/command&gt; cannot be executed inside a transaction
+   block.
+</span>
+パラメータを指定しないで<code class="command">CLUSTER</code>を実行した場合、現在のデータベース内の以前にクラスタ化されたテーブルのうち、呼び出したユーザが所有する全てのテーブルを（スーパーユーザが実行する場合は全てのテーブルを）再クラスタ化します。
+このパラメータを指定しない<code class="command">CLUSTER</code>を、トランザクションブロック内で実行することはできません。
+  </p><p>
+<span class="original">
+   When a table is being clustered, an &lt;literal&gt;ACCESS
+   EXCLUSIVE&lt;/literal&gt; lock is acquired on it. This prevents any other
+   database operations (both reads and writes) from operating on the
+   table until the &lt;command&gt;CLUSTER&lt;/command&gt; is finished.
+ </span>
+クラスタ化を行っているテーブルでは、<code class="literal">ACCESS EXCLUSIVE</code>ロックが獲得されています。
+これにより、<code class="command">CLUSTER</code>が終わるまで、そのテーブルに対するデータベース操作（読み書き両方）はできません。
+  </p></div><div class="refsect1" id="id-1.9.3.51.6"><h2>パラメータ</h2><span class="original">
+  &lt;title&gt;Parameters&lt;/title&gt;
+</span><div class="variablelist"><dl class="variablelist"><dt><span class="term"><em class="replaceable"><code>table_name</code></em></span></dt><dd><p>
+<span class="original">
+      The name (possibly schema-qualified) of a table.
+</span>
+テーブルの名前です（スキーマ修飾名も可）。
+     </p></dd><dt><span class="term"><em class="replaceable"><code>index_name</code></em></span></dt><dd><p>
+<span class="original">
+      The name of an index.
+</span>
+インデックスの名前です。
+     </p></dd><dt><span class="term"><code class="literal">VERBOSE</code></span></dt><dd><p>
+<span class="original">
+      Prints a progress report as each table is clustered.
+</span>
+各テーブルのクラスタ化を行う時に進行状況報告を出力します。
+     </p></dd><dt><span class="term"><em class="replaceable"><code>boolean</code></em></span></dt><dd><p>
+<span class="original">
+      Specifies whether the selected option should be turned on or off.
+      You can write &lt;literal&gt;TRUE&lt;/literal&gt;, &lt;literal&gt;ON&lt;/literal&gt;, or
+      &lt;literal&gt;1&lt;/literal&gt; to enable the option, and &lt;literal&gt;FALSE&lt;/literal&gt;,
+      &lt;literal&gt;OFF&lt;/literal&gt;, or &lt;literal&gt;0&lt;/literal&gt; to disable it.  The
+      &lt;replaceable class="parameter"&gt;boolean&lt;/replaceable&gt; value can also
+      be omitted, in which case &lt;literal&gt;TRUE&lt;/literal&gt; is assumed.
+</span>
+選択したオプションをオンにするかオフにするか指定します。
+オプションを有効にする場合には<code class="literal">TRUE</code>、<code class="literal">ON</code>または<code class="literal">1</code>と書くことができ、無効にする場合に&gt;は<code class="literal">FALSE</code>、<code class="literal">OFF</code>または<code class="literal">0</code>と書くことができます。
+<em class="replaceable"><code>boolean</code></em>の値は省略することもでき、その場合には<code class="literal">TRUE</code>とみなされます。
+     </p></dd></dl></div></div><div class="refsect1" id="id-1.9.3.51.7"><h2>注釈</h2><span class="original">
+  &lt;title&gt;Notes&lt;/title&gt;
+</span><p>
+<span class="original">
+    In cases where you are accessing single rows randomly
+    within a table, the actual order of the data in the
+    table is unimportant. However, if you tend to access some
+    data more than others, and there is an index that groups
+    them together, you will benefit from using &lt;command&gt;CLUSTER&lt;/command&gt;.
+    If you are requesting a range of indexed values from a table, or a
+    single indexed value that has multiple rows that match,
+    &lt;command&gt;CLUSTER&lt;/command&gt; will help because once the index identifies the
+    table page for the first row that matches, all other rows
+    that match are probably already on the same table page,
+    and so you save disk accesses and speed up the query.
+</span>
+テーブル内の個々の行にランダムにアクセスする場合、テーブル内のデータの順序は重要でありません。
+しかし、テーブル内の特定のデータにアクセスが集中していて、それらのデータをひとまとめにしているインデックスが存在する時は、<code class="command">CLUSTER</code>による利益を享受できます。
+テーブルからインデックスの値の範囲や、一致する複数の行を保有する1つのインデックスの値を要求する場合、<code class="command">CLUSTER</code>が役に立ちます。
+一度インデックスが一致する最初の行に対するテーブルページを認識すると、一致する他の全ての行も同じテーブルページに存在する可能性が高いので、ディスクアクセスを減らして問い合わせ処理の速度を向上することができるからです。
+
+   </p><p>
+<span class="original">
+    &lt;command&gt;CLUSTER&lt;/command&gt; can re-sort the table using either an index scan
+    on the specified index, or (if the index is a b-tree) a sequential
+    scan followed by sorting.  It will attempt to choose the method that
+    will be faster, based on planner cost parameters and available statistical
+    information.
+</span>
+<code class="command">CLUSTER</code>は、指定されたインデックスによるインデックススキャン、または（インデックスがB-Treeの場合）シーケンシャルスキャン後のソートのいずれかを用いて、テーブルを再ソートすることができます。
+プランナのコストパラメータと利用可能な統計情報に基づき、より高速な方式の選択を試みます。
+   </p><p>
+<span class="original">
+    When an index scan is used, a temporary copy of the table is created that
+    contains the table data in the index order.  Temporary copies of each
+    index on the table are created as well.  Therefore, you need free space on
+    disk at least equal to the sum of the table size and the index sizes.
+</span>
+インデックススキャンが使用される場合、インデックス順にテーブルデータを並べた、テーブルの一時コピーが作成されます。
+同様に、テーブルの各インデックスの一時コピーも作成されます。
+したがって、ディスクには、少なくともテーブルとインデックスの合計サイズと同じ容量の空き領域が必要です。
+   </p><p>
+<span class="original">
+    When a sequential scan and sort is used, a temporary sort file is
+    also created, so that the peak temporary space requirement is as much
+    as double the table size, plus the index sizes.  This method is often
+    faster than the index scan method, but if the disk space requirement is
+    intolerable, you can disable this choice by temporarily setting &lt;xref
+    linkend="guc-enable-sort"/&gt; to &lt;literal&gt;off&lt;/literal&gt;.
+</span>
+シーケンシャルスキャンとソートが使用される場合も一時的なソートファイルが作成されます。
+一時的に必要となるサイズの最大値はテーブルサイズの倍のサイズにインデックスサイズを加えた値となります。
+この方式はインデックススキャンより高速になることが多いのですが、必要なディスク容量に耐えられない場合は、一時的に<a class="xref" href="runtime-config-query.html#GUC-ENABLE-SORT">enable_sort</a>を<code class="literal">off</code>にすることで、この方式を無効にすることができます。
+   </p><p>
+<span class="original">
+    It is advisable to set &lt;xref linkend="guc-maintenance-work-mem"/&gt; to
+    a reasonably large value (but not more than the amount of RAM you can
+    dedicate to the &lt;command&gt;CLUSTER&lt;/command&gt; operation) before clustering.
+</span>
+クラスタ処理の前に<a class="xref" href="runtime-config-resource.html#GUC-MAINTENANCE-WORK-MEM">maintenance_work_mem</a>を程良く大きな値に設定することを勧めます。
+（しかし<code class="command">CLUSTER</code>操作専用に割り当てられるRAMの容量を超えないようにしてください。）
+   </p><p>
+<span class="original">
+    Because the planner records statistics about the ordering of
+    tables, it is advisable to run &lt;link linkend="sql-analyze"&gt;&lt;command&gt;ANALYZE&lt;/command&gt;&lt;/link&gt;
+    on the newly clustered table.
+    Otherwise, the planner might make poor choices of query plans.
+</span>
+プランナはテーブルの順序付けに関する統計情報を記録しているため、新しくクラスタ化されたテーブルでは、<a class="link" href="sql-analyze.html" title="ANALYZE"><code class="command">ANALYZE</code></a>を実行することが推奨されます。
+そうしないと、プランナが問い合わせ計画を適切に選択できない可能性があります。
+   </p><p>
+<span class="original">
+    Because &lt;command&gt;CLUSTER&lt;/command&gt; remembers which indexes are clustered,
+    one can cluster the tables one wants clustered manually the first time,
+    then set up a periodic maintenance script that executes
+    &lt;command&gt;CLUSTER&lt;/command&gt; without any parameters, so that the desired tables
+    are periodically reclustered.
+</span>
+<code class="command">CLUSTER</code>はどのインデックスでクラスタ化したかを記録していますので、対象のテーブルを定期的に再クラスタ化できるように、最初にクラスタ化したいテーブルを手作業でクラスタ化し、その後にパラメータをまったく持たない<code class="command">CLUSTER</code>を実行する定期的な保守用スクリプトを設定することができます。
+   </p><p>
+<span class="original">
+    Each backend running &lt;command&gt;CLUSTER&lt;/command&gt; will report its progress
+    in the &lt;structname&gt;pg_stat_progress_cluster&lt;/structname&gt; view. See
+    &lt;xref linkend="cluster-progress-reporting"/&gt; for details.
+</span>
+<code class="command">CLUSTER</code>を実行している各バックエンドはその進捗を<code class="structname">pg_stat_progress_cluster</code>ビューで報告します。
+詳細は<a class="xref" href="progress-reporting.html#CLUSTER-PROGRESS-REPORTING" title="28.4.4. CLUSTERの進捗状況のレポート">28.4.4</a>を参照してください。
+  </p></div><div class="refsect1" id="id-1.9.3.51.8"><h2>例</h2><span class="original">
+  &lt;title&gt;Examples&lt;/title&gt;
+</span><p>
+<span class="original">
+   Cluster the table &lt;literal&gt;employees&lt;/literal&gt; on the basis of
+   its index &lt;literal&gt;employees_ind&lt;/literal&gt;:
+</span>
+インデックス<code class="literal">employees_ind</code>に基づいて、テーブル<code class="literal">emp</code>をクラスタ化します。
+</p><pre class="programlisting">
+CLUSTER employees USING employees_ind;
+</pre><p>
+  </p><p>
+<span class="original">
+   Cluster the &lt;literal&gt;employees&lt;/literal&gt; table using the same
+   index that was used before:
+</span>
+以前に使用したインデックスを使用して、テーブル<code class="literal">employees</code>をクラスタ化します。
+</p><pre class="programlisting">
+CLUSTER employees;
+</pre><p>
+  </p><p>
+<span class="original">
+   Cluster all tables in the database that have previously been clustered:
+</span>
+データベース内の、以前にクラスタ化されたテーブルを全てクラスタ化します。
+</p><pre class="programlisting">
+CLUSTER;
+</pre></div><div class="refsect1" id="id-1.9.3.51.9"><h2>互換性</h2><span class="original">
+  &lt;title&gt;Compatibility&lt;/title&gt;
+</span><p>
+<span class="original">
+   There is no &lt;command&gt;CLUSTER&lt;/command&gt; statement in the SQL standard.
+</span>
+標準SQLには<code class="command">CLUSTER</code>文はありません。
+  </p><p>
+<span class="original">
+   The syntax
+</span>
+</p><pre class="synopsis">
+CLUSTER <em class="replaceable"><code>index_name</code></em> ON <em class="replaceable"><code>table_name</code></em>
+</pre><p>
+<span class="original">
+  is also supported for compatibility with pre-8.3 &lt;productname&gt;PostgreSQL&lt;/productname&gt;
+  versions.
+</span>
+という構文も、8.3より前のバージョンの<span class="productname">PostgreSQL</span>との互換性のためサポートされます。
+  </p></div><div class="refsect1" id="id-1.9.3.51.10"><h2>関連項目</h2><span class="original">
+  &lt;title&gt;See Also&lt;/title&gt;
+</span><span class="simplelist"><a class="xref" href="app-clusterdb.html" title="clusterdb"><span class="refentrytitle"><span class="application">clusterdb</span></span></a>, <a class="xref" href="progress-reporting.html#CLUSTER-PROGRESS-REPORTING" title="28.4.4. CLUSTERの進捗状況のレポート">28.4.4</a></span></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-close.html" title="CLOSE">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-comment.html" title="COMMENT">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">CLOSE </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> COMMENT</td></tr></table></div></body></html>

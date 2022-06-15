@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>51.5. プランナ/オプティマイザ</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="rule-system.html" title="51.4. PostgreSQLルールシステム" /><link rel="next" href="executor.html" title="51.6. エクゼキュータ" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="overview.html" title="第51章 PostgreSQL内部の概要">第51章 PostgreSQL内部の概要</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      planner-optimizer.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="rule-system.html" title="51.4. PostgreSQLルールシステム">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="overview.html" title="第51章 PostgreSQL内部の概要">上へ</a></td><td width="60%" align="center">51.5. プランナ/オプティマイザ</td><td width="20%" align="right"> <a accesskey="n" href="executor.html" title="51.6. エクゼキュータ">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PLANNER-OPTIMIZER"><div class="titlepage"><div><div><h2 class="title" style="clear: both">51.5. プランナ/オプティマイザ</h2></div></div></div><span class="original">
+   &lt;title&gt;Planner/Optimizer&lt;/title&gt;
+</span><p>
+<span class="original">
+    The task of the &lt;firstterm&gt;planner/optimizer&lt;/firstterm&gt; is to
+    create an optimal execution plan. A given SQL query (and hence, a
+    query tree) can be actually executed in a wide variety of
+    different ways, each of which will produce the same set of
+    results.  If it is computationally feasible, the query optimizer
+    will examine each of these possible execution plans, ultimately
+    selecting the execution plan that is expected to run the fastest.
+</span>
+<em class="firstterm">プランナ/オプティマイザ</em>の役割は最適な実行計画を作ることです。
+ある与えられたSQL問い合わせは（それがある問い合わせツリーになるのですが）、同じ結果をもたらす、多くの異なった方法で実際には実行できます。
+もしもコンピュータの演算として可能であれば、問い合わせオプティマイザは可能な実行計画をすべて検証し、実行するとした場合に一番早く結果をもたらすと想定される実行計画を選択します。
+   </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+     In some situations, examining each possible way in which a query
+     can be executed would take an excessive amount of time and memory.
+     In particular, this occurs when executing queries
+     involving large numbers of join operations. In order to determine
+     a reasonable (not necessarily optimal) query plan in a reasonable amount
+     of time, &lt;productname&gt;PostgreSQL&lt;/productname&gt; uses a &lt;firstterm&gt;Genetic
+     Query Optimizer&lt;/firstterm&gt; (see &lt;xref linkend="geqo"/&gt;) when the number of joins
+     exceeds a threshold (see &lt;xref linkend="guc-geqo-threshold"/&gt;).
+</span>
+場合によっては、問い合わせがどう実行されるか、可能性のある全ての手段を検証するため、膨大な時間とメモリを消費する可能性があります。
+特に数多くの結合操作に問い合わせが関わった時です。
+相応な（必ずしも最適ではありませんが）問い合わせ計画を、相応な時間内で決定するため<span class="productname">PostgreSQL</span>は結合の数が閾値を越えた場合、<em class="firstterm">遺伝的問い合わせオプティマイザ</em>（<a class="xref" href="geqo.html" title="第60章 遺伝的問い合わせ最適化">第60章</a>参照）を使用します（<a class="xref" href="runtime-config-query.html#GUC-GEQO-THRESHOLD">geqo_threshold</a>を参照ください）。
+    </p></div><p>
+<span class="original">
+    The planner's search procedure actually works with data structures
+    called &lt;firstterm&gt;paths&lt;/firstterm&gt;, which are simply cut-down representations of
+    plans containing only as much information as the planner needs to make
+    its decisions. After the cheapest path is determined, a full-fledged
+    &lt;firstterm&gt;plan tree&lt;/firstterm&gt; is built to pass to the executor.  This represents
+    the desired execution plan in sufficient detail for the executor to run it.
+    In the rest of this section we'll ignore the distinction between paths
+    and plans.
+</span>
+このプランナの検索手順は、実際には<em class="firstterm">経路</em>という名前のデータ構造を使用します。
+経路とは、プランナが決定を行うために必要な情報のみに切り詰めた単なる計画の表現です。
+最も安価である経路が決定された後、全てが揃った<em class="firstterm">計画ツリー</em>が作成されてエクゼキュータに渡されます。
+これはつまり、要求されている実行計画はエクゼキュータがそれを実行するために十分な詳しい内容を所有していることを表しています。
+本節の残りでは、経路と計画の違いについて無視します。
+   </p><div class="sect2" id="id-1.10.3.8.5"><div class="titlepage"><div><div><h3 class="title">51.5.1. 実行可能な計画の生成</h3></div></div></div><span class="original">
+    &lt;title&gt;Generating Possible Plans&lt;/title&gt;
+</span><p>
+<span class="original">
+     The planner/optimizer starts by generating plans for scanning each
+     individual relation (table) used in the query.  The possible plans
+     are determined by the available indexes on each relation.
+     There is always the possibility of performing a
+     sequential scan on a relation, so a sequential scan plan is always
+     created. Assume an index is defined on a
+     relation (for example a B-tree index) and a query contains the
+     restriction
+     &lt;literal&gt;relation.attribute OPR constant&lt;/literal&gt;. If
+     &lt;literal&gt;relation.attribute&lt;/literal&gt; happens to match the key of the B-tree
+     index and &lt;literal&gt;OPR&lt;/literal&gt; is one of the operators listed in
+     the index's &lt;firstterm&gt;operator class&lt;/firstterm&gt;, another plan is created using
+     the B-tree index to scan the relation. If there are further indexes
+     present and the restrictions in the query happen to match a key of an
+     index, further plans will be considered.  Index scan plans are also
+     generated for indexes that have a sort ordering that can match the
+     query's &lt;literal&gt;ORDER BY&lt;/literal&gt; clause (if any), or a sort ordering that
+     might be useful for merge joining (see below).
+</span>
+プランナ/オプティマイザは、問い合わせの中で使用される個々のリレーション（テーブル）をスキャンするための計画を生成することから始めます。
+各リレーション上で利用できるインデックスにより実行可能な計画が決まります。
+リレーションをシーケンシャルスキャンする可能性は常にありますので、シーケンシャルスキャンを使用する計画は常に作成されます。
+リレーション上にインデックス（例えばB-treeインデックス）が定義され、問い合わせには<code class="literal">relation.attribute OPR constant</code>という条件があるとしましょう。
+もし<code class="literal">relation.attribute</code>がB-treeインデックスのキーと一致し、<code class="literal">OPR</code>がインデックスの<em class="firstterm">演算子クラス</em>に列挙されている演算子の1つであれば、リレーションをスキャンするためにB-treeインデックスを使用する別の計画が作られます。
+さらに他のインデックスが存在し、問い合わせの中で条件がインデックスのキーに一致した場合、なおその上に計画が検討されます。インデックススキャン計画は、問い合わせの （もし存在すれば）<code class="literal">ORDER BY</code>句に一致するソート順、もしくはマージ結合に便利なソート順を所有するインデックスに対して生成されます（以下を参照してください）。
+    </p><p>
+<span class="original">
+     If the query requires joining two or more relations,
+     plans for joining relations are considered
+     after all feasible plans have been found for scanning single relations.
+     The three available join strategies are:
+</span>
+問い合わせが２つ以上のリレーションの結合を必要とすると、リレーションを結合する計画は、単一のリレーションをスキャンするために全ての実行可能な計画が探し出された後に検討されます。３つの実行可能な結合戦略を示します。
+
+     </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+        &lt;firstterm&gt;nested loop join&lt;/firstterm&gt;: The right relation is scanned
+        once for every row found in the left relation. This strategy
+        is easy to implement but can be very time consuming.  (However,
+        if the right relation can be scanned with an index scan, this can
+        be a good strategy.  It is possible to use values from the current
+        row of the left relation as keys for the index scan of the right.)
+</span>
+<em class="firstterm">ネステッドループ結合</em>：
+左側のリレーションの中で見つけられた行ごとに右側のリレーションが1回スキャンされます。
+この戦略は実装が簡単ですが、時間がかかる場合があります
+（とは言っても右側のリレーションがインデックススキャンによってスキャン可能であればよい戦略になります。
+右側のインデックススキャンのキーとして左側のリレーションの現在の行の値を使用することができます。）
+       </p></li><li class="listitem"><p>
+<span class="original">
+        &lt;firstterm&gt;merge join&lt;/firstterm&gt;: Each relation is sorted on the join
+        attributes before the join starts. Then the two relations are
+        scanned in parallel, and matching rows are combined to form
+        join rows. This kind of join is
+        attractive because each relation has to be scanned only once.
+        The required sorting might be achieved either by an explicit sort
+        step, or by scanning the relation in the proper order using an
+        index on the join key.
+</span>
+<em class="firstterm">マージ結合</em>：
+結合を開始する前に、それぞれのリレーションを結合属性でソートします。
+そして、2つのリレーションを並行してスキャンし、一致する行を結合行の形にまとめます。
+それぞれのリレーションがたった1回しかスキャンされなくて済むのでこの結合は魅力的です。
+要求されるソートは、明示的なソート段階、または、結合キー上のインデックスを使用して適切な順序でリレーションをスキャンすることにより行われます。
+       </p></li><li class="listitem"><p>
+<span class="original">
+        &lt;firstterm&gt;hash join&lt;/firstterm&gt;: the right relation is first scanned
+        and loaded into a hash table, using its join attributes as hash keys.
+        Next the left relation is scanned and the
+        appropriate values of every row found are used as hash keys to
+        locate the matching rows in the table.
+</span>
+<em class="firstterm">ハッシュ結合</em>：
+右側のリレーションがハッシュキーとして結合属性を用いて初めにスキャンされ、ハッシュテーブルに読み込まれます。
+次に左側のリレーションがスキャンされ、見つかったそれぞれの行に相応しい値が、右側のリレーションの行を探し出すためのハッシュキーとして使われます。
+       </p></li></ul></div><p>
+    </p><p>
+<span class="original">
+     When the query involves more than two relations, the final result
+     must be built up by a tree of join steps, each with two inputs.
+     The planner examines different possible join sequences to find the
+     cheapest one.
+</span>
+問い合わせが3つ以上のリレーションを含む場合、それぞれ2つの入力を持つ結合段階のツリーによって最終結果を構築しなければなりません。
+プランナは最も低コストな計画を見つけ出すために、あり得る異なった結合順序を検証します。
+    </p><p>
+<span class="original">
+     If the query uses fewer than &lt;xref linkend="guc-geqo-threshold"/&gt;
+     relations, a near-exhaustive search is conducted to find the best
+     join sequence.  The planner preferentially considers joins between any
+     two relations for which there exists a corresponding join clause in the
+     &lt;literal&gt;WHERE&lt;/literal&gt; qualification (i.e., for
+     which a restriction like &lt;literal&gt;where rel1.attr1=rel2.attr2&lt;/literal&gt;
+     exists). Join pairs with no join clause are considered only when there
+     is no other choice, that is, a particular relation has no available
+     join clauses to any other relation. All possible plans are generated for
+     every join pair considered by the planner, and the one that is
+     (estimated to be) the cheapest is chosen.
+</span>
+問い合わせが<a class="xref" href="runtime-config-query.html#GUC-GEQO-THRESHOLD">geqo_threshold</a>より少ないリレーションを使用する場合、最適な結合シーケンスを見つけ出すため、完璧に近い検索が行われます。
+プランナは<code class="literal">WHERE</code>条件での対応する結合句が存在する（すなわち、<code class="literal">where rel1.attr1=rel2.attr2</code>のような制約に対して）、あらゆる２つのリレーション間の結合を優先的に考慮します。
+結合句のない結合ペアは他に選択のない場合に考慮されます。つまり、ある特定のリレーションが他のどんなリレーションに対しても有効な結合句を持たない場合です。
+すべての有効な計画はプランナが考慮したすべての結合ペアに対し生成され、最も安価な（と評価された）ものが選択されます。
+    </p><p>
+<span class="original">
+     When &lt;varname&gt;geqo_threshold&lt;/varname&gt; is exceeded, the join
+     sequences considered are determined by heuristics, as described
+     in &lt;xref linkend="geqo"/&gt;.  Otherwise the process is the same.
+</span>
+<code class="varname">geqo_threshold</code>を上回ると、考慮された結合シーケンスは<a class="xref" href="geqo.html" title="第60章 遺伝的問い合わせ最適化">第60章</a>に記載されているように経験則で決定されます。
+そうでない時、処理は変わりません。
+    </p><p>
+<span class="original">
+     The finished plan tree consists of sequential or index scans of
+     the base relations, plus nested-loop, merge, or hash join nodes as
+     needed, plus any auxiliary steps needed, such as sort nodes or
+     aggregate-function calculation nodes.  Most of these plan node
+     types have the additional ability to do &lt;firstterm&gt;selection&lt;/firstterm&gt;
+     (discarding rows that do not meet a specified Boolean condition)
+     and &lt;firstterm&gt;projection&lt;/firstterm&gt; (computation of a derived column set
+     based on given column values, that is, evaluation of scalar
+     expressions where needed).  One of the responsibilities of the
+     planner is to attach selection conditions from the
+     &lt;literal&gt;WHERE&lt;/literal&gt; clause and computation of required
+     output expressions to the most appropriate nodes of the plan
+     tree.
+</span>
+最終的な計画ツリーは基になっているリレーションのシーケンシャルもしくはインデックススキャン、そして必要に応じてネステッドループ、マージ、またはハッシュ結合のノード、さらにはソートまたは集約関数計算ノードのような必要とされる補助の手順から構成されます。
+これらほとんどの計画ノード型は<em class="firstterm">選択</em>（特定の論理演算条件に合致しない行を破棄すること）および<em class="firstterm">射影</em>（与えられた列の値に基づき派生した列の集合を計算すること、つまり必要なところでスカラ式の評価をすること）を行う追加的能力を持っています。
+プランナの1つの責任は、<code class="literal">WHERE</code>句から選択条件を付加して計画ツリーの最も適切なノードに対し必要とされる出力式を計算することです。
+    </p></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="rule-system.html" title="51.4. PostgreSQLルールシステム">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="overview.html" title="第51章 PostgreSQL内部の概要">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="executor.html" title="51.6. エクゼキュータ">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">51.4. <span xmlns="http://www.w3.org/1999/xhtml" class="productname">PostgreSQL</span>ルールシステム </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 51.6. エクゼキュータ</td></tr></table></div></body></html>

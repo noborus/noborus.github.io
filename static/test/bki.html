@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>第71章 システムカタログの宣言と初期内容</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="storage-page-layout.html" title="70.6. データベースページのレイアウト" /><link rel="next" href="system-catalog-declarations.html" title="71.1. システムカタログの宣言ルール" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="internals.html" title="パート VII. 内部情報">パート VII. 内部情報</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      bki.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="storage-page-layout.html" title="70.6. データベースページのレイアウト">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="internals.html" title="パート VII. 内部情報">上へ</a></td><td width="60%" align="center">第71章 システムカタログの宣言と初期内容</td><td width="20%" align="right"> <a accesskey="n" href="system-catalog-declarations.html" title="71.1. システムカタログの宣言ルール">次へ</a></td></tr></table><hr /></div><div class="chapter" id="BKI"><div class="titlepage"><div><div><h2 class="title">第71章 システムカタログの宣言と初期内容</h2></div></div></div><div class="toc"><p><strong>目次</strong></p><dl class="toc"><dt><span class="sect1"><a href="system-catalog-declarations.html">71.1. システムカタログの宣言ルール</a></span></dt><dt><span class="sect1"><a href="system-catalog-initial-data.html">71.2. システムカタログ初期データ</a></span></dt><dd><dl><dt><span class="sect2"><a href="system-catalog-initial-data.html#SYSTEM-CATALOG-INITIAL-DATA-FORMAT">71.2.1. データファイル形式</a></span></dt><dt><span class="sect2"><a href="system-catalog-initial-data.html#SYSTEM-CATALOG-OID-ASSIGNMENT">71.2.2. OIDの割当</a></span></dt><dt><span class="sect2"><a href="system-catalog-initial-data.html#SYSTEM-CATALOG-OID-REFERENCES">71.2.3. OID参照検索</a></span></dt><dt><span class="sect2"><a href="system-catalog-initial-data.html#SYSTEM-CATALOG-AUTO-ARRAY-TYPES">71.2.4. 配列型の自動作成</a></span></dt><dt><span class="sect2"><a href="system-catalog-initial-data.html#SYSTEM-CATALOG-RECIPES">71.2.5. データファイルの編集方法</a></span></dt></dl></dd><dt><span class="sect1"><a href="bki-format.html">71.3. <acronym class="acronym">BKI</acronym>ファイル形式</a></span></dt><dt><span class="sect1"><a href="bki-commands.html">71.4. <acronym class="acronym">BKI</acronym>コマンド</a></span></dt><dt><span class="sect1"><a href="bki-structure.html">71.5. <acronym class="acronym">BKI</acronym>ファイルのブートストラップの構成</a></span></dt><dt><span class="sect1"><a href="bki-example.html">71.6. BKIの例</a></span></dt></dl></div><span class="original">
+ &lt;title&gt;System Catalog Declarations and Initial Contents&lt;/title&gt;
+</span><p>
+<span class="original">
+  &lt;productname&gt;PostgreSQL&lt;/productname&gt; uses many different system catalogs
+  to keep track of the existence and properties of database objects, such as
+  tables and functions.  Physically there is no difference between a system
+  catalog and a plain user table, but the backend C code knows the structure
+  and properties of each catalog, and can manipulate it directly at a low
+  level.  Thus, for example, it is inadvisable to attempt to alter the
+  structure of a catalog on-the-fly; that would break assumptions built into
+  the C code about how rows of the catalog are laid out.  But the structure
+  of the catalogs can change between major versions.
+</span>
+<span class="productname">PostgreSQL</span>は、テーブルや関数のようなデータベースオブジェクトの存在の有無と特性を追跡するために、多くの異なるシステムカタログを使用します。
+物理的な観点ではシステムカタログとユーザーテーブルの間に違いはありませんが、バックエンドのCコードはそれぞれのカタログの構造と特性を把握しており、直接カタログを低レベルで操作することができます。
+ですから、たとえばカタログの構造を思いつきで変更しようとするのはおすすめできません。そのことによって、Cのコードに組み込まれているカタログの行のレイアウトに関する前提を壊してしまうことになるからです。
+とはいえ、カタログの構造はメジャーバージョン間で変更されることがあります。
+ </p><p>
+<span class="original">
+  The structures of the catalogs are declared in specially formatted C
+  header files in the &lt;filename&gt;src/include/catalog/&lt;/filename&gt; directory of
+  the source tree.  For each catalog there is a header file
+  named after the catalog (e.g., &lt;filename&gt;pg_class.h&lt;/filename&gt;
+  for &lt;structname&gt;pg_class&lt;/structname&gt;), which defines the set of columns
+  the catalog has, as well as some other basic properties such as its OID.
+</span>
+カタログの構造は、ソースツリーの<code class="filename">src/include/catalog/</code>ディレクトリの中の特殊な形式のCヘッダーファイルに宣言されています。
+個々のカタログに対応して、カタログと同じ名前のヘッダーファイルが存在し（たとえば、<code class="structname">pg_class</code>に対して<code class="filename">pg_class.h</code>というように）、カタログが持つ一連の列やOIDのような基本的な特性を定義しています。
+ </p><p>
+<span class="original">
+  Many of the catalogs have initial data that must be loaded into them
+  during the &lt;quote&gt;bootstrap&lt;/quote&gt; phase
+  of &lt;application&gt;initdb&lt;/application&gt;, to bring the system up to a point
+  where it is capable of executing SQL commands.  (For
+  example, &lt;filename&gt;pg_class.h&lt;/filename&gt; must contain an entry for itself,
+  as well as one for each other system catalog and index.)  This
+  initial data is kept in editable form in data files that are also stored
+  in the &lt;filename&gt;src/include/catalog/&lt;/filename&gt; directory.  For example,
+  &lt;filename&gt;pg_proc.dat&lt;/filename&gt; describes all the initial rows that must
+  be inserted into the &lt;structname&gt;pg_proc&lt;/structname&gt; catalog.
+</span>
+SQLコマンドを実行可能な状態にまでシステムを持っていくために、多くのカタログは<span class="application">initdb</span>の<span class="quote">「<span class="quote">bootstrap</span>」</span>フェーズで読み込まなければならない初期データを持っています。
+（たとえば、<code class="filename">pg_class.h</code>は、他のシステムカタログとインデックス同様、自分自身のエントリを含んでいなければなりません。）
+この初期データも、<code class="filename">src/include/catalog/</code>ディレクトリに格納されているデータファイル中に編集可能な形式で保存されています。
+たとえば、<code class="filename">pg_proc.dat</code>は、<code class="structname">pg_proc</code>カタログに挿入されるべき初期の行を記述しています。
+ </p><p>
+<span class="original">
+  To create the catalog files and load this initial data into them, a
+  backend running in bootstrap mode reads a &lt;acronym&gt;BKI&lt;/acronym&gt;
+  (Backend Interface) file containing commands and initial data.
+  The &lt;filename&gt;postgres.bki&lt;/filename&gt; file used in this mode is prepared
+  from the aforementioned header and data files, while building
+  a &lt;productname&gt;PostgreSQL&lt;/productname&gt; distribution, by a Perl script
+  named &lt;filename&gt;genbki.pl&lt;/filename&gt;.
+  Although it's specific to a particular &lt;productname&gt;PostgreSQL&lt;/productname&gt;
+  release, &lt;filename&gt;postgres.bki&lt;/filename&gt; is platform-independent and is
+  installed in the &lt;filename&gt;share&lt;/filename&gt; subdirectory of the
+  installation tree.
+</span>
+カタログファイルを作り初期データをそこにロードするために、ブートストラップモードで実行中のバックエンドは、コマンドと初期データを含む<acronym class="acronym">BKI</acronym>（Backend Interface: バックエンドインタフェース）ファイルを読み込みます。
+このモードで使用される<code class="filename">postgres.bki</code>は、<code class="filename">genbki.pl</code>というPerlスクリプトを使って、<span class="productname">PostgreSQL</span>ディストリビューションを構築する過程で前述のヘッダーとデータファイルから作成されます。
+<code class="filename">postgres.bki</code>は<span class="productname">PostgreSQL</span>の特定のリリースに固有のものですが、プラットフォームからは独立しており、インストレーションツリーの<code class="filename">share</code>サブディレクトリにインストールされます。
+ </p><p>
+<span class="original">
+  &lt;filename&gt;genbki.pl&lt;/filename&gt; also produces a derived header file for
+  each catalog, for example &lt;filename&gt;pg_class_d.h&lt;/filename&gt; for
+  the &lt;structname&gt;pg_class&lt;/structname&gt; catalog.  This file contains
+  automatically-generated macro definitions, and may contain other macros,
+  enum declarations, and so on that can be useful for client C code that
+  reads a particular catalog.
+</span>
+<code class="filename">genbki.pl</code>は、他にも各々のカタログで使用する、たとえば<code class="structname">pg_class</code>のための<code class="filename">pg_class_d.h</code>のような派生ファイルを生成します。
+このファイルには自動生成されたマクロ定義が含まれているほか、他のマクロとenum宣言も含まれており、特定のカタログを読み込むクライアントCコードに役立ちます。
+ </p><p>
+<span class="original">
+  Most PostgreSQL developers don't need to be directly concerned with
+  the &lt;acronym&gt;BKI&lt;/acronym&gt; file, but almost any nontrivial feature
+  addition in the backend will require modifying the catalog header files
+  and/or initial data files.  The rest of this chapter gives some
+  information about that, and for completeness describes
+  the &lt;acronym&gt;BKI&lt;/acronym&gt; file format.
+</span>
+ほとんどのPostgreSQL開発者は直接<acronym class="acronym">BKI</acronym>ファイルのことを気にかける必要はありませんが、バックエンドに些細ではない機能を追加する際にはカタログヘッダーファイル、あるいはまた初期データファイルの変更が必要になるでしょう。
+この章の残りの部分でそれについての情報をお届けします。
+また網羅性のために、<acronym class="acronym">BKI</acronym>ファイルのフォーマットも説明します。
+ </p></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="storage-page-layout.html" title="70.6. データベースページのレイアウト">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="internals.html" title="パート VII. 内部情報">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="system-catalog-declarations.html" title="71.1. システムカタログの宣言ルール">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">70.6. データベースページのレイアウト </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 71.1. システムカタログの宣言ルール</td></tr></table></div></body></html>

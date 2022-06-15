@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>13.5. 警告</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="applevel-consistency.html" title="13.4. アプリケーションレベルでのデータの一貫性チェック" /><link rel="next" href="locking-indexes.html" title="13.6. ロックとインデックス" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="mvcc.html" title="第13章 同時実行制御">第13章 同時実行制御</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      mvcc-caveats.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="applevel-consistency.html" title="13.4. アプリケーションレベルでのデータの一貫性チェック">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="mvcc.html" title="第13章 同時実行制御">上へ</a></td><td width="60%" align="center">13.5. 警告</td><td width="20%" align="right"> <a accesskey="n" href="locking-indexes.html" title="13.6. ロックとインデックス">次へ</a></td></tr></table><hr /></div><div class="sect1" id="MVCC-CAVEATS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">13.5. 警告</h2></div></div></div><span class="original">
+   &lt;title&gt;Caveats&lt;/title&gt;
+</span><p>
+<span class="original">
+    Some DDL commands, currently only &lt;link linkend="sql-truncate"&gt;&lt;command&gt;TRUNCATE&lt;/command&gt;&lt;/link&gt; and the
+    table-rewriting forms of &lt;link linkend="sql-altertable"&gt;&lt;command&gt;ALTER TABLE&lt;/command&gt;&lt;/link&gt;, are not
+    MVCC-safe.  This means that after the truncation or rewrite commits, the
+    table will appear empty to concurrent transactions, if they are using a
+    snapshot taken before the DDL command committed.  This will only be an
+    issue for a transaction that did not access the table in question
+    before the DDL command started &amp;mdash; any transaction that has done so
+    would hold at least an &lt;literal&gt;ACCESS SHARE&lt;/literal&gt; table lock,
+    which would block the DDL command until that transaction completes.
+    So these commands will not cause any apparent inconsistency in the
+    table contents for successive queries on the target table, but they
+    could cause visible inconsistency between the contents of the target
+    table and other tables in the database.
+</span>
+DDLコマンドの中には、現在は<a class="link" href="sql-truncate.html" title="TRUNCATE"><code class="command">TRUNCATE</code></a>とテーブルを書き換える形の<a class="link" href="sql-altertable.html" title="ALTER TABLE"><code class="command">ALTER TABLE</code></a>だけですが、MVCCセーフでないものがあります。
+これは、DDLコマンドをコミットする前に取得したスナップショットを使っていると、切り詰めまたは書き換えのコミット後に、同時実行トランザクションに対してテーブルが空に見えることを意味しています。
+該当するテーブルにDDLコマンドが開始する前にアクセスしなかったトランザクションにとってのみ、これは問題となるでしょう—開始前にアクセスしたトランザクションは少なくとも<code class="literal">ACCESS SHARE</code>テーブルロックを保持しており、そのトランザクションが完了するまでDDLコマンドはブロックされるでしょう。
+ですので、対象のテーブルに対する連続した問い合わせで、このコマンドはテーブルの内容の見かけ上の不整合の原因とはなりません。しかし、対象のテーブルとデータベース内の他のテーブルの内容の間の可視の不整合の原因となるかもしれません。
+   </p><p>
+<span class="original">
+    Support for the Serializable transaction isolation level has not yet
+    been added to Hot Standby replication targets (described in
+    &lt;xref linkend="hot-standby"/&gt;).  The strictest isolation level currently
+    supported in hot standby mode is Repeatable Read.  While performing all
+    permanent database writes within Serializable transactions on the
+    primary will ensure that all standbys will eventually reach a consistent
+    state, a Repeatable Read transaction run on the standby can sometimes
+    see a transient state that is inconsistent with any serial execution
+    of the transactions on the primary.
+</span>
+シリアライザブルトランザクション分離レベルのサポートは、まだホットスタンバイレプリケーションは対象に加えられていません(<a class="xref" href="hot-standby.html" title="27.4. ホットスタンバイ">27.4</a>で述べます)。
+ホットスタンバイモードで現在サポートされた最も厳しい分離レベルはリピータブルリードです。
+プライマリ上でシリアライザブルトランザクション中にデータベースに永続的な書き込みを行なえば、スタンバイはすべて最終的に一貫した状態に達するだろうということは保証されるでしょうが、スタンバイ上で実行されたリピータブルリードトランザクションは、時々プライマリのトランザクションの任意の連続する実行と一致しない過渡状態を見ることがあるでしょう。
+   </p><p>
+<span class="original">
+    Internal access to the system catalogs is not done using the isolation
+    level of the current transaction.  This means that newly created database
+    objects such as tables are visible to concurrent Repeatable Read and
+    Serializable transactions, even though the rows they contain are not.  In
+    contrast, queries that explicitly examine the system catalogs don't see
+    rows representing concurrently created database objects, in the higher
+    isolation levels.
+</span>
+システムカタログへの内部のアクセスは現在のトランザクションの分離レベルを使っては行われません。
+これは、テーブルのような新しく作られたデータベースオブジェクトが、たとえシステムカタログが含む行が可視でないとしても、並行するリピータブルリードトランザクションやシリアライザブルトランザクションに対して可視であることを意味します。
+対照的に、明示的にシステムカタログを確認する問い合わせは、より高い分離レベルで並行して作られているデータベースオブジェクトを表す行を見ることはできません。
+   </p></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="applevel-consistency.html" title="13.4. アプリケーションレベルでのデータの一貫性チェック">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="mvcc.html" title="第13章 同時実行制御">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="locking-indexes.html" title="13.6. ロックとインデックス">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">13.4. アプリケーションレベルでのデータの一貫性チェック </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 13.6. ロックとインデックス</td></tr></table></div></body></html>

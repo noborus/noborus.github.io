@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>F.13. earthdistance</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="dict-xsyn.html" title="F.12. dict_xsyn" /><link rel="next" href="file-fdw.html" title="F.14. file_fdw" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="contrib.html" title="付録F 追加で提供されるモジュール">付録F 追加で提供されるモジュール</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      earthdistance.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="dict-xsyn.html" title="F.12. dict_xsyn">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュール">上へ</a></td><td width="60%" align="center">F.13. earthdistance</td><td width="20%" align="right"> <a accesskey="n" href="file-fdw.html" title="F.14. file_fdw">次へ</a></td></tr></table><hr /></div><div class="sect1" id="EARTHDISTANCE"><div class="titlepage"><div><div><h2 class="title" style="clear: both">F.13. earthdistance</h2></div></div></div><a id="id-1.11.7.22.2" class="indexterm"></a><p>
+<span class="original">
+  The &lt;filename&gt;earthdistance&lt;/filename&gt; module provides two different approaches to
+  calculating great circle distances on the surface of the Earth. The one
+  described first depends on the &lt;filename&gt;cube&lt;/filename&gt; module.
+  The second one is based on the built-in &lt;type&gt;point&lt;/type&gt; data type,
+  using longitude and latitude for the coordinates.
+</span>
+<code class="filename">earthdistance</code>は地表面上の大圏距離を計算する、2つの異なる方式を提供します。
+最初に説明する方式は<code class="filename">cube</code>モジュールに依存します。
+2番目の方式は、座標系として緯度経度を使用した、組み込みの<code class="type">point</code>データ型を基にしたものです。
+ </p><p>
+<span class="original">
+  In this module, the Earth is assumed to be perfectly spherical.
+  (If that's too inaccurate for you, you might want to look at the
+  &lt;application&gt;&lt;ulink url="https://postgis.net/"&gt;PostGIS&lt;/ulink&gt;&lt;/application&gt;
+  project.)
+</span>
+このモジュールでは地球は完全な球体であると仮定します。
+（この精度が不十分な場合は、<span class="application"><a class="ulink" href="https://postgis.net/" target="_top">PostGIS</a></span>プロジェクトを参照することを勧めます。）
+ </p><p>
+<span class="original">
+  The &lt;filename&gt;cube&lt;/filename&gt; module must be installed
+  before &lt;filename&gt;earthdistance&lt;/filename&gt; can be installed
+  (although you can use the &lt;literal&gt;CASCADE&lt;/literal&gt; option
+  of &lt;command&gt;CREATE EXTENSION&lt;/command&gt; to install both in one command).
+</span>
+<code class="filename">cube</code>モジュールは<code class="filename">earthdistance</code>をインストールする前にインストールしなければなりません(一つのコマンドで両方をインストールするために<code class="command">CREATE EXTENSION</code>の<code class="literal">CASCADE</code>オプションを使うこともできますが)。
+ </p><div class="caution"><h3 class="title">注意</h3><p>
+<span class="original">
+   It is strongly recommended that &lt;filename&gt;earthdistance&lt;/filename&gt;
+   and &lt;filename&gt;cube&lt;/filename&gt; be installed in the same schema, and that
+   that schema be one for which CREATE privilege has not been and will not
+   be granted to any untrusted users.
+   Otherwise there are installation-time security hazards
+   if &lt;filename&gt;earthdistance&lt;/filename&gt;'s schema contains objects defined
+   by a hostile user.
+   Furthermore, when using &lt;filename&gt;earthdistance&lt;/filename&gt;'s functions
+   after installation, the entire search path should contain only trusted
+   schemas.
+</span>
+<code class="filename">earthdistance</code>と<code class="filename">cube</code>は同じスキーマにインストールし、そのスキーマは信頼できないユーザにCREATE権限を許可していないし、今後も許可することのないものとすることを強く勧めます。
+さもないと、<code class="filename">earthdistance</code>のスキーマが悪意のあるユーザにより定義されたオブジェクトを含んでいた場合に、インストール時のセキュリティ問題になります。
+さらに、インストール後に<code class="filename">earthdistance</code>の関数を使う時には、サーチパス全体には信頼するスキーマだけが含まれるようにすべきです。
+  </p></div><div class="sect2" id="id-1.11.7.22.7"><div class="titlepage"><div><div><h3 class="title">F.13.1. cubeを基にした地表距離</h3></div></div></div><span class="original">
+  &lt;title&gt;Cube-Based Earth Distances&lt;/title&gt;
+</span><p>
+<span class="original">
+   Data is stored in cubes that are points (both corners are the same) using 3
+   coordinates representing the x, y, and z distance from the center of the
+   Earth.  A domain &lt;type&gt;earth&lt;/type&gt; over &lt;type&gt;cube&lt;/type&gt; is provided, which
+   includes constraint checks that the value meets these restrictions and
+   is reasonably close to the actual surface of the Earth.
+</span>
+地球中心からのx、y、z距離をあらわす3次元を使用した点（両隅が同じ）であるcubeとして、データは格納されます。
+<code class="type">cube</code>上に<code class="type">earth</code>ドメインが提供されます。
+これには、値がこれら制限を満たすか、また値が理論的に実際の地表面に近いかどうかの整合性検査を含みます。
+  </p><p>
+<span class="original">
+   The radius of the Earth is obtained from the &lt;function&gt;earth()&lt;/function&gt;
+   function. It is given in meters. But by changing this one function you can
+   change the module to use some other units, or to use a different value of
+   the radius that you feel is more appropriate.
+</span>
+地球の半径は<code class="function">earth()</code>関数から入手されます。
+この単位はメートルです。
+しかしこの1つの関数を変更することで、何らかの他の単位を使用するようにしたり、より適切と考える別の半径を使用したりするようにこのモジュールを変更することができます。
+  </p><p>
+<span class="original">
+   This package has applications to astronomical databases as well.
+   Astronomers will probably want to change &lt;function&gt;earth()&lt;/function&gt; to return a
+   radius of &lt;literal&gt;180/pi()&lt;/literal&gt; so that distances are in degrees.
+</span>
+このパッケージは天文学データベースへの応用もあります。
+天文学者はおそらく距離が度単位になるように、<code class="function">earth()</code>が<code class="literal">180/pi()</code>の半径を返すものと変更したいでしょう。
+  </p><p>
+<span class="original">
+   Functions are provided to support input in latitude and longitude (in
+   degrees), to support output of latitude and longitude, to calculate
+   the great circle distance between two points and to easily specify a
+   bounding box usable for index searches.
+</span>
+緯度経度（度単位）の入力をサポート、緯度経度の出力をサポート、2点間の大圏距離を計算、インデックス検索に使用可能な簡単に外接矩形を指定するための関数が提供されます。
+  </p><p>
+<span class="original">
+   The provided functions are shown
+   in &lt;xref linkend="earthdistance-cube-functions"/&gt;.
+</span>
+提供されている関数は<a class="xref" href="earthdistance.html#EARTHDISTANCE-CUBE-FUNCTIONS" title="表F.5 cubeを基にしたearthdistanceの関数">表 F.5</a>に示されています。
+  </p><div class="table" id="EARTHDISTANCE-CUBE-FUNCTIONS"><p class="title"><strong>表F.5 cubeを基にしたearthdistanceの関数</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;Cube-Based Earthdistance Functions&lt;/title&gt;
+</span><table class="table" summary="cubeを基にしたearthdistanceの関数" border="1"><colgroup><col /></colgroup><thead><tr><th class="func_table_entry"><p class="func_signature">
+<span class="original">
+        Function
+</span>
+        関数
+       </p>
+       <p>
+<span class="original">
+        Description
+</span>
+        説明
+       </p></th></tr></thead><tbody><tr><td class="func_table_entry"><p class="func_signature">
+        <a id="id-1.11.7.22.7.7.2.2.1.1.1.1" class="indexterm"></a>
+        <code class="function">earth</code> ()
+        → <code class="returnvalue">float8</code>
+       </p>
+       <p>
+<span class="original">
+        Returns the assumed radius of the Earth.
+</span>
+地球の想定半径を返します。
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <a id="id-1.11.7.22.7.7.2.2.2.1.1.1" class="indexterm"></a>
+        <code class="function">sec_to_gc</code> ( <code class="type">float8</code> )
+        → <code class="returnvalue">float8</code>
+       </p>
+       <p>
+<span class="original">
+        Converts the normal straight line
+        (secant) distance between two points on the surface of the Earth
+        to the great circle distance between them.
+</span>
+地表の2点間の通常の直線（割線）距離を大圏距離に変換します。
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <a id="id-1.11.7.22.7.7.2.2.3.1.1.1" class="indexterm"></a>
+        <code class="function">gc_to_sec</code> ( <code class="type">float8</code> )
+        → <code class="returnvalue">float8</code>
+       </p>
+       <p>
+<span class="original">
+        Converts the great circle distance between two points on the
+        surface of the Earth to the normal straight line (secant) distance
+        between them.
+</span>
+地表の2点間の大圏距離を通常の直線（割線）距離に変換します。
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <a id="id-1.11.7.22.7.7.2.2.4.1.1.1" class="indexterm"></a>
+        <code class="function">ll_to_earth</code> ( <code class="type">float8</code>, <code class="type">float8</code> )
+        → <code class="returnvalue">earth</code>
+       </p>
+       <p>
+<span class="original">
+        Returns the location of a point on the surface of the Earth given
+        its latitude (argument 1) and longitude (argument 2) in degrees.
+</span>
+度単位で指定された緯度（第1引数）と経度（第2引数）に対する地表位置を返します。
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <a id="id-1.11.7.22.7.7.2.2.5.1.1.1" class="indexterm"></a>
+        <code class="function">latitude</code> ( <code class="type">earth</code> )
+        → <code class="returnvalue">float8</code>
+       </p>
+       <p>
+<span class="original">
+        Returns the latitude in degrees of a point on the surface of the
+        Earth.
+</span>
+地表上の点の緯度を度単位で返します。
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <a id="id-1.11.7.22.7.7.2.2.6.1.1.1" class="indexterm"></a>
+        <code class="function">longitude</code> ( <code class="type">earth</code> )
+        → <code class="returnvalue">float8</code>
+       </p>
+       <p>
+<span class="original">
+        Returns the longitude in degrees of a point on the surface of the
+        Earth.
+</span>
+地表上の点の経度を度単位で返します。
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <a id="id-1.11.7.22.7.7.2.2.7.1.1.1" class="indexterm"></a>
+        <code class="function">earth_distance</code> ( <code class="type">earth</code>, <code class="type">earth</code> )
+        → <code class="returnvalue">float8</code>
+       </p>
+       <p>
+<span class="original">
+        Returns the great circle distance between two points on the
+        surface of the Earth.
+</span>
+地表上の2点間の大圏距離を返します。
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <a id="id-1.11.7.22.7.7.2.2.8.1.1.1" class="indexterm"></a>
+        <code class="function">earth_box</code> ( <code class="type">earth</code>, <code class="type">float8</code> )
+        → <code class="returnvalue">cube</code>
+       </p>
+       <p>
+<span class="original">
+        Returns a box suitable for an indexed search using the &lt;type&gt;cube&lt;/type&gt;
+        &lt;literal&gt;@&amp;gt;&lt;/literal&gt;
+        operator for points within a given great circle distance of a location.
+        Some points in this box are further than the specified great circle
+        distance from the location, so a second check using
+        &lt;function&gt;earth_distance&lt;/function&gt; should be included in the query.
+</span>
+位置から指定した大圏距離内の点に対する<code class="type">cube</code>の<code class="literal">@&gt;</code>演算子を使用するインデックス検索に適した矩形を返します。
+矩形内の点の一部は指定した大圏距離の外部にあります。
+このため、<code class="function">earth_distance</code>を使用した第2の検査を問い合わせに含めなければなりません。
+       </p></td></tr></tbody></table></div></div><br class="table-break" /></div><div class="sect2" id="id-1.11.7.22.8"><div class="titlepage"><div><div><h3 class="title">F.13.2. pointを基にした地表距離</h3></div></div></div><span class="original">
+  &lt;title&gt;Point-Based Earth Distances&lt;/title&gt;
+</span><p>
+<span class="original">
+   The second part of the module relies on representing Earth locations as
+   values of type &lt;type&gt;point&lt;/type&gt;, in which the first component is taken to
+   represent longitude in degrees, and the second component is taken to
+   represent latitude in degrees.  Points are taken as (longitude, latitude)
+   and not vice versa because longitude is closer to the intuitive idea of
+   x-axis and latitude to y-axis.
+</span>
+このモジュールの第2部分は<code class="type">point</code>型の値として地球上の位置を表現することに依存します。
+ここで第1要素は経度を度単位で、第2要素は緯度を度単位で表現していると見なします。
+直感的に経度はX軸、緯度はY軸という考えがより合うため、点は(経度, 緯度)として見なされますが、逆には見なされません。
+  </p><p>
+<span class="original">
+   A single operator is provided, shown
+   in &lt;xref linkend="earthdistance-point-operators"/&gt;.
+</span>
+<a class="xref" href="earthdistance.html#EARTHDISTANCE-POINT-OPERATORS" title="表F.6 pointを基にしたearthdistanceの演算子">表 F.6</a>に示されている1つの演算子が提供されます。
+  </p><div class="table" id="EARTHDISTANCE-POINT-OPERATORS"><p class="title"><strong>表F.6 pointを基にしたearthdistanceの演算子</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;Point-Based Earthdistance Operators&lt;/title&gt;
+</span><table class="table" summary="pointを基にしたearthdistanceの演算子" border="1"><colgroup><col /></colgroup><thead><tr><th class="func_table_entry"><p class="func_signature">
+<span class="original">
+        Operator
+</span>
+        演算子
+       </p>
+       <p>
+<span class="original">
+        Description
+</span>
+        説明
+       </p></th></tr></thead><tbody><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="type">point</code> <code class="literal">&lt;@&gt;</code> <code class="type">point</code>
+        → <code class="returnvalue">float8</code>
+       </p>
+       <p>
+<span class="original">
+        Computes the distance in statute miles between
+        two points on the Earth's surface.
+</span>
+法定マイル単位の地表の2点間の距離を計算します。
+       </p></td></tr></tbody></table></div></div><br class="table-break" /><p>
+<span class="original">
+   Note that unlike the &lt;type&gt;cube&lt;/type&gt;-based part of the module, units
+   are hardwired here: changing the &lt;function&gt;earth()&lt;/function&gt; function will
+   not affect the results of this operator.
+</span>
+このモジュールの<code class="type">cube</code>を基にした場合と異なり、ここでの単位はコード内に固定で記載されることに注意してください。
+<code class="function">earth()</code>関数を変更しても、この演算子の結果には影響しません。
+  </p><p>
+<span class="original">
+   One disadvantage of the longitude/latitude representation is that
+   you need to be careful about the edge conditions near the poles
+   and near +/- 180 degrees of longitude.  The &lt;type&gt;cube&lt;/type&gt;-based
+   representation avoids these discontinuities.
+</span>
+緯度経度表現の1つの欠点は、極近辺と経度±180度近辺の限界条件に注意する必要があることです。
+<code class="type">cube</code>を基にした表現ではこうした不連続性を防止できます。
+  </p></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="dict-xsyn.html" title="F.12. dict_xsyn">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュール">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="file-fdw.html" title="F.14. file_fdw">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">F.12. dict_xsyn </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> F.14. file_fdw</td></tr></table></div></body></html>

@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>F.31. pgstattuple</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="pgstatstatements.html" title="F.30. pg_stat_statements" /><link rel="next" href="pgsurgery.html" title="F.32. pg_surgery" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="contrib.html" title="付録F 追加で提供されるモジュール">付録F 追加で提供されるモジュール</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      pgstattuple.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="pgstatstatements.html" title="F.30. pg_stat_statements">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュール">上へ</a></td><td width="60%" align="center">F.31. pgstattuple</td><td width="20%" align="right"> <a accesskey="n" href="pgsurgery.html" title="F.32. pg_surgery">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PGSTATTUPLE"><div class="titlepage"><div><div><h2 class="title" style="clear: both">F.31. pgstattuple</h2></div></div></div><a id="id-1.11.7.40.2" class="indexterm"></a><p>
+<span class="original">
+  The &lt;filename&gt;pgstattuple&lt;/filename&gt; module provides various functions to
+  obtain tuple-level statistics.
+</span>
+<code class="filename">pgstattuple</code>モジュールはタプルレベルの統計情報を入手するための各種関数を提供します。
+ </p><p>
+<span class="original">
+  Because these functions return detailed page-level information, access is
+  restricted by default.  By default, only the
+  role &lt;literal&gt;pg_stat_scan_tables&lt;/literal&gt; has &lt;literal&gt;EXECUTE&lt;/literal&gt;
+  privilege.  Superusers of course bypass this restriction.  After the
+  extension has been installed, users may issue &lt;command&gt;GRANT&lt;/command&gt;
+  commands to change the privileges on the functions to allow others to
+  execute them.  However, it might be preferable to add those users to
+  the &lt;literal&gt;pg_stat_scan_tables&lt;/literal&gt; role instead.
+</span>
+これらの関数は詳細なページレベルの情報を返しますので、デフォルトではアクセスが制限されています。
+デフォルトでは<code class="literal">pg_stat_scan_tables</code>ロールだけが<code class="literal">EXECUTE</code>権限を持っています。
+スーパーユーザは、当然、この制限を無視します。
+拡張がインストールされた後、ユーザは<code class="command">GRANT</code>コマンドを発行して他のユーザがそれらを実行できるよう関数に対する権限を変更できます。
+しかしながら、その代わりに<code class="literal">pg_stat_scan_tables</code>ロールにそのユーザを追加する方が好ましいでしょう。
+ </p><div class="sect2" id="id-1.11.7.40.5"><div class="titlepage"><div><div><h3 class="title">F.31.1. 関数</h3></div></div></div><span class="original">
+  &lt;title&gt;Functions&lt;/title&gt;
+</span><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+     <a id="id-1.11.7.40.5.2.1.1.1" class="indexterm"></a>
+     <code class="function">pgstattuple(regclass) returns record</code>
+    </span></dt><dd><p>
+<span class="original">
+      &lt;function&gt;pgstattuple&lt;/function&gt; returns a relation's physical length,
+      percentage of &lt;quote&gt;dead&lt;/quote&gt; tuples, and other info. This may help users
+      to determine whether vacuum is necessary or not.  The argument is the
+      target relation's name (optionally schema-qualified) or OID.
+      For example:
+</span>
+<code class="function">pgstattuple</code>はリレーションの物理的な長さ、<span class="quote">「<span class="quote">無効</span>」</span>なタプルの割合、およびその他の情報を返します。
+これはバキュームが必要かどうかユーザが判断する時に有用かもしれません。
+引数は対象とするリレーションの名前（スキーマ修飾可）もしくはOIDです。
+以下に例を示します。
+</p><pre class="programlisting">
+test=&gt; SELECT * FROM pgstattuple('pg_catalog.pg_proc');
+-[ RECORD 1 ]------+-------
+table_len          | 458752
+tuple_count        | 1470
+tuple_len          | 438896
+tuple_percent      | 95.67
+dead_tuple_count   | 11
+dead_tuple_len     | 3157
+dead_tuple_percent | 0.69
+free_space         | 8932
+free_percent       | 1.95
+</pre><p>
+<span class="original">
+     The output columns are described in &lt;xref linkend="pgstattuple-columns"/&gt;.
+</span>
+出力列を<a class="xref" href="pgstattuple.html#PGSTATTUPLE-COLUMNS" title="表F.23 pgstattupleの出力列">表 F.23</a>で説明します。
+    </p><div class="table" id="PGSTATTUPLE-COLUMNS"><p class="title"><strong>表F.23 <code class="function">pgstattuple</code>の出力列</strong></p><div class="table-contents"><span class="original">
+     &lt;title&gt;&lt;function&gt;pgstattuple&lt;/function&gt; Output Columns&lt;/title&gt;
+</span><table class="table" summary="pgstattupleの出力列" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>列</th><th>型</th><th>説明</th></tr></thead><tbody><tr><td><code class="structfield">table_len</code></td><td><code class="type">bigint</code></td><td>リレーションのバイト単位の物理長</td></tr><tr><td><code class="structfield">tuple_count</code></td><td><code class="type">bigint</code></td><td>有効なタプル数</td></tr><tr><td><code class="structfield">tuple_len</code></td><td><code class="type">bigint</code></td><td>有効なタプルの物理長（バイト単位）</td></tr><tr><td><code class="structfield">tuple_percent</code></td><td><code class="type">float8</code></td><td>有効タプルの割合</td></tr><tr><td><code class="structfield">dead_tuple_count</code></td><td><code class="type">bigint</code></td><td>無効なタプル数</td></tr><tr><td><code class="structfield">dead_tuple_len</code></td><td><code class="type">bigint</code></td><td>バイト単位の総無効タプル長</td></tr><tr><td><code class="structfield">dead_tuple_percent</code></td><td><code class="type">float8</code></td><td>無効タプルの割合</td></tr><tr><td><code class="structfield">free_space</code></td><td><code class="type">bigint</code></td><td>バイト単位の総空き領域</td></tr><tr><td><code class="structfield">free_percent</code></td><td><code class="type">float8</code></td><td>空き領域の割合</td></tr></tbody></table></div></div><br class="table-break" /><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+      The &lt;literal&gt;table_len&lt;/literal&gt; will always be greater than the sum
+      of the &lt;literal&gt;tuple_len&lt;/literal&gt;, &lt;literal&gt;dead_tuple_len&lt;/literal&gt;
+      and &lt;literal&gt;free_space&lt;/literal&gt;. The difference is accounted for by
+      fixed page overhead, the per-page table of pointers to tuples, and
+      padding to ensure that tuples are correctly aligned.
+</span>
+<code class="literal">table_len</code>は、<code class="literal">tuple_len</code>、<code class="literal">dead_tuple_len</code>、<code class="literal">free_space</code>の合計よりも常に大きいです。
+違いの原因は、固定ページのオーバヘッド、ページ毎のタプルへのポインタのテーブル、タプルが正しく整列することを確実にするためのパディングです。
+     </p></div><p>
+<span class="original">
+     &lt;function&gt;pgstattuple&lt;/function&gt; acquires only a read lock on the
+     relation. So the results do not reflect an instantaneous snapshot;
+     concurrent updates will affect them.
+</span>
+<code class="function">pgstattuple</code> はリレーション上で読み取りロックのみを獲得します。
+ですので、結果はこの瞬間のスナップショットを考慮しません。つまり、同時実行の更新がその結果に影響を与えます。
+    </p><p>
+<span class="original">
+     &lt;function&gt;pgstattuple&lt;/function&gt; judges a tuple is &lt;quote&gt;dead&lt;/quote&gt; if
+     &lt;function&gt;HeapTupleSatisfiesDirty&lt;/function&gt; returns false.
+</span>
+<code class="function">pgstattuple</code>は、<code class="function">HeapTupleSatisfiesDirty</code>が偽を返すかどうかで、タプルが<span class="quote">「<span class="quote">無効</span>」</span>かどうか判定します。
+    </p></dd><dt><span class="term">
+     <code class="function">pgstattuple(text) returns record</code>
+    </span></dt><dd><p>
+<span class="original">
+      This is the same as &lt;function&gt;pgstattuple(regclass)&lt;/function&gt;, except
+      that the target relation is specified as TEXT. This function is kept
+      because of backward-compatibility so far, and will be deprecated in
+      some future release.
+</span>
+TEXTで対象リレーションを指定する点を除き、これは<code class="function">pgstattuple(regclass)</code>と同じです。
+この関数は今までのところ後方互換のために残されており、近い将来のリリースでは廃止予定になるでしょう。
+     </p></dd><dt><span class="term">
+    <a id="id-1.11.7.40.5.2.3.1.1" class="indexterm"></a>
+     <code class="function">pgstatindex(regclass) returns record</code>
+    </span></dt><dd><p>
+<span class="original">
+      &lt;function&gt;pgstatindex&lt;/function&gt; returns a record showing information
+      about a B-tree index.  For example:
+</span>
+<code class="function">pgstatindex</code>はB-treeインデックスに関する情報を示すレコードを返します。
+以下は例です。
+</p><pre class="programlisting">
+test=&gt; SELECT * FROM pgstatindex('pg_cast_oid_index');
+-[ RECORD 1 ]------+------
+version            | 2
+tree_level         | 0
+index_size         | 16384
+root_block_no      | 1
+internal_pages     | 0
+leaf_pages         | 1
+empty_pages        | 0
+deleted_pages      | 0
+avg_leaf_density   | 54.27
+leaf_fragmentation | 0
+</pre><p>
+     </p><p>
+<span class="original">
+     The output columns are:
+</span>
+出力列は以下の通りです。
+
+    </p><div class="informaltable"><table class="informaltable" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>列</th><th>型</th><th>説明</th></tr></thead><tbody><tr><td><code class="structfield">version</code></td><td><code class="type">integer</code></td><td>B-treeバージョン番号</td></tr><tr><td><code class="structfield">tree_level</code></td><td><code class="type">integer</code></td><td>ルートページのツリーレベル</td></tr><tr><td><code class="structfield">index_size</code></td><td><code class="type">bigint</code></td><td>バイト単位のインデックスサイズ</td></tr><tr><td><code class="structfield">root_block_no</code></td><td><code class="type">bigint</code></td><td>ルートページの場所（存在しない場合はゼロ）</td></tr><tr><td><code class="structfield">internal_pages</code></td><td><code class="type">bigint</code></td><td><span class="quote">「<span class="quote">内部</span>」</span>（上位レベル）ページ数</td></tr><tr><td><code class="structfield">leaf_pages</code></td><td><code class="type">bigint</code></td><td>リーフページ数</td></tr><tr><td><code class="structfield">empty_pages</code></td><td><code class="type">bigint</code></td><td>空ページ数</td></tr><tr><td><code class="structfield">deleted_pages</code></td><td><code class="type">bigint</code></td><td>削除ページ数</td></tr><tr><td><code class="structfield">avg_leaf_density</code></td><td><code class="type">float8</code></td><td>リーフページの平均密度</td></tr><tr><td><code class="structfield">leaf_fragmentation</code></td><td><code class="type">float8</code></td><td>リーフページの断片化</td></tr></tbody></table></div><p>
+    </p><p>
+<span class="original">
+     The reported &lt;literal&gt;index_size&lt;/literal&gt; will normally correspond to one more
+     page than is accounted for by &lt;literal&gt;internal_pages + leaf_pages +
+     empty_pages + deleted_pages&lt;/literal&gt;, because it also includes the
+     index's metapage.
+</span>
+報告される<code class="literal">index_size</code>は、通常、<code class="literal">internal_pages + leaf_pages + empty_pages + deleted_pages</code>が占めるより1多いページに相当するでしょう。
+これは、index_sizeがインデックスメタページも含むためです。
+    </p><p>
+<span class="original">
+     As with &lt;function&gt;pgstattuple&lt;/function&gt;, the results are accumulated
+     page-by-page, and should not be expected to represent an
+     instantaneous snapshot of the whole index.
+</span>
+<code class="function">pgstattuple</code>同様、結果はページ毎に累積されます。
+この瞬間のインデックス全体のスナップショットが存在すると想定してはいけません。
+    </p></dd><dt><span class="term">
+     <code class="function">pgstatindex(text) returns record</code>
+    </span></dt><dd><p>
+<span class="original">
+      This is the same as &lt;function&gt;pgstatindex(regclass)&lt;/function&gt;, except
+      that the target index is specified as TEXT. This function is kept
+      because of backward-compatibility so far, and will be deprecated in
+      some future release.
+</span>
+TEXTで対象インデックスを指定する点を除き、これは<code class="function">pgstatindex(regclass)</code>と同じです。
+この関数は今までのところ後方互換のために残されており、近い将来のリリースでは廃止予定になるでしょう。
+     </p></dd><dt><span class="term">
+     <a id="id-1.11.7.40.5.2.5.1.1" class="indexterm"></a>
+     <code class="function">pgstatginindex(regclass) returns record</code>
+    </span></dt><dd><p>
+<span class="original">
+      &lt;function&gt;pgstatginindex&lt;/function&gt; returns a record showing information
+      about a GIN index.  For example:
+</span>
+<code class="function">pgstatginindex</code>は、GINインデックスに関する情報を示すレコードを返します。
+以下に例を示します。
+</p><pre class="programlisting">
+test=&gt; SELECT * FROM pgstatginindex('test_gin_index');
+-[ RECORD 1 ]--+--
+version        | 1
+pending_pages  | 0
+pending_tuples | 0
+</pre><p>
+     </p><p>
+<span class="original">
+     The output columns are:
+</span>
+出力列は以下の通りです。
+
+    </p><div class="informaltable"><table class="informaltable" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>列</th><th>型</th><th>説明</th></tr></thead><tbody><tr><td><code class="structfield">version</code></td><td><code class="type">integer</code></td><td>GINバージョン番号</td></tr><tr><td><code class="structfield">pending_pages</code></td><td><code class="type">integer</code></td><td>待機中リスト内のページ数</td></tr><tr><td><code class="structfield">pending_tuples</code></td><td><code class="type">bigint</code></td><td>待機中リスト内のタプル数</td></tr></tbody></table></div><p>
+    </p></dd><dt><span class="term">
+     <a id="id-1.11.7.40.5.2.6.1.1" class="indexterm"></a>
+     <code class="function">pgstathashindex(regclass) returns record</code>
+    </span></dt><dd><p>
+<span class="original">
+      &lt;function&gt;pgstathashindex&lt;/function&gt; returns a record showing information
+      about a HASH index.  For example:
+</span>
+<code class="function">pgstathashindex</code>は、HASHインデックスに関する情報を示すレコードを返します。
+以下に例を示します。
+</p><pre class="programlisting">
+test=&gt; select * from pgstathashindex('con_hash_index');
+-[ RECORD 1 ]--+-----------------
+version        | 4
+bucket_pages   | 33081
+overflow_pages | 0
+bitmap_pages   | 1
+unused_pages   | 32455
+live_items     | 10204006
+dead_items     | 0
+free_percent   | 61.8005949100872
+</pre><p>
+     </p><p>
+<span class="original">
+     The output columns are:
+</span>
+出力列は以下の通りです。
+
+    </p><div class="informaltable"><table class="informaltable" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>列</th><th>型</th><th>説明</th></tr></thead><tbody><tr><td><code class="structfield">version</code></td><td><code class="type">integer</code></td><td>HASHバージョン番号</td></tr><tr><td><code class="structfield">bucket_pages</code></td><td><code class="type">bigint</code></td><td>バケットページの数</td></tr><tr><td><code class="structfield">overflow_pages</code></td><td><code class="type">bigint</code></td><td>オーバーフローページの数</td></tr><tr><td><code class="structfield">bitmap_pages</code></td><td><code class="type">bigint</code></td><td>ビットマップページの数</td></tr><tr><td><code class="structfield">unused_pages</code></td><td><code class="type">bigint</code></td><td>使われていないページの数</td></tr><tr><td><code class="structfield">live_items</code></td><td><code class="type">bigint</code></td><td>有効なタプルの数</td></tr><tr><td><code class="structfield">dead_tuples</code></td><td><code class="type">bigint</code></td><td>無効なタプルの数</td></tr><tr><td><code class="structfield">free_percent</code></td><td><code class="type">float</code></td><td>空き領域の割合</td></tr></tbody></table></div><p>
+    </p></dd><dt><span class="term">
+     <a id="id-1.11.7.40.5.2.7.1.1" class="indexterm"></a>
+     <code class="function">pg_relpages(regclass) returns bigint</code>
+    </span></dt><dd><p>
+<span class="original">
+      &lt;function&gt;pg_relpages&lt;/function&gt; returns the number of pages in the
+      relation.
+</span>
+<code class="function">pg_relpages</code>はリレーション内のページ数を返します。
+     </p></dd><dt><span class="term">
+     <code class="function">pg_relpages(text) returns bigint</code>
+    </span></dt><dd><p>
+<span class="original">
+      This is the same as &lt;function&gt;pg_relpages(regclass)&lt;/function&gt;, except
+      that the target relation is specified as TEXT. This function is kept
+      because of backward-compatibility so far, and will be deprecated in
+      some future release.
+</span>
+TEXTで対象リレーションを指定する点を除き、これは<code class="function">pg_relpages(regclass)</code>と同じです。
+この関数は今までのところ後方互換のために残されており、近い将来のリリースでは廃止予定になるでしょう。
+     </p></dd><dt><span class="term">
+     <a id="id-1.11.7.40.5.2.9.1.1" class="indexterm"></a>
+     <code class="function">pgstattuple_approx(regclass) returns record</code>
+    </span></dt><dd><p>
+<span class="original">
+      &lt;function&gt;pgstattuple_approx&lt;/function&gt; is a faster alternative to
+      &lt;function&gt;pgstattuple&lt;/function&gt; that returns approximate results.
+      The argument is the target relation's name or OID.
+      For example:
+</span>
+<code class="function">pgstattuple_approx</code>は<code class="function">pgstattuple</code>の代わりとなる高速なバージョンで、近似の結果を返します。
+引数は対象のリレーションの名前またはOIDです。
+以下に例を示します。
+</p><pre class="programlisting">
+test=&gt; SELECT * FROM pgstattuple_approx('pg_catalog.pg_proc'::regclass);
+-[ RECORD 1 ]--------+-------
+table_len            | 573440
+scanned_percent      | 2
+approx_tuple_count   | 2740
+approx_tuple_len     | 561210
+approx_tuple_percent | 97.87
+dead_tuple_count     | 0
+dead_tuple_len       | 0
+dead_tuple_percent   | 0
+approx_free_space    | 11996
+approx_free_percent  | 2.09
+</pre><p>
+<span class="original">
+      The output columns are described in &lt;xref linkend="pgstatapprox-columns"/&gt;.
+</span>
+出力列については<a class="xref" href="pgstattuple.html#PGSTATAPPROX-COLUMNS" title="表F.24 pgstattuple_approxの出力列">表 F.24</a>で説明します。
+     </p><p>
+<span class="original">
+      Whereas &lt;function&gt;pgstattuple&lt;/function&gt; always performs a
+      full-table scan and returns an exact count of live and dead tuples
+      (and their sizes) and free space, &lt;function&gt;pgstattuple_approx&lt;/function&gt;
+      tries to avoid the full-table scan and returns exact dead tuple
+      statistics along with an approximation of the number and
+      size of live tuples and free space.
+</span>
+<code class="function">pgstattuple</code>が常に全件走査を実行し、有効タプルと無効タプルの正確な数（およびそのサイズ）と空き領域を返すのに対し、<code class="function">pgstattuple_approx</code>は全件走査を避けようとし、無効タプルの正確な統計情報および有効タプルと空き領域の数とサイズの近似値を返します。
+     </p><p>
+<span class="original">
+      It does this by skipping pages that have only visible tuples
+      according to the visibility map (if a page has the corresponding VM
+      bit set, then it is assumed to contain no dead tuples). For such
+      pages, it derives the free space value from the free space map, and
+      assumes that the rest of the space on the page is taken up by live
+      tuples.
+</span>
+可視性マップに従えば可視のタプルしかないページ（ページに対応するVMビットがセットされているなら、無効タプルが含まれていないとみなします）についてスキップすることで、これを実現します。
+そのようなページについて空き領域の値を空き領域マップから導き、ページ上の残りのスペースは有効タプルによって占められているとみなします。
+     </p><p>
+<span class="original">
+      For pages that cannot be skipped, it scans each tuple, recording its
+      presence and size in the appropriate counters, and adding up the
+      free space on the page. At the end, it estimates the total number of
+      live tuples based on the number of pages and tuples scanned (in the
+      same way that VACUUM estimates pg_class.reltuples).
+</span>
+スキップできないページについては、各タプルをスキャンし、その存在とサイズを適切なカウンターに記録し、ページ上の空き領域を加算します。
+最後に有効タプルの合計数をスキャンしたページとタプルの数に基づいて推定します（VACUUMがpg_class.reltuplesを推定するのと同じ方法です）。
+     </p><div class="table" id="PGSTATAPPROX-COLUMNS"><p class="title"><strong>表F.24 <code class="function">pgstattuple_approx</code>の出力列 </strong></p><div class="table-contents"><span class="original">
+      &lt;title&gt;&lt;function&gt;pgstattuple_approx&lt;/function&gt; Output Columns&lt;/title&gt;
+</span><table class="table" summary="pgstattuple_approxの出力列 " border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>列</th><th>型</th><th>説明</th></tr></thead><tbody><tr><td><code class="structfield">table_len</code></td><td><code class="type">bigint</code></td><td>リレーションの物理的なバイト長（正確）</td></tr><tr><td><code class="structfield">scanned_percent</code></td><td><code class="type">float8</code></td><td>スキャンしたテーブルの割合</td></tr><tr><td><code class="structfield">approx_tuple_count</code></td><td><code class="type">bigint</code></td><td>有効タプル数（推定）</td></tr><tr><td><code class="structfield">approx_tuple_len</code></td><td><code class="type">bigint</code></td><td>有効タプルの合計のバイト長（推定）</td></tr><tr><td><code class="structfield">approx_tuple_percent</code></td><td><code class="type">float8</code></td><td>有効タプルの割合</td></tr><tr><td><code class="structfield">dead_tuple_count</code></td><td><code class="type">bigint</code></td><td>無効タプル数（正確）</td></tr><tr><td><code class="structfield">dead_tuple_len</code></td><td><code class="type">bigint</code></td><td>無効タプルの合計のバイト長（正確）</td></tr><tr><td><code class="structfield">dead_tuple_percent</code></td><td><code class="type">float8</code></td><td>無効タプルの割合</td></tr><tr><td><code class="structfield">approx_free_space</code></td><td><code class="type">bigint</code></td><td>空き領域の合計バイト数（推定）</td></tr><tr><td><code class="structfield">approx_free_percent</code></td><td><code class="type">float8</code></td><td>空き領域の割合</td></tr></tbody></table></div></div><br class="table-break" /><p>
+<span class="original">
+      In the above output, the free space figures may not match the
+      &lt;function&gt;pgstattuple&lt;/function&gt; output exactly, because the free
+      space map gives us an exact figure, but is not guaranteed to be
+      accurate to the byte.
+</span>
+上記の出力で、空き領域の数字は<code class="function">pgstattuple</code>の出力と正確には一致しないかもしれません。
+これは空き領域マップは正確な数字を提供しますが、バイト単位で正確であることまでは保証されていないためです。
+     </p></dd></dl></div></div><div class="sect2" id="id-1.11.7.40.6"><div class="titlepage"><div><div><h3 class="title">F.31.2. 作者</h3></div></div></div><span class="original">
+  &lt;title&gt;Authors&lt;/title&gt;
+</span><p>
+<span class="original">
+   Tatsuo Ishii, Satoshi Nagayasu and Abhijit Menon-Sen
+</span>
+   Tatsuo Ishii、Satoshi Nagayasu、Abhijit Menon-Sen
+  </p></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="pgstatstatements.html" title="F.30. pg_stat_statements">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュール">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="pgsurgery.html" title="F.32. pg_surgery">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">F.30. pg_stat_statements </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> F.32. pg_surgery</td></tr></table></div></body></html>

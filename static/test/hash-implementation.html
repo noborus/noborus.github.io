@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>69.2. 実装</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="hash-intro.html" title="69.1. 概要" /><link rel="next" href="storage.html" title="第70章 データベースの物理的な格納" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="hash-index.html" title="第69章 ハッシュインデックス">第69章 ハッシュインデックス</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      hash-implementation.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="hash-intro.html" title="69.1. 概要">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="hash-index.html" title="第69章 ハッシュインデックス">上へ</a></td><td width="60%" align="center">69.2. 実装</td><td width="20%" align="right"> <a accesskey="n" href="storage.html" title="第70章 データベースの物理的な格納">次へ</a></td></tr></table><hr /></div><div class="sect1" id="HASH-IMPLEMENTATION"><div class="titlepage"><div><div><h2 class="title" style="clear: both">69.2. 実装</h2></div></div></div><span class="original">
+ &lt;title&gt;Implementation&lt;/title&gt;
+</span><p>
+<span class="original">
+  There are four kinds of pages in a hash index: the meta page (page zero),
+  which contains statically allocated control information; primary bucket
+  pages; overflow pages; and bitmap pages, which keep track of overflow
+  pages that have been freed and are available for re-use. For addressing
+  purposes, bitmap pages are regarded as a subset of the overflow pages.
+</span>
+ハッシュインデックスには4種類のページがあります。
+静的に確保された制御情報を持つメタページ(ページ0)、主バケットページ、オーバフローページ、解放されて再利用が可能なオーバフローページを追跡するビットマップページ、です。
+アドレッシング目的という点では、ビットマップページはオーバフローページのサブセットと見なされます。
+ </p><p>
+<span class="original">
+  Both scanning the index and inserting tuples require locating the bucket
+  where a given tuple ought to be located. To do this, we need the bucket
+  count, highmask, and lowmask from the metapage; however, it's undesirable
+  for performance reasons to have to have to lock and pin the metapage for
+  every such operation. Instead, we retain a cached copy of the metapage
+  in each backend's relcache entry. This will produce the correct bucket
+  mapping as long as the target bucket hasn't been split since the last
+  cache refresh.
+</span>
+インデックスを操作すること、タプルを挿入することの両方には、与えられたタプルに位置づけられるべきバケットを特定する必要があります。
+これを実施するためには、バケット数、メタページの上位マスク、下位マスクが必要です。
+しかし、性能上の観点からは、そのような操作を行うたびにメタページをロックしてピンを立てるのは好ましいことではありません。
+そうする代わりに、それぞれのバックエンドのリレーションキャッシュ(relcache)のエントリにキャッシュされたメタページの複製を保持します。
+最後にキャッシュが更新された以降に目的のバケットが分割されていない限り、これは正しいバケットのマッピングを生成します。
+ </p><p>
+<span class="original">
+  Primary bucket pages and overflow pages are allocated independently since
+  any given index might need more or fewer overflow pages relative to its
+  number of buckets. The hash code uses an interesting set of addressing
+  rules to support a variable number of overflow pages while not having to
+  move primary bucket pages around after they are created.
+</span>
+与えられたインデックスにおいて、バケット数に対する必要な溢れページは多いかもしれないし少ないかもしれないので、主バケットページと溢れページは独立して確保されます。
+ハッシュのコードは、作成後は主バケットページを動かす必要がなく、しかも可変数のオーバフローページをサポートするために興味深いアドレス付規則を使用しています。
+ </p><p>
+<span class="original">
+  Each row in the table indexed is represented by a single index tuple in
+  the hash index. Hash index tuples are stored in bucket pages, and if
+  they exist, overflow pages. We speed up searches by keeping the index entries
+  in any one index page sorted by hash code, thus allowing binary search to be
+  used within an index page. Note however that there is *no* assumption about
+  the relative ordering of hash codes across different index pages of a bucket.
+</span>
+インデックス付されたテーブル内の各行はハッシュインデックスにおいては単一のインデックスタプルで表現されています。
+ハッシュインデックスタプルはバケットページに格納され、オーバフローページが存在するならそこにも存在します。
+インデックスエントリをハッシュコードによりソートされた一つのインデックスページに保持し、一つのインデックスページ内での二分探索を可能にすることにより、探索を高速化しています。
+しかし、バケット内の異なるインデックスページ間において、ハッシュコードの間に相対的な順序付けがあるという前提はないことに留意してください。
+ </p><p>
+<span class="original">
+  The bucket splitting algorithms to expand the hash index are too complex to
+  be worthy of mention here, though are described in more detail in
+  &lt;filename&gt;src/backend/access/hash/README&lt;/filename&gt;.
+  The split algorithm is crash safe and can be restarted if not completed
+  successfully.
+</span>
+ハッシュインデックスを拡張するためにバケットを分割するアルゴリズムは複雑過ぎてここで言及するには及びませんが、より詳細が<code class="filename">src/backend/access/hash/README</code>に記載されています。
+分割アルゴリズムはクラッシュ耐性があり、正常に完了していなくても再スタートできます。
+ </p></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="hash-intro.html" title="69.1. 概要">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="hash-index.html" title="第69章 ハッシュインデックス">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="storage.html" title="第70章 データベースの物理的な格納">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">69.1. 概要 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 第70章 データベースの物理的な格納</td></tr></table></div></body></html>

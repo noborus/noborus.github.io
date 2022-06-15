@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>F.8. citext</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="btree-gist.html" title="F.7. btree_gist" /><link rel="next" href="cube.html" title="F.9. cube" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="contrib.html" title="付録F 追加で提供されるモジュール">付録F 追加で提供されるモジュール</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      citext.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="btree-gist.html" title="F.7. btree_gist">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュール">上へ</a></td><td width="60%" align="center">F.8. citext</td><td width="20%" align="right"> <a accesskey="n" href="cube.html" title="F.9. cube">次へ</a></td></tr></table><hr /></div><div class="sect1" id="CITEXT"><div class="titlepage"><div><div><h2 class="title" style="clear: both">F.8. citext</h2></div></div></div><a id="id-1.11.7.17.2" class="indexterm"></a><p>
+<span class="original">
+  The &lt;filename&gt;citext&lt;/filename&gt; module provides a case-insensitive
+  character string type, &lt;type&gt;citext&lt;/type&gt;. Essentially, it internally calls
+  &lt;function&gt;lower&lt;/function&gt; when comparing values. Otherwise, it behaves almost
+  exactly like &lt;type&gt;text&lt;/type&gt;.
+</span>
+<code class="filename">citext</code>モジュールは、大文字小文字の区別がない文字列型を提供します。
+これは値の比較の際、基本的に内部で<code class="function">lower</code>を呼び出します。
+この他はほぼ<code class="type">text</code>と同様に動作します。
+ </p><div class="tip"><h3 class="title">ヒント</h3><p>
+<span class="original">
+   Consider using &lt;firstterm&gt;nondeterministic collations&lt;/firstterm&gt; (see
+   &lt;xref linkend="collation-nondeterministic"/&gt;) instead of this module.  They
+   can be used for case-insensitive comparisons, accent-insensitive
+   comparisons, and other combinations, and they handle more Unicode special
+   cases correctly.
+</span>
+このモジュールの代わりに<em class="firstterm">非決定論的照合順序</em>(<a class="xref" href="collation.html#COLLATION-NONDETERMINISTIC" title="24.2.2.4. 非決定論的な照合順序">24.2.2.4</a>参照)を使うことを検討してください。
+大文字小文字を区別しない比較、アクセントを区別しない比較、その他の組み合わせに対して使えますし、より多くのユニコードの特別な場合を正しく扱います。
+  </p></div><p>
+<span class="original">
+  This module is considered &lt;quote&gt;trusted&lt;/quote&gt;, that is, it can be
+  installed by non-superusers who have &lt;literal&gt;CREATE&lt;/literal&gt; privilege
+  on the current database.
+</span>
+このモジュールは<span class="quote">「<span class="quote">trusted</span>」</span>と見なされます。つまり、現在のデータベースに対して<code class="literal">CREATE</code>権限を持つ非スーパーユーザがインストールできます。
+ </p><div class="sect2" id="id-1.11.7.17.6"><div class="titlepage"><div><div><h3 class="title">F.8.1. 原理</h3></div></div></div><span class="original">
+  &lt;title&gt;Rationale&lt;/title&gt;
+</span><p>
+<span class="original">
+   The standard approach to doing case-insensitive matches
+   in &lt;productname&gt;PostgreSQL&lt;/productname&gt; has been to use the &lt;function&gt;lower&lt;/function&gt;
+   function when comparing values, for example
+</span>
+<span class="productname">PostgreSQL</span>において大文字小文字の区別のない比較を行う標準的な手法は、値を比べる際に以下のように<code class="function">lower</code>関数を使用することでした。例です。
+
+</p><pre class="programlisting">
+SELECT * FROM tab WHERE lower(col) = LOWER(?);
+</pre><p>
+  </p><p>
+<span class="original">
+   This works reasonably well, but has a number of drawbacks:
+</span>
+これはまあまあ動作しますが、数多くの欠点があります。
+  </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+      It makes your SQL statements verbose, and you always have to remember to
+      use &lt;function&gt;lower&lt;/function&gt; on both the column and the query value.
+</span>
+作成するSQL文を冗長にします。
+また常に列と問い合わせの値両方に<code class="function">lower</code>を使用することを忘れないようにしなければなりません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      It won't use an index, unless you create a functional index using
+      &lt;function&gt;lower&lt;/function&gt;.
+</span>
+<code class="function">lower</code>を使用して関数インデックスを作成していない限り、インデックスを使用しません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      If you declare a column as &lt;literal&gt;UNIQUE&lt;/literal&gt; or &lt;literal&gt;PRIMARY
+      KEY&lt;/literal&gt;, the implicitly generated index is case-sensitive.  So it's
+      useless for case-insensitive searches, and it won't enforce
+      uniqueness case-insensitively.
+</span>
+<code class="literal">UNIQUE</code>または<code class="literal">PRIMARY KEY</code>として列を宣言するのであれば、暗黙的に生成されるインデックスは大文字小文字を区別します。
+このため、大文字小文字を区別しない検索では使えず、また、大文字小文字を区別しない一意性を強制させられません。
+     </p></li></ul></div><p>
+<span class="original">
+    The &lt;type&gt;citext&lt;/type&gt; data type allows you to eliminate calls
+    to &lt;function&gt;lower&lt;/function&gt; in SQL queries, and allows a primary key to
+    be case-insensitive. &lt;type&gt;citext&lt;/type&gt; is locale-aware, just
+    like &lt;type&gt;text&lt;/type&gt;, which means that the matching of upper case and
+    lower case characters is dependent on the rules of
+    the database's &lt;literal&gt;LC_CTYPE&lt;/literal&gt; setting. Again, this behavior is
+    identical to the use of &lt;function&gt;lower&lt;/function&gt; in queries. But because it's
+    done transparently by the data type, you don't have to remember to do
+    anything special in your queries.
+</span>
+<code class="type">citext</code>データ型によりSQL問い合わせ内の<code class="function">lower</code>呼び出しを省くことができます。
+さらに、大文字小文字の区別がない主キーを実現できます。
+<code class="type">citext</code>は<code class="type">text</code>と同様にロケールも考慮します。
+つまり大文字と小文字のマッチングは、<code class="literal">LC_CTYPE</code>データベース設定の規則に依存します。
+ここでも、この動作は<code class="function">lower</code>を使用した問い合わせと同一です。
+しかしこのデータ型により、ロケールの考慮は透過的に行われますので、問い合わせで特殊なことを行うことを覚えておく必要はありません。
+   </p></div><div class="sect2" id="id-1.11.7.17.7"><div class="titlepage"><div><div><h3 class="title">F.8.2. 使用方法</h3></div></div></div><span class="original">
+  &lt;title&gt;How to Use It&lt;/title&gt;
+</span><p>
+<span class="original">
+   Here's a simple example of usage:
+</span>
+簡単な例を示します。
+
+</p><pre class="programlisting">
+CREATE TABLE users (
+    nick CITEXT PRIMARY KEY,
+    pass TEXT   NOT NULL
+);
+
+INSERT INTO users VALUES ( 'larry',  sha256(random()::text::bytea) );
+INSERT INTO users VALUES ( 'Tom',    sha256(random()::text::bytea) );
+INSERT INTO users VALUES ( 'Damian', sha256(random()::text::bytea) );
+INSERT INTO users VALUES ( 'NEAL',   sha256(random()::text::bytea) );
+INSERT INTO users VALUES ( 'Bjørn',  sha256(random()::text::bytea) );
+
+SELECT * FROM users WHERE nick = 'Larry';
+</pre><p>
+
+<span class="original">
+   The &lt;command&gt;SELECT&lt;/command&gt; statement will return one tuple, even though
+   the &lt;structfield&gt;nick&lt;/structfield&gt; column was set to &lt;literal&gt;larry&lt;/literal&gt; and the query
+   was for &lt;literal&gt;Larry&lt;/literal&gt;.
+</span>
+<code class="command">SELECT</code>文は、<code class="structfield">nick</code>列が<code class="literal">larry</code>に設定され、問い合わせが<code class="literal">Larry</code>に対してであっても、１つのタプルを返します。
+  </p></div><div class="sect2" id="id-1.11.7.17.8"><div class="titlepage"><div><div><h3 class="title">F.8.3. 文字列比較の動作</h3></div></div></div><span class="original">
+  &lt;title&gt;String Comparison Behavior&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;type&gt;citext&lt;/type&gt; performs comparisons by converting each string to lower
+   case (as though &lt;function&gt;lower&lt;/function&gt; were called) and then comparing the
+   results normally.  Thus, for example, two strings are considered equal
+   if &lt;function&gt;lower&lt;/function&gt; would produce identical results for them.
+</span>
+<code class="type">citext</code>はそれぞれの文字列を（<code class="function">lower</code>が呼ばれますが）小文字に変換して結果を普通に比較します。
+よって、例えば<code class="function">lower</code>で小文字にした場合に同じ結果となるような２つの文字列が等しいとみなされます。
+  </p><p>
+<span class="original">
+   In order to emulate a case-insensitive collation as closely as possible,
+   there are &lt;type&gt;citext&lt;/type&gt;-specific versions of a number of string-processing
+   operators and functions.  So, for example, the regular expression
+   operators &lt;literal&gt;~&lt;/literal&gt; and &lt;literal&gt;~*&lt;/literal&gt; exhibit the same behavior when
+   applied to &lt;type&gt;citext&lt;/type&gt;: they both match case-insensitively.
+   The same is true
+   for &lt;literal&gt;!~&lt;/literal&gt; and &lt;literal&gt;!~*&lt;/literal&gt;, as well as for the
+   &lt;literal&gt;LIKE&lt;/literal&gt; operators &lt;literal&gt;~~&lt;/literal&gt; and &lt;literal&gt;~~*&lt;/literal&gt;, and
+   &lt;literal&gt;!~~&lt;/literal&gt; and &lt;literal&gt;!~~*&lt;/literal&gt;. If you'd like to match
+   case-sensitively, you can cast the operator's arguments to &lt;type&gt;text&lt;/type&gt;.
+</span>
+大文字小文字の区別のない照合をできる限り正確にエミュレートするために、数多くの<code class="type">citext</code>独自版の各種文字列処理演算子と関数があります。
+したがって、例えば正規表現演算子<code class="literal">~</code>および<code class="literal">~*</code>は、<code class="type">citext</code>に適用する時に同じ動作を提供します。
+これら両方は大文字小文字を区別することなくマッチします。
+<code class="literal">!~</code>や<code class="literal">!~*</code>だけではなく<code class="literal">LIKE</code>演算子、<code class="literal">~~</code>、<code class="literal">~~*</code>、<code class="literal">!~~</code>、<code class="literal">!~~*</code>でも同じことが言えます。
+もし大文字小文字を区別して比較したい場合は、演算子の引数を<code class="type">text</code>にキャストすることができます。
+  </p><p>
+<span class="original">
+   Similarly, all of the following functions perform matching
+   case-insensitively if their arguments are &lt;type&gt;citext&lt;/type&gt;:
+</span>
+引数が<code class="type">citext</code>であれば、同様にして以下の関数は大文字小文字を区別しない一致を実行します。
+  </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+      <code class="function">regexp_match()</code>
+    </p></li><li class="listitem"><p>
+      <code class="function">regexp_matches()</code>
+    </p></li><li class="listitem"><p>
+      <code class="function">regexp_replace()</code>
+    </p></li><li class="listitem"><p>
+      <code class="function">regexp_split_to_array()</code>
+    </p></li><li class="listitem"><p>
+      <code class="function">regexp_split_to_table()</code>
+    </p></li><li class="listitem"><p>
+      <code class="function">replace()</code>
+    </p></li><li class="listitem"><p>
+      <code class="function">split_part()</code>
+    </p></li><li class="listitem"><p>
+      <code class="function">strpos()</code>
+    </p></li><li class="listitem"><p>
+      <code class="function">translate()</code>
+    </p></li></ul></div><p>
+<span class="original">
+   For the regexp functions, if you want to match case-sensitively, you can
+   specify the &lt;quote&gt;c&lt;/quote&gt; flag to force a case-sensitive match.  Otherwise,
+   you must cast to &lt;type&gt;text&lt;/type&gt; before using one of these functions if
+   you want case-sensitive behavior.
+</span>
+正規表現関数（RegExp関数）では、大文字小文字を区別して一致させたい場合<span class="quote">「<span class="quote">c</span>」</span>フラグを付けて、強制的に大文字小文字を区別して一致させることができます。
+そうしないと、大文字小文字を区別させたい場合にはこれらの関数のいずれかを使用する前段階で<code class="type">text</code>にキャストしなければなりません。
+  </p></div><div class="sect2" id="id-1.11.7.17.9"><div class="titlepage"><div><div><h3 class="title">F.8.4. 制限</h3></div></div></div><span class="original">
+  &lt;title&gt;Limitations&lt;/title&gt;
+</span><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+      &lt;type&gt;citext&lt;/type&gt;'s case-folding behavior depends on
+      the &lt;literal&gt;LC_CTYPE&lt;/literal&gt; setting of your database. How it compares
+      values is therefore determined when the database is created.
+      It is not truly
+      case-insensitive in the terms defined by the Unicode standard.
+      Effectively, what this means is that, as long as you're happy with your
+      collation, you should be happy with &lt;type&gt;citext&lt;/type&gt;'s comparisons. But
+      if you have data in different languages stored in your database, users
+      of one language may find their query results are not as expected if the
+      collation is for another language.
+</span>
+<code class="type">citext</code>の大文字小文字を区別しない動作は使用するデータベースの<code class="literal">LC_CTYPE</code>に依存します。
+どのように値を比較するかは、データベースが作成されたときに決定されます。
+Unicode標準の定義という観点では、真に大文字小文字の区別がないわけではありません。
+実質的に何を意味しているかというと、使用している照合が十分なものであれば、<code class="type">citext</code>による比較も十分なものになるはずです。
+しかしデータベースに様々な言語でデータを格納している場合は、ある言語のユーザは照合が他の言語用のものであった場合想定外の問い合わせ結果を得るかもしれません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      As of &lt;productname&gt;PostgreSQL&lt;/productname&gt; 9.1, you can attach a
+      &lt;literal&gt;COLLATE&lt;/literal&gt; specification to &lt;type&gt;citext&lt;/type&gt; columns or data
+      values.  Currently, &lt;type&gt;citext&lt;/type&gt; operators will honor a non-default
+      &lt;literal&gt;COLLATE&lt;/literal&gt; specification while comparing case-folded strings,
+      but the initial folding to lower case is always done according to the
+      database's &lt;literal&gt;LC_CTYPE&lt;/literal&gt; setting (that is, as though
+      &lt;literal&gt;COLLATE "default"&lt;/literal&gt; were given).  This may be changed in a
+      future release so that both steps follow the input &lt;literal&gt;COLLATE&lt;/literal&gt;
+      specification.
+</span>
+<span class="productname">PostgreSQL</span> 9.1では、<code class="literal">COLLATE</code>指定を<code class="type">citext</code>列もしくはデータ値に付け加えることができます。
+現状では、<code class="type">citext</code>演算子は大文字小文字を含んだ文字列を比較する際に、デフォルトではない<code class="literal">COLLATE</code>指定を重んじます。
+しかし、最初の小文字変換はデータベースの<code class="literal">LC_CTYPE</code>設定にしたがって、常に実行されます（つまり、<code class="literal">COLLATE "default"</code>が指定されたようになります）
+これは、両方のステップが入力された<code class="literal">COLLATE</code>指定に従うように、将来のリリースにおいて変更されるでしょう。
+     </p></li><li class="listitem"><p>
+<span class="original">
+       &lt;type&gt;citext&lt;/type&gt; is not as efficient as &lt;type&gt;text&lt;/type&gt; because the
+       operator functions and the B-tree comparison functions must make copies
+       of the data and convert it to lower case for comparisons.  Also, only
+       &lt;type&gt;text&lt;/type&gt; can support B-Tree deduplication.  However,
+       &lt;type&gt;citext&lt;/type&gt; is slightly more efficient than using
+       &lt;function&gt;lower&lt;/function&gt; to get case-insensitive matching.
+</span>
+演算子関数およびB-tree比較関数でデータの複製を作成しそれを比較のために小文字に変換しなければなりませんので、<code class="type">citext</code>は<code class="type">text</code>ほど効率的ではありません。
+また、<code class="type">text</code>だけがB-Tree重複排除をサポートできます。
+しかし大文字小文字の区別をしない一致をさせるために<code class="function">lower</code>を使用する場合よりかなり効率的です。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      &lt;type&gt;citext&lt;/type&gt; doesn't help much if you need data to compare
+      case-sensitively in some contexts and case-insensitively in other
+      contexts.  The standard answer is to use the &lt;type&gt;text&lt;/type&gt; type and
+      manually use the &lt;function&gt;lower&lt;/function&gt; function when you need to compare
+      case-insensitively; this works all right if case-insensitive comparison
+      is needed only infrequently.  If you need case-insensitive behavior most
+      of the time and case-sensitive infrequently, consider storing the data
+      as &lt;type&gt;citext&lt;/type&gt; and explicitly casting the column to &lt;type&gt;text&lt;/type&gt;
+      when you want case-sensitive comparison.  In either situation, you will
+      need two indexes if you want both types of searches to be fast.
+</span>
+<code class="type">citext</code>は、ある文脈では大文字小文字の区別を行い、またある文脈では大文字小文字の区別を行わない比較をする必要がある場合、あまり役に立ちません。
+標準的な解法は<code class="type">text</code>型を使用し、大文字小文字を区別する比較が必要であれば手作業で<code class="function">lower</code>関数を使用することです。
+これは大文字小文字を区別しない比較の必要性がまれであれば、問題なく動作します。
+大文字小文字を区別しない比較がほとんどで、大文字小文字を区別する比較の必要性がまれである場合は、データを<code class="type">citext</code>として格納し、大文字小文字を区別する比較の際にその列を明示的に<code class="type">text</code>にキャストすることを検討してください。
+どちらの場合でも、2種類の検索の両方を高速にするために２つのインデックスを作成しなければならないでしょう。
+    </p></li><li class="listitem"><p>
+<span class="original">
+      The schema containing the &lt;type&gt;citext&lt;/type&gt; operators must be
+      in the current &lt;varname&gt;search_path&lt;/varname&gt; (typically &lt;literal&gt;public&lt;/literal&gt;);
+      if it is not, the normal case-sensitive &lt;type&gt;text&lt;/type&gt; operators
+      will be invoked instead.
+</span>
+<code class="type">citext</code>演算子を含んだスキーマは、現在の<code class="varname">search_path</code>(典型的には<code class="literal">public</code>)に
+存在しなければいけません。もし無い場合は通常の大文字小文字が区別される<code class="type">text</code>比較が代わりに呼び出されます。
+    </p></li><li class="listitem"><p>
+<span class="original">
+      The approach of lower-casing strings for comparison does not handle some
+      Unicode special cases correctly, for example when one upper-case letter
+      has two lower-case letter equivalents.  Unicode distinguishes between
+      &lt;firstterm&gt;case mapping&lt;/firstterm&gt; and &lt;firstterm&gt;case
+      folding&lt;/firstterm&gt; for this reason.  Use nondeterministic collations
+      instead of &lt;type&gt;citext&lt;/type&gt; to handle that correctly.
+</span>
+比較のために文字列を小文字にする方法は、例えば、大文字1つに対応する小文字が2つある場合等、ユニコードの特別な場合を正しく扱えないことがあります。
+ユニコードはこの理由で<em class="firstterm">大文字小文字の対応関係</em>と<em class="firstterm">大文字小文字の畳み込み</em>を区別します。
+正しくその場合を扱うには、<code class="type">citext</code>の代わりに非決定論的照合順序を使ってください。
+     </p></li></ul></div></div><div class="sect2" id="id-1.11.7.17.10"><div class="titlepage"><div><div><h3 class="title">F.8.5. 作者</h3></div></div></div><span class="original">
+  &lt;title&gt;Author&lt;/title&gt;
+</span><p>
+   David E. Wheeler <code class="email">&lt;<a class="email" href="mailto:david@kineticode.com">david@kineticode.com</a>&gt;</code>
+  </p><p>
+<span class="original">
+    Inspired by the original &lt;type&gt;citext&lt;/type&gt; module by Donald Fraser.
+</span>
+    Donald Fraserによる<code class="type">citext</code>モジュール原本からのヒント
+  </p></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="btree-gist.html" title="F.7. btree_gist">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュール">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="cube.html" title="F.9. cube">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">F.7. btree_gist </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> F.9. cube</td></tr></table></div></body></html>
