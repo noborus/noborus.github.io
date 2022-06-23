@@ -1,7 +1,7 @@
 +++
 author = "Noboru Saito"
 title = "tcell/tviewでTUIを作るならキー割り当てにcbindを利用しよう"
-date = "2020-10-27T10:00:00+09:00"
+date = "2022-6-23T12:00:00+09:00"
 tags = [
     "cbind", "tcell", "go", "tui",
 ]
@@ -12,21 +12,12 @@ categories = [
 
 ## cbindとは？
 
-[cbind](https://gitlab.com/tslocum/cbind)は[tcell](https://github.com/gdamore/tcell)のキーイベントとイベントハンドラを結びつけるライブラリです。
-
-{{< warning >}}
-現在cbindの最新はtcellのversion 2が対象になっています。version 1を対象にする場合は cbind v0.1.1を使用して下さい。
-{{< /warning >}}
-
-{{< cmd >}}
-go get gitlab.com/tslocum/cbind@v0.1.1
-{{< /cmd >}}
-
-ここでも v0.1.1を対象にしています。
+[cbind](https://code.rocketnine.space/tslocum/cbind)は[tcell](https://github.com/gdamore/tcell)のキーイベントとイベントハンドラを結びつけるライブラリです。
 
 ## tcellのキーイベント
 
-[tcell](https://github.com/gdamore/tcell) ではキー入力がイベントの１つとして取得できます。[tview](https://github.com/rivo/tview)でもtcellのイベントを使用しているので、同じ様にイベントとして取得します。
+[tcell](https://github.com/gdamore/tcell) ではキー入力がイベントの１つとして取得できます。
+[tview](https://github.com/rivo/tview)でもtcellのイベントを使用しているので、同じ様にイベントとして取得します。
 
 tcellのキーイベントを取得するのは以下のように`switch case`でキーを判別して、イベントハンドラを呼び出すのが一般的です。
 
@@ -57,14 +48,16 @@ tcellのキーイベントを取得するのは以下のように`switch case`�
 
 ## cbindを使用
 
-そこで使用したいのが[cbind](https://gitlab.com/tslocum/cbind)です。
+そこで使用したいのが[cbind](https://code.rocketnine.space/tslocum/cbind)です。
 
-cbind は `*tcell.EventKey`を文字列にする`Encode`とキー文字列（`ctrl+a`等）をtcellのイベントキーに変換する`Decode`があり、それらを利用して「文字列」にイベントハンドラを結びつけて登録できます。実際にキーイベントが起きたら、cbindに任せれば登録されていたイベントハンドラが実行されることになります。
+cbind は `Set()`でキーの文字列といイベントハンドラを結びつけて登録できます。
+実際にキーイベントが起きたら、cbindに任せれば登録されていたイベントハンドラが実行されることになります。
 
-### 実際の使用例です。
+### 実際の使用例です
 
 キーの登録は、まず`cbind.NewConfiguration()`をしてConfigurationを作成します。
-そのConfigurationにキー文字列を`Decode`でイベントキーに変換して、`SetRune`または`SetKey`で登録します。
+そのConfigurationにキー文字列とハンドラを`Set("Alt+s", handleSave)`のように登録します。
+または、`Decode`でイベントキーに変換して、`SetRune`または`SetKey`で登録します。
 
 実際に登録するときには、キー文字列（`ctrl+a`等）とイベントハンドラ（func）を直接結びつけるのではなく、アクション名（文字列）を介しておくと、ヘルプや設定ファイル化するときに便利です。
 
@@ -101,17 +94,9 @@ func setKeyBind() (*cbind.Configuration, error) {
 		if handler == nil {
 			return nil, fmt.Errorf("[%s] unknown action", a)
 		}
-		for _, k := range keys {
-            // keyBindのキー文字列をイベントキーに変換
-			mod, key, ch, err := cbind.Decode(k)
-			if err != nil {
-				return nil, fmt.Errorf("[%s] for %s: %s", k, a, err)
-            }
-            // キーとイベントハンドラを登録
-			if key == tcell.KeyRune {
-				c.SetRune(mod, ch, wrapEventHandler(handler))
-			} else {
-				c.SetKey(mod, key, wrapEventHandler(handler))
+		for _, key := range keys {
+			if err := c.Set(key, wrapEventHandler(handler)); err != nil {
+				return nil, fmt.Errorf("failed to set keybind: %s", err)
 			}
 		}
 	}
@@ -150,9 +135,9 @@ import (
 	"log"
 	"strings"
 
-	"github.com/gdamore/tcell"
+	"code.rocketnine.space/tslocum/cbind"
+	"github.com/gdamore/tcell/v2"
 	"github.com/mattn/go-runewidth"
-	"gitlab.com/tslocum/cbind"
 )
 
 const (
@@ -180,15 +165,9 @@ func setKeyBind() (*cbind.Configuration, error) {
 		if handler == nil {
 			return nil, fmt.Errorf("[%s] unknown action", a)
 		}
-		for _, k := range keys {
-			mod, key, ch, err := cbind.Decode(k)
-			if err != nil {
-				return nil, fmt.Errorf("[%s] for %s: %s", k, a, err)
-			}
-			if key == tcell.KeyRune {
-				c.SetRune(mod, ch, wrapEventHandler(handler))
-			} else {
-				c.SetKey(mod, key, wrapEventHandler(handler))
+		for _, key := range keys {
+			if err := c.Set(key, wrapEventHandler(handler)); err != nil {
+				return nil, fmt.Errorf("failed to set keybind: %s", err)
 			}
 		}
 	}
@@ -211,15 +190,18 @@ func main() {
 		log.Fatal(err)
 	}
 	defer screen.Fini()
-	str := fmt.Sprintf("[%s] %s", strings.Join(keyBind[actionQuit], ","), actionQuit)
-	setContents(screen, 0, 0, str, tcell.StyleDefault)
 
 	c, err := setKeyBind()
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// Start application.
+	str := fmt.Sprintf("[%s] %s", strings.Join(keyBind[actionQuit], ","), actionQuit)
+	setContents(screen, 0, 0, str, tcell.StyleDefault)
 	screen.Show()
+
+	// Main routine.
 	go func() {
 		for {
 			ev := screen.PollEvent()
@@ -242,6 +224,10 @@ func setContents(screen tcell.Screen, x int, y int, str string, style tcell.Styl
 
 ## cbindの使用例
 
-[pkg.go.devのImported By](https://pkg.go.dev/gitlab.com/tslocum/cbind?tab=importedby)に作者の方が実際に使用している例があるので、そちらを参考にすると良いでしょう。
+[pkg.go.devのImported By](https://pkg.go.dev/code.rocketnine.space/tslocum/cbind?tab=importedby)に作者の方が実際に使用している例があるので、そちらを参考にすると良いでしょう。
 
 また、拙作[ov](https://github.com/noborus/ov)でもcbindを使用して、キーバインドをカスタマイズ可能にしています。[こちらも](https://github.com/noborus/ov)も参考にしてみてください。
+
+## 履歴
+
+* 2022/6/23 tcell/v2を対象に変更
