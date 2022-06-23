@@ -16,7 +16,17 @@ bubbletea bubbles bubbleteaのimported by その他 termbox-goやtcellは、端�
 現在のshellプロンプトで動作するような対話型プログラムの場合は、termbox-goやtcellでは作ることはできないので、bubbletea系か別のライブラリや自前で実装することになります。
 別のプログラムとしては、対話型のライブラリとして go-promptやlinerがあります。
 また、コンソール上の表示を助けるツールとして色を付けたり、その行のまま表示を変えるプログレスバー的な表示をするライブラリがあります。
-どれを選択すべきか？ 2020年12月現在、端末全体を使用する以外の使用の可能性がある場合は、bubbleteaを使用するのが良いと思います。端末全体を使用するアプリケーションを開発するなら、tview とbubbleteaで、例を見ながらどちらを使用するか決めるのが良いでしょう。</description></item><item><title>tcellについて2</title><link>https://noborus.github.io/blog/tcell_02/</link><pubDate>Sun, 17 May 2020 00:00:00 +0000</pubDate><guid>https://noborus.github.io/blog/tcell_02/</guid><description>これまで goのTUIについて tcellについて イベント tcellのイベントは、NewScreen()で作成したスクリーンのPollEvent()で取得できます。
+どれを選択すべきか？ 2020年12月現在、端末全体を使用する以外の使用の可能性がある場合は、bubbleteaを使用するのが良いと思います。端末全体を使用するアプリケーションを開発するなら、tview とbubbleteaで、例を見ながらどちらを使用するか決めるのが良いでしょう。</description></item><item><title>tcell/tviewでTUIを作るならキー割り当てにcbindを利用しよう</title><link>https://noborus.github.io/blog/cbind/</link><pubDate>Tue, 27 Oct 2020 10:00:00 +0900</pubDate><guid>https://noborus.github.io/blog/cbind/</guid><description>cbindとは？ cbindはtcellのキーイベントとイベントハンドラを結びつけるライブラリです。
+tcellのキーイベント tcell ではキー入力がイベントの１つとして取得できます。 tviewでもtcellのイベントを使用しているので、同じ様にイベントとして取得します。
+tcellのキーイベントを取得するのは以下のようにswitch caseでキーを判別して、イベントハンドラを呼び出すのが一般的です。
+ev := screen.PollEvent() switch ev := ev.(type) { case *tcell.EventKey: switch ev.Key() { case tcell.KeyEscape: close(quit) return } case tcell.KeyEnter: action() return } ここのtcell.KeyEscapeは constの数値として定義されています（キーボードに存在する英数字などの文字はruneで入ってきます）。 キー割り当てが少ないうちは、このまま追加していけば機能を増やせるので分かりやすいですが、キー割り当てが多くなってくると以下のような問題が出てきます。
+修飾キー(CTRL、ALT&amp;hellip;)が押された場合に動作が変わる場合はさらに分岐する キー割り当てをドキュメント化するのが大変になる キー割り当てのヘルプが必要になる キー割り当てを人によって変更したくなる ドキュメント化やヘルプはコードで実装した後、手間を掛けて書いていけばなんとか解決できますが、キー割り当ての変更に対応するには、元のままのコードでは不可能です。
+cbindを使用 そこで使用したいのがcbindです。
+cbind は Set()でキーの文字列といイベントハンドラを結びつけて登録できます。 実際にキーイベントが起きたら、cbindに任せれば登録されていたイベントハンドラが実行されることになります。
+実際の使用例です キーの登録は、まずcbind.NewConfiguration()をしてConfigurationを作成します。 そのConfigurationにキー文字列とハンドラをSet(&amp;quot;Alt+s&amp;quot;, handleSave)のように登録します。 または、Decodeでイベントキーに変換して、SetRuneまたはSetKeyで登録します。
+実際に登録するときには、キー文字列（ctrl+a等）とイベントハンドラ（func）を直接結びつけるのではなく、アクション名（文字列）を介しておくと、ヘルプや設定ファイル化するときに便利です。
+アクション名とキー文字列のマップ(keyBind)とアクション名とイベントハンドラのマップ(actionHandlers)をあらかじめ定義しておいてsetKeyBindで登録しています。
+const ( // アクション名 actionQuit = &amp;quot;quit&amp;quot; ) var keyBind = map[string][]string{ // アクション名に対してキー文字列をマッピング（キー文字列は複数可能） actionQuit: {&amp;quot;q&amp;quot;, &amp;quot;ctrl+q&amp;quot;}, } var actionHandlers = map[string]func(){ // アクション名に対してイベントハンドラをマッピング actionQuit: handleQuit, } // 終了のイベントハンドラ var quit = make(chan struct{}) var handleQuit = func() { close(quit) } func setKeyBind() (*cbind.</description></item><item><title>tcellについて2</title><link>https://noborus.github.io/blog/tcell_02/</link><pubDate>Sun, 17 May 2020 00:00:00 +0000</pubDate><guid>https://noborus.github.io/blog/tcell_02/</guid><description>これまで goのTUIについて tcellについて イベント tcellのイベントは、NewScreen()で作成したスクリーンのPollEvent()で取得できます。
 その名の通り、イベントが起こるまでポーリング（polling）して待つので、起こらない限り止まったままになります。
 PollEvent()でイベントが起こったらイベントに応じて処理し、SetContent()でセットし、次のイベントが起こる前にDraw()で描画する。 というのが、実際のメインルーチンになります。
 このメインルーチンをgoroutineで動かし、終了のイベントがきたらchannelに通知して通知を受信したらFini()を実行して終了するのが一般的な流れです。
@@ -51,14 +61,4 @@ SetContent()を使って端末画面分埋めれば自由に描画ができる�
 そのため全角幅を含む文字列を描画する場合はgo-runewidthを使用して、文字幅を調べながら1文字づつ設置していくのが通常の手順になります。
 そして、もう1つ重要なのがイベント管理で、tcellがキー、マウス、リサイズ等のイベントを管理してくれます。そのイベントを受け取ってSetContent()で描画し直せば、論理上アプリケーションが作成できます。
 以下に最小の例をあげます。
-package main import ( &amp;quot;log&amp;quot; &amp;quot;github.</description></item><item><title>tcell/tviewでTUIを作るならキー割り当てにcbindを利用しよう</title><link>https://noborus.github.io/blog/cbind/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://noborus.github.io/blog/cbind/</guid><description>cbindとは？ cbindはtcellのキーイベントとイベントハンドラを結びつけるライブラリです。
-tcellのキーイベント tcell ではキー入力がイベントの１つとして取得できます。 tviewでもtcellのイベントを使用しているので、同じ様にイベントとして取得します。
-tcellのキーイベントを取得するのは以下のようにswitch caseでキーを判別して、イベントハンドラを呼び出すのが一般的です。
-ev := screen.PollEvent() switch ev := ev.(type) { case *tcell.EventKey: switch ev.Key() { case tcell.KeyEscape: close(quit) return } case tcell.KeyEnter: action() return } ここのtcell.KeyEscapeは constの数値として定義されています（キーボードに存在する英数字などの文字はruneで入ってきます）。 キー割り当てが少ないうちは、このまま追加していけば機能を増やせるので分かりやすいですが、キー割り当てが多くなってくると以下のような問題が出てきます。
-修飾キー(CTRL、ALT&amp;hellip;)が押された場合に動作が変わる場合はさらに分岐する キー割り当てをドキュメント化するのが大変になる キー割り当てのヘルプが必要になる キー割り当てを人によって変更したくなる ドキュメント化やヘルプはコードで実装した後、手間を掛けて書いていけばなんとか解決できますが、キー割り当ての変更に対応するには、元のままのコードでは不可能です。
-cbindを使用 そこで使用したいのがcbindです。
-cbind は Set()でキーの文字列といイベントハンドラを結びつけて登録できます。 実際にキーイベントが起きたら、cbindに任せれば登録されていたイベントハンドラが実行されることになります。
-実際の使用例です キーの登録は、まずcbind.NewConfiguration()をしてConfigurationを作成します。 そのConfigurationにキー文字列とハンドラをSet(&amp;quot;Alt+s&amp;quot;, handleSave)のように登録します。 または、Decodeでイベントキーに変換して、SetRuneまたはSetKeyで登録します。
-実際に登録するときには、キー文字列（ctrl+a等）とイベントハンドラ（func）を直接結びつけるのではなく、アクション名（文字列）を介しておくと、ヘルプや設定ファイル化するときに便利です。
-アクション名とキー文字列のマップ(keyBind)とアクション名とイベントハンドラのマップ(actionHandlers)をあらかじめ定義しておいてsetKeyBindで登録しています。
-const ( // アクション名 actionQuit = &amp;quot;quit&amp;quot; ) var keyBind = map[string][]string{ // アクション名に対してキー文字列をマッピング（キー文字列は複数可能） actionQuit: {&amp;quot;q&amp;quot;, &amp;quot;ctrl+q&amp;quot;}, } var actionHandlers = map[string]func(){ // アクション名に対してイベントハンドラをマッピング actionQuit: handleQuit, } // 終了のイベントハンドラ var quit = make(chan struct{}) var handleQuit = func() { close(quit) } func setKeyBind() (*cbind.</description></item></channel></rss>
+package main import ( &amp;quot;log&amp;quot; &amp;quot;github.</description></item></channel></rss>
