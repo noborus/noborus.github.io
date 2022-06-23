@@ -1,7 +1,8 @@
 +++
 author = "Noboru Saito"
 title = "tcell/tviewでTUIを作るならキー割り当てにcbindを利用しよう"
-date = "2022-6-23T12:00:00+09:00"
+date = "2020-10-27T10:00:00+09:00"
+lastmod = "2022-6-23T12:00:00+09:00"
 tags = [
     "cbind", "tcell", "go", "tui",
 ]
