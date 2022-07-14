@@ -32,7 +32,20 @@ ov can perform operations such as search input without stopping follow-mode (als
 docker run chentex/random-logger:latest 100 400 |ov --follow-mode</description></item><item><title>How to use section</title><link>https://noborus.github.io/ov/section/</link><pubDate>Thu, 26 May 2022 08:00:00 +0900</pubDate><guid>https://noborus.github.io/ov/section/</guid><description>ov can use a unit called section. Sections are blocks separated by section delimiters. The section delimiter line is displayed in the style of StyleSectionLine (background color green).
 The section delimiter is optionally specified as a regular expression string at startup.
 ov --section-delimiter &amp;quot;^$&amp;quot; If you want to set the section delimiter after startup, enter it in input mode with the section_delimiter key binding (alt + d).
-Section delimiter: ^$ If section delimiters are not required (blank lines, etc.</description></item><item><title>trdsql jq構文</title><link>https://noborus.github.io/blog/35_jq/</link><pubDate>Sat, 09 Jul 2022 07:00:00 +0900</pubDate><guid>https://noborus.github.io/blog/35_jq/</guid><description>これまでtdsqlが対象とするJSONはフラットなJSONでした。そのためSQLの対象となるのはトップレベルのオブジェクトでした。
+Section delimiter: ^$ If section delimiters are not required (blank lines, etc.</description></item><item><title>0列の扱い</title><link>https://noborus.github.io/blog/column0/</link><pubDate>Thu, 14 Jul 2022 20:00:00 +0900</pubDate><guid>https://noborus.github.io/blog/column0/</guid><description>きっかけ 現在のバージョンのPostgreSQLではSELECT ;というSQL文を実行してもエラーになりません。 試してみると(1 row)と返ってきたので、あれ？なんで？となりました。
+これは、列数が0なんですね。PostgreSQLは列数が0のテーブルが作れるので、それに合わせているようです。
+CREATE empty();
+&amp;mdash; Tatsuo Ishii (@tatsuo_ishii) July 13, 2022 列数が0という指摘を受けて、一応0列があることを理解していたつもりだったのですけど、 勘違いしていたことに気づきました。
+テーブルを省略したSELECTの扱い 全部のSQL実装では無いですが、SQLのSELECTはFROM句がなくても動作する実装が多いです。 pqlで実行すると以下のようになります。
+SELECT '1'; ?column? ---------- 1 (1 row) のようにすれば文字列1が返ってきます。列名は無いので?column?で表されていますが、1行1列のテーブルと同じ扱いになります。
+SELECT ;はこの流れで列数が0のテーブルということになります。
+psqlでは実行すると以下のように行が（改行も含めて）表示されないまま 1 row と表示されるのでちょっと変な感じがしたのですが、これはpsql側でどう表示するかの問題であって、0列1行のテーブルと同じ扱いになっています。
+SELECT ; -- (1 row) PostgreSQLは0列のテーブルが作れる twitterで石井さんから指摘があったのですが、最近のPostgreSQLでは0列のテーブルが作成できるようになっています。
+CREATE TABLE empty (); 元からSQLでは行をINSERTしなければ0行のテーブルになるので、0列のテーブルを作っただけだと0列0行のテーブルになります。
+SELECT * FROM empty; -- (0 rows) psqlの表示では0列の場合(1 row)と(0 rows)の表示でしか区別出来ないですが、0行と1行でちゃんと違いがあって整合が取れている動作になっています。
+現在進行形でも0列を許可するように修正されているので、前はエラーになったものが通るようになっていたり、これから通るようになったりする可能性があります。
+0列のテーブル操作 INSERT 0列のテーブルにINSERTしようとすると素直にできませんでした。
+INSERT INTO empty () VALUES (); ERROR: 42601: syntax error at or near &amp;quot;)&amp;quot; SELECT 列が0のテーブルだけでなく、列が1つ以上のテーブルであってもSELECT FROM oneで列0で返すことができます。</description></item><item><title>trdsql jq構文</title><link>https://noborus.github.io/blog/35_jq/</link><pubDate>Sat, 09 Jul 2022 07:00:00 +0900</pubDate><guid>https://noborus.github.io/blog/35_jq/</guid><description>これまでtdsqlが対象とするJSONはフラットなJSONでした。そのためSQLの対象となるのはトップレベルのオブジェクトでした。
 [ {&amp;quot;age&amp;quot;: &amp;quot;26&amp;quot;, &amp;quot;name&amp;quot;: &amp;quot;Tanaka&amp;quot;}, {&amp;quot;age&amp;quot;: &amp;quot;32&amp;quot;, &amp;quot;name&amp;quot;: &amp;quot;Suzuki&amp;quot;} ] JSONは階層を深くすることができるので、さらに下の階層をSQLの対象としたい場合がありました。 SQLの関数を使用して、アクセスすることも出来ますが、少し面倒でした。
 { &amp;quot;list&amp;quot;: [ {&amp;quot;age&amp;quot;: &amp;quot;26&amp;quot;, &amp;quot;name&amp;quot;: &amp;quot;Tanaka&amp;quot;}, {&amp;quot;age&amp;quot;: &amp;quot;32&amp;quot;, &amp;quot;name&amp;quot;: &amp;quot;Suzuki&amp;quot;} ] } tdsqlではJSONに対し、まずjqの構文を使用して処理し、その結果に対してSQLを実行できます。 jqの構文はファイル名の後に&amp;quot;::&amp;ldquo;を付け、その後に書きます。 jqの構文なので、主に&amp;rdquo;.&amp;ldquo;ドットではじまり、中の値にアクセスします。
 （jsonを対象とすると配列全体を１つの列と解釈してしまう）。
