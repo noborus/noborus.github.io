@@ -76,7 +76,9 @@ SELECT c1,c2 FROM test_table ORDER BY 1;
 ```SQL
 SELECT c2 FROM test_table ORDER BY 2;
 ```
+
 と
+
 ```SQL
 SELECT c2 FROM test_table ORDER BY 1+1;
 ```
