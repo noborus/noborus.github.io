@@ -1,6 +1,6 @@
 ---
 author: "Noboru Saito"
-title: "0列の扱い"
+title: "SQLで0列の扱い"
 date: 2022-07-14T20:00:00+09:00
 tags: ["sql"]
 categories: ["sql"]
@@ -19,7 +19,7 @@ categories: ["sql"]
 ## テーブルを省略したSELECTの扱い
 
 全部のSQL実装では無いですが、SQLの`SELECT`はFROM句がなくても動作する実装が多いです。
-pqlで実行すると以下のようになります。
+psqlで実行すると以下のようになります。
 
 ```SQL
 SELECT '1';
@@ -43,7 +43,7 @@ SELECT ;
 
 ## PostgreSQLは0列のテーブルが作れる
 
-twitterで石井さんから指摘があったのですが、最近のPostgreSQLでは0列のテーブルが作成できるようになっています。
+前述の石井さんから指摘にあるように最近のPostgreSQLでは0列のテーブルが作成できるようになっています。
 
 ```SQL
 CREATE TABLE empty ();
