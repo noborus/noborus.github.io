@@ -1,8 +1,8 @@
 ---
 author: "Noboru Saito"
-title: "SQLで0列の扱い"
+title: "PostgreSQLで0列の扱い"
 date: 2022-07-14T20:00:00+09:00
-tags: ["sql"]
+tags: ["sql", "postgresql"]
 categories: ["sql"]
 ---
 
