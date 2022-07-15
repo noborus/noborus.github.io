@@ -77,17 +77,25 @@ aminsert (Relation indexRelation,
 通常アクセスメソッドは、一意性検査を行う時に<code class="literal">heapRelation</code>パラメータのみを必要とします
 (タプルの有効性を検証するためにヒープ内を検索しなければなりません)。
   </p><p>
-   The <code class="literal">indexUnchanged</code> Boolean value gives a hint
+<span class="original">
+   The &lt;literal&gt;indexUnchanged&lt;/literal&gt; Boolean value gives a hint
    about the nature of the tuple to be indexed.  When it is true,
    the tuple is a duplicate of some existing tuple in the index.  The
    new tuple is a logically unchanged successor MVCC tuple version.  This
-   happens when an <code class="command">UPDATE</code> takes place that does not
+   happens when an &lt;command&gt;UPDATE&lt;/command&gt; takes place that does not
    modify any columns covered by the index, but nevertheless requires a
    new version in the index.  The index AM may use this hint to decide
    to apply bottom-up index deletion in parts of the index where many
    versions of the same logical row accumulate.  Note that updating a
    non-key column does not affect the value of
-   <code class="literal">indexUnchanged</code>.
+   &lt;literal&gt;indexUnchanged&lt;/literal&gt;.
+</span>
+<code class="literal">indexUnchanged</code>真偽値はインデックス付されるタプルの性質に関するヒントを与えます。
+真なら、そのタプルは既存のインデックス中のタプルと重複しています。
+新しいタプルは論理的に変わっていない後継であるMVCCタプルバージョンです。
+これは<code class="command">UPDATE</code>の実行によりインデックス対象のどの列も変更されず、それにもかかわらずインデックスにおいて新しいバージョンを要求する場合に起こります。
+インデックスAMは、同じ論理的な行の多くのバージョンが蓄積されるときに、インデックスのある部分にボトムアップインデックス削除を適用するかどうかを決定するためにこのヒントを使うことができます。
+非キー列を更新しても<code class="literal">indexUnchanged</code>の値には影響がないことに留意してください。
   </p><p>
 <span class="original">
    The function's Boolean result value is significant only when
@@ -187,7 +195,6 @@ amvacuumcleanup (IndexVacuumInfo *info,
 しかし、そうでなければ正しい統計情報を返さなければなりません。
   </p><p>
 <span class="original">
-   As of &lt;productname&gt;PostgreSQL&lt;/productname&gt; 8.4,
    &lt;function&gt;amvacuumcleanup&lt;/function&gt; will also be called at completion of an
    &lt;command&gt;ANALYZE&lt;/command&gt; operation.  In this case &lt;literal&gt;stats&lt;/literal&gt; is always
    NULL and any return value will be ignored.  This case can be distinguished
@@ -195,7 +202,7 @@ amvacuumcleanup (IndexVacuumInfo *info,
    that the access method do nothing except post-insert cleanup in such a
    call, and that only in an autovacuum worker process.
 </span>
-<span class="productname">PostgreSQL</span> 8.4の時点で、<code class="function">amvacuumcleanup</code>も<code class="command">ANALYZE</code>操作の完了時点にも呼び出されます。
+<code class="function">amvacuumcleanup</code>も<code class="command">ANALYZE</code>操作の完了時点にも呼び出されます。
 この場合、<code class="literal">stats</code>は常にNULLで、戻り値はまったく無視されます。
 この事象は<code class="literal">info-&gt;analyze_only</code>を検査することで識別されます。
 アクセスメソッドがそのような呼び出しで挿入後の整理以外何もしないように、そしてそれは自動バキュームワーカプロセスのみであるようにすることを推奨します。
@@ -217,9 +224,10 @@ amcanreturn (Relation indexRelation, int attno);
    the &lt;structfield&gt;amcanreturn&lt;/structfield&gt; field in its &lt;structname&gt;IndexAmRoutine&lt;/structname&gt;
    struct can be set to NULL.
 </span>
-<code class="structname">IndexTuple</code>形式のインデックスエントリをインデックスが設定された列の値として返すことにより、そのインデックスが指定された列で<a class="link" href="indexes-index-only-scans.html" title="11.9. インデックスオンリースキャンとカバリングインデックス"><em class="firstterm">インデックスオンリースキャン</em></a>をサポートしているかどうかを判断します。
-属性番号は1始まり、すなわち最初の列の属性番号は1です。
+列のインデックスされた元の値を返すことにより、そのインデックスが指定された列で<a class="link" href="indexes-index-only-scans.html" title="11.9. インデックスオンリースキャンとカバリングインデックス"><em class="firstterm">インデックスオンリースキャン</em></a>をサポート可能かどうかを判断します。
+属性番号は1始まり、すなわち最初の列のattnoは1です。
 インデックスオンリースキャンがサポートされている場合は真が返され、サポートされていない場合は偽が返ります。
+取得できない列がinclude列である意味はないので、この関数は（サポートされていれば）incliude列に対しては常に真を返すでしょう。
 アクセスメソッドがインデックスオンリースキャンをサポートしていない場合、<code class="structname">IndexAmRoutine</code>構造体の<code class="structfield">amcanreturn</code>フィールドをNULLにセットすることができます。
   </p><p>
 </p><pre class="programlisting">
@@ -337,7 +345,7 @@ amproperty (Oid index_oid, int attno,
 </span>
 順序付け演算子をサポートするアクセスメソッドは、<code class="literal">AMPROP_DISTANCE_ORDERABLE</code>の属性検査を実装する必要があります。
 なぜなら、コアコードはそれをどうすれば良いか知らないため、NULLを返すからです。
-コアコードのデフォルトの動作であるインデックスのオープンと<code class="structfield">amcanreturn</code>の呼び出しよりも安価にできるのであれば、<code class="literal">AMPROP_RETURNABLE</code>の検査を実装するのは利点となります。
+コアコードのデフォルトの動作であるインデックスのオープンと<code class="function">amcanreturn</code>の呼び出しよりも安価にできるのであれば、<code class="literal">AMPROP_RETURNABLE</code>の検査を実装するのは利点となります。
 その他のすべての標準属性に対しては、デフォルトの動作が満足できるもののはずです。
   </p><p>
 </p><pre class="programlisting">
@@ -367,10 +375,10 @@ amvalidate (Oid opclassoid);
    invalid.  Problems should be reported with &lt;function&gt;ereport&lt;/function&gt;
    messages, typically at &lt;literal&gt;INFO&lt;/literal&gt; level.
 </span>
-指定の演算子クラスについて、アクセスメソッドが合理的にできる限りにおいて、カタログエントリを検証します。
+指定の演算子クラスについて、アクセスメソッドが合理的に可能な範囲でカタログエントリを検証します。
 例えば、これには必要なすべてのサポート関数が提供されていることのテストが含まれるかもしれません。
 <code class="function">amvalidate</code>関数は演算子クラスが無効なときは偽を返さなければなりません。
-問題点は<code class="function">ereport</code>メッセージにより報告されます。
+問題があれば典型的には<code class="literal">INFO</code>レベルで<code class="function">ereport</code>メッセージにより報告されます。
   </p><p>
 </p><pre class="programlisting">
 void
@@ -379,36 +387,52 @@ amadjustmembers (Oid opfamilyoid,
                  List *operators,
                  List *functions);
 </pre><p>
+<span class="original">
    Validate proposed new operator and function members of an operator family,
    so far as the access method can reasonably do that, and set their
    dependency types if the default is not satisfactory.  This is called
-   during <code class="command">CREATE OPERATOR CLASS</code> and during
-   <code class="command">ALTER OPERATOR FAMILY ADD</code>; in the latter
-   case <em class="parameter"><code>opclassoid</code></em> is <code class="literal">InvalidOid</code>.
-   The <code class="type">List</code> arguments are lists
-   of <code class="structname">OpFamilyMember</code> structs, as defined
-   in <code class="filename">amapi.h</code>.
+   during &lt;command&gt;CREATE OPERATOR CLASS&lt;/command&gt; and during
+   &lt;command&gt;ALTER OPERATOR FAMILY ADD&lt;/command&gt;; in the latter
+   case &lt;parameter&gt;opclassoid&lt;/parameter&gt; is &lt;literal&gt;InvalidOid&lt;/literal&gt;.
+   The &lt;type&gt;List&lt;/type&gt; arguments are lists
+   of &lt;structname&gt;OpFamilyMember&lt;/structname&gt; structs, as defined
+   in &lt;filename&gt;amapi.h&lt;/filename&gt;.
 
    Tests done by this function will typically be a subset of those
-   performed by <code class="function">amvalidate</code>,
-   since <code class="function">amadjustmembers</code> cannot assume that it is
+   performed by &lt;function&gt;amvalidate&lt;/function&gt;,
+   since &lt;function&gt;amadjustmembers&lt;/function&gt; cannot assume that it is
    seeing a complete set of members.  For example, it would be reasonable
    to check the signature of a support function, but not to check whether
    all required support functions are provided.  Any problems can be
    reported by throwing an error.
 
    The dependency-related fields of
-   the <code class="structname">OpFamilyMember</code> structs are initialized by
+   the &lt;structname&gt;OpFamilyMember&lt;/structname&gt; structs are initialized by
    the core code to create hard dependencies on the opclass if this
-   is <code class="command">CREATE OPERATOR CLASS</code>, or soft dependencies on the
-   opfamily if this is <code class="command">ALTER OPERATOR FAMILY ADD</code>.
-   <code class="function">amadjustmembers</code> can adjust these fields if some other
+   is &lt;command&gt;CREATE OPERATOR CLASS&lt;/command&gt;, or soft dependencies on the
+   opfamily if this is &lt;command&gt;ALTER OPERATOR FAMILY ADD&lt;/command&gt;.
+   &lt;function&gt;amadjustmembers&lt;/function&gt; can adjust these fields if some other
    behavior is more appropriate.  For example, GIN, GiST, and SP-GiST
    always set operator members to have soft dependencies on the opfamily,
    since the connection between an operator and an opclass is relatively
    weak in these index types; so it is reasonable to allow operator members
    to be added and removed freely.  Optional support functions are typically
    also given soft dependencies, so that they can be removed if necessary.
+</span>
+アクセスメソッドが合理的に可能な範囲で提案された新しい演算子族の演算子と関数メンバーを検証し、デフォルトが不十分なら依存型を設定します。
+これは<code class="command">CREATE OPERATOR CLASS</code>と<code class="command">ALTER OPERATOR FAMILY ADD</code>の実行中に呼び出されます。
+後者の場合、<em class="parameter"><code>opclassoid</code></em>は<code class="literal">InvalidOid</code>です。
+<code class="type">List</code>引数は<code class="filename">amapi.h</code>で定義されている<code class="structname">OpFamilyMember</code>構造体のリストです。
+
+この関数で実施されるテストは典型的には<code class="function">amvalidate</code>が行うテストのサブセットです。
+なぜなら、<code class="function">amadjustmembers</code>はメンバーの集合のすべてを観察しているとは仮定することができないからです。
+たとえば、サポート関数の呼び出し形式を検証することは妥当ですが、必要なすべてのサポート関数が提供されていることを検証するのは妥当ではないからです。
+問題が発生すればどの場合でもエラーが生じます。
+
+<code class="structname">OpFamilyMember</code>構造体の依存性に関するフィールドに、<code class="command">CREATE OPERATOR CLASS</code>の場合にはopclassにコアコードがハード依存性で初期化します。<code class="command">ALTER OPERATOR FAMILY ADD</code>ならばopfamilyをソフト依存性で初期化します。
+それ以外の振る舞いがより適正ならば、<code class="function">amadjustmembers</code>でこれらのフィールドを調整することができます。
+たとえば、GIN、GiST、SP-GiSTのようなインデックス形式では演算子とopclassの関連性が相対的低く、演算子メンバーの追加削除を自由に行うことが合理的であるため、これらの演算子メンバーにおいてはopfamilyに常にソフト依存性が設定されます。
+また、必要ならば削除可能にするために、追加のサポート関数にソフト依存性を設定するのが一般的です。
   </p><p>
 <span class="original">
    The purpose of an index, of course, is to support scans for tuples matching
@@ -531,7 +555,8 @@ amgettuple (IndexScanDesc scan,
    &lt;function&gt;amgettuple&lt;/function&gt;, &lt;function&gt;amrescan&lt;/function&gt;, or &lt;function&gt;amendscan&lt;/function&gt;
    call for the scan.
 </span>
-そのインデックスが<a class="link" href="indexes-index-only-scans.html" title="11.9. インデックスオンリースキャンとカバリングインデックス">インデックスオンリースキャン</a>をサポートしている場合(つまり<code class="function">amcanreturn</code>が真を返す場合)、そのアクセスメソッドはスキャンが成功したならば<code class="literal">scan-&gt;xs_want_itup</code>も確認し、それが真の場合、そのインデックスエントリに対応する元のインデックスされたデータを返さなければなりません。
+そのインデックスが<a class="link" href="indexes-index-only-scans.html" title="11.9. インデックスオンリースキャンとカバリングインデックス">インデックスオンリースキャン</a>をサポートしている場合(つまり<code class="function">amcanreturn</code>がすべての列に対して真を返す場合)、そのアクセスメソッドはスキャンが成功したならば<code class="literal">scan-&gt;xs_want_itup</code>も確認し、それが真の場合、そのインデックスエントリに対応する元のインデックスされたデータを返さなければなりません。
+<code class="function">amcanreturn</code>が列に対して偽を返す場合、その列はNULLとして返されます。
 返却されるデータは、<code class="literal">scan-&gt;xs_itupdesc</code>タプルディスクリプタとともに<code class="literal">scan-&gt;xs_itup</code>に格納された<code class="structname">IndexTuple</code>ポインタの形式か、あるいは、<code class="literal">scan-&gt;xs_hitupdesc</code>タプルディスクリプタとともに<code class="literal">scan-&gt;xs_hitup</code>に格納された<code class="structname">HeapTuple</code>ポインタの形式です。
 （後者の形式は、再構成されたデータが<code class="structname">IndexTuple</code>に収まらない場合に使用するべきです。）
 どちらの場合でも、そのポインタが参照するデータの管理はアクセスメソッドの責任です。

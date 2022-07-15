@@ -16,7 +16,7 @@
    This may be expanded in the future.
 </span>
 <span class="productname">PostgreSQL</span>は、何らかのコマンドの実行中に進捗状況をレポートする能力があります。
-現在、進捗状況のレポートをサポートしているのは、<code class="command">ANALYZE</code>、<code class="command">CLUSTER</code>、<code class="command">CREATE INDEX</code>、<code class="command">VACUUM</code>、および、<a class="xref" href="protocol-replication.html#PROTOCOL-REPLICATION-BASE-BACKUP">BASE_BACKUP</a>(すなわち、<a class="xref" href="app-pgbasebackup.html" title="pg_basebackup"><span class="refentrytitle"><span class="application">pg_basebackup</span></span></a>がベースバックアップのために発行するレプリケーションコマンド)のみです。
+現在、進捗状況のレポートをサポートしているのは、<code class="command">ANALYZE</code>、<code class="command">CLUSTER</code>、<code class="command">CREATE INDEX</code>、<code class="command">VACUUM</code>、<code class="command">COPY</code>、および、<a class="xref" href="protocol-replication.html#PROTOCOL-REPLICATION-BASE-BACKUP">BASE_BACKUP</a>(すなわち、<a class="xref" href="app-pgbasebackup.html" title="pg_basebackup"><span class="refentrytitle"><span class="application">pg_basebackup</span></span></a>がベースバックアップのために発行するレプリケーションコマンド)のみです。
 将来的にサポートされるコマンドが拡大される可能性があります。
   </p><div class="sect2" id="ANALYZE-PROGRESS-REPORTING"><div class="titlepage"><div><div><h3 class="title">28.4.1. ANALYZEの進捗状況のレポート</h3></div></div></div><span class="original">
   &lt;title&gt;ANALYZE Progress Reporting&lt;/title&gt;
@@ -199,7 +199,7 @@
     progress is reported first for the parent table, whereby its inheritance
     statistics are collected, followed by that for each partition.
 </span>
-<code class="command">ANALYZE</code>がパーティションテーブルで実行される場合は、そのパーティションテーブルのすべても<a class="xref" href="sql-analyze.html" title="ANALYZE"><span class="refentrytitle">ANALYZE</span></a>に書かれているように再帰的に解析されることに注意してください。
+<code class="command">ANALYZE</code>がパーティションテーブルで実行される場合は、そのパーティションテーブルのすべても再帰的に解析されることに注意してください。
 その場合、<code class="command">ANALYZE</code>の進捗はまず親テーブルについて報告され、それによってその継承の統計情報が集められ、各パーティションの報告が続きます。
    </p></div></div><div class="sect2" id="CREATE-INDEX-PROGRESS-REPORTING"><div class="titlepage"><div><div><h3 class="title">28.4.2. CREATE INDEXの進捗状況のレポート</h3></div></div></div><span class="original">
   &lt;title&gt;CREATE INDEX Progress Reporting&lt;/title&gt;
@@ -356,6 +356,7 @@
        This field is &lt;literal&gt;0&lt;/literal&gt; during a &lt;literal&gt;REINDEX&lt;/literal&gt;.
 </span>
 パーティションテーブル上のインデックスを作成するとき、この列にはインデックスが作られることになっているパーティションの総数が設定されます。
+このフィールドは<code class="literal">REINDEX</code>実行中は<code class="literal">0</code>になります。
       </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
        <code class="structfield">partitions_done</code> <code class="type">bigint</code>
       </p>
@@ -365,7 +366,8 @@
        the number of partitions on which the index has been created.
        This field is &lt;literal&gt;0&lt;/literal&gt; during a &lt;literal&gt;REINDEX&lt;/literal&gt;.
 </span>
-パーティションテーブル上のインデックスを作成するとき、この列にはインデックス作成が既に完了しているパーティションの数が設定されます。
+パーティションテーブル上のインデックスを作成するとき、この列にはインデックスが既に作成されたパーティションの数が設定されます。
+このフィールドは<code class="literal">REINDEX</code>実行中は<code class="literal">0</code>になります。
       </p></td></tr></tbody></table></div></div><br class="table-break" /><div class="table" id="CREATE-INDEX-PHASES"><p class="title"><strong>表28.37 CREATE INDEXのフェーズ</strong></p><div class="table-contents"><span class="original">
    &lt;title&gt;CREATE INDEX Phases&lt;/title&gt;
 </span><table class="table" summary="CREATE INDEXのフェーズ" border="1"><colgroup><col class="col1" /><col class="col2" /></colgroup><thead><tr><th>フェーズ</th><th>説明</th></tr></thead><tbody><tr><td><code class="literal">initializing</code></td><td>
@@ -645,7 +647,7 @@
 </span>
 <code class="command">VACUUM</code>は、現在インデックスをバキューム処理中です。
 テーブルにインデックスが存在する場合、ヒープが完全にスキャンされた後に、バキューム実行ごとに少なくとも１回発生します。
-<a class="xref" href="runtime-config-resource.html#GUC-MAINTENANCE-WORK-MEM">maintenance_work_mem</a>が、発見された無効タプルの数量を格納するのに不十分な場合は、バキューム実行ごとに複数回発生する可能性があります。
+<a class="xref" href="runtime-config-resource.html#GUC-MAINTENANCE-WORK-MEM">maintenance_work_mem</a>が、発見された無効タプルの数量を格納するのに不十分な場合（または、自動バキュームの場合は<a class="xref" href="runtime-config-resource.html#GUC-AUTOVACUUM-WORK-MEM">autovacuum_work_mem</a>が設定されている場合）は、バキューム実行ごとに複数回発生する可能性があります。
      </td></tr><tr><td><code class="literal">vacuuming heap</code></td><td>
 <span class="original">
        &lt;command&gt;VACUUM&lt;/command&gt; is currently vacuuming the heap.  Vacuuming the heap
@@ -1022,75 +1024,124 @@ WAL送信プロセスは、バックアップを終了するために現在<code
 WAL送信プロセスはバックアップ中に生成されたWALログをすべて現在転送しています。
 <span class="application">pg_basebackup</span>で<code class="literal">--wal-method=fetch</code>が指定されていれば、このフェーズが<code class="literal">waiting for wal archiving to finish</code>の次に来ます。
 バックアップはこのフェーズが完了したら終了します。
-      </td></tr></tbody></table></div></div><br class="table-break" /></div><div class="sect2" id="COPY-PROGRESS-REPORTING"><div class="titlepage"><div><div><h3 class="title">28.4.6. COPY Progress Reporting</h3></div></div></div><a id="id-1.6.15.9.8.2" class="indexterm"></a><p>
-   Whenever <code class="command">COPY</code> is running, the
-   <code class="structname">pg_stat_progress_copy</code> view will contain one row
-   for each backend that is currently running a <code class="command">COPY</code> command.
+      </td></tr></tbody></table></div></div><br class="table-break" /></div><div class="sect2" id="COPY-PROGRESS-REPORTING"><div class="titlepage"><div><div><h3 class="title">28.4.6. COPYの進捗状況のレポート</h3></div></div></div><span class="original">
+  &lt;title&gt;COPY Progress Reporting&lt;/title&gt;
+</span><a id="id-1.6.15.9.8.2" class="indexterm"></a><p>
+<span class="original">
+   Whenever &lt;command&gt;COPY&lt;/command&gt; is running, the
+   &lt;structname&gt;pg_stat_progress_copy&lt;/structname&gt; view will contain one row
+   for each backend that is currently running a &lt;command&gt;COPY&lt;/command&gt; command.
    The table below describes the information that will be reported and provides
    information about how to interpret it.
+</span>
+<code class="command">COPY</code>が実行されているときはいつでも、<code class="structname">pg_stat_progress_copy</code>ビューには現在<code class="command">COPY</code>コマンドを実行している各バックエンドごとの行が含まれます。
+以下の表は、報告される情報を説明し、どのように解釈するかの情報を提供します。
   </p><div class="table" id="PG-STAT-PROGRESS-COPY-VIEW"><p class="title"><strong>表28.44 <code class="structname">pg_stat_progress_copy</code> View</strong></p><div class="table-contents"><table class="table" summary="pg_stat_progress_copy View" border="1"><colgroup><col /></colgroup><thead><tr><th class="catalog_table_entry"><p class="column_definition">
+<span class="original">
        Column Type
+</span>
+列 型
       </p>
       <p>
+<span class="original">
        Description
+</span>
+説明
       </p></th></tr></thead><tbody><tr><td class="catalog_table_entry"><p class="column_definition">
        <code class="structfield">pid</code> <code class="type">integer</code>
       </p>
       <p>
+<span class="original">
        Process ID of backend.
+</span>
+バックエンドのプロセスIDです。
       </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
        <code class="structfield">datid</code> <code class="type">oid</code>
       </p>
       <p>
+<span class="original">
        OID of the database to which this backend is connected.
+</span>
+バックエンドが接続されているデータベースのOIDです。
       </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
        <code class="structfield">datname</code> <code class="type">name</code>
       </p>
       <p>
+<span class="original">
        Name of the database to which this backend is connected.
+</span>
+バックエンドが接続されているデータベース名です。
       </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
        <code class="structfield">relid</code> <code class="type">oid</code>
       </p>
       <p>
-       OID of the table on which the <code class="command">COPY</code> command is
-       executed. It is set to <code class="literal">0</code> if copying from a
-       <code class="command">SELECT</code> query.
+<span class="original">
+       OID of the table on which the &lt;command&gt;COPY&lt;/command&gt; command is
+       executed. It is set to &lt;literal&gt;0&lt;/literal&gt; if copying from a
+       &lt;command&gt;SELECT&lt;/command&gt; query.
+</span>
+<code class="command">COPY</code>コマンドが実行されるテーブルのOIDです。
+<code class="command">SELECT</code>問い合わせからコピーする場合は<code class="literal">0</code>に設定されます。
       </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
        <code class="structfield">command</code> <code class="type">text</code>
       </p>
       <p>
-       The command that is running: <code class="literal">COPY FROM</code>, or
-       <code class="literal">COPY TO</code>.
+<span class="original">
+       The command that is running: &lt;literal&gt;COPY FROM&lt;/literal&gt;, or
+       &lt;literal&gt;COPY TO&lt;/literal&gt;.
+</span>
+実行しているコマンドで、
+<code class="literal">COPY FROM</code>または<code class="literal">COPY TO</code>です。
       </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
        <code class="structfield">type</code> <code class="type">text</code>
       </p>
       <p>
+<span class="original">
        The io type that the data is read from or written to:
-       <code class="literal">FILE</code>, <code class="literal">PROGRAM</code>,
-       <code class="literal">PIPE</code> (for <code class="command">COPY FROM STDIN</code> and
-       <code class="command">COPY TO STDOUT</code>), or <code class="literal">CALLBACK</code>
+       &lt;literal&gt;FILE&lt;/literal&gt;, &lt;literal&gt;PROGRAM&lt;/literal&gt;,
+       &lt;literal&gt;PIPE&lt;/literal&gt; (for &lt;command&gt;COPY FROM STDIN&lt;/command&gt; and
+       &lt;command&gt;COPY TO STDOUT&lt;/command&gt;), or &lt;literal&gt;CALLBACK&lt;/literal&gt;
        (used for example during the initial table synchronization in
        logical replication).
+</span>
+データの読み取りまたは書き込みが行われる入出力の種類で、
+<code class="literal">FILE</code>、
+<code class="literal">PROGRAM</code>、
+<code class="literal">PIPE</code>（<code class="command">COPY FROM STDIN</code>および<code class="command">COPY TO STDOUT</code>用）、
+または<code class="literal">CALLBACK</code>（たとえば、論理レプリケーションの初期テーブル同期中に使用されます）です。
       </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
        <code class="structfield">bytes_processed</code> <code class="type">bigint</code>
       </p>
       <p>
-       Number of bytes already processed by <code class="command">COPY</code> command.
+<span class="original">
+       Number of bytes already processed by &lt;command&gt;COPY&lt;/command&gt; command.
+</span>
+<code class="command">COPY</code>コマンドで既に処理されたバイト数です。
       </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
        <code class="structfield">bytes_total</code> <code class="type">bigint</code>
       </p>
       <p>
-       Size of source file for <code class="command">COPY FROM</code> command in bytes.
-       It is set to <code class="literal">0</code> if not available.
+<span class="original">
+       Size of source file for &lt;command&gt;COPY FROM&lt;/command&gt; command in bytes.
+       It is set to &lt;literal&gt;0&lt;/literal&gt; if not available.
+</span>
+<code class="command">COPY FROM</code>コマンドのコピー元ファイルのバイト数でのサイズです。
+利用できない場合は<code class="literal">0</code>に設定されます。
       </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
        <code class="structfield">tuples_processed</code> <code class="type">bigint</code>
       </p>
       <p>
-       Number of tuples already processed by <code class="command">COPY</code> command.
+<span class="original">
+       Number of tuples already processed by &lt;command&gt;COPY&lt;/command&gt; command.
+</span>
+<code class="command">COPY</code>コマンドで既に処理されたタプル数です。
       </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
        <code class="structfield">tuples_excluded</code> <code class="type">bigint</code>
       </p>
       <p>
+<span class="original">
        Number of tuples not processed because they were excluded by the
-       <code class="command">WHERE</code> clause of the <code class="command">COPY</code> command.
+       &lt;command&gt;WHERE&lt;/command&gt; clause of the &lt;command&gt;COPY&lt;/command&gt; command.
+</span>
+<code class="command">COPY</code>コマンドの<code class="command">WHERE</code>句で除外されたために処理されなかったタプル数です。
       </p></td></tr></tbody></table></div></div><br class="table-break" /></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="monitoring-locks.html" title="28.3. ロックの表示">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="monitoring.html" title="第28章 データベース活動状況の監視">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="dynamic-trace.html" title="28.5. 動的追跡">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">28.3. ロックの表示 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 28.5. 動的追跡</td></tr></table></div></body></html>

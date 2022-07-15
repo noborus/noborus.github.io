@@ -35,7 +35,7 @@ SELECT <em class="replaceable"><code>expression</code></em>
      two integer variables &lt;literal&gt;x&lt;/literal&gt; and &lt;literal&gt;y&lt;/literal&gt;, and we write
 </span>
 を主SQLエンジンに供給して、上式を評価します。
-<a class="xref" href="plpgsql-implementation.html#PLPGSQL-VAR-SUBST" title="43.11.1. 変数置換">43.11.1</a>において詳細を説明したように、<code class="command">SELECT</code>コマンドの形成において<span class="application">PL/pgSQL</span>変数名は、その都度パラメータによって置換されます。
+<a class="xref" href="plpgsql-implementation.html#PLPGSQL-VAR-SUBST" title="43.11.1. 変数置換">43.11.1</a>において詳細を説明したように、<code class="command">SELECT</code>コマンドの形成において<span class="application">PL/pgSQL</span>変数名は、その都度問い合わせパラメータによって置換されます。
 これにより、<code class="command">SELECT</code>の問い合わせ計画は一度だけ準備することができ、その後の評価で異なった変数値を代入して再利用されます。
 すなわち、式の最初の使用においては、実質的に<code class="command">PREPARE</code>コマンドと同等です。
 例えば、2つの整数変数<code class="literal">x</code>と<code class="literal">y</code>を宣言して、
@@ -63,19 +63,29 @@ PREPARE <em class="replaceable"><code>statement_name</code></em>(integer, intege
 通常この詳細は、<span class="application">PL/pgSQL</span>ユーザにとって重要ではありませんが、この知識は問題点の解析に有用です。
 それ以外の情報は、<a class="xref" href="plpgsql-implementation.html#PLPGSQL-PLAN-CACHING" title="43.11.2. 計画のキャッシュ">43.11.2</a>に記述されています。
     </p><p>
-     Since an <em class="replaceable"><code>expression</code></em> is converted to a
-     <code class="literal">SELECT</code> command, it can contain the same clauses
-     that an ordinary <code class="literal">SELECT</code> would, except that it
-     cannot include a top-level <code class="literal">UNION</code>,
-     <code class="literal">INTERSECT</code>, or <code class="literal">EXCEPT</code> clause.
+<span class="original">
+     Since an &lt;replaceable&gt;expression&lt;/replaceable&gt; is converted to a
+     &lt;literal&gt;SELECT&lt;/literal&gt; command, it can contain the same clauses
+     that an ordinary &lt;literal&gt;SELECT&lt;/literal&gt; would, except that it
+     cannot include a top-level &lt;literal&gt;UNION&lt;/literal&gt;,
+     &lt;literal&gt;INTERSECT&lt;/literal&gt;, or &lt;literal&gt;EXCEPT&lt;/literal&gt; clause.
      Thus for example one could test whether a table is non-empty with
+&lt;programlisting&gt;
+IF count(*) &amp;gt; 0 FROM my_table THEN ...
+&lt;/programlisting&gt;
+     since the &lt;replaceable&gt;expression&lt;/replaceable&gt;
+     between &lt;literal&gt;IF&lt;/literal&gt; and &lt;literal&gt;THEN&lt;/literal&gt; is parsed as
+     though it were &lt;literal&gt;SELECT count(*) &amp;gt; 0 FROM my_table&lt;/literal&gt;.
+     The &lt;literal&gt;SELECT&lt;/literal&gt; must produce a single column, and not
+     more than one row.  (If it produces no rows, the result is taken as
+     NULL.)
+</span>
+<em class="replaceable"><code>expression</code></em>は<code class="literal">SELECT</code>コマンドに変換されますので、通常の<code class="literal">SELECT</code>が含むことのできるものと同じ句を含むことができます。ただし、トップレベルの<code class="literal">UNION</code>、<code class="literal">INTERSECT</code>、<code class="literal">EXCEPT</code>句は含むことができません。
+そのため、例えば、以下によりテーブルが空でないか確かめることができます。
 </p><pre class="programlisting">
 IF count(*) &gt; 0 FROM my_table THEN ...
 </pre><p>
-     since the <em class="replaceable"><code>expression</code></em>
-     between <code class="literal">IF</code> and <code class="literal">THEN</code> is parsed as
-     though it were <code class="literal">SELECT count(*) &gt; 0 FROM my_table</code>.
-     The <code class="literal">SELECT</code> must produce a single column, and not
-     more than one row.  (If it produces no rows, the result is taken as
-     NULL.)
+<code class="literal">IF</code>と<code class="literal">THEN</code>間の<em class="replaceable"><code>式</code></em>は<code class="literal">SELECT count(*) &gt; 0 FROM my_table</code>であるかのように解析されるからです。
+<code class="literal">SELECT</code>は1つの列、2つ以上でない行を生成しなければなりません。
+(行を生成しないのであれば、結果はNULLとして受け付けられます。)
     </p></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="plpgsql-declarations.html" title="43.3. 宣言">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="plpgsql.html" title="第43章 PL/pgSQL — SQL手続き言語">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="plpgsql-statements.html" title="43.5. 基本的な文">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">43.3. 宣言 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 43.5. 基本的な文</td></tr></table></div></body></html>

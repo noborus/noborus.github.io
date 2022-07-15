@@ -30,7 +30,7 @@
 </span>
 特定の条件下で問い合わせのパフォーマンスが劇的に向上することがあります。
 特にテーブル内のアクセスが集中する行の殆どが単一または少数のパーティションに存在している場合がそうです。
-パーティショニングはインデックスの先頭にある列の代わりになり、インデックスの大きさを小さくして、インデックスの頻繁に使われる部分がメモリに収まりやすくなるようにします。
+パーティショニングは実質的にインデックスの上位木レベルの代わりになり、インデックスの頻繁に使われる部分がメモリに収まりやすくなるようにします。
       </p></li><li class="listitem"><p>
 <span class="original">
        When queries or updates access a large percentage of a single
@@ -39,7 +39,7 @@
        index, which would require random-access reads scattered across the
        whole table.
 </span>
-問い合わせや更新が一つのパーティションの大部分にアクセスする場合、インデックスやランダムアクセスを使用してテーブル全体にまたがる読み取りをする代わりに、そのパーティションへの順次アクセスをすることでパフォーマンスを向上させることができます。
+問い合わせや更新が一つのパーティションの大部分にアクセスする場合、インデックス使用してテーブル全体にまたがるランダムアクセス読み取りをする代わりに、そのパーティションへの順次アクセスをすることでパフォーマンスを向上させることができます。
       </p></li><li class="listitem"><p>
 <span class="original">
        Bulk loads and deletes can be accomplished by adding or removing
@@ -50,8 +50,8 @@
        operation.  These commands also entirely avoid the
        &lt;command&gt;VACUUM&lt;/command&gt; overhead caused by a bulk &lt;command&gt;DELETE&lt;/command&gt;.
 </span>
-一括挿入や削除について、その要件をパーティションの設計に組み込んでいれば、それをパーティションの追加や削除で実現することが可能です。
-<code class="command">ALTER TABLE DETACH PARTITION</code>を実行する、あるいは個々のパーティションを<code class="command">DROP TABLE</code>で削除するのは、一括の操作をするよりも遥かに高速です。
+一括挿入や削除について、その使い方のパターンをパーティションの設計に組み込んでいれば、それをパーティションの追加や削除で実現することが可能です。
+個々のパーティションを<code class="command">DROP TABLE</code>で削除する、あるいは<code class="command">ALTER TABLE DETACH PARTITION</code>を実行することにより、一括の操作をするよりも遥かに高速です。
 これらのコマンドはまた、一括の<code class="command">DELETE</code>で引き起こされる<code class="command">VACUUM</code>のオーバーヘッドを完全に回避できます。
       </p></li><li class="listitem"><p>
 <span class="original">
@@ -67,7 +67,7 @@
      rule of thumb is that the size of the table should exceed the physical
      memory of the database server.
 </span>
-この利益は通常、そうしなければテーブルが非常に大きくなる場合にのみ価値があります。
+これらの利益は通常、そうしなければテーブルが非常に大きくなる場合にのみ価値があります。
 テーブルがパーティショニングから利益を得られるかどうかの正確な分岐点はアプリケーションに依存しますが、重要なことはテーブルのサイズがデータベースサーバの物理メモリより大きいことです。
     </p><p>
 <span class="original">
@@ -93,6 +93,8 @@
 </span>
 テーブルはキー列またはキー列の集合で定義される<span class="quote">「<span class="quote">範囲</span>」</span>にパーティション分割され、異なるパーティションに割り当てられる値の範囲に重なりがないようになります。
 例えば、日付の範囲によってパーティション分割することもあるでしょうし、特定のビジネスオブジェクトの識別子の範囲によって分割することもあるでしょう。
+個々の範囲の境界は、下限は境界値を含み、上限は境界値を含まないと理解されています。
+たとえば、あるパーティションの境界が<code class="literal">1</code>から<code class="literal">10</code>で、次の範囲が<code class="literal">10</code>から<code class="literal">20</code>なら、値<code class="literal">10</code>は最初ではなく、二番目のパーティションに所属します。
         </p></dd><dt><span class="term">リストパーティション</span></dt><dd><p>
 <span class="original">
          The table is partitioned by explicitly listing which key value(s)
@@ -122,25 +124,37 @@
     </p></div><div class="sect2" id="DDL-PARTITIONING-DECLARATIVE"><div class="titlepage"><div><div><h3 class="title">5.11.2. 宣言的パーティショニング</h3></div></div></div><span class="original">
    &lt;title&gt;Declarative Partitioning&lt;/title&gt;
 </span><p>
-    <span class="productname">PostgreSQL</span> allows you to declare
+<span class="original">
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; allows you to declare
     that a table is divided into partitions.  The table that is divided
-    is referred to as a <em class="firstterm">partitioned table</em>.  The
-    declaration includes the <em class="firstterm">partitioning method</em>
+    is referred to as a &lt;firstterm&gt;partitioned table&lt;/firstterm&gt;.  The
+    declaration includes the &lt;firstterm&gt;partitioning method&lt;/firstterm&gt;
     as described above, plus a list of columns or expressions to be used
-    as the <em class="firstterm">partition key</em>.
+    as the &lt;firstterm&gt;partition key&lt;/firstterm&gt;.
+</span>
+<span class="productname">PostgreSQL</span>ではテーブルをパーティションに分割すると宣言することができます。
+分割されたテーブルは<em class="firstterm">パーティションテーブル</em>と呼ばれます。
+この宣言は上で述べた<em class="firstterm">パーティション方式</em>を含んでおり、加えて<em class="firstterm">パーティションキー</em>として使用される列あるいは式のリストからなります。
    </p><p>
-    The partitioned table itself is a <span class="quote">「<span class="quote">virtual</span>」</span> table having
+<span class="original">
+    The partitioned table itself is a &lt;quote&gt;virtual&lt;/quote&gt; table having
     no storage of its own.  Instead, the storage belongs
-    to <em class="firstterm">partitions</em>, which are otherwise-ordinary
+    to &lt;firstterm&gt;partitions&lt;/firstterm&gt;, which are otherwise-ordinary
     tables associated with the partitioned table.
     Each partition stores a subset of the data as defined by its
-    <em class="firstterm">partition bounds</em>.
+    &lt;firstterm&gt;partition bounds&lt;/firstterm&gt;.
     All rows inserted into a partitioned table will be routed to the
     appropriate one of the partitions based on the values of the partition
     key column(s).
     Updating the partition key of a row will cause it to be moved into a
     different partition if it no longer satisfies the partition bounds
     of its original partition.
+</span>
+パーティションテーブル自身はストレージを持たない<span class="quote">「<span class="quote">仮想</span>」</span>テーブルです。
+その代わり、ストレージはパーティションテーブルに関連付けられた通常のテーブルである<em class="firstterm">partitions</em>に所属します。
+個々のパーティションは<em class="firstterm">パーティション境界</em>によって定義されるデータのサブセットです。
+パーティションテーブルに挿入されるすべての行は、パーティションキーの列の値に基づいてパーティションの一つに振り向けられます。
+行のパーティションキーを更新し、それが元のパーティション境界を満たさなくなった場合、その行は異なるパーティションに移動されます。
    </p><p>
 <span class="original">
     Partitions may themselves be defined as partitioned tables, resulting
@@ -151,8 +165,8 @@
     partitions.  See &lt;xref linkend="sql-createtable"/&gt; for more details on
     creating partitioned tables and partitions.
 </span>
-<em class="firstterm">サブパーティショニング</em>と呼ばれる方法を使って、パーティションそれ自体をパーティションテーブルとして定義することができます。
-パーティションには、他のパーティションとは別に独自のインデックス、制約、デフォルト値を定義できます。
+パーティションは自身をパーティション化テーブルであると定義することができ、その結果<em class="firstterm">サブパーティショニング</em>となります。
+すべてのパーティションは親のパーティションと同じ列を持たなければなりませんが、パーティションは他のパーティションとは別の独自のインデックス、制約、デフォルト値を持つことができます。
 パーティションテーブルおよびパーティションの作成についての更なる詳細については<a class="xref" href="sql-createtable.html" title="CREATE TABLE"><span class="refentrytitle">CREATE TABLE</span></a>を参照してください。
    </p><p>
 <span class="original">
@@ -166,16 +180,17 @@
     sub-commands.
 </span>
 通常のテーブルをパーティションテーブルに変更する、およびその逆はできません。
-しかし、データのある通常のテーブルやパーティションテーブルをパーティションテーブルのパーティションとして追加する、あるいはパーティションテーブルからパーティションを削除し、それを独立したテーブルにすることは可能です。
+しかし、既存の通常のテーブルやパーティションテーブルをパーティションテーブルのパーティションとして追加する、あるいはパーティションテーブルからパーティションを削除し、それを独立したテーブルにすることは可能です。
+これにより多くの保守プロセスを単純化して効率化できます。
 <code class="command">ATTACH PARTITION</code>および<code class="command">DETACH PARTITION</code>のサブコマンドについての詳細は<a class="xref" href="sql-altertable.html" title="ALTER TABLE"><span class="refentrytitle">ALTER TABLE</span></a>を参照してください。
    </p><p>
+<span class="original">
     Partitions can also be foreign tables, although they have some limitations
-    that normal tables do not; see <a class="xref" href="sql-createforeigntable.html" title="CREATE FOREIGN TABLE"><span class="refentrytitle">CREATE FOREIGN TABLE</span></a> for
+    that normal tables do not; see &lt;xref linkend="sql-createforeigntable"/&gt; for
     more information.
---&gt;
+</span>
 通常のテーブルにない制限がいくつかありますが、パーティションを外部テーブルとすることができます。
 詳細は<a class="xref" href="sql-createforeigntable.html" title="CREATE FOREIGN TABLE"><span class="refentrytitle">CREATE FOREIGN TABLE</span></a>を参照してください。
-例えば、パーティションテーブルに挿入されるデータは外部テーブルのパーティションには振り向けられません。
    </p><div class="sect3" id="DDL-PARTITIONING-DECLARATIVE-EXAMPLE"><div class="titlepage"><div><div><h4 class="title">5.11.2.1. 例</h4></div></div></div><span class="original">
     &lt;title&gt;Example&lt;/title&gt;
 </span><p>
@@ -257,9 +272,13 @@ CREATE TABLE measurement (
 こうして作成されたパーティションは、すべての点において<span class="productname">PostgreSQL</span>の通常のテーブル（あるいは場合によっては外部テーブル）と同じです。
 各パーティション毎に別々にテーブル空間や格納パラメータを指定することもできます。
       </p><p>
+<span class="original">
        For our example, each partition should hold one month's worth of
        data, to match the requirement of deleting one month's data at a
        time.  So the commands might look like:
+</span>
+この例では、個々のパーティションは一月分のデータを保持し、一度に一月分のデータを削除するという要件を満たしています。
+ですからコマンドは以下のようになるかもしれません。
 
 </p><pre class="programlisting">
 CREATE TABLE measurement_y2006m02 PARTITION OF measurement
@@ -282,15 +301,18 @@ CREATE TABLE measurement_y2008m01 PARTITION OF measurement
     TABLESPACE fasttablespace;
 </pre><p>
 
+<span class="original">
        (Recall that adjacent partitions can share a bound value, since
        range upper bounds are treated as exclusive bounds.)
+</span>
+（境界の上限は境界値を含まないので、隣接したパーティションは境界値を共有できることを思い出してください。）
       </p><p>
 <span class="original">
        If you wish to implement sub-partitioning, again specify the
        &lt;literal&gt;PARTITION BY&lt;/literal&gt; clause in the commands used to create
        individual partitions, for example:
 </span>
-サブパーティショニングを実装するには、例えば以下のように、個々のパーティションを作成するコマンドで<code class="literal">PARTITION BY</code>句を指定してください。
+サブパーティショニングの実装が希望なら、同じように以下のように、個々のパーティションを作成するコマンドで<code class="literal">PARTITION BY</code>句を指定してください。
 
 </p><pre class="programlisting">
 CREATE TABLE measurement_y2006m02 PARTITION OF measurement
@@ -316,13 +338,21 @@ CREATE TABLE measurement_y2006m02 PARTITION OF measurement
 指定するパーティションキーは親のパーティションキーと重なっても構いませんが、サブパーティションの境界を指定するときは、それが受け付けるデータの集合がパーティション自体の境界でできるものの部分集合を構成するように注意してください。
 システムは本当にそのようになっているかどうか、検査しようとしません。
       </p><p>
+<span class="original">
        Inserting data into the parent table that does not map
        to one of the existing partitions will cause an error; an appropriate
        partition must be added manually.
+</span>
+既存のパーティションにマップされない親テーブルにデータを挿入しようとするとエラーになります。
+手動で適切なパーティションを追加しなければなりません。
       </p><p>
+<span class="original">
        It is not necessary to manually create table constraints describing
        the partition boundary conditions for partitions.  Such constraints
        will be created automatically.
+</span>
+パーティションのパーティション境界条件を記述するテーブル制約を手動で作る必要はありません。
+そのような制約は自動的に作られます。
       </p></li><li class="listitem"><p>
 <span class="original">
        Create an index on the key column(s), as well as any other indexes you
@@ -338,8 +368,9 @@ CREATE TABLE measurement_y2006m02 PARTITION OF measurement
 </span>
 キー列にインデックスを作成し、またその他のインデックスも必要に応じてパーティションテーブル上に作成します。
 （厳密に言えば、キー列のインデックスは必要なわけではありませんが、ほとんどの場合に役に立つでしょう。）
-これは各パーティション上に1つのインデックスを自動的に作ります。
-後から作成もしくは追加したパーティションにもインデックスが含まれます。
+これは個々のパーティションに対応するインデックスを自動的に作るので、作成したすべてのパーティション、あるいは後でアタッチしたパーティションもそのようなインデックスを持ちます。
+パーティションテーブルのインデックスあるいは一意制約はパーティションテーブルがそうであるのと同様、<span class="quote">「<span class="quote">仮想</span>」</span>です。
+実際のデータは個々のパーティションテーブル上の子インデックスにあります。
 
 </p><pre class="programlisting">
 CREATE INDEX ON measurement (logdate);
@@ -373,7 +404,7 @@ CREATE INDEX ON measurement (logdate);
       than physically moving large amounts of data around.
 </span>
 最初にテーブルを定義した時に作成したパーティションの集合は、通常はそのまま静的に残ることを意図したものではありません。
-古いデータのパーティションを削除し、新しいデータの入った新しいパーティションを定期的に作成したいというのが普通です。
+古いデータを持つパーティションを削除し、新しいデータの入った新しいパーティションを定期的に作成したいというのが普通です。
 パーティショニングのもっとも重要な利点の一つは、パーティショニングがなければ大変なことになるであろうこの作業を、大量のデータを物理的に動かすのではなく、パーティション構造を操作することにより、ほとんど一瞬にして実行できるという、まさにそのことなのです。
     </p><p>
 <span class="original">
@@ -399,6 +430,7 @@ DROP TABLE measurement_y2006m02;
      right.  This has two forms:
 </span>
 別の方法で多くの場合に望ましいのは、パーティションテーブルからパーティションを削除する一方で、パーティションそれ自体はテーブルとしてアクセス可能なまま残すことです。
+これには２つの形式があります。
 
 </p><pre class="programlisting">
 ALTER TABLE measurement DETACH PARTITION measurement_y2006m02;
@@ -422,6 +454,8 @@ ALTER TABLE measurement DETACH PARTITION measurement_y2006m02 CONCURRENTLY;
 こうすると、データを削除する前に、そのデータについて追加の操作が実行できます。
 例えば、<code class="command">COPY</code>、<span class="application">pg_dump</span>や類似のツールを使ってデータのバックアップをする好機となることが多いでしょう。
 また、データを集計してより小さな形式にする、その他のデータ操作を実行する、レポート作成を実行するなどのための好機となるかもしれません。
+コマンドの最初の形式は<code class="literal">ACCESS EXCLUSIVE</code>ロックを親テーブルに必要とします。
+二番目の形式のように<code class="literal">CONCURRENTLY</code>修飾子を追加すると、デタッチ操作の際に<code class="literal">SHARE UPDATE EXCLUSIVE</code>を親テーブルにかけるだけで済みますが、制限の詳細については<a class="link" href="sql-altertable.html#SQL-ALTERTABLE-DETACH-PARTITION"><code class="literal">ALTER TABLE ... DETACH PARTITION</code></a>を参照してください。
    </p><p>
 <span class="original">
      Similarly we can add a new partition to handle new data. We can create an
@@ -446,7 +480,8 @@ CREATE TABLE measurement_y2008m02 PARTITION OF measurement
      to avoid tediously repeating the parent table's definition:
 </span>
 別の方法として、新しいテーブルをパーティション構造の外部に作成し、その後でそれを適切なパーティションにする方が便利な場合もあります。
-こうすると、パーティションテーブル内でデータが見えるようになるより前に、データをロードし、確認し、変換することができます。
+こうすると、パーティションテーブル内でデータが見えるようになるより前に、新しいデータをロードし、確認し、変換することができます。
+<code class="literal">CREATE TABLE ... LIKE</code>オプションは親テーブルの定義を長々と繰り返すことを避けることができて有用です。
 
 </p><pre class="programlisting">
 CREATE TABLE measurement_y2008m02
@@ -463,8 +498,11 @@ ALTER TABLE measurement ATTACH PARTITION measurement_y2008m02
     FOR VALUES FROM ('2008-02-01') TO ('2008-03-01' );
 </pre><p>
     </p><p>
-     The <code class="command">ATTACH PARTITION</code> command requires taking a
-     <code class="literal">SHARE UPDATE EXCLUSIVE</code> lock on the partitioned table.
+<span class="original">
+     The &lt;command&gt;ATTACH PARTITION&lt;/command&gt; command requires taking a
+     &lt;literal&gt;SHARE UPDATE EXCLUSIVE&lt;/literal&gt; lock on the partitioned table.
+</span>
+<code class="command">ATTACH PARTITION</code>コマンドは、パーティションテーブルへの<code class="literal">SHARE UPDATE EXCLUSIVE</code>ロックの取得を必要とします。
     </p><p>
 <span class="original">
      Before running the &lt;command&gt;ATTACH PARTITION&lt;/command&gt; command, it is
@@ -482,22 +520,29 @@ ALTER TABLE measurement ATTACH PARTITION measurement_y2008m02
      suitable &lt;literal&gt;CHECK&lt;/literal&gt; constraint is encountered or the leaf
      partitions are reached.
 </span>
-<code class="command">ATTACH PARTITION</code>コマンドを実行する前に、マッチするパーティション制約を記述する<code class="literal">CHECK</code>制約を、パーティションに追加するテーブルに作成することを推奨します。
+上で説明したように、<code class="command">ATTACH PARTITION</code>コマンドを実行する前に、マッチするパーティション制約を記述する<code class="literal">CHECK</code>制約を、パーティションに追加するテーブルに作成することを推奨します。
 こうすることで、システムは、そうしなければ必要になる暗示的なパーティション制約を検証するための走査を、省略することができます。
-このような制約がなければ、そのパーティションに<code class="literal">ACCESS EXCLUSIVE</code>ロック、親テーブルに<code class="literal">SHARE UPDATE EXCLUSIVE</code>を保持したままで、パーティション制約を検証するためにテーブルを走査することになります。
-この制約は<code class="command">ATTACH PARTITION</code>が終わった後に削除するのが望ましいかも知れません。
+このような<code class="literal">CHECK</code>制約がなければ、そのパーティションに<code class="literal">ACCESS EXCLUSIVE</code>ロック、を保持したままで、パーティション制約を検証するためにテーブルを走査することになります。
+もう不要になったこの<code class="literal">CHECK</code>制約は<code class="command">ATTACH PARTITION</code>が終わった後に削除することを推奨します。
+アタッチされるテーブル自体がパーティションテーブルなら、適切な<code class="literal">CHECK</code>制約が見つかるか、リーフパーティションに到達するまで個々のサブパーティションは再帰的にロックされ走査されます。
     </p><p>
-     Similarly, if the partitioned table has a <code class="literal">DEFAULT</code>
-     partition, it is recommended to create a <code class="literal">CHECK</code>
+<span class="original">
+     Similarly, if the partitioned table has a &lt;literal&gt;DEFAULT&lt;/literal&gt;
+     partition, it is recommended to create a &lt;literal&gt;CHECK&lt;/literal&gt;
      constraint which excludes the to-be-attached partition's constraint.  If
-     this is not done then the <code class="literal">DEFAULT</code> partition will be
+     this is not done then the &lt;literal&gt;DEFAULT&lt;/literal&gt; partition will be
      scanned to verify that it contains no records which should be located in
      the partition being attached.  This operation will be performed whilst
-     holding an <code class="literal">ACCESS EXCLUSIVE</code> lock on the <code class="literal">
-     DEFAULT</code> partition.  If the <code class="literal">DEFAULT</code> partition
+     holding an &lt;literal&gt;ACCESS EXCLUSIVE&lt;/literal&gt; lock on the &lt;literal&gt;
+     DEFAULT&lt;/literal&gt; partition.  If the &lt;literal&gt;DEFAULT&lt;/literal&gt; partition
      is itself a partitioned table then each of its partitions will be
      recursively checked in the same way as the table being attached, as
      mentioned above.
+</span>
+同様に、そのパーティションが<code class="literal">DEFAULT</code>パーティションを持っているなら、アタッチ予定のパーティションの制約を含まない<code class="literal">CHECK</code>制約を作成することをお勧めします。
+これをしておかないと、アタッチ予定のパーティション中にレコードがないことを確認するために<code class="literal">DEFAULT</code>パーティションが走査されます。
+この操作の間、<code class="literal">ACCESS EXCLUSIVE</code>ロックが<code class="literal">DEFAULT</code>パーティションに保持されます。
+<code class="literal">DEFAULT</code>パーティション自体がパーティションテーブルなら、個々のパーティションは、上で述べたようにアタッチ予定のテーブルと同じ方法で走査されます。
     </p><p>
 <span class="original">
      As explained above, it is possible to create indexes on partitioned tables
@@ -516,10 +561,10 @@ ALTER TABLE measurement ATTACH PARTITION measurement_y2008m02
      partitions are attached to the parent index, the parent index is marked
      valid automatically.  Example:
 </span>
-前述したとおり、パーティションテーブル上にインデックスを作成することが可能であり、それらは階層全体に自動で適用されます。
+前述のとおり、階層全体に自動で適用されるようにパーティションテーブル上にインデックスを作成することが可能です。
 既存のパーティションだけではなく将来作成されるパーティションもインデックス付けされるため、これはとても便利です。
 一つの制限は、そのようなパーティションのインデックスを作成する場合<code class="literal">CONCURRENTLY</code>句を使うことができません。
-長いロック時間を克服するためには、パーティションテーブルに<code class="command">CREATE INDEX ON ONLY</code>を使うことが可能です。
+長いロック時間を避けるためには、パーティションテーブルに<code class="command">CREATE INDEX ON ONLY</code>を使うことが可能です。
 そのようなインデックスは無効とマークされ、パーティションは適用するインデックスを自動で取得しません。
 パーティション上のインデックスは<code class="literal">CONCURRENTLY</code>を使用して個々に作成することができ、後から<code class="command">ALTER INDEX .. ATTACH PARTITION</code>を使用して親のインデックスに<em class="firstterm">attached</em>できます。
 全てのパーティションに対してインデックスがアタッチされた時点で、親のインデックスは、自動で有効とマークされます。
@@ -558,24 +603,34 @@ ALTER INDEX measurement_city_id_logdate_key
 </span>
 パーティションテーブルには以下の制限事項があります。
     </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
        Unique constraints (and hence primary keys) on partitioned tables must
        include all the partition key columns.  This limitation exists because
        the individual indexes making up the constraint can only directly
        enforce uniqueness within their own partitions; therefore, the
        partition structure itself must guarantee that there are not
        duplicates in different partitions.
+</span>
+パーティションテーブル上の一意制約（したがって主キーも）は、すべてのパーティションキー列を含んでいなければなりません。
+制約を実装している個々のインデックスは自身のパーティション内でしか一意性を直接強制することができないためです。
+ですからパーティション構造自身が、異なるパーティションに重複がないことを保証しなければなりません。
       </p></li><li class="listitem"><p>
+<span class="original">
        There is no way to create an exclusion constraint spanning the
        whole partitioned table.  It is only possible to put such a
        constraint on each leaf partition individually.  Again, this
        limitation stems from not being able to enforce cross-partition
        restrictions.
+</span>
+すべてのパーティションにまたがる排他制約を作成する方法はありません。
+個々のリーフパーティションにそうした制約を設定することだけが可能です。
+繰り返しますが、この制限はパーティションをまたがる制限を強制することができないことに起因しています。
       </p></li><li class="listitem"><p>
 <span class="original">
        &lt;literal&gt;BEFORE ROW&lt;/literal&gt; triggers on &lt;literal&gt;INSERT&lt;/literal&gt;
        cannot change which partition is the final destination for a new row.
 </span>
-<code class="literal">BEFORE ROW</code>トリガーは、どのパーティションが新しい行の最終目的地であるかを変更することはできません。
+<code class="literal">INSERT</code>の<code class="literal">BEFORE ROW</code>トリガーは、どのパーティションが新しい行の最終目的地であるかを変更することはできません。
       </p></li><li class="listitem"><p>
 <span class="original">
        Mixing temporary and permanent relations in the same partition tree is
@@ -590,6 +645,7 @@ ALTER INDEX measurement_city_id_logdate_key
 一時リレーションを使う場合は、パーティションツリーのすべてのメンバーは同じセッションに由来しなければなりません。
       </p></li></ul></div><p>
     </p><p>
+<span class="original">
      Individual partitions are linked to their partitioned table using
      inheritance behind-the-scenes.  However, it is not possible to use
      all of the generic features of inheritance with declaratively
@@ -598,43 +654,72 @@ ALTER INDEX measurement_city_id_logdate_key
      it is a partition of, nor can a table inherit from both a partitioned
      table and a regular table.  That means partitioned tables and their
      partitions never share an inheritance hierarchy with regular tables.
+</span>
+個々のパーティションは継承を背景にパーティションテーブルに紐付けられています。
+しかし、宣言的パーティションテーブルもしくはそれらのパーティションでは継承の一般的な機能の一部（後述）を使用することはできません。
+例えば、パーティションテーブルのパーティションは、そのパーティションテーブル以外の親を持つことができませんし、また一般のテーブルはパーティションテーブルをその親にしてパーティションテーブルから継承することはできません。
+これはつまり、パーティションテーブルおよびそれらのパーティションは一般のテーブルと継承によって繋がることができないということです。
     </p><p>
+<span class="original">
      Since a partition hierarchy consisting of the partitioned table and its
      partitions is still an inheritance hierarchy,
-     <code class="structfield">tableoid</code> and all the normal rules of
-     inheritance apply as described in <a class="xref" href="ddl-inherit.html" title="5.10. 継承">5.10</a>, with
+     &lt;structfield&gt;tableoid&lt;/structfield&gt; and all the normal rules of
+     inheritance apply as described in &lt;xref linkend="ddl-inherit"/&gt;, with
      a few exceptions:
+</span>
+パーティションテーブルとそのパーティションを構成するパーティションの階層は継承の階層でもあるので、<code class="structfield">tableoid</code>と継承におけるすべての通常の規則が<a class="xref" href="ddl-inherit.html" title="5.10. 継承">5.10</a>で説明したとおりに適用されますが、いくつか例外があります。
+最も重要な例外を以下に示します。
 
      </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
         Partitions cannot have columns that are not present in the parent.  It
         is not possible to specify columns when creating partitions with
-        <code class="command">CREATE TABLE</code>, nor is it possible to add columns to
-        partitions after-the-fact using <code class="command">ALTER TABLE</code>.
-        Tables may be added as a partition with <code class="command">ALTER TABLE
-        ... ATTACH PARTITION</code> only if their columns exactly match
+        &lt;command&gt;CREATE TABLE&lt;/command&gt;, nor is it possible to add columns to
+        partitions after-the-fact using &lt;command&gt;ALTER TABLE&lt;/command&gt;.
+        Tables may be added as a partition with &lt;command&gt;ALTER TABLE
+        ... ATTACH PARTITION&lt;/command&gt; only if their columns exactly match
         the parent.
+</span>
+パーティションは親に存在しない列を持つことができません。
+パーティションを<code class="command">CREATE TABLE</code>で作成する時に列を指定することはできませんし、作成後に<code class="command">ALTER TABLE</code>でパーティションに列を追加することもできません。
+テーブルを<code class="command">ALTER TABLE ... ATTACH PARTITION</code>でパーティションとして追加できるのは、その列が完全に親と一致している場合のみです。
        </p></li><li class="listitem"><p>
-        Both <code class="literal">CHECK</code> and <code class="literal">NOT NULL</code>
+<span class="original">
+        Both &lt;literal&gt;CHECK&lt;/literal&gt; and &lt;literal&gt;NOT NULL&lt;/literal&gt;
         constraints of a partitioned table are always inherited by all its
-        partitions.  <code class="literal">CHECK</code> constraints that are marked
-        <code class="literal">NO INHERIT</code> are not allowed to be created on
+        partitions.  &lt;literal&gt;CHECK&lt;/literal&gt; constraints that are marked
+        &lt;literal&gt;NO INHERIT&lt;/literal&gt; are not allowed to be created on
         partitioned tables.
-        You cannot drop a <code class="literal">NOT NULL</code> constraint on a
+        You cannot drop a &lt;literal&gt;NOT NULL&lt;/literal&gt; constraint on a
         partition's column if the same constraint is present in the parent
         table.
+</span>
+パーティションテーブルの<code class="literal">CHECK</code>制約と<code class="literal">NOT NULL</code>制約はいずれも必ずすべてのパーティションに継承されます。
+パーティションテーブルで<code class="literal">NO INHERIT</code>の印を付けた<code class="literal">CHECK</code>制約を作ることはできません。
+同じ制約が親テーブルに存在する場合、親テーブルの列に存在する<code class="literal">NOT NULL</code>制約をパーティションの列から削除することはできません。
        </p></li><li class="listitem"><p>
-        Using <code class="literal">ONLY</code> to add or drop a constraint on only
+<span class="original">
+        Using &lt;literal&gt;ONLY&lt;/literal&gt; to add or drop a constraint on only
         the partitioned table is supported as long as there are no
-        partitions.  Once partitions exist, using <code class="literal">ONLY</code>
+        partitions.  Once partitions exist, using &lt;literal&gt;ONLY&lt;/literal&gt;
         will result in an error.  Instead, constraints on the partitions
         themselves can be added and (if they are not present in the parent
         table) dropped.
+</span>
+<code class="literal">ONLY</code>を使ってパーティションテーブルについてのみ制約を追加または削除することは、パーティションが存在しない場合はサポートされます。
+ひとたびパーティションが存在すれば、<code class="literal">ONLY</code>の使用はエラーになります。
+その代わりに、パーティション自身の制約を追加することや（親テーブルに存在しない場合）削除することが可能です。
        </p></li><li class="listitem"><p>
+<span class="original">
         As a partitioned table does not have any data itself, attempts to use
-        <code class="command">TRUNCATE</code> <code class="literal">ONLY</code> on a partitioned
+        &lt;command&gt;TRUNCATE&lt;/command&gt; &lt;literal&gt;ONLY&lt;/literal&gt; on a partitioned
         table will always return an error.
+</span>
+パーティションテーブルは直接データを所有することはないため、<code class="command">TRUNCATE</code> <code class="literal">ONLY</code>をパーティションテーブルに対して使用しようとすると、必ずエラーが返されます。
        </p></li></ul></div><p>
-    </p></div></div><div class="sect2" id="DDL-PARTITIONING-USING-INHERITANCE"><div class="titlepage"><div><div><h3 class="title">5.11.3. Partitioning Using Inheritance</h3></div></div></div><p>
+    </p></div></div><div class="sect2" id="DDL-PARTITIONING-USING-INHERITANCE"><div class="titlepage"><div><div><h3 class="title">5.11.3. 継承を用いたパーティション</h3></div></div></div><span class="original">
+    &lt;title&gt;Partitioning Using Inheritance&lt;/title&gt;
+</span><p>
 <span class="original">
      While the built-in declarative partitioning is suitable for most
      common use cases, there are some circumstances where a more flexible
@@ -677,8 +762,8 @@ ALTER INDEX measurement_city_id_logdate_key
       declarative partitioning example above.  Use
       the following steps:
 </span>
-上の非パーティション<code class="structname">measurement</code>テーブルを使用します。
-継承を使用したパーティショニングを実装するには、以下の手順に従います。
+この例は、上の宣言的パーティションの例と等価な構造のパーティションを作成しています。
+以下の手順に従います。
 
       </p><div class="orderedlist"><ol class="orderedlist compact" type="1"><li class="listitem"><p>
 <span class="original">
@@ -690,12 +775,12 @@ ALTER INDEX measurement_city_id_logdate_key
          example, the root table is the &lt;structname&gt;measurement&lt;/structname&gt;
          table as originally defined:
 </span>
-<span class="quote">「<span class="quote">マスター</span>」</span>テーブルを作成します。
+<span class="quote">「<span class="quote">root</span>」</span>テーブルを作成します。
 すべての<span class="quote">「<span class="quote">子</span>」</span>テーブルはこれを継承します。
 このテーブルにはデータは含まれません。
 子テーブルに同じように適用されるのでなければ、このテーブルにチェック制約を定義しないでください。
 このテーブル上にインデックスや一意制約を定義することにも意味はありません。
-以下の例では、マスターテーブルは最初に定義したのと同じ<code class="structname">measurement</code>テーブルです。
+以下の例では、rootテーブルは最初に定義したのと同じ<code class="structname">measurement</code>テーブルです。
 
 </p><pre class="programlisting">
 CREATE TABLE measurement (
@@ -713,8 +798,8 @@ CREATE TABLE measurement (
          partitioning, these tables are in every way normal
          &lt;productname&gt;PostgreSQL&lt;/productname&gt; tables (or foreign tables).
 </span>
-いくつかの<span class="quote">「<span class="quote">子</span>」</span>テーブルを作成し、それぞれマスターテーブルを継承するものにします。
-通常、これらのテーブルはマスターから継承したものに列を追加しません。
+いくつかの<span class="quote">「<span class="quote">子</span>」</span>テーブルを作成し、それぞれrootテーブルを継承するものにします。
+通常、これらのテーブルはrootから継承したものに列を追加しません。
 宣言的パーティショニングの場合と同じく、これらのテーブルはすべての点で普通の<span class="productname">PostgreSQL</span>のテーブル（あるいは外部テーブル）と同じです。
         </p><p>
 </p><pre class="programlisting">
@@ -758,11 +843,7 @@ CHECK ( outletID BETWEEN 200 AND 300 )
          Instead, ranges should be defined in this style:
 </span>
 キー値200がどちらの子テーブルに属するか明らかではないため、これは誤っています。
-        </p><p>
-<span class="original">
-         It would be better to instead create child tables as follows:
-</span>
-その代わりに以下のように子テーブルを作る方が良いでしょう。
+代わりにこの方法で範囲を定義すべきです。
 
 </p><pre class="programlisting">
 CREATE TABLE measurement_y2006m02 (
@@ -809,7 +890,7 @@ CREATE INDEX measurement_y2008m01_logdate ON measurement_y2008m01 (logdate);
          use a very simple trigger function:
 </span>
 アプリケーションで<code class="literal">INSERT INTO measurement ...</code>を実行することができ、そのときにデータが適切な子テーブルにリダイレクトされることが望ましいです。
-マスターテーブルに適当なトリガー関数を追加することでそのような設定にすることができます。
+rootテーブルに適当なトリガー関数を追加することでそのような設定にすることができます。
 データが最後の子テーブルにしか追加されないなら、次のような非常に単純なトリガー関数を使うことができます。
 
 </p><pre class="programlisting">
@@ -840,7 +921,7 @@ CREATE TRIGGER insert_measurement_trigger
          inserts into the current child table.  The trigger definition does
          not need to be updated, however.
 </span>
-トリガが常に現在の子テーブルを指すようにするためには、毎月、トリガ関数を再定義しなくてはいけません。
+常に現在の子テーブルに挿入するようにするためには、毎月、トリガ関数を再定義しなくてはいけません。
 しかし、トリガ定義を更新する必要はありません。
         </p><p>
 <span class="original">
@@ -903,7 +984,7 @@ LANGUAGE plpgsql;
          child table is to set up rules, instead of a trigger, on the
          root table.  For example:
 </span>
-挿入を適切な子テーブルにリダイレクトする別の方法は、マスターテーブルにトリガーではなくルールを設定することです。
+挿入を適切な子テーブルにリダイレクトする別の方法は、rootテーブルにトリガーではなくルールを設定することです。
 例えば次のようにします。
 
 </p><pre class="programlisting">
@@ -937,7 +1018,7 @@ DO INSTEAD
          approach.
 </span>
 <code class="command">COPY</code>はルールを無視することに注意してください。
-データの挿入に<code class="command">COPY</code>を使いたい場合は、マスターではなく正しい子テーブルにコピーする必要があります。
+データの挿入に<code class="command">COPY</code>を使いたい場合は、rootではなく正しい子テーブルにコピーする必要があります。
 トリガーであれば<code class="command">COPY</code>でも起動されるので、トリガーを使う方法であれば通常通りに使用することができます。
         </p><p>
 <span class="original">
@@ -946,7 +1027,7 @@ DO INSTEAD
          date; the data will silently go into the root table instead.
 </span>
 ルールを使う方法のもう一つの欠点は、ルールの集合が挿入日付に対応しきれていない場合に、強制的にエラーにする簡単な方法がないことです。
-この場合、データは警告などを出すことなくマスターテーブルに入ります。
+この場合、データは警告などを出すことなくrootテーブルに入ります。
         </p></li><li class="listitem"><p>
 <span class="original">
          Ensure that the &lt;xref linkend="guc-constraint-exclusion"/&gt;
@@ -1066,7 +1147,7 @@ ALTER TABLE measurement_y2008m02 INHERIT measurement;
         you need to run them on each child table individually. A command like:
 </span>
 手作業で<code class="command">VACUUM</code>あるいは<code class="command">ANALYZE</code>コマンドを実行している場合、それを個々の子テーブルに対して実行する必要があることを忘れないで下さい。
-次のようなコマンドはマスターテーブルしか処理しません。
+次のようなコマンドはrootテーブルしか処理しません。
 </p><pre class="programlisting">
 ANALYZE measurement;
 </pre><p>
@@ -1349,7 +1430,9 @@ EXPLAIN SELECT count(*) FROM measurement WHERE logdate &gt;= DATE '2008-01-01';
 そのため、従来の継承を基にしたパーティショニングはおそらく100個までの子でうまく動作します。
 何千もの子テーブルを使用することは避けてください。
      </p></li></ul></div><p>
-   </p></div><div class="sect2" id="DDL-PARTITIONING-DECLARATIVE-BEST-PRACTICES"><div class="titlepage"><div><div><h3 class="title">5.11.6. Best Practices for Declarative Partitioning</h3></div></div></div><p>
+   </p></div><div class="sect2" id="DDL-PARTITIONING-DECLARATIVE-BEST-PRACTICES"><div class="titlepage"><div><div><h3 class="title">5.11.6. 宣言的パーティショニングのベストプラクティス</h3></div></div></div><span class="original">
+   &lt;title&gt;Best Practices for Declarative Partitioning&lt;/title&gt;
+</span><p>
 <span class="original">
     The choice of how to partition a table should be made carefully, as the
     performance of query planning and execution can be negatively affected by
@@ -1375,7 +1458,7 @@ EXPLAIN SELECT count(*) FROM measurement WHERE logdate &gt;= DATE '2008-01-01';
 </span>
 最も重要な設計の決定の一つは、データを分割するための一つまたは複数の列です。
 大抵最適な選択は、パーティションテーブル上で実行されるクエリの<code class="literal">WHERE</code>句に最もよく現れる列または列の組み合わせによって分割することです。
-パーティションキーと一致し互換性がある<code class="literal">WHERE</code>句の項目は、不要なパーティションを取り除く為に使うことができます。
+パーティション範囲制約と一致し互換性がある<code class="literal">WHERE</code>句の項目は、不要なパーティションを取り除く為に使うことができます。
 しかしながら、<code class="literal">PRIMARY KEY</code>もしくは<code class="literal">UNIQUE</code>制約の条件により、他の決定を強いられるかもしれません。
 不要なデータの削除も同様にパーティショニング戦略を計画する際に考えるべき要素です。
 すべてのパーティションはとても早くデタッチすることができるため、一度に削除される全てのデータが単一のパーティション中に設置されるようにパーティション戦略を設計することが有益かもしれません。
@@ -1402,7 +1485,7 @@ EXPLAIN SELECT count(*) FROM measurement WHERE logdate &gt;= DATE '2008-01-01';
 テーブルを分割するパーティションの目標数を選択することもまた需要な決定です。
 十分なパーティションがないとインデックスは大きくなりデータの局所性が貧しいままであるかもしれず、キャッシュヒット率が低い結果となる可能性があります。
 しかしながら非常に多くのパーティションにテーブルを分割することもまた問題の原因となります。
-非常に多くのパーティションは、クエリの計画時間が長くなり、クエリの計画および実行の両方の際にメモリ消費が高くなることを意味します。
+以下に詳しく説明するように、非常に多くのパーティションは、クエリの計画時間が長くなり、クエリの計画および実行の両方の際にメモリ消費が高くなることを意味します。
 テーブルを分割する方法を選択するとき、 将来に起こる変化を考慮することもまた重要です。
 例えば、顧客毎に一つのパーティションを用意することを選択し、現在大規模な顧客が少数いる場合、数年以内に小規模な顧客を多数代わりに見つける可能性を含めて考慮します。
 この場合、<code class="literal">LIST</code>によって分割しデータの分割が実用的な数以上に顧客の数が増加しないことを期待するより、<code class="literal">HASH</code>によって分割し妥当なパーティション数にすることを選択する方が良いかもしれません。
@@ -1415,7 +1498,9 @@ EXPLAIN SELECT count(*) FROM measurement WHERE logdate &gt;= DATE '2008-01-01';
     Either of these can easily lead to excessive numbers of partitions,
     so restraint is advisable.
 </span>
-サブパーティショニングは、他のパーティションより巨大になると想定されるパーティションを更に分割するために役立ちますが、過度なサブパーティショニングは大量のパーティションを容易に引き起こし、前の段落で言及したのと同じ問題の原因となります。
+サブパーティショニングは、他のパーティションより巨大になると想定されるパーティションを更に分割するために役立ちます。
+他の選択は、パーティションキー中に複数の列を含む範囲パーティションを使うことです。
+これらのどちらも容易に大量のパーティション数をもたらす結果になるので、自制することをお勧めします。
    </p><p>
 <span class="original">
     It is important to consider the overhead of partitioning during
@@ -1431,10 +1516,9 @@ EXPLAIN SELECT count(*) FROM measurement WHERE logdate &gt;= DATE '2008-01-01';
     That's because each partition requires its metadata to be loaded into the
     local memory of each session that touches it.
 </span>
-クエリの計画および実行時のパーティショニングのオーバーヘッドを考慮することもまた重要です。
+クエリの計画および実行時のパーティショニングのオーバーヘッドを考慮することが重要です。
 典型的なクエリではクエリプランナが少数のパーティションを除いて残り全てのパーティションを除外できるという前提に立てば、クエリプランナは通常最大数千パーティションのパーティション階層を適切に操作することができます。
 プランナがパーティション除去を行った後に多くのパーティションが残るほど、計画時間は長くなりメモリ消費は高くなります。
-これは<code class="command">UPDATE</code>と<code class="command">DELETE</code>コマンドに特に当てはまります。
 大量のパーティションを持っていることについて考慮するもうひとつの理由は、特に多くのセッションが大量のパーティションを参照する場合、ある期間にサーバのメモリ消費が著しく増加するかもしれないことです。
 その理由は、各パーティションは参照される各セッションのローカルメモリにメタデータを読み込む必要があるためです。
    </p><p>
@@ -1453,5 +1537,5 @@ EXPLAIN SELECT count(*) FROM measurement WHERE logdate &gt;= DATE '2008-01-01';
 通常、データウェアハウスでは処理時間の大半をクエリ実行に費やすため、クエリ計画時間はあまり問題になりません。
 2種類のワークロードのいずれかでも、大量のデータを再パーティショニングすることは非常に遅いため、初期に適切な決定を下すことが重要です。
 計画したワークロードのシミュレーションは、パーティショニング戦略を最適化するためにしばしば役立ちます。
-多数のパーティションがより少数のパーティションより優れていることや、少数のパーティションが多数のパーティションより優れていることを前提としないでください。
+単純に多数のパーティションがより少数のパーティションより優れていることや、少数のパーティションが多数のパーティションより優れていることを前提としないでください。
    </p></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ddl-inherit.html" title="5.10. 継承">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="ddl.html" title="第5章 データ定義">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="ddl-foreign-data.html" title="5.12. 外部データ">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">5.10. 継承 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 5.12. 外部データ</td></tr></table></div></body></html>
