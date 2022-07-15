@@ -12,6 +12,7 @@
     as described in &lt;xref linkend="plpgsql-statements-general-sql"/&gt;.
 </span>
 本節および次節では、明示的に<span class="application">PL/pgSQL</span>で解釈される、全ての種類の文について説明します。
+これらの種類の文として認められないものはすべて、SQLコマンドであると仮定され、<a class="xref" href="plpgsql-statements.html#PLPGSQL-STATEMENTS-GENERAL-SQL" title="43.5.2. SQLコマンドの実行">43.5.2</a>において記述したように、メインデータベースエンジンに送信され実行されます。
    </p><div class="sect2" id="PLPGSQL-STATEMENTS-ASSIGNMENT"><div class="titlepage"><div><div><h3 class="title">43.5.1. 代入</h3></div></div></div><span class="original">
     &lt;title&gt;Assignment&lt;/title&gt;
 </span><p>
@@ -36,7 +37,7 @@
 上述した通り、このような文中にある式は、メインデータベースエンジンに送信される<code class="command">SELECT</code> SQLコマンドによって評価されます。
 式は1つの値を生成しなければなりません
 (変数が行変数またはレコード変数の場合は行値となるかもしれません)。
-対象の変数は単純な変数(ブロック名で修飾可能)、行変数またはレコード変数のフィールド、または単純な変数またはフィールドとなる配列要素とすることができます。
+対象の変数は単純な変数(ブロック名で修飾可能)、行またはレコードの対象のフィールド、または配列の対象の要素またはスライスとすることができます。
 等号（<code class="literal">=</code>）がPL/SQLにおける代入記号（<code class="literal">:=</code>）の代わりに使用できます。
     </p><p>
 <span class="original">
@@ -65,31 +66,47 @@ my_array[j] := 20;
 my_array[1:3] := array[1,2,3];
 complex_array[n].realpart = 12.3;
 </pre><p>
-    </p></div><div class="sect2" id="PLPGSQL-STATEMENTS-GENERAL-SQL"><div class="titlepage"><div><div><h3 class="title">43.5.2. Executing SQL Commands</h3></div></div></div><p>
+    </p></div><div class="sect2" id="PLPGSQL-STATEMENTS-GENERAL-SQL"><div class="titlepage"><div><div><h3 class="title">43.5.2. SQLコマンドの実行</h3></div></div></div><span class="original">
+    &lt;title&gt;Executing SQL Commands&lt;/title&gt;
+</span><p>
+<span class="original">
      In general, any SQL command that does not return rows can be executed
-     within a <span class="application">PL/pgSQL</span> function just by writing
+     within a &lt;application&gt;PL/pgSQL&lt;/application&gt; function just by writing
      the command.  For example, you could create and fill a table by writing
+</span>
+一般に、行を返さないSQLコマンドは<span class="application">PL/pgSQL</span>関数内にそのコマンドを書くだけで実行されます。
+例えば、テーブルを作成してデータを入れるには以下のように書けます。
 </p><pre class="programlisting">
 CREATE TABLE mytable (id int primary key, data text);
 INSERT INTO mytable VALUES (1,'one'), (2,'two');
 </pre><p>
     </p><p>
-     If the command does return rows (for example <code class="command">SELECT</code>,
-     or <code class="command">INSERT</code>/<code class="command">UPDATE</code>/<code class="command">DELETE</code>
-     with <code class="literal">RETURNING</code>), there are two ways to proceed.
+<span class="original">
+     If the command does return rows (for example &lt;command&gt;SELECT&lt;/command&gt;,
+     or &lt;command&gt;INSERT&lt;/command&gt;/&lt;command&gt;UPDATE&lt;/command&gt;/&lt;command&gt;DELETE&lt;/command&gt;
+     with &lt;literal&gt;RETURNING&lt;/literal&gt;), there are two ways to proceed.
      When the command will return at most one row, or you only care about
      the first row of output, write the command as usual but add
-     an <code class="literal">INTO</code> clause to capture the output, as described
-     in <a class="xref" href="plpgsql-statements.html#PLPGSQL-STATEMENTS-SQL-ONEROW" title="43.5.3. 1行の結果を返す問い合わせの実行">43.5.3</a>.
+     an &lt;literal&gt;INTO&lt;/literal&gt; clause to capture the output, as described
+     in &lt;xref linkend="plpgsql-statements-sql-onerow"/&gt;.
      To process all of the output rows, write the command as the data
-     source for a <code class="command">FOR</code> loop, as described in
-     <a class="xref" href="plpgsql-control-structures.html#PLPGSQL-RECORDS-ITERATING" title="43.6.6. 問い合わせ結果による繰り返し">43.6.6</a>.
+     source for a &lt;command&gt;FOR&lt;/command&gt; loop, as described in
+     &lt;xref linkend="plpgsql-records-iterating"/&gt;.
+</span>
+コマンドが行を返すのであれば(例えば<code class="command">SELECT</code>や<code class="literal">RETURNING</code>を伴う<code class="command">INSERT</code>/<code class="command">UPDATE</code>/<code class="command">DELETE</code>など)、処理する方法が2つあります。
+コマンドが多くても1行を返す場合、もしくは出力の最初の行だけに関心がある場合には、<a class="xref" href="plpgsql-statements.html#PLPGSQL-STATEMENTS-SQL-ONEROW" title="43.5.3. 1行の結果を返すコマンドの実行">43.5.3</a>に書かれているように、出力を取得するための<code class="literal">INTO</code>句を追加する以外は通常通りコマンドを書いてください。
+出力行をすべて処理するためには、<a class="xref" href="plpgsql-control-structures.html#PLPGSQL-RECORDS-ITERATING" title="43.6.6. 問い合わせ結果による繰り返し">43.6.6</a>に書かれているように、<code class="command">FOR</code>ループに対するデータソースとしてコマンドを書いてください。
     </p><p>
+<span class="original">
      Usually it is not sufficient just to execute statically-defined SQL
      commands.  Typically you'll want a command to use varying data values,
      or even to vary in more fundamental ways such as by using different
      table names at different times.  Again, there are two ways to proceed
      depending on the situation.
+</span>
+通常、静的に定義されたSQLコマンドを実行するだけでは十分ではありません。
+典型的には、可変のデータ値を使ったり、さらには異なる時には異なるテーブル名を使うなどより基本的な方法で変化したりするコマンドを使いたいでしょう。
+今回も、状況に応じて2つの方法があります。
     </p><p>
 <span class="original">
      &lt;application&gt;PL/pgSQL&lt;/application&gt; variable values can be
@@ -105,10 +122,9 @@ INSERT INTO mytable VALUES (1,'one'), (2,'two');
      at run time.  This is exactly like the processing described earlier
      for expressions; for details see &lt;xref linkend="plpgsql-var-subst"/&gt;.
 </span>
-コマンドテキストに現れる全ての<span class="application">PL/pgSQL</span>変数名は、パラメータとして扱われます。
-その後、実行時のパラメータ値として、その時点の変数値が提供されます。
-これは以前に述べた式に関する処理と同じです。
-<a class="xref" href="plpgsql-implementation.html#PLPGSQL-VAR-SUBST" title="43.11.1. 変数置換">43.11.1</a>を参照してください。
+<span class="application">PL/pgSQL</span>変数値は、最適化可能なSQLコマンドに自動的に挿入できます。最適化可能なSQLコマンドとは、<code class="command">SELECT</code>、<code class="command">INSERT</code>、<code class="command">UPDATE</code>、<code class="command">DELETE</code>と<code class="command">EXPLAIN</code>や<code class="command">CREATE TABLE ... AS SELECT</code>のようなこのうちの1つを含む特定のユーティリティコマンドのことです。
+このコマンドでは、コマンドテキストに現れるすべての<span class="application">PL/pgSQL</span>変数名は、問い合わせパラメータで置き換えられ、その後、実行時のパラメータ値として、その時点の変数値が提供されます。
+これは以前に述べた式に関する処理と全く同じです。詳細は<a class="xref" href="plpgsql-implementation.html#PLPGSQL-VAR-SUBST" title="43.11.1. 変数置換">43.11.1</a>を参照してください。
     </p><p>
 <span class="original">
      When executing an optimizable SQL command in this way,
@@ -116,19 +132,27 @@ INSERT INTO mytable VALUES (1,'one'), (2,'two');
      plan for the command, as discussed in
      &lt;xref linkend="plpgsql-plan-caching"/&gt;.
 </span>
-SQLコマンドがこのように実行されると、<a class="xref" href="plpgsql-implementation.html#PLPGSQL-PLAN-CACHING" title="43.11.2. 計画のキャッシュ">43.11.2</a>に記述したように、<span class="application">PL/pgSQL</span>はコマンドのために、実行計画をキャッシュして再利用します。
+最適化可能なSQLコマンドがこのように実行されると、<a class="xref" href="plpgsql-implementation.html#PLPGSQL-PLAN-CACHING" title="43.11.2. 計画のキャッシュ">43.11.2</a>に記述したように、<span class="application">PL/pgSQL</span>はコマンドのために、実行計画をキャッシュして再利用します。
     </p><p>
+<span class="original">
      Non-optimizable SQL commands (also called utility commands) are not
      capable of accepting query parameters.  So automatic substitution
-     of <span class="application">PL/pgSQL</span> variables does not work in such
+     of &lt;application&gt;PL/pgSQL&lt;/application&gt; variables does not work in such
      commands.  To include non-constant text in a utility command executed
-     from <span class="application">PL/pgSQL</span>, you must build the utility
-     command as a string and then <code class="command">EXECUTE</code> it, as
-     discussed in <a class="xref" href="plpgsql-statements.html#PLPGSQL-STATEMENTS-EXECUTING-DYN" title="43.5.4. 動的コマンドの実行">43.5.4</a>.
+     from &lt;application&gt;PL/pgSQL&lt;/application&gt;, you must build the utility
+     command as a string and then &lt;command&gt;EXECUTE&lt;/command&gt; it, as
+     discussed in &lt;xref linkend="plpgsql-statements-executing-dyn"/&gt;.
+</span>
+最適化可能ではないSQLコマンド(ユーティリティコマンドとも呼ばれます)は問い合わせパラメータを受け付けられません。
+そのため、<span class="application">PL/pgSQL</span>変数の自動置換はそのようなコマンド内では機能しません。
+<span class="application">PL/pgSQL</span>から実行されるユーティリティコマンドに不変ではないテキストを含めるには、<a class="xref" href="plpgsql-statements.html#PLPGSQL-STATEMENTS-EXECUTING-DYN" title="43.5.4. 動的コマンドの実行">43.5.4</a>で述べたように、ユーティリティコマンドを文字列として構築し、それを<code class="command">EXECUTE</code>しなければなりません。
     </p><p>
-     <code class="command">EXECUTE</code> must also be used if you want to modify
+<span class="original">
+     &lt;command&gt;EXECUTE&lt;/command&gt; must also be used if you want to modify
      the command in some other way than supplying a data value, for example
      by changing a table name.
+</span>
+例えば、テーブル名を変更するなど、データ値を提供する以外の方法でコマンドを修正したい場合にも、<code class="command">EXECUTE</code>を使わなければなりません。
     </p><p>
 <span class="original">
      Sometimes it is useful to evaluate an expression or &lt;command&gt;SELECT&lt;/command&gt;
@@ -164,7 +188,7 @@ PERFORM <em class="replaceable"><code>query</code></em>;
 SQLの<code class="command">SELECT</code>文と同じ方法で<em class="replaceable"><code>query</code></em>を記述しますが、最初のキーワード<code class="command">SELECT</code>を<code class="command">PERFORM</code>に置き換えてください。
 <code class="command">WITH</code>問い合わせに対しては、<code class="command">PERFORM</code> を使用して、問い合わせをカッコ内に配置してください。
 （この場合、問い合わせは1行だけ返すことができます。）
-結果を返さないコマンドと同様に、<span class="application">PL/pgSQL</span>変数は問い合わせ内に置き換えられ、計画は同様にキャッシュされます。
+上述のように、<span class="application">PL/pgSQL</span>変数は問い合わせ内に置き換えられ、計画は同様にキャッシュされます。
 また、特殊な変数である<code class="literal">FOUND</code>は問い合わせ結果が1行でも生成された場合は真に設定され、生成されない場合は偽に設定されます（<a class="xref" href="plpgsql-statements.html#PLPGSQL-STATEMENTS-DIAGNOSTICS" title="43.5.5. 結果ステータスの取得">43.5.5</a>を参照してください）。
     </p><div class="note"><h3 class="title">注記</h3><p>
 <span class="original">
@@ -187,7 +211,7 @@ SQLの<code class="command">SELECT</code>文と同じ方法で<em class="replace
 </p><pre class="programlisting">
 PERFORM create_mv('cs_session_page_requests_mv', my_query);
 </pre><p>
-    </p></div><div class="sect2" id="PLPGSQL-STATEMENTS-SQL-ONEROW"><div class="titlepage"><div><div><h3 class="title">43.5.3. 1行の結果を返す問い合わせの実行</h3></div></div></div><span class="original">
+    </p></div><div class="sect2" id="PLPGSQL-STATEMENTS-SQL-ONEROW"><div class="titlepage"><div><div><h3 class="title">43.5.3. 1行の結果を返すコマンドの実行</h3></div></div></div><span class="original">
     &lt;title&gt;Executing a Command with a Single-Row Result&lt;/title&gt;
 </span><a id="id-1.8.8.7.5.2" class="indexterm"></a><a id="id-1.8.8.7.5.3" class="indexterm"></a><p>
 <span class="original">
@@ -223,8 +247,8 @@ DELETE ... RETURNING <em class="replaceable"><code>expressions</code></em> INTO 
      as it would be written outside &lt;application&gt;PL/pgSQL&lt;/application&gt;.
 </span>
 ここで、<em class="replaceable"><code>target</code></em>はレコード変数、行変数、あるいは、単純な変数とレコード/行変数のフィールドをカンマで区切ったリストです。
-<span class="application">PL/pgSQL</span>変数により残りの問い合わせが置換され、行を返さないコマンドにおいて述べたように計画がキャッシュされます。
-このように作動するのは、<code class="literal">RETURNING</code>を伴った<code class="command">INSERT</code>/<code class="command">UPDATE</code>/<code class="command">DELETE</code>と<code class="command">SELECT</code>および行セットの結果を返すユーティリティコマンド（例えば、<code class="command">EXPLAIN</code>）です。
+上述のように<span class="application">PL/pgSQL</span>変数によりコマンドの残り(すなわち、<code class="literal">INTO</code>句以外のすべて)が置換され、同じように計画がキャッシュされます。
+このように作動するのは、<code class="command">SELECT</code>、<code class="literal">RETURNING</code>を伴った<code class="command">INSERT</code>/<code class="command">UPDATE</code>/<code class="command">DELETE</code>とおよび<code class="command">EXPLAIN</code>のような行セットの結果を返す特定のユーティリティコマンドです。
 <code class="literal">INTO</code>句以外では、SQLコマンドは<span class="application">PL/pgSQL</span>の外部に記述したものと同じです。
     </p><div class="tip"><h3 class="title">ヒント</h3><p>
 <span class="original">
@@ -248,9 +272,9 @@ DELETE ... RETURNING <em class="replaceable"><code>expressions</code></em> INTO 
      occurs.  When a record variable is the target, it automatically
      configures itself to the row type of the command's result columns.
 </span>
-行または変数リストが対象に使用された場合、列数とデータ型において問い合わせの結果と対象の構造が正確に一致しなければなりません。
+行変数または変数リストが対象に使用された場合、列数とデータ型においてコマンドの結果と対象の構造が正確に一致しなければなりません。
 さもないと、実行時エラーが発生します。
-レコード変数が対象の場合は、問い合わせ結果の列の行型に自身を自動的に設定します。
+レコード変数が対象の場合は、コマンドの結果の列の行型に自身を自動的に設定します。
     </p><p>
 <span class="original">
      The &lt;literal&gt;INTO&lt;/literal&gt; clause can appear almost anywhere in the SQL
@@ -276,7 +300,7 @@ DELETE ... RETURNING <em class="replaceable"><code>expressions</code></em> INTO 
      &lt;xref linkend="plpgsql-statements-diagnostics"/&gt;) to
      determine whether a row was returned:
 </span>
-<code class="literal">INTO</code>句において<code class="literal">STRICT</code>が指定されない場合、<em class="replaceable"><code>target</code></em>は問い合わせが返す最初の行となり、行を返さない時はNULLとなります。
+<code class="literal">INTO</code>句において<code class="literal">STRICT</code>が指定されない場合、<em class="replaceable"><code>target</code></em>はコマンドが返す最初の行となり、コマンドが行を返さない時はNULLとなります。
 （<span class="quote">「<span class="quote">最初の行</span>」</span>とは<code class="literal">ORDER BY</code>を使用しないと定義できないことに注意してください。）
 2行目以降の行の結果は、全て破棄されます。
 以下のように、特殊な<code class="literal">FOUND</code>変数（<a class="xref" href="plpgsql-statements.html#PLPGSQL-STATEMENTS-DIAGNOSTICS" title="43.5.5. 結果ステータスの取得">43.5.5</a>を参照してください）を調べて、行が返されたかどうかを検査することができます。
@@ -295,7 +319,7 @@ END IF;
      (more than one row). You can use an exception block if you wish
      to catch the error, for example:
 </span>
-<code class="literal">STRICT</code>オプションが指定された場合、問い合わせは正確に1行を返さなければなりません。
+<code class="literal">STRICT</code>オプションが指定された場合、コマンドは正確に1行を返さなければなりません。
 さもないと、行がない時は<code class="literal">NO_DATA_FOUND</code>、2行以上が返った時は<code class="literal">TOO_MANY_ROWS</code>という実行時エラーが生じます。
 エラーを捕捉したい時は、例外ブロックを使用できます。
 以下に例を示します。
@@ -339,7 +363,7 @@ END;
      function compilations will be affected.  You can also enable it
      on a per-function basis by using a compiler option, for example:
 </span>
-<code class="literal">print_strict_params</code>が関数に利用可能であり、かつ要求がSTRICTでないためにエラーが発生した場合、エラーメッセージの<code class="literal">STRICT</code>部分は問い合わせに渡したパラメータに関する情報を含みます。
+<code class="literal">print_strict_params</code>が関数に利用可能であり、かつ要求がSTRICTでないためにエラーが発生した場合、エラーメッセージの<code class="literal">STRICT</code>部分はコマンドに渡したパラメータに関する情報を含みます。
 <code class="varname">plpgsql.print_strict_params</code>を指定することにより、全ての関数の<code class="literal">print_strict_params</code>設定を変更できます。
 しかし、変更後にコンパイルした関数にだけ有効です。
 コンパイルオプションを使用すれば、個々の関数を基準とした設定変更もできます。
@@ -440,17 +464,16 @@ EXECUTE <em class="replaceable"><code>command-string</code></em> [<span class="o
      clause is specified, the command results are discarded.
 </span>
 <code class="literal">INTO</code>句は、行を返すSQLコマンドの結果を代入するべき場所を指定します。
-行または変数リストが用いられる時、それは問い合わせの結果の構造と正確に一致しなければなりません
-(レコード変数が使用される時、自動的に結果の構造と一致するように自身を構築させます)。
+行変数または変数リストが用いられる時、それはコマンドの結果の構造と正確に一致しなければなりません。レコード変数が使用される時、自動的に結果の構造と一致するように自身を構築させます。
 複数の行が返された時、最初の行だけが<code class="literal">INTO</code>変数に代入されます。
-1行も返されない時、NULL が<code class="literal">INTO</code>変数に代入されます。
-<code class="literal">INTO</code>句が指定されない時、問い合わせの結果は捨てられます。
+1行も返されない時、NULLが<code class="literal">INTO</code>変数に代入されます。
+<code class="literal">INTO</code>句が指定されない時、コマンドの結果は捨てられます。
     </p><p>
 <span class="original">
      If the &lt;literal&gt;STRICT&lt;/literal&gt; option is given, an error is reported
      unless the command produces exactly one row.
 </span>
-<code class="literal">STRICT</code>オプションが指定された時、問い合わせの結果が正確に1行の場合を除き、エラーとなります。
+<code class="literal">STRICT</code>オプションが指定された時、コマンドの結果が正確に1行の場合を除き、エラーとなります。
     </p><p>
 <span class="original">
      The command string can use parameter values, which are referenced
@@ -494,15 +517,18 @@ EXECUTE 'SELECT count(*) FROM '
      A cleaner approach is to use &lt;function&gt;format()&lt;/function&gt;'s &lt;literal&gt;%I&lt;/literal&gt;
      specification to insert table or column names with automatic quoting:
 </span>
-よりきれいな方法は<code class="function">format()</code>の<code class="literal">%I</code>指定をテーブル名または列名に使うことです（改行で分かれた文字列は連結されます）。
+よりきれいな方法は、<code class="function">format()</code>の<code class="literal">%I</code>指定を使い自動引用符付けされたテーブル名または列名を挿入することです。
 </p><pre class="programlisting">
 EXECUTE format('SELECT count(*) FROM %I '
    'WHERE inserted_by = $1 AND inserted &lt;= $2', tabname)
    INTO c
    USING checked_user, checked_date;
 </pre><p>
+<span class="original">
      (This example relies on the SQL rule that string literals separated by a
      newline are implicitly concatenated.)
+</span>
+(この例は、改行により分割された文字列リテラルが暗黙に連結されるというSQL規則に依存しています。)
     </p><p>
 <span class="original">
      Another restriction on parameter symbols is that they only work in
@@ -513,7 +539,7 @@ EXECUTE format('SELECT count(*) FROM %I '
      types (generically called utility statements), you must insert
      values textually even if they are just data values.
 </span>
-他にもパラメータ記号は<code class="command">SELECT</code>、<code class="command">INSERT</code>、<code class="command">UPDATE</code>、<code class="command">DELETE</code>コマンドでしか動作しない、という制限があります。
+他にもパラメータ記号は最適化可能なSQLコマンド(<code class="command">SELECT</code>、<code class="command">INSERT</code>、<code class="command">UPDATE</code>、<code class="command">DELETE</code>とこのうちの1つを含む特定のコマンド)でしか動作しない、という制限があります。
 他の種類の文(一般的にユーティリティ文と呼ばれます)では、単なるデータ値であったとしてもテキストの値として埋め込まなければなりません。
     </p><p>
 <span class="original">
@@ -554,7 +580,7 @@ EXECUTE format('SELECT count(*) FROM %I '
      &lt;command&gt;EXECUTE&lt;/command&gt; statement cannot be used directly within
      &lt;application&gt;PL/pgSQL&lt;/application&gt; functions (and is not needed).
 </span>
-<span class="application">PL/pgSQL</span> <code class="command">EXECUTE</code>文は<span class="productname">PostgreSQL</span>サーバでサポートされている<a class="xref" href="sql-execute.html" title="EXECUTE"><span class="refentrytitle">EXECUTE</span></a>SQL文とは関連がありません。
+<span class="application">PL/pgSQL</span> <code class="command">EXECUTE</code>文は<span class="productname">PostgreSQL</span>サーバでサポートされている<a class="link" href="sql-execute.html" title="EXECUTE"><code class="command">EXECUTE</code></a> SQL文とは関連がありません。
 サーバの<code class="command">EXECUTE</code>文は<span class="application">PL/pgSQL</span>関数内で使用することはできません（使用する必要もありません）。
     </p></div><div class="example" id="PLPGSQL-QUOTE-LITERAL-EXAMPLE"><p class="title"><strong>例43.1 動的問い合わせの中の値の引用符付け</strong></p><div class="example-contents"><span class="original">
    &lt;title&gt;Quoting Values in Dynamic Queries&lt;/title&gt;

@@ -17,7 +17,9 @@
 </span>
 <span class="productname">PostgreSQL</span>では、B-tree、Hash、GiST、SP-GiST、GIN、BRINといった複数の種類のインデックスを使用可能です。
 インデックスの各種類は、異なる種類の問い合わせに最も適した、異なるアルゴリズムを使用します。
-デフォルトで<code class="command">CREATE INDEX</code>コマンドは、B-treeインデックスを作成し、それは最も一般的な状況に適合します。
+デフォルトで<a class="link" href="sql-createindex.html" title="CREATE INDEX"><code class="command">CREATE INDEX</code></a>コマンドは、B-treeインデックスを作成し、それは最も一般的な状況に適合します。
+他のインデックスの種類は、キーワード<code class="literal">USING</code>の後にインデックス種類名を記述することで選択されます。
+例えば、ハッシュインデックスを作成するには、次のようにします。
 </p><pre class="programlisting">
 CREATE INDEX <em class="replaceable"><code>name</code></em> ON <em class="replaceable"><code>table</code></em> USING HASH (<em class="replaceable"><code>column</code></em>);
 </pre><p>
@@ -81,11 +83,11 @@ B-treeインデックスをソートされた順序でデータを受けとる�
    The query planner will consider using a hash index whenever an
    indexed column is involved in a comparison using the
    equal operator:
-
 </span>
-ハッシュインデックスは単純な等価性比較のみを扱うことができます。
-問い合わせプランナでは、インデックスの付いた列を<code class="literal">=</code>演算子を使用して比較する場合に、ハッシュインデックスの使用を検討します。
-ハッシュインデックスを作成するには、以下のようなコマンドを使用してください。
+ハッシュインデックスは、インデックスの付いた列の値から算出される32ビットのハッシュコードを格納します。
+したがって、ハッシュインデックスは単純な等価性比較のみを扱うことができます。
+問い合わせプランナでは、インデックスの付いた列を以下の等号演算子を使用して比較する場合は常に、ハッシュインデックスの使用を検討します。
+
 </p><pre class="synopsis">
 =
 </pre><p>
@@ -165,8 +167,8 @@ SP-GiSTインデックスは広域な異なる不均衡でディスクベース�
    documented in &lt;xref linkend="spgist-builtin-opclasses-table"/&gt;.
    For more information see &lt;xref linkend="spgist"/&gt;.
 </span>
-(演算子の意味は以下を参照してください<a class="xref" href="functions-geometry.html" title="9.11. 幾何関数と演算子">9.11</a> )
-標準配布物に含まれるSP-GiSTクラスは<a class="xref" href="spgist-builtin-opclasses.html#SPGIST-BUILTIN-OPCLASSES-TABLE" title="表66.1 組み込みSP-GiST演算子クラス">表 66.1</a>に記載されています。
+（これらの演算子の意味については<a class="xref" href="functions-geometry.html" title="9.11. 幾何関数と演算子">9.11</a>を参照してください。）
+標準配布物に含まれるSP-GiST演算子クラスは<a class="xref" href="spgist-builtin-opclasses.html#SPGIST-BUILTIN-OPCLASSES-TABLE" title="表66.1 組み込みSP-GiST演算子クラス">表 66.1</a>に記載されています。
 詳細は <a class="xref" href="spgist.html" title="第66章 SP-GiSTインデックス">第66章</a>を参照してください。
   </p><p>
 <span class="original">
@@ -176,7 +178,7 @@ SP-GiSTインデックスは広域な異なる不均衡でディスクベース�
    column in &lt;xref linkend="spgist-builtin-opclasses-table"/&gt;.
 </span>
 GiSTと同様に、SP-GiSTは<span class="quote">「<span class="quote">最近傍</span>」</span>検索をサポートします。
-距離の順序付けをサポートするSP-GiST演算子クラスの場合、対応する演算子は<a class="xref" href="spgist-builtin-opclasses.html#SPGIST-BUILTIN-OPCLASSES-TABLE" title="表66.1 組み込みSP-GiST演算子クラス">表 66.1</a>の<span class="quote">「<span class="quote">順序付け演算子</span>」</span>列に指定されます。
+距離の順序付けをサポートするSP-GiST演算子クラスの場合、対応する演算子は<a class="xref" href="spgist-builtin-opclasses.html#SPGIST-BUILTIN-OPCLASSES-TABLE" title="表66.1 組み込みSP-GiST演算子クラス">表 66.1</a>の<span class="quote">「<span class="quote">順序付け演算子</span>」</span>列に一覧表示されます。
   </p></div><div class="sect2" id="INDEXES-TYPES-GIN"><div class="titlepage"><div><div><h3 class="title">11.2.5. GIN</h3></div></div></div><a id="id-1.5.10.5.7.2" class="indexterm"></a><a id="id-1.5.10.5.7.3" class="indexterm"></a><p>
 <span class="original">
    GIN indexes are &lt;quote&gt;inverted indexes&lt;/quote&gt; which are appropriate for
@@ -233,6 +235,7 @@ GiSTやSP-GiST同様、GINも多くの異なるユーザ定義のインデック
    using these operators:
 </span>
 BRINインデックス(ブロックレンジインデックス(Block Range INdex)を縮めたものです)はテーブルの連続的な物理ブロックの範囲に格納された値についての要約を格納します。
+したがって、これらの値は、テーブル行の物理的な順序とよく相関している列に最も効果的です。
 GiST、SP-GiST、GINと同じように、BRINは多くの異なるインデックス戦略をサポートし、BRINインデックスが使用できる具体的な演算子はインデックス戦略によって変化します。
 線形のソート順を持つデータ型では、インデックス付けされたデータは各ブロックレンジの列の中の値の最小値と最大値に対応しています。
 これは以下の演算子を使用したインデックスによる問い合わせをサポートします。
@@ -246,6 +249,6 @@ GiST、SP-GiST、GINと同じように、BRINは多くの異なるインデッ�
    documented in &lt;xref linkend="brin-builtin-opclasses-table"/&gt;.
    For more information see &lt;xref linkend="brin"/&gt;.
 </span>
-標準配布物に含まれるBRIN演算子クラスは<a class="xref" href="brin-builtin-opclasses.html#BRIN-BUILTIN-OPCLASSES-TABLE" title="表68.1 組み込みBRIN演算子クラス">表 68.1</a>.に記載されています。
+標準配布物に含まれるBRIN演算子クラスは<a class="xref" href="brin-builtin-opclasses.html#BRIN-BUILTIN-OPCLASSES-TABLE" title="表68.1 組み込みBRIN演算子クラス">表 68.1</a>に記載されています。
 詳細は<a class="xref" href="brin.html" title="第68章 BRINインデックス">第68章</a>を参照してください。
   </p></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="indexes-intro.html" title="11.1. 序文">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="indexes.html" title="第11章 インデックス">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="indexes-multicolumn.html" title="11.3. 複数列インデックス">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">11.1. 序文 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 11.3. 複数列インデックス</td></tr></table></div></body></html>

@@ -816,31 +816,6 @@ ORDER BY p;
 <code class="function">json_to_recordset()</code>は、2つの列(最初の<code class="type">integer</code>と2番目の<code class="type">text</code>)を返すように指示されます。
 <code class="function">generate_series()</code>の結果は直接使用されます。
 <code class="literal">ORDER BY</code>句では、列値が整数として並べ替えられます。
-    </p><p>
-     This example uses <code class="literal">ROWS FROM</code>:
-</p><pre class="programlisting">
-SELECT *
-FROM ROWS FROM
-    (
-        json_to_recordset('[{"a":40,"b":"foo"},{"a":"100","b":"bar"}]')
-            AS (a INTEGER, b TEXT),
-        generate_series(1, 3)
-    ) AS x (p, q, s)
-ORDER BY p;
-
-  p  |  q  | s
------+-----+---
-  40 | foo | 1
- 100 | bar | 2
-     |     | 3
-</pre><p>
-     It joins two functions into a single <code class="literal">FROM</code>
-     target.  <code class="function">json_to_recordset()</code> is instructed
-     to return two columns, the first <code class="type">integer</code>
-     and the second <code class="type">text</code>.  The result of
-     <code class="function">generate_series()</code> is used directly.
-     The <code class="literal">ORDER BY</code> clause sorts the column values
-     as integers.
     </p></div><div class="sect3" id="QUERIES-LATERAL"><div class="titlepage"><div><div><h4 class="title">7.2.1.5. <code class="literal">LATERAL</code> 副問い合わせ</h4></div></div></div><span class="original">
     &lt;title&gt;&lt;literal&gt;LATERAL&lt;/literal&gt; Subqueries&lt;/title&gt;
 </span><a id="id-1.5.6.6.5.10.2" class="indexterm"></a><p>
@@ -1489,12 +1464,19 @@ GROUP BY GROUPING SETS (
    </p><p>
     <a id="id-1.5.6.6.8.13.1" class="indexterm"></a>
     <a id="id-1.5.6.6.8.13.2" class="indexterm"></a>
+<span class="original">
     When specifying multiple grouping items together, the final set of grouping
     sets might contain duplicates. For example:
+</span>
+複数の集約項目をまとめて指定する場合、グループ化セットの最終的なセットに重複が含まれる可能性があります。
+例えば
 </p><pre class="programlisting">
 GROUP BY ROLLUP (a, b), ROLLUP (a, c)
 </pre><p>
+<span class="original">
     is equivalent to
+</span>
+は以下と同等です。
 </p><pre class="programlisting">
 GROUP BY GROUPING SETS (
     (a, b, c),
@@ -1508,13 +1490,20 @@ GROUP BY GROUPING SETS (
     ()
 )
 </pre><p>
+<span class="original">
     If these duplicates are undesirable, they can be removed using the
-    <code class="literal">DISTINCT</code> clause directly on the <code class="literal">GROUP BY</code>.
+    &lt;literal&gt;DISTINCT&lt;/literal&gt; clause directly on the &lt;literal&gt;GROUP BY&lt;/literal&gt;.
     Therefore:
+</span>
+これらの重複が望ましくない場合は、<code class="literal">GROUP BY</code>で直接<code class="literal">DISTINCT</code>句を使用して削除できます。
+したがって、
 </p><pre class="programlisting">
 GROUP BY <span class="emphasis"><strong>DISTINCT</strong></span> ROLLUP (a, b), ROLLUP (a, c)
 </pre><p>
+<span class="original">
     is equivalent to
+</span>
+は以下と同等です。
 </p><pre class="programlisting">
 GROUP BY GROUPING SETS (
     (a, b, c),
@@ -1524,9 +1513,14 @@ GROUP BY GROUPING SETS (
     ()
 )
 </pre><p>
-    This is not the same as using <code class="literal">SELECT DISTINCT</code> because the output
+<span class="original">
+    This is not the same as using &lt;literal&gt;SELECT DISTINCT&lt;/literal&gt; because the output
     rows may still contain duplicates.  If any of the ungrouped columns contains NULL,
     it will be indistinguishable from the NULL used when that same column is grouped.
+</span>
+これは、<code class="literal">SELECT DISTINCT</code>を使用する場合と同じではありません。
+出力行に重複が含まれる可能性があるためです。
+グループ化されていない列のいずれかにNULLが含まれている場合、同じ列をグループ化するときに使用されるNULLと区別できません。
    </p><div class="note"><h3 class="title">注記</h3><p>
 <span class="original">
     The construct &lt;literal&gt;(a, b)&lt;/literal&gt; is normally recognized in expressions as
