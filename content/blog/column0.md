@@ -14,7 +14,7 @@ categories: ["sql"]
 {{< tweet user="noborus" id="1547166536779313152" >}}
 
 列数が0という指摘を受けて、一応0列があることを理解していたつもりだったのですけど、
-勘違いしていたことに気づきました。
+その仕様を勘違いしていたことに気づきました。
 
 ## テーブルを省略したSELECTの扱い
 
@@ -22,7 +22,7 @@ categories: ["sql"]
 psqlで実行すると以下のようになります。
 
 ```SQL
-# SELECT '1';
+SELECT '1';
  ?column? 
 ----------
  1
@@ -31,28 +31,30 @@ psqlで実行すると以下のようになります。
 
 のようにすれば文字列1が返ってきます。列名は無いので`?column?`で表されていますが、1行1列のテーブルと同じ扱いになります。
 
-`SELECT ;`はこの流れで**列数が0のテーブル**ということになります。
+`SELECT ;`はこの流れで**行数が1で、列数が0のテーブル**ということになります。
 
-psqlでは実行すると以下のように行が（改行も含めて）表示されないまま 1 row と表示されるのでちょっと変な感じがしたのですが、これはpsql側でどう表示するかの問題であって、0列1行のテーブルと同じ扱いになっています。
+psqlでは実行すると以下のように行が（改行も含めて）表示されないまま `1 row` と表示されるのでちょっと変な感じがしたのですが、これはpsql側でどう表示するかの問題であって、0列1行のテーブルと同じ扱いになっています。
 
 ```SQL
-# SELECT ;
+SELECT ;
 --
 (1 row)
 ```
+
+なにも指定していないので、0行0列になるかと勘違いしてましたが、0列1行の方が正しいとわかります。
 
 ## PostgreSQLは0列のテーブルが作れる
 
 前述の石井さんから指摘にあるように最近のPostgreSQLでは0列のテーブルが作成できるようになっています。
 
 ```SQL
-# CREATE TABLE empty ();
+CREATE TABLE empty ();
 ```
 
 元からSQLでは行をINSERTしなければ0行のテーブルになるので、0列のテーブルを作っただけだと0列0行のテーブルになります。
 
 ```SQL
-# SELECT * FROM empty;
+SELECT * FROM empty;
 --
 (0 rows)
 ```
@@ -68,16 +70,17 @@ psqlの表示では0列の場合(1 row)と(0 rows)の表示でしか区別出来
 0列のテーブルにINSERTしようとすると素直にできませんでした。
 
 ```SQL
-# INSERT INTO empty () VALUES ();
+INSERT INTO empty () VALUES ();
 ERROR:  42601: syntax error at or near ")"
 ```
 
 ### SELECT
 
 列が0のテーブルだけでなく、列が1つ以上のテーブルであっても`SELECT FROM one`で列数が0で返すことができます。
+これにより列数が0で、複数行のテーブルを表現できます。
 
 ```SQL
-# \d one
+\d one
                  Table "public.one"
  Column |  Type   | Collation | Nullable | Default 
 --------+---------+-----------+----------+---------
@@ -85,7 +88,7 @@ ERROR:  42601: syntax error at or near ")"
 ```
 
 ```SQL
-# SELECT FROM one;
+SELECT FROM one;
 --
 (2 rows)
 ```
@@ -95,14 +98,14 @@ ERROR:  42601: syntax error at or near ")"
 ということは`INSERT INTO table SELECT`ならINSERTが可能になります。
 
 ```SQL
-# INSERT INTO empty SELECT FROM one;
+INSERT INTO empty SELECT FROM one;
 INSERT 0 2
 ```
 
 INSERT出来てます。
 
 ```SQL
-# SELECT * FROM empty;
+SELECT * FROM empty;
 --
 (2 rows)
 ```
@@ -110,14 +113,14 @@ INSERT出来てます。
 行数が0のときとは明確に区別されます。
 
 ```SQL
-# INSERT INTO empty SELECT FROM one WHERE false;
+INSERT INTO empty SELECT FROM one WHERE false;
 INSERT 0 0
 ```
 
 行数0でも`SELECT i FROM`にしてしまうとちゃんとエラーになります。
 
 ```SQL
-# INSERT INTO empty SELECT i FROM one WHERE false;
+INSERT INTO empty SELECT i FROM one WHERE false;
 ERROR:  42601: INSERT has more expressions than target columns
 LINE 1: INSERT INTO empty SELECT i FROM one WHERE false;
                                  ^
