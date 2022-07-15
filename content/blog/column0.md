@@ -22,7 +22,7 @@ categories: ["sql"]
 psqlで実行すると以下のようになります。
 
 ```SQL
-SELECT '1';
+# SELECT '1';
  ?column? 
 ----------
  1
@@ -36,7 +36,7 @@ SELECT '1';
 psqlでは実行すると以下のように行が（改行も含めて）表示されないまま 1 row と表示されるのでちょっと変な感じがしたのですが、これはpsql側でどう表示するかの問題であって、0列1行のテーブルと同じ扱いになっています。
 
 ```SQL
-SELECT ;
+# SELECT ;
 --
 (1 row)
 ```
@@ -46,38 +46,38 @@ SELECT ;
 前述の石井さんから指摘にあるように最近のPostgreSQLでは0列のテーブルが作成できるようになっています。
 
 ```SQL
-CREATE TABLE empty ();
+# CREATE TABLE empty ();
 ```
 
 元からSQLでは行をINSERTしなければ0行のテーブルになるので、0列のテーブルを作っただけだと0列0行のテーブルになります。
 
 ```SQL
-SELECT * FROM empty;
+# SELECT * FROM empty;
 --
 (0 rows)
 ```
 
 psqlの表示では0列の場合(1 row)と(0 rows)の表示でしか区別出来ないですが、0行と1行でちゃんと違いがあって整合が取れている動作になっています。
 
-現在進行形でも0列を許可するように修正されているので、前はエラーになったものが通るようになっていたり、これから通るようになったりする可能性があります。
-
 ## 0列のテーブル操作
+
+前は0列のSQLが許可されないところが多かったのですが、現在進行形で0列を許可するように修正されているので、前はエラーになったものが通るようになっていたり、これから通るようになったりする可能性があります。
 
 ### INSERT
 
 0列のテーブルにINSERTしようとすると素直にできませんでした。
 
 ```SQL
-INSERT INTO empty () VALUES ();
+# INSERT INTO empty () VALUES ();
 ERROR:  42601: syntax error at or near ")"
 ```
 
 ### SELECT
 
-列が0のテーブルだけでなく、列が1つ以上のテーブルであっても`SELECT FROM one`で列0で返すことができます。
+列が0のテーブルだけでなく、列が1つ以上のテーブルであっても`SELECT FROM one`で列数が0で返すことができます。
 
 ```SQL
- \d one
+# \d one
                  Table "public.one"
  Column |  Type   | Collation | Nullable | Default 
 --------+---------+-----------+----------+---------
@@ -85,7 +85,7 @@ ERROR:  42601: syntax error at or near ")"
 ```
 
 ```SQL
-SELECT FROM one;
+# SELECT FROM one;
 --
 (2 rows)
 ```
@@ -99,17 +99,27 @@ SELECT FROM one;
 INSERT 0 2
 ```
 
-行数が0のときとは明確に区別されます。行数0でも`SELECT i FROM`にしてしまうとちゃんとエラーになります。
+INSERT出来てます。
+
+```SQL
+# SELECT * FROM empty;
+--
+(2 rows)
+```
+
+行数が0のときとは明確に区別されます。
 
 ```SQL
 # INSERT INTO empty SELECT FROM one WHERE false;
 INSERT 0 0
 ```
 
-0列テーブルにもINSERT出来てます。
+行数0でも`SELECT i FROM`にしてしまうとちゃんとエラーになります。
 
 ```SQL
-SELECT * FROM empty;
---
-(2 rows)
+# INSERT INTO empty SELECT i FROM one WHERE false;
+ERROR:  42601: INSERT has more expressions than target columns
+LINE 1: INSERT INTO empty SELECT i FROM one WHERE false;
+                                 ^
+LOCATION:  transformInsertRow, analyze.c:936
 ```
