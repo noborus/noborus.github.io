@@ -1,12 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>CREATE PUBLICATION</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-createprocedure.html" title="CREATE PROCEDURE" /><link rel="next" href="sql-createrole.html" title="CREATE ROLE" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      sql-createpublication.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>CREATE PUBLICATION</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-createprocedure.html" title="CREATE PROCEDURE" /><link rel="next" href="sql-createrole.html" title="CREATE ROLE" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15rc1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15rc1 : sql-createpublication.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-createprocedure.html" title="CREATE PROCEDURE">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">CREATE PUBLICATION</td><td width="20%" align="right"> <a accesskey="n" href="sql-createrole.html" title="CREATE ROLE">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-CREATEPUBLICATION"><div class="titlepage"></div><a id="id-1.9.3.77.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">CREATE PUBLICATION</span></h2><p>CREATE PUBLICATION<span class="original">
   &lt;refpurpose&gt;define a new publication&lt;/refpurpose&gt;
 </span> — 新しいパブリケーションを定義する</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
 CREATE PUBLICATION <em class="replaceable"><code>name</code></em>
-    [ FOR TABLE [ ONLY ] <em class="replaceable"><code>table_name</code></em> [ * ] [, ...]
-      | FOR ALL TABLES ]
+    [ FOR ALL TABLES
+      | FOR <em class="replaceable"><code>publication_object</code></em> [, ... ] ]
     [ WITH ( <em class="replaceable"><code>publication_parameter</code></em> [= <em class="replaceable"><code>value</code></em>] [, ... ] ) ]
+
+<span class="phrase">where <em class="replaceable"><code>publication_object</code></em> is one of:</span>
+
+    TABLE [ ONLY ] <em class="replaceable"><code>table_name</code></em> [ * ] [ ( <em class="replaceable"><code>column_name</code></em> [, ... ] ) ] [ WHERE ( <em class="replaceable"><code>expression</code></em> ) ] [, ... ]
+    TABLES IN SCHEMA { <em class="replaceable"><code>schema_name</code></em> | CURRENT_SCHEMA } [, ... ]
 </pre></div><div class="refsect1" id="id-1.9.3.77.5"><h2>説明</h2><span class="original">
   &lt;title&gt;Description&lt;/title&gt;
 </span><p>
@@ -53,12 +58,44 @@ CREATE PUBLICATION <em class="replaceable"><code>name</code></em>
 パーティションテーブルのパーティションは、パブリケーションに含まれると常に暗黙的にみなされますので、パブリケーションに明示的に追加されることは決してありません。
      </p><p>
 <span class="original">
+      If the optional &lt;literal&gt;WHERE&lt;/literal&gt; clause is specified, it defines a
+      &lt;firstterm&gt;row filter&lt;/firstterm&gt; expression. Rows for
+      which the &lt;replaceable class="parameter"&gt;expression&lt;/replaceable&gt;
+      evaluates to false or null will not be published. Note that parentheses
+      are required around the expression. It has no effect on
+      &lt;literal&gt;TRUNCATE&lt;/literal&gt; commands.
+</span>
+《機械翻訳》オプションの<code class="literal">WHERE</code>句を指定すると、<em class="firstterm">行フィルタ</em>式が定義されます。
+<em class="replaceable"><code>式</code></em>がFALSEまたはNULLと評価される行は発行されません。
+式をカッコで囲む必要があることに注意してください。
+この句は<code class="literal">TRUNCATE</code>コマンドには影響しません。
+     </p><p>
+<span class="original">
+      When a column list is specified, only the named columns are replicated.
+      If no column list is specified, all columns of the table are replicated
+      through this publication, including any columns added later. It has no
+      effect on &lt;literal&gt;TRUNCATE&lt;/literal&gt; commands. See
+      &lt;xref linkend="logical-replication-col-lists"/&gt; for details about column
+      lists.
+</span>
+《機械翻訳》列リストを指定すると、指定した列のみがレプリケートされます。
+列リストが指定されていない場合は、後で追加される列も含めて、表のすべての列がこのパブリケーションを介してレプリケートされます。
+<code class="literal">TRUNCATE</code>コマンドには影響しません。
+列リストの詳細は<a class="xref" href="logical-replication-col-lists.html" title="31.4. Column Lists">31.4</a>を参照してください。
+     </p><p>
+<span class="original">
       Only persistent base tables and partitioned tables can be part of a
       publication.  Temporary tables, unlogged tables, foreign tables,
       materialized views, and regular views cannot be part of a publication.
 </span>
 パブリケーションに含めることができるのは、永続的なベーステーブルとパーティションテーブルだけです。
 一時テーブル、ログを取らないテーブル、外部テーブル、マテリアライズドビュー、通常のビューはパブリケーションに含めることはできません。
+     </p><p>
+<span class="original">
+      Specifying a column list when the publication also publishes
+      &lt;literal&gt;FOR TABLES IN SCHEMA&lt;/literal&gt; is not supported.
+</span>
+《機械翻訳》パブリケーションもパブリッシュする場合のカラム・リストの指定<code class="literal">FOR TABLES IN SCHEMA</code>はサポートされていません。
      </p><p>
 <span class="original">
       When a partitioned table is added to a publication, all of its existing
@@ -75,6 +112,38 @@ CREATE PUBLICATION <em class="replaceable"><code>name</code></em>
       the database, including tables created in the future.
 </span>
 そのパブリケーションでは、将来作成されるテーブルも含め、そのデータベース内の全テーブルについての変更を複製するものとして印をつけます。
+     </p></dd><dt><span class="term"><code class="literal">FOR TABLES IN SCHEMA</code></span></dt><dd><p>
+<span class="original">
+      Marks the publication as one that replicates changes for all tables in
+      the specified list of schemas, including tables created in the future.
+</span>
+《マッチ度[78.723404]》そのパブリケーションでは、将来作成されるテーブルも含め、そのデータベース内の全テーブルについての変更を複製するものとして印をつけます。
+     </p><p>
+<span class="original">
+      Specifying a schema when the publication also publishes a table with a
+      column list is not supported.
+</span>
+《機械翻訳》パブリケーションがカラム・リストを持つテーブルもパブリッシュする場合のスキーマの指定はサポートされていません。
+     </p><p>
+<span class="original">
+      Only persistent base tables and partitioned tables present in the schema
+      will be included as part of the publication.  Temporary tables, unlogged
+      tables, foreign tables, materialized views, and regular views from the
+      schema will not be part of the publication.
+</span>
+《マッチ度[70.270270]》パブリケーションに含めることができるのは、永続的なベーステーブルとパーティションテーブルだけです。
+一時テーブル、ログを取らないテーブル、外部テーブル、マテリアライズドビュー、通常のビューはパブリケーションに含めることはできません。
+     </p><p>
+<span class="original">
+      When a partitioned table is published via schema level publication, all
+      of its existing and future partitions are implicitly considered to be part of the
+      publication, regardless of whether they are from the publication schema or not.
+      So, even operations that are performed directly on a
+      partition are also published via publications that its ancestors are
+      part of.
+</span>
+《マッチ度[70.604396]》パーティションテーブルがパブリケーションに追加された場合、既存のパーティションと将来のものすべてがパブリケーションに含められたと暗黙的にみなされます。
+ですので、パーティションに対して直接実行された操作であっても、その先祖を含むパブリケーション経由でパブリッシュされます。
      </p></dd><dt><span class="term"><code class="literal">WITH ( <em class="replaceable"><code>publication_parameter</code></em> [= <em class="replaceable"><code>value</code></em>] [, ... ] )</code></span></dt><dd><p>
 <span class="original">
       This clause specifies optional parameters for a publication.  The
@@ -98,6 +167,15 @@ CREATE PUBLICATION <em class="replaceable"><code>name</code></em>
 値はカンマで区切られた操作のリストです。
 使用できる操作は<code class="literal">insert</code>、<code class="literal">update</code>、<code class="literal">delete</code>、<code class="literal">truncate</code>です。
 デフォルトではすべての動作をパブリッシュするので、このオプションのデフォルト値は<code class="literal">'insert, update, delete, truncate'</code>です。
+         </p><p>
+<span class="original">
+          This parameter only affects DML operations. In particular, the initial
+          data synchronization (see &lt;xref linkend="logical-replication-snapshot"/&gt;)
+          for logical replication does not take this parameter into account when
+          copying existing table data.
+</span>
+《機械翻訳》このパラメータはDML操作にのみ影響します。
+特に、論理レプリケーションの初期データ同期化(<a class="xref" href="logical-replication-architecture.html#LOGICAL-REPLICATION-SNAPSHOT" title="31.7.1. 初期スナップショット">31.7.1</a>を参照)では、既存の表データをコピーするときにこのパラメータは考慮されません。
          </p></dd><dt><span class="term"><code class="literal">publish_via_partition_root</code> (<code class="type">boolean</code>)</span></dt><dd><p>
 <span class="original">
           This parameter determines whether changes in a partitioned table (or
@@ -112,6 +190,13 @@ CREATE PUBLICATION <em class="replaceable"><code>name</code></em>
 これを有効にすると、パーティション化されていないテーブルやパーティションの異なる集合からなるパーティションテーブルへ変更を複製できるようになります。
          </p><p>
 <span class="original">
+          This parameter also affects how row filters and column lists are
+          chosen for partitions; see below for details.
+</span>
+《機械翻訳》このパラメータは、パーティション用の行フィルタと列リストの選択方法にも影響します。
+詳細は以下を参照してください。
+         </p><p>
+<span class="original">
           If this is enabled, &lt;literal&gt;TRUNCATE&lt;/literal&gt; operations performed
           directly on partitions are not replicated.
 </span>
@@ -120,11 +205,12 @@ CREATE PUBLICATION <em class="replaceable"><code>name</code></em>
   &lt;title&gt;Notes&lt;/title&gt;
 </span><p>
 <span class="original">
-   If neither &lt;literal&gt;FOR TABLE&lt;/literal&gt; nor &lt;literal&gt;FOR ALL
-   TABLES&lt;/literal&gt; is specified, then the publication starts out with an
-   empty set of tables.  That is useful if tables are to be added later.
+   If &lt;literal&gt;FOR TABLE&lt;/literal&gt;, &lt;literal&gt;FOR ALL TABLES&lt;/literal&gt; or
+   &lt;literal&gt;FOR TABLES IN SCHEMA&lt;/literal&gt; are not specified, then the
+   publication starts out with an empty set of tables.  That is useful if
+   tables or schemas are to be added later.
 </span>
-<code class="literal">FOR TABLE</code>と<code class="literal">FOR ALL TABLES</code>のどちらも指定されていない場合、パブリケーションは空のテーブルの集合で作られます。
+《マッチ度[72.983871]》<code class="literal">FOR TABLE</code>と<code class="literal">FOR ALL TABLES</code>のどちらも指定されていない場合、パブリケーションは空のテーブルの集合で作られます。
 これは後でテーブルを追加したい場合に便利です。
   </p><p>
 <span class="original">
@@ -144,10 +230,11 @@ CREATE PUBLICATION <em class="replaceable"><code>name</code></em>
   </p><p>
 <span class="original">
    To add a table to a publication, the invoking user must have ownership
-   rights on the table.  The &lt;command&gt;FOR ALL TABLES&lt;/command&gt; clause requires
-   the invoking user to be a superuser.
+   rights on the table.  The &lt;command&gt;FOR ALL TABLES&lt;/command&gt; and
+   &lt;command&gt;FOR TABLES IN SCHEMA&lt;/command&gt; clauses require the invoking
+   user to be a superuser.
 </span>
-パブリケーションにテーブルを追加するには、それを実行するユーザがそのテーブルの所有権を持っていなければなりません。
+《マッチ度[75.221239]》パブリケーションにテーブルを追加するには、それを実行するユーザがそのテーブルの所有権を持っていなければなりません。
 <code class="command">FOR ALL TABLES</code>句は、それを実行するユーザがスーパーユーザである必要があります。
   </p><p>
 <span class="original">
@@ -160,6 +247,53 @@ CREATE PUBLICATION <em class="replaceable"><code>name</code></em>
 そうでなければ、それらのテーブルに対して、それらの操作は禁止されることになります。
   </p><p>
 <span class="original">
+   Any column list must include the &lt;literal&gt;REPLICA IDENTITY&lt;/literal&gt; columns
+   in order for &lt;command&gt;UPDATE&lt;/command&gt; or &lt;command&gt;DELETE&lt;/command&gt;
+   operations to be published. There are no column list restrictions if the
+   publication publishes only &lt;command&gt;INSERT&lt;/command&gt; operations.
+</span>
+《機械翻訳》<code class="command">UPDATE</code>または<code class="command">DELETE</code>操作を発行するには、すべての列リストに<code class="literal">REPLICA IDENTITY</code>列が含まれている必要があります。
+パブリケーションが<code class="command">INSERT</code>操作のみを発行する場合は、列リストの制限はありません。
+  </p><p>
+<span class="original">
+   A row filter expression (i.e., the &lt;literal&gt;WHERE&lt;/literal&gt; clause) must contain only
+   columns that are covered by the &lt;literal&gt;REPLICA IDENTITY&lt;/literal&gt;, in
+   order for &lt;command&gt;UPDATE&lt;/command&gt; and &lt;command&gt;DELETE&lt;/command&gt; operations
+   to be published. For publication of &lt;command&gt;INSERT&lt;/command&gt; operations,
+   any column may be used in the &lt;literal&gt;WHERE&lt;/literal&gt; expression. The
+   row filter allows simple expressions that don't have
+   user-defined functions, user-defined operators, user-defined types,
+   user-defined collations, non-immutable built-in functions, or references to
+   system columns.
+</span>
+《機械翻訳》行フィルタ式(つまり、<code class="literal">WHERE</code>句)には、<code class="command">UPDATE</code>および<code class="command">DELETE</code>操作を発行するために、<code class="literal">REPLICA IDENTITY</code>でカバーされる列のみを含める必要があります。
+<code class="command">INSERT</code>操作の発行では、<code class="literal">WHERE</code>式で任意の列を使用できます。
+行フィルタでは、ユーザー定義関数、ユーザー定義演算子、ユーザー定義型、ユーザー定義照合、不変でない組み込み関数、またはシステム列への参照を持たない単純な式を使用できます。
+  </p><p>
+<span class="original">
+   The row filter on a table becomes redundant if
+   &lt;literal&gt;FOR TABLES IN SCHEMA&lt;/literal&gt; is specified and the table
+   belongs to the referred schema.
+</span>
+《機械翻訳》<code class="literal">FOR TABLES IN SCHEMA</code>が指定され、そのテーブルが参照されたスキーマに属している場合、テーブルの行フィルタは冗長になります。
+  </p><p>
+<span class="original">
+   For published partitioned tables, the row filter for each
+   partition is taken from the published partitioned table if the
+   publication parameter &lt;literal&gt;publish_via_partition_root&lt;/literal&gt; is true,
+   or from the partition itself if it is false (the default).
+   See &lt;xref linkend="logical-replication-row-filter"/&gt; for details about row
+   filters.
+   Similarly, for published partitioned tables, the column list for each
+   partition is taken from the published partitioned table if the
+   publication parameter &lt;literal&gt;publish_via_partition_root&lt;/literal&gt; is true,
+   or from the partition itself if it is false.
+</span>
+《機械翻訳》公開済パーティション表の場合、各パーティションの行フィルタは、発行パラメータ<code class="literal">publish_via_partition_root</code>がtrueの場合は発行済パーティション表から、false(デフォルト)の場合はパーティション自体から取得されます。
+行フィルタの詳細は<a class="xref" href="logical-replication-row-filter.html" title="31.3. Row Filters">31.3</a>を参照してください。
+同様に、発行済パーティション表の場合、各パーティションの列リストは、発行パラメータ<code class="literal">publish_via_partition_root</code>がtrueの場合は発行済パーティション表から、falseの場合はパーティション自体から取得されます。
+  </p><p>
+<span class="original">
    For an &lt;command&gt;INSERT ... ON CONFLICT&lt;/command&gt; command, the publication will
    publish the operation that actually results from the command.  So depending
    of the outcome, it may be published as either &lt;command&gt;INSERT&lt;/command&gt; or
@@ -167,6 +301,14 @@ CREATE PUBLICATION <em class="replaceable"><code>name</code></em>
 </span>
 <code class="command">INSERT ... ON CONFLICT</code>コマンドに対しては、パブリケーションはコマンドの結果として実際に起こった操作をパブリッシュします。
 従って、その結果に応じて<code class="command">INSERT</code>あるいは<code class="command">UPDATE</code>のいずれかとしてパブリッシュするか、あるいは何もパブリッシュしないかもしれません。
+  </p><p>
+<span class="original">
+   &lt;command&gt;ATTACH&lt;/command&gt;ing a table into a partition tree whose root is
+   published using a publication with &lt;literal&gt;publish_via_partition_root&lt;/literal&gt;
+   set to &lt;literal&gt;true&lt;/literal&gt; does not result in the table's existing contents
+   being replicated.
+</span>
+<code class="literal">publish_via_partition_root</code>を<code class="literal">true</code>に設定したルートがパブリッシュされたパブリケーションを使用してパーティションツリーにテーブルを<code class="command">ATTACH</code>しても、テーブルの既存の内容は複製されません。
   </p><p>
 <span class="original">
    &lt;command&gt;COPY ... FROM&lt;/command&gt; commands are published
@@ -178,6 +320,12 @@ CREATE PUBLICATION <em class="replaceable"><code>name</code></em>
    &lt;acronym&gt;DDL&lt;/acronym&gt; operations are not published.
 </span>
 <acronym class="acronym">DDL</acronym>の操作はパブリッシュされません。
+  </p><p>
+<span class="original">
+   The &lt;literal&gt;WHERE&lt;/literal&gt; clause expression is executed with the role used
+   for the replication connection.
+</span>
+《機械翻訳》<code class="literal">WHERE</code>句式は、レプリケーション接続に使用されるロールで実行されます。
   </p></div><div class="refsect1" id="id-1.9.3.77.8"><h2>例</h2><span class="original">
   &lt;title&gt;Examples&lt;/title&gt;
 </span><p>
@@ -188,6 +336,15 @@ CREATE PUBLICATION <em class="replaceable"><code>name</code></em>
 </p><pre class="programlisting">
 CREATE PUBLICATION mypublication FOR TABLE users, departments;
 </pre><p>
+  </p><p>
+<span class="original">
+   Create a publication that publishes all changes from active departments:
+&lt;programlisting&gt;
+CREATE PUBLICATION active_departments FOR TABLE departments WHERE (active IS TRUE);
+&lt;/programlisting&gt;
+</span>
+《機械翻訳》アクティブな部署からのすべての変更を発行するパブリケーションを作成します。
+</p><pre class="programlisting">CREATE PUBLICATION active_departments FOR TABLE departments WHERE(active IS TRUE);</pre><p>
   </p><p>
 <span class="original">
    Create a publication that publishes all changes in all tables:
@@ -205,7 +362,40 @@ CREATE PUBLICATION alltables FOR ALL TABLES;
 </p><pre class="programlisting">
 CREATE PUBLICATION insert_only FOR TABLE mydata
     WITH (publish = 'insert');
-</pre></div><div class="refsect1" id="id-1.9.3.77.9"><h2>互換性</h2><span class="original">
+</pre><p>
+  </p><p>
+<span class="original">
+   Create a publication that publishes all changes for tables
+   &lt;structname&gt;users&lt;/structname&gt;, &lt;structname&gt;departments&lt;/structname&gt; and
+   all changes for all the tables present in the schema
+   &lt;structname&gt;production&lt;/structname&gt;:
+&lt;programlisting&gt;
+CREATE PUBLICATION production_publication FOR TABLE users, departments, TABLES IN SCHEMA production;
+&lt;/programlisting&gt;
+</span>
+《機械翻訳》表<code class="structname">users</code>、<code class="structname">departments</code>のすべての変更、およびスキーマ<code class="structname">production</code>に存在するすべての表のすべての変更を発行するパブリケーションを作成します。
+</p><pre class="programlisting">CREATE PUBLICATION production_publication FOR TABLE users,departments,TABLES IN SCHEMA production;</pre><p>
+  </p><p>
+<span class="original">
+   Create a publication that publishes all changes for all the tables present in
+   the schemas &lt;structname&gt;marketing&lt;/structname&gt; and
+   &lt;structname&gt;sales&lt;/structname&gt;:
+&lt;programlisting&gt;
+CREATE PUBLICATION sales_publication FOR TABLES IN SCHEMA marketing, sales;
+&lt;/programlisting&gt;
+</span>
+《機械翻訳》スキーマ<code class="structname">marketing</code>および<code class="structname">sales</code>に存在するすべてのテーブルに対するすべての変更を発行するパブリケーションを作成します。
+</p><pre class="programlisting">CREATE PUBLICATION sales_publication FOR TABLES IN SCHEMA marketing,sales;</pre><p>
+<span class="original">
+   Create a publication that publishes all changes for table &lt;structname&gt;users&lt;/structname&gt;,
+   but replicates only columns &lt;structname&gt;user_id&lt;/structname&gt; and
+   &lt;structname&gt;firstname&lt;/structname&gt;:
+&lt;programlisting&gt;
+CREATE PUBLICATION users_filtered FOR TABLE users (user_id, firstname);
+&lt;/programlisting&gt;
+</span>
+《機械翻訳》テーブル<code class="structname">users</code>のすべての変更を発行し、カラム<code class="structname">user_id</code>と<code class="structname">firstname</code>のみを複製するパブリケーションを作成します。
+</p><pre class="programlisting">CREATE PUBLICATION users_filtered FOR TABLE users(user_id,firstname);</pre></div><div class="refsect1" id="id-1.9.3.77.9"><h2>互換性</h2><span class="original">
   &lt;title&gt;Compatibility&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -215,4 +405,4 @@ CREATE PUBLICATION insert_only FOR TABLE mydata
 <code class="command">CREATE PUBLICATION</code>は<span class="productname">PostgreSQL</span>の拡張です。
   </p></div><div class="refsect1" id="id-1.9.3.77.10"><h2>関連項目</h2><span class="original">
   &lt;title&gt;See Also&lt;/title&gt;
-</span><span class="simplelist"><a class="xref" href="sql-alterpublication.html" title="ALTER PUBLICATION"><span class="refentrytitle">ALTER PUBLICATION</span></a>, <a class="xref" href="sql-droppublication.html" title="DROP PUBLICATION"><span class="refentrytitle">DROP PUBLICATION</span></a></span></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-createprocedure.html" title="CREATE PROCEDURE">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-createrole.html" title="CREATE ROLE">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">CREATE PROCEDURE </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> CREATE ROLE</td></tr></table></div></body></html>
+</span><span class="simplelist"><a class="xref" href="sql-alterpublication.html" title="ALTER PUBLICATION"><span class="refentrytitle">ALTER PUBLICATION</span></a>, <a class="xref" href="sql-droppublication.html" title="DROP PUBLICATION"><span class="refentrytitle">DROP PUBLICATION</span></a>, <a class="xref" href="sql-createsubscription.html" title="CREATE SUBSCRIPTION"><span class="refentrytitle">CREATE SUBSCRIPTION</span></a>, <a class="xref" href="sql-altersubscription.html" title="ALTER SUBSCRIPTION"><span class="refentrytitle">ALTER SUBSCRIPTION</span></a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-createprocedure.html" title="CREATE PROCEDURE">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-createrole.html" title="CREATE ROLE">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">CREATE PROCEDURE </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15rc1文書">ホーム</a></td><td width="40%" align="right" valign="top"> CREATE ROLE</td></tr></table></div></body></html>

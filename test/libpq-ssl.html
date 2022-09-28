@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>34.19. SSLサポート</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="libpq-ldap.html" title="34.18. 接続パラメータのLDAP検索" /><link rel="next" href="libpq-threading.html" title="34.20. スレッド化プログラムの振舞い" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="libpq.html" title="第34章 libpq — C ライブラリ">第34章 <span class="application">libpq</span> — C ライブラリ</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      libpq-ssl.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>34.19. SSLサポート</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="libpq-ldap.html" title="34.18. 接続パラメータのLDAP検索" /><link rel="next" href="libpq-threading.html" title="34.20. スレッド化プログラムの振舞い" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15rc1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="libpq.html" title="第34章 libpq — C ライブラリ">第34章 <span class="application">libpq</span> — C ライブラリ</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15rc1 : libpq-ssl.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="libpq-ldap.html" title="34.18. 接続パラメータのLDAP検索">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="libpq.html" title="第34章 libpq — C ライブラリ">上へ</a></td><td width="60%" align="center">34.19. SSLサポート</td><td width="20%" align="right"> <a accesskey="n" href="libpq-threading.html" title="34.20. スレッド化プログラムの振舞い">次へ</a></td></tr></table><hr /></div><div class="sect1" id="LIBPQ-SSL"><div class="titlepage"><div><div><h2 class="title" style="clear: both">34.19. SSLサポート</h2></div></div></div><span class="original">
   &lt;title&gt;SSL Support&lt;/title&gt;
 </span><a id="id-1.7.3.26.2" class="indexterm"></a><p>
 <span class="original">
    &lt;productname&gt;PostgreSQL&lt;/productname&gt; has native support for using &lt;acronym&gt;SSL&lt;/acronym&gt;
-   connections to encrypt client/server communications for increased
-   security. See &lt;xref linkend="ssl-tcp"/&gt; for details about the server-side
+   connections to encrypt client/server communications using
+   &lt;acronym&gt;TLS&lt;/acronym&gt; protocols for increased security.
+   See &lt;xref linkend="ssl-tcp"/&gt; for details about the server-side
    &lt;acronym&gt;SSL&lt;/acronym&gt; functionality.
 </span>
-<span class="productname">PostgreSQL</span>は、セキュリティを高めるためにクライアントサーバ間の通信を暗号化する<acronym class="acronym">SSL</acronym>接続の使用を元来サポートしています。
+《マッチ度[83.333333]》<span class="productname">PostgreSQL</span>は、セキュリティを高めるためにクライアントサーバ間の通信を暗号化する<acronym class="acronym">SSL</acronym>接続の使用を元来サポートしています。
 サーバ側の<acronym class="acronym">SSL</acronym>機能についての詳細は<a class="xref" href="ssl-tcp.html" title="19.9. SSLによる安全なTCP/IP接続">19.9</a>を参照してください。
   </p><p>
 <span class="original">
@@ -80,20 +81,35 @@ SSL接続はサーバ証明書が検証されない場合失敗します。
   </p><p>
 <span class="original">
    In &lt;literal&gt;verify-full&lt;/literal&gt; mode, the host name is matched against the
-   certificate's Subject Alternative Name attribute(s), or against the
-   Common Name attribute if no Subject Alternative Name of type &lt;literal&gt;dNSName&lt;/literal&gt; is
+   certificate's Subject Alternative Name attribute(s) (SAN), or against the
+   Common Name attribute if no SAN of type &lt;literal&gt;dNSName&lt;/literal&gt; is
    present.  If the certificate's name attribute starts with an asterisk
    (&lt;literal&gt;*&lt;/literal&gt;), the asterisk will be treated as
    a wildcard, which will match all characters &lt;emphasis&gt;except&lt;/emphasis&gt; a dot
    (&lt;literal&gt;.&lt;/literal&gt;). This means the certificate will not match subdomains.
    If the connection is made using an IP address instead of a host name, the
-   IP address will be matched (without doing any DNS lookups).
+   IP address will be matched (without doing any DNS lookups) against SANs of
+   type &lt;literal&gt;iPAddress&lt;/literal&gt; or &lt;literal&gt;dNSName&lt;/literal&gt;.  If no
+   &lt;literal&gt;iPAddress&lt;/literal&gt; SAN is present and no
+   matching &lt;literal&gt;dNSName&lt;/literal&gt; SAN is present, the host IP address is
+   matched against the Common Name attribute.
 </span>
-<code class="literal">verify-full</code>モードでは、ホスト名を証明書のサブジェクト別名(Subject Alternative Name)属性と、あるいは<code class="literal">dNSName</code>タイプのサブジェクト別名がないときはコモンネーム属性とマッチさせます。
+《マッチ度[65.168539]》<code class="literal">verify-full</code>モードでは、ホスト名を証明書のサブジェクト別名(Subject Alternative Name)属性と、あるいは<code class="literal">dNSName</code>タイプのサブジェクト別名がないときはコモンネーム属性とマッチさせます。
 証明書の名前属性がアスタリスク（<code class="literal">*</code>）で始まると、それはワイルドカードとして取り扱われ、ドット（<code class="literal">.</code>）を<span class="emphasis"><em>除く</em></span>すべての文字とマッチします。
 これは、証明書がサブドメインとマッチしないことを意味します。
 もし接続がホスト名ではなくIPアドレスを使用するのであれば、（いかなるDNS検索もせず）IPアドレスがマッチさせられます。
-  </p><p>
+  </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+    For backward compatibility with earlier versions of PostgreSQL, the host
+    IP address is verified in a manner different
+    from &lt;ulink url="https://tools.ietf.org/html/rfc6125"&gt;RFC 6125&lt;/ulink&gt;.
+    The host IP address is always matched against &lt;literal&gt;dNSName&lt;/literal&gt;
+    SANs as well as &lt;literal&gt;iPAddress&lt;/literal&gt; SANs, and can be matched
+    against the Common Name attribute if no relevant SANs exist.
+</span>
+《機械翻訳》PostgreSQLの以前のバージョンとの後方互換性のために、ホストIPアドレスは<a class="ulink" href="https://tools.ietf.org/html/rfc6125" target="_top">RFC 6125</a>とは異なる方法で検証されます。
+ホストIPアドレスは<code class="literal">DNsName</code>SANおよび<code class="literal">IpAddress</code>SANに対して常に照合され、関連するSANが存在しない場合はCommon Name属性に対して照合できます。
+   </p></div><p>
 <span class="original">
    To allow server certificate verification, one or more root certificates
    must be placed in the file &lt;filename&gt;~/.postgresql/root.crt&lt;/filename&gt;
@@ -120,8 +136,11 @@ SSL接続はサーバ証明書が検証されない場合失敗します。
    setting
    the connection parameters &lt;literal&gt;sslrootcert&lt;/literal&gt; and &lt;literal&gt;sslcrl&lt;/literal&gt;
    or the environment variables &lt;envar&gt;PGSSLROOTCERT&lt;/envar&gt; and &lt;envar&gt;PGSSLCRL&lt;/envar&gt;.
+   &lt;literal&gt;sslcrldir&lt;/literal&gt; or the environment variable &lt;envar&gt;PGSSLCRLDIR&lt;/envar&gt;
+   can also be used to specify a directory containing CRL files.
 </span>
 ルート証明書ファイルとCRLの格納場所を接続パラメータ<code class="literal">sslrootcert</code>と<code class="literal">sslcrl</code>、もしくは環境変数<code class="envar">PGSSLROOTCERT</code>と<code class="envar">PGSSLCRL</code>で変更することができます。
+<code class="literal">sslcrldir</code>または環境変数<code class="envar">PGSSLCRLDIR</code>を使用して、CRLファイルを含むディレクトリを指定することもできます。
   </p><div class="note"><h3 class="title">注記</h3><p>
 <span class="original">
     For backwards compatibility with earlier versions of PostgreSQL, if a
@@ -142,29 +161,46 @@ SSL接続はサーバ証明書が検証されない場合失敗します。
 <span class="original">
    If the server attempts to verify the identity of the
    client by requesting the client's leaf certificate,
-   &lt;application&gt;libpq&lt;/application&gt; will send the certificates stored in
+   &lt;application&gt;libpq&lt;/application&gt; will send the certificate(s) stored in
    file &lt;filename&gt;~/.postgresql/postgresql.crt&lt;/filename&gt; in the user's home
    directory.  The certificates must chain to the root certificate trusted
    by the server.  A matching
    private key file &lt;filename&gt;~/.postgresql/postgresql.key&lt;/filename&gt; must also
-   be present. The private
-   key file must not allow any access to world or group; achieve this by the
-   command &lt;command&gt;chmod 0600 ~/.postgresql/postgresql.key&lt;/command&gt;.
+   be present.
    On Microsoft Windows these files are named
    &lt;filename&gt;%APPDATA%\postgresql\postgresql.crt&lt;/filename&gt; and
-   &lt;filename&gt;%APPDATA%\postgresql\postgresql.key&lt;/filename&gt;, and there
-   is no special permissions check since the directory is presumed secure.
+   &lt;filename&gt;%APPDATA%\postgresql\postgresql.key&lt;/filename&gt;.
    The location of the certificate and key files can be overridden by the
-   connection parameters &lt;literal&gt;sslcert&lt;/literal&gt; and &lt;literal&gt;sslkey&lt;/literal&gt; or the
+   connection parameters &lt;literal&gt;sslcert&lt;/literal&gt;
+   and &lt;literal&gt;sslkey&lt;/literal&gt;, or by the
    environment variables &lt;envar&gt;PGSSLCERT&lt;/envar&gt; and &lt;envar&gt;PGSSLKEY&lt;/envar&gt;.
 </span>
 サーバが、クライアントのリーフ証明書を要求することによってクライアントの身元を検証しようとする場合、<span class="application">libpq</span>はユーザのホームディレクトリにある<code class="filename">~/.postgresql/postgresql.crt</code>ファイルに格納された証明書を送信します。
 証明書は、サーバが信頼するルート証明書につながらなければなりません。
 対応する<code class="filename">~/.postgresql/postgresql.key</code>秘密キーファイルも存在しなければなりません。
 秘密キーファイルは他者やグループからのアクセスを許可してはいけません。
-<code class="command">chmod 0600 ~/.postgresql/postgresql.key</code>コマンドでこれを実現してください。
-Microsoft Windowsでは、このファイルの名前はそれぞれ<code class="filename">%APPDATA%\postgresql\postgresql.crt</code>と<code class="filename">%APPDATA%\postgresql\postgresql.key</code>であり、このディレクトリは安全であると想定されますので、特別な権限検査は行われません。
+Microsoft Windowsでは、このファイルの名前はそれぞれ<code class="filename">%APPDATA%\postgresql\postgresql.crt</code>と<code class="filename">%APPDATA%\postgresql\postgresql.key</code>です。
 証明書とキーファイルの格納場所は<code class="literal">sslcert</code>および<code class="literal">sslkey</code>接続パラメータ、または<code class="envar">PGSSLCERT</code>および<code class="envar">PGSSLKEY</code>環境変数で上書きされます。
+  </p><p>
+<span class="original">
+   On Unix systems, the permissions on the private key file must disallow
+   any access to world or group; achieve this by a command such as
+   &lt;command&gt;chmod 0600 ~/.postgresql/postgresql.key&lt;/command&gt;.
+   Alternatively, the file can be owned by root and have group read access
+   (that is, &lt;literal&gt;0640&lt;/literal&gt; permissions).  That setup is intended
+   for installations where certificate and key files are managed by the
+   operating system.  The user of &lt;application&gt;libpq&lt;/application&gt; should
+   then be made a member of the group that has access to those certificate
+   and key files.  (On Microsoft Windows, there is no file permissions
+   check, since the &lt;filename&gt;%APPDATA%\postgresql&lt;/filename&gt; directory is
+   presumed secure.)
+</span>
+Unixシステムにおいて、秘密鍵ファイル権限はグループ、他者へのアクセスをすべて拒否しなければなりません。
+これは<code class="command">chmod 0600~/.postgresql/postgresql.key</code>といったコマンドによって行います。
+あるいは、このファイルをrootが所有し、グループの読み取りアクセス権（つまり<code class="literal">0640</code>のアクセス権）を持つこともできます。
+このセットアップは、証明書と鍵ファイルがオペレーティングシステムによって管理されているインストールを対象としています。
+<span class="application">libpq</span>のユーザは、これらの証明書と鍵ファイルへのアクセス権を持つグループのメンバになる必要があります。
+（Microsoft Windowsにおいては、<code class="filename">%APPDATA%\postgresql</code>ディレクトリが安全であると考えられるため、ファイルの権限の検査は行われません。）
   </p><p>
 <span class="original">
    The first certificate in &lt;filename&gt;postgresql.crt&lt;/filename&gt; must be the
@@ -198,9 +234,9 @@ Microsoft Windowsでは、このファイルの名前はそれぞれ<code class=
    key password callback; see
    &lt;xref linkend="libpq-pqsetsslkeypasshook-openssl"/&gt;.
 </span>
-キーは平文テキストで、あるいは、OpenSSLで対応しているAES-128など任意のアルゴリズムを使ってパスフレーズで暗号化して、格納できます。
+キーは平文テキストで、あるいは、<span class="productname">OpenSSL</span>で対応しているAES-128など任意のアルゴリズムを使ってパスフレーズで暗号化して、格納できます。
 キーが暗号化されて格納された場合、パスフレーズは<a class="xref" href="libpq-connect.html#LIBPQ-CONNECT-SSLPASSWORD">sslpassword</a>接続オプションで供給してもよいです。
-暗号化されたキーが供給されて、かつ、<code class="literal">sslpassword</code>が無いか空欄の場合、TTYが利用可能であればパスワードはOpenSSLにより<code class="literal">Enter PEM pass phrase:</code>プロンプトで対話的に入力が要求されます。
+暗号化されたキーが供給されて、かつ、<code class="literal">sslpassword</code>が無いか空欄の場合、TTYが利用可能であればパスワードは<span class="productname">OpenSSL</span>により<code class="literal">Enter PEM pass phrase:</code>プロンプトで対話的に入力が要求されます。
 アプリケーションはクライアント証明書のプロンプトと<code class="literal">sslpassword</code>パラメータの操作を、自身のキーパスワードコールバックを供給することで置き換えできます。
 <a class="xref" href="libpq-connect.html#LIBPQ-PQSETSSLKEYPASSHOOK-OPENSSL"><code class="function">PQsetSSLKeyPassHook_OpenSSL</code></a>を参照してください。
   </p><p>
@@ -364,7 +400,7 @@ void PQinitOpenSSL(int do_ssl, int do_crypto);
        are initialized.  When SSL support is not compiled in, this function is
        present but does nothing.
 </span>
-<em class="parameter"><code>do_ssl</code></em>が非ゼロの時、<span class="application">libpq</span>は最初のデータベース接続を開始する以前に<span class="application">OpenSSL</span>ライブラリを初期化します。
+<em class="parameter"><code>do_ssl</code></em>が非ゼロの時、<span class="application">libpq</span>は最初のデータベース接続を開始する以前に<span class="productname">OpenSSL</span>ライブラリを初期化します。
 <em class="parameter"><code>do_crypto</code></em>が非ゼロの時、<code class="literal">libcrypto</code>ライブラリが初期化されます。
 デフォルトでは（<a class="xref" href="libpq-ssl.html#LIBPQ-PQINITOPENSSL"><code class="function">PQinitOpenSSL</code></a>が呼ばれない場合）、両方のライブラリが初期化されます。
 SSLサポートがコンパイルされていない場合、この関数は存在しますが何もしません。
@@ -376,7 +412,7 @@ SSLサポートがコンパイルされていない場合、この関数は存�
        before first opening a database connection.  Also be sure that you
        have done that initialization before opening a database connection.
 </span>
-使用するアプリケーションが<span class="application">OpenSSL</span>またはその基礎をなす<code class="literal">libcrypto</code>ライブラリのいずれかを使用し、そして初期化するのであれば、最初のデータベース接続開始以前に、適切なパラメータをゼロにしてこの関数を呼び出さなければ<span class="emphasis"><em>なりません</em></span>。
+使用するアプリケーションが<span class="productname">OpenSSL</span>またはその基礎をなす<code class="literal">libcrypto</code>ライブラリのいずれかを使用し、そして初期化するのであれば、最初のデータベース接続開始以前に、適切なパラメータをゼロにしてこの関数を呼び出さなければ<span class="emphasis"><em>なりません</em></span>。
 同時に、データベース接続開始前に初期化を行ったことの確認をしてください。
       </p></dd><dt id="LIBPQ-PQINITSSL"><span class="term"><code class="function">PQinitSSL</code><a id="id-1.7.3.26.9.3.1.2.1.2" class="indexterm"></a></span></dt><dd><p>
 <span class="original">
@@ -394,7 +430,7 @@ void PQinitSSL(int do_ssl);
        of &lt;productname&gt;OpenSSL&lt;/productname&gt; and &lt;literal&gt;libcrypto&lt;/literal&gt;.
 </span>
 この関数は<code class="literal">PQinitOpenSSL(do_ssl, do_ssl)</code>と等価です。
-<span class="application">OpenSSL</span>および<code class="literal">libcrypto</code>の両方を初期化する、もしくは両方ともしないアプリケーションにとっては（この関数で）十分です。
+<span class="productname">OpenSSL</span>および<code class="literal">libcrypto</code>の両方を初期化する、もしくは両方ともしないアプリケーションにとっては（この関数で）十分です。
       </p><p>
 <span class="original">
        &lt;xref linkend="libpq-PQinitSSL"/&gt; has been present since
@@ -406,4 +442,4 @@ void PQinitSSL(int do_ssl);
 <span class="productname">PostgreSQL</span> 8.0以降、<a class="xref" href="libpq-ssl.html#LIBPQ-PQINITSSL"><code class="function">PQinitSSL</code></a>は含まれていますが、<a class="xref" href="libpq-ssl.html#LIBPQ-PQINITOPENSSL"><code class="function">PQinitOpenSSL</code></a>は<span class="productname">PostgreSQL</span> 8.4で追加されました。
 従って、旧バージョンの<span class="application">libpq</span>で動かす必要があるアプリケーションでは<a class="xref" href="libpq-ssl.html#LIBPQ-PQINITSSL"><code class="function">PQinitSSL</code></a>の方が好ましいかもしれません。
       </p></dd></dl></div><p>
-  </p></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="libpq-ldap.html" title="34.18. 接続パラメータのLDAP検索">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="libpq.html" title="第34章 libpq — C ライブラリ">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="libpq-threading.html" title="34.20. スレッド化プログラムの振舞い">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">34.18. 接続パラメータのLDAP検索 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 34.20. スレッド化プログラムの振舞い</td></tr></table></div></body></html>
+  </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="libpq-ldap.html" title="34.18. 接続パラメータのLDAP検索">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="libpq.html" title="第34章 libpq — C ライブラリ">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="libpq-threading.html" title="34.20. スレッド化プログラムの振舞い">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">34.18. 接続パラメータのLDAP検索 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15rc1文書">ホーム</a></td><td width="40%" align="right" valign="top"> 34.20. スレッド化プログラムの振舞い</td></tr></table></div></body></html>

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>39.4. 完全なトリガの例</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="trigger-interface.html" title="39.3. Cによるトリガ関数の作成" /><link rel="next" href="event-triggers.html" title="第40章 イベントトリガ" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="triggers.html" title="第39章 トリガ">第39章 トリガ</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      trigger-example.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>39.4. 完全なトリガの例</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="trigger-interface.html" title="39.3. Cによるトリガ関数の作成" /><link rel="next" href="event-triggers.html" title="第40章 イベントトリガ" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15rc1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="triggers.html" title="第39章 トリガ">第39章 トリガ</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15rc1 : trigger-example.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="trigger-interface.html" title="39.3. Cによるトリガ関数の作成">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="triggers.html" title="第39章 トリガ">上へ</a></td><td width="60%" align="center">39.4. 完全なトリガの例</td><td width="20%" align="right"> <a accesskey="n" href="event-triggers.html" title="第40章 イベントトリガ">次へ</a></td></tr></table><hr /></div><div class="sect1" id="TRIGGER-EXAMPLE"><div class="titlepage"><div><div><h2 class="title" style="clear: both">39.4. 完全なトリガの例</h2></div></div></div><span class="original">
    &lt;title&gt;A Complete Trigger Example&lt;/title&gt;
 </span><p>
@@ -38,15 +38,11 @@ CREATE TABLE ttest (
 </p><pre class="programlisting">
 #include "postgres.h"
 #include "fmgr.h"
-
-
 <span class="original">
 #include "executor/spi.h"       /* this is what you need to work with SPI */
 #include "commands/trigger.h"   /* ... triggers ... */
 #include "utils/rel.h"          /* ... and relations */
 </span>
-
-
 #include "executor/spi.h"       /* これはSPIを使用する場合に必要なもの */
 #include "commands/trigger.h"   /* これはトリガで必要なもの */
 #include "utils/rel.h"          /* これはリレーションで必要なもの */
@@ -66,35 +62,25 @@ trigf(PG_FUNCTION_ARGS)
     bool        isnull;
     int         ret, i;
 
-
-
 <span class="original">
     /* make sure it's called as a trigger at all */
 </span>
-
-
     /* トリガとして呼び出されたかどうかを確認 */
     if (!CALLED_AS_TRIGGER(fcinfo))
         elog(ERROR, "trigf: not called by trigger manager");
 
-
 <span class="original">
     /* tuple to return to executor */
 </span>
-
-
     /* エクゼキュータに返すタプル */
     if (TRIGGER_FIRED_BY_UPDATE(trigdata-&gt;tg_event))
         rettuple = trigdata-&gt;tg_newtuple;
     else
         rettuple = trigdata-&gt;tg_trigtuple;
 
-
 <span class="original">
     /* check for null values */
 </span>
-
-
     /* NULL値をチェック */
     if (!TRIGGER_FIRED_BY_DELETE(trigdata-&gt;tg_event)
         &amp;&amp; TRIGGER_FIRED_BEFORE(trigdata-&gt;tg_event))
@@ -107,34 +93,25 @@ trigf(PG_FUNCTION_ARGS)
 
     tupdesc = trigdata-&gt;tg_relation-&gt;rd_att;
 
-
 <span class="original">
     /* connect to SPI manager */
 </span>
-
-
     /* SPIマネージャに接続 */
     if ((ret = SPI_connect()) &lt; 0)
         elog(ERROR, "trigf (fired %s): SPI_connect returned %d", when, ret);
 
-
 <span class="original">
     /* get number of rows in table */
 </span>
-
-
     /* テーブル中の行数を取得 */
     ret = SPI_exec("SELECT count(*) FROM ttest", 0);
 
     if (ret &lt; 0)
         elog(ERROR, "trigf (fired %s): SPI_exec returned %d", when, ret);
 
-
 <span class="original">
     /* count(*) returns int8, so be careful to convert */
 </span>
-
-
     /* count(*)はint8を返す。変換に注意してください*/
     i = DatumGetInt64(SPI_getbinval(SPI_tuptable-&gt;vals[0],
                                     SPI_tuptable-&gt;tupdesc,
@@ -184,7 +161,7 @@ INFO:  trigf (fired before): there are 0 rows in ttest
 INSERT 0 0
 
 <span class="original">
-&amp;#045;&amp;#045; Insertion skipped and AFTER trigger is not fired
+&amp;#45;- Insertion skipped and AFTER trigger is not fired
 </span>
 -- 挿入操作は飛ばされ、また、AFTERトリガも発行されません。
 
@@ -261,5 +238,5 @@ DELETE 2
     &lt;filename&gt;src/test/regress/regress.c&lt;/filename&gt; and
     in &lt;xref linkend="contrib-spi"/&gt;.
 </span>
-<code class="filename">src/test/regress/regress.c</code>と<a class="xref" href="contrib-spi.html" title="F.38. spi">spi</a>にはもっと複雑な例があります。
-   </p></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="trigger-interface.html" title="39.3. Cによるトリガ関数の作成">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="triggers.html" title="第39章 トリガ">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="event-triggers.html" title="第40章 イベントトリガ">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">39.3. Cによるトリガ関数の作成 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 第40章 イベントトリガ</td></tr></table></div></body></html>
+<code class="filename">src/test/regress/regress.c</code>と<a class="xref" href="contrib-spi.html" title="F.41. spi">spi</a>にはもっと複雑な例があります。
+   </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="trigger-interface.html" title="39.3. Cによるトリガ関数の作成">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="triggers.html" title="第39章 トリガ">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="event-triggers.html" title="第40章 イベントトリガ">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">39.3. Cによるトリガ関数の作成 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15rc1文書">ホーム</a></td><td width="40%" align="right" valign="top"> 第40章 イベントトリガ</td></tr></table></div></body></html>

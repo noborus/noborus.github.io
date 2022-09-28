@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>62.4. インデックスのロック処理に関する検討</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="index-scanning.html" title="62.3. インデックススキャン" /><link rel="next" href="index-unique-checks.html" title="62.5. インデックス一意性検査" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="indexam.html" title="第62章 インデックスアクセスメソッドのインタフェース定義">第62章 インデックスアクセスメソッドのインタフェース定義</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      index-locking.html">誤訳等の報告
-                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="index-scanning.html" title="62.3. インデックススキャン">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="indexam.html" title="第62章 インデックスアクセスメソッドのインタフェース定義">上へ</a></td><td width="60%" align="center">62.4. インデックスのロック処理に関する検討</td><td width="20%" align="right"> <a accesskey="n" href="index-unique-checks.html" title="62.5. インデックス一意性検査">次へ</a></td></tr></table><hr /></div><div class="sect1" id="INDEX-LOCKING"><div class="titlepage"><div><div><h2 class="title" style="clear: both">62.4. インデックスのロック処理に関する検討</h2></div></div></div><span class="original">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>64.4. インデックスのロック処理に関する検討</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="index-scanning.html" title="64.3. インデックススキャン" /><link rel="next" href="index-unique-checks.html" title="64.5. インデックス一意性検査" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15rc1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="indexam.html" title="第64章 インデックスアクセスメソッドのインタフェース定義">第64章 インデックスアクセスメソッドのインタフェース定義</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15rc1 : index-locking.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="index-scanning.html" title="64.3. インデックススキャン">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="indexam.html" title="第64章 インデックスアクセスメソッドのインタフェース定義">上へ</a></td><td width="60%" align="center">64.4. インデックスのロック処理に関する検討</td><td width="20%" align="right"> <a accesskey="n" href="index-unique-checks.html" title="64.5. インデックス一意性検査">次へ</a></td></tr></table><hr /></div><div class="sect1" id="INDEX-LOCKING"><div class="titlepage"><div><div><h2 class="title" style="clear: both">64.4. インデックスのロック処理に関する検討</h2></div></div></div><span class="original">
   &lt;title&gt;Index Locking Considerations&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -20,7 +20,7 @@
 <span class="productname">PostgreSQL</span>コアシステムはインデックススキャン中にインデックスに対して<code class="literal">AccessShareLock</code>を獲得します。
 また、（通常の<code class="command">VACUUM</code>を含む）インデックスの更新中に<code class="literal">RowExclusiveLock</code>を獲得します。
 これらの種類のロックは競合しませんので、アクセスメソッドは必要になるかもしれない粒度の細かなロック処理に関して責任を持ちます。
-インデックスの生成、破棄、<code class="literal">REINDEX</code>時にインデックス全体に対する<code class="literal">ACCESS EXCLUSIVE</code>ロックが獲得されます(<code class="literal">CONCURRENTLY</code>では代わりに<code class="literal">SHARE UPDATE EXCLUSIVE</code>が取得されます)。
+インデックスの生成、破棄、<code class="command">REINDEX</code>時にインデックス全体に対する<code class="literal">ACCESS EXCLUSIVE</code>ロックが獲得されます(<code class="literal">CONCURRENTLY</code>では代わりに<code class="literal">SHARE UPDATE EXCLUSIVE</code>が取得されます)。
   </p><p>
 <span class="original">
    Building an index type that supports concurrent updates usually requires
@@ -55,7 +55,7 @@ B-treeおよびハッシュインデックス種類では、<code class="filenam
 新しいヒープ項目はインデックス項目を作成する前に作成されます。
 （このため、同時実行インデックススキャンはヒープエントリを確認する時によく失敗します。
 インデックスの読み取りは、未コミットの行を対象としませんので問題ありません。
-しかし、<a class="xref" href="index-unique-checks.html" title="62.5. インデックス一意性検査">62.5</a>を参照してください。）
+しかし、<a class="xref" href="index-unique-checks.html" title="64.5. インデックス一意性検査">64.5</a>を参照してください。）
       </p></li><li class="listitem"><p>
 <span class="original">
        When a heap entry is to be deleted (by &lt;command&gt;VACUUM&lt;/command&gt;), all its
@@ -102,7 +102,7 @@ B-treeおよびハッシュインデックス種類では、<code class="filenam
 空の項目スロットは<code class="function">heap_fetch()</code>で無視されますので、これは読み取りが達した時にその項目番号が未使用である場合でも大きな問題は起こりません。
 しかし、第三のバックエンドがすでにその項目スロットを他のものに再使用した場合はどうなるでしょうか？
 そのスロット内の新しいものが、スナップショット試験を通過するには新しすぎることが確実ですので、MVCCに則ったスナップショットを使用する場合は問題ありません。
-しかし、MVCCに則らないスナップショット(<code class="literal">SnapshotNow</code>など)では、実際にはスキャンキーに合わない行を受付け、返す可能性があります。
+しかし、MVCCに則らないスナップショット(<code class="literal">SnapshotAny</code>など)では、実際にはスキャンキーに合わない行を受付け、返す可能性があります。
 すべての場合においてヒープ行に対しスキャンキーの再検査を行うことを必須とすることで、こうした状況から保護することができますが、これは高価すぎます。
 代わりに、読み取りがまだ一致するヒープ項目へのインデックス項目の<span class="quote">「<span class="quote">作業中</span>」</span>であることを示す代理として、インデックスページに対するピンを使用します。
 このピンに対して<code class="function">ambulkdelete</code>がブロックするようにすることで、読み取りの作業が終わる前に<code class="command">VACUUM</code>がそのヒープ項目を削除できないことを確実にします。
@@ -149,4 +149,4 @@ B-treeおよびハッシュインデックス種類では、<code class="filenam
 これは、同時実行のシリアライザブルトランザクションによるそのインデックスへの何らかのタプル挿入で、読み書きの競合が発生することがあります。
 同時実行のシリアライザブルトランザクションの集合の中で特定の読み書きの競合パターンが検知された場合、データの整合性を保護するためにこれらのトランザクションの１つはキャンセルされます。
 このフラグが設定されている場合、こうしたトランザクションのキャンセルの頻度を低減することになる、より粒度の細かな述語ロックをインデックスアクセスメソッドが実装していることを示します。
-  </p></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="index-scanning.html" title="62.3. インデックススキャン">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="indexam.html" title="第62章 インデックスアクセスメソッドのインタフェース定義">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="index-unique-checks.html" title="62.5. インデックス一意性検査">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">62.3. インデックススキャン </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 62.5. インデックス一意性検査</td></tr></table></div></body></html>
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="index-scanning.html" title="64.3. インデックススキャン">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="indexam.html" title="第64章 インデックスアクセスメソッドのインタフェース定義">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="index-unique-checks.html" title="64.5. インデックス一意性検査">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">64.3. インデックススキャン </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15rc1文書">ホーム</a></td><td width="40%" align="right" valign="top"> 64.5. インデックス一意性検査</td></tr></table></div></body></html>

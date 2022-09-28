@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>19.5. サーバのシャットダウン</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="kernel-resources.html" title="19.4. カーネルリソースの管理" /><link rel="next" href="upgrading.html" title="19.6. PostgreSQLクラスタのアップグレード処理" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="runtime.html" title="第19章 サーバの準備と運用">第19章 サーバの準備と運用</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      server-shutdown.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>19.5. サーバのシャットダウン</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="kernel-resources.html" title="19.4. カーネルリソースの管理" /><link rel="next" href="upgrading.html" title="19.6. PostgreSQLクラスタのアップグレード処理" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15rc1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="runtime.html" title="第19章 サーバの準備と運用">第19章 サーバの準備と運用</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15rc1 : server-shutdown.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="kernel-resources.html" title="19.4. カーネルリソースの管理">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="runtime.html" title="第19章 サーバの準備と運用">上へ</a></td><td width="60%" align="center">19.5. サーバのシャットダウン</td><td width="20%" align="right"> <a accesskey="n" href="upgrading.html" title="19.6. PostgreSQLクラスタのアップグレード処理">次へ</a></td></tr></table><hr /></div><div class="sect1" id="SERVER-SHUTDOWN"><div class="titlepage"><div><div><h2 class="title" style="clear: both">19.5. サーバのシャットダウン</h2></div></div></div><span class="original">
   &lt;title&gt;Shutting Down the Server&lt;/title&gt;
-</span><a id="id-1.6.6.8.2" class="indexterm"></a><p>
+</span><a id="id-1.6.6.8.2" class="indexterm"></a><a id="id-1.6.6.8.3" class="indexterm"></a><p>
 <span class="original">
    There are several ways to shut down the database server.
    Under the hood, they all reduce to sending a signal to the supervisor
@@ -28,42 +28,27 @@
 </span>
 サーバを直接管理する場合は、<code class="command">postgres</code>プロセスに異なるシグナルを送信することで、シャットダウンのタイプを制御できます。
 
-   </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><span class="systemitem">SIGTERM</span><a id="id-1.6.6.8.5.2.1.1.2" class="indexterm"></a></span></dt><dd><p>
-<span class="original">
-       This is the &lt;firstterm&gt;Smart Shutdown&lt;/firstterm&gt; mode.
-       After receiving &lt;systemitem&gt;SIGTERM&lt;/systemitem&gt;, the server
+   </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><span class="systemitem">SIGTERM</span><a id="id-1.6.6.8.6.2.1.1.2" class="indexterm"></a></span></dt><dd><p>
+       This is the <em class="firstterm">Smart Shutdown</em> mode.
+       After receiving <span class="systemitem">SIGTERM</span>, the server
        disallows new connections, but lets existing sessions end their
        work normally. It shuts down only after all of the sessions terminate.
-       If the server is in online backup mode, it additionally waits
-       until online backup mode is no longer active.  While backup mode is
-       active, new connections will still be allowed, but only to superusers
-       (this exception allows a superuser to connect to terminate
-       online backup mode).  If the server is in recovery when a smart
+       If the server is in recovery when a smart
        shutdown is requested, recovery and streaming replication will be
        stopped only after all regular sessions have terminated.
-</span>
-これは<em class="firstterm">スマートシャットダウン</em>モードです。
-<span class="systemitem">SIGTERM</span>を受け取った後で、サーバは新しい接続を禁止しますが、既に存在するセッションは通常通り動作させます。
-すべてのセッションが通常に終了するまではシャットダウンしません。
-サーバがオンラインバックアップモードである場合、オンラインバックアップモードが活動しなくなるまでさらに待ちます。
-バックアップモードが活動している間、新規接続は依然として許可されますが、スーパーユーザに対してだけです
-（この例外はスーパーユーザがオンラインバックアップモード停止のための接続を許可します）。
-スマートシャットダウンが要求された時にサーバがリカバリ状態である場合、すべての通常のセッションが終了した後のみでリカバリとストリーミングレプリケーションが停止します。
-      </p></dd><dt><span class="term"><span class="systemitem">SIGINT</span><a id="id-1.6.6.8.5.2.2.1.2" class="indexterm"></a></span></dt><dd><p>
+      </p></dd><dt><span class="term"><span class="systemitem">SIGINT</span><a id="id-1.6.6.8.6.2.2.1.2" class="indexterm"></a></span></dt><dd><p>
 <span class="original">
        This is the &lt;firstterm&gt;Fast Shutdown&lt;/firstterm&gt; mode.
        The server disallows new connections and sends all existing
        server processes &lt;systemitem&gt;SIGTERM&lt;/systemitem&gt;, which will cause them
        to abort their current transactions and exit promptly. It then
        waits for all server processes to exit and finally shuts down.
-       If the server is in online backup mode, backup mode will be
-       terminated, rendering the backup useless.
 </span>
-これは<em class="firstterm">高速シャットダウン</em>モードです。
+《マッチ度[51.757188]》これは<em class="firstterm">高速シャットダウン</em>モードです。
 サーバは新しい接続を禁止しすべての存在するサーバプロセスに<span class="systemitem">SIGTERM</span>を送り、この結果サーバプロセスは現在のトランザクションをアボートし、即座に終了します。
 そして サーバはすべてのサーバプロセスの終了を待って、最後にシャットダウンします。
 サーバがオンラインバックアップモードである場合、バックアップモードは終了しますので、そのバックアップは使用することができなくなります。
-      </p></dd><dt><span class="term"><span class="systemitem">SIGQUIT</span><a id="id-1.6.6.8.5.2.3.1.2" class="indexterm"></a></span></dt><dd><p>
+      </p></dd><dt><span class="term"><span class="systemitem">SIGQUIT</span><a id="id-1.6.6.8.6.2.3.1.2" class="indexterm"></a></span></dt><dd><p>
 <span class="original">
       This is the &lt;firstterm&gt;Immediate Shutdown&lt;/firstterm&gt; mode.
       The server will send &lt;systemitem&gt;SIGQUIT&lt;/systemitem&gt; to all child
@@ -121,5 +106,5 @@ $ <strong class="userinput"><code>kill -INT `head -1 /usr/local/pgsql/data/postm
    &lt;systemitem&gt;SIGTERM&lt;/systemitem&gt; signal to the child process associated with
    the session.
 </span>
-他のセッションを継続させながら個別のセッションを停止するには<code class="function">pg_terminate_backend()</code>（<a class="xref" href="functions-admin.html#FUNCTIONS-ADMIN-SIGNAL-TABLE" title="表9.86 サーバシグナル送信関数">表 9.86</a>を参照）を使用するか、そのセッションに関連する子プロセスに<span class="systemitem">SIGTERM</span>シグナルを送ります。
-  </p></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="kernel-resources.html" title="19.4. カーネルリソースの管理">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="runtime.html" title="第19章 サーバの準備と運用">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="upgrading.html" title="19.6. PostgreSQLクラスタのアップグレード処理">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">19.4. カーネルリソースの管理 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 19.6. <span xmlns="http://www.w3.org/1999/xhtml" class="productname">PostgreSQL</span>クラスタのアップグレード処理</td></tr></table></div></body></html>
+他のセッションを継続させながら個別のセッションを停止するには<code class="function">pg_terminate_backend()</code>（<a class="xref" href="functions-admin.html#FUNCTIONS-ADMIN-SIGNAL-TABLE" title="表9.87 サーバシグナル送信関数">表 9.87</a>を参照）を使用するか、そのセッションに関連する子プロセスに<span class="systemitem">SIGTERM</span>シグナルを送ります。
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="kernel-resources.html" title="19.4. カーネルリソースの管理">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="runtime.html" title="第19章 サーバの準備と運用">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="upgrading.html" title="19.6. PostgreSQLクラスタのアップグレード処理">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">19.4. カーネルリソースの管理 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15rc1文書">ホーム</a></td><td width="40%" align="right" valign="top"> 19.6. <span class="productname">PostgreSQL</span>クラスタのアップグレード処理</td></tr></table></div></body></html>

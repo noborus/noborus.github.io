@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>F.37. pg_walinspect</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="pgvisibility.html" title="F.36. pg_visibility" /><link rel="next" href="postgres-fdw.html" title="F.38. postgres_fdw" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15rc1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="contrib.html" title="付録F 追加で提供されるモジュール">付録F 追加で提供されるモジュール</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15rc1 : pgwalinspect.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="pgvisibility.html" title="F.36. pg_visibility">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュール">上へ</a></td><td width="60%" align="center">F.37. pg_walinspect</td><td width="20%" align="right"> <a accesskey="n" href="postgres-fdw.html" title="F.38. postgres_fdw">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PGWALINSPECT"><div class="titlepage"><div><div><h2 class="title" style="clear: both">F.37. pg_walinspect</h2></div></div></div><a id="id-1.11.7.46.2" class="indexterm"></a><p>
+  The <code class="filename">pg_walinspect</code> module provides SQL functions that
+  allow you to inspect the contents of write-ahead log of
+  a running <span class="productname">PostgreSQL</span> database cluster at a low
+  level, which is useful for debugging or analytical or reporting or
+  educational purposes. It is similar to <a class="xref" href="pgwaldump.html" title="pg_waldump"><span class="refentrytitle"><span class="application">pg_waldump</span></span></a>, but
+  accessible through SQL rather than a separate utility.
+ </p><p>
+  All the functions of this module will provide the WAL information using the
+  current server's timeline ID.
+ </p><p>
+  All the functions of this module will try to find the first valid WAL record
+  that is at or after the given <em class="replaceable"><code>in_lsn</code></em> or
+  <em class="replaceable"><code>start_lsn</code></em> and will emit error if no such record
+  is available. Similarly, the <em class="replaceable"><code>end_lsn</code></em> must be
+  available, and if it falls in the middle of a record, the entire record must
+  be available.
+ </p><div class="note"><h3 class="title">注記</h3><p>
+   Some functions, such as <code class="function"><a class="link" href="functions-admin.html#PG-LOGICAL-EMIT-MESSAGE">pg_logical_emit_message</a></code>,
+   return the LSN <span class="emphasis"><em>after</em></span> the record just
+   inserted. Therefore, if you pass that LSN as
+   <em class="replaceable"><code>in_lsn</code></em> or <em class="replaceable"><code>start_lsn</code></em>
+   to one of these functions, it will return the <span class="emphasis"><em>next</em></span>
+   record.
+  </p></div><p>
+  By default, use of these functions is restricted to superusers and members of
+  the <code class="literal">pg_read_server_files</code> role. Access may be granted by
+  superusers to others using <code class="command">GRANT</code>.
+ </p><div class="sect2" id="id-1.11.7.46.8"><div class="titlepage"><div><div><h3 class="title">F.37.1. General Functions</h3></div></div></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+     <code class="function">
+      pg_get_wal_record_info(in_lsn pg_lsn,
+                             start_lsn OUT pg_lsn,
+                             end_lsn OUT pg_lsn,
+                             prev_lsn OUT pg_lsn,
+                             xid OUT xid,
+                             resource_manager OUT text,
+                             record_type OUT text,
+                             record_length OUT int4,
+                             main_data_length OUT int4,
+                             fpi_length OUT int4,
+                             description OUT text,
+                             block_ref OUT text)
+     </code>
+    </span></dt><dd><p>
+      Gets WAL record information of a given LSN. If the given LSN isn't
+      at the start of a WAL record, it gives the information of the next
+      available valid WAL record; or an error if no such record is found.
+     </p></dd><dt><span class="term">
+     <code class="function">
+      pg_get_wal_records_info(start_lsn pg_lsn,
+                              end_lsn pg_lsn,
+                              start_lsn OUT pg_lsn,
+                              end_lsn OUT pg_lsn,
+                              prev_lsn OUT pg_lsn,
+                              xid OUT xid,
+                              resource_manager OUT text,
+                              record_type OUT text,
+                              record_length OUT int4,
+                              main_data_length OUT int4,
+                              fpi_length OUT int4,
+                              description OUT text,
+                              block_ref OUT text)
+      returns setof record
+     </code>
+    </span></dt><dd><p>
+      Gets information of all the valid WAL records between
+      <em class="replaceable"><code>start_lsn</code></em> and <em class="replaceable"><code>end_lsn</code></em>.
+      Returns one row per WAL record. If <em class="replaceable"><code>start_lsn</code></em>
+      or <em class="replaceable"><code>end_lsn</code></em> are not yet available, the
+      function will raise an error. For example, usage of the function is as
+      follows:
+</p><pre class="screen">
+postgres=# select start_lsn, end_lsn, prev_lsn, xid, resource_manager, record_type, record_length, main_data_length, fpi_length, description from pg_get_wal_records_info('0/14F9A30', '0/15011D7');
+ start_lsn |  end_lsn  | prev_lsn  | xid | resource_manager | record_type  | record_length | main_data_length | fpi_length |     description
+-----------+-----------+-----------+-----+------------------+--------------+---------------+------------------+------------+---------------------
+ 0/14FA118 | 0/14FB4B0 | 0/14F9958 | 725 | Btree            | INSERT_LEAF  |          5013 |                2 |       4960 | off 246
+ 0/14FB4B0 | 0/14FD050 | 0/14FA118 | 725 | Btree            | INSERT_LEAF  |          7045 |                2 |       6992 | off 130
+ 0/14FD050 | 0/14FD0A8 | 0/14FB4B0 | 725 | Heap2            | MULTI_INSERT |            85 |                6 |          0 | 1 tuples flags 0x02
+ 0/14FD0A8 | 0/14FD0F0 | 0/14FD050 | 725 | Btree            | INSERT_LEAF  |            72 |                2 |          0 | off 155
+ 0/14FD0F0 | 0/14FD138 | 0/14FD0A8 | 725 | Btree            | INSERT_LEAF  |            72 |                2 |          0 | off 134
+ 0/14FD138 | 0/14FD210 | 0/14FD0F0 | 725 | Heap             | INSERT       |           211 |                3 |          0 | off 11 flags 0x00
+ 0/14FD210 | 0/14FD250 | 0/14FD138 | 725 | Btree            | INSERT_LEAF  |            64 |                2 |          0 | off 246
+ 0/14FD250 | 0/14FF260 | 0/14FD210 | 725 | Btree            | INSERT_LEAF  |          8181 |                2 |       8128 | off 47
+ 0/14FF260 | 0/14FF2B8 | 0/14FD250 | 725 | Heap2            | MULTI_INSERT |            85 |                6 |          0 | 1 tuples flags 0x02
+ 0/14FF2B8 | 0/14FF300 | 0/14FF260 | 725 | Btree            | INSERT_LEAF  |            72 |                2 |          0 | off 155
+ 0/14FF300 | 0/15008D8 | 0/14FF2B8 | 725 | Btree            | INSERT_LEAF  |          5565 |                2 |       5512 | off 106
+ 0/15008D8 | 0/1500C48 | 0/14FF300 | 725 | Heap             | INSERT       |           874 |                3 |        820 | off 2 flags 0x01
+(12 rows)
+</pre><p>
+     </p></dd><dt><span class="term">
+     <code class="function">
+      pg_get_wal_records_info_till_end_of_wal(start_lsn pg_lsn,
+                                              start_lsn OUT pg_lsn,
+                                              end_lsn OUT pg_lsn,
+                                              prev_lsn OUT pg_lsn,
+                                              xid OUT xid,
+                                              resource_manager OUT text,
+                                              record_type OUT text,
+                                              record_length OUT int4,
+                                              main_data_length OUT int4,
+                                              fpi_length OUT int4,
+                                              description OUT text,
+                                              block_ref OUT text)
+      returns setof record
+     </code>
+    </span></dt><dd><p>
+      This function is same as <code class="function">pg_get_wal_records_info()</code>
+      except that it gets information of all the valid WAL records from
+      <em class="replaceable"><code>start_lsn</code></em> till the end of WAL.
+     </p></dd><dt><span class="term">
+     <code class="function">
+      pg_get_wal_stats(start_lsn pg_lsn,
+                       end_lsn pg_lsn,
+                       per_record boolean DEFAULT false,
+                       "resource_manager/record_type" OUT text,
+                       count OUT int8,
+                       count_percentage OUT float8,
+                       record_length OUT int8,
+                       record_length_percentage OUT float8,
+                       fpi_length OUT int8,
+                       fpi_length_percentage OUT float8,
+                       combined_size OUT int8,
+                       combined_size_percentage OUT float8)
+      returns setof record
+     </code>
+    </span></dt><dd><p>
+      Gets statistics of all the valid WAL records between
+      <em class="replaceable"><code>start_lsn</code></em> and
+      <em class="replaceable"><code>end_lsn</code></em>. By default, it returns one row per
+      <em class="replaceable"><code>resource_manager</code></em> type. When
+      <em class="replaceable"><code>per_record</code></em> is set to <code class="literal">true</code>,
+      it returns one row per <em class="replaceable"><code>record_type</code></em>.
+      If <em class="replaceable"><code>start_lsn</code></em>
+      or <em class="replaceable"><code>end_lsn</code></em> are not yet available, the
+      function will raise an error. For example, usage of the function is as
+      follows:
+</p><pre class="screen">
+postgres=# select * from pg_get_wal_stats('0/12FBA30', '0/15011D7') where count &gt; 0;
+ resource_manager/record_type | count | count_percentage | record_size | record_size_percentage | fpi_size | fpi_size_percentage | combined_size | combined_size_percentage
+------------------------------+-------+------------------+-------------+------------------------+----------+---------------------+---------------+--------------------------
+ XLOG                         |    10 |       0.10871929 |         796 |            0.052369177 |      352 |         0.061031006 |          1148 |              0.054751817
+ Transaction                  |   187 |        2.0330508 |       62773 |              4.1298623 |        0 |                   0 |         62773 |                2.9938467
+ Storage                      |    13 |       0.14133507 |         546 |            0.035921574 |        0 |                   0 |           546 |                0.0260405
+ Database                     |     2 |      0.021743858 |          84 |            0.005526396 |        0 |                   0 |            84 |             0.0040062307
+ Standby                      |   218 |        2.3700805 |       15908 |              1.0465941 |        0 |                   0 |         15908 |               0.75870377
+ Heap2                        |  1897 |        20.624048 |      383916 |              25.257998 |   364472 |           63.193447 |        748388 |                35.693035
+ Heap                         |  1318 |        14.329202 |      621390 |               40.88151 |   139660 |           24.214746 |        761050 |                 36.29693
+ Btree                        |  5553 |         60.37182 |      434565 |              28.590216 |    72272 |           12.530776 |        506837 |                 24.17269
+(8 rows)
+</pre><p>
+
+With <em class="replaceable"><code>per_record</code></em> passed as <code class="literal">true</code>:
+
+</p><pre class="screen">
+postgres=# select * from pg_get_wal_stats('0/14AFC30', '0/15011D7', true) where count &gt; 0;
+ resource_manager/record_type | count | count_percentage | record_size | record_size_percentage | fpi_size | fpi_size_percentage | combined_size | combined_size_percentage
+------------------------------+-------+------------------+-------------+------------------------+----------+---------------------+---------------+--------------------------
+ XLOG/CHECKPOINT_SHUTDOWN     |     1 |       0.32894737 |         114 |             0.22891566 |        0 |                   0 |           114 |               0.03534489
+ XLOG/CHECKPOINT_ONLINE       |     4 |        1.3157895 |         456 |             0.91566265 |        0 |                   0 |           456 |               0.14137957
+ XLOG/NEXTOID                 |     1 |       0.32894737 |          30 |            0.060240965 |        0 |                   0 |            30 |              0.009301287
+ Transaction/COMMIT           |     9 |        2.9605262 |        1173 |              2.3554218 |        0 |                   0 |          1173 |               0.36368033
+ Storage/CREATE               |     1 |       0.32894737 |          42 |            0.084337346 |        0 |                   0 |            42 |             0.0130218025
+ Database/CREATE_FILE_COPY    |     2 |       0.65789473 |          84 |             0.16867469 |        0 |                   0 |            84 |              0.026043605
+ Standby/RUNNING_XACTS        |     6 |        1.9736842 |         316 |              0.6345382 |        0 |                   0 |           316 |               0.09797356
+ Standby/INVALIDATIONS        |    45 |        14.802631 |        4018 |               8.068274 |        0 |                   0 |          4018 |                1.2457525
+ Heap2/PRUNE                  |     4 |        1.3157895 |         270 |              0.5421687 |        0 |                   0 |           270 |               0.08371159
+ Heap2/FREEZE_PAGE            |    27 |         8.881579 |       20904 |              41.975903 |        0 |                   0 |         20904 |                 6.481137
+ Heap2/VISIBLE                |    29 |         9.539474 |        1756 |              3.5261045 |    73728 |           27.032736 |         75484 |                23.403278
+ Heap2/MULTI_INSERT           |    13 |        4.2763157 |        1049 |              2.1064258 |    12216 |            4.479057 |         13265 |                 4.112719
+ Heap/INSERT                  |    19 |             6.25 |        2324 |              4.6666665 |    43884 |           16.090284 |         46208 |                14.326463
+ Heap/UPDATE                  |     7 |        2.3026316 |         511 |              1.0261045 |    54340 |           19.924028 |         54851 |                17.006165
+ Heap/HOT_UPDATE              |    11 |         3.618421 |        1134 |              2.2771084 |      468 |          0.17159452 |          1602 |               0.49668875
+ Heap/LOCK                    |     8 |         2.631579 |         432 |              0.8674699 |        0 |                   0 |           432 |               0.13393854
+ Heap/INPLACE                 |    45 |        14.802631 |        9123 |              18.319277 |    16076 |            5.894345 |         25199 |                7.8127713
+ Heap/UPDATE+INIT             |     1 |       0.32894737 |         817 |              1.6405623 |        0 |                   0 |           817 |               0.25330505
+ Btree/INSERT_LEAF            |    70 |        23.026316 |        5183 |              10.407631 |    72024 |           26.407955 |         77207 |                23.937483
+ Btree/DEDUP                  |     1 |       0.32894737 |          64 |             0.12851405 |        0 |                   0 |            64 |              0.019842746
+(20 rows)
+</pre><p>
+     </p></dd><dt><span class="term">
+     <code class="function">
+      pg_get_wal_stats_till_end_of_wal(start_lsn pg_lsn,
+                                       per_record boolean DEFAULT false,
+                                       "resource_manager/record_type" OUT text,
+                                       count OUT int8,
+                                       count_percentage OUT float8,
+                                       record_length OUT int8,
+                                       record_length_percentage OUT float8,
+                                       fpi_length OUT int8,
+                                       fpi_length_percentage OUT float8,
+                                       combined_size OUT int8,
+                                       combined_size_percentage OUT float8)
+      returns setof record
+     </code>
+    </span></dt><dd><p>
+      This function is same as <code class="function">pg_get_wal_stats()</code> except
+      that it gets statistics of all the valid WAL records from
+      <em class="replaceable"><code>start_lsn</code></em> till end of WAL.
+     </p></dd></dl></div></div><div class="sect2" id="id-1.11.7.46.9"><div class="titlepage"><div><div><h3 class="title">F.37.2. Author</h3></div></div></div><p>
+   Bharath Rupireddy <code class="email">&lt;<a class="email" href="mailto:bharath.rupireddyforpostgres@gmail.com">bharath.rupireddyforpostgres@gmail.com</a>&gt;</code>
+  </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="pgvisibility.html" title="F.36. pg_visibility">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュール">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="postgres-fdw.html" title="F.38. postgres_fdw">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">F.36. pg_visibility </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15rc1文書">ホーム</a></td><td width="40%" align="right" valign="top"> F.38. postgres_fdw</td></tr></table></div></body></html>
