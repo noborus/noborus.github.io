@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>CREATE FUNCTION</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-createforeigntable.html" title="CREATE FOREIGN TABLE" /><link rel="next" href="sql-creategroup.html" title="CREATE GROUP" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      sql-createfunction.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>CREATE FUNCTION</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-createforeigntable.html" title="CREATE FOREIGN TABLE" /><link rel="next" href="sql-creategroup.html" title="CREATE GROUP" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15rc1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15rc1 : sql-createfunction.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-createforeigntable.html" title="CREATE FOREIGN TABLE">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">CREATE FUNCTION</td><td width="20%" align="right"> <a accesskey="n" href="sql-creategroup.html" title="CREATE GROUP">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-CREATEFUNCTION"><div class="titlepage"></div><a id="id-1.9.3.67.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">CREATE FUNCTION</span></h2><p>CREATE FUNCTION<span class="original">
   &lt;refpurpose&gt;define a new function&lt;/refpurpose&gt;
 </span> — 新しい関数を定義する</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
@@ -777,12 +777,14 @@ SELECT * FROM dup(42);
 しかし、これは実際には、1つのレコードではなく、レコードの<span class="emphasis"><em>集合</em></span>を返しますので、<code class="literal">TABLE</code>関数は上の例とは異なります。
   </p></div><div class="refsect1" id="SQL-CREATEFUNCTION-SECURITY"><h2><code class="literal">SECURITY DEFINER</code>関数の安全な作成</h2><span class="original">
   &lt;title&gt;Writing &lt;literal&gt;SECURITY DEFINER&lt;/literal&gt; Functions Safely&lt;/title&gt;
-</span><a id="id-1.9.3.67.10.2" class="indexterm"></a><p>
-<span class="original">
-    Because a &lt;literal&gt;SECURITY DEFINER&lt;/literal&gt; function is executed
+</span><a id="id-1.9.3.67.10.2" class="indexterm"></a><a id="id-1.9.3.67.10.3" class="indexterm"></a><p>
+    Because a <code class="literal">SECURITY DEFINER</code> function is executed
     with the privileges of the user that owns it, care is needed to
-    ensure that the function cannot be misused.  For security,
-    &lt;xref linkend="guc-search-path"/&gt; should be set to exclude any schemas
+    ensure that the function cannot be misused.  This is particularly
+    important for non-<em class="replaceable"><code>sql_body</code></em> functions because
+    their function bodies are evaluated at run-time, not creation time.
+    For security,
+    <a class="xref" href="runtime-config-client.html#GUC-SEARCH-PATH">search_path</a> should be set to exclude any schemas
     writable by untrusted users.  This prevents
     malicious users from creating objects (e.g., tables, functions, and
     operators) that mask objects intended to be used by the function.
@@ -790,18 +792,8 @@ SELECT * FROM dup(42);
     temporary-table schema, which is searched first by default, and
     is normally writable by anyone.  A secure arrangement can be obtained
     by forcing the temporary schema to be searched last.  To do this,
-    write &lt;literal&gt;pg_temp&lt;/literal&gt;&lt;indexterm&gt;&lt;primary&gt;pg_temp&lt;/primary&gt;&lt;secondary&gt;securing functions&lt;/secondary&gt;&lt;/indexterm&gt; as the last entry in &lt;varname&gt;search_path&lt;/varname&gt;.
+    write <code class="literal">pg_temp</code><a id="id-1.9.3.67.10.4.5" class="indexterm"></a> as the last entry in <code class="varname">search_path</code>.
     This function illustrates safe usage:
-</span>
-<code class="literal">SECURITY DEFINER</code>関数は関数を所有するユーザの権限で実行されますので、その関数を間違って使用できないことを確実にしなければなりません。
-安全上、<a class="xref" href="runtime-config-client.html#GUC-SEARCH-PATH">search_path</a>は、信頼できないユーザが書き込み可能なスキーマを除去した形で設定すべきです。
-これは、悪意のあるユーザがその関数で使用されるオブジェクトを隠すようなオブジェクト（例えば、テーブル、関数、演算子など）を作成することを防ぎます。
-ここで特に重要なことは、一時テーブルスキーマです。
-このスキーマはデフォルトで最初に検索され、そして、通常誰でも書き込み可能です。
-一時スキーマの検索を強制的に最後にすることで、セキュリティを調整できます。
-このためには、<code class="literal">pg_temp</code>を<code class="varname">search_path</code>の最後の項目として記載してください。
-<a id="id-1.9.3.67.10.3.5" class="indexterm"></a>
-安全な使用方法を以下の関数で示します。
 
 </p><pre class="programlisting">
 CREATE FUNCTION check_password(uname TEXT, pass TEXT)
@@ -817,7 +809,7 @@ END;
 $$  LANGUAGE plpgsql
     SECURITY DEFINER
 <span class="original">
-    &amp;#045;&amp;#045; Set a secure search_path: trusted schema(s), then 'pg_temp'.
+    &amp;#45;- Set a secure search_path: trusted schema(s), then 'pg_temp'.
 </span>
     -- 信頼できるスキーマ、その後にpg_tempという順でsearch_pathを安全に設定します。
     SET search_path = admin, pg_temp;
@@ -942,4 +934,4 @@ COMMIT;
 高度な機能、最適化属性、他の言語を使ったより複雑な関数は、必ず重要なところでPostgreSQLに固有のものになるでしょう。
   </p></div><div class="refsect1" id="id-1.9.3.67.12"><h2>関連項目</h2><span class="original">
   &lt;title&gt;See Also&lt;/title&gt;
-</span><span class="simplelist"><a class="xref" href="sql-alterfunction.html" title="ALTER FUNCTION"><span class="refentrytitle">ALTER FUNCTION</span></a>, <a class="xref" href="sql-dropfunction.html" title="DROP FUNCTION"><span class="refentrytitle">DROP FUNCTION</span></a>, <a class="xref" href="sql-grant.html" title="GRANT"><span class="refentrytitle">GRANT</span></a>, <a class="xref" href="sql-load.html" title="LOAD"><span class="refentrytitle">LOAD</span></a>, <a class="xref" href="sql-revoke.html" title="REVOKE"><span class="refentrytitle">REVOKE</span></a></span></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-createforeigntable.html" title="CREATE FOREIGN TABLE">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-creategroup.html" title="CREATE GROUP">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">CREATE FOREIGN TABLE </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> CREATE GROUP</td></tr></table></div></body></html>
+</span><span class="simplelist"><a class="xref" href="sql-alterfunction.html" title="ALTER FUNCTION"><span class="refentrytitle">ALTER FUNCTION</span></a>, <a class="xref" href="sql-dropfunction.html" title="DROP FUNCTION"><span class="refentrytitle">DROP FUNCTION</span></a>, <a class="xref" href="sql-grant.html" title="GRANT"><span class="refentrytitle">GRANT</span></a>, <a class="xref" href="sql-load.html" title="LOAD"><span class="refentrytitle">LOAD</span></a>, <a class="xref" href="sql-revoke.html" title="REVOKE"><span class="refentrytitle">REVOKE</span></a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-createforeigntable.html" title="CREATE FOREIGN TABLE">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-creategroup.html" title="CREATE GROUP">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">CREATE FOREIGN TABLE </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15rc1文書">ホーム</a></td><td width="40%" align="right" valign="top"> CREATE GROUP</td></tr></table></div></body></html>

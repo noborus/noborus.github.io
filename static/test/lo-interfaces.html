@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>35.3. クライアントインタフェース</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="lo-implementation.html" title="35.2. 実装機能" /><link rel="next" href="lo-funcs.html" title="35.4. サーバ側の関数" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="largeobjects.html" title="第35章 ラージオブジェクト">第35章 ラージオブジェクト</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      lo-interfaces.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>35.3. クライアントインタフェース</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="lo-implementation.html" title="35.2. 実装機能" /><link rel="next" href="lo-funcs.html" title="35.4. サーバ側の関数" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15rc1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="largeobjects.html" title="第35章 ラージオブジェクト">第35章 ラージオブジェクト</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15rc1 : lo-interfaces.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="lo-implementation.html" title="35.2. 実装機能">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="largeobjects.html" title="第35章 ラージオブジェクト">上へ</a></td><td width="60%" align="center">35.3. クライアントインタフェース</td><td width="20%" align="right"> <a accesskey="n" href="lo-funcs.html" title="35.4. サーバ側の関数">次へ</a></td></tr></table><hr /></div><div class="sect1" id="LO-INTERFACES"><div class="titlepage"><div><div><h2 class="title" style="clear: both">35.3. クライアントインタフェース</h2></div></div></div><span class="original">
    &lt;title&gt;Client Interfaces&lt;/title&gt;
 </span><p>
@@ -47,83 +47,78 @@ libpqの接続がパイプラインモードである間は、クライアント
    </p><div class="sect2" id="LO-CREATE"><div class="titlepage"><div><div><h3 class="title">35.3.1. ラージオブジェクトの作成</h3></div></div></div><span class="original">
     &lt;title&gt;Creating a Large Object&lt;/title&gt;
 </span><p>
-     <a id="id-1.7.4.8.7.2.1" class="indexterm"></a>
+     <a id="id-1.7.4.10.7.2.1" class="indexterm"></a>
 <span class="original">
      The function
 </span>
+この関数は
 </p><pre class="synopsis">
-Oid lo_creat(PGconn *conn, int mode);
+Oid lo_create(PGconn *conn, Oid lobjId);
 </pre><p>
-<span class="original">
-     creates a new large object.
+     creates a new large object.  The OID to be assigned can be
+     specified by <em class="replaceable"><code>lobjId</code></em>;
+     if so, failure occurs if that OID is already in use for some large
+     object.  If <em class="replaceable"><code>lobjId</code></em>
+     is <code class="symbol">InvalidOid</code> (zero) then <code class="function">lo_create</code>
+     assigns an unused OID.
      The return value is the OID that was assigned to the new large object,
-     or &lt;symbol&gt;InvalidOid&lt;/symbol&gt; (zero) on failure.
-
-     &lt;replaceable class="parameter"&gt;mode&lt;/replaceable&gt; is unused and
-     ignored as of &lt;productname&gt;PostgreSQL&lt;/productname&gt; 8.1; however, for
-     backward compatibility with earlier releases it is best to
-     set it to &lt;symbol&gt;INV_READ&lt;/symbol&gt;, &lt;symbol&gt;INV_WRITE&lt;/symbol&gt;,
-     or &lt;symbol&gt;INV_READ&lt;/symbol&gt; &lt;literal&gt;|&lt;/literal&gt; &lt;symbol&gt;INV_WRITE&lt;/symbol&gt;.
-     (These symbolic constants are defined
-     in the header file &lt;filename&gt;libpq/libpq-fs.h&lt;/filename&gt;.)
-</span>
-この関数はラージオブジェクトを新規に作成します。
-戻り値は新規ラージオブジェクトに割り当てられたOIDで、失敗時には<code class="symbol">InvalidOid</code>（0）が返されます。
-<span class="productname">PostgreSQL</span> 8.1では、<em class="replaceable"><code>mode</code></em>は使用されず、無視されます。
-しかし、以前のリリースとの後方互換性を保持するために、これを<code class="symbol">INV_READ</code>、<code class="symbol">INV_WRITE</code>、<code class="symbol">INV_READ</code> <code class="literal">|</code> <code class="symbol">INV_WRITE</code>に設定することが最善です。
-（これらの定数シンボルは<code class="filename">libpq/libpq-fs.h</code>ヘッダファイルで定義されています。）
+     or <code class="symbol">InvalidOid</code> (zero) on failure.
     </p><p>
 <span class="original">
      An example:
 </span>
 以下に例を示します。
 </p><pre class="programlisting">
-inv_oid = lo_creat(conn, INV_READ|INV_WRITE);
+inv_oid = lo_create(conn, desired_oid);
 </pre><p>
     </p><p>
-     <a id="id-1.7.4.8.7.4.1" class="indexterm"></a>
 <span class="original">
-     The function
-</span>
-</p><pre class="synopsis">
-Oid lo_create(PGconn *conn, Oid lobjId);
-</pre><p>
-<span class="original">
-     also creates a new large object.  The OID to be assigned can be
-     specified by &lt;replaceable class="parameter"&gt;lobjId&lt;/replaceable&gt;;
-     if so, failure occurs if that OID is already in use for some large
-     object.  If &lt;replaceable class="parameter"&gt;lobjId&lt;/replaceable&gt;
-     is &lt;symbol&gt;InvalidOid&lt;/symbol&gt; (zero) then &lt;function&gt;lo_create&lt;/function&gt; assigns an unused
-     OID (this is the same behavior as &lt;function&gt;lo_creat&lt;/function&gt;).
+     &lt;indexterm&gt;&lt;primary&gt;lo_creat&lt;/primary&gt;&lt;/indexterm&gt;
+     The older function
+&lt;synopsis&gt;
+Oid lo_creat(PGconn *conn, int mode);
+&lt;/synopsis&gt;
+     also creates a new large object, always assigning an unused OID.
      The return value is the OID that was assigned to the new large object,
      or &lt;symbol&gt;InvalidOid&lt;/symbol&gt; (zero) on failure.
 </span>
-この関数もラージオブジェクトを新規に作成します。
-割り当てられるOIDを<em class="replaceable"><code>lobjId</code></em>で指定することができます。
-こうした場合、そのOIDが他のラージオブジェクトですでに使用されていた場合、失敗します。
-<em class="replaceable"><code>lobjId</code></em>が<code class="symbol">InvalidOid</code>（0）の場合、<code class="function">lo_create</code>は未使用のOIDを割り当てます。
-（これは<code class="function">lo_creat</code>と同じ動作です。）
-戻り値は新規ラージオブジェクトに割り当てられたOIDで、失敗時には<code class="symbol">InvalidOid</code>（0）が返されます。
+《機械翻訳》<a id="id-1.7.4.10.7.4.1" class="indexterm"></a>古い関数</p><pre class="synopsis">Oid lo_creat(PGconn*conn,int mode);</pre><p>も新しいラージオブジェクトを作成し、常に未使用のOIDを割り当てます。
+戻り値は新しいラージオブジェクトに割り当てられたOIDです。
+失敗した場合は<code class="symbol">InvalidOid</code>(0)が返されます。
     </p><p>
 <span class="original">
-     &lt;function&gt;lo_create&lt;/function&gt; is new as of &lt;productname&gt;PostgreSQL&lt;/productname&gt;
-     8.1; if this function is run against an older server version, it will
-     fail and return &lt;symbol&gt;InvalidOid&lt;/symbol&gt;.
+     In &lt;productname&gt;PostgreSQL&lt;/productname&gt; releases 8.1 and later,
+     the &lt;replaceable class="parameter"&gt;mode&lt;/replaceable&gt; is ignored,
+     so that &lt;function&gt;lo_creat&lt;/function&gt; is exactly equivalent to
+     &lt;function&gt;lo_create&lt;/function&gt; with a zero second argument.
+     However, there is little reason to use &lt;function&gt;lo_creat&lt;/function&gt;
+     unless you need to work with servers older than 8.1.
+     To work with such an old server, you must
+     use &lt;function&gt;lo_creat&lt;/function&gt; not &lt;function&gt;lo_create&lt;/function&gt;,
+     and you must set &lt;replaceable class="parameter"&gt;mode&lt;/replaceable&gt; to
+     one of &lt;symbol&gt;INV_READ&lt;/symbol&gt;, &lt;symbol&gt;INV_WRITE&lt;/symbol&gt;,
+     or &lt;symbol&gt;INV_READ&lt;/symbol&gt; &lt;literal&gt;|&lt;/literal&gt; &lt;symbol&gt;INV_WRITE&lt;/symbol&gt;.
+     (These symbolic constants are defined
+     in the header file &lt;filename&gt;libpq/libpq-fs.h&lt;/filename&gt;.)
 </span>
-<code class="function">lo_create</code>は<span class="productname">PostgreSQL</span> 8.1から導入されました。
-この関数を古いバージョンで実行させると失敗し、<code class="symbol">InvalidOid</code>が返されます。
+《機械翻訳》<span class="productname">PostgreSQL</span>リリース8.1以降では、<em class="replaceable"><code>mode</code></em>は無視されます。
+そのため<code class="function">lo_creat</code>は0秒引数を持つ<code class="function">lo_create</code>とまったく同じです。
+しかし、8.1より古いサーバで作業する必要がない限り、<code class="function">lo_creat</code>を使用する理由はほとんどありません。
+このような古いサーバで作業するには、<code class="function">lo_create</code>ではなく<code class="function">lo_creat</code>を使用する必要があります。
+<em class="replaceable"><code>mode</code></em>を<code class="symbol">INV_READ</code>、<code class="symbol">INV_WRITE</code>、<code class="symbol">INV_READ</code>spectro echos醇^INV_WRITE fapnのいずれかに設定する必要があります(これらのシンボリック定数は、ヘッダファイルで定義されています。
+libpq/libpq-fs.h iko)。
     </p><p>
 <span class="original">
      An example:
 </span>
 例を示します。
 </p><pre class="programlisting">
-inv_oid = lo_create(conn, desired_oid);
+inv_oid = lo_creat(conn, INV_READ|INV_WRITE);
 </pre><p>
     </p></div><div class="sect2" id="LO-IMPORT"><div class="titlepage"><div><div><h3 class="title">35.3.2. ラージオブジェクトのインポート</h3></div></div></div><span class="original">
     &lt;title&gt;Importing a Large Object&lt;/title&gt;
 </span><p>
-     <a id="id-1.7.4.8.8.2.1" class="indexterm"></a>
+     <a id="id-1.7.4.10.8.2.1" class="indexterm"></a>
 <span class="original">
      To import an operating system file as a large object, call
 </span>
@@ -147,10 +142,11 @@ Oid lo_import(PGconn *conn, const char *filename);
 このファイルがサーバではなく、クライアントインタフェースライブラリから読み取られることに注意してください。
 ですから、このファイルはクライアントのファイルシステム上に存在し、クライアントアプリケーションから読み取り可能でなければなりません。
     </p><p>
-     <a id="id-1.7.4.8.8.3.1" class="indexterm"></a>
+     <a id="id-1.7.4.10.8.3.1" class="indexterm"></a>
 <span class="original">
      The function
 </span>
+この関数も
 </p><pre class="synopsis">
 Oid lo_import_with_oid(PGconn *conn, const char *filename, Oid lobjId);
 </pre><p>
@@ -164,7 +160,7 @@ Oid lo_import_with_oid(PGconn *conn, const char *filename, Oid lobjId);
      The return value is the OID that was assigned to the new large object,
      or &lt;symbol&gt;InvalidOid&lt;/symbol&gt; (zero) on failure.
 </span>
-この関数も新規のラージオブジェクトをインポートします。
+新規のラージオブジェクトをインポートします。
 割り当てられるOIDを<em class="replaceable"><code>lobjId</code></em>で指定することができます。
 こうした場合、そのOIDが他のラージオブジェクトですでに使用されていた場合、失敗します。
 <em class="replaceable"><code>lobjId</code></em>が<code class="symbol">InvalidOid</code>（0）の場合、<code class="function">lo_import_with_oid</code>は未使用のOIDを割り当てます（これは<code class="function">lo_import</code>と同じ動作です）。
@@ -180,7 +176,7 @@ Oid lo_import_with_oid(PGconn *conn, const char *filename, Oid lobjId);
     </p></div><div class="sect2" id="LO-EXPORT"><div class="titlepage"><div><div><h3 class="title">35.3.3. ラージオブジェクトのエクスポート</h3></div></div></div><span class="original">
     &lt;title&gt;Exporting a Large Object&lt;/title&gt;
 </span><p>
-     <a id="id-1.7.4.8.9.2.1" class="indexterm"></a>
+     <a id="id-1.7.4.10.9.2.1" class="indexterm"></a>
 <span class="original">
      To export a large object
      into an operating system file, call
@@ -202,7 +198,7 @@ int lo_export(PGconn *conn, Oid lobjId, const char *filename);
     </p></div><div class="sect2" id="LO-OPEN"><div class="titlepage"><div><div><h3 class="title">35.3.4. 既存のラージオブジェクトのオープン</h3></div></div></div><span class="original">
     &lt;title&gt;Opening an Existing Large Object&lt;/title&gt;
 </span><p>
-     <a id="id-1.7.4.8.10.2.1" class="indexterm"></a>
+     <a id="id-1.7.4.10.10.2.1" class="indexterm"></a>
 <span class="original">
      To open an existing large object for reading or writing, call
 </span>
@@ -283,10 +279,11 @@ inv_fd = lo_open(conn, inv_oid, INV_READ|INV_WRITE);
     </p></div><div class="sect2" id="LO-WRITE"><div class="titlepage"><div><div><h3 class="title">35.3.5. ラージオブジェクトへのデータの書き込み</h3></div></div></div><span class="original">
 &lt;title&gt;Writing Data to a Large Object&lt;/title&gt;
 </span><p>
-     <a id="id-1.7.4.8.11.2.1" class="indexterm"></a>
+     <a id="id-1.7.4.10.11.2.1" class="indexterm"></a>
 <span class="original">
      The function
 </span>
+この関数も
 </p><pre class="synopsis">
 int lo_write(PGconn *conn, int fd, const char *buf, size_t len);
 </pre><p>
@@ -315,10 +312,11 @@ int lo_write(PGconn *conn, int fd, const char *buf, size_t len);
 </p></div><div class="sect2" id="LO-READ"><div class="titlepage"><div><div><h3 class="title">35.3.6. ラージオブジェクトからのデータの読み込み</h3></div></div></div><span class="original">
 &lt;title&gt;Reading Data from a Large Object&lt;/title&gt;
 </span><p>
-     <a id="id-1.7.4.8.12.2.1" class="indexterm"></a>
+     <a id="id-1.7.4.10.12.2.1" class="indexterm"></a>
 <span class="original">
      The function
 </span>
+この関数は
 </p><pre class="synopsis">
 int lo_read(PGconn *conn, int fd, char *buf, size_t len);
 </pre><p>
@@ -349,7 +347,7 @@ int lo_read(PGconn *conn, int fd, char *buf, size_t len);
 </p></div><div class="sect2" id="LO-SEEK"><div class="titlepage"><div><div><h3 class="title">35.3.7. ラージオブジェクトのシーク</h3></div></div></div><span class="original">
 &lt;title&gt;Seeking in a Large Object&lt;/title&gt;
 </span><p>
-     <a id="id-1.7.4.8.13.2.1" class="indexterm"></a>
+     <a id="id-1.7.4.10.13.2.1" class="indexterm"></a>
 <span class="original">
      To change the current read or write location associated with a
      large object descriptor, call
@@ -372,7 +370,7 @@ int lo_lseek(PGconn *conn, int fd, int offset, int whence);
 <em class="parameter"><code>whence</code></em>に指定可能な値は、<code class="symbol">SEEK_SET</code>（オブジェクトの先頭位置からシーク）、<code class="symbol">SEEK_CUR</code>（現在位置からシーク）、<code class="symbol">SEEK_END</code>（オブジェクトの末尾位置からシーク）のいずれかです。
 戻り値は新しい位置ポインタで、エラー時に-1が返されます。
 </p><p>
-     <a id="id-1.7.4.8.13.3.1" class="indexterm"></a>
+     <a id="id-1.7.4.10.13.3.1" class="indexterm"></a>
 <span class="original">
      When dealing with large objects that might exceed 2GB in size,
      instead use
@@ -402,7 +400,7 @@ pg_int64 lo_lseek64(PGconn *conn, int fd, pg_int64 offset, int whence);
 </p></div><div class="sect2" id="LO-TELL"><div class="titlepage"><div><div><h3 class="title">35.3.8. ラージオブジェクトのシーク位置の入手</h3></div></div></div><span class="original">
 &lt;title&gt;Obtaining the Seek Position of a Large Object&lt;/title&gt;
 </span><p>
-     <a id="id-1.7.4.8.14.2.1" class="indexterm"></a>
+     <a id="id-1.7.4.10.14.2.1" class="indexterm"></a>
 <span class="original">
      To obtain the current read or write location of a large object descriptor,
      call
@@ -416,7 +414,7 @@ int lo_tell(PGconn *conn, int fd);
 </span>
 エラーが発生した場合は-1が返されます。
 </p><p>
-     <a id="id-1.7.4.8.14.3.1" class="indexterm"></a>
+     <a id="id-1.7.4.10.14.3.1" class="indexterm"></a>
 <span class="original">
      When dealing with large objects that might exceed 2GB in size,
      instead use
@@ -445,7 +443,7 @@ pg_int64 lo_tell64(PGconn *conn, int fd);
 </p></div><div class="sect2" id="LO-TRUNCATE"><div class="titlepage"><div><div><h3 class="title">35.3.9. ラージオブジェクトを切り詰める</h3></div></div></div><span class="original">
 &lt;title&gt;Truncating a Large Object&lt;/title&gt;
 </span><p>
-     <a id="id-1.7.4.8.15.2.1" class="indexterm"></a>
+     <a id="id-1.7.4.10.15.2.1" class="indexterm"></a>
 <span class="original">
      To truncate a large object to a given length, call
 </span>
@@ -482,7 +480,7 @@ int lo_truncate(PGconn *conn, int fd, size_t len);
 </span>
 <em class="parameter"><code>len</code></em>パラメータは<code class="type">size_t</code>として宣言されていますが、<code class="function">lo_truncate</code>は<code class="literal">INT_MAX</code>より大きな値を拒絶します。
 </p><p>
-     <a id="id-1.7.4.8.15.5.1" class="indexterm"></a>
+     <a id="id-1.7.4.10.15.5.1" class="indexterm"></a>
 <span class="original">
      When dealing with large objects that might exceed 2GB in size,
      instead use
@@ -516,7 +514,7 @@ int lo_truncate64(PGconn *conn, int fd, pg_int64 len);
 </p></div><div class="sect2" id="LO-CLOSE"><div class="titlepage"><div><div><h3 class="title">35.3.10. ラージオブジェクト記述子を閉じる</h3></div></div></div><span class="original">
 &lt;title&gt;Closing a Large Object Descriptor&lt;/title&gt;
 </span><p>
-     <a id="id-1.7.4.8.16.2.1" class="indexterm"></a>
+     <a id="id-1.7.4.10.16.2.1" class="indexterm"></a>
 <span class="original">
      A large object descriptor can be closed by calling
 </span>
@@ -542,7 +540,7 @@ int lo_close(PGconn *conn, int fd);
 </p></div><div class="sect2" id="LO-UNLINK"><div class="titlepage"><div><div><h3 class="title">35.3.11. ラージオブジェクトの削除</h3></div></div></div><span class="original">
     &lt;title&gt;Removing a Large Object&lt;/title&gt;
 </span><p>
-     <a id="id-1.7.4.8.17.2.1" class="indexterm"></a>
+     <a id="id-1.7.4.10.17.2.1" class="indexterm"></a>
 <span class="original">
      To remove a large object from the database, call
 </span>
@@ -556,4 +554,4 @@ int lo_unlink(PGconn *conn, Oid lobjId);
 </span>
 <em class="parameter"><code>lobjId</code></em>引数は削除するラージオブジェクトのOIDを指定します。
 成功時に1を、失敗時に-1を返します。
-    </p></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="lo-implementation.html" title="35.2. 実装機能">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="largeobjects.html" title="第35章 ラージオブジェクト">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="lo-funcs.html" title="35.4. サーバ側の関数">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">35.2. 実装機能 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 35.4. サーバ側の関数</td></tr></table></div></body></html>
+    </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="lo-implementation.html" title="35.2. 実装機能">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="largeobjects.html" title="第35章 ラージオブジェクト">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="lo-funcs.html" title="35.4. サーバ側の関数">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">35.2. 実装機能 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15rc1文書">ホーム</a></td><td width="40%" align="right" valign="top"> 35.4. サーバ側の関数</td></tr></table></div></body></html>

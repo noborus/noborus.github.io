@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>CREATE SEQUENCE</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-createschema.html" title="CREATE SCHEMA" /><link rel="next" href="sql-createserver.html" title="CREATE SERVER" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      sql-createsequence.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>CREATE SEQUENCE</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-createschema.html" title="CREATE SCHEMA" /><link rel="next" href="sql-createserver.html" title="CREATE SERVER" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15rc1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15rc1 : sql-createsequence.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-createschema.html" title="CREATE SCHEMA">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">CREATE SEQUENCE</td><td width="20%" align="right"> <a accesskey="n" href="sql-createserver.html" title="CREATE SERVER">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-CREATESEQUENCE"><div class="titlepage"></div><a id="id-1.9.3.81.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">CREATE SEQUENCE</span></h2><p>CREATE SEQUENCE<span class="original">
   &lt;refpurpose&gt;define a new sequence generator&lt;/refpurpose&gt;
 </span> — 新しいシーケンスジェネレータを定義する</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
-CREATE [ TEMPORARY | TEMP ] SEQUENCE [ IF NOT EXISTS ] <em class="replaceable"><code>name</code></em>
+CREATE [ { TEMPORARY | TEMP } | UNLOGGED ] SEQUENCE [ IF NOT EXISTS ] <em class="replaceable"><code>name</code></em>
     [ AS <em class="replaceable"><code>data_type</code></em> ]
     [ INCREMENT [ BY ] <em class="replaceable"><code>increment</code></em> ]
     [ MINVALUE <em class="replaceable"><code>minvalue</code></em> | NO MINVALUE ] [ MAXVALUE <em class="replaceable"><code>maxvalue</code></em> | NO MAXVALUE ]
@@ -28,10 +28,11 @@ CREATE [ TEMPORARY | TEMP ] SEQUENCE [ IF NOT EXISTS ] <em class="replaceable"><
    specified schema.  Otherwise it is created in the current schema.
    Temporary sequences exist in a special schema, so a schema name cannot be
    given when creating a temporary sequence.
-   The sequence name must be distinct from the name of any other sequence,
-   table, index, view, or foreign table in the same schema.
+   The sequence name must be distinct from the name of any other relation
+   (table, sequence, index, view, materialized view, or foreign table) in
+   the same schema.
 </span>
-スキーマ名が与えられている場合、そのシーケンスは指定されたスキーマに作成されます。
+《マッチ度[86.034913]》スキーマ名が与えられている場合、そのシーケンスは指定されたスキーマに作成されます。
 スキーマ名がなければ、シーケンスは現在のスキーマに作成されます。
 また、一時シーケンスは特別なスキーマに存在するため、一時シーケンスの作成時にスキーマ名を与えることはできません。
 シーケンス名は、同じスキーマ内の他のシーケンス、テーブル、インデックス、ビュー、外部テーブルとは異なる名前にする必要があります。
@@ -78,6 +79,30 @@ SELECT * FROM <em class="replaceable"><code>name</code></em>;
 </span>
 このパラメータが指定された場合、作成するシーケンスオブジェクトがそのセッション専用となり、セッション終了時に自動的に削除されます。
 一時シーケンスが存在する場合、同じ名前を持つ既存の永続シーケンスは、スキーマ修飾された名前で参照されない限り、（そのセッションでは）不可視になります。
+     </p></dd><dt><span class="term"><code class="literal">UNLOGGED</code></span></dt><dd><p>
+<span class="original">
+      If specified, the sequence is created as an unlogged sequence.  Changes
+      to unlogged sequences are not written to the write-ahead log.  They are
+      not crash-safe: an unlogged sequence is automatically reset to its
+      initial state after a crash or unclean shutdown.  Unlogged sequences are
+      also not replicated to standby servers.
+</span>
+《機械翻訳》指定した場合、順序はロギングされない順序として作成されます。
+ロギングされない順序への変更は、先行書込みログに書き込まれません。
+これらはクラッシュ・セーフではありません。
+クラッシュまたはクリーンでないシャットダウン後、ロギングされない順序は自動的に初期状態にリセットされます。
+ロギングされない順序は、スタンバイ・サーバーにもレプリケートされません。
+     </p><p>
+<span class="original">
+      Unlike unlogged tables, unlogged sequences do not offer a significant
+      performance advantage.  This option is mainly intended for sequences
+      associated with unlogged tables via identity columns or serial columns.
+      In those cases, it usually wouldn't make sense to have the sequence
+      WAL-logged and replicated but not its associated table.
+</span>
+《機械翻訳》記録されていないテーブルとは異なり、記録されていないシーケンスは大きなパフォーマンス上の利点を提供しません。
+このオプションは主に、ID列やシリアル列を介して記録されていないテーブルに関連付けられたシーケンスを対象としています。
+このような場合、通常、シーケンスをWAL記録して複製しても、関連付けられたテーブルを複製しないようにすることは意味がありません。
      </p></dd><dt><span class="term"><code class="literal">IF NOT EXISTS</code></span></dt><dd><p>
 <span class="original">
       Do not throw an error if a relation with the same name already exists.
@@ -260,7 +285,7 @@ SELECT * FROM <em class="replaceable"><code>name</code></em>;
    session A might reserve values 1..10 and return
    &lt;function&gt;nextval&lt;/function&gt;=1, then session B might reserve values
    11..20 and return &lt;function&gt;nextval&lt;/function&gt;=11 before session A
-   has generated &lt;literal&gt;nextval&lt;/literal&gt;=2.  Thus, with a
+   has generated &lt;function&gt;nextval&lt;/function&gt;=2.  Thus, with a
    &lt;replaceable class="parameter"&gt;cache&lt;/replaceable&gt; setting of one
    it is safe to assume that &lt;function&gt;nextval&lt;/function&gt; values are generated
    sequentially; with a &lt;replaceable
@@ -271,7 +296,7 @@ SELECT * FROM <em class="replaceable"><code>name</code></em>;
    any session, whether or not it has yet been returned by
    &lt;function&gt;nextval&lt;/function&gt;.
 </span>
-さらに、複数のセッションには異なるシーケンス値が割り当てられることが保証されていますが、全てのセッションが尊重されると、シーケンス値が順番通りにならないことがあります。
+《マッチ度[93.282150]》さらに、複数のセッションには異なるシーケンス値が割り当てられることが保証されていますが、全てのセッションが尊重されると、シーケンス値が順番通りにならないことがあります。
 例えば、<em class="replaceable"><code>cache</code></em>が10の場合を考えます。
 セッションAでは1から10までを確保し、<code class="function">nextval</code>=1を返します。
 セッションBでは、セッションAが<code class="function">nextval</code>=2を返す前に、11から20を確保し、<code class="function">nextval</code>=11を返します。
@@ -359,4 +384,4 @@ END;
 <code class="literal">OWNED BY</code>句は<span class="productname">PostgreSQL</span>の拡張です。
      </p></li></ul></div></div><div class="refsect1" id="id-1.9.3.81.10"><h2>関連項目</h2><span class="original">
   &lt;title&gt;See Also&lt;/title&gt;
-</span><span class="simplelist"><a class="xref" href="sql-altersequence.html" title="ALTER SEQUENCE"><span class="refentrytitle">ALTER SEQUENCE</span></a>, <a class="xref" href="sql-dropsequence.html" title="DROP SEQUENCE"><span class="refentrytitle">DROP SEQUENCE</span></a></span></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-createschema.html" title="CREATE SCHEMA">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-createserver.html" title="CREATE SERVER">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">CREATE SCHEMA </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> CREATE SERVER</td></tr></table></div></body></html>
+</span><span class="simplelist"><a class="xref" href="sql-altersequence.html" title="ALTER SEQUENCE"><span class="refentrytitle">ALTER SEQUENCE</span></a>, <a class="xref" href="sql-dropsequence.html" title="DROP SEQUENCE"><span class="refentrytitle">DROP SEQUENCE</span></a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-createschema.html" title="CREATE SCHEMA">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-createserver.html" title="CREATE SERVER">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">CREATE SCHEMA </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15rc1文書">ホーム</a></td><td width="40%" align="right" valign="top"> CREATE SERVER</td></tr></table></div></body></html>

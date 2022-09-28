@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>INSERT</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-importforeignschema.html" title="IMPORT FOREIGN SCHEMA" /><link rel="next" href="sql-listen.html" title="LISTEN" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      sql-insert.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>INSERT</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-importforeignschema.html" title="IMPORT FOREIGN SCHEMA" /><link rel="next" href="sql-listen.html" title="LISTEN" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15rc1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15rc1 : sql-insert.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-importforeignschema.html" title="IMPORT FOREIGN SCHEMA">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">INSERT</td><td width="20%" align="right"> <a accesskey="n" href="sql-listen.html" title="LISTEN">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-INSERT"><div class="titlepage"></div><a id="id-1.9.3.152.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">INSERT</span></h2><p>INSERT<span class="original">
   &lt;refpurpose&gt;create new rows in a table&lt;/refpurpose&gt;
 </span> — テーブルに新しい行を作成する</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
@@ -68,10 +68,17 @@ INSERT INTO <em class="replaceable"><code>table_name</code></em> [ AS <em class=
 各列の式が正しいデータ型でない場合は、自動的に型の変換が行われます。
   </p><p>
 <span class="original">
+   &lt;command&gt;INSERT&lt;/command&gt; into tables that lack unique indexes will
+   not be blocked by concurrent activity.  Tables with unique indexes
+   might block if concurrent sessions perform actions that lock or modify
+   rows matching the unique index values being inserted;  the details
+   are covered in &lt;xref linkend="index-unique-checks"/&gt;.
    &lt;literal&gt;ON CONFLICT&lt;/literal&gt; can be used to specify an alternative
    action to raising a unique constraint or exclusion constraint
    violation error. (See &lt;xref linkend="sql-on-conflict"/&gt; below.)
 </span>
+一意インデックスのないテーブルへの<code class="command">INSERT</code>は同時実行中の処理によりブロックされることはありません。
+挿入される一意インデックスの値と一致する行をロックまたは修正する動作を同時実行中のセッションがしている場合には、一意インデックスのあるテーブルはブロックします。詳細は<a class="xref" href="index-unique-checks.html" title="64.5. インデックス一意性検査">64.5</a>で扱っています。
 <code class="literal">ON CONFLICT</code>は一意制約または排他制約について、違反のエラーを発生させるのに代わる動作を指定するのに使うことができます。
 （以下の<a class="xref" href="sql-insert.html#SQL-ON-CONFLICT" title="ON CONFLICT句">ON CONFLICT Clause</a>を参照してください。）
   </p><p>
@@ -118,7 +125,7 @@ INSERT INTO <em class="replaceable"><code>table_name</code></em> [ AS <em class=
 </span>
 列リストを指定する場合は、列挙された列に対する<code class="literal">INSERT</code>権限のみが必要です。
 同様に、<code class="literal">ON CONFLICT DO UPDATE</code>が指定されている場合、更新対象として列挙されている列についてのみ、<code class="literal">UPDATE</code>権限が必要です。
-しかし、<code class="literal">ON CONFLICT DO UPDATE</code>はまた、その式あるいは<em class="replaceable"><code>condition</code></em>で読み取られるすべての列についての<code class="literal">SELECT</code>権限も必要です。
+しかし、<code class="literal">ON CONFLICT DO UPDATE</code>は、値が<code class="literal">ON CONFLICT DO UPDATE</code>式あるいは<em class="replaceable"><code>condition</code></em>で読み取られるすべての列について<code class="literal">SELECT</code>権限も必要です。
   </p><p>
 <span class="original">
    Use of the &lt;literal&gt;RETURNING&lt;/literal&gt; clause requires &lt;literal&gt;SELECT&lt;/literal&gt;
@@ -176,7 +183,7 @@ INSERT INTO <em class="replaceable"><code>table_name</code></em> [ AS <em class=
         provided, it completely hides the actual name of the table.
         This is particularly useful when &lt;literal&gt;ON CONFLICT DO UPDATE&lt;/literal&gt;
         targets a table named &lt;varname&gt;excluded&lt;/varname&gt;, since that will otherwise
-        be taken as the name of the special table representing rows proposed
+        be taken as the name of the special table representing the row proposed
         for insertion.
 </span>
 <em class="replaceable"><code>table_name</code></em>の代替名です。
@@ -375,7 +382,7 @@ IDENTITY列には関連付けられた列により新しく生成された値が
         conflict.  The &lt;literal&gt;SET&lt;/literal&gt; and
         &lt;literal&gt;WHERE&lt;/literal&gt; clauses in &lt;literal&gt;ON CONFLICT DO
         UPDATE&lt;/literal&gt; have access to the existing row using the
-        table's name (or an alias), and to rows proposed for insertion
+        table's name (or an alias), and to the row proposed for insertion
         using the special &lt;varname&gt;excluded&lt;/varname&gt; table.
         &lt;literal&gt;SELECT&lt;/literal&gt; privilege is required on any column in the
         target table where corresponding &lt;varname&gt;excluded&lt;/varname&gt;
@@ -571,6 +578,15 @@ INSERT <em class="replaceable"><code>oid</code></em> <em class="replaceable"><co
 </span>
 指定したテーブルがパーティションテーブルの場合、各行は適切なパーティションに回され、そちらに挿入されます。
 指定したテーブルがパーティションの場合、挿入行にパーティションの制約に違反するものがあれば、エラーが発生します。
+  </p><p>
+<span class="original">
+   You may also wish to consider using &lt;command&gt;MERGE&lt;/command&gt;, since that
+   allows mixing &lt;command&gt;INSERT&lt;/command&gt;, &lt;command&gt;UPDATE&lt;/command&gt;, and
+   &lt;command&gt;DELETE&lt;/command&gt; within a single statement.
+   See &lt;xref linkend="sql-merge"/&gt;.
+</span>
+《機械翻訳》<code class="command">MERGE</code>を使用すると、単一のステートメント内で<code class="command">INSERT</code>、<code class="command">UPDATE</code>、<code class="command">DELETE</code>を混在させることができます。
+<a class="xref" href="sql-merge.html" title="MERGE"><span class="refentrytitle">MERGE</span></a>を参照してください。
   </p></div><div class="refsect1" id="id-1.9.3.152.9"><h2>例</h2><span class="original">
   &lt;title&gt;Examples&lt;/title&gt;
 </span><p>
@@ -647,13 +663,13 @@ INSERT INTO films SELECT * FROM tmp_films WHERE date_prod &lt; '2004-05-07';
 
 </p><pre class="programlisting">
 <span class="original">
-&amp;#045;&amp;#045; Create an empty 3x3 gameboard for noughts-and-crosses
+&amp;#45;- Create an empty 3x3 gameboard for noughts-and-crosses
 </span>
 -- 三目並べ用の3×3マスのゲーム盤を作成します。
 INSERT INTO tictactoe (game, board[1:3][1:3])
     VALUES (1, '{{" "," "," "},{" "," "," "},{" "," "," "}}');
 <span class="original">
-&amp;#045;&amp;#045; The subscripts in the above example aren't really needed
+&amp;#45;- The subscripts in the above example aren't really needed
 </span>
 --上の例の添え字は本当は必要ありません。
 INSERT INTO tictactoe (game, board)
@@ -728,7 +744,7 @@ INSERT INTO distributors (did, dname) VALUES (7, 'Redline GmbH')
 実際に更新される行を制限するために<code class="literal">WHERE</code>句が使われています（ただし、更新されない既存の行もすべてロックされます）。
 </p><pre class="programlisting">
 <span class="original">
-&amp;#045;- Don't update existing distributors based in a certain ZIP code
+&amp;#45;- Don't update existing distributors based in a certain ZIP code
 </span>
 -- 特定の郵便番号については既存の販売店を更新しません
 INSERT INTO distributors AS d (did, dname) VALUES (8, 'Anvil Distribution')
@@ -737,8 +753,8 @@ INSERT INTO distributors AS d (did, dname) VALUES (8, 'Anvil Distribution')
     WHERE d.zipcode &lt;&gt; '21201';
 
 <span class="original">
-&amp;#045;- Name a constraint directly in the statement (uses associated
-&amp;#045;- index to arbitrate taking the DO NOTHING action)
+&amp;#45;- Name a constraint directly in the statement (uses associated
+&amp;#45;- index to arbitrate taking the DO NOTHING action)
 </span>
 -- 文中で制約を直接指定します（DO NOTHINGの動作をする競合解決のため
 -- 関連するインデックスを指定します）
@@ -758,9 +774,9 @@ INSERT INTO distributors (did, dname) VALUES (9, 'Antwerp Design')
 この例では、<code class="literal">is_active</code>というブーリアン列が<code class="literal">true</code>である行という条件で、<code class="literal">did</code>列に一意インデックスが定義されているものとしています。
 </p><pre class="programlisting">
 <span class="original">
-&amp;#045;- This statement could infer a partial unique index on "did"
-&amp;#045;- with a predicate of "WHERE is_active", but it could also
-&amp;#045;- just use a regular unique constraint on "did"
+&amp;#45;- This statement could infer a partial unique index on "did"
+&amp;#45;- with a predicate of "WHERE is_active", but it could also
+&amp;#45;- just use a regular unique constraint on "did"
 </span>
 -- この文は"WHERE is_active"という述語を使って、部分インデックスを
 -- 推定できますが、単に"did"上の通常の一意制約を使うこともできます
@@ -780,9 +796,11 @@ INSERT INTO distributors (did, dname) VALUES (10, 'Conrad International')
    Also, the case in
    which a column name list is omitted, but not all the columns are
    filled from the &lt;literal&gt;VALUES&lt;/literal&gt; clause or &lt;replaceable&gt;query&lt;/replaceable&gt;,
-   is disallowed by the standard.
+   is disallowed by the standard. If you prefer a more SQL standard
+   conforming statement than &lt;literal&gt;ON CONFLICT&lt;/literal&gt;, see
+   &lt;xref linkend="sql-merge"/&gt;.
 </span>
-<code class="command">INSERT</code>は標準SQLに準拠します。
+《マッチ度[76.722818]》<code class="command">INSERT</code>は標準SQLに準拠します。
 ただし、<code class="literal">RETURNING</code>句、<code class="command">INSERT</code>で<code class="literal">WITH</code>が可能であること、<code class="literal">ON CONFLICT</code>で代替の動作を指定できることは<span class="productname">PostgreSQL</span>の拡張です。
 また、標準SQLでは、列名リストが省略された時に、<code class="literal">VALUES</code>句または<em class="replaceable"><code>query</code></em>で一部の列のみを指定することはできません。
   </p><p>
@@ -801,4 +819,4 @@ PostgreSQLではこの句はどのような場合でも指定でき、それが�
    &lt;xref linkend="sql-select"/&gt;.
 </span>
 <em class="replaceable"><code>query</code></em>句の制限については、<a class="xref" href="sql-select.html" title="SELECT"><span class="refentrytitle">SELECT</span></a>にて記述されています。
-  </p></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-importforeignschema.html" title="IMPORT FOREIGN SCHEMA">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-listen.html" title="LISTEN">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">IMPORT FOREIGN SCHEMA </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> LISTEN</td></tr></table></div></body></html>
+  </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-importforeignschema.html" title="IMPORT FOREIGN SCHEMA">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-listen.html" title="LISTEN">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">IMPORT FOREIGN SCHEMA </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15rc1文書">ホーム</a></td><td width="40%" align="right" valign="top"> LISTEN</td></tr></table></div></body></html>

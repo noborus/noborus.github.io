@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>30.5. WALの設定</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="wal-async-commit.html" title="30.4. 非同期コミット" /><link rel="next" href="wal-internals.html" title="30.6. WALの内部" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="wal.html" title="第30章 信頼性とログ先行書き込み">第30章 信頼性とログ先行書き込み</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      wal-configuration.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>30.5. WALの設定</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="wal-async-commit.html" title="30.4. 非同期コミット" /><link rel="next" href="wal-internals.html" title="30.6. WALの内部" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15rc1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="wal.html" title="第30章 信頼性とログ先行書き込み">第30章 信頼性とログ先行書き込み</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15rc1 : wal-configuration.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="wal-async-commit.html" title="30.4. 非同期コミット">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="wal.html" title="第30章 信頼性とログ先行書き込み">上へ</a></td><td width="60%" align="center">30.5. <acronym class="acronym">WAL</acronym>の設定</td><td width="20%" align="right"> <a accesskey="n" href="wal-internals.html" title="30.6. WALの内部">次へ</a></td></tr></table><hr /></div><div class="sect1" id="WAL-CONFIGURATION"><div class="titlepage"><div><div><h2 class="title" style="clear: both">30.5. <acronym class="acronym">WAL</acronym>の設定</h2></div></div></div><span class="original">
   &lt;title&gt;&lt;acronym&gt;WAL&lt;/acronym&gt; Configuration&lt;/title&gt;
 </span><p>
@@ -215,12 +215,13 @@ LinuxおよびPOSIXプラットフォームでは、チェックポイントに�
    kept at all times. Also, if WAL archiving is used, old segments cannot be
    removed or recycled until they are archived. If WAL archiving cannot keep up
    with the pace that WAL is generated, or if &lt;varname&gt;archive_command&lt;/varname&gt;
+   or &lt;varname&gt;archive_library&lt;/varname&gt;
    fails repeatedly, old WAL files will accumulate in &lt;filename&gt;pg_wal&lt;/filename&gt;
    until the situation is resolved. A slow or failed standby server that
    uses a replication slot will have the same effect (see
    &lt;xref linkend="streaming-replication-slots"/&gt;).
 </span>
-<code class="varname">max_wal_size</code>に関わらず、最新の<a class="xref" href="runtime-config-replication.html#GUC-WAL-KEEP-SIZE">wal_keep_size</a>メガバイトのWALファイルに加えて、もう一つのWALファイルが常に保持されます。
+《マッチ度[90.532544]》<code class="varname">max_wal_size</code>に関わらず、最新の<a class="xref" href="runtime-config-replication.html#GUC-WAL-KEEP-SIZE">wal_keep_size</a>メガバイトのWALファイルに加えて、もう一つのWALファイルが常に保持されます。
 また、WALアーカイブを利用している場合は、古いセグメントは、アーカイブされるまでは削除も再利用もされません。
 WALが生成されるペースにWALのアーカイブ処理が追いつかなかったり、<code class="varname">archive_command</code>が連続して失敗すると、事態が解決するまでWALファイルは<code class="filename">pg_wal</code>の下に蓄積されていきます。
 レプリケーションスロットを使用しているスタンバイサーバが低速だったり、失敗すると、同じ現象が起きます(<a class="xref" href="warm-standby.html#STREAMING-REPLICATION-SLOTS" title="27.2.6. レプリケーションスロット">27.2.6</a>を参照のこと)
@@ -389,7 +390,6 @@ WALログが高遅延の回転ディスクに格納されているときは、<c
 しかしながら、プラットフォームによってどれが一番速いのかがまったく違います。
 <a class="xref" href="pgtestfsync.html" title="pg_test_fsync"><span class="refentrytitle"><span class="application">pg_test_fsync</span></span></a>プログラムを使って異なるオプションの速度テストを行うことができます。
 ちなみに、このパラメータは<code class="varname">fsync</code>が無効になっている場合は役に立ちません。
-
   </p><p>
 <span class="original">
    Enabling the &lt;xref linkend="guc-wal-debug"/&gt; configuration parameter
@@ -433,10 +433,25 @@ WALログが高遅延の回転ディスクに格納されているときは、<c
 </span>
 WALデータをディスクに書き込むための2つの内部関数があります。
 <code class="function">XLogWrite</code>と<code class="function">issue_xlog_fsync</code>です。
-<a class="xref" href="runtime-config-statistics.html#GUC-TRACK-WAL-IO-TIMING">track_wal_io_timing</a>が有効な場合、<code class="function">XLogWrite</code>がWALデータをディスクに書き込み、<code class="function">issue_xlog_fsync</code>がWALデータをディスクに同期する合計時間は、それぞれ<a class="xref" href="monitoring-stats.html#PG-STAT-WAL-VIEW" title="表28.22 pg_stat_walビュー">pg_stat_wal</a>の<code class="literal">wal_write_time</code>および<code class="literal">wal_sync_time</code>として数えられます。
+<a class="xref" href="runtime-config-statistics.html#GUC-TRACK-WAL-IO-TIMING">track_wal_io_timing</a>が有効な場合、<code class="function">XLogWrite</code>がWALデータをディスクに書き込み、<code class="function">issue_xlog_fsync</code>がWALデータをディスクに同期する合計時間は、それぞれ<a class="xref" href="monitoring-stats.html#PG-STAT-WAL-VIEW" title="表28.24 pg_stat_walビュー">pg_stat_wal</a>の<code class="literal">wal_write_time</code>および<code class="literal">wal_sync_time</code>として数えられます。
 <code class="function">XLogWrite</code>は、WALバッファをディスクに書き込んで<code class="function">issue_xlog_fsync</code>を呼び出すために、通常は<code class="function">XLogInsertRecord</code>（WALバッファに新しいレコード用の領域がない場合）、<code class="function">XLogFlush</code>、WALライタによって呼び出されます。
 <code class="function">issue_xlog_fsync</code>は通常、WALファイルをディスクに同期するために<code class="function">XLogWrite</code>によって呼び出されます。
 <code class="varname">wal_sync_method</code>が<code class="literal">open_datasync</code>または<code class="literal">open_sync</code>の場合、<code class="function">XLogWrite</code>での書き込み操作はディスクに書き込まれたWALデータの同期を保証し、<code class="function">issue_xlog_fsync</code>は何も行いません。
 <code class="varname">wal_sync_method</code>が<code class="literal">fdatasync</code>、<code class="literal">fsync</code>、または<code class="literal">fsync_writethrough</code>のいずれかの場合、書き込み操作はWALバッファをカーネルキャッシュに移動し、<code class="function">issue_xlog_fsync</code>はそれらをディスクに同期します。
 <code class="varname">track_wal_io_timing</code>の設定に関係なく、<code class="function">XLogWrite</code>の書き込み回数と<code class="function">issue_xlog_fsync</code>のディスクへのWALデータの同期回数もそれぞれ<code class="structname">pg_stat_wal</code>の<code class="literal">wal_write</code>と<code class="literal">wal_sync</code>としてカウントされます。
-  </p></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="wal-async-commit.html" title="30.4. 非同期コミット">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="wal.html" title="第30章 信頼性とログ先行書き込み">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="wal-internals.html" title="30.6. WALの内部">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">30.4. 非同期コミット </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 30.6. WALの内部</td></tr></table></div></body></html>
+  </p><p>
+<span class="original">
+   The &lt;xref linkend="guc-recovery-prefetch"/&gt; parameter can be used to reduce
+   I/O wait times during recovery by instructing the kernel to initiate reads
+   of disk blocks that will soon be needed but are not currently in
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt;'s buffer pool.
+   The &lt;xref linkend="guc-maintenance-io-concurrency"/&gt; and
+   &lt;xref linkend="guc-wal-decode-buffer-size"/&gt; settings limit prefetching
+   concurrency and distance, respectively.  By default, it is set to
+   &lt;literal&gt;try&lt;/literal&gt;, which enables the feature on systems where
+   &lt;function&gt;posix_fadvise&lt;/function&gt; is available.
+</span>
+《機械翻訳》<a class="xref" href="runtime-config-wal.html#GUC-RECOVERY-PREFETCH">recovery_prefetch</a>パラメータは、すぐに必要になるが現在<span class="productname">PostgreSQL</span>のバッファプールにないディスクブロックの読み取りを開始するようカーネルに指示することにより、リカバリ中の入出力待ち時間を減らすために使用できます。
+<a class="xref" href="runtime-config-resource.html#GUC-MAINTENANCE-IO-CONCURRENCY">maintenance_io_concurrency</a>と<a class="xref" href="runtime-config-wal.html#GUC-WAL-DECODE-BUFFER-SIZE">wal_decode_buffer_size</a>の設定は、プリフェッチの同時実行性と距離をそれぞれ制限します。
+デフォルトでは<code class="literal">try</code>に設定されており、<code class="function">posix_fadvise</code>が利用可能なシステムでこの機能が有効になります。
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="wal-async-commit.html" title="30.4. 非同期コミット">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="wal.html" title="第30章 信頼性とログ先行書き込み">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="wal-internals.html" title="30.6. WALの内部">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">30.4. 非同期コミット </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15rc1文書">ホーム</a></td><td width="40%" align="right" valign="top"> 30.6. WALの内部</td></tr></table></div></body></html>

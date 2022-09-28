@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>57.4. 外部データラッパのクエリプラン作成</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="fdw-helpers.html" title="57.3. 外部データラッパヘルパ関数" /><link rel="next" href="fdw-row-locking.html" title="57.5. 外部データラッパでの行ロック" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="fdwhandler.html" title="第57章 外部データラッパの作成">第57章 外部データラッパの作成</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      fdw-planning.html">誤訳等の報告
-                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="fdw-helpers.html" title="57.3. 外部データラッパヘルパ関数">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="fdwhandler.html" title="第57章 外部データラッパの作成">上へ</a></td><td width="60%" align="center">57.4. 外部データラッパのクエリプラン作成</td><td width="20%" align="right"> <a accesskey="n" href="fdw-row-locking.html" title="57.5. 外部データラッパでの行ロック">次へ</a></td></tr></table><hr /></div><div class="sect1" id="FDW-PLANNING"><div class="titlepage"><div><div><h2 class="title" style="clear: both">57.4. 外部データラッパのクエリプラン作成</h2></div></div></div><span class="original">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>59.4. 外部データラッパの問い合わせプラン作成</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="fdw-helpers.html" title="59.3. 外部データラッパヘルパ関数" /><link rel="next" href="fdw-row-locking.html" title="59.5. 外部データラッパでの行ロック" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15rc1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="fdwhandler.html" title="第59章 外部データラッパの作成">第59章 外部データラッパの作成</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15rc1 : fdw-planning.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="fdw-helpers.html" title="59.3. 外部データラッパヘルパ関数">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="fdwhandler.html" title="第59章 外部データラッパの作成">上へ</a></td><td width="60%" align="center">59.4. 外部データラッパの問い合わせプラン作成</td><td width="20%" align="right"> <a accesskey="n" href="fdw-row-locking.html" title="59.5. 外部データラッパでの行ロック">次へ</a></td></tr></table><hr /></div><div class="sect1" id="FDW-PLANNING"><div class="titlepage"><div><div><h2 class="title" style="clear: both">59.4. 外部データラッパの問い合わせプラン作成</h2></div></div></div><span class="original">
     &lt;title&gt;Foreign Data Wrapper Query Planning&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -28,7 +28,7 @@ FDWコールバック関数の<code class="function">GetForeignRelSize</code>、
 </span>
 <code class="literal">root</code>と<code class="literal">baserel</code>に含まれる情報は、外部テーブルから取得する必要のある情報の量(とそれによるコスト)を削減するために使用できます。
 <code class="literal">baserel-&gt;baserestrictinfo</code>は、取得される行をフィルタリングする検索条件(<code class="literal">WHERE</code>句)を含んでいるため、特に興味深いものです。(コアのエクゼキュータが代わりにそれらをチェックできるので、FDW自身がこれらの制約を適用しなければならないわけではありません。)
-<code class="literal">baserel-&gt;reltarget-&gt;exprs</code>はどの列が取得される必要があるかを決定するのに使用できます。ただし、このリストは<code class="structname">ForeignScan</code>プランノードから出力すべき列しか含んでおらず、条件検査には必要だがクエリからは出力されない列は含まないことに注意してください。
+<code class="literal">baserel-&gt;reltarget-&gt;exprs</code>はどの列が取得される必要があるかを決定するのに使用できます。ただし、このリストは<code class="structname">ForeignScan</code>プランノードから出力すべき列しか含んでおらず、条件検査には必要だが問い合わせからは出力されない列は含まないことに注意してください。
     </p><p>
 <span class="original">
      Various private fields are available for the FDW planning functions to
@@ -82,7 +82,7 @@ FDWコールバック関数の<code class="function">GetForeignRelSize</code>、
 <code class="function">GetForeignPlan</code>では、選択された<code class="structname">ForeignPath</code>ノードの<code class="structfield">fdw_private</code>フィールドを調べて、<code class="structname">ForeignScan</code>プランノード内に格納されプラン実行時に利用可能な<code class="structfield">fdw_exprs</code>と<code class="structfield">fdw_private</code>の二つのリストを生成することができます。
 これらは両方とも<code class="function">copyObject</code>がコピーできる形式でなければなりません。
 <code class="structfield">fdw_private</code>リストにはこれ以外に制約はなく、コアバックエンドによって解釈されることはありません。
-<code class="structfield">fdw_exprs</code>リストがNILでない場合は、クエリ実行時に実行されることを意図した式ツリーが含まれていることが期待されます。
+<code class="structfield">fdw_exprs</code>リストがNILでない場合は、問い合わせ実行時に実行されることを意図した式ツリーが含まれていることが期待されます。
 これらのツリーは、完全に実行可能な状態にするためにプランナによる後処理を受けます。
     </p><p>
 <span class="original">
@@ -128,7 +128,7 @@ FDWにできるのが<code class="structname">RestrictInfo</code>ノードを<co
 おそらく、そのパスの<code class="structfield">fdw_private</code>フィールドは識別された句の<code class="structname">RestrictInfo</code>ノードをさすポインタを含むでしょう。
 そして、<code class="function">GetForeignPlan</code>はその句を<code class="literal">scan_clauses</code>から取り除き、実行可能な形式にほぐされることを保障するために<em class="replaceable"><code>sub_expression</code></em>を<code class="structfield">fdw_exprs</code>に追加するでしょう。
 また、おそらく、実行時に何をすべきかをプラン実行関数に伝えるためにプランノードの<code class="structfield">fdw_private</code>フィールドに制御情報を入れるでしょう。
-リモートサーバに送られたクエリは、実行時に<code class="structfield">fdw_exprs</code>式ツリーを評価して得られた値をパラメータ値とする<code class="literal">WHERE <em class="replaceable"><code>foreign_variable</code></em> = $1</code>のようなものを伴うでしょう。
+リモートサーバに送られた問い合わせは、実行時に<code class="structfield">fdw_exprs</code>式ツリーを評価して得られた値をパラメータ値とする<code class="literal">WHERE <em class="replaceable"><code>foreign_variable</code></em> = $1</code>のようなものを伴うでしょう。
     </p><p>
 <span class="original">
      Any clauses removed from the plan node's qual list must instead be added
@@ -190,7 +190,7 @@ FDWがセットできる別の<code class="structname">ForeignScan</code>フィ�
      to &lt;structfield&gt;fdw_exprs&lt;/structfield&gt;, and then at run time the case works the
      same as for an ordinary restriction clause.
 </span>
-FDWはそのテーブルの条件句のみに依存するパスを常に少なくとも一つは生成すべきです。結合クエリでは、例えば<em class="replaceable"><code>foreign_variable</code></em> <code class="literal">=</code> <em class="replaceable"><code>local_variable</code></em>といった結合句に依存するパス(群)を生成することもできます。
+FDWはそのテーブルの条件句のみに依存するパスを常に少なくとも一つは生成すべきです。結合問い合わせでは、例えば<em class="replaceable"><code>foreign_variable</code></em> <code class="literal">=</code> <em class="replaceable"><code>local_variable</code></em>といった結合句に依存するパス(群)を生成することもできます。
 そのような句は<code class="literal">baserel-&gt;baserestrictinfo</code>には見つからず、リレーションの結合リストにあるはずです。
 そのような句を使用するパスは<span class="quote">「<span class="quote">パラメータ化されたパス</span>」</span>と呼ばれます。
 このようなパスでは、選択された結合句（群）で使用されているリレーション（群）を<code class="literal">param_info</code>の適合する値から特定しなければなりません;その値を計算するには<code class="function">get_baserel_parampathinfo</code>を使用します。
@@ -253,10 +253,10 @@ FDWはグルーピングや集約のような、スキャンや結合のレベ�
      inserted into &lt;literal&gt;UPPERREL_FINAL&lt;/literal&gt; is responsible for
      implementing &lt;emphasis&gt;all&lt;/emphasis&gt; behavior of the query.
 </span>
-<code class="function">PlanForeignModify</code>と<a class="xref" href="fdw-callbacks.html#FDW-CALLBACKS-UPDATE" title="57.2.4. 外部テーブル更新のためのFDWルーチン">57.2.4</a>で記述された他のコールバックは、外部リレーションは通常の方法でスキャンされ、それから個別の行変更がローカルの<code class="literal">ModifyTable</code>プランノードで駆動されるという想定をもとに設計されています。
+<code class="function">PlanForeignModify</code>と<a class="xref" href="fdw-callbacks.html#FDW-CALLBACKS-UPDATE" title="59.2.4. 外部テーブル更新のためのFDWルーチン">59.2.4</a>で記述された他のコールバックは、外部リレーションは通常の方法でスキャンされ、それから個別の行変更がローカルの<code class="literal">ModifyTable</code>プランノードで駆動されるという想定をもとに設計されています。
 この方法は変更が外部テーブルと同様にローカルテーブルを読む必要がある一般的な場合に必要です。
 しかしながら、操作が全体的に外部サーバで実行できるなら、FDWはそのようにするパスを生成して<code class="literal">UPPERREL_FINAL</code>上位リレーションに挿入することができます。ここでは<code class="literal">ModifyTable</code>方式に対して競合します。
-この方式は、<a class="xref" href="fdw-callbacks.html#FDW-CALLBACKS-ROW-LOCKING" title="57.2.6. 行ロックのためのFDWルーチン">57.2.6</a>で記述された行ロックコールバックを使うのでなしに、リモート<code class="literal">SELECT FOR UPDATE</code>を実装するのにも使われます。
+この方式は、<a class="xref" href="fdw-callbacks.html#FDW-CALLBACKS-ROW-LOCKING" title="59.2.6. 行ロックのためのFDWルーチン">59.2.6</a>で記述された行ロックコールバックを使うのでなしに、リモート<code class="literal">SELECT FOR UPDATE</code>を実装するのにも使われます。
 <code class="literal">UPPERREL_FINAL</code>に挿入されたパスは問い合わせの<span class="emphasis"><em>全ての</em></span>振る舞いの実装に責任があることに留意してください。
     </p><p>
 <span class="original">
@@ -288,4 +288,4 @@ FDWはグルーピングや集約のような、スキャンや結合のレベ�
 なぜなら、リモートのテーブルの一意制約や排他制約についての情報がローカルにはないからです。
 これは結果的に<code class="literal">ON CONFLICT DO UPDATE</code>がサポートされないことを意味します。
 なぜなら、競合の対象の指定が必須だからです。
-    </p></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="fdw-helpers.html" title="57.3. 外部データラッパヘルパ関数">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="fdwhandler.html" title="第57章 外部データラッパの作成">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="fdw-row-locking.html" title="57.5. 外部データラッパでの行ロック">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">57.3. 外部データラッパヘルパ関数 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 57.5. 外部データラッパでの行ロック</td></tr></table></div></body></html>
+    </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="fdw-helpers.html" title="59.3. 外部データラッパヘルパ関数">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="fdwhandler.html" title="第59章 外部データラッパの作成">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="fdw-row-locking.html" title="59.5. 外部データラッパでの行ロック">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">59.3. 外部データラッパヘルパ関数 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15rc1文書">ホーム</a></td><td width="40%" align="right" valign="top"> 59.5. 外部データラッパでの行ロック</td></tr></table></div></body></html>

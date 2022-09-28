@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>CREATE INDEX</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-creategroup.html" title="CREATE GROUP" /><link rel="next" href="sql-createlanguage.html" title="CREATE LANGUAGE" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      sql-createindex.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>CREATE INDEX</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-creategroup.html" title="CREATE GROUP" /><link rel="next" href="sql-createlanguage.html" title="CREATE LANGUAGE" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15rc1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15rc1 : sql-createindex.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-creategroup.html" title="CREATE GROUP">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">CREATE INDEX</td><td width="20%" align="right"> <a accesskey="n" href="sql-createlanguage.html" title="CREATE LANGUAGE">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-CREATEINDEX"><div class="titlepage"></div><a id="id-1.9.3.69.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">CREATE INDEX</span></h2><p>CREATE INDEX<span class="original">
   &lt;refpurpose&gt;define a new index&lt;/refpurpose&gt;
 </span> — 
@@ -8,6 +8,7 @@
 CREATE [ UNIQUE ] INDEX [ CONCURRENTLY ] [ [ IF NOT EXISTS ] <em class="replaceable"><code>name</code></em> ] ON [ ONLY ] <em class="replaceable"><code>table_name</code></em> [ USING <em class="replaceable"><code>method</code></em> ]
     ( { <em class="replaceable"><code>column_name</code></em> | ( <em class="replaceable"><code>expression</code></em> ) } [ COLLATE <em class="replaceable"><code>collation</code></em> ] [ <em class="replaceable"><code>opclass</code></em> [ ( <em class="replaceable"><code>opclass_parameter</code></em> = <em class="replaceable"><code>value</code></em> [, ... ] ) ] ] [ ASC | DESC ] [ NULLS { FIRST | LAST } ] [, ...] )
     [ INCLUDE ( <em class="replaceable"><code>column_name</code></em> [, ...] ) ]
+    [ NULLS [ NOT ] DISTINCT ]
     [ WITH ( <em class="replaceable"><code>storage_parameter</code></em> [= <em class="replaceable"><code>value</code></em>] [, ... ] ) ]
     [ TABLESPACE <em class="replaceable"><code>tablespace_name</code></em> ]
     [ WHERE <em class="replaceable"><code>predicate</code></em> ]
@@ -206,11 +207,14 @@ CREATE [ UNIQUE ] INDEX [ CONCURRENTLY ] [ [ IF NOT EXISTS ] <em class="replacea
 <span class="original">
         The name of the index to be created.  No schema name can be included
         here; the index is always created in the same schema as its parent
-        table.  If the name is omitted, &lt;productname&gt;PostgreSQL&lt;/productname&gt; chooses a
+        table.  The name of the index must be distinct from the name of any
+        other relation (table, sequence, index, view, materialized view, or
+        foreign table) in that schema.
+        If the name is omitted, &lt;productname&gt;PostgreSQL&lt;/productname&gt; chooses a
         suitable name based on the parent table's name and the indexed column
         name(s).
 </span>
-作成するインデックスの名前です。
+《マッチ度[58.980044]》作成するインデックスの名前です。
 この名前には、スキーマ名を含めることはできません。
 インデックスは、常にその親テーブルと同じスキーマに作成されます。
 この名前を省略すると、<span class="productname">PostgreSQL</span>はその親テーブルの名前とインデックス付けされる列名に基づいた適切な名前を選びます。
@@ -230,11 +234,12 @@ CREATE [ UNIQUE ] INDEX [ CONCURRENTLY ] [ [ IF NOT EXISTS ] <em class="replacea
 <span class="original">
         The name of the index method to be used.  Choices are
         &lt;literal&gt;btree&lt;/literal&gt;, &lt;literal&gt;hash&lt;/literal&gt;,
-        &lt;literal&gt;gist&lt;/literal&gt;, &lt;literal&gt;spgist&lt;/literal&gt;, &lt;literal&gt;gin&lt;/literal&gt;, and
-        &lt;literal&gt;brin&lt;/literal&gt;.
+        &lt;literal&gt;gist&lt;/literal&gt;, &lt;literal&gt;spgist&lt;/literal&gt;, &lt;literal&gt;gin&lt;/literal&gt;,
+        &lt;literal&gt;brin&lt;/literal&gt;, or user-installed access methods like
+        &lt;link linkend="bloom"&gt;bloom&lt;/link&gt;.
         The default method is &lt;literal&gt;btree&lt;/literal&gt;.
 </span>
-使用するインデックスメソッドの名前です。
+《マッチ度[67.791411]》使用するインデックスメソッドの名前です。
 <code class="literal">btree</code>、<code class="literal">hash</code>、<code class="literal">gist</code>、<code class="literal">spgist</code>、<code class="literal">gin</code>、<code class="literal">brin</code>から選択します。
 デフォルトのメソッドは<code class="literal">btree</code>です。
        </p></dd><dt><span class="term"><em class="replaceable"><code>column_name</code></em></span></dt><dd><p>
@@ -299,6 +304,14 @@ NULLを非NULLより前にソートすることを指定します。
 </span>
 NULLを非NULLより後にソートすることを指定します。
 これは<code class="literal">DESC</code>が指定されない場合のデフォルトです。
+       </p></dd><dt><span class="term"><code class="literal">NULLS DISTINCT</code><br /></span><span class="term"><code class="literal">NULLS NOT DISTINCT</code></span></dt><dd><p>
+<span class="original">
+        Specifies whether for a unique index, null values should be considered
+        distinct (not equal).  The default is that they are distinct, so that
+        a unique index could contain multiple null values in a column.
+</span>
+《機械翻訳》一意索引のNULL値を個別(等しくない)とみなすかどうかを指定します。
+デフォルトでは、NULL値は個別であるため、一意索引には1つの列に複数のNULL値を含めることができます。
        </p></dd><dt><span class="term"><em class="replaceable"><code>storage_parameter</code></em></span></dt><dd><p>
 <span class="original">
         The name of an index-method-specific storage parameter.  See
@@ -335,6 +348,7 @@ NULLを非NULLより後にソートすることを指定します。
 B-tree、ハッシュ、GiSTおよびSP-GiSTといったインデックスはすべて次のパラメータを受け付けます。
    </p><div class="variablelist"><dl class="variablelist"><dt id="INDEX-RELOPTION-FILLFACTOR"><span class="term"><code class="literal">fillfactor</code> (<code class="type">integer</code>)
      <a id="id-1.9.3.69.6.3.3.1.1.3" class="indexterm"></a>
+     <a id="id-1.9.3.69.6.3.3.1.1.4" class="indexterm"></a>
     </span></dt><dd><p>
 <span class="original">
       The fillfactor for an index is a percentage that determines how full
@@ -367,7 +381,7 @@ B-treeのデフォルトのフィルファクタは90ですが、10から100ま�
 </span>
 多くの挿入や更新が予想されるテーブルのB-treeインデックスでは、(テーブルへの一括ロードに続く)<code class="command">CREATE INDEX</code>の時にフィルファクタを低い値に設定することで恩恵に与れるかもしれません。
 50から90の範囲の値は、B-treeインデックスの初期の段階でのページ分割の<span class="emphasis"><em>割合</em></span>を<span class="quote">「<span class="quote">ならす</span>」</span>のに有用かもしれません。(このようにフィルファクタを下げることはページ分割の絶対数を下げるかもしれません。もっとも、この効果はデータベースの処理内容に大きく依存します。)
-<a class="xref" href="btree-implementation.html#BTREE-DELETION" title="64.4.2. Bottom-up Index Deletion">64.4.2</a>に書かれたB-treeボトムアップインデックス削除技法は<span class="quote">「<span class="quote">余分な</span>」</span>タプルのバージョンを保存するのにページの<span class="quote">「<span class="quote">余分な</span>」</span>空きに依存しますので、(その効果は通常、重要なものではありませんが)フィルファクタの影響を受けるかもしれません。
+<a class="xref" href="btree-implementation.html#BTREE-DELETION" title="67.4.2. ボトムアップインデックスの削除">67.4.2</a>に書かれたB-treeボトムアップインデックス削除技法は<span class="quote">「<span class="quote">余分な</span>」</span>タプルのバージョンを保存するのにページの<span class="quote">「<span class="quote">余分な</span>」</span>空きに依存しますので、(その効果は通常、重要なものではありませんが)フィルファクタの影響を受けるかもしれません。
      </p><p>
 <span class="original">
       In other specific cases it might be useful to increase fillfactor to
@@ -394,6 +408,7 @@ B-treeのデフォルトのフィルファクタは90ですが、10から100ま�
 B-treeインデックスはさらに以下のパラメータを受け付けます。
    </p><div class="variablelist"><dl class="variablelist"><dt id="INDEX-RELOPTION-DEDUPLICATE-ITEMS"><span class="term"><code class="literal">deduplicate_items</code> (<code class="type">boolean</code>)
      <a id="id-1.9.3.69.6.3.5.1.1.3" class="indexterm"></a>
+     <a id="id-1.9.3.69.6.3.5.1.1.4" class="indexterm"></a>
     </span></dt><dd><p>
 <span class="original">
       Controls usage of the B-tree deduplication technique described
@@ -404,7 +419,7 @@ B-treeインデックスはさらに以下のパラメータを受け付けま�
       described in &lt;xref linkend="config-setting"/&gt;.) The default is
       &lt;literal&gt;ON&lt;/literal&gt;.
 </span>
-<a class="xref" href="btree-implementation.html#BTREE-DEDUPLICATION" title="64.4.3. 重複排除">64.4.3</a>に書かれているB-tree重複排除技法の使用を制御します。
+<a class="xref" href="btree-implementation.html#BTREE-DEDUPLICATION" title="67.4.3. 重複排除">67.4.3</a>に書かれているB-tree重複排除技法の使用を制御します。
 最適化を有効、無効にするには<code class="literal">ON</code>、<code class="literal">OFF</code>を設定します。
 (<a class="xref" href="config-setting.html" title="20.1. パラメータの設定">20.1</a>に書かれているように、<code class="literal">ON</code>や<code class="literal">OFF</code>の他の綴りも認められています。)
 デフォルトは<code class="literal">ON</code>です。
@@ -423,6 +438,7 @@ B-treeインデックスはさらに以下のパラメータを受け付けま�
 GiSTインデックスではさらに以下のパラメータを受け付けます。
    </p><div class="variablelist"><dl class="variablelist"><dt id="INDEX-RELOPTION-BUFFERING"><span class="term"><code class="literal">buffering</code> (<code class="type">enum</code>)
      <a id="id-1.9.3.69.6.3.7.1.1.3" class="indexterm"></a>
+     <a id="id-1.9.3.69.6.3.7.1.1.4" class="indexterm"></a>
     </span></dt><dd><p>
 <span class="original">
      Determines whether the buffered build technique described in
@@ -435,7 +451,7 @@ GiSTインデックスではさらに以下のパラメータを受け付けま�
      Note that if sorted build is possible, it will be used instead of
      buffered build unless &lt;literal&gt;buffering=ON&lt;/literal&gt; is specified.
 </span>
-<a class="xref" href="gist-implementation.html#GIST-BUFFERING-BUILD" title="65.4.1. GiSTインデックス構築法">65.4.1</a>で説明するバッファ化構築技術をインデックスを構築する時に使用するかどうかを決定します。
+<a class="xref" href="gist-implementation.html#GIST-BUFFERING-BUILD" title="68.4.1. GiSTインデックス構築法">68.4.1</a>で説明するバッファ化構築技術をインデックスを構築する時に使用するかどうかを決定します。
 バッファ処理は<code class="literal">OFF</code>で無効に、<code class="literal">ON</code>で有効になります。
 また<code class="literal">AUTO</code>と指定すると、最初は無効ですが、インデックスサイズが<a class="xref" href="runtime-config-query.html#GUC-EFFECTIVE-CACHE-SIZE">effective_cache_size</a>に達した後はその場で有効になります。
 デフォルトは<code class="literal">AUTO</code>です。
@@ -447,6 +463,7 @@ GiSTインデックスではさらに以下のパラメータを受け付けま�
 GINインデックスでは以下の異なるパラメータを受け付けます。
    </p><div class="variablelist"><dl class="variablelist"><dt id="INDEX-RELOPTION-FASTUPDATE"><span class="term"><code class="literal">fastupdate</code> (<code class="type">boolean</code>)
      <a id="id-1.9.3.69.6.3.9.1.1.3" class="indexterm"></a>
+     <a id="id-1.9.3.69.6.3.9.1.1.4" class="indexterm"></a>
     </span></dt><dd><p>
 <span class="original">
      This setting controls usage of the fast update technique described in
@@ -454,7 +471,7 @@ GINインデックスでは以下の異なるパラメータを受け付けま�
      &lt;literal&gt;ON&lt;/literal&gt; enables fast update, &lt;literal&gt;OFF&lt;/literal&gt; disables it.
      The default is &lt;literal&gt;ON&lt;/literal&gt;.
 </span>
-この設定は<a class="xref" href="gin-implementation.html#GIN-FAST-UPDATE" title="67.4.1. GIN高速更新手法">67.4.1</a>で説明する高速更新技法を使用するかどうかを制御します。
+この設定は<a class="xref" href="gin-implementation.html#GIN-FAST-UPDATE" title="70.4.1. GIN高速更新手法">70.4.1</a>で説明する高速更新技法を使用するかどうかを制御します。
 これは論理値パラメータであり、<code class="literal">ON</code>は高速更新を有効に、<code class="literal">OFF</code>は無効にします。
 デフォルトは<code class="literal">ON</code>です。
     </p><div class="note"><h3 class="title">注記</h3><p>
@@ -470,6 +487,7 @@ GINインデックスでは以下の異なるパラメータを受け付けま�
 確実に待機中のリストを空にするためには、続いてテーブルを<code class="command">VACUUM</code>するか、<code class="function">gin_clean_pending_list</code>関数を呼び出すのが良いでしょう。
      </p></div></dd></dl></div><div class="variablelist"><dl class="variablelist"><dt id="INDEX-RELOPTION-GIN-PENDING-LIST-LIMIT"><span class="term"><code class="literal">gin_pending_list_limit</code> (<code class="type">integer</code>)
      <a id="id-1.9.3.69.6.3.10.1.1.3" class="indexterm"></a>
+     <a id="id-1.9.3.69.6.3.10.1.1.4" class="indexterm"></a>
     </span></dt><dd><p>
 <span class="original">
      Custom &lt;xref linkend="guc-gin-pending-list-limit"/&gt; parameter.
@@ -484,25 +502,31 @@ GINインデックスでは以下の異なるパラメータを受け付けま�
 <acronym class="acronym">BRIN</acronym>インデックスは別のパラメータを受け入れます。
    </p><div class="variablelist"><dl class="variablelist"><dt id="INDEX-RELOPTION-PAGES-PER-RANGE"><span class="term"><code class="literal">pages_per_range</code> (<code class="type">integer</code>)
      <a id="id-1.9.3.69.6.3.12.1.1.3" class="indexterm"></a>
+     <a id="id-1.9.3.69.6.3.12.1.1.4" class="indexterm"></a>
     </span></dt><dd><p>
 <span class="original">
      Defines the number of table blocks that make up one block range for
      each entry of a &lt;acronym&gt;BRIN&lt;/acronym&gt; index (see &lt;xref linkend="brin-intro"/&gt;
      for more details).  The default is &lt;literal&gt;128&lt;/literal&gt;.
 </span>
-<acronym class="acronym">BRIN</acronym>インデックスの各エントリについて1つのブロックレンジを構成するテーブルブロックの数を定義します（詳しくは<a class="xref" href="brin-intro.html" title="68.1. はじめに">68.1</a>参照）。
+<acronym class="acronym">BRIN</acronym>インデックスの各エントリについて1つのブロックレンジを構成するテーブルブロックの数を定義します（詳しくは<a class="xref" href="brin-intro.html" title="71.1. はじめに">71.1</a>参照）。
 デフォルトは<code class="literal">128</code>です。
     </p></dd><dt id="INDEX-RELOPTION-AUTOSUMMARIZE"><span class="term"><code class="literal">autosummarize</code> (<code class="type">boolean</code>)
      <a id="id-1.9.3.69.6.3.12.2.1.3" class="indexterm"></a>
+     <a id="id-1.9.3.69.6.3.12.2.1.4" class="indexterm"></a>
     </span></dt><dd><p>
 <span class="original">
-     Defines whether a summarization run is invoked for the previous page
+     Defines whether a summarization run is queued for the previous page
      range whenever an insertion is detected on the next one.
+     See &lt;xref linkend="brin-operation"/&gt; for more details.
+     The default is &lt;literal&gt;off&lt;/literal&gt;.
 </span>
-次のページへの挿入が検知された時に、いつでも直前のページに対してサマリー処理を起動するかどうかを定義します。
+次のページへの挿入が検知された時に、いつでも直前のページに対してサマリー処理をキューに入れるかどうかを定義します。
+詳細は<a class="xref" href="brin-intro.html#BRIN-OPERATION" title="71.1.1. インデックスの保守">71.1.1</a>を参照してください。
+デフォルトは<code class="literal">off</code>です。
     </p></dd></dl></div></div><div class="refsect2" id="SQL-CREATEINDEX-CONCURRENTLY"><h3>インデックスの同時作成</h3><span class="original">
    &lt;title&gt;Building Indexes Concurrently&lt;/title&gt;
-</span><a id="id-1.9.3.69.6.4.2" class="indexterm"></a><p>
+</span><a id="id-1.9.3.69.6.4.2" class="indexterm"></a><a id="id-1.9.3.69.6.4.3" class="indexterm"></a><p>
 <span class="original">
     Creating an index can interfere with regular operation of a database.
     Normally &lt;productname&gt;PostgreSQL&lt;/productname&gt; locks the table to be indexed against
@@ -544,7 +568,8 @@ GINインデックスでは以下の異なるパラメータを受け付けま�
 もちろん、インデックス作成によりCPUや入出力に余分に負荷がかかりますので、他の操作が低速になる可能性があります。
    </p><p>
 <span class="original">
-    In a concurrent index build, the index is actually entered into
+    In a concurrent index build, the index is actually entered as an
+    &lt;quote&gt;invalid&lt;/quote&gt; index into
     the system catalogs in one transaction, then two table scans occur in
     two more transactions.  Before each table scan, the index build must
     wait for existing transactions that have modified the table to terminate.
@@ -553,16 +578,16 @@ GINインデックスでは以下の異なるパラメータを受け付けま�
     scan to terminate, including transactions used by any phase of concurrent
     index builds on other tables, if the indexes involved are partial or have
     columns that are not simple column references.
-    Then finally the index can be marked ready for use,
+    Then finally the index can be marked &lt;quote&gt;valid&lt;/quote&gt; and ready for use,
     and the &lt;command&gt;CREATE INDEX&lt;/command&gt; command terminates.
     Even then, however, the index may not be immediately usable for queries:
     in the worst case, it cannot be used as long as transactions exist that
     predate the start of the index build.
 </span>
-同時実行インデックス構築では実際には、1つのトランザクションでシステムカタログに登録され、さらに2つのトランザクションで２つのテーブルスキャンが起こります。
+同時実行インデックス構築では実際には、1つのトランザクションで<span class="quote">「<span class="quote">無効な</span>」</span>インデックスとしてシステムカタログに登録され、さらに2つのトランザクションで2つのテーブルスキャンが起こります。
 各テーブルスキャンの前に、インデックス構築はテーブルを修正した実行中のトランザクションが終了するのを待たなければなりません。
 2回目のスキャンの後、インデックス構築は2回目のスキャンより前のスナップショット（<a class="xref" href="mvcc.html" title="第13章 同時実行制御">第13章</a>参照）を持つすべてのトランザクションが終了するのを待たなければなりません。関係するインデックスが部分インデックスであったり、単純な列参照でない列を持っているのなら、ここでのトランザクションは他のテーブルでの同時実行インデックス構築の任意の段階で使われているトランザクションを含みます。
-その後でようやく、インデックスは利用可能であると印が付けられ、<code class="command">CREATE INDEX</code>コマンドが終了します。
+その後でようやく、インデックスは<span class="quote">「<span class="quote">有効</span>」</span>であり利用可能であると印が付けられ、<code class="command">CREATE INDEX</code>コマンドが終了します。
 しかし、それでもインデックスは問い合わせに対して即座に利用可能であるとは限りません。
 最悪の場合、インデックス構築開始前のトランザクションが存在する間は利用できません。
    </p><p>
@@ -582,9 +607,9 @@ GINインデックスでは以下の異なるパラメータを受け付けま�
 </p><pre class="programlisting">
 postgres=# \d tab
        Table "public.tab"
- Column |  Type   | Collation | Nullable | Default 
+ Column |  Type   | Collation | Nullable | Default
 --------+---------+-----------+----------+---------
- col    | integer |           |          | 
+ col    | integer |           |          |
 Indexes:
     "idx" btree (col) INVALID
 </pre><p>
@@ -852,11 +877,8 @@ Indexes:
    Like any long-running transaction, &lt;command&gt;CREATE INDEX&lt;/command&gt; on a
    table can affect which tuples can be removed by concurrent
    &lt;command&gt;VACUUM&lt;/command&gt; on any other table.
-   Excepted from this are operations with the &lt;literal&gt;CONCURRENTLY&lt;/literal&gt;
-   option for indexes that are not partial and do not index any expressions.
 </span>
 他の時間のかかるトランザクションと同じく、あるテーブルに対する<code class="command">CREATE INDEX</code>は、その他のテーブルに対する同時実行中の<code class="command">VACUUM</code>によりどのタプルが削除できるかに影響します。
-この例外は、部分インデックスでなくて式をインデックス化しないインデックスに対する<code class="literal">CONCURRENTLY</code>オプション付きの操作です。
   </p><p>
 <span class="original">
    Prior releases of &lt;productname&gt;PostgreSQL&lt;/productname&gt; also had an
@@ -996,4 +1018,4 @@ CREATE INDEX CONCURRENTLY sales_quantity_index ON sales_table (quantity);
 標準SQLにはインデックスについての規定はありません。
   </p></div><div class="refsect1" id="id-1.9.3.69.10"><h2>関連項目</h2><span class="original">
   &lt;title&gt;See Also&lt;/title&gt;
-</span><span class="simplelist"><a class="xref" href="sql-alterindex.html" title="ALTER INDEX"><span class="refentrytitle">ALTER INDEX</span></a>, <a class="xref" href="sql-dropindex.html" title="DROP INDEX"><span class="refentrytitle">DROP INDEX</span></a>, <a class="xref" href="sql-reindex.html" title="REINDEX"><span class="refentrytitle">REINDEX</span></a>, <a class="xref" href="progress-reporting.html#CREATE-INDEX-PROGRESS-REPORTING" title="28.4.2. CREATE INDEXの進捗状況のレポート">28.4.2</a></span></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-creategroup.html" title="CREATE GROUP">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-createlanguage.html" title="CREATE LANGUAGE">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">CREATE GROUP </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> CREATE LANGUAGE</td></tr></table></div></body></html>
+</span><span class="simplelist"><a class="xref" href="sql-alterindex.html" title="ALTER INDEX"><span class="refentrytitle">ALTER INDEX</span></a>, <a class="xref" href="sql-dropindex.html" title="DROP INDEX"><span class="refentrytitle">DROP INDEX</span></a>, <a class="xref" href="sql-reindex.html" title="REINDEX"><span class="refentrytitle">REINDEX</span></a>, <a class="xref" href="progress-reporting.html#CREATE-INDEX-PROGRESS-REPORTING" title="28.4.2. CREATE INDEXの進捗状況のレポート">28.4.2</a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-creategroup.html" title="CREATE GROUP">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-createlanguage.html" title="CREATE LANGUAGE">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">CREATE GROUP </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15rc1文書">ホーム</a></td><td width="40%" align="right" valign="top"> CREATE LANGUAGE</td></tr></table></div></body></html>

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>11.7. 式に対するインデックス</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="indexes-unique.html" title="11.6. 一意インデックス" /><link rel="next" href="indexes-partial.html" title="11.8. 部分インデックス" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="indexes.html" title="第11章 インデックス">第11章 インデックス</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      indexes-expressional.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>11.7. 式に対するインデックス</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="indexes-unique.html" title="11.6. 一意インデックス" /><link rel="next" href="indexes-partial.html" title="11.8. 部分インデックス" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15rc1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="indexes.html" title="第11章 インデックス">第11章 インデックス</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15rc1 : indexes-expressional.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="indexes-unique.html" title="11.6. 一意インデックス">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="indexes.html" title="第11章 インデックス">上へ</a></td><td width="60%" align="center">11.7. 式に対するインデックス</td><td width="20%" align="right"> <a accesskey="n" href="indexes-partial.html" title="11.8. 部分インデックス">次へ</a></td></tr></table><hr /></div><div class="sect1" id="INDEXES-EXPRESSIONAL"><div class="titlepage"><div><div><h2 class="title" style="clear: both">11.7. 式に対するインデックス</h2></div></div></div><span class="original">
   &lt;title&gt;Indexes on Expressions&lt;/title&gt;
-</span><a id="id-1.5.10.10.2" class="indexterm"></a><p>
+</span><a id="id-1.5.10.11.2" class="indexterm"></a><a id="id-1.5.10.11.3" class="indexterm"></a><p>
 <span class="original">
    An index column need not be just a column of the underlying table,
    but can be a function or scalar expression computed from one or
@@ -25,7 +25,7 @@ SELECT * FROM test1 WHERE lower(col1) = 'value';
    defined on the result of the &lt;literal&gt;lower(col1)&lt;/literal&gt;
    function:
 </span>
-<code class="literal">lower(column)</code>関数の結果にインデックスが定義されていれば、この問い合わせでインデックスを使用することができます。
+<code class="literal">lower(col1)</code>関数の結果にインデックスが定義されていれば、この問い合わせでインデックスを使用することができます。
 </p><pre class="programlisting">
 CREATE INDEX test1_lower_col1_idx ON test1 (lower(col1));
 </pre><p>
@@ -66,8 +66,8 @@ CREATE INDEX people_names ON people ((first_name || ' ' || last_name));
   </p><p>
 <span class="original">
    Index expressions are relatively expensive to maintain, because the
-   derived expression(s) must be computed for each row upon insertion
-   and whenever it is updated.  However, the index expressions are
+   derived expression(s) must be computed for each row insertion
+   and &lt;link linkend="storage-hot"&gt;non-HOT update.&lt;/link&gt;  However, the index expressions are
    &lt;emphasis&gt;not&lt;/emphasis&gt; recomputed during an indexed search, since they are
    already stored in the index.  In both examples above, the system
    sees the query as just &lt;literal&gt;WHERE indexedcolumn = 'constant'&lt;/literal&gt;
@@ -75,8 +75,8 @@ CREATE INDEX people_names ON people ((first_name || ' ' || last_name));
    query.  Thus, indexes on expressions are useful when retrieval speed
    is more important than insertion and update speed.
 </span>
-派生した式が、行が挿入、更新される度に実行されなければなりませんので、インデックス式は相対的に見て維持が高価です。
+《マッチ度[90.080000]》派生した式が、行挿入と非HOT更新の度に実行されなければなりませんので、インデックス式は相対的に見て維持が高価です。
 しかし、インデックス式はインデックス内にすでに格納されているため、インデックスを使用する検索の間は再計算<span class="emphasis"><em>されません</em></span>。
 上の両方の例では、システムは問い合わせを単なる<code class="literal">WHERE indexedcolumn = 'constant'</code>と理解しますので、この検索速度は他の単純なインデックス問い合わせと同じです。
 したがって、式に対するインデックスは取り出し速度が挿入、更新速度より重要な場合に有用です。
-  </p></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="indexes-unique.html" title="11.6. 一意インデックス">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="indexes.html" title="第11章 インデックス">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="indexes-partial.html" title="11.8. 部分インデックス">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">11.6. 一意インデックス </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 11.8. 部分インデックス</td></tr></table></div></body></html>
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="indexes-unique.html" title="11.6. 一意インデックス">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="indexes.html" title="第11章 インデックス">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="indexes-partial.html" title="11.8. 部分インデックス">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">11.6. 一意インデックス </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15rc1文書">ホーム</a></td><td width="40%" align="right" valign="top"> 11.8. 部分インデックス</td></tr></table></div></body></html>
