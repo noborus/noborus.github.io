@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>26.3. 継続的アーカイブとポイントインタイムリカバリ（PITR）</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="backup-file.html" title="26.2. ファイルシステムレベルのバックアップ" /><link rel="next" href="high-availability.html" title="第27章 高可用性、負荷分散およびレプリケーション" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15rc2文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="backup.html" title="第26章 バックアップとリストア">第26章 バックアップとリストア</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15rc2 : continuous-archiving.html">誤訳等の報告
-                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="backup-file.html" title="26.2. ファイルシステムレベルのバックアップ">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="backup.html" title="第26章 バックアップとリストア">上へ</a></td><td width="60%" align="center">26.3. 継続的アーカイブとポイントインタイムリカバリ（PITR）</td><td width="20%" align="right"> <a accesskey="n" href="high-availability.html" title="第27章 高可用性、負荷分散およびレプリケーション">次へ</a></td></tr></table><hr /></div><div class="sect1" id="CONTINUOUS-ARCHIVING"><div class="titlepage"><div><div><h2 class="title" style="clear: both">26.3. 継続的アーカイブとポイントインタイムリカバリ（PITR）</h2></div></div></div><span class="original">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>26.3. 継続的アーカイブとポイントインタイムリカバリ（PITR）</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="backup-file.html" title="26.2. ファイルシステムレベルのバックアップ" /><link rel="next" href="high-availability.html" title="第27章 高可用性、負荷分散およびレプリケーション" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="backup.html" title="第26章 バックアップとリストア">第26章 バックアップとリストア</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : continuous-archiving.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="backup-file.html" title="26.2. ファイルシステムレベルのバックアップ">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="backup.html" title="第26章 バックアップとリストア">上へ</a></td><td width="60%" align="center">26.3. 継続的アーカイブとポイントインタイムリカバリ（PITR）</td><td width="20%" align="right"> <a accesskey="n" href="high-availability.html" title="第27章 高可用性、負荷分散およびレプリケーション">次へ</a></td></tr></table><div class="other_version"><a href="https://www.postgresql.jp/document/">他のバージョンの文書</a></div><hr /></div><div class="sect1" id="CONTINUOUS-ARCHIVING"><div class="titlepage"><div><div><h2 class="title" style="clear: both">26.3. 継続的アーカイブとポイントインタイムリカバリ（PITR）</h2></div></div></div><span class="original">
   &lt;title&gt;Continuous Archiving and Point-in-Time Recovery (PITR)&lt;/title&gt;
 </span><a id="id-1.6.13.8.2" class="indexterm"></a><a id="id-1.6.13.8.3" class="indexterm"></a><a id="id-1.6.13.8.4" class="indexterm"></a><a id="id-1.6.13.8.5" class="indexterm"></a><a id="id-1.6.13.8.6" class="indexterm"></a><p>
 <span class="original">
@@ -170,14 +170,20 @@ WALアーカイブを行わない場合、システムは通常数個のセグ�
 《機械翻訳》WAL保管を有効にするには、<a class="xref" href="runtime-config-wal.html#GUC-WAL-LEVEL">wal_level</a>設定パラメータを<code class="literal">replica</code>以上に、<a class="xref" href="runtime-config-wal.html#GUC-ARCHIVE-MODE">archive_mode</a>を<code class="literal">on</code>に設定し、<a class="xref" href="runtime-config-wal.html#GUC-ARCHIVE-COMMAND">archive_command</a>設定パラメータで使用するシェルコマンドを指定するか、<a class="xref" href="runtime-config-wal.html#GUC-ARCHIVE-LIBRARY">archive_library</a>設定パラメータで使用するライブラリを指定します。
 実際には、これらの設定は常に<code class="filename">postgresql.conf</code>ファイルに置かれます。
    </p><p>
-    In <code class="varname">archive_command</code>,
-    <code class="literal">%p</code> is replaced by the path name of the file to
-    archive, while <code class="literal">%f</code> is replaced by only the file name.
+<span class="original">
+    In &lt;varname&gt;archive_command&lt;/varname&gt;,
+    &lt;literal&gt;%p&lt;/literal&gt; is replaced by the path name of the file to
+    archive, while &lt;literal&gt;%f&lt;/literal&gt; is replaced by only the file name.
     (The path name is relative to the current working directory,
     i.e., the cluster's data directory.)
-    Use <code class="literal">%%</code> if you need to embed an actual <code class="literal">%</code>
+    Use &lt;literal&gt;%%&lt;/literal&gt; if you need to embed an actual &lt;literal&gt;%&lt;/literal&gt;
     character in the command.  The simplest useful command is something
     like:
+</span>
+《機械翻訳》<code class="varname">archive_command</code>では、<code class="literal">%p</code>はアーカイブするファイルのパス名に置き換えられますが、<code class="literal">%f</code>はファイル名のみに置き換えられます。
+(パス名は現在の作業ディレクトリ、つまりクラスタのデータディレクトリからの相対パスです。)
+実際の<code class="literal">%</code>文字をコマンドに埋め込む必要がある場合は<code class="literal">%%</code>を使用してください。
+最も簡単で便利なコマンドは以下のようなものです。
 </p><pre class="programlisting">
 archive_command = 'test ! -f /mnt/server/archivedir/%f &amp;&amp; cp %p /mnt/server/archivedir/%f'  # Unix
 archive_command = 'copy "%p" "C:\\server\\archivedir\\%f"'  # Windows
@@ -505,15 +511,18 @@ WALアーカイブが有効であり、正常に動作することを確認し�
      rights to run &lt;function&gt;pg_backup_start&lt;/function&gt; (superuser,
      or a user who has been granted &lt;literal&gt;EXECUTE&lt;/literal&gt; on the
      function) and issue the command:
-&lt;programlisting&gt;
+</span>
+《機械翻訳》実行権限を持つユーザ<code class="function">pg_backup_start</code>としてサーバ（どのデータベースであってもかまいません）に接続します。ユーザはスーパーユーザか、またはこの関数に<code class="literal">EXECUTE</code>権限を与えられたユーザです。以下のコマンドを発行します。
+</p><pre class="programlisting">
 SELECT pg_backup_start(label =&gt; 'label', fast =&gt; false);
-&lt;/programlisting&gt;
+</pre><p>
+<span class="original">
      where &lt;literal&gt;label&lt;/literal&gt; is any string you want to use to uniquely
      identify this backup operation. The connection
      calling &lt;function&gt;pg_backup_start&lt;/function&gt; must be maintained until the end of
      the backup, or the backup will be automatically aborted.
 </span>
-《機械翻訳》実行権限を持つユーザ<code class="function">pg_backup_start</code>としてサーバ(どのデータベースでも構いません)に接続し、以下のコマンドを発行します:</p><pre class="programlisting">SELECT pg_backup_start(label=&gt;'label',fast=&gt;false);</pre><p>ここで<code class="literal">label</code>は、このバックアップ操作を一意に識別するために使用したい文字列です。
+《機械翻訳》ここで<code class="literal">label</code>は、このバックアップ操作を一意に識別するために使用したい文字列です。
 <code class="function">pg_backup_start</code>を呼び出す接続は、バックアップが終了するまで維持されなければなりません。
 さもないと、バックアップは自動的に打ち切られます。
     </p><p>
@@ -1290,4 +1299,4 @@ archive_command = 'local_backup_script.sh "%p" "%f"'
 ページスナップショットを無効にしても PITR処理の際にログが使用できなくなることはありません。
 将来の課題は、<code class="varname">full_page_writes</code>がたとえオンになっている場合であっても不要なページを取り除き、アーカイブ済みWALデータの圧縮を行うことでしょう。
 差し当たり管理者は、可能な限りチェックポイント間隔パラメータを大きくすることによって、WALに含まれるページスナップショットの数を削減することができます。
-   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="backup-file.html" title="26.2. ファイルシステムレベルのバックアップ">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="backup.html" title="第26章 バックアップとリストア">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="high-availability.html" title="第27章 高可用性、負荷分散およびレプリケーション">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">26.2. ファイルシステムレベルのバックアップ </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15rc2文書">ホーム</a></td><td width="40%" align="right" valign="top"> 第27章 高可用性、負荷分散およびレプリケーション</td></tr></table></div></body></html>
+   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="backup-file.html" title="26.2. ファイルシステムレベルのバックアップ">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="backup.html" title="第26章 バックアップとリストア">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="high-availability.html" title="第27章 高可用性、負荷分散およびレプリケーション">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">26.2. ファイルシステムレベルのバックアップ </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 第27章 高可用性、負荷分散およびレプリケーション</td></tr></table></div></body></html>
