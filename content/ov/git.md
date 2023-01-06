@@ -25,7 +25,7 @@ You will be able to move by commit as shown below.
 
 ```config
 [pager]
-    diff = ov -F --section-delimiter "^diff"
+    log = ov -F --section-delimiter "^commit" 
 ```
 
 ![git log](/ov/git-log.gif)
@@ -37,7 +37,7 @@ You will be able to move in diff units as shown below.
 
 ```config
 [pager]
-    log = ov -F --section-delimiter "^commit" 
+    diff = ov -F --section-delimiter "^diff"
 ```
 
 ![git dfff](/ov/git-diff.gif)

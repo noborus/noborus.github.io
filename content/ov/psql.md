@@ -17,7 +17,7 @@ If it fits on the screen, exit the pager(-F).
 PSQL_PAGER 'ov -F -C -d "|" -H1'
 ```
 
-The following sets the header style of `ov.yaml`.
+The following sets the header style of `config.yaml`.
 
 ```yaml
 StyleHeader:

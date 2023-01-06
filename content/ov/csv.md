@@ -10,7 +10,7 @@ weight: 10
 `ov` can also be used as a csv viewer.
 
 ```console
-ov -H1 -C -d',' -c MOCK_DATA.csv
+ov -H1 -C -d',' -c --column-rainbow MOCK_DATA.csv
 ```
 
-![ov-csv.png](/ov/ov-csv.png)
+![ov-csv.gif](/ov/ov-csv.gif)

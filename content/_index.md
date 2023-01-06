@@ -9,7 +9,7 @@ weight: 1
 
 ---
 
-### trdsql 
+### trdsql
 
 [![trdsql](/images/GitHub-Mark-32px.png)](https://github.com/noborus/trdsql) [![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/trdsql)](https://pkg.go.dev/github.com/noborus/trdsql)
 
