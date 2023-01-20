@@ -32,7 +32,7 @@ less,moreの代わりとしても動作する高機能ページャー。
 * [ov pages](/ov/)
 * [ovの紹介](blog/oviewer/)
 * [ovの紹介](https://zenn.dev/noborus/articles/2b1087a1274cf41c4c0a)(Zenn)
-
+* [ターミナルページャー新時代](https://qiita.com/noborus/items/ce119d0d86dd689e0d18)(Qiita)
 ---
 
 ### ovcs
