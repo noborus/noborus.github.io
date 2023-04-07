@@ -93,6 +93,12 @@ PostgreSQL の pg_stat_progressを監視、表示するCLIツール
 
 PostgreSQLの日本語マニュアル翻訳ツール
 
+### guesswidth
+
+[![guesswidth](/images/GitHub-Mark-32px.png)](https://github.com/noborus/guesswidth)
+
+CLI出力の列の幅を推測するライブラリ・ツール
+
 ---
 ## 参加しているプロジェクト
 
