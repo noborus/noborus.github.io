@@ -33,6 +33,7 @@ less,moreの代わりとしても動作する高機能ページャー。
 * [ovの紹介](blog/oviewer/)
 * [ovの紹介](https://zenn.dev/noborus/articles/2b1087a1274cf41c4c0a)(Zenn)
 * [ターミナルページャー新時代](https://qiita.com/noborus/items/ce119d0d86dd689e0d18)(Qiita)
+
 ---
 
 ### ovcs
@@ -51,7 +52,7 @@ Terminal Pager ov を client/server化したもの。
 
 データベースのテーブルと親和性のあるファイルフォーマット(tbln)を扱うライブラリ＆ツール
 
-* [[tbln.dev](https://tbln.dev/)]
+* [[tbln.dev](https://tbln.dev/)
 
 ---
 
@@ -93,13 +94,19 @@ PostgreSQL の pg_stat_progressを監視、表示するCLIツール
 
 PostgreSQLの日本語マニュアル翻訳ツール
 
+---
+
 ### guesswidth
 
 [![guesswidth](/images/GitHub-Mark-32px.png)](https://github.com/noborus/guesswidth)
 
 CLI出力の列の幅を推測するライブラリ・ツール
 
+* [幅指定フォーマットの幅を推測する](https://zenn.dev/noborus/articles/0aeef54ead08f5)
+* [Guess the width of the width-specified format](/blog/guesswidth.md)
+
 ---
+
 ## 参加しているプロジェクト
 
 ### jpug-doc
