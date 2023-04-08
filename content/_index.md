@@ -103,7 +103,7 @@ PostgreSQLの日本語マニュアル翻訳ツール
 CLI出力の列の幅を推測するライブラリ・ツール
 
 * [幅指定フォーマットの幅を推測する](https://zenn.dev/noborus/articles/0aeef54ead08f5)
-* [Guess the width of the width-specified format](/blog/guesswidth.md)
+* [Guess the width of the width-specified format](blog/guesswidth/)
 
 ---
 
