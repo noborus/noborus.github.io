@@ -53,9 +53,9 @@ sample.json
 
 これをそのままtrdsqlを実行すると以下のようになります(見やすいように-oatを付けています。CSV出力にすると「"」が含まれる文字列のためエスケープされて出力されます。)
 
-{{< cmd >}}
+```console
 trdsql -oat "SELECT color,category,code FROM sample.json"
-{{</cmd >}}
+```
 ```
 +-------+----------+-----------------------------------+
 | color | category |               code                |
@@ -73,9 +73,9 @@ trdsql -oat "SELECT color,category,code FROM sample.json"
 SQLite3とMySQLではjson_extract()により`$`をルートとして（コマンドラインでは`$`が意味を持つので「\」でエスケープしてください）、指定した値を取得出来ます。
 codeの中の"hex"のみを表示するには以下のようにします。
 
-{{< cmd >}}
+```console
 trdsql -ijson -oat "SELECT color,category,json_extract(code,'\$.hex') AS hex FROM sample.json"
-{{</cmd >}}
+```
 ```
 +-------+----------+------+
 | color | category | hex  |
@@ -91,9 +91,9 @@ trdsql -ijson -oat "SELECT color,category,json_extract(code,'\$.hex') AS hex FRO
 PostgreSQLでは、json_extract_path_textを使用して、取得できます。
 PostgreSQLで取得する場合は、jsonやjsonbにキャストしてから関数を使用してください。
 
-{{< cmd >}}
+```console
 trdsql -driver postgres -dsn "dbname=trdsql_test" "SELECT color,category,json_extract_path_text(code::json,'hex') AS hex FROM sample.json"
-{{</cmd >}}
+```
 ```
 +-------+----------+------+
 | color | category | hex  |
@@ -106,9 +106,9 @@ trdsql -driver postgres -dsn "dbname=trdsql_test" "SELECT color,category,json_ex
 
 また、PostgreSQLでは12からjsonb_path_query()でJSON_PATH指定で取得できます（返されるのは、textではなくJSONの値です）。
 
-{{< cmd >}}
+```console
 trdsql -driver postgres -dsn "dbname=trdsql_test" "SELECT color,category,jsonb_path_query(code::jsonb,'\$.hex')::text AS hex FROM sample.json"
-{{</cmd >}}
+```
 ```
 +-------+----------+--------+
 | color | category |  hex   |

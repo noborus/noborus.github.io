@@ -1,7 +1,9 @@
 +++
 author = "Noboru Saito"
-title = "ov - Feature-rich terminal pager"
-date = "2023-06-02"
+title = "ov"
+date = "2023-06-08"
+tags = "ov"
+weight = 3
 +++
 
 [![ov](ov.gif)](https://github.com/noborus/ov)
@@ -19,3 +21,7 @@ not only the pager function to display at the terminal size.
 * Table-formatted text can be interpreted as a column by the delimiter.
 * Text can be interpreted as a section by splitting the line with a delimiter.
 * [Supports files larger than memory](memory).
+
+## Use case
+
+{{% children sort="weight" %}}

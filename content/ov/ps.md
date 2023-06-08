@@ -1,6 +1,6 @@
 ---
 author: "Noboru Saito"
-title: "Use ov with ps"
+title: "ps"
 date: 2023-05-31T09:00:00+09:00
 tags: ["ov"]
 categories: ["ov"]

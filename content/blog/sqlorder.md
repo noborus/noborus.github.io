@@ -18,9 +18,9 @@ tom__boさんが書かれた[8.0.22でのprepared statementの挙動変化](http
 
 その中で紹介されていた、
 
-{{< blockquote >}}
+{{% notice %}}
 For a prepared statement of the form SELECT expr1, expr2, ... FROM table ORDER BY ?, passing an integer value N for the parameter no longer causes ordering of the results by the Nth expression in the select list; the results are no longer ordered, as is expected with ORDER BY constant.
-{{< /blockquote >}}
+{{% /notice %}}
 
 「the results are no longer ordered, as is expected with ORDER BY constant.」を見て？？なったので、ちょっと調べてみることに。
 

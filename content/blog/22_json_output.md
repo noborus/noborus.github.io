@@ -33,9 +33,9 @@ JSON関数で出力する場合は、「”」等がエスケープされない-
 SQLite3、MySQLでは、json_array()やjson_object()を使用することによりJSONを生成できます。
 ここでは「名前:値」の形式で出力するためjson_objectを使用します。2つペアの引数で、指定していきます。
 
-{{< cmd >}}
+```console
 trdsql -ih -oraw "SELECT json_object('id',id,'name',name) FROM header.csv"
-{{< /cmd >}}
+```
 
 ```json
 {"id":"1","name":"Orange"}
@@ -46,9 +46,9 @@ trdsql -ih -oraw "SELECT json_object('id',id,'name',name) FROM header.csv"
 階層を深くするには、json_object()を内部でさらに使います。
 SQLite3にはjson_pretty()関数が無いので、jqで見やすくしています。
 
-{{< cmd >}}
+```console
 trdsql -ih -oraw "SELECT json_object('fruits', json_object('id',id,'name',name)) FROM header.csv"|jq .
-{{< /cmd >}}
+```
 
 ```json
 {
@@ -75,9 +75,9 @@ trdsql -ih -oraw "SELECT json_object('fruits', json_object('id',id,'name',name))
 
 ## SQLite3
 
-{{< cmd >}}
+```console
 trdsql -ih -oraw "SELECT json_group_array(json_object('fruits', json_object('id',id,'name',name))) FROM header.csv"|jq .
-{{< /cmd >}}
+```
 
 ```json
  [
@@ -104,10 +104,10 @@ trdsql -ih -oraw "SELECT json_group_array(json_object('fruits', json_object('id'
 
 ## MySQL
 
-{{< cmd >}}
+```console
 trdsql -driver mysql -dsn "noborus:noborus@/trdsql_test" -ih -oraw "SELECT json_pretty(json_arrayagg(json_object('fruits', json_object('id',id,'name',name)))) "\
   "FROM header.csv"
-{{< /cmd >}}
+```
 
 ```json
 [
@@ -143,10 +143,10 @@ PostgreSQLでは、JSONを扱うのにjsonとjsonbの２つの型があり、関
 
 今回は jsonb_pretty()がjsonbにしかないので、jsonb関数を使用します。SQLite3やMySQLのjson_object()とほぼ同じ動作をする関数jsonb_build_object()を使用するとJSONを生成できます。
 
-{{< cmd >}}
+```console
 trdsql -driver postgres -dsn "dbname=trdsql_test" -ih -oraw "SELECT jsonb_pretty(jsonb_build_object('fruits', jsonb_build_object('id',id,'name',name))) "\
   "FROM header.csv"
-{{< /cmd >}}
+```
 
 ```json
 {
@@ -171,9 +171,9 @@ trdsql -driver postgres -dsn "dbname=trdsql_test" -ih -oraw "SELECT jsonb_pretty
 
 これをさらに配列にして一つのJSONにするには、json_agg()又はjsonb_agg()を使用します。
 
-{{< cmd >}}
+```console
 trdsql -driver postgres -dsn "dbname=trdsql_test" -ih -oraw "SELECT jsonb_pretty(jsonb_agg(jsonb_build_object('fruits', jsonb_build_object('id',id,'name',name))))  FROM header.csv"
-{{< /cmd >}}
+```
 
 ```json
 [

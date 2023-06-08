@@ -29,9 +29,9 @@ CSV、LTSV、JSON等の相互変換ができます。
 
 CSV(-icsv)からLTSV(-oltsv)への変換は以下のようにします。
 
-{{< cmd >}}
+```console
 trdsql -icsv -oltsv "SELECT * FROM ファイル名"
-{{< /cmd >}}
+```
 
 
 ### CSV header
@@ -47,9 +47,9 @@ id,name
 3,Apple
 ```
 
-{{< cmd >}}
+```console
 trdsql -icsv -ih -oltsv "SELECT * FROM header.csv" > test.ltsv
-{{< /cmd >}}
+```
 
 test.ltsv
 
@@ -65,9 +65,9 @@ id:3	name:Apple
 
 上記で出力されたLTSVを入力に使用すれば、CSVに戻ります。
 
-{{< cmd >}}
+```console
 trdsql -iltsv -ocsv -oh "SELECT * FROM test.ltsv"
-{{< /cmd >}}
+```
 
 ```CSV
 id,name
@@ -85,17 +85,17 @@ id,name
 
 以下はTSVからCSVの変更になります。
 
-{{< cmd >}}
+```console
 trdsql -icsv -id "\t" -ih "SELECT * FROM test.tsv"
-{{< /cmd >}}
+```
 
 ### JSON出力
 
 JSON出力では、全体を配列としてのJSONが出力されます。
 
-{{< cmd >}}
+```console
 trdsql -icsv -ih -ojson "SELECT * FROM header.csv"
-{{< /cmd >}}
+```
 
 ```JSON
 [
@@ -129,9 +129,9 @@ trdsqlではJSONは、行と列で構成されているフォーマットを想�
 
 このような列が同じで揃っていれば、CSVやLTSVと同様に入力が可能です。
 
-{{< cmd >}}
+```console
 trdsql -ijson -ocsv "SELECT * FROM test.json"
-{{< /cmd >}}
+```
 
 (JSONのオブジェクトは順序が不定のため、列の順番はname,idのように前後することがあります。)
 
@@ -139,9 +139,9 @@ trdsql -ijson -ocsv "SELECT * FROM test.json"
 
 また出力だけならば、更に多くのフォーマットに対応しているため、マークダウンのテーブル(CSV2MDとかJSON2MDとかLTSV2MDとか呼ばれるツールに相当)として出力できます。
 
-{{< cmd >}}
+```console
 trdsql -icsv -ih -ovf "SELECT * FROM header.csv"
-{{< /cmd >}}
+```
 ```
 | id |  name  |
 |----|--------|
@@ -152,9 +152,9 @@ trdsql -icsv -ih -ovf "SELECT * FROM header.csv"
 
 列が多いCSVファイル等で横に長くなってしまって見づらいファイルをVerticalフォーマットで縦に表示したり出来ます。
 
-{{< cmd >}}
+```console
 trdsql -icsv -ih -ovf "SELECT * FROM header.csv"
-{{< /cmd >}}
+```
 ```
 ---[ 1]-----------------------------------------------------
     id | 1

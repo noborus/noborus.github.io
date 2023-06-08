@@ -45,9 +45,9 @@ dsnの項目には以下が指定できます。デフォルトの場合は省�
 例えば、ローカルホストのportが5433でデータベース名がtrdsql_testに接続するには以下のようにします。
 
 
-{{<cmd>}}
+```console
 trdsql -driver postgres -dsn "host=localhost port=5433 dbname=trdsql_test" "SELECT 1"
-{{</cmd>}}
+```
 
 ### UNIXドメインソケット
 
@@ -61,9 +61,9 @@ UNIXドメインソケットへ接続もできます。
 
 上記の場合、hostに`/var/run/postgresql/`を指定します。「`/`」から始まるとUnixドメインソケットとみなされます。portは`.s.PGSQL.`の後にある「5432」を指定します。
 
-{{<cmd>}}
+```console
 trdsql -driver postgres -dsn "host=/var/run/postgresql/ port=5432 dbname=trdsql_test" "SELECT VERSION()"
-{{</cmd>}}
+```
 ```
 "PostgreSQL 10.10 (Ubuntu 10.10-0ubuntu0.18.04.1) on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 7.4.0-1ubuntu1~18.04.1) 7.4.0, 64-bit"
 ```
@@ -76,9 +76,9 @@ trdsql -driver postgres -dsn "host=/var/run/postgresql/ port=5432 dbname=trdsql_
 
 というファイルがあれば、以下のようにして接続します。
 
-{{<cmd>}}
+```console
 trdsql -driver postgres -dsn "host=/tmp/ port=5120 dbname=postgres" "SELECT VERSION()"
-{{</cmd>}}
+```
 ```
 "PostgreSQL 12.0 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 7.4.0-1ubuntu1~18.04.1) 7.4.0, 64-bit"
 ```
@@ -91,9 +91,9 @@ trdsql -driver postgres -dsn "host=/tmp/ port=5120 dbname=postgres" "SELECT VERS
 
 PostgreSQLドライバを指定して、-aオプションによる解析をおこなうとSQLの例も変更されています。
 
-{{<cmd>}}
+```console
 trdsql -driver postgres -dsn "host=localhost dbname=trdsql_test" -ih  -a sample.csv
-{{</cmd>}}
+```
 ```
 The table name is sample.csv.
 The file type is CSV.
@@ -131,9 +131,9 @@ trdsqlは対象のファイルが無くてもSQLの実行するようになっ�
 
 例えば実際のテーブルをMarkDownで出力することも簡単にできます。
 
-{{<cmd>}}
+```console
 trdsql -driver postgres -dsn "host=localhost dbname=noborus" -omd -ih "SELECT * FROM city LIMIT 10"
-{{</cmd>}}
+```
 ```
 | city_id |        city        | country_id |     last_update      |
 |---------|--------------------|------------|----------------------|

@@ -32,23 +32,23 @@ param=valueのパラメーターは多くの種類がありますので、[go-sq
 
 ローカルホストのデフォルトのUNIXドメインソケットを使用する場合は、ユーザー名、パスワード、データベース名を指定すれば接続できます。
 
-{{< cmd >}}
+```console
 trdsql -driver mysql -dsn "noborus:noborus@/trdsql_test" "SELECT 1"
-{{< /cmd >}}
+```
 
 UNIXドメインソケットのパスを指定するには、プロトコルにunixを指定して、`unix(パス)`で指定します。
 
-{{< cmd >}}
+```console
 trdsql -driver mysql -dsn "noborus:noborus@unix(/var/run/mysqld/mysqld.sock)/trdsql_test" "SELECT 1"
-{{< /cmd >}}
+```
 
 ### TCP接続
 
 TCPはプロトコルにtcpを指定して、`tcp(ホスト名:ポート番号)`を指定します。
 
-{{< cmd >}}
+```console
 trdsql -driver mysql -dsn "noborus:noborus@tcp(localhost:3306)/trdsql_test" "SELECT 1"
-{{< /cmd >}}
+```
 
 ### 実テーブルの出力
 
@@ -56,9 +56,9 @@ trdsql -driver mysql -dsn "noborus:noborus@tcp(localhost:3306)/trdsql_test" "SEL
 
 前回のPostgreSQLと同様にMySQLのテーブルに対してSQLを実行し、オプションで指定したフォーマットで出力することが出来ます。
 
-{{< cmd >}}
+```console
 trdsql -driver mysql -dsn "noborus:noborus@/trdsql_test" -oat -ih "SELECT * FROM actor LIMIT 10"
-{{< /cmd >}}
+```
 ```
 +----------+------------+--------------+---------------------+
 | actor_id | first_name |  last_name   |     last_update     |

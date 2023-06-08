@@ -1,6 +1,6 @@
 +++
 author = "Noboru Saito"
-title = "ov - Memory management"
+title = "Memory management"
 date = "2023-06-02"
 +++
 

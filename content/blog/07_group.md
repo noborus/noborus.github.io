@@ -32,25 +32,25 @@ orange,40
 
 ここでappleやorange毎の合計を出したい場合は、以下のように検索条件で絞れば計算できますが、nameの種類の数だけ実行するとなると大変な作業になります。
 
-{{<cmd>}}
+```console
 trdsql -ih "SELECT name,SUM(CAST(price AS INT)) as sum FROM sample.csv WHERE name='apple'"
-{{</cmd>}}
+```
 ```
 apple,280
 ```
 
-{{<cmd>}}
+```console
 trdsql -ih "SELECT name,SUM(CAST(price AS INT)) as sum FROM sample.csv WHERE name='orange'"
-{{</cmd>}}
+```
 ```
 orange,130
 ```
 
 そこで`GROUP BY`を使ってnameをグループとして扱うことで、それぞれの集計結果を求めることができます。
 
-{{<cmd>}}
+```console
 trdsql -ih "SELECT name,SUM(CAST(price AS INT)) as sum FROM sample.csv GROUP BY name"
-{{</cmd>}}
+```
 ```
 apple,280
 melon,500
@@ -60,10 +60,10 @@ orange,130
 前回の集計を少し変えてname毎に出すように出力してみます。
 出力は-oat(Ascii Table)を使うと見やすく表示できます。
 
-{{<cmd>}}
+```console
 trdsql -ih -oat \
 "SELECT name, COUNT(name) as count, MIN(CAST(price AS INT)) AS min, MAX(CAST(price AS INT)) as max, SUM(CAST(price AS INT)) as sum,  AVG(CAST(price AS INT)) as avg  FROM sample.csv GROUP BY name"
-{{</cmd>}}
+```
 ```
 +--------+-------+-----+-----+-----+--------------------+
 |  name  | count | min | max | sum |        avg         |
@@ -76,9 +76,9 @@ trdsql -ih -oat \
 
 GROUP集計した結果をORDER BYで並べ替えることもできます。
 
-{{<cmd>}}
+```console
 trdsql -ih -oat "SELECT name, COUNT(name) as count, MIN(CAST(price AS INT)) AS min, MAX(CAST(price AS INT)) as max, SUM(CAST(price AS INT)) as sum, AVG(CAST(price AS INT)) as avg  FROM sample.csv GROUP BY name ORDER BY sum DESC"
-{{</cmd>}}
+```
 ```
 +--------+-------+-----+-----+-----+--------------------+
 |  name  | count | min | max | sum |        avg         |
@@ -91,9 +91,9 @@ trdsql -ih -oat "SELECT name, COUNT(name) as count, MIN(CAST(price AS INT)) AS m
 
 GROUP集計した結果についてWHEREで条件を指定することはできません。そこからさらに絞るにはHAVINGを使用します。
 
-{{<cmd>}}
+```console
 trdsql -ih -oat "SELECT name, COUNT(name) as count, MIN(CAST(price AS INT)) AS min, MAX(CAST(price AS INT)) as max, SUM(CAST(price AS INT)) as sum, AVG(CAST(price AS INT)) as avg  FROM sample.csv  GROUP BY name  HAVING COUNT(name) > 1 ORDER BY sum DESC"
-{{</cmd>}}
+```
 ```
 +--------+-------+-----+-----+-----+--------------------+
 |  name  | count | min | max | sum |        avg         |

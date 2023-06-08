@@ -1,6 +1,6 @@
 ---
 author: "Noboru Saito"
-title: "Use ov with man"
+title: "man"
 date: 2022-05-24T09:00:00+09:00
 tags: ["ov"]
 categories: ["ov"]

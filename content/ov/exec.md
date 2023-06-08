@@ -1,6 +1,6 @@
 ---
 author: "Noboru Saito"
-title: "How to use exec mode"
+title: "execute command"
 date: 2022-05-27T08:00:00+09:00
 tags: ["ov"]
 categories: ["ov"]

@@ -81,9 +81,9 @@ Examplesの実行例をヒントにこれまでに紹介したSQLを使用して
 
 アクセスが多いホストTop 5を出力
 
-{{<cmd>}}
+```console
 trdsql -oat "SELECT \`host\`, count(\`host\`) as count FROM log.ltsv GROUP BY \`host\` ORDER BY count DESC LIMIT 5"
-{{</cmd>}}
+```
 ```
 +----------------+-------+
 |      host      | count |
@@ -98,9 +98,9 @@ trdsql -oat "SELECT \`host\`, count(\`host\`) as count FROM log.ltsv GROUP BY \`
 
 リクエストが多い順Top 5を出力
 
-{{<cmd>}}
+```console
 trdsql -oat "SELECT req, count(req) as count FROM log.ltsv GROUP BY req ORDER BY count DESC LIMIT 5"
-{{</cmd>}}
+```
 ```
 +--------------------------------+-------+
 |              req               | count |
@@ -119,9 +119,9 @@ trdsql -oat "SELECT req, count(req) as count FROM log.ltsv GROUP BY req ORDER BY
 
 status が200以外のリクエストと回数を出力
 
-{{<cmd>}}
+```console
 trdsql -oat "SELECT req, status,count(req) as count FROM log.ltsv WHERE status != '200' GROUP BY req, status ORDER BY count DESC"
-{{</cmd>}}
+```
 ```
 +-------------------------------+--------+-------+
 |              req              | status | count |

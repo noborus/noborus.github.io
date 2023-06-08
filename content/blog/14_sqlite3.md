@@ -25,9 +25,9 @@ dsnはsqlite3のデータファイル名を指定すれば、そのファイル�
 
 あらかじめファイルが無い場合もエラーにはなりません。
 
-{{< cmd >}}
+```console
 trdsql -driver sqlite3 -dsn "test.sqlite" -oat "SELECT * FROM test"
-{{< /cmd >}}
+```
 
 ```
 +----+--------+-------+
@@ -46,9 +46,9 @@ trdsql -driver sqlite3 -dsn "test.sqlite" -oat "SELECT * FROM test"
 
 デフォルトではLIKEは大文字小文字が区別されない。
 
-{{< cmd >}}
+```console
 trdsql -driver sqlite3 -dsn ":memory:" -ih "SELECT * FROM header.csv WHERE name LIKE '%a%'"
-{{< /cmd >}}
+```
 
 ```
 1,Orange
@@ -57,9 +57,9 @@ trdsql -driver sqlite3 -dsn ":memory:" -ih "SELECT * FROM header.csv WHERE name 
 
 _cslike=trueにすると大文字小文字が区別されます。
 
-{{< cmd >}}
+```console
 trdsql -driver sqlite3 -dsn ":memory:?_cslike=true" -ih "SELECT * FROM header.csv WHERE name LIKE '%a%'"
-{{< /cmd >}}
+```
 
 ```
 1,Orange
@@ -69,15 +69,15 @@ trdsql -driver sqlite3 -dsn ":memory:?_cslike=true" -ih "SELECT * FROM header.cs
 
 `mode=rwc`では書き込みが成功します。
 
-{{< cmd >}}
+```console
 trdsql -ih -driver sqlite3 -dsn "file:trdsql_test.db?mode=rwc" "CREATE TABLE users AS SELECT CAST(id as int), CAST(name AS varchar(20)) FROM user.csv "
-{{< /cmd >}}
+```
 
 `mode=ro`では書き込みが禁止されエラーになります。
 
-{{< cmd >}}
+```console
 trdsql -ih -driver sqlite3 -dsn "file:trdsql_testro.db?mode=ro" "CREATE TABLE users AS SELECT CAST(id as int), CAST(name AS varchar(20)) FROM user.csv "
-{{< /cmd >}}
+```
 
 ```
 2020/01/08 14:02:54 ERROR(BEGIN):unable to open database file: no such file or directory

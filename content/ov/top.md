@@ -1,6 +1,6 @@
 ---
 author: "Noboru Saito"
-title: "Use ov with top"
+title: "top"
 date: 2023-01-30T01:00:00+09:00
 tags: ["ov"]
 categories: ["ov"]

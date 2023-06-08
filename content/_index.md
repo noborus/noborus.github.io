@@ -1,7 +1,6 @@
 ---
 title: "Top"
-type: "top"
-menu: "main"
+archetype: "home"
 weight: 1
 ---
 
@@ -9,9 +8,9 @@ weight: 1
 
 ---
 
-### trdsql
-
-[![trdsql](/images/GitHub-Mark-32px.png)](https://github.com/noborus/trdsql) [![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/trdsql)](https://pkg.go.dev/github.com/noborus/trdsql)
+### <i class="fab fa-github"></i> [trdsql](https://github.com/noborus/trdsql)
+{{% icon fab-fa-github %}}
+{{% button href="https://pkg.go.dev/github.com/noborus/trdsql" color="#007d9c" %}}reference{{% /button %}}
 
 CSV,LTSV,JSON,TBLNファイルにSQLを実行できるツール
 
@@ -21,11 +20,11 @@ CSV,LTSV,JSON,TBLNファイルにSQLを実行できるツール
 
 ---
 
-### ov
+###  <i class="fab fa-github"></i> [ov](https://github.com/noborus/ov)
 
-[![ov](/images/GitHub-Mark-32px.png)](https://github.com/noborus/ov) [![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/ov)](https://pkg.go.dev/github.com/noborus/ov)
+{{% button href="https://pkg.go.dev/github.com/noborus/ov" color="#007d9c" %}}reference{{% /button %}}
 
-Terminal Pager
+Feature-rich terminal Pager
 
 less,moreの代わりとしても動作する高機能ページャー。
 
@@ -36,9 +35,7 @@ less,moreの代わりとしても動作する高機能ページャー。
 
 ---
 
-### ovcs
-
-[![ovcs](/images/GitHub-Mark-32px.png)](https://github.com/noborus/ovcs)
+### <i class="fab fa-github"></i> [ovcs](https://github.com/noborus/ovcs)
 
 Terminal Pager ov を client/server化したもの。
 
@@ -46,59 +43,49 @@ Terminal Pager ov を client/server化したもの。
 
 ---
 
-### tbln
+### <i class="fab fa-github"></i> [tbln](https://github.com/noborus/tbln)
 
-[![tbln](/images/GitHub-Mark-32px.png)](https://github.com/noborus/tbln) [![PkgGoDev](https://pkg.go.dev/badge/noborus/tbln)](https://pkg.go.dev/noborus/tbln)
+{{% button href="https://pkg.go.dev/github.com/noborus/tbln" color="#007d9c" %}}reference{{% /button %}}
 
 データベースのテーブルと親和性のあるファイルフォーマット(tbln)を扱うライブラリ＆ツール
 
-* [[tbln.dev](https://tbln.dev/)
+* [tbln.dev](https://tbln.dev/)
 
 ---
 
-### psutilsql
-
-[![psutilsql](/images/GitHub-Mark-32px.png)](https://github.com/noborus/psutilsql) [![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/psutilsql)](https://pkg.go.dev/github.com/noborus/psutilsql)
+### <i class="fab fa-github"></i> [psutilsql](https://github.com/noborus/psutilsql)
 
 システム情報にSQLを実行して表示するツール
 
 ---
 
-### mdtsql
+### <i class="fab fa-github"></i> [mdtsql](https://github.com/noborus/mdtsql)
 
-[![mdtsql](/images/GitHub-Mark-32px.png)](https://github.com/noborus/mdtsql)
-
-マークダウンテーブルに対してSQLを実行するツール
+マークダウンのテーブルに対してSQLを実行するツール
 
 ---
 
-### mdviewer
-
-[![mdviewer](/images/GitHub-Mark-32px.png)](https://github.com/noborus/mdviewer)
+### <i class="fab fa-github"></i> [mdviewer](https://github.com/noborus/mdviewer)
 
 マークダウンをページャーで表示
 
 ---
 
-### pgsp
-
-[![pgsp](/images/GitHub-Mark-32px.png)](https://github.com/noborus/pgsp)
+### <i class="fab fa-github"></i> [pgsp](https://github.com/noborus/pgsp)
 
 PostgreSQL の pg_stat_progressを監視、表示するCLIツール
 
 ---
 
-### jpug-doc-tool
-
-[![jpug-doc-tool](/images/GitHub-Mark-32px.png)](https://github.com/noborus/jpug-doc-tool)
+### <i class="fab fa-github"></i> [jpug-doc-tool](https://github.com/noborus/jpug-doc-tool)
 
 PostgreSQLの日本語マニュアル翻訳ツール
 
 ---
 
-### guesswidth
+### <i class="fab fa-github"></i> [guesswidth](https://github.com/noborus/guesswidth)
 
-[![guesswidth](/images/GitHub-Mark-32px.png)](https://github.com/noborus/guesswidth)
+{{% button href="https://pkg.go.dev/github.com/noborus/guesswidth" color="#007d9c" %}}reference{{% /button %}}
 
 CLI出力の列の幅を推測するライブラリ・ツール
 

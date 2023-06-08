@@ -1,6 +1,6 @@
 ---
 author: "Noboru Saito"
-title: "Use ov with bat"
+title: "bat"
 date: 2022-05-30T09:00:00+09:00
 tags: ["ov"]
 categories: ["ov"]

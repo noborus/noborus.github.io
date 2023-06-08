@@ -1,6 +1,6 @@
 ---
 author: "Noboru Saito"
-title: "Specify multiple files"
+title: "multiple files"
 date: 2022-06-26T09:00:00+09:00
 tags: ["ov"]
 categories: ["ov"]

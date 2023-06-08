@@ -20,23 +20,23 @@ categories = [
 
 以下はLTSV形式で出力します。
 
-{{< cmd >}}
+```console
 trdsql -out test.ltsv "SELECT * FROM testdata/test.csv"
-{{< /cmd >}}
+```
 
 出力フォーマットを指定した場合は、出力フォーマットが優先されます。以下はjsonl形式で出力されます。
 
-{{< cmd >}}
+```console
 trdsql -ojsonl -out test.txt "SELECT * FROM testdata/test.csv"
-{{< /cmd >}}
+```
 
 圧縮形式も推測するので、`test.csv.gz`のようにした場合はCSV形式のgzip圧縮で出力されます。基本的ファイルの拡張子はファイル形式.圧縮形式の順です。
 
 以下はLTSV形式でzstd圧縮で出力されます。
 
-{{< cmd >}}
+```console
 trdsql -out test.ltsv.zst "SELECT * FROM testdata/test.csv"
-{{< /cmd >}}
+```
 
 圧縮フォーマットも`-oz 圧縮形式`で指定した場合はそちらが優先されます。
 
