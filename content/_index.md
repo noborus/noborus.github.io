@@ -18,6 +18,7 @@ CSV,LTSV,JSON,TBLNファイルにSQLを実行できるツール
 * [trdsqlのBlog](/trdsql/)
 * [trdsqlというコマンドラインツールを作った](https://qiita.com/noborus/items/f253961cca6f4465f20c)(Qiita)
 * [trdsqlはCSV,LTSV,JSONをDB(PostgreSQL,MySQL)にインポートするツールです](https://zenn.dev/noborus/articles/16451ce8351765380c03)(Zenn)
+* [trdsql Category](/categories/trdsql/)
 
 ---
 
@@ -35,6 +36,7 @@ less,moreの代わりとしても動作する高機能ページャー。
 * [ovの紹介](blog/oviewer/)
 * [ovの紹介](https://zenn.dev/noborus/articles/2b1087a1274cf41c4c0a)(Zenn)
 * [ターミナルページャー新時代](https://qiita.com/noborus/items/ce119d0d86dd689e0d18)(Qiita)
+* [ov Category](/categories/ov/)
 
 ---
 
@@ -78,6 +80,8 @@ Terminal Pager ov を client/server化したもの。
 
 マークダウンのテーブルに対してSQLを実行するツール
 
+* [mdtsql Category](/categories/mdtsql/)
+
 ---
 
 ### <i class="fab fa-github"></i> [mdviewer](https://github.com/noborus/mdviewer)
@@ -96,6 +100,17 @@ Terminal Pager ov を client/server化したもの。
 
 PostgreSQL の pg_stat_progressを監視、表示するCLIツール
 
+* [pgsp Category](/categories/pgsp/)
+
+---
+
+### <i class="fab fa-github"></i> [go-textra](https://github.com/noborus/go-textra)
+
+<a class="github-button" href="https://github.com/noborus/go-textra" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/go-textra on GitHub">Star</a>
+<a class="github-button" href="https://github.com/noborus/go-textra/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/go-textra on GitHub">Fork</a>
+
+[みんなの自動翻訳@textra's](https://mt-auto-minhon-mlt.ucri.jgn-x.jp/) client API用ライブラリです。
+
 ---
 
 ### <i class="fab fa-github"></i> [jpug-doc-tool](https://github.com/noborus/jpug-doc-tool)
@@ -104,6 +119,8 @@ PostgreSQL の pg_stat_progressを監視、表示するCLIツール
 <a class="github-button" href="https://github.com/noborus/jpug-doc-tool/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/jpug-doc-tool on GitHub">Fork</a>
 
 PostgreSQLの日本語マニュアル翻訳ツール
+
+* [jpug-doc Category](categories/jpug-doc/)
 
 ---
 
