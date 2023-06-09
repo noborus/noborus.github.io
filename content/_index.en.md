@@ -4,25 +4,26 @@ archetype: "home"
 weight: 1
 ---
 
-## {{% icon icon="hammer" %}} 作ったもの
+## {{% icon icon="hammer" %}} What I made
 
 ---
-### <i class="fab fa-github"></i> [trdsql](https://github.com/noborus/trdsql)
+
+### [trdsql](https://github.com/noborus/trdsql)
 
 <a class="github-button" href="https://github.com/noborus/trdsql" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/trdsql on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/trdsql/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/trdsql on GitHub">Fork</a>
 <span class="project-badge">[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/trdsql)](https://pkg.go.dev/github.com/noborus/trdsql)</span>
 
-CSV,LTSV,JSON,TBLNファイルにSQLを実行できるツール
+A tool that can execute SQL on CSV, LTSV, JSON, TBLN files
 
-* [trdsqlのBlog](/trdsql/)
-* [trdsqlというコマンドラインツールを作った](https://qiita.com/noborus/items/f253961cca6f4465f20c)(Qiita)
-* [trdsqlはCSV,LTSV,JSONをDB(PostgreSQL,MySQL)にインポートするツールです](https://zenn.dev/noborus/articles/16451ce8351765380c03)(Zenn)
+* [trdsql Blog](/trdsql/)
+* [Created a command line tool called trdsql](https://qiita.com/noborus/items/f253961cca6f4465f20c)(Qiita)
+* [trdsql is a tool to import CSV, LTSV, JSON into DB (PostgreSQL, MySQL)](https://zenn.dev/noborus/articles/16451ce8351765380c03)(Zenn)
 * [trdsql Category](/categories/trdsql/)
 
 ---
 
-###  <i class="fab fa-github"></i> [ov](https://github.com/noborus/ov)
+### [ov](https://github.com/noborus/ov)
 
 <a class="github-button" href="https://github.com/noborus/ov" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/ov on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/ov/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/ov on GitHub">Fork</a>
@@ -30,139 +31,136 @@ CSV,LTSV,JSON,TBLNファイルにSQLを実行できるツール
 
 Feature-rich terminal Pager
 
-less,moreの代わりとしても動作する高機能ページャー。
+A highly functional pager that works as a substitute for less and more.
 
 * [ov pages](/ov/)
-* [ovの紹介](blog/oviewer/)
-* [ovの紹介](https://zenn.dev/noborus/articles/2b1087a1274cf41c4c0a)(Zenn)
-* [ターミナルページャー新時代](https://qiita.com/noborus/items/ce119d0d86dd689e0d18)(Qiita)
+* [Introduction to ov](https://zenn.dev/noborus/articles/2b1087a1274cf41c4c0a)(Zenn)
+* [Terminal Pager New Era](https://qiita.com/noborus/items/ce119d0d86dd689e0d18)(Qiita)
 * [ov Category](/categories/ov/)
 
 ---
 
-### <i class="fab fa-github"></i> [ovcs](https://github.com/noborus/ovcs)
+### [ovcs](https://github.com/noborus/ovcs)
 
 <a class="github-button" href="https://github.com/noborus/ovcs" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/ovcs on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/ovcs/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/ovcs on GitHub">Fork</a>
 <span class="project-badge">[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/ovcs)](https://pkg.go.dev/github.com/noborus/ovcs)</span>
 
-Terminal Pager ov を client/server化したもの。
+A client/server version of Terminal Pager ov.
 
-* [terminal pagerをclient/server化してtmuxを組み合わせたら最強のSQLクライアントになった](https://zenn.dev/noborus/articles/b5a0899c4e410452ebdf)
+* [By combining terminal pager with client/server and tmux, it became the strongest SQL client](https://zenn.dev/noborus/articles/b5a0899c4e410452ebdf)
 
 ---
 
-### <i class="fab fa-github"></i> [tbln](https://github.com/noborus/tbln)
+### [tbln](https://github.com/noborus/tbln)
 
 <a class="github-button" href="https://github.com/noborus/tbln" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/tbln on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/tbln/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/tbln on GitHub">Fork</a>
 <span class="project-badge">[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/tbln)](https://pkg.go.dev/github.com/noborus/tbln)</span>
 
-データベースのテーブルと親和性のあるファイルフォーマット(tbln)を扱うライブラリ＆ツール
+Libraries and tools that handle file formats (tbln) that are compatible with database tables
 
 * [tbln.dev](https://tbln.dev/)
 
 ---
 
-### <i class="fab fa-github"></i> [psutilsql](https://github.com/noborus/psutilsql)
+### [psutilsql](https://github.com/noborus/psutilsql)
 
 <a class="github-button" href="https://github.com/noborus/psutilsql" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/psutilsql on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/psutilsql/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/psutilsql on GitHub">Fork</a>
 
-システム情報にSQLを実行して表示するツール
+A tool that executes SQL to display system information
 
 ---
 
-### <i class="fab fa-github"></i> [mdtsql](https://github.com/noborus/mdtsql)
+### [mdtsql](https://github.com/noborus/mdtsql)
 
 <a class="github-button" href="https://github.com/noborus/mdtsql" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/mdtsql on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/mdtsql/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/mdtsql on GitHub">Fork</a>
 
-マークダウンのテーブルに対してSQLを実行するツール
+A tool to execute SQL against a markdown table
 
 * [mdtsql Category](/categories/mdtsql/)
 
 ---
 
-### <i class="fab fa-github"></i> [mdviewer](https://github.com/noborus/mdviewer)
+### [mdviewer](https://github.com/noborus/mdviewer)
 
 <a class="github-button" href="https://github.com/noborus/mdviewer" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/mdviewer on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/mdviewer/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/mdviewer on GitHub">Fork</a>
 
-マークダウンをページャーで表示
+View markdown in pager
 
 ---
 
-### <i class="fab fa-github"></i> [pgsp](https://github.com/noborus/pgsp)
+### [pgsp](https://github.com/noborus/pgsp)
 
 <a class="github-button" href="https://github.com/noborus/pgsp" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/pgsp on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/pgsp/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/pgsp on GitHub">Fork</a>
 
-PostgreSQL の pg_stat_progressを監視、表示するCLIツール
+CLI tool to monitor and display pg_stat_progress of PostgreSQL
 
 * [pgsp Category](/categories/pgsp/)
 
 ---
 
-### <i class="fab fa-github"></i> [go-textra](https://github.com/noborus/go-textra)
+### [go-textra](https://github.com/noborus/go-textra)
 
 <a class="github-button" href="https://github.com/noborus/go-textra" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/go-textra on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/go-textra/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/go-textra on GitHub">Fork</a>
 
-[みんなの自動翻訳@textra's](https://mt-auto-minhon-mlt.ucri.jgn-x.jp/) client API用ライブラリです。
+[みんなの自動翻訳@textra's](https://mt-auto-minhon-mlt.ucri.jgn-x.jp/) Library for client API.
 
 ---
 
-### <i class="fab fa-github"></i> [jpug-doc-tool](https://github.com/noborus/jpug-doc-tool)
+### [jpug-doc-tool](https://github.com/noborus/jpug-doc-tool)
 
 <a class="github-button" href="https://github.com/noborus/jpug-doc-tool" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/jpug-doc-tool on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/jpug-doc-tool/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/jpug-doc-tool on GitHub">Fork</a>
 
-PostgreSQLの日本語マニュアル翻訳ツール
+Japanese manual translation tool for PostgreSQL
 
 * [jpug-doc Category](categories/jpug-doc/)
 
 ---
 
-### <i class="fab fa-github"></i> [guesswidth](https://github.com/noborus/guesswidth)
+### [guesswidth](https://github.com/noborus/guesswidth)
 
 <a class="github-button" href="https://github.com/noborus/guesswidth" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/guesswidth on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/guesswidth/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/guesswidth on GitHub">Fork</a>
 <span class="project-badge">[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/guesswidth)](https://pkg.go.dev/github.com/noborus/guesswidth)</span>
 
-CLI出力の列の幅を推測するライブラリ・ツール
+Library tool to infer column widths in CLI output
 
-* [幅指定フォーマットの幅を推測する](https://zenn.dev/noborus/articles/0aeef54ead08f5)
+* [Guess the width of the width format](https://zenn.dev/noborus/articles/0aeef54ead08f5)
 * [Guess the width of the width-specified format](blog/guesswidth/)
 
 ---
 
-##  {{% icon icon="share-alt" %}}参加しているプロジェクト
+## {{% icon icon="share-alt" %}}Participating projects
 
-### jpug-doc
+### [jpug-doc](https://github.com/pgsql-jp/jpug-doc)
 
-[jpug-doc](https://github.com/pgsql-jp/jpug-doc)
+A repository for translating PostgreSQL manuals.
 
-PostgreSQLマニュアルの翻訳作業をしているレポジトリ。
-
-* (Qiita)[PostgreSQL日本語マニュアルについて](https://qiita.com/noborus/items/03f98e43c216d7e23767)
-* [日本PostgreSQLユーザ会（別館）](https://pgsql-jp.github.io/) 最新版の翻訳マニュアルがあるサイト
+* (Qiita) [About the PostgreSQL Japanese manual](https://qiita.com/noborus/items/03f98e43c216d7e23767)
+* [PostgreSQL Japan User Group (Annex)](https://pgsql-jp.github.io/) Site with the latest version of the translated manual
   * [github](https://github.com/pgsql-jp/pgsql-jp.github.io)
-* [対訳集](https://github.com/pgsql-jp/taiyaku) PostgreSQLマニュアルの対訳集
+* [Translations](https://github.com/pgsql-jp/taiyaku) PostgreSQL manual translations
 
-#### テスト版
+#### test version
 
-不定期に更新。方針が決定していない実験的な変更版が置いてあります。
+Updated irregularly. There is an experimental change that has not been decided on.
 
-[CSSサンプル](css/html)
+[CSS sample](css/html)
 
 last-updated: 2019-08-06 15:01:23 JST
 
-[テスト版PDF](test/postgres-A4.pdf)
+[Test PDF](test/postgres-A4.pdf)
 
 ---
 
 <iframe src="https://github.com/sponsors/noborus/card" title="Sponsor noborus" height="225" width="600" style="border: 0;"></iframe>
 
 ---
-<script async src="./js/buttons.js"></script>
+<script async src="/js/buttons.js"></script>

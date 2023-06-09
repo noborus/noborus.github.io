@@ -1,6 +1,6 @@
 +++
 author = "Noboru Saito"
-title = "ov"
+title = "ov - Feature-rich pager"
 date = "2023-06-08"
 tags = "ov"
 weight = 3
@@ -24,4 +24,4 @@ not only the pager function to display at the terminal size.
 
 ## Use case
 
-{{% children sort="weight" description=true %}}
+{{% children sort="weight" %}}
