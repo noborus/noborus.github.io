@@ -160,4 +160,9 @@ last-updated: 2019-08-06 15:01:23 JST
 
 [テスト版PDF](test/postgres-A4.pdf)
 
+---
+
+<iframe src="https://github.com/sponsors/noborus/card" title="Sponsor noborus" height="225" width="600" style="border: 0;"></iframe>
+
+---
 <script async src="./js/buttons.js"></script>
