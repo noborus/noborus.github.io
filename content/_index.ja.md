@@ -139,9 +139,7 @@ CLI出力の列の幅を推測するライブラリ・ツール
 
 ##  {{% icon icon="share-alt" %}}参加しているプロジェクト
 
-### jpug-doc
-
-[jpug-doc](https://github.com/pgsql-jp/jpug-doc)
+### <i class="fab fa-github"></i> [jpug-doc](https://github.com/pgsql-jp/jpug-doc)
 
 PostgreSQLマニュアルの翻訳作業をしているレポジトリ。
 

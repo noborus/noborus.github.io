@@ -139,7 +139,7 @@ Library tool to infer column widths in CLI output
 
 ## {{% icon icon="share-alt" %}}Participating projects
 
-### [jpug-doc](https://github.com/pgsql-jp/jpug-doc)
+### <i class="fab fa-github"></i> [jpug-doc](https://github.com/pgsql-jp/jpug-doc)
 
 A repository for translating PostgreSQL manuals.
 
