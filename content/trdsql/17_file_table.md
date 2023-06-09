@@ -2,7 +2,7 @@
 author = "Noboru Saito"
 title = "trdsql ファイルとテーブルのJOIN"
 date = "2019-12-17"
-description = ""
+description = "既にテーブルが存在するデータベースに接続することにより、ファイルとテーブルをJOINすることもできます。"
 weight = 17
 tags = [
     "trdsql",

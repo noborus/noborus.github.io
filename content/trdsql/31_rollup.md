@@ -2,7 +2,7 @@
 author = "Noboru Saito"
 title = "trdsql 合計を行に追加する"
 date = "2020-01-04T13:38:00+09:00"
-description = ""
+description = "trdsqlでROLLUPを使ってみます。"
 weight = 31
 tags = [
     "trdsql",

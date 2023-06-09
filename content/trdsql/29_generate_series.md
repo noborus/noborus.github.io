@@ -2,7 +2,7 @@
 author = "Noboru Saito"
 title = "trdsql generate_series"
 date = "2019-12-29"
-description = ""
+description = "trdsqlでgenerate_series()を使ってみます。"
 weight = 29
 tags = [
     "trdsql",

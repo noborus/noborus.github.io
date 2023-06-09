@@ -2,7 +2,7 @@
 author = "Noboru Saito"
 title = "trdsql ファイルフォーマット変換"
 date = "2019-12-02"
-description = ""
+description = "trdsqlのファイルフォーマット変換"
 weight = 2
 tags = [
     "trdsql",

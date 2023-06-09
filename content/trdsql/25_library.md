@@ -2,7 +2,7 @@
 author = "Noboru Saito"
 title = "trdsql ライブラリ使用"
 date = "2019-12-25"
-description = ""
+description = "trdsqlのライブラリ使用方法を簡単に説明します。"
 weight = 25
 tags = [
     "trdsql",

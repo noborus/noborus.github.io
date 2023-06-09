@@ -2,7 +2,7 @@
 author = "Noboru Saito"
 title = "trdsql output"
 date = "2020-03-02T18:45:00+09:00"
-description = ""
+description = "trdsqlで出力ファイルを指定できるようにしました。"
 weight = 34
 tags = [
     "trdsql",

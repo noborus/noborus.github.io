@@ -2,7 +2,7 @@
 author = "Noboru Saito"
 title = "trdsql JSON解析"
 date = "2019-12-21"
-description = ""
+description = "trdsqlでJSONを解析する方法を説明します。"
 weight = 21
 tags = [
     "trdsql",

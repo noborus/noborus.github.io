@@ -2,7 +2,7 @@
 author = "Noboru Saito"
 title = "trdsql 圧縮ファイル"
 date = "2020-03-02T17:52:00+09:00"
-description = ""
+description = "trdsqlで圧縮ファイルを読み込みます。"
 weight = 33
 tags = [
     "trdsql",

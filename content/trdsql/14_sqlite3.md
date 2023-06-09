@@ -2,7 +2,7 @@
 author = "Noboru Saito"
 title = "trdsql SQLite3エンジンの使用"
 date = "2019-12-14"
-description = ""
+description = "trdsql SQLite3エンジンの使用方法を説明します。"
 weight = 14
 tags = [
     "trdsql",

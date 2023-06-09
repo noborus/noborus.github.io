@@ -2,7 +2,7 @@
 author = "Noboru Saito"
 title = "trdsql SQLファイル指定"
 date = "2019-12-26"
-description = ""
+description = "trdsql SQLファイル指定"
 weight = 26
 tags = [
     "trdsql",

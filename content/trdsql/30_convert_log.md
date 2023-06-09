@@ -2,7 +2,7 @@
 author = "Noboru Saito"
 title = "trdsql convert log"
 date = "2019-12-30"
-description = ""
+description = "trdsqlで既存のログをLTSVに変換する方法を紹介します。"
 weight = 30
 tags = [
     "trdsql",

@@ -2,7 +2,7 @@
 author = "Noboru Saito"
 title = "trdsql 日付・時刻処理"
 date = "2019-12-20"
-description = ""
+description = "trdsqlで日付・時刻処理をする方法を説明します。"
 weight = 20
 tags = [
     "trdsql",

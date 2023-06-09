@@ -2,7 +2,7 @@
 author = "Noboru Saito"
 title = "trdsql CASE式"
 date = "2020-01-07T10:18:00+09:00"
-description = ""
+description = "trdsqlでCASE式を使ってみます。"
 weight = 32
 tags = [
     "trdsql",

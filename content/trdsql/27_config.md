@@ -2,7 +2,7 @@
 author = "Noboru Saito"
 title = "trdsql config"
 date = "2019-12-27"
-description = ""
+description = "trdsqlの設定ファイルについて説明します。"
 weight = 27
 tags = [
     "trdsql",

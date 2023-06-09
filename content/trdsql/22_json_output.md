@@ -2,7 +2,7 @@
 author = "Noboru Saito"
 title = "trdsql JSON出力"
 date = "2019-12-22"
-description = ""
+description = "trdsqlでJSONを出力する方法を説明します。"
 weight = 22
 tags = [
     "trdsql",

@@ -2,7 +2,7 @@
 author = "Noboru Saito"
 title = "trdsql ワイルドカード、圧縮ファイル"
 date = "2019-12-09"
-description = ""
+description = "trdsql ワイルドカード、圧縮ファイル"
 weight = 9
 tags = [
     "trdsql",

@@ -24,4 +24,4 @@ not only the pager function to display at the terminal size.
 
 ## Use case
 
-{{% children sort="weight" %}}
+{{% children sort="weight" description=true %}}

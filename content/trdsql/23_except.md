@@ -2,7 +2,7 @@
 author = "Noboru Saito"
 title = "trdsql 差分、比較"
 date = "2019-12-23"
-description = ""
+description = "trdsqlでCSV同士やCSVとテーブルなどで、値の比較をしたい場合があります。"
 weight = 23
 tags = [
     "trdsql",

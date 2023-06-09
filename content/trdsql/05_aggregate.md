@@ -2,7 +2,7 @@
 author = "Noboru Saito"
 title = "trdsql 集計"
 date = "2019-12-05"
-description = ""
+description = "trdsqlの集計"
 weight = 5
 tags = [
     "trdsql",

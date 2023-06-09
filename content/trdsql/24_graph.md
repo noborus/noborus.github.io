@@ -2,7 +2,7 @@
 author = "Noboru Saito"
 title = "trdsql グラフ"
 date = "2019-12-24"
-description = ""
+description = "trdsqlでグラフを作成する方法を紹介します。"
 weight = 24
 tags = [
     "trdsql",

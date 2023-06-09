@@ -2,7 +2,7 @@
 author = "Noboru Saito"
 title = "trdsql PostgreSQLエンジンの使用"
 date = "2019-12-12"
-description = ""
+description = "trdsqlでPostgreSQLを使用する方法を説明します。"
 weight = 12
 tags = [
     "trdsql",

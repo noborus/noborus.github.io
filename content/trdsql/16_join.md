@@ -2,7 +2,7 @@
 author = "Noboru Saito"
 title = "trdsql JOIN"
 date = "2019-12-16"
-description = ""
+description = "trdsqlで複数のファイルをJOINする方法を説明します。"
 weight = 16
 tags = [
     "trdsql",

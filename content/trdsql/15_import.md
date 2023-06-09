@@ -2,7 +2,7 @@
 author = "Noboru Saito"
 title = "trdsql DBインポート"
 date = "2019-12-15"
-description = ""
+description = "trdsqlでデータベースにインポートする方法を説明します。"
 weight = 15
 tags = [
     "trdsql",

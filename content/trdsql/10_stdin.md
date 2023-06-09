@@ -2,7 +2,7 @@
 author = "Noboru Saito"
 title = "trdsql 標準入力"
 date = "2019-12-10"
-description = ""
+description = "trdsqlは他のUNIXツールのように標準入力からデータを受け取ることができます。ただSQLの文法上テーブル名を指定する必要があります。標準入力を使用するときは、「-」か「stdin」を使用します。"
 weight = 10
 tags = [
     "trdsql",

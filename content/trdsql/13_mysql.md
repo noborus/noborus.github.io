@@ -2,7 +2,7 @@
 author = "Noboru Saito"
 title = "trdsql MySQLエンジンの使用"
 date = "2019-12-13"
-description = ""
+description = "trdsqlでMySQLを使用する方法を説明します。"
 weight = 13
 tags = [
     "trdsql",

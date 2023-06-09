@@ -9,7 +9,7 @@ weight: 1
 ---
 
 ### <i class="fab fa-github"></i> [trdsql](https://github.com/noborus/trdsql)
-{{% icon fab-fa-github %}}
+
 {{% button href="https://pkg.go.dev/github.com/noborus/trdsql" color="#007d9c" %}}reference{{% /button %}}
 
 CSV,LTSV,JSON,TBLNファイルにSQLを実行できるツール

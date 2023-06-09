@@ -2,7 +2,7 @@
 author = "Noboru Saito"
 title = "trdsql Window関数"
 date = "2019-12-19"
-description = ""
+description = "trdsqlでWindow関数を使用する方法を紹介します。"
 weight = 19
 tags = [
     "trdsql",
