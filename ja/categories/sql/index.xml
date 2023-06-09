@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>sql on 斉藤登のページ</title><link>https://noborus.github.io/ja/categories/sql/index.html</link><description>Recent content in sql on 斉藤登のページ</description><generator>Hugo -- gohugo.io</generator><language>ja</language><lastBuildDate>Thu, 14 Jul 2022 20:00:00 +0900</lastBuildDate><atom:link href="https://noborus.github.io/ja/categories/sql/index.xml" rel="self" type="application/rss+xml"/><item><title>PostgreSQLで0列の扱い</title><link>https://noborus.github.io/ja/blog/column0/index.html</link><pubDate>Thu, 14 Jul 2022 20:00:00 +0900</pubDate><guid>https://noborus.github.io/ja/blog/column0/index.html</guid><description>きっかけ 現在のバージョンのPostgreSQLではSELECT ;というSQL文を実行してもエラーになりません。 試してみると(1 row)と返ってきたので、あれ？なんで？となりました。
+これは、列数が0なんですね。PostgreSQLは列数が0のテーブルが作れるので、それに合わせているようです。
+CREATE empty();
+&amp;mdash; Tatsuo Ishii (@tatsuo_ishii) July 13, 2022 列数が0という指摘を受けて、一応0列があることを理解していたつもりだったのですけど、 その仕様を勘違いしていたことに気づきました。
+テーブルを省略したSELECTの扱い 全部のSQL実装では無いですが、SQLのSELECTはFROM句がなくても動作する実装が多いです。 psqlで実行すると以下のようになります。
+SELECT &amp;#39;1&amp;#39;; ?column? ---------- 1 (1 row) のようにすれば文字列1が返ってきます。列名は無いので?column?で表されていますが、1行1列のテーブルと同じ扱いになります。
+SELECT ;はこの流れで行数が1で、列数が0のテーブルということになります。
+psqlでは実行すると以下のように行が（改行も含めて）表示されないまま 1 row と表示されるのでちょっと変な感じがしたのですが、これはpsql側でどう表示するかの問題であって、1行0列のテーブルと同じ扱いになっています。
+SELECT ; -- (1 row) なにも指定していないので、0行0列になるかと勘違いしてましたが、1行0列の方が正しいとわかります。
+PostgreSQLは0列のテーブルが作れる 前述の石井さんから指摘にあるように最近のPostgreSQLでは0列のテーブルが作成できるようになっています。
+CREATE TABLE empty (); 元からSQLでは行をINSERTしなければ0行のテーブルになるので、0列のテーブルを作っただけだと0列0行のテーブルになります。
+SELECT * FROM empty; -- (0 rows) psqlの表示では0列の場合(1 row)と(0 rows)の表示でしか区別出来ないですが、0行と1行でちゃんと違いがあって整合が取れている動作になっています。
+0列のテーブル操作 前は0列のSQLが許可されないところが多かったのですが、現在進行形で0列を許可するように修正されているので、前はエラーになったものが通るようになっていたり、これから通るようになったりする可能性があります。
+INSERT 0列のテーブルにINSERTしようとすると素直にできませんでした。
+INSERT INTO empty () VALUES (); ERROR: 42601: syntax error at or near &amp;#34;)&amp;#34; SELECT 列数が0のテーブルだけでなく、列数が1つ以上のテーブルであってもSELECT FROM oneで列数が0で返すことができます。 これにより列数が0で、複数行のテーブルを表現できます。</description></item><item><title>手っ取り遅くSQLを学ぶ</title><link>https://noborus.github.io/ja/blog/sql/index.html</link><pubDate>Thu, 05 May 2022 10:00:00 +0900</pubDate><guid>https://noborus.github.io/ja/blog/sql/index.html</guid><description>手っ取り遅くSQLを学ぶ 「手っ取り遅くSQLを学ぶ」とは？すぐにSQLを使えるよう学ぶのではなく、まわりくどくSQLを理解して学んでいく方法で解説します。
+「手っ取り早くSQLを学ぶ」と言ったら、よく使うSQLをなるべくシンプルな形にして、実際に試しながら、徐々に応用していく方法だと考えています。 「手っ取り遅くSQLを学ぶ」はその逆で、SQLの記法は後回しにして考え方を解説していきます。
+まずはテーブル SQLは主にリレーショナル・データベース（RDBMS）で使用されるデータ操作のための言語です。
+リレーショナル・データベースは「テーブル」をデータの集合として使用しているので、SQLを学ぶには、まずテーブルを理解する必要があります。
+テーブルとは、訳すと「表」なので、コンピューターと関係なくても日常でも溢れている表現方法です。 名簿であったり、一覧表など一般に、よく目にします。
+SQLで扱うテーブルは、表全般の中でもう少しルールが定まったものを対象とします。
+他のプログラミング言語と同じく「型を持った値」があります。数値の123や文字列の&amp;rsquo;abc&amp;rsquo;等。 この「型を持った値」を複数持つことができます。これをレコードと言ったり、「行」と言ったりします。
+このレコードが含んでいる値の数と型が一致している集合がテーブルです。 通常は、単純な数合わせではなく、型が一致しているだけでもなく、同じ意味を表しています。これをカラムと言ったり、「列」と言ったりします。 このカラムには名前を付けられることが多いです。「格納」する場合は、あとで取り出す必要があるので名前が必須になります。
+この集合をレコードの配列と考えても良いかもしれませんが、この時点では順序は不動なことに注意が必要です。 他のプログラミングからは、2次元配列で表される場合もありますが、プログラミング言語を理解している人は、構造体の配列と考えた方が良いでしょう。実際にSQLで操作したデータをプログラミング言語で受け取るときには、構造体の配列に変換することがよくあります。
+そして、テーブルの行も列も理論上は0以上無限まで可能です。 実際には上限はデータベースの仕様やコンピューターの限界値に左右されますが、下限は0から可能です。
+行が0というのは、たとえば名簿リストを作成したとして該当者が存在しないことはあるのでよくある話だと思いますが、列が0というのは理論上存在しても現実にはないので、定義はできないようにしているデータベースもあります。
+この「テーブル」単位にしておけば、自分の欲しいデータを取得できると考えて作られたのがリレーショナル・データベース（RDBMS）で、そのための記法がSQLです。
+SQLとは？ リレーショナル・データベースは、SQLを実行できるだけでなくテーブルを効率よく管理するためにいろいろな機能が備わっていますが、主要なSQLはテーブルを操作するため、少し切り離して考えることができます。
+SQLはテーブル（複数でも可）から「1つの」テーブルを作ることを目的としています。
+SQLをすでに知っている人からすると、テーブルを作ると言ったら「CREATE TABLE」と思うかもしれません。 データベースにテーブルを作るという狭い意味ではそうなのですが、その結果がテーブルになるという意味で広い意味では、テーブルを作るという目的であると言えます。
+INSERT/UPDATE/DELETEなどの更新系SQL文は、実行した結果がデータベースに反映されます。
+取得するSQL文と説明されることが多いSELECT文は、実際には取得ではなく、「SELECT」の意味の通り、「選択する」と解釈する方が正しいです。 「SELECT」文により選択された結果が指定されていない場合は、暗黙の了解として結果を取得します。
+3つ以上のテーブルから1つのテーブルを「作る」場合、まず2つのテーブルから1つのテーブルを作成し、作成されたテーブルと残ったテーブルから、1つのテーブルを作成するといった風に考えることで3つ以上のテーブルから1つのテーブルを作成できます。
+数学（というよりも算数）の「3+2+4」を「3+2」してその結果から「5+4」を計算するのと似ています。
+つまりSQLはテーブルとテーブルの計算式と言えます。
+JOIN テーブルの計算式として、一番基本は算数の足し算に相当するテーブルのJOINです。 ただし、テーブルとテーブルのJOINは、むしろ算数の掛け算に似ています。
+まずは列だけ考えてみます。テーブルAとテーブルXをJOINします。
+テーブルA
+A B テーブルX
+X Y テーブルとテーブルのJOINは、双方の「列」はそのまま全部使用します。
+A B X Y 続いて、行のJOINを考えます。
+Aテーブルの1行に対してXテーブルのすべての行に合成します。これをAテーブルのすべての行でおこないます。
+A B 1 3 2 4 X Y 1 8 2 9 Aの1行目とXテーブルを合成
+A B X Y 1 3 1 8 1 3 2 9 Aの2行目とXテーブルを合成</description></item><item><title>SQLのORDER BY 列番号と式</title><link>https://noborus.github.io/ja/blog/sqlorder/index.html</link><pubDate>Sat, 31 Oct 2020 12:53:00 +0900</pubDate><guid>https://noborus.github.io/ja/blog/sqlorder/index.html</guid><description>きっかけ tom__boさんが書かれた8.0.22でのprepared statementの挙動変化 で、ORDER BY に列番号を指定する問題に注目が集まりました。
+その中で紹介されていた、
+For a prepared statement of the form SELECT expr1, expr2, &amp;hellip; FROM table ORDER BY ?, passing an integer value N for the parameter no longer causes ordering of the results by the Nth expression in the select list; the results are no longer ordered, as is expected with ORDER BY constant.
+「the results are no longer ordered, as is expected with ORDER BY constant.</description></item></channel></rss>
