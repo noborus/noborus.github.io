@@ -4,7 +4,7 @@ archetype: "home"
 weight: 1
 ---
 
-## {{% icon icon="hammer" %}} What I made
+## <i class="fas fa-hammer"></i> What I made
 
 ---
 
@@ -137,7 +137,7 @@ Library tool to infer column widths in CLI output
 
 ---
 
-## {{% icon icon="share-alt" %}}Participating projects
+## <i class="fas fa-share-alt"></i> Participating projects
 
 ### <i class="fab fa-github"></i> [jpug-doc](https://github.com/pgsql-jp/jpug-doc)
 

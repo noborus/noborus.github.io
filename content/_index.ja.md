@@ -4,7 +4,7 @@ archetype: "home"
 weight: 1
 ---
 
-## {{% icon icon="hammer" %}} 作ったもの
+## <i class="fas fa-hammer"></i> 作ったもの
 
 ---
 
@@ -137,7 +137,7 @@ CLI出力の列の幅を推測するライブラリ・ツール
 
 ---
 
-##  {{% icon icon="share-alt" %}}参加しているプロジェクト
+## <i class="fas fa-share-alt"></i> 参加しているプロジェクト
 
 ### <i class="fab fa-github"></i> [jpug-doc](https://github.com/pgsql-jp/jpug-doc)
 
