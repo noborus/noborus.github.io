@@ -4,7 +4,7 @@ archetype: "home"
 weight: 1
 ---
 
-## <i class="fas fa-hammer"></i> What I made
+## <i class="fas fa-hammer"></i> Products
 
 ---
 
@@ -31,7 +31,7 @@ A tool that can execute SQL on CSV, LTSV, JSON, TBLN files
 
 Feature-rich terminal Pager
 
-A highly functional pager that works as a substitute for less and more.
+A highly functional pager that works as a substitute for `less` or `more`.
 
 * [ov pages](/ov/)
 * [Introduction to ov](https://zenn.dev/noborus/articles/2b1087a1274cf41c4c0a)(Zenn)
@@ -46,7 +46,7 @@ A highly functional pager that works as a substitute for less and more.
 <a class="github-button" href="https://github.com/noborus/ovcs/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/ovcs on GitHub">Fork</a>
 <span class="project-badge">[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/ovcs)](https://pkg.go.dev/github.com/noborus/ovcs)</span>
 
-A client/server version of Terminal Pager ov.
+A client/server version of Terminal Pager `ov`.
 
 * [By combining terminal pager with client/server and tmux, it became the strongest SQL client](https://zenn.dev/noborus/articles/b5a0899c4e410452ebdf)
 
@@ -58,7 +58,7 @@ A client/server version of Terminal Pager ov.
 <a class="github-button" href="https://github.com/noborus/tbln/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/tbln on GitHub">Fork</a>
 <span class="project-badge">[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/tbln)](https://pkg.go.dev/github.com/noborus/tbln)</span>
 
-Libraries and tools that handle file formats (tbln) that are compatible with database tables
+Libraries and tools that handle file formats (tbln) that are compatible with database tables.
 
 * [tbln.dev](https://tbln.dev/)
 
@@ -69,7 +69,7 @@ Libraries and tools that handle file formats (tbln) that are compatible with dat
 <a class="github-button" href="https://github.com/noborus/psutilsql" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/psutilsql on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/psutilsql/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/psutilsql on GitHub">Fork</a>
 
-A tool that executes SQL to display system information
+A tool that executes SQL to display system information.
 
 ---
 
@@ -78,7 +78,7 @@ A tool that executes SQL to display system information
 <a class="github-button" href="https://github.com/noborus/mdtsql" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/mdtsql on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/mdtsql/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/mdtsql on GitHub">Fork</a>
 
-A tool to execute SQL against a markdown table
+A tool to execute SQL against a markdown table.
 
 * [mdtsql Category](/categories/mdtsql/)
 
@@ -89,7 +89,7 @@ A tool to execute SQL against a markdown table
 <a class="github-button" href="https://github.com/noborus/mdviewer" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/mdviewer on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/mdviewer/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/mdviewer on GitHub">Fork</a>
 
-View markdown in pager
+View markdown in pager.
 
 ---
 
@@ -98,7 +98,7 @@ View markdown in pager
 <a class="github-button" href="https://github.com/noborus/pgsp" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/pgsp on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/pgsp/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/pgsp on GitHub">Fork</a>
 
-CLI tool to monitor and display pg_stat_progress of PostgreSQL
+CLI tool to monitor and display pg_stat_progress of PostgreSQL.
 
 * [pgsp Category](/categories/pgsp/)
 
@@ -118,7 +118,7 @@ CLI tool to monitor and display pg_stat_progress of PostgreSQL
 <a class="github-button" href="https://github.com/noborus/jpug-doc-tool" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/jpug-doc-tool on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/jpug-doc-tool/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/jpug-doc-tool on GitHub">Fork</a>
 
-Japanese manual translation tool for PostgreSQL
+Japanese manual translation tool for PostgreSQL.
 
 * [jpug-doc Category](categories/jpug-doc/)
 
@@ -130,7 +130,7 @@ Japanese manual translation tool for PostgreSQL
 <a class="github-button" href="https://github.com/noborus/guesswidth/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/guesswidth on GitHub">Fork</a>
 <span class="project-badge">[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/guesswidth)](https://pkg.go.dev/github.com/noborus/guesswidth)</span>
 
-Library tool to infer column widths in CLI output
+Library tool to infer column widths in CLI output.
 
 * [Guess the width of the width format](https://zenn.dev/noborus/articles/0aeef54ead08f5)
 * [Guess the width of the width-specified format](blog/guesswidth/)
