@@ -1,7 +1,7 @@
 +++
 author = "Noboru Saito"
 title = "trdsql File format conversion"
-date = "2023-06-11"
+date = "2023-06-10"
 description = "trdsql file format conversion"
 weight = 2
 tags = [
