@@ -8,7 +8,7 @@ weight: 1
 
 ---
 
-### [trdsql](https://github.com/noborus/trdsql)
+### <i class="fab fa-github"></i> [trdsql](https://github.com/noborus/trdsql)
 
 <a class="github-button" href="https://github.com/noborus/trdsql" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/trdsql on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/trdsql/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/trdsql on GitHub">Fork</a>
@@ -23,7 +23,7 @@ A tool that can execute SQL on CSV, LTSV, JSON, TBLN files
 
 ---
 
-### [ov](https://github.com/noborus/ov)
+### <i class="fab fa-github"></i> [ov](https://github.com/noborus/ov)
 
 <a class="github-button" href="https://github.com/noborus/ov" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/ov on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/ov/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/ov on GitHub">Fork</a>
@@ -40,7 +40,7 @@ A highly functional pager that works as a substitute for less and more.
 
 ---
 
-### [ovcs](https://github.com/noborus/ovcs)
+### <i class="fab fa-github"></i> [ovcs](https://github.com/noborus/ovcs)
 
 <a class="github-button" href="https://github.com/noborus/ovcs" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/ovcs on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/ovcs/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/ovcs on GitHub">Fork</a>
@@ -52,7 +52,7 @@ A client/server version of Terminal Pager ov.
 
 ---
 
-### [tbln](https://github.com/noborus/tbln)
+### <i class="fab fa-github"></i> [tbln](https://github.com/noborus/tbln)
 
 <a class="github-button" href="https://github.com/noborus/tbln" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/tbln on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/tbln/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/tbln on GitHub">Fork</a>
@@ -64,7 +64,7 @@ Libraries and tools that handle file formats (tbln) that are compatible with dat
 
 ---
 
-### [psutilsql](https://github.com/noborus/psutilsql)
+### <i class="fab fa-github"></i> [psutilsql](https://github.com/noborus/psutilsql)
 
 <a class="github-button" href="https://github.com/noborus/psutilsql" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/psutilsql on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/psutilsql/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/psutilsql on GitHub">Fork</a>
@@ -73,7 +73,7 @@ A tool that executes SQL to display system information
 
 ---
 
-### [mdtsql](https://github.com/noborus/mdtsql)
+### <i class="fab fa-github"></i> [mdtsql](https://github.com/noborus/mdtsql)
 
 <a class="github-button" href="https://github.com/noborus/mdtsql" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/mdtsql on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/mdtsql/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/mdtsql on GitHub">Fork</a>
@@ -84,7 +84,7 @@ A tool to execute SQL against a markdown table
 
 ---
 
-### [mdviewer](https://github.com/noborus/mdviewer)
+### <i class="fab fa-github"></i> [mdviewer](https://github.com/noborus/mdviewer)
 
 <a class="github-button" href="https://github.com/noborus/mdviewer" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/mdviewer on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/mdviewer/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/mdviewer on GitHub">Fork</a>
@@ -93,7 +93,7 @@ View markdown in pager
 
 ---
 
-### [pgsp](https://github.com/noborus/pgsp)
+### <i class="fab fa-github"></i> [pgsp](https://github.com/noborus/pgsp)
 
 <a class="github-button" href="https://github.com/noborus/pgsp" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/pgsp on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/pgsp/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/pgsp on GitHub">Fork</a>
@@ -104,7 +104,7 @@ CLI tool to monitor and display pg_stat_progress of PostgreSQL
 
 ---
 
-### [go-textra](https://github.com/noborus/go-textra)
+### <i class="fab fa-github"></i> [go-textra](https://github.com/noborus/go-textra)
 
 <a class="github-button" href="https://github.com/noborus/go-textra" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/go-textra on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/go-textra/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/go-textra on GitHub">Fork</a>
@@ -113,7 +113,7 @@ CLI tool to monitor and display pg_stat_progress of PostgreSQL
 
 ---
 
-### [jpug-doc-tool](https://github.com/noborus/jpug-doc-tool)
+### <i class="fab fa-github"></i> [jpug-doc-tool](https://github.com/noborus/jpug-doc-tool)
 
 <a class="github-button" href="https://github.com/noborus/jpug-doc-tool" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/jpug-doc-tool on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/jpug-doc-tool/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/jpug-doc-tool on GitHub">Fork</a>
