@@ -1,7 +1,7 @@
 +++
 author = "Noboru Saito"
 title = "trdsql"
-date = "2019-12-01"
+date = "2023-06-10"
 weight = 2
 +++
 

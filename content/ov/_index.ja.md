@@ -4,6 +4,7 @@ title = "ov - Feature-rich pager"
 date = "2023-06-08"
 tags = "ov"
 weight = 3
+menuTitle = "ov"
 +++
 
 [![ov](ov.gif)](https://github.com/noborus/ov)
