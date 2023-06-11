@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>bubbletea on Noboru Saito's page</title><link>https://noborus.github.io/tags/bubbletea/index.html</link><description>Recent content in bubbletea on Noboru Saito's page</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Wed, 14 Jul 2021 15:00:00 +0900</lastBuildDate><atom:link href="https://noborus.github.io/tags/bubbletea/index.xml" rel="self" type="application/rss+xml"/><item><title>pgsp</title><link>https://noborus.github.io/blog/pgsp/index.html</link><pubDate>Wed, 14 Jul 2021 15:00:00 +0900</pubDate><guid>https://noborus.github.io/blog/pgsp/index.html</guid><description>pgsp は PostgreSQLの pg_stat_progress viewを監視して表示するCLIツールです。
+pg_stat_progress PostgreSQLでは、いくつか時間がかかる処理に対して進捗状況が見られるViewがあります。 Viewの名前は pg_stat_progressではじまり、analyze, cluster, create_index, vacuum, basebackup (version 14からは copyが追加される予定)などが取得できます。
+詳しくは progress-reportingを参照してください。
+これらのViewは処理が始まったときにレコードが追加されて、変化する処理状況（フェーズや処理した数）を更新していき、終了するとレコードが消えます。SQLで簡単に確認できるので便利ですが、常に更新されていくため、状況を逐一見たいときにはpsqlでは\watch等を利用してSELECTを繰り返して見る必要があります。
+SELECT * FROM pg_stat_progress_analyze; pgsp pgspはこれらのViewを監視して表示する専用のCLIツールです。Go製です。 やっていることはシンプルでpg_stat_progress_* のViewを定期的にSELECTで取得し、レコードが追加、更新されたら進捗に相当する数値でプログレスバーを更新します。
+PostgreSQLに普通に接続にいくので接続情報（ホスト、ポート、ユーザー、パスワード等）が必要です。 --dsnで設定してください。
+pgsp --dsn &amp;#39;host=ホスト名 port=ポート番号 user=ユーザー名 password=パスワード&amp;#39; UNIXドメインソケットを使用する場合はhostにpathを書きます。
+pgsp --dsn &amp;#39;host=/var/run/postgresql&amp;#39; 設定ファイルとして $HOME/.pgsp.yaml に書くこともできます。
+dsn: host=&amp;#39;/var/run/postgresql/&amp;#39; user=&amp;#39;postgres&amp;#39; 起動すると定期的にViewにSELECTを実行します。レコードがなければスピンが回るだけです。
+何らかの処理が走ってViewにレコードが追加されるとViewの内容とプログレスバーが表示されます。Viewの内容はTerminalの表示域によって変わるようになっています。
+また、Viewは処理が終わるとレコードが削除されますが、pgspでは少しの間（デフォルトで10秒）表示し続けるようになっています。この時間は -a --AfterCompletionにより調整できます。
+10分経過まで表示しておきたい場合は以下のようにします。
+pgsp -a 600 更新間隔は-i --Intervalによって指定できます（デフォルトは 0.5秒)。処理によってはすぐに終わってしまうので、0.5秒間隔だと、実際には処理が行われていたにも関わらず捕捉出来ない場合があります。その場合は更新間隔を0.1秒等にしてみてください。
+逆に負荷が気になる場合は1以上に設定すると良いでしょう。
+Bubble Tea CLIツールの表示はBubble Tea を使用しておこなっています。
+Bubble TeaではTerminal上で、その場で表示するアプリケーションが簡単に作成出来るようになっています。その例でもあるプログレスバーをシンプルに利用しています。
+また、Terminal全体を使用してのアプリケーションも作成出来るため、pgspでも-f --fullscreenオプションによりTerminal全体を表示できるようになっています。
+fullscreenで表示した場合は起動前の表示内容はそのまま、別途別のコンソールが開かれ、終了後は元の画面に戻ります。お好みで使い分けてください。</description></item><item><title>goのTUIについて2020年最終版</title><link>https://noborus.github.io/blog/go_tui2020/index.html</link><pubDate>Thu, 31 Dec 2020 14:00:00 +0900</pubDate><guid>https://noborus.github.io/blog/go_tui2020/index.html</guid><description>概要 goのTUIについての2020年の最終更新版です。
+goでTUI(text user interface)を作成する場合にライブラリを使用するのが一般的です。
+goのTUIライブラリはだいたい以下に分類されます。
+termbox-go系 tcell系 bubbletea系 その他 goのTUIライブラリはtermbox-go系、tcell系の利用が多かったですが、彗星のごとくbubbleteaが登場しました。
+bubbleteaはThe Elm Architectureに基づいて作られているというフレームワークで、追加のコンポーネントとしてbubblesもあり、もう一つの系統として選択肢になると思います。
+TUIライブラリを謳っている場合は、だいたい上記3つを元に実装されている場合が多いです。
+TUIはエスケープシーケンスを使用すれば、ライブラリを使用しなくても実現できますが、端末によりエスケープシーケンスが変わっていたりするので、マルチプラットフォームで動作するのは難しくなります。 そのため、独自に一から作成するよりは、これらのライブラリの上に便利な機能を足す形になります。
+termbox-go系 termbox-goは、老舗で現在も多く使われていますが、開発は停滞傾向で、termbox-goにもそれほど保守しない方向だと書かれています。
+termbox-goを使用して、より高度なウィジットを実装したライブラリにgocuiがあります。
+termbox-go gocui termui termbox-goのimported by tcell系 tcellは、termbox-goよりも新しくtermbox-goを意識して開発され、今も開発も続いています。 tcellは基本的な機能しか提供しませんが、tcell/viewsには、少し高度なウィジットがあります。
+また、より高度なウィジットを実装したライブラリとしてtviewがあり、よく使用されています。また、そこからForkしたcviewも候補に入れておくと良いかも知れません。
+さらに元々termbox-goを使用していたgocuiをtcellに変更したawesome-gocui/gocuiも開発されています。
+tcell tcell/views tview cview cbind gowid goban awesome-gocui/gocui tcellのimported by bubbletea系 端末全部を使用するモードしかないtermbox-goとtcellと違い彗星のごとく現われたbubbleteaは現在のプロンプトから対話するような、ちょっとしたプログラムから端末全部を使用するTUIまでサポートしています。
+既に例が豊富に用意されていて、十分に実用に耐えるように思います。
+bubbletea bubbles bubbleteaのimported by その他 termbox-goやtcellは、端末画面をまるまる使用することを前提に作られています。起動すると現在の端末画面は消えて（終了時に戻すことは可能）、新しい画面が表示されます。
+現在のshellプロンプトで動作するような対話型プログラムの場合は、termbox-goやtcellでは作ることはできないので、bubbletea系か別のライブラリや自前で実装することになります。
+別のプログラムとしては、対話型のライブラリとして go-promptやlinerがあります。
+また、コンソール上の表示を助けるツールとして色を付けたり、その行のまま表示を変えるプログレスバー的な表示をするライブラリがあります。
+どれを選択すべきか？ 2020年12月現在、端末全体を使用する以外の使用の可能性がある場合は、bubbleteaを使用するのが良いと思います。端末全体を使用するアプリケーションを開発するなら、tview とbubbleteaで、例を見ながらどちらを使用するか決めるのが良いでしょう。</description></item></channel></rss>

@@ -1,4 +1,287 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>SQL on Noboru Saito's page</title><link>https://noborus.github.io/tags/sql/index.html</link><description>Recent content in SQL on Noboru Saito's page</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Tue, 03 May 2022 12:58:24 +0900</lastBuildDate><atom:link href="https://noborus.github.io/tags/sql/index.xml" rel="self" type="application/rss+xml"/><item><title>Another way to aggregate json(jq + SQL)</title><link>https://noborus.github.io/blog/jqsql/index.html</link><pubDate>Tue, 03 May 2022 12:58:24 +0900</pubDate><guid>https://noborus.github.io/blog/jqsql/index.html</guid><description>Aggregate json with trdsql I agree that the aggregation of jq described in the Introducing zq is not easy.
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>sql on Noboru Saito's page</title><link>https://noborus.github.io/tags/sql/index.html</link><description>Recent content in sql on Noboru Saito's page</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Thu, 14 Jul 2022 20:00:00 +0900</lastBuildDate><atom:link href="https://noborus.github.io/tags/sql/index.xml" rel="self" type="application/rss+xml"/><item><title>trdsql 簡単なSQL</title><link>https://noborus.github.io/trdsql/03_sql/index.html</link><pubDate>Tue, 03 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/trdsql/03_sql/index.html</guid><description>trdsqlと簡単なSQLを使用することで、他のUNIXツールを組み合わせて出来るようなことが一発で出来るようになります。
+ファイル解析 SELECT * FROMから進んで簡単なSQLを実行する場合、あらかじめ列名を把握しておく必要があります。 trdsql に -aオプションにファイル名を付けて実行するとファイルを解析して情報を出力してくれます。
+（CSVファイルの拡張子が.csvの様な場合は、-icsvを省略することが出来ます。-ih ヘッダを解釈、 -is スキップ数の指定等のオプションを必要に応じて付けないと意図しない解析結果になることがあります）。
+trdsql -ih -a header.csv The table name is header.csv. The file type is CSV. Data types: +-------------+------+ | column name | type | +-------------+------+ | id | text | | \`name\` | text | +-------------+------+ Data samples: +----+----------+ | id | \`name\` | +----+----------+ | 1 | Orange | +----+----------+ Examples: trdsql -ih &amp;#34;SELECT id, \`name\` FROM header.csv&amp;#34; trdsql -ih &amp;#34;SELECT id, \`name\` FROM header.</description></item><item><title>trdsql 簡単なSQL その２</title><link>https://noborus.github.io/trdsql/04_sql2/index.html</link><pubDate>Wed, 04 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/trdsql/04_sql2/index.html</guid><description>検索条件 前回、列の並べ替え、抽出、行の並べ替えをしたので、今回は行の抽出です。 行を抽出するには、WHEREを付けて、検索条件を書きます。
+前回と同じ例のファイルを使います。
+trdsql -ih &amp;#34;SELECT id, \`name\` FROM header.csv WHERE id=1&amp;#34; 1,Orange SQLのメインな機能ですね。検索条件を書くだけで、該当する行を出力できます。
+AND, OR AND や OR や ()括弧を使用することにより複雑な条件が書けます。
+trdsql -ih &amp;#34;SELECT id, \`name\` FROM header.csv WHERE id=&amp;#39;1&amp;#39; OR id=&amp;#39;2&amp;#39;&amp;#34; 1,Orange 2,Melon trdsql -ih &amp;#34;SELECT id, \`name\` FROM header.csv &amp;#34; &amp;#34;WHERE (id=&amp;#39;1&amp;#39; OR id=&amp;#39;2&amp;#39;) AND \`name\`=&amp;#39;Orange&amp;#39;&amp;#34; 1,Orange 前回にも書いたようにtrdsqlでは、CSVやLTSV、JSONの値をtext型として扱っています。そのため、「=」の条件で書いているときには、暗黙のCASTが効いて型をそれほど意識しなくても良いですが、範囲を指定するときには結果が変わってしまうので、CASTする必要があります。
+trdsql -ih &amp;#34;SELECT id,\`name\` FROM header.csv &amp;#34; &amp;#34;WHERE CAST(id as int)&amp;gt;1&amp;#34; 2,Melon 3,Apple SELECTを使用するときは、列の指定のところでCASTを使用して、そのCASTした列を指定して検索条件やORDER BYを書くことが出来ます。
+その際には元の列名はCAST前の列を指しているので、AS 別名を使用してCAST後の列名を使用します（CAST後の列名に元の名前を付けることは出来ます）。
+trdsql -ih &amp;#34;SELECT CAST(id AS int) AS id,\`name\` FROM header.</description></item><item><title>trdsql 集計</title><link>https://noborus.github.io/trdsql/05_aggregate/index.html</link><pubDate>Thu, 05 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/trdsql/05_aggregate/index.html</guid><description>COUNT(*) 最初はCOUNT(*)です。全体の件数を数えることが出来ます。
+集計関数を使用すると元の行と列のデータは出力されず、そこから集計された結果が出力されます。
+以下の例は結果が１行なので、CSVの様に見えませんが、1行1列(ヘッダー付き)のCSVとして出力されています。
+単純に件数を数えるだけですが、ヘッダーと解釈して数に含まないか等の注意が必要です。
+trdsql -icsv -ih -oh &amp;#34;SELECT COUNT(*) FROM header.csv&amp;#34; count(*) 3 検索条件の指定が出来ます。検索条件にあてはまる件数を知りたい時に使用します。
+trdsql -icsv -ih -oh &amp;#34;SELECT COUNT(*) FROM header.csv WHERE id&amp;lt;&amp;#39;1&amp;#39;&amp;#34; count(*) 2 COUNT(列名) COUNT(列名) もよく使用します。RDBMSではNULLが除外されるので、COUNT(*)とは区別して使われます。
+また、COUNTとDISTINCTを組み合わせると重複を省いた件数を出力できます。
+以下のようなCSVファイルで実行してみます。
+id,name 1,aaa 2,bbb 3,ccc 4,aaa trdsql -icsv -ih -oh &amp;#34;SELECT COUNT(name) FROM abc.csv&amp;#34; count(name) 4 trdsql -ih -oh &amp;#34;SELECT COUNT(DISTINCT name) FROM abc.csv&amp;#34; COUNT(DISTINCT name) 3 集計関数は一度に実行することもできます。
+trdsql -ih -oh &amp;#34;SELECT COUNT(name), COUNT(DISTINCT name) FROM abc.csv&amp;#34; COUNT(name),COUNT(DISTINCT name) 4,3</description></item><item><title>trdsql DBインポート</title><link>https://noborus.github.io/trdsql/15_import/index.html</link><pubDate>Sun, 15 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/trdsql/15_import/index.html</guid><description>trdsqlにはデータベースにインポートするオプションはありません。 しかしながら、SELECT以外のSQLの実行も可能なので、SQLによるインポートが可能です。
+以下は、メモリデータベースにインポートしても終了すると消えてしまうので、メモリデータベース以外のデータベースに接続して実行します。
+CREATE TABLE AS テーブルを作成してインポートするには CREATE TABLE ASを使用します。
+PostgreSQL で CREATE TABLE AS まず、PostgreSQLへデータをインポートしてみます。 これまで、SELECTで実行してきた内容に CREATE TABLE テーブル名 AS を前につければ、テーブルが作成されデータがインポートされます。
+trdsql -driver postgres -dsn &amp;#34;dbname=trdsql_test&amp;#34; -ih \ &amp;#34;CREATE TABLE test AS SELECT * FROM header.csv&amp;#34; 成功した場合、何も表示されずに終了します。失敗した場合、エラーが表示されます。
+SELECTの結果がインポートされるため、SELECT側で列名の変更、列の型指定、インポートするデータの条件指定をすれば良いことになります。
+trdsql -driver postgres -dsn &amp;#34;dbname=trdsql_test&amp;#34; -ih \ &amp;#34;CREATE TABLE fruits AS SELECT id::int AS num, name::VARCHAR(20) FROM header.csv&amp;#34; trdsql -driver postgres -dsn &amp;#34;dbname=trdsql_test&amp;#34; -ih -oh\ &amp;#34;SELECT * FROM fruits&amp;#34; num,name 1,Orange 2,Melon 3,Apple もし、テーブルの作成のみを先にして、INSERTを後でおこないたい場合はWITH NO DATAを付けます。</description></item><item><title>trdsql JOIN</title><link>https://noborus.github.io/trdsql/16_join/index.html</link><pubDate>Mon, 16 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/trdsql/16_join/index.html</guid><description>これまで一つのファイルにSQLを実行してきましたが、複数のファイルをJOINするSQLも実行できます。
+以下の2つのCSVファイルがあったとして、
+abc.csv
+1,AAA 2,BBB 3,CCC price.csv
+1,100 2,500 3,50 以下のように連結するのが、JOINです。
+1,AAA,100 2,BBB,500 3,CCC,50 trdsqlではテーブルの代わりにファイル名を使用すれば、そのままSQLのJOINが書けます。
+trdsql &amp;#34;SELECT a.c1, a.c2, p.c2&amp;#34; \ &amp;#34;FROM abc.csv AS a&amp;#34; \ &amp;#34;LEFT JOIN price.csv AS p&amp;#34; \ &amp;#34;USING (c1)&amp;#34; 同じ件数で対応する同じ列がある1対1のJOINのため、INNER JOINと同じ結果になります。 LEFT JOINの場合は、先に指定したabc.csvの行はすべて表示され、price.csvは対応する行がある場合のみ表示されます。 今回はヘッダーがないCSVなので、列名はc1,c2&amp;hellip;の共通になるため、一番左側(c1)が共通の列としてUSINGを使用してます。これは ON a.c1 = p.c1 と同じ意味になります。
+複数のCSVをJOINするときには、ヘッダーの有無を統一しておく必要があります。
+しかしながら、自動判別可能な拡張子になっていれば、CSVとLTSV等の混在は可能です。
+unit.ltsv
+id:1 unit:個 id:2 unit:箱 先程のCSVのJOINの結果に更にLTSVをJOINします。
+trdsql -oat \ &amp;#34;SELECT a.c1, a.c2, p.c2, unit&amp;#34; \ &amp;#34; FROM abc.csv AS a&amp;#34; \ &amp;#34;LEFT JOIN price.csv AS p&amp;#34; \ &amp;#34;USING (c1)&amp;#34; \ &amp;#34;LEFT JOIN unit.</description></item><item><title>trdsql ファイルとテーブルのJOIN</title><link>https://noborus.github.io/trdsql/17_file_table/index.html</link><pubDate>Tue, 17 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/trdsql/17_file_table/index.html</guid><description>既にテーブルが存在するデータベースに接続することにより、ファイルとテーブルをJOINすることもできます。
+例えば、データベース内にfruitsというテーブルがあった場合に、前回のabc.csvとJOINできます。
+trdsql -driver postgres -dsn &amp;#34;dbname=trdsql_test&amp;#34; \ &amp;#34;SELECT a.c1, a.c2, f.name FROM abc.csv AS a &amp;#34;\ &amp;#34;LEFT JOIN fruits AS f ON (CAST(a.c1 AS int) = f.id)&amp;#34; 1,AAA,Orange 2,BBB,Melon 3,CCC,Apple 例えば、データベース上にusersテーブルがあり、抽出したいリストがCSVファイルであった場合に、リストをWHERE user IN (...)で並べる等を検討するところですが、trdsqlではダイレクトにJOINして抽出できます。
+list.csv
+tarou jirou noborus usersテーブル
+id,name 1,taizou 2,momo 3,tarou trdsql -driver postgres -dsn &amp;#34;dbname=trdsql_test&amp;#34; \ &amp;#34;SELECT u.id, u.name FROM users AS u &amp;#34;\ &amp;#34;INNER JOIN list.csv AS l ON (u.name = l.c1)&amp;#34; 3,tarou 逆にCSVファイルにデータベースのテーブルから情報を足すといったことも考えられます。
+trdsql -driver postgres -dsn &amp;#34;dbname=trdsql_test&amp;#34; \ &amp;#34;SELECT u.</description></item><item><title>trdsql 列の編集</title><link>https://noborus.github.io/trdsql/18_edit_columns/index.html</link><pubDate>Wed, 18 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/trdsql/18_edit_columns/index.html</guid><description>これまで列の並べ替えはしてきましたが、列の内容はそのままでした。 SQLでは、文字列の書き換えが得意分野とは言えませんが、SQLの関数を使うことにより、それなりできる機能は揃っています。
+列の連結 「||」を使って、列名をつなげば、２つ以上の列を連結して一つの列になります。
+trdsql -ih -oh \ &amp;#34;SELECT id,name||id AS name_id FROM header.csv&amp;#34; id,name_id 1,Orange1 2,Melon2 3,Apple3 列と列だけでなく、文字列をそのまま連結も可能です。SQLの文字列は「&amp;rsquo;」シングルクオートで括ります。
+trdsql -ih -oh \ &amp;#34;SELECT id,name||&amp;#39;_&amp;#39;||id AS name_id FROM header.csv&amp;#34; id,name_id 1,Orange_1 2,Melon_2 3,Apple_3 PostgreSQL、MySQL またPostgreSQLとMySQLでは、複数の列をつなげたいときには concat(列名or文字列,列名or文字列,&amp;hellip;) が使用できます。
+trdsql -driver postgres -dsn &amp;#34;dbname=trdsql_test&amp;#34; -ih -oh \ &amp;#34;SELECT concat(id,name,&amp;#39;個&amp;#39;) FROM header.csv&amp;#34; concat 1Orange個 2Melon個 3Apple個 接続文字を付けてつなげたい場合は、concat_ws(接続文字,列名or文字列,列名or文字列,&amp;hellip;)が使用できます。
+trdsql -driver postgres -dsn &amp;#34;dbname=trdsql_test&amp;#34; -ih -oh \ &amp;#34;SELECT concat_ws(&amp;#39; &amp;#39;,id,name,&amp;#39;個&amp;#39;) FROM header.csv&amp;#34; concat_ws 1 Orange 個 2 Melon 個 3 Apple 個 SQLite3 SQLite3では、concat,concat_wsはありませんが、printfが使用できますので、より柔軟に文字列を生成できます。</description></item><item><title>trdsql Window関数</title><link>https://noborus.github.io/trdsql/19_window/index.html</link><pubDate>Thu, 19 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/trdsql/19_window/index.html</guid><description>これまでグループ集計による集計を紹介していますが、グループ集計は元の行とはまったく別にグループ毎の行を出力していました。 つまり、元のファイルとは別に集計の結果を出力していた訳です。
+そうではなくて、元のファイルの情報にプラスして集計結果を出して欲しい場合があります。 例えば、点数の列では、点数の平均との差を出力したり、柔軟な計算が出来るようになります。これまでの方法では、一旦集計してからJOINするしかありませんでしたが、SQLのWindow関数を使うとそういった集計も出すことが出来ます。
+古いバージョンではSQLite3では、Window関数を使用できませんでしたが、現在のtrdsqlに含まれているSQLite3では、Window関数を使用できます。
+PostgreSQLやMySQLでもWindow関数が使用できますが、MySQLは8.0からなので、注意が必要です。
+合計の表示 合計の計算は集計計算で出しましたが、最後の結果のみを出力していました。 Window関数では、行毎に結果を表示できます。
+例えば、以下のような点数のCSVについて結果を表示してみます。
+id,class,name,score 1,A,bob,174 2,A,alice,248 3,A,carol,163 4,B,dave,289 5,B,eve,157 6,B,flank,272 Window関数は集約関数の関数にOVER ()句を付けることにより範囲や、順序を指定することにより計算をおこないます。 OVER ()句があることで、他の列とは独立して対象の行以外を計算できます。
+OVER()句を空で指定すると全行が対象となります。
+trdsql -ih -omd \ &amp;#34;SELECT id,name,score, SUM(CAST(score AS int)) OVER () FROM score.csv&amp;#34; | id | name | score | sum | |----|-------|-------|------| | 1 | bob | 174 | 1303 | | 2 | alice | 248 | 1303 | | 3 | carol | 163 | 1303 | | 4 | dave | 289 | 1303 | | 5 | eve | 157 | 1303 | | 6 | flank | 272 | 1303 | SUM()で合計が求められるので、AVG()で平均も求められます。</description></item><item><title>trdsql 日付・時刻処理</title><link>https://noborus.github.io/trdsql/20_date/index.html</link><pubDate>Fri, 20 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/trdsql/20_date/index.html</guid><description>ファイル内に入っている日付、時刻をそのまま扱う場合は良いですが、変換等の処理をしたい場合があります。
+その場合は、一旦日付や時刻と解釈させてから扱う方が扱いやすくなります。
+SQLite3の日付、時刻処理 デフォルトのSQLite3の日付、時刻処理では、以下のフォーマットであれば、日付、時刻として解釈することができます。 もしSQLite3のエンジンで処理したい場合は、このフォーマットにしておくと良いでしょう。
+YYYY-MM-DD YYYY-MM-DD HH:MM YYYY-MM-DD HH:MM:SS YYYY-MM-DD HH:MM:SS.SSS YYYY-MM-DDTHH:MM YYYY-MM-DDTHH:MM:SS YYYY-MM-DDTHH:MM:SS.SSS HH:MM HH:MM:SS HH:MM:SS.SSS now DDDDDDDDDD 以下のようなログファイルのtimeを処理したい場合、
+time:2015-09-06T05:58:05+09:00 method:POST ... time:2015-09-06T05:58:41+09:00 method:POST ... time:2015-09-06T06:00:42+09:00 method:GET ... datetime(time)で日時として、認識させれば、strftime()で再フォーマットがしやすくなります。
+trdsql -iltsv &amp;#34;SELECT strftime(&amp;#39;%Y年%m月%d日%H時%M分%S秒&amp;#39;,datetime(time)) FROM log.ltsv&amp;#34; 2015年09月05日20時58分05秒 2015年09月05日20時58分41秒 2015年09月05日21時00分42秒 上記以外のフォーマットの場合は、SQLite3では文字列をまず書き換える必要があります。
+PostgreSQLの日付、時刻処理 PostgreSQLの日付、時刻処理は、より豊富なフォーマットを処理できます。
+多くの場合は、dateやtimestampにCASTするだけで、多くの有名なフォーマットは解釈されます。
+trdsql -driver postgres -dsn &amp;#34;dbname=trdsql_test&amp;#34; &amp;#34;SELECT to_char(CAST(time AS timestamp),&amp;#39;YYYY年MM月dd日HH24時MI分ss秒&amp;#39;) FROM log.ltsv&amp;#34; 2015年09月06日05時58分05秒 2015年09月06日05時58分41秒 2015年09月06日06時00分42秒 日付、時刻型に変換されるので、そこから表示するフォーマットに変換するにはto_char()を使用します。指定の仕方はマニュアルを参照して下さい。
+さらに独特なフォーマットの場合は、 to_dateやto_timestampにより自分で定義したフォーマットで解釈させることが出来ます。
+例えば上記で出力したフォーマットの場合、to_charと同じフォーマット指定でto_timestampを実行すれば逆にタイムスタンプとして扱われます。
+trdsql -ih -oh -driver postgres -dsn &amp;#34;dbname=trdsql_test&amp;#34; &amp;#34;SELECT to_timestamp(\&amp;#34;日時\&amp;#34;,&amp;#39;YYYY年MM月dd日HH24時MI分ss秒&amp;#39;) FROM d.</description></item><item><title>trdsql JSON解析</title><link>https://noborus.github.io/trdsql/21_json_parse/index.html</link><pubDate>Sat, 21 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/trdsql/21_json_parse/index.html</guid><description>これまでtrdsqlでは、JSONの入力が可能と書きましたが、例として書いたのは基本的にフラットな構造のJSONでした。 ただ、２階層以上の階層構造が含まれるJSONはエラーになる訳ではなく、そのまま文字列として扱われます。
+以下のようなJSONがあるとします。
+sample.json
+[ { &amp;#34;color&amp;#34;: &amp;#34;white&amp;#34;, &amp;#34;category&amp;#34;: &amp;#34;value&amp;#34;, &amp;#34;code&amp;#34;: { &amp;#34;rgba&amp;#34;: [0, 0, 0, 1], &amp;#34;hex&amp;#34;: &amp;#34;#FFF&amp;#34; } }, { &amp;#34;color&amp;#34;: &amp;#34;red&amp;#34;, &amp;#34;category&amp;#34;: &amp;#34;hue&amp;#34;, &amp;#34;type&amp;#34;: &amp;#34;primary&amp;#34;, &amp;#34;code&amp;#34;: { &amp;#34;rgba&amp;#34;: [255, 0, 0, 1], &amp;#34;hex&amp;#34;: &amp;#34;#FF0&amp;#34; } }, { &amp;#34;color&amp;#34;: &amp;#34;blue&amp;#34;, &amp;#34;category&amp;#34;: &amp;#34;hue&amp;#34;, &amp;#34;type&amp;#34;: &amp;#34;primary&amp;#34;, &amp;#34;code&amp;#34;: { &amp;#34;rgba&amp;#34;: [0, 0, 255, 1], &amp;#34;hex&amp;#34;: &amp;#34;#00F&amp;#34; } } ] これをそのままtrdsqlを実行すると以下のようになります(見やすいように-oatを付けています。CSV出力にすると「&amp;quot;」が含まれる文字列のためエスケープされて出力されます。)
+trdsql -oat &amp;#34;SELECT color,category,code FROM sample.json&amp;#34; +-------+----------+-----------------------------------+ | color | category | code | +-------+----------+-----------------------------------+ | white | value | {&amp;#34;hex&amp;#34;:&amp;#34;#FFF&amp;#34;,&amp;#34;rgba&amp;#34;:[0,0,0,1]} | | red | hue | {&amp;#34;hex&amp;#34;:&amp;#34;#FF0&amp;#34;,&amp;#34;rgba&amp;#34;:[255,0,0,1]} | | blue | hue | {&amp;#34;hex&amp;#34;:&amp;#34;#00F&amp;#34;,&amp;#34;rgba&amp;#34;:[0,0,255,1]} | +-------+----------+-----------------------------------+ このcodeは文字列の扱いですが、各データベースは既にJSONを扱える関数を備えているため、データベース側の関数を使って変更できます。</description></item><item><title>trdsql JSON出力</title><link>https://noborus.github.io/trdsql/22_json_output/index.html</link><pubDate>Sun, 22 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/trdsql/22_json_output/index.html</guid><description>CSVやLTSVなどのフラットな形式のデータは、JSONにしたいときには（-ojsonによる）JSON出力をすれば良いですが、JSONは本来より深い階層も表現できるフォーマットです。
+そのようなJSONは、データベースのJSON関数を使用することにより作成できます。
+以下のCSVからJSON関数でJSON出力をしてみます。
+id,name 1,Orange 2,Melon 3,Apple JSON関数で出力する場合は、「”」等がエスケープされない-orawを使用して出力すると、有効なJSONとして出力できます。
+SQLite3、MySQL SQLite3、MySQLでは、json_array()やjson_object()を使用することによりJSONを生成できます。 ここでは「名前:値」の形式で出力するためjson_objectを使用します。2つペアの引数で、指定していきます。
+trdsql -ih -oraw &amp;#34;SELECT json_object(&amp;#39;id&amp;#39;,id,&amp;#39;name&amp;#39;,name) FROM header.csv&amp;#34; {&amp;#34;id&amp;#34;:&amp;#34;1&amp;#34;,&amp;#34;name&amp;#34;:&amp;#34;Orange&amp;#34;} {&amp;#34;id&amp;#34;:&amp;#34;2&amp;#34;,&amp;#34;name&amp;#34;:&amp;#34;Melon&amp;#34;} {&amp;#34;id&amp;#34;:&amp;#34;3&amp;#34;,&amp;#34;name&amp;#34;:&amp;#34;Apple&amp;#34;} 階層を深くするには、json_object()を内部でさらに使います。 SQLite3にはjson_pretty()関数が無いので、jqで見やすくしています。
+trdsql -ih -oraw &amp;#34;SELECT json_object(&amp;#39;fruits&amp;#39;, json_object(&amp;#39;id&amp;#39;,id,&amp;#39;name&amp;#39;,name)) FROM header.csv&amp;#34;|jq . { &amp;#34;fruits&amp;#34;: { &amp;#34;id&amp;#34;: &amp;#34;1&amp;#34;, &amp;#34;name&amp;#34;: &amp;#34;Orange&amp;#34; } } { &amp;#34;fruits&amp;#34;: { &amp;#34;id&amp;#34;: &amp;#34;2&amp;#34;, &amp;#34;name&amp;#34;: &amp;#34;Melon&amp;#34; } } { &amp;#34;fruits&amp;#34;: { &amp;#34;id&amp;#34;: &amp;#34;3&amp;#34;, &amp;#34;name&amp;#34;: &amp;#34;Apple&amp;#34; } } 上記の結果は1行1JSONで出力されています。これをさらに配列にして、一つのJSONにするには、SQLite3では json_group_array()、MySQLではjson_arrayagg()でグループ化して出力できます。
+SQLite3 trdsql -ih -oraw &amp;#34;SELECT json_group_array(json_object(&amp;#39;fruits&amp;#39;, json_object(&amp;#39;id&amp;#39;,id,&amp;#39;name&amp;#39;,name))) FROM header.csv&amp;#34;|jq .</description></item><item><title>trdsql 差分、比較</title><link>https://noborus.github.io/trdsql/23_except/index.html</link><pubDate>Mon, 23 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/trdsql/23_except/index.html</guid><description>CSV同士やCSVとテーブルなどで、値の比較をしたい場合があります。
+同じ形式で一部が違うCSVファイルであれば、diffを取る方法もありますが、trdsqlのSQLを使用して比較すると形式が違う場合の比較にも使用できます。
+差分の出力 SQLで比較して、差分を出すには、EXCEPTを使用します。EXCEPTは Aのテーブルから Bのテーブルを引いた残りのAの内容を出力します。
+Bの方に多くの行があっても関係なく、AにあってBにない行を出力します。
+以下のCSVファイルで比較してみます。new.csvで、3の更新と4の追加があるCSVファイルです。
+old.csv
+1,AAA 2,BBB 3,CCC new.csv
+1,AAA 2,BBB 3,CCB 4,DDD 単純に全列を比較すると1と2の行が同じであるため、消されて残った3と4が出力されます。 この場合old.csv側にnew.csvにない行があっても出力されません。diffの比較とは違いますね。
+trdsql &amp;#34;SELECT * FROM new.csv EXCEPT SELECT * FROM old.csv &amp;#34; 3,CCB 4,DDD テーブルとファイルの差分出力 既存のデータベースに接続すれば、テーブルとの比較もできます。
+例えば、trdsql DBインポートでインポートしたテーブルと更新されたCSVとの比較をしたいときには、以下のようにすると良いでしょう。
+CSVファイル側をキャストして型を合わせています。
+trdsql -driver postgres -dsn &amp;#34;dbname=trdsql_test&amp;#34; -ih -oh \ &amp;#34;SELECT id::int,name FROM fruits.csv &amp;#34; \ &amp;#34;EXCEPT &amp;#34; \ &amp;#34;SELECT id,name FROM fruits &amp;#34; id,name 4,Grape データベース側のテーブルが更新されて新しい場合は、逆にテーブル EXCEPT CSVファイルとすれば、良いでしょう。
+共通の行の出力 また、EXCEPTとは逆に共通の行を出力させたいときには、INTERSECT を使用します。
+&amp;#34;SELECT id::int,name FROM fruits.</description></item><item><title>trdsql グラフ</title><link>https://noborus.github.io/trdsql/24_graph/index.html</link><pubDate>Tue, 24 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/trdsql/24_graph/index.html</guid><description>trdsqlは、グラフ作成機能は持っていないためグラフを作成したいときには別のツールを使用して作成することになります。
+ExcelやLibreOfficeで描画するのが定番でしょうが、ここではmarianogappa/chartでグラフを描画する方法を紹介します。
+marianogappa/chartは、Goで作られていて、や多くのプラットフォームで動作して、標準入力から受け取ったデータをブラウザに描画します。
+複雑なグラフには向いていませんが、簡単なグラフを少ないオプションを指定するだけで描画できます。
+chartに与えるデータは表示したいグラフによりますが、1列又は2列のデータです。
+例えばchartのデフォルトのpieでは、以下のような文字列が並んでいるようなデータを集計して円グラフにしてくれます。
+aaa bbb ccc aaa aaa aaa cat aaa.csv|chart （ブラウザが開いて表示されます）
+これを使用して例えば、ログ集計で使用したログのリクエストをグラフにすると以下のようになります。
+trdsql &amp;#34;SELECT req FROM log.ltsv&amp;#34;|chart また、他のグラフでは、1列目がx項目名で、2列目が値として与えます。デフォルトはタブ区切りのデータを受け取るので、タブ区切りで出力します。
+ログ集計のリクエストが多い順をTOP 20に変えて出力すると以下のようになります。
+trdsql -od &amp;#34;\t&amp;#34; \ &amp;#34;SELECT req, count(req) as count &amp;#34; \ &amp;#34;FROM log.ltsv &amp;#34; \ &amp;#34;GROUP BY req &amp;#34; \ &amp;#34;ORDER BY count DESC LIMIT 20&amp;#34; |chart bar marianogappa/chartは、Chart.jsを使用してグラフを描画しています。Chart.js自体が簡単なJavaScriptを用意すれば描画してくれるので、もう少し複雑なグラフを描きたい場合は直接利用するのが良いでしょう。</description></item><item><title>trdsql ライブラリ使用</title><link>https://noborus.github.io/trdsql/25_library/index.html</link><pubDate>Wed, 25 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/trdsql/25_library/index.html</guid><description>trdsqlは初期の頃は、main packageで構成されていましたが、現在はtrdsql packageをmainから呼び出す構成になっていて、trdsql packageをライブラリとして使用できます。
+trdsqlのパッケージは、以下の構成になっていて、それぞれ呼び出し可能です。
+簡単なサンプルを示します。
+package main import ( &amp;#34;log&amp;#34; &amp;#34;github.com/noborus/trdsql&amp;#34; ) func main() { trd := trdsql.NewTRDSQL( trdsql.NewImporter(trdsql.InDelimiter(&amp;#34;:&amp;#34;)), trdsql.NewExporter(trdsql.NewWriter()), ) err := trd.Exec(&amp;#34;SELECT c1 FROM /etc/passwd&amp;#34;) if err != nil { log.Fatal(err) } } 上記のプログラムは/etc/passwdに対してSQL文を実行しています。 Importer(データベースにインポートするインターフェイス）とExporter(データベースから結果を出力するインターフェイス）を与えてTRDSQLをNewし、Execで実行するのが、おおまかな流れです。
+func NewTRDSQL(im Importer, ex Exporter) *TRDSQL このImporter,Exporterはインターフェイスに沿っていれば、置き換えられます（例えば、SQL内のファイルをインポートするのではなく、独自にインポートするにはImporterのインターフェイスに沿った関数を作成します）。
+Importer デフォルトのImporterは、trdsql.NewImporter()を呼び出せば作成できます。 デフォルトのImporterはtrdsql.Import()でReadOptsのオプションを取ります。ここでフォーマットやその他オプションを渡します。
+SQL文にある「/etc/passwd」をデータベースにインポートして使用するのは、デフォルトの動作のため、区切り文字のみ「:」に変更しています。
+trdsql.Import()はSQL文を受け取り、必要なファイルをデータベースにインポートします。そのときにファイルの形式に合わせたtrdsql.Readerインターフェイス（各CSV,LTSV,JSON,TBLNのReader)からテーブルへインポートされます。
+また、インポートするデータベースによってバルクインサートかCOPYによるインポートを選択してインポートしています。
+Exporter デフォルトのExporterは、trdsql.NewExporter()を呼び出せば作成できます。 SQLでは出力は1つなので、出力する関数（trdsql.NewWriter()）を渡しています。 trdsql.NewWriter()はWriteOptsによりフォーマットと動作のオプションを設定して、実際のWriter関数（CSV、LTSV、JSON、TBLN、AT、VF&amp;hellip;)によりSQLを実行した結果を書き出します。
+Exec ImporterとExporterの準備が済んでいれば、ExecでSQLを実際に実行します。
+データベース接続 トランザクションの開始 Importerでインポートの実行 Exporterで指定したSQLの実行をして出力 トランザクションの終了 データベース切断 参考資料 trdsqlには、参考してファイルからのインポートだけでなく、スライスからインポートする関数が入っています。 それを利用したサンプルが _example/slice/ にあります。
+また、trdsql packageを利用してshirou/gopsutilの結果をSQLで取得できるようにしたものが、 noborus/psutilsql です。</description></item><item><title>trdsql SQLファイル指定</title><link>https://noborus.github.io/trdsql/26_file_sql/index.html</link><pubDate>Thu, 26 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/trdsql/26_file_sql/index.html</guid><description>SQLファイル名指定オプション「-q」 trdsql &amp;ldquo;SQLコマンド&amp;quot;の形式だと、長いSQLを書くのが難しいですし、シェルに対してエスケープしなければならない文字があって見た目もわかりにくい場合があります。
+trdsqlではファイルにSQLを書いておき、そのファイルのSQLを実行させるオプションがあります。
+以下のように記述したSQLをtest.sqlで保存しておきます。
+test.sql
+SELECT id, `name` FROM testsql.csv （コマンドの引数で渡していたときは「\`」のように「`」をエスケープする必要がありましたが、ファイルのSQLを実行する場合は必要ありません）。
+testsql.csv は対象となるCSVファイルです。
+id,name 1,tarou 2,jirou &amp;ldquo;SQLコマンド&amp;rdquo; の代わりに 「-q ファイル名.sql」で実行します。それ以外のオプションは代わりません。
+trdsql -ih -oat -q test.sql +----+-------+ | id | name | +----+-------+ | 1 | tarou | | 2 | jirou | +----+-------+</description></item><item><title>PostgreSQLで0列の扱い</title><link>https://noborus.github.io/blog/column0/index.html</link><pubDate>Thu, 14 Jul 2022 20:00:00 +0900</pubDate><guid>https://noborus.github.io/blog/column0/index.html</guid><description>きっかけ 現在のバージョンのPostgreSQLではSELECT ;というSQL文を実行してもエラーになりません。 試してみると(1 row)と返ってきたので、あれ？なんで？となりました。
+これは、列数が0なんですね。PostgreSQLは列数が0のテーブルが作れるので、それに合わせているようです。
+CREATE empty();
+&amp;mdash; Tatsuo Ishii (@tatsuo_ishii) July 13, 2022 列数が0という指摘を受けて、一応0列があることを理解していたつもりだったのですけど、 その仕様を勘違いしていたことに気づきました。
+テーブルを省略したSELECTの扱い 全部のSQL実装では無いですが、SQLのSELECTはFROM句がなくても動作する実装が多いです。 psqlで実行すると以下のようになります。
+SELECT &amp;#39;1&amp;#39;; ?column? ---------- 1 (1 row) のようにすれば文字列1が返ってきます。列名は無いので?column?で表されていますが、1行1列のテーブルと同じ扱いになります。
+SELECT ;はこの流れで行数が1で、列数が0のテーブルということになります。
+psqlでは実行すると以下のように行が（改行も含めて）表示されないまま 1 row と表示されるのでちょっと変な感じがしたのですが、これはpsql側でどう表示するかの問題であって、1行0列のテーブルと同じ扱いになっています。
+SELECT ; -- (1 row) なにも指定していないので、0行0列になるかと勘違いしてましたが、1行0列の方が正しいとわかります。
+PostgreSQLは0列のテーブルが作れる 前述の石井さんから指摘にあるように最近のPostgreSQLでは0列のテーブルが作成できるようになっています。
+CREATE TABLE empty (); 元からSQLでは行をINSERTしなければ0行のテーブルになるので、0列のテーブルを作っただけだと0列0行のテーブルになります。
+SELECT * FROM empty; -- (0 rows) psqlの表示では0列の場合(1 row)と(0 rows)の表示でしか区別出来ないですが、0行と1行でちゃんと違いがあって整合が取れている動作になっています。
+0列のテーブル操作 前は0列のSQLが許可されないところが多かったのですが、現在進行形で0列を許可するように修正されているので、前はエラーになったものが通るようになっていたり、これから通るようになったりする可能性があります。
+INSERT 0列のテーブルにINSERTしようとすると素直にできませんでした。
+INSERT INTO empty () VALUES (); ERROR: 42601: syntax error at or near &amp;#34;)&amp;#34; SELECT 列数が0のテーブルだけでなく、列数が1つ以上のテーブルであってもSELECT FROM oneで列数が0で返すことができます。 これにより列数が0で、複数行のテーブルを表現できます。</description></item><item><title>手っ取り遅くSQLを学ぶ</title><link>https://noborus.github.io/blog/sql/index.html</link><pubDate>Thu, 05 May 2022 10:00:00 +0900</pubDate><guid>https://noborus.github.io/blog/sql/index.html</guid><description>手っ取り遅くSQLを学ぶ 「手っ取り遅くSQLを学ぶ」とは？すぐにSQLを使えるよう学ぶのではなく、まわりくどくSQLを理解して学んでいく方法で解説します。
+「手っ取り早くSQLを学ぶ」と言ったら、よく使うSQLをなるべくシンプルな形にして、実際に試しながら、徐々に応用していく方法だと考えています。 「手っ取り遅くSQLを学ぶ」はその逆で、SQLの記法は後回しにして考え方を解説していきます。
+まずはテーブル SQLは主にリレーショナル・データベース（RDBMS）で使用されるデータ操作のための言語です。
+リレーショナル・データベースは「テーブル」をデータの集合として使用しているので、SQLを学ぶには、まずテーブルを理解する必要があります。
+テーブルとは、訳すと「表」なので、コンピューターと関係なくても日常でも溢れている表現方法です。 名簿であったり、一覧表など一般に、よく目にします。
+SQLで扱うテーブルは、表全般の中でもう少しルールが定まったものを対象とします。
+他のプログラミング言語と同じく「型を持った値」があります。数値の123や文字列の&amp;rsquo;abc&amp;rsquo;等。 この「型を持った値」を複数持つことができます。これをレコードと言ったり、「行」と言ったりします。
+このレコードが含んでいる値の数と型が一致している集合がテーブルです。 通常は、単純な数合わせではなく、型が一致しているだけでもなく、同じ意味を表しています。これをカラムと言ったり、「列」と言ったりします。 このカラムには名前を付けられることが多いです。「格納」する場合は、あとで取り出す必要があるので名前が必須になります。
+この集合をレコードの配列と考えても良いかもしれませんが、この時点では順序は不動なことに注意が必要です。 他のプログラミングからは、2次元配列で表される場合もありますが、プログラミング言語を理解している人は、構造体の配列と考えた方が良いでしょう。実際にSQLで操作したデータをプログラミング言語で受け取るときには、構造体の配列に変換することがよくあります。
+そして、テーブルの行も列も理論上は0以上無限まで可能です。 実際には上限はデータベースの仕様やコンピューターの限界値に左右されますが、下限は0から可能です。
+行が0というのは、たとえば名簿リストを作成したとして該当者が存在しないことはあるのでよくある話だと思いますが、列が0というのは理論上存在しても現実にはないので、定義はできないようにしているデータベースもあります。
+この「テーブル」単位にしておけば、自分の欲しいデータを取得できると考えて作られたのがリレーショナル・データベース（RDBMS）で、そのための記法がSQLです。
+SQLとは？ リレーショナル・データベースは、SQLを実行できるだけでなくテーブルを効率よく管理するためにいろいろな機能が備わっていますが、主要なSQLはテーブルを操作するため、少し切り離して考えることができます。
+SQLはテーブル（複数でも可）から「1つの」テーブルを作ることを目的としています。
+SQLをすでに知っている人からすると、テーブルを作ると言ったら「CREATE TABLE」と思うかもしれません。 データベースにテーブルを作るという狭い意味ではそうなのですが、その結果がテーブルになるという意味で広い意味では、テーブルを作るという目的であると言えます。
+INSERT/UPDATE/DELETEなどの更新系SQL文は、実行した結果がデータベースに反映されます。
+取得するSQL文と説明されることが多いSELECT文は、実際には取得ではなく、「SELECT」の意味の通り、「選択する」と解釈する方が正しいです。 「SELECT」文により選択された結果が指定されていない場合は、暗黙の了解として結果を取得します。
+3つ以上のテーブルから1つのテーブルを「作る」場合、まず2つのテーブルから1つのテーブルを作成し、作成されたテーブルと残ったテーブルから、1つのテーブルを作成するといった風に考えることで3つ以上のテーブルから1つのテーブルを作成できます。
+数学（というよりも算数）の「3+2+4」を「3+2」してその結果から「5+4」を計算するのと似ています。
+つまりSQLはテーブルとテーブルの計算式と言えます。
+JOIN テーブルの計算式として、一番基本は算数の足し算に相当するテーブルのJOINです。 ただし、テーブルとテーブルのJOINは、むしろ算数の掛け算に似ています。
+まずは列だけ考えてみます。テーブルAとテーブルXをJOINします。
+テーブルA
+A B テーブルX
+X Y テーブルとテーブルのJOINは、双方の「列」はそのまま全部使用します。
+A B X Y 続いて、行のJOINを考えます。
+Aテーブルの1行に対してXテーブルのすべての行に合成します。これをAテーブルのすべての行でおこないます。
+A B 1 3 2 4 X Y 1 8 2 9 Aの1行目とXテーブルを合成
+A B X Y 1 3 1 8 1 3 2 9 Aの2行目とXテーブルを合成</description></item><item><title>Another way to aggregate json(jq + SQL)</title><link>https://noborus.github.io/blog/jqsql/index.html</link><pubDate>Tue, 03 May 2022 12:58:24 +0900</pubDate><guid>https://noborus.github.io/blog/jqsql/index.html</guid><description>Aggregate json with trdsql I agree that the aggregation of jq described in the Introducing zq is not easy.
 I&amp;rsquo;ve seen A Practical Example of zq, zq was not easy for me.
 SQL is not easy for everyone, but it is a language that many people can use. I am one of them.
-Of course, it is difficult to process all JSON with SQL. But what about using them in combination?</description></item></channel></rss>
+Of course, it is difficult to process all JSON with SQL. But what about using them in combination?</description></item><item><title>SQLのORDER BY 列番号と式</title><link>https://noborus.github.io/blog/sqlorder/index.html</link><pubDate>Sat, 31 Oct 2020 12:53:00 +0900</pubDate><guid>https://noborus.github.io/blog/sqlorder/index.html</guid><description>きっかけ tom__boさんが書かれた8.0.22でのprepared statementの挙動変化 で、ORDER BY に列番号を指定する問題に注目が集まりました。
+その中で紹介されていた、
+For a prepared statement of the form SELECT expr1, expr2, &amp;hellip; FROM table ORDER BY ?, passing an integer value N for the parameter no longer causes ordering of the results by the Nth expression in the select list; the results are no longer ordered, as is expected with ORDER BY constant.
+「the results are no longer ordered, as is expected with ORDER BY constant.</description></item><item><title>trdsql SQLファイル指定</title><link>https://noborus.github.io/blog/26_file_sql/index.html</link><pubDate>Thu, 26 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/blog/26_file_sql/index.html</guid><description>SQLファイル名指定オプション「-q」 trdsql &amp;ldquo;SQLコマンド&amp;quot;の形式だと、長いSQLを書くのが難しいですし、シェルに対してエスケープしなければならない文字があって見た目もわかりにくい場合があります。
+trdsqlではファイルにSQLを書いておき、そのファイルのSQLを実行させるオプションがあります。
+以下のように記述したSQLをtest.sqlで保存しておきます。
+test.sql
+SELECT id, `name` FROM testsql.csv （コマンドの引数で渡していたときは「\`」のように「`」をエスケープする必要がありましたが、ファイルのSQLを実行する場合は必要ありません）。
+testsql.csv は対象となるCSVファイルです。
+id,name 1,tarou 2,jirou &amp;ldquo;SQLコマンド&amp;rdquo; の代わりに 「-q ファイル名.sql」で実行します。それ以外のオプションは代わりません。
+trdsql -ih -oat -q test.sql +----+-------+ | id | name | +----+-------+ | 1 | tarou | | 2 | jirou | +----+-------+</description></item><item><title>trdsql ライブラリ使用</title><link>https://noborus.github.io/blog/25_library/index.html</link><pubDate>Wed, 25 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/blog/25_library/index.html</guid><description>trdsqlは初期の頃は、main packageで構成されていましたが、現在はtrdsql packageをmainから呼び出す構成になっていて、trdsql packageをライブラリとして使用できます。
+trdsqlのパッケージは、以下の構成になっていて、それぞれ呼び出し可能です。
+簡単なサンプルを示します。
+package main import ( &amp;#34;log&amp;#34; &amp;#34;github.com/noborus/trdsql&amp;#34; ) func main() { trd := trdsql.NewTRDSQL( trdsql.NewImporter(trdsql.InDelimiter(&amp;#34;:&amp;#34;)), trdsql.NewExporter(trdsql.NewWriter()), ) err := trd.Exec(&amp;#34;SELECT c1 FROM /etc/passwd&amp;#34;) if err != nil { log.Fatal(err) } } 上記のプログラムは/etc/passwdに対してSQL文を実行しています。 Importer(データベースにインポートするインターフェイス）とExporter(データベースから結果を出力するインターフェイス）を与えてTRDSQLをNewし、Execで実行するのが、おおまかな流れです。
+func NewTRDSQL(im Importer, ex Exporter) *TRDSQL このImporter,Exporterはインターフェイスに沿っていれば、置き換えられます（例えば、SQL内のファイルをインポートするのではなく、独自にインポートするにはImporterのインターフェイスに沿った関数を作成します）。
+Importer デフォルトのImporterは、trdsql.NewImporter()を呼び出せば作成できます。 デフォルトのImporterはtrdsql.Import()でReadOptsのオプションを取ります。ここでフォーマットやその他オプションを渡します。
+SQL文にある「/etc/passwd」をデータベースにインポートして使用するのは、デフォルトの動作のため、区切り文字のみ「:」に変更しています。
+trdsql.Import()はSQL文を受け取り、必要なファイルをデータベースにインポートします。そのときにファイルの形式に合わせたtrdsql.Readerインターフェイス（各CSV,LTSV,JSON,TBLNのReader)からテーブルへインポートされます。
+また、インポートするデータベースによってバルクインサートかCOPYによるインポートを選択してインポートしています。
+Exporter デフォルトのExporterは、trdsql.NewExporter()を呼び出せば作成できます。 SQLでは出力は1つなので、出力する関数（trdsql.NewWriter()）を渡しています。 trdsql.NewWriter()はWriteOptsによりフォーマットと動作のオプションを設定して、実際のWriter関数（CSV、LTSV、JSON、TBLN、AT、VF&amp;hellip;)によりSQLを実行した結果を書き出します。
+Exec ImporterとExporterの準備が済んでいれば、ExecでSQLを実際に実行します。
+データベース接続 トランザクションの開始 Importerでインポートの実行 Exporterで指定したSQLの実行をして出力 トランザクションの終了 データベース切断 参考資料 trdsqlには、参考してファイルからのインポートだけでなく、スライスからインポートする関数が入っています。 それを利用したサンプルが _example/slice/ にあります。
+また、trdsql packageを利用してshirou/gopsutilの結果をSQLで取得できるようにしたものが、 noborus/psutilsql です。</description></item><item><title>trdsql グラフ</title><link>https://noborus.github.io/blog/24_graph/index.html</link><pubDate>Tue, 24 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/blog/24_graph/index.html</guid><description>trdsqlは、グラフ作成機能は持っていないためグラフを作成したいときには別のツールを使用して作成することになります。
+ExcelやLibreOfficeで描画するのが定番でしょうが、ここではmarianogappa/chartでグラフを描画する方法を紹介します。
+marianogappa/chartは、Goで作られていて、や多くのプラットフォームで動作して、標準入力から受け取ったデータをブラウザに描画します。
+複雑なグラフには向いていませんが、簡単なグラフを少ないオプションを指定するだけで描画できます。
+chartに与えるデータは表示したいグラフによりますが、1列又は2列のデータです。
+例えばchartのデフォルトのpieでは、以下のような文字列が並んでいるようなデータを集計して円グラフにしてくれます。
+aaa bbb ccc aaa aaa aaa cat aaa.csv|chart （ブラウザが開いて表示されます）
+これを使用して例えば、ログ集計で使用したログのリクエストをグラフにすると以下のようになります。
+trdsql &amp;#34;SELECT req FROM log.ltsv&amp;#34;|chart また、他のグラフでは、1列目がx項目名で、2列目が値として与えます。デフォルトはタブ区切りのデータを受け取るので、タブ区切りで出力します。
+ログ集計のリクエストが多い順をTOP 20に変えて出力すると以下のようになります。
+trdsql -od &amp;#34;\t&amp;#34; \ &amp;#34;SELECT req, count(req) as count &amp;#34; \ &amp;#34;FROM log.ltsv &amp;#34; \ &amp;#34;GROUP BY req &amp;#34; \ &amp;#34;ORDER BY count DESC LIMIT 20&amp;#34; |chart bar marianogappa/chartは、Chart.jsを使用してグラフを描画しています。Chart.js自体が簡単なJavaScriptを用意すれば描画してくれるので、もう少し複雑なグラフを描きたい場合は直接利用するのが良いでしょう。</description></item><item><title>trdsql 差分、比較</title><link>https://noborus.github.io/blog/23_except/index.html</link><pubDate>Mon, 23 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/blog/23_except/index.html</guid><description>CSV同士やCSVとテーブルなどで、値の比較をしたい場合があります。
+同じ形式で一部が違うCSVファイルであれば、diffを取る方法もありますが、trdsqlのSQLを使用して比較すると形式が違う場合の比較にも使用できます。
+差分の出力 SQLで比較して、差分を出すには、EXCEPTを使用します。EXCEPTは Aのテーブルから Bのテーブルを引いた残りのAの内容を出力します。
+Bの方に多くの行があっても関係なく、AにあってBにない行を出力します。
+以下のCSVファイルで比較してみます。new.csvで、3の更新と4の追加があるCSVファイルです。
+old.csv
+1,AAA 2,BBB 3,CCC new.csv
+1,AAA 2,BBB 3,CCB 4,DDD 単純に全列を比較すると1と2の行が同じであるため、消されて残った3と4が出力されます。 この場合old.csv側にnew.csvにない行があっても出力されません。diffの比較とは違いますね。
+trdsql &amp;#34;SELECT * FROM new.csv EXCEPT SELECT * FROM old.csv &amp;#34; 3,CCB 4,DDD テーブルとファイルの差分出力 既存のデータベースに接続すれば、テーブルとの比較もできます。
+例えば、trdsql DBインポートでインポートしたテーブルと更新されたCSVとの比較をしたいときには、以下のようにすると良いでしょう。
+CSVファイル側をキャストして型を合わせています。
+trdsql -driver postgres -dsn &amp;#34;dbname=trdsql_test&amp;#34; -ih -oh \ &amp;#34;SELECT id::int,name FROM fruits.csv &amp;#34; \ &amp;#34;EXCEPT &amp;#34; \ &amp;#34;SELECT id,name FROM fruits &amp;#34; id,name 4,Grape データベース側のテーブルが更新されて新しい場合は、逆にテーブル EXCEPT CSVファイルとすれば、良いでしょう。
+共通の行の出力 また、EXCEPTとは逆に共通の行を出力させたいときには、INTERSECT を使用します。
+&amp;#34;SELECT id::int,name FROM fruits.</description></item><item><title>trdsql JSON出力</title><link>https://noborus.github.io/blog/22_json_output/index.html</link><pubDate>Sun, 22 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/blog/22_json_output/index.html</guid><description>CSVやLTSVなどのフラットな形式のデータは、JSONにしたいときには（-ojsonによる）JSON出力をすれば良いですが、JSONは本来より深い階層も表現できるフォーマットです。
+そのようなJSONは、データベースのJSON関数を使用することにより作成できます。
+以下のCSVからJSON関数でJSON出力をしてみます。
+id,name 1,Orange 2,Melon 3,Apple JSON関数で出力する場合は、「”」等がエスケープされない-orawを使用して出力すると、有効なJSONとして出力できます。
+SQLite3、MySQL SQLite3、MySQLでは、json_array()やjson_object()を使用することによりJSONを生成できます。 ここでは「名前:値」の形式で出力するためjson_objectを使用します。2つペアの引数で、指定していきます。
+trdsql -ih -oraw &amp;#34;SELECT json_object(&amp;#39;id&amp;#39;,id,&amp;#39;name&amp;#39;,name) FROM header.csv&amp;#34; {&amp;#34;id&amp;#34;:&amp;#34;1&amp;#34;,&amp;#34;name&amp;#34;:&amp;#34;Orange&amp;#34;} {&amp;#34;id&amp;#34;:&amp;#34;2&amp;#34;,&amp;#34;name&amp;#34;:&amp;#34;Melon&amp;#34;} {&amp;#34;id&amp;#34;:&amp;#34;3&amp;#34;,&amp;#34;name&amp;#34;:&amp;#34;Apple&amp;#34;} 階層を深くするには、json_object()を内部でさらに使います。 SQLite3にはjson_pretty()関数が無いので、jqで見やすくしています。
+trdsql -ih -oraw &amp;#34;SELECT json_object(&amp;#39;fruits&amp;#39;, json_object(&amp;#39;id&amp;#39;,id,&amp;#39;name&amp;#39;,name)) FROM header.csv&amp;#34;|jq . { &amp;#34;fruits&amp;#34;: { &amp;#34;id&amp;#34;: &amp;#34;1&amp;#34;, &amp;#34;name&amp;#34;: &amp;#34;Orange&amp;#34; } } { &amp;#34;fruits&amp;#34;: { &amp;#34;id&amp;#34;: &amp;#34;2&amp;#34;, &amp;#34;name&amp;#34;: &amp;#34;Melon&amp;#34; } } { &amp;#34;fruits&amp;#34;: { &amp;#34;id&amp;#34;: &amp;#34;3&amp;#34;, &amp;#34;name&amp;#34;: &amp;#34;Apple&amp;#34; } } 上記の結果は1行1JSONで出力されています。これをさらに配列にして、一つのJSONにするには、SQLite3では json_group_array()、MySQLではjson_arrayagg()でグループ化して出力できます。
+SQLite3 trdsql -ih -oraw &amp;#34;SELECT json_group_array(json_object(&amp;#39;fruits&amp;#39;, json_object(&amp;#39;id&amp;#39;,id,&amp;#39;name&amp;#39;,name))) FROM header.csv&amp;#34;|jq .</description></item><item><title>trdsql JSON解析</title><link>https://noborus.github.io/blog/21_json_parse/index.html</link><pubDate>Sat, 21 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/blog/21_json_parse/index.html</guid><description>これまでtrdsqlでは、JSONの入力が可能と書きましたが、例として書いたのは基本的にフラットな構造のJSONでした。 ただ、２階層以上の階層構造が含まれるJSONはエラーになる訳ではなく、そのまま文字列として扱われます。
+以下のようなJSONがあるとします。
+sample.json
+[ { &amp;#34;color&amp;#34;: &amp;#34;white&amp;#34;, &amp;#34;category&amp;#34;: &amp;#34;value&amp;#34;, &amp;#34;code&amp;#34;: { &amp;#34;rgba&amp;#34;: [0, 0, 0, 1], &amp;#34;hex&amp;#34;: &amp;#34;#FFF&amp;#34; } }, { &amp;#34;color&amp;#34;: &amp;#34;red&amp;#34;, &amp;#34;category&amp;#34;: &amp;#34;hue&amp;#34;, &amp;#34;type&amp;#34;: &amp;#34;primary&amp;#34;, &amp;#34;code&amp;#34;: { &amp;#34;rgba&amp;#34;: [255, 0, 0, 1], &amp;#34;hex&amp;#34;: &amp;#34;#FF0&amp;#34; } }, { &amp;#34;color&amp;#34;: &amp;#34;blue&amp;#34;, &amp;#34;category&amp;#34;: &amp;#34;hue&amp;#34;, &amp;#34;type&amp;#34;: &amp;#34;primary&amp;#34;, &amp;#34;code&amp;#34;: { &amp;#34;rgba&amp;#34;: [0, 0, 255, 1], &amp;#34;hex&amp;#34;: &amp;#34;#00F&amp;#34; } } ] これをそのままtrdsqlを実行すると以下のようになります(見やすいように-oatを付けています。CSV出力にすると「&amp;quot;」が含まれる文字列のためエスケープされて出力されます。)
+trdsql -oat &amp;#34;SELECT color,category,code FROM sample.json&amp;#34; +-------+----------+-----------------------------------+ | color | category | code | +-------+----------+-----------------------------------+ | white | value | {&amp;#34;hex&amp;#34;:&amp;#34;#FFF&amp;#34;,&amp;#34;rgba&amp;#34;:[0,0,0,1]} | | red | hue | {&amp;#34;hex&amp;#34;:&amp;#34;#FF0&amp;#34;,&amp;#34;rgba&amp;#34;:[255,0,0,1]} | | blue | hue | {&amp;#34;hex&amp;#34;:&amp;#34;#00F&amp;#34;,&amp;#34;rgba&amp;#34;:[0,0,255,1]} | +-------+----------+-----------------------------------+ このcodeは文字列の扱いですが、各データベースは既にJSONを扱える関数を備えているため、データベース側の関数を使って変更できます。</description></item><item><title>trdsql 日付・時刻処理</title><link>https://noborus.github.io/blog/20_date/index.html</link><pubDate>Fri, 20 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/blog/20_date/index.html</guid><description>ファイル内に入っている日付、時刻をそのまま扱う場合は良いですが、変換等の処理をしたい場合があります。
+その場合は、一旦日付や時刻と解釈させてから扱う方が扱いやすくなります。
+SQLite3の日付、時刻処理 デフォルトのSQLite3の日付、時刻処理では、以下のフォーマットであれば、日付、時刻として解釈することができます。 もしSQLite3のエンジンで処理したい場合は、このフォーマットにしておくと良いでしょう。
+YYYY-MM-DD YYYY-MM-DD HH:MM YYYY-MM-DD HH:MM:SS YYYY-MM-DD HH:MM:SS.SSS YYYY-MM-DDTHH:MM YYYY-MM-DDTHH:MM:SS YYYY-MM-DDTHH:MM:SS.SSS HH:MM HH:MM:SS HH:MM:SS.SSS now DDDDDDDDDD 以下のようなログファイルのtimeを処理したい場合、
+time:2015-09-06T05:58:05+09:00 method:POST ... time:2015-09-06T05:58:41+09:00 method:POST ... time:2015-09-06T06:00:42+09:00 method:GET ... datetime(time)で日時として、認識させれば、strftime()で再フォーマットがしやすくなります。
+trdsql -iltsv &amp;#34;SELECT strftime(&amp;#39;%Y年%m月%d日%H時%M分%S秒&amp;#39;,datetime(time)) FROM log.ltsv&amp;#34; 2015年09月05日20時58分05秒 2015年09月05日20時58分41秒 2015年09月05日21時00分42秒 上記以外のフォーマットの場合は、SQLite3では文字列をまず書き換える必要があります。
+PostgreSQLの日付、時刻処理 PostgreSQLの日付、時刻処理は、より豊富なフォーマットを処理できます。
+多くの場合は、dateやtimestampにCASTするだけで、多くの有名なフォーマットは解釈されます。
+trdsql -driver postgres -dsn &amp;#34;dbname=trdsql_test&amp;#34; &amp;#34;SELECT to_char(CAST(time AS timestamp),&amp;#39;YYYY年MM月dd日HH24時MI分ss秒&amp;#39;) FROM log.ltsv&amp;#34; 2015年09月06日05時58分05秒 2015年09月06日05時58分41秒 2015年09月06日06時00分42秒 日付、時刻型に変換されるので、そこから表示するフォーマットに変換するにはto_char()を使用します。指定の仕方はマニュアルを参照して下さい。
+さらに独特なフォーマットの場合は、 to_dateやto_timestampにより自分で定義したフォーマットで解釈させることが出来ます。
+例えば上記で出力したフォーマットの場合、to_charと同じフォーマット指定でto_timestampを実行すれば逆にタイムスタンプとして扱われます。
+trdsql -ih -oh -driver postgres -dsn &amp;#34;dbname=trdsql_test&amp;#34; &amp;#34;SELECT to_timestamp(\&amp;#34;日時\&amp;#34;,&amp;#39;YYYY年MM月dd日HH24時MI分ss秒&amp;#39;) FROM d.</description></item><item><title>trdsql Window関数</title><link>https://noborus.github.io/blog/19_window/index.html</link><pubDate>Thu, 19 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/blog/19_window/index.html</guid><description>これまでグループ集計による集計を紹介していますが、グループ集計は元の行とはまったく別にグループ毎の行を出力していました。 つまり、元のファイルとは別に集計の結果を出力していた訳です。
+そうではなくて、元のファイルの情報にプラスして集計結果を出して欲しい場合があります。 例えば、点数の列では、点数の平均との差を出力したり、柔軟な計算が出来るようになります。これまでの方法では、一旦集計してからJOINするしかありませんでしたが、SQLのWindow関数を使うとそういった集計も出すことが出来ます。
+古いバージョンではSQLite3では、Window関数を使用できませんでしたが、現在のtrdsqlに含まれているSQLite3では、Window関数を使用できます。
+PostgreSQLやMySQLでもWindow関数が使用できますが、MySQLは8.0からなので、注意が必要です。
+合計の表示 合計の計算は集計計算で出しましたが、最後の結果のみを出力していました。 Window関数では、行毎に結果を表示できます。
+例えば、以下のような点数のCSVについて結果を表示してみます。
+id,class,name,score 1,A,bob,174 2,A,alice,248 3,A,carol,163 4,B,dave,289 5,B,eve,157 6,B,flank,272 Window関数は集約関数の関数にOVER ()句を付けることにより範囲や、順序を指定することにより計算をおこないます。 OVER ()句があることで、他の列とは独立して対象の行以外を計算できます。
+OVER()句を空で指定すると全行が対象となります。
+trdsql -ih -omd \ &amp;#34;SELECT id,name,score, SUM(CAST(score AS int)) OVER () FROM score.csv&amp;#34; | id | name | score | sum | |----|-------|-------|------| | 1 | bob | 174 | 1303 | | 2 | alice | 248 | 1303 | | 3 | carol | 163 | 1303 | | 4 | dave | 289 | 1303 | | 5 | eve | 157 | 1303 | | 6 | flank | 272 | 1303 | SUM()で合計が求められるので、AVG()で平均も求められます。</description></item><item><title>trdsql 列の編集</title><link>https://noborus.github.io/blog/18_edit_columns/index.html</link><pubDate>Wed, 18 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/blog/18_edit_columns/index.html</guid><description>これまで列の並べ替えはしてきましたが、列の内容はそのままでした。 SQLでは、文字列の書き換えが得意分野とは言えませんが、SQLの関数を使うことにより、それなりできる機能は揃っています。
+列の連結 「||」を使って、列名をつなげば、２つ以上の列を連結して一つの列になります。
+trdsql -ih -oh \ &amp;#34;SELECT id,name||id AS name_id FROM header.csv&amp;#34; id,name_id 1,Orange1 2,Melon2 3,Apple3 列と列だけでなく、文字列をそのまま連結も可能です。SQLの文字列は「&amp;rsquo;」シングルクオートで括ります。
+trdsql -ih -oh \ &amp;#34;SELECT id,name||&amp;#39;_&amp;#39;||id AS name_id FROM header.csv&amp;#34; id,name_id 1,Orange_1 2,Melon_2 3,Apple_3 PostgreSQL、MySQL またPostgreSQLとMySQLでは、複数の列をつなげたいときには concat(列名or文字列,列名or文字列,&amp;hellip;) が使用できます。
+trdsql -driver postgres -dsn &amp;#34;dbname=trdsql_test&amp;#34; -ih -oh \ &amp;#34;SELECT concat(id,name,&amp;#39;個&amp;#39;) FROM header.csv&amp;#34; concat 1Orange個 2Melon個 3Apple個 接続文字を付けてつなげたい場合は、concat_ws(接続文字,列名or文字列,列名or文字列,&amp;hellip;)が使用できます。
+trdsql -driver postgres -dsn &amp;#34;dbname=trdsql_test&amp;#34; -ih -oh \ &amp;#34;SELECT concat_ws(&amp;#39; &amp;#39;,id,name,&amp;#39;個&amp;#39;) FROM header.csv&amp;#34; concat_ws 1 Orange 個 2 Melon 個 3 Apple 個 SQLite3 SQLite3では、concat,concat_wsはありませんが、printfが使用できますので、より柔軟に文字列を生成できます。</description></item><item><title>trdsql ファイルとテーブルのJOIN</title><link>https://noborus.github.io/blog/17_file_table/index.html</link><pubDate>Tue, 17 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/blog/17_file_table/index.html</guid><description>既にテーブルが存在するデータベースに接続することにより、ファイルとテーブルをJOINすることもできます。
+例えば、データベース内にfruitsというテーブルがあった場合に、前回のabc.csvとJOINできます。
+trdsql -driver postgres -dsn &amp;#34;dbname=trdsql_test&amp;#34; \ &amp;#34;SELECT a.c1, a.c2, f.name FROM abc.csv AS a &amp;#34;\ &amp;#34;LEFT JOIN fruits AS f ON (CAST(a.c1 AS int) = f.id)&amp;#34; 1,AAA,Orange 2,BBB,Melon 3,CCC,Apple 例えば、データベース上にusersテーブルがあり、抽出したいリストがCSVファイルであった場合に、リストをWHERE user IN (...)で並べる等を検討するところですが、trdsqlではダイレクトにJOINして抽出できます。
+list.csv
+tarou jirou noborus usersテーブル
+id,name 1,taizou 2,momo 3,tarou trdsql -driver postgres -dsn &amp;#34;dbname=trdsql_test&amp;#34; \ &amp;#34;SELECT u.id, u.name FROM users AS u &amp;#34;\ &amp;#34;INNER JOIN list.csv AS l ON (u.name = l.c1)&amp;#34; 3,tarou 逆にCSVファイルにデータベースのテーブルから情報を足すといったことも考えられます。
+trdsql -driver postgres -dsn &amp;#34;dbname=trdsql_test&amp;#34; \ &amp;#34;SELECT u.</description></item><item><title>trdsql JOIN</title><link>https://noborus.github.io/blog/16_join/index.html</link><pubDate>Mon, 16 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/blog/16_join/index.html</guid><description>これまで一つのファイルにSQLを実行してきましたが、複数のファイルをJOINするSQLも実行できます。
+以下の2つのCSVファイルがあったとして、
+abc.csv
+1,AAA 2,BBB 3,CCC price.csv
+1,100 2,500 3,50 以下のように連結するのが、JOINです。
+1,AAA,100 2,BBB,500 3,CCC,50 trdsqlではテーブルの代わりにファイル名を使用すれば、そのままSQLのJOINが書けます。
+trdsql &amp;#34;SELECT a.c1, a.c2, p.c2&amp;#34; \ &amp;#34;FROM abc.csv AS a&amp;#34; \ &amp;#34;LEFT JOIN price.csv AS p&amp;#34; \ &amp;#34;USING (c1)&amp;#34; 同じ件数で対応する同じ列がある1対1のJOINのため、INNER JOINと同じ結果になります。 LEFT JOINの場合は、先に指定したabc.csvの行はすべて表示され、price.csvは対応する行がある場合のみ表示されます。 今回はヘッダーがないCSVなので、列名はc1,c2&amp;hellip;の共通になるため、一番左側(c1)が共通の列としてUSINGを使用してます。これは ON a.c1 = p.c1 と同じ意味になります。
+複数のCSVをJOINするときには、ヘッダーの有無を統一しておく必要があります。
+しかしながら、自動判別可能な拡張子になっていれば、CSVとLTSV等の混在は可能です。
+unit.ltsv
+id:1 unit:個 id:2 unit:箱 先程のCSVのJOINの結果に更にLTSVをJOINします。
+trdsql -oat \ &amp;#34;SELECT a.c1, a.c2, p.c2, unit&amp;#34; \ &amp;#34; FROM abc.csv AS a&amp;#34; \ &amp;#34;LEFT JOIN price.csv AS p&amp;#34; \ &amp;#34;USING (c1)&amp;#34; \ &amp;#34;LEFT JOIN unit.</description></item><item><title>trdsql DBインポート</title><link>https://noborus.github.io/blog/15_import/index.html</link><pubDate>Sun, 15 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/blog/15_import/index.html</guid><description>trdsqlにはデータベースにインポートするオプションはありません。 しかしながら、SELECT以外のSQLの実行も可能なので、SQLによるインポートが可能です。
+以下は、メモリデータベースにインポートしても終了すると消えてしまうので、メモリデータベース以外のデータベースに接続して実行します。
+CREATE TABLE AS テーブルを作成してインポートするには CREATE TABLE ASを使用します。
+PostgreSQL で CREATE TABLE AS まず、PostgreSQLへデータをインポートしてみます。 これまで、SELECTで実行してきた内容に CREATE TABLE テーブル名 AS を前につければ、テーブルが作成されデータがインポートされます。
+trdsql -driver postgres -dsn &amp;#34;dbname=trdsql_test&amp;#34; -ih \ &amp;#34;CREATE TABLE test AS SELECT * FROM header.csv&amp;#34; 成功した場合、何も表示されずに終了します。失敗した場合、エラーが表示されます。
+SELECTの結果がインポートされるため、SELECT側で列名の変更、列の型指定、インポートするデータの条件指定をすれば良いことになります。
+trdsql -driver postgres -dsn &amp;#34;dbname=trdsql_test&amp;#34; -ih \ &amp;#34;CREATE TABLE fruits AS SELECT id::int AS num, name::VARCHAR(20) FROM header.csv&amp;#34; trdsql -driver postgres -dsn &amp;#34;dbname=trdsql_test&amp;#34; -ih -oh\ &amp;#34;SELECT * FROM fruits&amp;#34; num,name 1,Orange 2,Melon 3,Apple もし、テーブルの作成のみを先にして、INSERTを後でおこないたい場合はWITH NO DATAを付けます。</description></item><item><title>trdsql 集計</title><link>https://noborus.github.io/blog/05_aggregate/index.html</link><pubDate>Thu, 05 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/blog/05_aggregate/index.html</guid><description>COUNT(*) 最初はCOUNT(*)です。全体の件数を数えることが出来ます。
+集計関数を使用すると元の行と列のデータは出力されず、そこから集計された結果が出力されます。
+以下の例は結果が１行なので、CSVの様に見えませんが、1行1列(ヘッダー付き)のCSVとして出力されています。
+単純に件数を数えるだけですが、ヘッダーと解釈して数に含まないか等の注意が必要です。
+trdsql -icsv -ih -oh &amp;#34;SELECT COUNT(*) FROM header.csv&amp;#34; count(*) 3 検索条件の指定が出来ます。検索条件にあてはまる件数を知りたい時に使用します。
+trdsql -icsv -ih -oh &amp;#34;SELECT COUNT(*) FROM header.csv WHERE id&amp;lt;&amp;#39;1&amp;#39;&amp;#34; count(*) 2 COUNT(列名) COUNT(列名) もよく使用します。RDBMSではNULLが除外されるので、COUNT(*)とは区別して使われます。
+また、COUNTとDISTINCTを組み合わせると重複を省いた件数を出力できます。
+以下のようなCSVファイルで実行してみます。
+id,name 1,aaa 2,bbb 3,ccc 4,aaa trdsql -icsv -ih -oh &amp;#34;SELECT COUNT(name) FROM abc.csv&amp;#34; count(name) 4 trdsql -ih -oh &amp;#34;SELECT COUNT(DISTINCT name) FROM abc.csv&amp;#34; COUNT(DISTINCT name) 3 集計関数は一度に実行することもできます。
+trdsql -ih -oh &amp;#34;SELECT COUNT(name), COUNT(DISTINCT name) FROM abc.csv&amp;#34; COUNT(name),COUNT(DISTINCT name) 4,3</description></item><item><title>trdsql 簡単なSQL その２</title><link>https://noborus.github.io/blog/04_sql2/index.html</link><pubDate>Wed, 04 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/blog/04_sql2/index.html</guid><description>検索条件 前回、列の並べ替え、抽出、行の並べ替えをしたので、今回は行の抽出です。 行を抽出するには、WHEREを付けて、検索条件を書きます。
+前回と同じ例のファイルを使います。
+trdsql -ih &amp;#34;SELECT id, \`name\` FROM header.csv WHERE id=1&amp;#34; 1,Orange SQLのメインな機能ですね。検索条件を書くだけで、該当する行を出力できます。
+AND, OR AND や OR や ()括弧を使用することにより複雑な条件が書けます。
+trdsql -ih &amp;#34;SELECT id, \`name\` FROM header.csv WHERE id=&amp;#39;1&amp;#39; OR id=&amp;#39;2&amp;#39;&amp;#34; 1,Orange 2,Melon trdsql -ih &amp;#34;SELECT id, \`name\` FROM header.csv &amp;#34; &amp;#34;WHERE (id=&amp;#39;1&amp;#39; OR id=&amp;#39;2&amp;#39;) AND \`name\`=&amp;#39;Orange&amp;#39;&amp;#34; 1,Orange 前回にも書いたようにtrdsqlでは、CSVやLTSV、JSONの値をtext型として扱っています。そのため、「=」の条件で書いているときには、暗黙のCASTが効いて型をそれほど意識しなくても良いですが、範囲を指定するときには結果が変わってしまうので、CASTする必要があります。
+trdsql -ih &amp;#34;SELECT id,\`name\` FROM header.csv &amp;#34; &amp;#34;WHERE CAST(id as int)&amp;gt;1&amp;#34; 2,Melon 3,Apple SELECTを使用するときは、列の指定のところでCASTを使用して、そのCASTした列を指定して検索条件やORDER BYを書くことが出来ます。
+その際には元の列名はCAST前の列を指しているので、AS 別名を使用してCAST後の列名を使用します（CAST後の列名に元の名前を付けることは出来ます）。
+trdsql -ih &amp;#34;SELECT CAST(id AS int) AS id,\`name\` FROM header.</description></item><item><title>trdsql 簡単なSQL</title><link>https://noborus.github.io/blog/03_sql/index.html</link><pubDate>Tue, 03 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/blog/03_sql/index.html</guid><description>trdsqlと簡単なSQLを使用することで、他のUNIXツールを組み合わせて出来るようなことが一発で出来るようになります。
+ファイル解析 SELECT * FROMから進んで簡単なSQLを実行する場合、あらかじめ列名を把握しておく必要があります。 trdsql に -aオプションにファイル名を付けて実行するとファイルを解析して情報を出力してくれます。
+（CSVファイルの拡張子が.csvの様な場合は、-icsvを省略することが出来ます。-ih ヘッダを解釈、 -is スキップ数の指定等のオプションを必要に応じて付けないと意図しない解析結果になることがあります）。
+trdsql -ih -a header.csv The table name is header.csv. The file type is CSV. Data types: +-------------+------+ | column name | type | +-------------+------+ | id | text | | \`name\` | text | +-------------+------+ Data samples: +----+----------+ | id | \`name\` | +----+----------+ | 1 | Orange | +----+----------+ Examples: trdsql -ih &amp;#34;SELECT id, \`name\` FROM header.csv&amp;#34; trdsql -ih &amp;#34;SELECT id, \`name\` FROM header.</description></item></channel></rss>

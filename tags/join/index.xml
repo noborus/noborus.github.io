@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>JOIN on Noboru Saito's page</title><link>https://noborus.github.io/tags/join/index.html</link><description>Recent content in JOIN on Noboru Saito's page</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Sat, 28 Dec 2019 00:00:00 +0000</lastBuildDate><atom:link href="https://noborus.github.io/tags/join/index.xml" rel="self" type="application/rss+xml"/><item><title>trdsql JOIN</title><link>https://noborus.github.io/trdsql/16_join/index.html</link><pubDate>Mon, 16 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/trdsql/16_join/index.html</guid><description>これまで一つのファイルにSQLを実行してきましたが、複数のファイルをJOINするSQLも実行できます。
+以下の2つのCSVファイルがあったとして、
+abc.csv
+1,AAA 2,BBB 3,CCC price.csv
+1,100 2,500 3,50 以下のように連結するのが、JOINです。
+1,AAA,100 2,BBB,500 3,CCC,50 trdsqlではテーブルの代わりにファイル名を使用すれば、そのままSQLのJOINが書けます。
+trdsql &amp;#34;SELECT a.c1, a.c2, p.c2&amp;#34; \ &amp;#34;FROM abc.csv AS a&amp;#34; \ &amp;#34;LEFT JOIN price.csv AS p&amp;#34; \ &amp;#34;USING (c1)&amp;#34; 同じ件数で対応する同じ列がある1対1のJOINのため、INNER JOINと同じ結果になります。 LEFT JOINの場合は、先に指定したabc.csvの行はすべて表示され、price.csvは対応する行がある場合のみ表示されます。 今回はヘッダーがないCSVなので、列名はc1,c2&amp;hellip;の共通になるため、一番左側(c1)が共通の列としてUSINGを使用してます。これは ON a.c1 = p.c1 と同じ意味になります。
+複数のCSVをJOINするときには、ヘッダーの有無を統一しておく必要があります。
+しかしながら、自動判別可能な拡張子になっていれば、CSVとLTSV等の混在は可能です。
+unit.ltsv
+id:1 unit:個 id:2 unit:箱 先程のCSVのJOINの結果に更にLTSVをJOINします。
+trdsql -oat \ &amp;#34;SELECT a.c1, a.c2, p.c2, unit&amp;#34; \ &amp;#34; FROM abc.csv AS a&amp;#34; \ &amp;#34;LEFT JOIN price.csv AS p&amp;#34; \ &amp;#34;USING (c1)&amp;#34; \ &amp;#34;LEFT JOIN unit.</description></item><item><title>trdsql ファイルとテーブルのJOIN</title><link>https://noborus.github.io/trdsql/17_file_table/index.html</link><pubDate>Tue, 17 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/trdsql/17_file_table/index.html</guid><description>既にテーブルが存在するデータベースに接続することにより、ファイルとテーブルをJOINすることもできます。
+例えば、データベース内にfruitsというテーブルがあった場合に、前回のabc.csvとJOINできます。
+trdsql -driver postgres -dsn &amp;#34;dbname=trdsql_test&amp;#34; \ &amp;#34;SELECT a.c1, a.c2, f.name FROM abc.csv AS a &amp;#34;\ &amp;#34;LEFT JOIN fruits AS f ON (CAST(a.c1 AS int) = f.id)&amp;#34; 1,AAA,Orange 2,BBB,Melon 3,CCC,Apple 例えば、データベース上にusersテーブルがあり、抽出したいリストがCSVファイルであった場合に、リストをWHERE user IN (...)で並べる等を検討するところですが、trdsqlではダイレクトにJOINして抽出できます。
+list.csv
+tarou jirou noborus usersテーブル
+id,name 1,taizou 2,momo 3,tarou trdsql -driver postgres -dsn &amp;#34;dbname=trdsql_test&amp;#34; \ &amp;#34;SELECT u.id, u.name FROM users AS u &amp;#34;\ &amp;#34;INNER JOIN list.csv AS l ON (u.name = l.c1)&amp;#34; 3,tarou 逆にCSVファイルにデータベースのテーブルから情報を足すといったことも考えられます。
+trdsql -driver postgres -dsn &amp;#34;dbname=trdsql_test&amp;#34; \ &amp;#34;SELECT u.</description></item><item><title>trdsql CROSS JOIN</title><link>https://noborus.github.io/trdsql/28_cross_join/index.html</link><pubDate>Sat, 28 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/trdsql/28_cross_join/index.html</guid><description>CROSS JOINは、総当りを簡単に作り出せる方法です。
+a.csv
+aa ab ac b.csv
+ba bb bc の２つのCSVをCROSS JOINすると 3×3で全ての組み合わせを出力できます。
+trdsql &amp;#34;SELECT * FROM a.csv CROSS JOIN b.csv&amp;#34; aa,ba aa,bb aa,bc ab,ba ab,bb ab,bc ac,ba ac,bb ac,bc また一つのファイルに対して自己結合をすることもできます。 例えば、ホーム＆アウェーの総当り表を作成してみます。
+cleague.csv
+team 巨人 DeNA 阪神 広島 中日 ヤクルト 単純にCROSS JOINするには以下のようになります（JOIN条件は無いので書けません）。
+trdsql -ih \ &amp;#34;SELECT h.team,a.team &amp;#34;\ &amp;#34; FROM cleague.csv AS h &amp;#34;\ &amp;#34; CROSS JOIN cleague.csv AS a&amp;#34; 自分のチームとは対戦出来ないので、同じチームのときをWHERE h.team != a.teamにより除外します。
+trdsql -ih -omd \ &amp;#34;SELECT h.team AS home,a.</description></item><item><title>trdsql CROSS JOIN</title><link>https://noborus.github.io/blog/28_cross_join/index.html</link><pubDate>Sat, 28 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/blog/28_cross_join/index.html</guid><description>CROSS JOINは、総当りを簡単に作り出せる方法です。
+a.csv
+aa ab ac b.csv
+ba bb bc の２つのCSVをCROSS JOINすると 3×3で全ての組み合わせを出力できます。
+trdsql &amp;#34;SELECT * FROM a.csv CROSS JOIN b.csv&amp;#34; aa,ba aa,bb aa,bc ab,ba ab,bb ab,bc ac,ba ac,bb ac,bc また一つのファイルに対して自己結合をすることもできます。 例えば、ホーム＆アウェーの総当り表を作成してみます。
+cleague.csv
+team 巨人 DeNA 阪神 広島 中日 ヤクルト 単純にCROSS JOINするには以下のようになります（JOIN条件は無いので書けません）。
+trdsql -ih \ &amp;#34;SELECT h.team,a.team &amp;#34;\ &amp;#34; FROM cleague.csv AS h &amp;#34;\ &amp;#34; CROSS JOIN cleague.csv AS a&amp;#34; 自分のチームとは対戦出来ないので、同じチームのときをWHERE h.team != a.teamにより除外します。
+trdsql -ih -omd \ &amp;#34;SELECT h.team AS home,a.</description></item><item><title>trdsql ファイルとテーブルのJOIN</title><link>https://noborus.github.io/blog/17_file_table/index.html</link><pubDate>Tue, 17 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/blog/17_file_table/index.html</guid><description>既にテーブルが存在するデータベースに接続することにより、ファイルとテーブルをJOINすることもできます。
+例えば、データベース内にfruitsというテーブルがあった場合に、前回のabc.csvとJOINできます。
+trdsql -driver postgres -dsn &amp;#34;dbname=trdsql_test&amp;#34; \ &amp;#34;SELECT a.c1, a.c2, f.name FROM abc.csv AS a &amp;#34;\ &amp;#34;LEFT JOIN fruits AS f ON (CAST(a.c1 AS int) = f.id)&amp;#34; 1,AAA,Orange 2,BBB,Melon 3,CCC,Apple 例えば、データベース上にusersテーブルがあり、抽出したいリストがCSVファイルであった場合に、リストをWHERE user IN (...)で並べる等を検討するところですが、trdsqlではダイレクトにJOINして抽出できます。
+list.csv
+tarou jirou noborus usersテーブル
+id,name 1,taizou 2,momo 3,tarou trdsql -driver postgres -dsn &amp;#34;dbname=trdsql_test&amp;#34; \ &amp;#34;SELECT u.id, u.name FROM users AS u &amp;#34;\ &amp;#34;INNER JOIN list.csv AS l ON (u.name = l.c1)&amp;#34; 3,tarou 逆にCSVファイルにデータベースのテーブルから情報を足すといったことも考えられます。
+trdsql -driver postgres -dsn &amp;#34;dbname=trdsql_test&amp;#34; \ &amp;#34;SELECT u.</description></item><item><title>trdsql JOIN</title><link>https://noborus.github.io/blog/16_join/index.html</link><pubDate>Mon, 16 Dec 2019 00:00:00 +0000</pubDate><guid>https://noborus.github.io/blog/16_join/index.html</guid><description>これまで一つのファイルにSQLを実行してきましたが、複数のファイルをJOINするSQLも実行できます。
+以下の2つのCSVファイルがあったとして、
+abc.csv
+1,AAA 2,BBB 3,CCC price.csv
+1,100 2,500 3,50 以下のように連結するのが、JOINです。
+1,AAA,100 2,BBB,500 3,CCC,50 trdsqlではテーブルの代わりにファイル名を使用すれば、そのままSQLのJOINが書けます。
+trdsql &amp;#34;SELECT a.c1, a.c2, p.c2&amp;#34; \ &amp;#34;FROM abc.csv AS a&amp;#34; \ &amp;#34;LEFT JOIN price.csv AS p&amp;#34; \ &amp;#34;USING (c1)&amp;#34; 同じ件数で対応する同じ列がある1対1のJOINのため、INNER JOINと同じ結果になります。 LEFT JOINの場合は、先に指定したabc.csvの行はすべて表示され、price.csvは対応する行がある場合のみ表示されます。 今回はヘッダーがないCSVなので、列名はc1,c2&amp;hellip;の共通になるため、一番左側(c1)が共通の列としてUSINGを使用してます。これは ON a.c1 = p.c1 と同じ意味になります。
+複数のCSVをJOINするときには、ヘッダーの有無を統一しておく必要があります。
+しかしながら、自動判別可能な拡張子になっていれば、CSVとLTSV等の混在は可能です。
+unit.ltsv
+id:1 unit:個 id:2 unit:箱 先程のCSVのJOINの結果に更にLTSVをJOINします。
+trdsql -oat \ &amp;#34;SELECT a.c1, a.c2, p.c2, unit&amp;#34; \ &amp;#34; FROM abc.csv AS a&amp;#34; \ &amp;#34;LEFT JOIN price.csv AS p&amp;#34; \ &amp;#34;USING (c1)&amp;#34; \ &amp;#34;LEFT JOIN unit.</description></item></channel></rss>
