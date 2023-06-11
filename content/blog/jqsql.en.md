@@ -1,7 +1,8 @@
 ---
 title: "Another way to aggregate json(jq + SQL)"
 date: 2022-05-03T12:58:24+09:00
-tags: ["trdsql","jq", "SQL","zq"]
+tags: ["trdsql","jq", "SQL","zq","english"]
+categories: ["trdsql"]
 ---
 
 ## Aggregate json with trdsql

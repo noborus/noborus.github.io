@@ -1,6 +1,6 @@
 ---
 title: "Guess the width of the width-specified format"
-tags: ["guesswidth"]
+tags: ["guesswidth","english"]
 categories: ["guesswidth"]
 date: 2023-04-09T7:00:00+09:00
 ---
