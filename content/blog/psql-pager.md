@@ -87,7 +87,7 @@ unicode_header_linestyle single
 
 ### PAGERを変更する
 
-psqlでは、`PSQL_PAGER`又は`PAGER`環境変数により、PAGERを変更することができる。`PAGER`は汎用的な環境変数なので、psql以外のコマンドでも使用されるのでpsqlのみに適用したい場合は、`PSQL_PAGER`を使用します。
+psqlでは、`PSQL_PAGER`又は`PAGER`環境変数により、PAGERを変更することができます。`PAGER`は汎用的な環境変数なので、psql以外のコマンドでも使用されるのでpsqlのみに適用したい場合は、`PSQL_PAGER`を使用します。
 `PSQL_PAGER`と`PAGER`環境変数がセットされていない場合は、`more`又は`less`がデフォルトのPAGERになる。`less`がある場合は、`less`が優先されます。
 
 ```console
@@ -118,7 +118,7 @@ PSQL_PAGER=less psql
 バージョン600で、`less`のヘッダーを表示するオプションが追加されたので、それ以降のバージョンであれば、以下のように設定するとpsqlのヘッダー（列名）の表示を固定できます。
 
 ```console
-PAGER="less --header 2" psql
+PSQL_PAGER="less --header 2" psql
 ```
 
 `--header 2`は、ヘッダーを2行固定表示するオプションです。`--header`オプションを使用したときには、折返し表示をしないモードになります（`-S`相当）。
@@ -141,7 +141,7 @@ Header lines: 2,14
 `pspg`はテーマがたくさん用意されていて変更できます。`pspg`のテーマは、`pspg --themes`で確認できます。
 
 ```console
-PAGER=pspg psql
+PSQL_PAGER=pspg psql
 ```
 
 ![psql-pspg](../psql-pspg.png)
@@ -151,7 +151,7 @@ PAGER=pspg psql
 `ov`は拙作の汎用PAGERでpsqlでの使用を想定して開発を開始しましたが、他の用途でも使えるようにオプションやキーにより必要な機能が切り替えられるようにしたため、汎用でありながらpsqlに向いた表示ができます。
 
 ```console
-PAGER='ov -C -d "|" -H1 --column-mode --column-rainbow' psql
+PSQL_PAGER='ov -C -d "|" -H1 --column-mode --column-rainbow' psql
 ```
 
 ヘッダー行の行数を指定('-H1')して、ヘッダー行を固定表示しています。ヘッダー行に対してスタイルを指定できるため、区切り文字('-')をヘッダーとして扱わなくても済むために1行のみにしています。
@@ -176,3 +176,37 @@ psqlには`\watch`コマンドがあり、この前に実行したSQLを定期�
 ただPAGER側で終了しなくても`\watch`の結果を受け付け続けることができれば、`\watch`の結果をPAGERで表示できます。そのために`PSQL_WATCH_PAGER`が追加されました。
 
 `PSQL_WATCH_PAGER`には`pspg`と`ov`が指定できます。
+
+#### pspgのWATCH対応
+
+pspgを`PSQL_WATCH_PAGER`に指定するときに`--stream`オプションを付けます。
+
+```console
+PSQL_WATCH_PAGER='pspg --stream' psql
+```
+
+```sql
+SELECT * FROM pg_stat_activity;
+\watch 1
+```
+
+`\watch`により pg_stat_activityの結果が1秒ごとに更新されます。
+
+![psql-pspg-stream](../psql-pspg-stream.png)
+
+#### ovのWATCH対応
+
+ovを`PSQL_WATCH_PAGER`に指定するときに`--follow-section`オプションと`--section-delimiter "^$"`を付けます。
+
+`--follow-section`はovのオプションで、`--section-delimiter`で指定した区切り文字で区切られたセクションでフォローモードを有効にします。
+`--section-delimiter`はovのオプションで、`^$`は空行を区切り文字として指定しています。
+
+つまり空行がある位置までをスクロールして表示し、その後は空行がある位置までスクロールして表示を繰り返します。
+
+```console
+PSQL_WATCH_PAGER='ov -w=f --follow-section --section-delimiter "^$" -d "|" --column-mode --column-rainbow' psql
+```
+
+さらに section-start(`alt+s`) でセクションの開始位置を指定することができます。セクションの開始位置を指定すると、その位置からスクロールして表示を繰り返します。
+
+![psql-ov-watch](../psql-ov-watch.png)
