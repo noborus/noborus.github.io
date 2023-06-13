@@ -1,18 +1,19 @@
 +++
 title = "About"
 description = "Noboru Saito"
-date = "2019-12-13"
+date = "2023-06-12"
 menu = "main"
 weight = 4
 +++
 
-Noboru Saito's Page.
+{{< figure src="/images/noborus.png" title="Noboru Saito's Page." width="200" height="200" >}}
 
-{{< figure src="/images/noborus.png" title="noborus" width="200" height="200" >}}
+I am a freelance programmer.
 
 ## Links
 
-* GitHub: [https://github.com/noborus](https://github.com/noborus)
-* Twitter: [https://twitter.com/noborus](https://twitter.com/noborus)
-* Qiita: [https://qiita.com/noborus](https://qiita.com/noborus)
-* Zenn: [https://zenn.dev/noborus](https://zenn.dev/noborus)
+* <i class="fab fa-github"></i>GitHub: [https://github.com/noborus](https://github.com/noborus)
+* <i class="fab fa-twitter"></i>Twitter: [https://twitter.com/noborus](https://twitter.com/noborus)
+* <i class="fab fa-reddit"></i>Reddit: [https://www.reddit.com/user/noborusai/](https://www.reddit.com/user/noborusai/)
+
+<iframe src="https://github.com/sponsors/noborus/card" title="Sponsor noborus" height="225" width="600" style="border: 0;"></iframe>

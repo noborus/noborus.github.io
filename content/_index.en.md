@@ -146,7 +146,7 @@ A repository for translating PostgreSQL manuals.
 * (Qiita) [About the PostgreSQL Japanese manual](https://qiita.com/noborus/items/03f98e43c216d7e23767)
 * [PostgreSQL Japan User Group (Annex)](https://pgsql-jp.github.io/) Site with the latest version of the translated manual
   * [github](https://github.com/pgsql-jp/pgsql-jp.github.io)
-* [Translations](https://github.com/pgsql-jp/taiyaku) PostgreSQL manual translations
+* [taiyaku](https://github.com/pgsql-jp/taiyaku) PostgreSQL Manual Bilingual Collection
 
 #### test version
 
