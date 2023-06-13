@@ -215,7 +215,7 @@ ps aux|trdsql -iwidth -ojson "SELECT * FROM - WHERE \"COMMAND\" = 'ps aux'"
 
 Also, this is actually the real deal,
 but I have also incorporated it into my pager [ov](https://github.com/noborus/ov)
-(still working on it before release), and by combining the options, you can display the following.
+(v0.30.0 or later), and by combining the options, you can display the following.
 
 ```console
 ps aux| ov
