@@ -16,5 +16,6 @@ weight = 4
 * <i class="fab fa-twitter"></i>Twitter: [https://twitter.com/noborus](https://twitter.com/noborus)
 * Qiita: [https://qiita.com/noborus](https://qiita.com/noborus)
 * Zenn: [https://zenn.dev/noborus](https://zenn.dev/noborus)
+* {{% icon icon="envelope" %}}mail: [noborusai+dm@gmail.com](mailto:noborusai+dm@gmail.com)
 
 <iframe src="https://github.com/sponsors/noborus/card" title="Sponsor noborus" height="225" width="600" style="border: 0;"></iframe>
