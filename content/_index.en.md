@@ -19,7 +19,7 @@ A tool that can execute SQL on CSV, LTSV, JSON, TBLN files
 * [trdsql Blog](/trdsql/)
 * [Created a command line tool called trdsql](https://qiita.com/noborus/items/f253961cca6f4465f20c)(Qiita)
 * [trdsql is a tool to import CSV, LTSV, JSON into DB (PostgreSQL, MySQL)](https://zenn.dev/noborus/articles/16451ce8351765380c03)(Zenn)
-* [trdsql Category](/categories/trdsql/)
+* [trdsql Category](/categories/trdsql/)(Blog)
 
 ---
 
@@ -36,7 +36,8 @@ A highly functional pager that works as a substitute for `less` or `more`.
 * [ov pages](/ov/)
 * [Introduction to ov](https://zenn.dev/noborus/articles/2b1087a1274cf41c4c0a)(Zenn)
 * [Terminal Pager New Era](https://qiita.com/noborus/items/ce119d0d86dd689e0d18)(Qiita)
-* [ov Category](/categories/ov/)
+* [Alternatives to popular CLI tools: more](https://www.linuxlinks.com/alternatives-popular-cli-tools-more/)
+* [ov Category](/categories/ov/)(Blog)
 
 ---
 

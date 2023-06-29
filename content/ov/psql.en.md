@@ -49,7 +49,7 @@ PSQL_WATCH_PAGER 'ov --follow-section --section-delimiter "^$"'
 Even when displaying in the extended output (\x), if the record delimiter is treated as a section delimiter, the display when moved will be easier to see.
 
 ```env
-PAGER 'ov -F --section-delimiter "^-"'
+PAGER='ov -F --section-delimiter "^-"'
 ```
 
 ![\x](/ov/psql-vf.gif)
@@ -65,7 +65,7 @@ Even in unaligned display, it is displayed comfortably by using column highlight
 The PAGER specification does not change with the following.
 
 ```env
-PSQL_PAGER'ov -F -C -d "|" -H1'.
+PSQL_PAGER='ov -F -C -d "|" -H1'.
 ```
 
 ![\a](/ov/psql-alignment.gif)
