@@ -9,7 +9,7 @@ date = "2023-06-02"
 ### Regular file
 
 `ov` is managed by dividing it into Chunks for each ChunkSize (10,000) lines.
-For example, a file with 73210 lines is divided into 7 chunks. Chunk
+For example, a file with 73210 lines is divided into 7 chunks.
 
 ![file memory management](../ov-file-mem.png)
 

@@ -2,7 +2,7 @@
 author: "Noboru Saito"
 title: "view csv"
 date: 2023-06-30T06:00:00+09:00
-tags: ["ov"]
+tags: ["ov", "csv"]
 categories: ["ov"]
 weight: 10
 ---
