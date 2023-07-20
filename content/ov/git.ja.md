@@ -33,7 +33,6 @@ git logはcommit毎に区切られます。
 
 ## git diff
 
-git diff is separated by diff or file.
 git diffはdiffまたはファイル毎に区切られます。
 以下のようにするとdiff毎に移動できます。
 
