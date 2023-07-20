@@ -1,7 +1,7 @@
 ---
 author: "Noboru Saito"
 title: "Multicolor highlights multiple words"
-date: 2022-12-30T06:00:00+09:00
+date: 2023-07-21T06:00:00+09:00
 tags: ["ov"]
 categories: ["ov"]
 weight: 13
@@ -20,7 +20,7 @@ ov --multi-color "ERROR.*,WARN,INFO,DEBUG,not,^.{24}" access.log
 Enter regular expressions separated by spaces.
 Enclose in quotation marks if it contains spaces.
 
-* `.` multicolor input mode(default key bindings).
+* `.`(default key bindings) multicolor input mode.
 
 ```text
 ERROR.* WARN "error is"
@@ -29,7 +29,7 @@ ERROR.* WARN "error is"
 ## customize
 
 The colors(styles) displayed are customizable.
-See [github size](https://github.com/noborus/ov#6-customize) for settings.
+See [github customize](https://github.com/noborus/ov#6-customize) for settings.
 
 ```yaml
 StyleMultiColorHighlight:
