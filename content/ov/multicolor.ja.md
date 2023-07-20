@@ -1,6 +1,6 @@
 ---
 author: "Noboru Saito"
-title: "Multicolor highlights multiple words"
+title: "複数の単語を複数の色でハイライト"
 date: 2023-07-21T06:00:00+09:00
 tags: ["ov"]
 categories: ["ov"]

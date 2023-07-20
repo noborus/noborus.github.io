@@ -7,8 +7,6 @@ categories: ["ov"]
 weight: 5
 ---
 
-`ov` can be set as a pager for [pgcli](https://github.com/dbcli/pgcli).
-
 `ov`は[pgcli](https://github.com/dbcli/pgcli)のページャーとしても使用可能です。
 
 ~/.config/pgcli/config に以下のように設定します。

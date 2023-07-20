@@ -1,6 +1,6 @@
 ---
 author: "Noboru Saito"
-title: "Watch files with ov"
+title: "ovでファイル監視（ウォッチ）"
 date: 2023-07-21T06:00:00+09:00
 tags: ["ov"]
 categories: ["ov"]

@@ -1,13 +1,13 @@
 ---
 author: "Noboru Saito"
-title: "view csv"
+title: "csvの表示"
 date: 2023-06-30T06:00:00+09:00
 tags: ["ov", "csv"]
 categories: ["ov"]
 weight: 10
 ---
 
-`ov`をCSV Viewerとして使うことができます。
+`ov`をCSVビューアとして使うことができます。
 ヘッダーの有無や区切りも文字を指定できます。
 
 ```console

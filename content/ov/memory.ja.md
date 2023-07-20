@@ -1,6 +1,6 @@
 +++
 author = "Noboru Saito"
-title = "Memory management"
+title = "メモリ管理"
 date = "2023-07-07"
 +++
 

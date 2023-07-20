@@ -1,6 +1,6 @@
 +++
 author = "Noboru Saito"
-title = "ov - Feature-rich pager"
+title = "ov - 機能豊富なページャー"
 date = "2023-06-08"
 tags = "ov"
 weight = 3
