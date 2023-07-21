@@ -1,23 +1,27 @@
 ---
 author: "Noboru Saito"
 title: "psql"
-date: 2023-06-30T4:00:00+09:00
-tags: ["ov"]
+date: 2023-07-21T9:00:00+09:00
+tags: ["ov", "psql"]
 categories: ["ov"]
 weight: 1
 ---
+
+PostgreSQLのクライアントツールである`psql`は`PAGER`を利用して、結果を表示します。
+[PSQLのPAGERを設定する](/ja/blog/psql-pager/index.html)も参照してください。
 
 ## psql
 
 以下は`PSQL_PAGER` の推奨設定です。
 ヘッダー1を指定(-H1)、列の区切りに"|"を指定(-d "|")、カラムモード(-C)を設定します。
 画面に収まる場合は、ページャーを終了します(-F)。
+列の色を変える(`--column-rainbow`)のもおすすめです。
 
 ```env
-PSQL_PAGER 'ov -F -C -d "|" -H1' --column-rainbow
+PSQL_PAGER 'ov -F -C -d "|" -H1 --column-rainbow'
 ```
 
-`config.yaml`で以下の設定をしています。
+画面ではデフォルトから色を変えて`config.yaml`で以下の設定をしています。
 
 ```yaml
 StyleHeader:

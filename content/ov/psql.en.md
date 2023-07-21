@@ -1,20 +1,23 @@
 ---
 author: "Noboru Saito"
 title: "psql"
-date: 2022-05-19T10:00:00+09:00
-tags: ["ov"]
+date: 2023-07-21T09:00:00+09:00
+tags: ["ov", "psql"]
 categories: ["ov"]
 weight: 1
 ---
+
+This is the setting for `psql`, a client tool for PostgreSQL.
 
 ## psql
 
 This is the recommended setting for `PSQL_PAGER`.
 Header 1 is specified(-H1),"|" is used to separate columns(-d "|"), and column mode(-C) is set.
 If it fits on the screen, exit the pager(-F).
+It is also recommended to change the color of the columns(`--column-rainbow`).
 
 ```env
-PSQL_PAGER 'ov -F -C -d "|" -H1'
+PSQL_PAGER 'ov -F -C -d "|" -H1 --column-rainbow'
 ```
 
 The following sets the header style of `config.yaml`.
