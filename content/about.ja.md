@@ -13,7 +13,6 @@ weight = 4
 ## Links
 
 * <i class="fab fa-github"></i>GitHub: [https://github.com/noborus](https://github.com/noborus)
-* <i class="fab fa-twitter"></i>Twitter: [https://twitter.com/noborus](https://twitter.com/noborus)
 * Qiita: [https://qiita.com/noborus](https://qiita.com/noborus)
 * Zenn: [https://zenn.dev/noborus](https://zenn.dev/noborus)
 * {{% icon icon="envelope" %}}mail: [noborusai+dm@gmail.com](mailto:noborusai+dm@gmail.com)

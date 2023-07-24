@@ -13,7 +13,6 @@ I am a freelance programmer.
 ## Links
 
 * <i class="fab fa-github"></i>GitHub: [https://github.com/noborus](https://github.com/noborus)
-* <i class="fab fa-twitter"></i>Twitter: [https://twitter.com/noborus](https://twitter.com/noborus)
 * <i class="fab fa-reddit"></i>Reddit: [https://www.reddit.com/user/noborusai/](https://www.reddit.com/user/noborusai/)
 * {{% icon icon="envelope" %}}mail: [noborusai+dm@gmail.com](mailto:noborusai+dm@gmail.com)
 
