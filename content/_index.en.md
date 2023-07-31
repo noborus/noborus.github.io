@@ -12,7 +12,10 @@ weight: 1
 
 <a class="github-button" href="https://github.com/noborus/trdsql" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/trdsql on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/trdsql/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/trdsql on GitHub">Fork</a>
-<span class="project-badge">[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/trdsql)](https://pkg.go.dev/github.com/noborus/trdsql)</span>
+<span class="project-badge">
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/trdsql?lightbox=false)](https://pkg.go.dev/github.com/noborus/trdsql)
+[![Latest Release](https://img.shields.io/github/v/release/noborus/trdsql.svg?lightbox=false)](https://github.com/noborus/trdsql/releases)
+</span>
 
 A tool that can execute SQL on CSV, LTSV, JSON, TBLN files
 
@@ -27,7 +30,10 @@ A tool that can execute SQL on CSV, LTSV, JSON, TBLN files
 
 <a class="github-button" href="https://github.com/noborus/ov" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/ov on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/ov/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/ov on GitHub">Fork</a>
-<span class="project-badge">[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/ov)](https://pkg.go.dev/github.com/noborus/ov)</span>
+<span class="project-badge">
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/ov?lightbox=false)](https://pkg.go.dev/github.com/noborus/ov)
+[![Latest Release](https://img.shields.io/github/v/release/noborus/ov.svg?lightbox=false)](https://github.com/noborus/ov/releases)
+</span>
 
 Feature-rich terminal Pager
 
@@ -45,7 +51,7 @@ A highly functional pager that works as a substitute for `less` or `more`.
 
 <a class="github-button" href="https://github.com/noborus/ovcs" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/ovcs on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/ovcs/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/ovcs on GitHub">Fork</a>
-<span class="project-badge">[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/ovcs)](https://pkg.go.dev/github.com/noborus/ovcs)</span>
+<span class="project-badge">[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/ovcs?lightbox=false)](https://pkg.go.dev/github.com/noborus/ovcs)</span>
 
 A client/server version of Terminal Pager `ov`.
 
@@ -57,7 +63,7 @@ A client/server version of Terminal Pager `ov`.
 
 <a class="github-button" href="https://github.com/noborus/tbln" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/tbln on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/tbln/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/tbln on GitHub">Fork</a>
-<span class="project-badge">[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/tbln)](https://pkg.go.dev/github.com/noborus/tbln)</span>
+<span class="project-badge">[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/tbln?lightbox=false)](https://pkg.go.dev/github.com/noborus/tbln)</span>
 
 Libraries and tools that handle file formats (tbln) that are compatible with database tables.
 
@@ -129,7 +135,7 @@ Japanese manual translation tool for PostgreSQL.
 
 <a class="github-button" href="https://github.com/noborus/guesswidth" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/guesswidth on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/guesswidth/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/guesswidth on GitHub">Fork</a>
-<span class="project-badge">[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/guesswidth)](https://pkg.go.dev/github.com/noborus/guesswidth)</span>
+<span class="project-badge">[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/guesswidth?lightbox=false)](https://pkg.go.dev/github.com/noborus/guesswidth)</span>
 
 Library tool to infer column widths in CLI output.
 
