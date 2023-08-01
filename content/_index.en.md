@@ -131,11 +131,14 @@ Japanese manual translation tool for PostgreSQL.
 
 ---
 
-### [guesswidth](https://github.com/noborus/guesswidth)
+### <i class="fab fa-github"></i> [guesswidth](https://github.com/noborus/guesswidth)
 
 <a class="github-button" href="https://github.com/noborus/guesswidth" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/guesswidth on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/guesswidth/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/guesswidth on GitHub">Fork</a>
-<span class="project-badge">[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/guesswidth?lightbox=false)](https://pkg.go.dev/github.com/noborus/guesswidth)</span>
+<span class="project-badge">
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/guesswidth?lightbox=false)](https://pkg.go.dev/github.com/noborus/guesswidth)
+[![Latest Release](https://img.shields.io/github/v/release/noborus/guesswidth.svg?lightbox=false)](https://github.com/noborus/guesswidth/releases)
+</span>
 
 Library tool to infer column widths in CLI output.
 
