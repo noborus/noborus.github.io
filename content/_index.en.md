@@ -37,7 +37,7 @@ A tool that can execute SQL on CSV, LTSV, JSON, TBLN files
 
 Feature-rich terminal Pager
 
-A highly functional pager that works as a substitute for `less` or `more`.
+A terminal pager that can be used as an alternative to `less` or `more`.
 
 * [ov pages](/ov/)
 * [Introduction to ov](https://zenn.dev/noborus/articles/2b1087a1274cf41c4c0a)(Zenn)
