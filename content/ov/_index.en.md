@@ -9,9 +9,9 @@ menuTitle = "ov"
 
 [![ov](ov.gif)](https://github.com/noborus/ov)
 
-[Download](https://github.com/noborus/ov/releases/latest)
+{{% icon download %}} [Download](https://github.com/noborus/ov/releases/latest)
 
-Please refer to the [github site](https://github.com/noborus/ov) for **installation and settings.**
+Please refer to the [<i class="fab fa-github"></i>github site](https://github.com/noborus/ov) for **installation and settings.**
 
 ## Features
 

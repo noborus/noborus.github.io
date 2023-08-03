@@ -12,8 +12,8 @@ This is the setting for `psql`, a client tool for PostgreSQL.
 ## psql
 
 This is the recommended setting for `PSQL_PAGER`.
-Header 1 is specified(-H1),"|" is used to separate columns(-d "|"), and column mode(-C) is set.
-If it fits on the screen, exit the pager(-F).
+Header 1 is specified(`-H1`),"|" is used to separate columns(`-d "|"`), and column mode(`-C`) is set.
+If it fits on the screen, exit the pager(`-F`).
 It is also recommended to change the color of the columns(`--column-rainbow`).
 
 ```env
