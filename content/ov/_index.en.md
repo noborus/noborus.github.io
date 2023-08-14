@@ -7,6 +7,7 @@ weight = 3
 menuTitle = "ov"
 +++
 
+[en | [Ja](/ja/ov/)]
 [![ov](ov.gif)](https://github.com/noborus/ov)
 
 {{% icon download %}} [Download](https://github.com/noborus/ov/releases/latest)

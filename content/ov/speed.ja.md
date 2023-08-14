@@ -1,7 +1,7 @@
 ---
 author: "Noboru Saito"
-title: "速度"
-date: 2023-08-10T015:00:00+09:00
+title: "大きなファイルを開く速度"
+date: 2023-08-10T15:00:00+09:00
 tags: ["ov", "speed"]
 categories: ["ov"]
 weight: 14

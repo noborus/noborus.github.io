@@ -1,6 +1,6 @@
 ---
 author: "Noboru Saito"
-title: "Speed"
+title: "speed of opening large files"
 date: 2023-08-10T15:00:00+09:00
 tags: ["ov"]
 categories: ["ov"]
