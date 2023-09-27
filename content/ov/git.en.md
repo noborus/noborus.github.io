@@ -1,7 +1,7 @@
 ---
 author: "Noboru Saito"
 title: "git"
-date: 2022-05-21T10:00:00+09:00
+date: 2022-09-24T10:00:00+09:00
 tags: ["ov"]
 categories: ["ov"]
 weight: 2
@@ -15,9 +15,11 @@ It is recommended to set the following in gitconfig.
 
 ```config
 [pager]
-    diff = ov -F --section-delimiter "^diff" --jump-target "section"
+    diff = ov -F --section-delimiter "^diff" --section-header"
     log = ov -F --section-delimiter "^commit" --jump-target "section"
 ```
+
+(Please add `--jump-target "section"` if you like)
 
 ## git log
 
@@ -30,8 +32,13 @@ You will be able to move by commit unit.
 
 git diff is separated by diff or file.
 You will be able to move in diff units.
+You can move to the next section (`space` key) or previous section (`^` key) in one go.
 
 ![git diff](/ov/git-diff.gif)
+
+Furthermore, by specifying `--section-header`, the diff file name will be displayed even if you scroll.
+
+![git-section-header](/ov/git-section-header.gif)
 
 ## search
 
