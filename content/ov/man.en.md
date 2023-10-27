@@ -10,7 +10,7 @@ weight: 7
 `ov` can also be used as a man pager.
 
 ```env
-MANPAGER=ov
+MANPAGER="ov --section-delimiter '^[^\s]' --section-header"
 ```
 
 In the man page, you can set the color by the `StyleOverStrike` and `StyleOverLine` styles.
