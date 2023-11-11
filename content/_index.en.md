@@ -59,6 +59,15 @@ A client/server version of Terminal Pager `ov`.
 
 ---
 
+### <i class="fab fa-github"></i> [mdviewer](https://github.com/noborus/mdviewer)
+
+<a class="github-button" href="https://github.com/noborus/mdviewer" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/mdviewer on GitHub">Star</a>
+<a class="github-button" href="https://github.com/noborus/mdviewer/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/mdviewer on GitHub">Fork</a>
+
+View markdown in pager.
+
+---
+
 ### <i class="fab fa-github"></i> [tbln](https://github.com/noborus/tbln)
 
 <a class="github-button" href="https://github.com/noborus/tbln" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/tbln on GitHub">Star</a>
@@ -91,12 +100,16 @@ A tool to execute SQL against a markdown table.
 
 ---
 
-### <i class="fab fa-github"></i> [mdviewer](https://github.com/noborus/mdviewer)
+### <i class="fab fa-github"></i> [xlsxsql](https://github.com/noborus/xlsxsql)
 
-<a class="github-button" href="https://github.com/noborus/mdviewer" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/mdviewer on GitHub">Star</a>
-<a class="github-button" href="https://github.com/noborus/mdviewer/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/mdviewer on GitHub">Fork</a>
+<a class="github-button" href="https://github.com/noborus/xlsxsql" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/xlsxsql on GitHub">Star</a>
+<a class="github-button" href="https://github.com/noborus/xlsxsql/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/xlsxsql on GitHub">Fork</a>
+<span class="project-badge">
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/xlsxsql?lightbox=false)](https://pkg.go.dev/github.com/noborus/xlsxsql)
+[![Latest Release](https://img.shields.io/github/v/release/noborus/xlsxsql.svg?lightbox=false)](https://github.com/noborus/xlsxsql/releases)
+</span>
 
-View markdown in pager.
+A tool that executes SQL against an Excel file.
 
 ---
 
@@ -144,19 +157,6 @@ Library tool to infer column widths in CLI output.
 
 * [Guess the width of the width format](https://zenn.dev/noborus/articles/0aeef54ead08f5)
 * [Guess the width of the width-specified format](blog/guesswidth/)
-
----
-
-### <i class="fab fa-github"></i> [xlsxsql](https://github.com/noborus/xlsxsql)
-
-<a class="github-button" href="https://github.com/noborus/xlsxsql" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/xlsxsql on GitHub">Star</a>
-<a class="github-button" href="https://github.com/noborus/xlsxsql/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/xlsxsql on GitHub">Fork</a>
-<span class="project-badge">
-[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/xlsxsql?lightbox=false)](https://pkg.go.dev/github.com/noborus/xlsxsql)
-[![Latest Release](https://img.shields.io/github/v/release/noborus/xlsxsql.svg?lightbox=false)](https://github.com/noborus/xlsxsql/releases)
-</span>
-
-A tool that executes SQL against an Excel file.
 
 ---
 
