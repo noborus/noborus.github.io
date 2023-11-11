@@ -146,6 +146,19 @@ CLI出力の列の幅を推測するライブラリ・ツール
 
 ---
 
+### <i class="fab fa-github"></i> [xlsxsql](https://github.com/noborus/xlsxsql)
+
+<a class="github-button" href="https://github.com/noborus/xlsxsql" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/xlsxsql on GitHub">Star</a>
+<a class="github-button" href="https://github.com/noborus/xlsxsql/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/xlsxsql on GitHub">Fork</a>
+<span class="project-badge">
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/xlsxsql?lightbox=false)](https://pkg.go.dev/github.com/noborus/xlsxsql)
+[![Latest Release](https://img.shields.io/github/v/release/noborus/xlsxsql.svg?lightbox=false)](https://github.com/noborus/xlsxsql/releases)
+</span>
+
+Excelファイルに対してSQLを実行するツール
+
+---
+
 ## <i class="fas fa-share-alt"></i> 参加しているプロジェクト
 
 ### <i class="fab fa-github"></i> [jpug-doc](https://github.com/pgsql-jp/jpug-doc)
