@@ -50,7 +50,9 @@ less,moreの代わりとしても動作する高機能ページャー。
 
 <a class="github-button" href="https://github.com/noborus/ovcs" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/ovcs on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/ovcs/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/ovcs on GitHub">Fork</a>
-<span class="project-badge">[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/ovcs?lightbox=false)](https://pkg.go.dev/github.com/noborus/ovcs)</span>
+<span class="project-badge">
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/ovcs?lightbox=false)](https://pkg.go.dev/github.com/noborus/ovcs)
+</span>
 
 Terminal Pager ov を client/server化したもの。
 
@@ -62,6 +64,10 @@ Terminal Pager ov を client/server化したもの。
 
 <a class="github-button" href="https://github.com/noborus/mdviewer" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/mdviewer on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/mdviewer/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/mdviewer on GitHub">Fork</a>
+<span class="project-badge">
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/mdviewer?lightbox=false)](https://pkg.go.dev/github.com/noborus/mdviewer)
+[![Latest Release](https://img.shields.io/github/v/release/noborus/mdviewer.svg?lightbox=false)](https://github.com/noborus/mdviewer/releases)
+</span>
 
 マークダウンをページャーで表示
 
@@ -71,7 +77,9 @@ Terminal Pager ov を client/server化したもの。
 
 <a class="github-button" href="https://github.com/noborus/tbln" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/tbln on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/tbln/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/tbln on GitHub">Fork</a>
-<span class="project-badge">[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/tbln?lightbox=false)](https://pkg.go.dev/github.com/noborus/tbln)</span>
+<span class="project-badge">
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/tbln?lightbox=false)](https://pkg.go.dev/github.com/noborus/tbln)
+</span>
 
 データベースのテーブルと親和性のあるファイルフォーマット(tbln)を扱うライブラリ＆ツール
 
@@ -83,6 +91,10 @@ Terminal Pager ov を client/server化したもの。
 
 <a class="github-button" href="https://github.com/noborus/psutilsql" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/psutilsql on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/psutilsql/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/psutilsql on GitHub">Fork</a>
+<span class="project-badge">
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/psutilsql?lightbox=false)](https://pkg.go.dev/github.com/noborus/psutilsql)
+[![Latest Release](https://img.shields.io/github/v/release/noborus/psutilsql.svg?lightbox=false)](https://github.com/noborus/psutilsql/releases)
+</span>
 
 システム情報にSQLを実行して表示するツール
 
@@ -92,10 +104,27 @@ Terminal Pager ov を client/server化したもの。
 
 <a class="github-button" href="https://github.com/noborus/mdtsql" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/mdtsql on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/mdtsql/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/mdtsql on GitHub">Fork</a>
+<span class="project-badge">
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/mdtsql?lightbox=false)](https://pkg.go.dev/github.com/noborus/mdtsql)
+[![Latest Release](https://img.shields.io/github/v/release/noborus/mdtsql.svg?lightbox=false)](https://github.com/noborus/mdtsql/releases)
+</span>
 
 マークダウンのテーブルに対してSQLを実行するツール
 
 * [mdtsql Category](/categories/mdtsql/)
+
+---
+
+### <i class="fab fa-github"></i> [xlsxsql](https://github.com/noborus/xlsxsql)
+
+<a class="github-button" href="https://github.com/noborus/xlsxsql" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/xlsxsql on GitHub">Star</a>
+<a class="github-button" href="https://github.com/noborus/xlsxsql/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/xlsxsql on GitHub">Fork</a>
+<span class="project-badge">
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/xlsxsql?lightbox=false)](https://pkg.go.dev/github.com/noborus/xlsxsql)
+[![Latest Release](https://img.shields.io/github/v/release/noborus/xlsxsql.svg?lightbox=false)](https://github.com/noborus/xlsxsql/releases)
+</span>
+
+Excelファイルに対してSQLを実行するツール
 
 ---
 

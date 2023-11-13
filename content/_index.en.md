@@ -51,7 +51,9 @@ A terminal pager that can be used as an alternative to `less` or `more`.
 
 <a class="github-button" href="https://github.com/noborus/ovcs" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/ovcs on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/ovcs/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/ovcs on GitHub">Fork</a>
-<span class="project-badge">[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/ovcs?lightbox=false)](https://pkg.go.dev/github.com/noborus/ovcs)</span>
+<span class="project-badge">
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/ovcs?lightbox=false)](https://pkg.go.dev/github.com/noborus/ovcs)
+</span>
 
 A client/server version of Terminal Pager `ov`.
 
@@ -63,6 +65,10 @@ A client/server version of Terminal Pager `ov`.
 
 <a class="github-button" href="https://github.com/noborus/mdviewer" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/mdviewer on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/mdviewer/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/mdviewer on GitHub">Fork</a>
+<span class="project-badge">
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/mdviewer?lightbox=false)](https://pkg.go.dev/github.com/noborus/mdviewer)
+[![Latest Release](https://img.shields.io/github/v/release/noborus/mdviewer.svg?lightbox=false)](https://github.com/noborus/mdviewer/releases)
+</span>
 
 View markdown in pager.
 
@@ -72,7 +78,9 @@ View markdown in pager.
 
 <a class="github-button" href="https://github.com/noborus/tbln" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/tbln on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/tbln/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/tbln on GitHub">Fork</a>
-<span class="project-badge">[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/tbln?lightbox=false)](https://pkg.go.dev/github.com/noborus/tbln)</span>
+<span class="project-badge">
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/tbln?lightbox=false)](https://pkg.go.dev/github.com/noborus/tbln)
+</span>
 
 Libraries and tools that handle file formats (tbln) that are compatible with database tables.
 
@@ -84,6 +92,10 @@ Libraries and tools that handle file formats (tbln) that are compatible with dat
 
 <a class="github-button" href="https://github.com/noborus/psutilsql" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/psutilsql on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/psutilsql/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/psutilsql on GitHub">Fork</a>
+<span class="project-badge">
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/psutilsql?lightbox=false)](https://pkg.go.dev/github.com/noborus/psutilsql)
+[![Latest Release](https://img.shields.io/github/v/release/noborus/psutilsql.svg?lightbox=false)](https://github.com/noborus/psutilsql/releases)
+</span>
 
 A tool that executes SQL to display system information.
 
@@ -93,6 +105,10 @@ A tool that executes SQL to display system information.
 
 <a class="github-button" href="https://github.com/noborus/mdtsql" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/mdtsql on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/mdtsql/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/mdtsql on GitHub">Fork</a>
+<span class="project-badge">
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/mdtsql?lightbox=false)](https://pkg.go.dev/github.com/noborus/mdtsql)
+[![Latest Release](https://img.shields.io/github/v/release/noborus/mdtsql.svg?lightbox=false)](https://github.com/noborus/mdtsql/releases)
+</span>
 
 A tool to execute SQL against a markdown table.
 
@@ -117,6 +133,10 @@ A tool that executes SQL against an Excel file.
 
 <a class="github-button" href="https://github.com/noborus/pgsp" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/pgsp on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/pgsp/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/pgsp on GitHub">Fork</a>
+<span class="project-badge">
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/pgsp?lightbox=false)](https://pkg.go.dev/github.com/noborus/pgsp)
+[![Latest Release](https://img.shields.io/github/v/release/noborus/pgsp.svg?lightbox=false)](https://github.com/noborus/pgsp/releases)
+</span>
 
 CLI tool to monitor and display pg_stat_progress of PostgreSQL.
 
