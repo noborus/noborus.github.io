@@ -149,7 +149,7 @@ CLI tool to monitor and display pg_stat_progress of PostgreSQL.
 <a class="github-button" href="https://github.com/noborus/go-textra" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/go-textra on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/go-textra/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/go-textra on GitHub">Fork</a>
 
-[みんなの自動翻訳@textra's](https://mt-auto-minhon-mlt.ucri.jgn-x.jp/) Library for client API.
+[Min'na no Jidou Hon'yaku@textra's](https://mt-auto-minhon-mlt.ucri.jgn-x.jp/) Library for client API.
 
 ---
 
