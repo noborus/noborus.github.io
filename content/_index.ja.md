@@ -126,6 +126,8 @@ Terminal Pager ov を client/server化したもの。
 
 Excelファイルに対してSQLを実行するツール
 
+* [xlsxファイルにSQLを実行するxlsxsql](https://qiita.com/noborus/items/f93196b4600aacefd8f0)(Qiita)
+
 ---
 
 ### <i class="fab fa-github"></i> [pgsp](https://github.com/noborus/pgsp)
@@ -181,7 +183,7 @@ CLI出力の列の幅を推測するライブラリ・ツール
 
 PostgreSQLマニュアルの翻訳作業をしているレポジトリ。
 
-* (Qiita)[PostgreSQL日本語マニュアルについて](https://qiita.com/noborus/items/03f98e43c216d7e23767)
+* [PostgreSQL日本語マニュアルについて](https://qiita.com/noborus/items/03f98e43c216d7e23767)(Qiita)
 * [日本PostgreSQLユーザ会（別館）](https://pgsql-jp.github.io/) 最新版の翻訳マニュアルがあるサイト
   * [github](https://github.com/pgsql-jp/pgsql-jp.github.io)
 * [対訳集](https://github.com/pgsql-jp/taiyaku) PostgreSQLマニュアルの対訳集
