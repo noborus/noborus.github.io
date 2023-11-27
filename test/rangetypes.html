@@ -1,0 +1,710 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>8.17. 範囲型</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="rowtypes.html" title="8.16. 複合型" /><link rel="next" href="domains.html" title="8.18. ドメイン型" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="datatype.html" title="第8章 データ型">第8章 データ型</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : rangetypes.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="rowtypes.html" title="8.16. 複合型">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="datatype.html" title="第8章 データ型">上へ</a></td><td width="60%" align="center">8.17. 範囲型</td><td width="20%" align="right"> <a accesskey="n" href="domains.html" title="8.18. ドメイン型">次へ</a></td></tr></table><hr /></div><div class="sect1" id="RANGETYPES"><div class="titlepage"><div><div><h2 class="title" style="clear: both">8.17. 範囲型</h2></div></div></div><span class="original">
+ &lt;title&gt;Range Types&lt;/title&gt;
+</span><a id="id-1.5.7.27.2" class="indexterm"></a><a id="id-1.5.7.27.3" class="indexterm"></a><a id="id-1.5.7.27.4" class="indexterm"></a><a id="id-1.5.7.27.5" class="indexterm"></a><p>
+<span class="original">
+  Range types are data types representing a range of values of some
+  element type (called the range's &lt;firstterm&gt;subtype&lt;/firstterm&gt;).
+  For instance, ranges
+  of &lt;type&gt;timestamp&lt;/type&gt; might be used to represent the ranges of
+  time that a meeting room is reserved. In this case the data type
+  is &lt;type&gt;tsrange&lt;/type&gt; (short for &lt;quote&gt;timestamp range&lt;/quote&gt;),
+  and &lt;type&gt;timestamp&lt;/type&gt; is the subtype.  The subtype must have
+  a total order so that it is well-defined whether element values are
+  within, before, or after a range of values.
+</span>
+範囲型は、ある要素型(その範囲の<em class="firstterm">派生元型</em>と呼ばれます)の値の範囲を表わすデータ型です。
+例えば、<code class="type">timestamp</code>の範囲は、会議室が予約されている時間の範囲を表すのに使うことができるでしょう。
+この場合、データ型は<code class="type">tsrange</code>(<span class="quote">「<span class="quote">timestamp range</span>」</span>の短縮)で、<code class="type">timestamp</code>が派生元型となります。
+派生元型には完全な順序がなければなりません。これは、要素の値が範囲の前、中間、後のどこにあるのか明確に定義されている必要があるからです。
+ </p><p>
+<span class="original">
+  Range types are useful because they represent many element values in a
+  single range value, and because concepts such as overlapping ranges can
+  be expressed clearly. The use of time and date ranges for scheduling
+  purposes is the clearest example; but price ranges, measurement
+  ranges from an instrument, and so forth can also be useful.
+</span>
+範囲型は、一つの範囲内の多くの要素の値を表現できる、また、範囲の重なりなどの概念が明確に表現できる、などの理由で便利です。
+スケジューリングのために時刻と日付の範囲を使うのがもっとも簡単な例ですが、価格の範囲、機器による測定値の範囲などといったものにも利用できるでしょう。
+ </p><p>
+<span class="original">
+  Every range type has a corresponding multirange type. A multirange is
+  an ordered list of non-contiguous, non-empty, non-null ranges. Most
+  range operators also work on multiranges, and they have a few functions
+  of their own.
+</span>
+すべての範囲型には、対応する多重範囲型があります。
+多重範囲は、連続していない、空でない、NULLでない範囲の順序付きリストです。
+ほとんどの範囲演算子は多重範囲でも機能し、いくつかの独自の機能を持っています。
+ </p><div class="sect2" id="RANGETYPES-BUILTIN"><div class="titlepage"><div><div><h3 class="title">8.17.1. 組み込みの範囲型と多重範囲型</h3></div></div></div><span class="original">
+  &lt;title&gt;Built-in Range and Multirange Types&lt;/title&gt;
+</span><p>
+<span class="original">
+  PostgreSQL comes with the following built-in range types:
+</span>
+PostgreSQLには、以下の組み込みの範囲型があります。
+  </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+       &lt;type&gt;int4range&lt;/type&gt; &amp;mdash; Range of &lt;type&gt;integer&lt;/type&gt;,
+       &lt;type&gt;int4multirange&lt;/type&gt; &amp;mdash; corresponding Multirange
+</span>
+<code class="type">int4range</code>—<code class="type">integer</code>の範囲、<code class="type">int4multirange</code>—対応する多重範囲
+      </p></li><li class="listitem"><p>
+<span class="original">
+       &lt;type&gt;int8range&lt;/type&gt; &amp;mdash; Range of &lt;type&gt;bigint&lt;/type&gt;,
+       &lt;type&gt;int8multirange&lt;/type&gt; &amp;mdash; corresponding Multirange
+</span>
+<code class="type">int8range</code>—<code class="type">bigint</code>の範囲、<code class="type">int8multirange</code>—対応する多重範囲
+      </p></li><li class="listitem"><p>
+<span class="original">
+       &lt;type&gt;numrange&lt;/type&gt; &amp;mdash; Range of &lt;type&gt;numeric&lt;/type&gt;,
+       &lt;type&gt;nummultirange&lt;/type&gt; &amp;mdash; corresponding Multirange
+</span>
+<code class="type">numrange</code>—<code class="type">numeric</code>の範囲、<code class="type">nummultirange</code>—対応する多重範囲
+      </p></li><li class="listitem"><p>
+<span class="original">
+       &lt;type&gt;tsrange&lt;/type&gt; &amp;mdash; Range of &lt;type&gt;timestamp without time zone&lt;/type&gt;,
+       &lt;type&gt;tsmultirange&lt;/type&gt; &amp;mdash; corresponding Multirange
+</span>
+<code class="type">tsrange</code>—<code class="type">timestamp without time zone</code>の範囲、<code class="type">tsmultirange</code>—対応する多重範囲
+      </p></li><li class="listitem"><p>
+<span class="original">
+       &lt;type&gt;tstzrange&lt;/type&gt; &amp;mdash; Range of &lt;type&gt;timestamp with time zone&lt;/type&gt;,
+       &lt;type&gt;tstzmultirange&lt;/type&gt; &amp;mdash; corresponding Multirange
+</span>
+<code class="type">tstzrange</code>—<code class="type">timestamp with time zone</code>の範囲、<code class="type">tstzmultirange</code>—対応する多重範囲
+      </p></li><li class="listitem"><p>
+<span class="original">
+       &lt;type&gt;daterange&lt;/type&gt; &amp;mdash; Range of &lt;type&gt;date&lt;/type&gt;,
+       &lt;type&gt;datemultirange&lt;/type&gt; &amp;mdash; corresponding Multirange
+</span>
+<code class="type">daterange</code>—<code class="type">date</code>の範囲、<code class="type">datemultirange</code>—対応する多重範囲
+      </p></li></ul></div><p>
+<span class="original">
+  In addition, you can define your own range types;
+  see &lt;xref linkend="sql-createtype"/&gt; for more information.
+</span>
+この他にも、独自の範囲型を定義することができます。詳しくは<a class="xref" href="sql-createtype.html" title="CREATE TYPE"><span class="refentrytitle">CREATE TYPE</span></a>を参照してください。
+ </p></div><div class="sect2" id="RANGETYPES-EXAMPLES"><div class="titlepage"><div><div><h3 class="title">8.17.2. 例</h3></div></div></div><span class="original">
+  &lt;title&gt;Examples&lt;/title&gt;
+</span><p>
+</p><pre class="programlisting">
+CREATE TABLE reservation (room int, during tsrange);
+INSERT INTO reservation VALUES
+    (1108, '[2010-01-01 14:30, 2010-01-01 15:30)');
+
+<span class="original">
+&amp;#45;- Containment
+</span>
+-- 含有
+SELECT int4range(10, 20) @&gt; 3;
+
+<span class="original">
+&amp;#45;- Overlaps
+</span>
+-- 重なり
+SELECT numrange(11.1, 22.2) &amp;&amp; numrange(20.0, 30.0);
+
+<span class="original">
+&amp;#45;- Extract the upper bound
+</span>
+-- 上限の取得
+SELECT upper(int8range(15, 25));
+
+<span class="original">
+&amp;#45;- Compute the intersection
+</span>
+-- 共通部分の計算
+SELECT int4range(10, 20) * int4range(15, 25);
+
+<span class="original">
+&amp;#45;- Is the range empty?
+</span>
+-- 範囲は空か
+SELECT isempty(numrange(1, 5));
+</pre><p>
+
+<span class="original">
+   See &lt;xref linkend="range-operators-table"/&gt;
+   and &lt;xref linkend="range-functions-table"/&gt; for complete lists of
+   operators and functions on range types.
+</span>
+範囲型についての演算子と関数の完全なリストについては、<a class="xref" href="functions-range.html#RANGE-OPERATORS-TABLE" title="表9.54 範囲演算子">表 9.54</a>と<a class="xref" href="functions-range.html#RANGE-FUNCTIONS-TABLE" title="表9.56 範囲関数">表 9.56</a>を参照してください。
+  </p></div><div class="sect2" id="RANGETYPES-INCLUSIVITY"><div class="titlepage"><div><div><h3 class="title">8.17.3. 閉じた境界と開いた境界</h3></div></div></div><span class="original">
+  &lt;title&gt;Inclusive and Exclusive Bounds&lt;/title&gt;
+</span><p>
+<span class="original">
+   Every non-empty range has two bounds, the lower bound and the upper
+   bound. All points between these values are included in the range. An
+   inclusive bound means that the boundary point itself is included in
+   the range as well, while an exclusive bound means that the boundary
+   point is not included in the range.
+</span>
+空でない範囲には必ず2つの境界、つまり下限値と上限値があります。
+これらの値の間にある値はすべてその範囲に含まれます。
+閉じた境界とは、その境界値自体が範囲に含まれることを意味し、開いた境界とは、その境界値が範囲に含まれないことを意味します。
+  </p><p>
+<span class="original">
+   In the text form of a range, an inclusive lower bound is represented by
+   &lt;quote&gt;&lt;literal&gt;[&lt;/literal&gt;&lt;/quote&gt; while an exclusive lower bound is
+   represented by &lt;quote&gt;&lt;literal&gt;(&lt;/literal&gt;&lt;/quote&gt;. Likewise, an inclusive upper bound is represented by
+   &lt;quote&gt;&lt;literal&gt;]&lt;/literal&gt;&lt;/quote&gt;, while an exclusive upper bound is
+   represented by &lt;quote&gt;&lt;literal&gt;)&lt;/literal&gt;&lt;/quote&gt;.
+   (See &lt;xref linkend="rangetypes-io"/&gt; for more details.)
+</span>
+範囲を文字列の形式で表すとき、閉じた下限値は<span class="quote">「<span class="quote"><code class="literal">[</code></span>」</span>で、開いた下限値は<span class="quote">「<span class="quote"><code class="literal">(</code></span>」</span>で表します。
+同様に、閉じた上限値は<span class="quote">「<span class="quote"><code class="literal">]</code></span>」</span>で、開いた上限値は<span class="quote">「<span class="quote"><code class="literal">)</code></span>」</span>で表します。
+(詳しくは <a class="xref" href="rangetypes.html#RANGETYPES-IO" title="8.17.5. 範囲の入出力">8.17.5</a>を参照してください。)
+  </p><p>
+<span class="original">
+   The functions &lt;literal&gt;lower_inc&lt;/literal&gt;
+   and &lt;literal&gt;upper_inc&lt;/literal&gt; test the inclusivity of the lower
+   and upper bounds of a range value, respectively.
+</span>
+関数<code class="literal">lower_inc</code>および<code class="literal">upper_inc</code>はそれぞれ、範囲の下限値と上限値が閉じているかどうかを検査します。
+  </p></div><div class="sect2" id="RANGETYPES-INFINITE"><div class="titlepage"><div><div><h3 class="title">8.17.4. 無限の(境界のない)範囲</h3></div></div></div><span class="original">
+  &lt;title&gt;Infinite (Unbounded) Ranges&lt;/title&gt;
+</span><p>
+<span class="original">
+   The lower bound of a range can be omitted, meaning that all
+   values less than the upper bound are included in the range, e.g.,
+   &lt;literal&gt;(,3]&lt;/literal&gt;. Likewise, if the upper bound of the range
+   is omitted, then all values greater than the lower bound are included
+   in the range. If both lower and upper bounds are omitted, all values
+   of the element type are considered to be in the range.  Specifying a
+   missing bound as inclusive is automatically converted to exclusive,
+   e.g., &lt;literal&gt;[,]&lt;/literal&gt; is converted to &lt;literal&gt;(,)&lt;/literal&gt;.
+   You can think of these missing values as +/-infinity, but they are
+   special range type values and are considered to be beyond any range
+   element type's +/-infinity values.
+</span>
+例えば、<code class="literal">(,3]</code>のように、範囲の下限値は省略することができ、このとき、上限値より小さいすべての値はその範囲に含まれることになります。
+同じように、範囲の上限値も省略することができ、このときは、下限値より大きいすべての値がその範囲に含まれることになります。
+下限値と上限値が両方とも省略されたときは、その要素型のすべての値がその範囲に含まれるとみなされます。
+省略された閉じた境界は自動的に開いた境界に変換されます。例えば、<code class="literal">[,]</code>は<code class="literal">(,)</code>に変換されます。
+省略された値を+/-無限大と考えることができますが、特殊な範囲型の値であり、いかなる範囲の要素型の+/-無限大の値も越えていると考えられます。
+  </p><p>
+<span class="original">
+   Element types that have the notion of &lt;quote&gt;infinity&lt;/quote&gt; can
+   use them as explicit bound values.  For example, with timestamp
+   ranges, &lt;literal&gt;[today,infinity)&lt;/literal&gt; excludes the special
+   &lt;type&gt;timestamp&lt;/type&gt; value &lt;literal&gt;infinity&lt;/literal&gt;,
+   while &lt;literal&gt;[today,infinity]&lt;/literal&gt; include it, as does
+   &lt;literal&gt;[today,)&lt;/literal&gt; and &lt;literal&gt;[today,]&lt;/literal&gt;.
+</span>
+<span class="quote">「<span class="quote">無限大</span>」</span>の概念がある要素型では、それを明示的な境界値として使用できます。
+例えば、timestampの範囲で<code class="literal">[today,infinity)</code>は特殊な<code class="type">timestamp</code>値、<code class="literal">infinity</code>を含みませんが、一方、<code class="literal">[today,infinity]</code>は<code class="literal">[today,)</code>や<code class="literal">[today,]</code>と同じように<code class="literal">infinity</code>を含みます。
+  </p><p>
+<span class="original">
+   The functions &lt;literal&gt;lower_inf&lt;/literal&gt;
+   and &lt;literal&gt;upper_inf&lt;/literal&gt; test for infinite lower
+   and upper bounds of a range, respectively.
+</span>
+関数<code class="literal">lower_inf</code>および<code class="literal">upper_inf</code>はそれぞれ範囲の下限値と上限値が無限大かどうかを検査します。
+  </p></div><div class="sect2" id="RANGETYPES-IO"><div class="titlepage"><div><div><h3 class="title">8.17.5. 範囲の入出力</h3></div></div></div><span class="original">
+  &lt;title&gt;Range Input/Output&lt;/title&gt;
+</span><p>
+<span class="original">
+   The input for a range value must follow one of the following patterns:
+</span>
+範囲値の入力は、以下の形式の一つに従わなければなりません。
+</p><pre class="synopsis">
+(<em class="replaceable"><code>lower-bound</code></em>,<em class="replaceable"><code>upper-bound</code></em>)
+(<em class="replaceable"><code>lower-bound</code></em>,<em class="replaceable"><code>upper-bound</code></em>]
+[<em class="replaceable"><code>lower-bound</code></em>,<em class="replaceable"><code>upper-bound</code></em>)
+[<em class="replaceable"><code>lower-bound</code></em>,<em class="replaceable"><code>upper-bound</code></em>]
+empty
+</pre><p>
+<span class="original">
+   The parentheses or brackets indicate whether the lower and upper bounds
+   are exclusive or inclusive, as described previously.
+   Notice that the final pattern is &lt;literal&gt;empty&lt;/literal&gt;, which
+   represents an empty range (a range that contains no points).
+</span>
+前にも述べたとおり、丸括弧と大括弧は下限値と上限値が開いているか閉じているかを表します。
+最後の形式が<code class="literal">empty</code>であることに注意してください。これは空の範囲(範囲に含まれる値が1つもない)を表します。
+  </p><p>
+<span class="original">
+   The &lt;replaceable&gt;lower-bound&lt;/replaceable&gt; may be either a string
+   that is valid input for the subtype, or empty to indicate no
+   lower bound.  Likewise, &lt;replaceable&gt;upper-bound&lt;/replaceable&gt; may be
+   either a string that is valid input for the subtype, or empty to
+   indicate no upper bound.
+</span>
+<em class="replaceable"><code>lower-bound</code></em>は、その派生元型の有効な入力値となる文字列か、あるいは省略して下限値がないことを指定するかのいずれかです。
+同様に、<em class="replaceable"><code>upper-bound</code></em>は、その派生元型の有効な入力値となる文字列か、あるいは省略して上限値がないことを指定するかのいずれかです。
+  </p><p>
+<span class="original">
+   Each bound value can be quoted using &lt;literal&gt;"&lt;/literal&gt; (double quote)
+   characters.  This is necessary if the bound value contains parentheses,
+   brackets, commas, double quotes, or backslashes, since these characters
+   would otherwise be taken as part of the range syntax.  To put a double
+   quote or backslash in a quoted bound value, precede it with a
+   backslash. (Also, a pair of double quotes within a double-quoted bound
+   value is taken to represent a double quote character, analogously to the
+   rules for single quotes in SQL literal strings.) Alternatively, you can
+   avoid quoting and use backslash-escaping to protect all data characters
+   that would otherwise be taken as range syntax.  Also, to write a bound
+   value that is an empty string, write &lt;literal&gt;""&lt;/literal&gt;, since writing
+   nothing means an infinite bound.
+</span>
+境界値は<code class="literal">"</code>(二重引用符)で括ることができます。
+これは特に境界値が丸括弧、大括弧、カンマ、二重引用符、あるいはバックスラッシュを含んでいる場合に必要となります。そうしなければ、これらの文字は範囲の構文の一部とみなされてしまうからです。
+二重引用符あるいはバックスラッシュを引用符で括られた境界値の中に入れるには、その直前にバックスラッシュを入れてください。
+(また、SQLの文字列リテラルと同じように、二重引用符で括られた境界値の中で二重引用符を2つ続けることで1つの二重引用符を表すこともできます。)
+あるいは、引用符で括る代わりに、範囲の構文の一部とみなされるすべての文字をバックスラッシュでエスケープする、ということもできます。
+なお、境界値として空文字列を指定するには<code class="literal">""</code>と書いてください。何も書かないと、境界値が無限大であることになってしまいます。
+  </p><p>
+<span class="original">
+   Whitespace is allowed before and after the range value, but any whitespace
+   between the parentheses or brackets is taken as part of the lower or upper
+   bound value.  (Depending on the element type, it might or might not be
+   significant.)
+</span>
+境界値の前後に空白文字を入れることができますが、括弧内にある空白文字はすべて下限値あるいは上限値の一部とみなされます。
+(このことは、要素型によっては重要かもしれませんし、重要でないかもしれません。)
+  </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+    These rules are very similar to those for writing field values in
+    composite-type literals.  See &lt;xref linkend="rowtypes-io-syntax"/&gt; for
+    additional commentary.
+</span>
+これらの規則は、複合型のリテラルにフィールド値を記述する時と非常によく似ています。
+詳細な解説は<a class="xref" href="rowtypes.html#ROWTYPES-IO-SYNTAX" title="8.16.6. 複合型の入出力構文">8.16.6</a>を参照してください。
+   </p></div><p>
+<span class="original">
+  Examples:
+</span>
+  例：
+</p><pre class="programlisting">
+<span class="original">
+&amp;#45;- includes 3, does not include 7, and does include all points in between
+</span>
+-- 3を含み、7を含まない。その間の数はすべて含まれる
+SELECT '[3,7)'::int4range;
+
+<span class="original">
+&amp;#45;- does not include either 3 or 7, but includes all points in between
+</span>
+-- 3も7も含まないが、その間の数はすべて含まれる
+SELECT '(3,7)'::int4range;
+
+<span class="original">
+&amp;#45;- includes only the single point 4
+</span>
+-- 1つの値、4だけを含む
+SELECT '[4,4]'::int4range;
+
+<span class="original">
+&amp;#45;- includes no points (and will be normalized to 'empty')
+</span>
+-- 含まれる点は何もない('empty'に正規化される)
+SELECT '[4,4)'::int4range;
+</pre><p>
+  </p><p>
+<span class="original">
+   The input for a multirange is curly brackets (&lt;literal&gt;{&lt;/literal&gt; and
+   &lt;literal&gt;}&lt;/literal&gt;) containing zero or more valid ranges,
+   separated by commas. Whitespace is permitted around the brackets and
+   commas. This is intended to be reminiscent of array syntax, although
+   multiranges are much simpler: they have just one dimension and there is
+   no need to quote their contents. (The bounds of their ranges may be
+   quoted as above however.)
+</span>
+多重範囲の入力は、カンマで区切られた0個以上の有効範囲を含む中カッコ(<code class="literal">{</code>および<code class="literal">}</code>)です。
+カッコとカンマの前後に空白を使用できます。
+これは配列構文を連想させることを意図したものですが、多重範囲ははるかに単純で、次元が1つしかなく、内容を引用符で囲む必要はありません(ただし、範囲の境界は前述のように引用符で囲むことができます)。
+  </p><p>
+<span class="original">
+  Examples:
+</span>
+例えば、
+</p><pre class="programlisting">
+SELECT '{}'::int4multirange;
+SELECT '{[3,7)}'::int4multirange;
+SELECT '{[3,7), [8,9)}'::int4multirange;
+</pre><p>
+  </p></div><div class="sect2" id="RANGETYPES-CONSTRUCT"><div class="titlepage"><div><div><h3 class="title">8.17.6. 範囲と多重範囲のコンストラクタ</h3></div></div></div><span class="original">
+  &lt;title&gt;Constructing Ranges and Multiranges&lt;/title&gt;
+</span><p>
+<span class="original">
+   Each range type has a constructor function with the same name as the range
+   type.  Using the constructor function is frequently more convenient than
+   writing a range literal constant, since it avoids the need for extra
+   quoting of the bound values.  The constructor function
+   accepts two or three arguments.  The two-argument form constructs a range
+   in standard form (lower bound inclusive, upper bound exclusive), while
+   the three-argument form constructs a range with bounds of the form
+   specified by the third argument.
+   The third argument must be one of the strings
+   &lt;quote&gt;&lt;literal&gt;()&lt;/literal&gt;&lt;/quote&gt;,
+   &lt;quote&gt;&lt;literal&gt;(]&lt;/literal&gt;&lt;/quote&gt;,
+   &lt;quote&gt;&lt;literal&gt;[)&lt;/literal&gt;&lt;/quote&gt;, or
+   &lt;quote&gt;&lt;literal&gt;[]&lt;/literal&gt;&lt;/quote&gt;.
+   For example:
+</span>
+範囲型には、その範囲型と同じ名前のコンストラクタ関数があります。
+コンストラクタ関数を使うと、境界値の指定で余計な引用を使わずに済むので、リテラルの定数で範囲を記述するよりも便利なことが多いでしょう。
+コンストラクタ関数は2つ、または3つの引数をとります。
+引数が2つの形式では、(閉じた下限値, 開いた上限値)という標準的な形式の範囲を生成します。引数が3つの形式では、3番目の引数で指定した形式の境界の範囲を生成します。
+3番目の引数は、以下の文字列のいずれかでなければなりません。
+<span class="quote">「<span class="quote"><code class="literal">()</code></span>」</span>、<span class="quote">「<span class="quote"><code class="literal">(]</code></span>」</span>、<span class="quote">「<span class="quote"><code class="literal">[)</code></span>」</span>、または<span class="quote">「<span class="quote"><code class="literal">[]</code></span>」</span>。
+例えば、
+
+</p><pre class="programlisting">
+<span class="original">
+&amp;#45;- The full form is: lower bound, upper bound, and text argument indicating
+&amp;#45;- inclusivity/exclusivity of bounds.
+</span>
+-- 完全な形式では、下限値、上限値、そして境界が閉じているか開いているかを
+-- 示す文字列の引数を指定する
+SELECT numrange(1.0, 14.0, '(]');
+
+<span class="original">
+&amp;#45;- If the third argument is omitted, '[)' is assumed.
+</span>
+-- 3番目の引数が省略されると、'[)'を指定したのと同じになる
+SELECT numrange(1.0, 14.0);
+
+<span class="original">
+&amp;#45;- Although '(]' is specified here, on display the value will be converted to
+&amp;#45;- canonical form, since int8range is a discrete range type (see below).
+</span>
+-- ここでは'(]'を指定しているが、int8rangeは離散的な範囲型(下記参照)なので
+-- 正規化された形式に変換されて表示される
+SELECT int8range(1, 14, '(]');
+
+<span class="original">
+&amp;#45;- Using NULL for either bound causes the range to be unbounded on that side.
+</span>
+-- 境界値にNULLを指定すると、範囲の上限、あるいは下限がないことになる
+SELECT numrange(NULL, 2.2);
+</pre><p>
+  </p><p>
+<span class="original">
+   Each range type also has a multirange constructor with the same name as the
+   multirange type.  The constructor function takes zero or more arguments
+   which are all ranges of the appropriate type.
+   For example:
+</span>
+各範囲型には、多重範囲型と同じ名前の多重範囲コンストラクタもあります。
+コンストラクタ関数は、すべて適切な型の範囲である0個以上の引数を取ります。
+例えば、
+
+</p><pre class="programlisting">
+SELECT nummultirange();
+SELECT nummultirange(numrange(1.0, 14.0));
+SELECT nummultirange(numrange(1.0, 14.0), numrange(20.0, 25.0));
+</pre><p>
+  </p></div><div class="sect2" id="RANGETYPES-DISCRETE"><div class="titlepage"><div><div><h3 class="title">8.17.7. 離散的な範囲型</h3></div></div></div><span class="original">
+  &lt;title&gt;Discrete Range Types&lt;/title&gt;
+</span><p>
+<span class="original">
+   A discrete range is one whose element type has a well-defined
+   &lt;quote&gt;step&lt;/quote&gt;, such as &lt;type&gt;integer&lt;/type&gt; or &lt;type&gt;date&lt;/type&gt;.
+   In these types two elements can be said to be adjacent, when there are
+   no valid values between them.  This contrasts with continuous ranges,
+   where it's always (or almost always) possible to identify other element
+   values between two given values.  For example, a range over the
+   &lt;type&gt;numeric&lt;/type&gt; type is continuous, as is a range over &lt;type&gt;timestamp&lt;/type&gt;.
+   (Even though &lt;type&gt;timestamp&lt;/type&gt; has limited precision, and so could
+   theoretically be treated as discrete, it's better to consider it continuous
+   since the step size is normally not of interest.)
+</span>
+離散的な範囲とは、<code class="type">integer</code>や<code class="type">date</code>のように明確に定義された<span class="quote">「<span class="quote">ステップ</span>」</span>のある要素型の範囲のことです。
+このような型において、2つの要素の間に有効な値が1つもないとき、その2つの要素は隣接している、と言います。
+これは連続的な範囲と対照的です。連続的な範囲では、任意の2つの値について、それらの間に別の値を見つけることが、いつでも(あるいは、ほとんどいつでも)可能です。
+例えば、<code class="type">numeric</code>型や<code class="type">timestamp</code>型の範囲は連続的です。
+(<code class="type">timestamp</code>の精度は限界があるので、理論的には離散的として取り扱うことも可能ですが、ステップの大きさについて関心がないのが普通ですから、連続的であると考える方が良いでしょう。)
+  </p><p>
+<span class="original">
+   Another way to think about a discrete range type is that there is a clear
+   idea of a &lt;quote&gt;next&lt;/quote&gt; or &lt;quote&gt;previous&lt;/quote&gt; value for each element value.
+   Knowing that, it is possible to convert between inclusive and exclusive
+   representations of a range's bounds, by choosing the next or previous
+   element value instead of the one originally given.
+   For example, in an integer range type &lt;literal&gt;[4,8]&lt;/literal&gt; and
+   &lt;literal&gt;(3,9)&lt;/literal&gt; denote the same set of values; but this would not be so
+   for a range over numeric.
+</span>
+離散的な範囲型に関するもう1つの考え方は、各要素の値について、<span class="quote">「<span class="quote">次</span>」</span>あるいは<span class="quote">「<span class="quote">前</span>」</span>の値というのものが明確に考えられるか、ということです。
+これを知っていれば、範囲の境界の閉じた表現、あるいは開いた表現について、その値の次、あるいは前の値を使って、表現を変換することができます。
+例えば、整数の範囲型<code class="literal">[4,8]</code>と<code class="literal">(3,9)</code>は同じ値の集合を意味しますが、これがnumericの範囲型であったならそうではありません。
+  </p><p>
+<span class="original">
+   A discrete range type should have a &lt;firstterm&gt;canonicalization&lt;/firstterm&gt;
+   function that is aware of the desired step size for the element type.
+   The canonicalization function is charged with converting equivalent values
+   of the range type to have identical representations, in particular
+   consistently inclusive or exclusive bounds.
+   If a canonicalization function is not specified, then ranges with different
+   formatting will always be treated as unequal, even though they might
+   represent the same set of values in reality.
+</span>
+離散的な範囲型はその要素型で使いたいステップのサイズを認識する<em class="firstterm">正規化</em>関数を持つべきです。
+正規化関数は同等な値の範囲型を、同一の表現に、特に、閉じた境界、開いた境界について一定の形式に変換します。
+正規化関数が指定されない場合、異なる形式の範囲は必ず等しくないものとして扱われます。これは例え、それらが現実的に同じ値の集合であったとしても、等しくないとされます。
+  </p><p>
+<span class="original">
+   The built-in range types &lt;type&gt;int4range&lt;/type&gt;, &lt;type&gt;int8range&lt;/type&gt;,
+   and &lt;type&gt;daterange&lt;/type&gt; all use a canonical form that includes
+   the lower bound and excludes the upper bound; that is,
+   &lt;literal&gt;[)&lt;/literal&gt;. User-defined range types can use other conventions,
+   however.
+</span>
+組み込みの範囲型である<code class="type">int4range</code>、<code class="type">int8range</code>、および<code class="type">daterange</code>はいずれも閉じた下限値と開いた上限値、つまり<code class="literal">[)</code>の正規化形式を使います。
+しかし、ユーザ定義の範囲型はこれとは別の方式を使うことができます。
+  </p></div><div class="sect2" id="RANGETYPES-DEFINING"><div class="titlepage"><div><div><h3 class="title">8.17.8. 新しい範囲型の定義</h3></div></div></div><span class="original">
+  &lt;title&gt;Defining New Range Types&lt;/title&gt;
+</span><p>
+<span class="original">
+   Users can define their own range types. The most common reason to do
+   this is to use ranges over subtypes not provided among the built-in
+   range types.
+   For example, to define a new range type of subtype &lt;type&gt;float8&lt;/type&gt;:
+</span>
+独自の範囲型を定義することもできます。
+もっともありそうな理由は、組み込みの範囲型では、その派生元型についての範囲型が提供されていない、ということでしょう。
+例えば、<code class="type">float8</code>を派生元型とする新しい範囲型を定義するには次のようにします。
+
+</p><pre class="programlisting">
+CREATE TYPE floatrange AS RANGE (
+    subtype = float8,
+    subtype_diff = float8mi
+);
+
+SELECT '[1.234, 5.678]'::floatrange;
+</pre><p>
+
+<span class="original">
+   Because &lt;type&gt;float8&lt;/type&gt; has no meaningful
+   &lt;quote&gt;step&lt;/quote&gt;, we do not define a canonicalization
+   function in this example.
+</span>
+<code class="type">float8</code>には意味のある<span class="quote">「<span class="quote">ステップ</span>」</span>がないので、この例では正規化関数を定義していません。
+  </p><p>
+<span class="original">
+   When you define your own range you automatically get a corresponding
+   multirange type.
+</span>
+独自の範囲を定義すると、対応する多重範囲型が自動的に取得されます。
+  </p><p>
+<span class="original">
+   Defining your own range type also allows you to specify a different
+   subtype B-tree operator class or collation to use, so as to change the sort
+   ordering that determines which values fall into a given range.
+</span>
+独自の範囲型を定義すると、派生元型とは異なるB-tree演算子クラスや照合順を指定でき、どの値が指定の範囲に入るかを決定するソート順を変更することもできます。
+  </p><p>
+<span class="original">
+   If the subtype is considered to have discrete rather than continuous
+   values, the &lt;command&gt;CREATE TYPE&lt;/command&gt; command should specify a
+   &lt;literal&gt;canonical&lt;/literal&gt; function.
+   The canonicalization function takes an input range value, and must return
+   an equivalent range value that may have different bounds and formatting.
+   The canonical output for two ranges that represent the same set of values,
+   for example the integer ranges &lt;literal&gt;[1, 7]&lt;/literal&gt; and &lt;literal&gt;[1,
+   8)&lt;/literal&gt;, must be identical.  It doesn't matter which representation
+   you choose to be the canonical one, so long as two equivalent values with
+   different formattings are always mapped to the same value with the same
+   formatting.  In addition to adjusting the inclusive/exclusive bounds
+   format, a canonicalization function might round off boundary values, in
+   case the desired step size is larger than what the subtype is capable of
+   storing.  For instance, a range type over &lt;type&gt;timestamp&lt;/type&gt; could be
+   defined to have a step size of an hour, in which case the canonicalization
+   function would need to round off bounds that weren't a multiple of an hour,
+   or perhaps throw an error instead.
+</span>
+派生元型が、連続的ではなく離散的な値を持つと考えられる場合は、<code class="command">CREATE TYPE</code>コマンドで<code class="literal">canonical</code>(正規化)関数を指定する必要があります。
+正規化関数は、範囲の値を入力として受け取り、それと同等な範囲の値を返さなければなりません。戻り値は、入力値とは異なる境界値と形式になっているかもしれません。
+同じ値の集合を表す範囲、例えば、整数の範囲である<code class="literal">[1, 7]</code>と<code class="literal">[1, 8)</code>の正規化出力は、同一である必要があります。
+異なる形式の同等な値が、いつでも同じ形式の同じ値に変換されるのであれば、正規化出力の形式は何であってもかまいません。
+正規化関数は、閉じた境界、開いた境界の形式を調整するだけではありません。派生元型が格納できるよりも大きなサイズのステップを使いたい場合は境界値を丸めることもあります。
+例えば<code class="type">timestamp</code>の範囲型をステップのサイズを1時間として定義することができます。このとき、正規化関数は1時間の倍数になっていない境界値を丸める必要があります。あるいは、その代わりにエラーを投げることもできます。
+  </p><p>
+<span class="original">
+   In addition, any range type that is meant to be used with GiST or SP-GiST
+   indexes should define a subtype difference, or &lt;literal&gt;subtype_diff&lt;/literal&gt;,
+   function.  (The index will still work without &lt;literal&gt;subtype_diff&lt;/literal&gt;,
+   but it is likely to be considerably less efficient than if a difference
+   function is provided.)  The subtype difference function takes two input
+   values of the subtype, and returns their difference
+   (i.e., &lt;replaceable&gt;X&lt;/replaceable&gt; minus &lt;replaceable&gt;Y&lt;/replaceable&gt;) represented as
+   a &lt;type&gt;float8&lt;/type&gt; value.  In our example above, the
+   function &lt;function&gt;float8mi&lt;/function&gt; that underlies the regular &lt;type&gt;float8&lt;/type&gt;
+   minus operator can be used; but for any other subtype, some type
+   conversion would be necessary.  Some creative thought about how to
+   represent differences as numbers might be needed, too.  To the greatest
+   extent possible, the &lt;literal&gt;subtype_diff&lt;/literal&gt; function should agree with
+   the sort ordering implied by the selected operator class and collation;
+   that is, its result should be positive whenever its first argument is
+   greater than its second according to the sort ordering.
+</span>
+また、GiSTまたはSP-GiSTインデックスと一緒に使われる範囲型は、派生元型の差分、つまり<code class="literal">subtype_diff</code>関数を定義すべきです。
+(そのインデックスは<code class="literal">subtype_diff</code>がなくても機能しますが、差分関数が提供されている時に比べると、あまり効果的でないことが多いでしょう。)
+派生元型の差分関数は、2つの派生元型の入力値をとり、その差分(つまり、<em class="replaceable"><code>X</code></em>引く<em class="replaceable"><code>Y</code></em>)を<code class="type">float8</code>型の値として返します。
+上の例では、通常の<code class="type">float8</code>のマイナス演算子が呼び出す関数<code class="function">float8mi</code>を使うことができますが、それ以外の派生元型では何らかの型変換が必要となるでしょう。
+差分をいかにして数字で表現するかについて、創造的な発想も必要になるかもしれません。
+可能な限りにおいて、<code class="literal">subtype_diff</code>関数は、選択した演算子クラスと照合順が示唆するソート順と矛盾しないようにすべき、つまり、ソート順で、1番目の引数が2番目の引数より上に来る場合は、必ず差分関数の結果は正になるべきです。
+  </p><p>
+<span class="original">
+   A less-oversimplified example of a &lt;literal&gt;subtype_diff&lt;/literal&gt; function is:
+</span>
+<code class="literal">subtype_diff</code>関数の単純化されすぎていない例を以下に示します。
+  </p><pre class="programlisting">
+CREATE FUNCTION time_subtype_diff(x time, y time) RETURNS float8 AS
+'SELECT EXTRACT(EPOCH FROM (x - y))' LANGUAGE sql STRICT IMMUTABLE;
+
+CREATE TYPE timerange AS RANGE (
+    subtype = time,
+    subtype_diff = time_subtype_diff
+);
+
+SELECT '[11:10, 23:00]'::timerange;
+</pre><p>
+<span class="original">
+   See &lt;xref linkend="sql-createtype"/&gt; for more information about creating
+   range types.
+</span>
+範囲型の作成について、より詳細な情報は<a class="xref" href="sql-createtype.html" title="CREATE TYPE"><span class="refentrytitle">CREATE TYPE</span></a>を参照してください。
+  </p></div><div class="sect2" id="RANGETYPES-INDEXING"><div class="titlepage"><div><div><h3 class="title">8.17.9. インデックス</h3></div></div></div><span class="original">
+  &lt;title&gt;Indexing&lt;/title&gt;
+</span><a id="id-1.5.7.27.17.2" class="indexterm"></a><a id="id-1.5.7.27.17.3" class="indexterm"></a><p>
+<span class="original">
+   GiST and SP-GiST indexes can be created for table columns of range types.
+   GiST indexes can be also created for table columns of multirange types.
+   For instance, to create a GiST index:
+</span>
+範囲型のテーブル列にGiSTおよびSP-GiSTインデックスを作成することができます。
+GiSTインデックスは、多重範囲型のテーブル列に対しても作成できます。
+例えば、GiSTインデックスを作成するには、
+</p><pre class="programlisting">
+CREATE INDEX reservation_idx ON reservation USING GIST (during);
+</pre><p>
+<span class="original">
+   A GiST or SP-GiST index on ranges can accelerate queries involving these
+   range operators:
+   &lt;literal&gt;=&lt;/literal&gt;,
+   &lt;literal&gt;&amp;amp;&amp;amp;&lt;/literal&gt;,
+   &lt;literal&gt;&amp;lt;@&lt;/literal&gt;,
+   &lt;literal&gt;@&amp;gt;&lt;/literal&gt;,
+   &lt;literal&gt;&amp;lt;&amp;lt;&lt;/literal&gt;,
+   &lt;literal&gt;&amp;gt;&amp;gt;&lt;/literal&gt;,
+   &lt;literal&gt;-|-&lt;/literal&gt;,
+   &lt;literal&gt;&amp;amp;&amp;lt;&lt;/literal&gt;, and
+   &lt;literal&gt;&amp;amp;&amp;gt;&lt;/literal&gt;.
+   A GiST index on multiranges can accelerate queries involving the same
+   set of multirange operators.
+   A GiST index on ranges and GiST index on multiranges can also accelerate
+   queries involving these cross-type range to multirange and multirange to
+   range operators correspondingly:
+   &lt;literal&gt;&amp;amp;&amp;amp;&lt;/literal&gt;,
+   &lt;literal&gt;&amp;lt;@&lt;/literal&gt;,
+   &lt;literal&gt;@&amp;gt;&lt;/literal&gt;,
+   &lt;literal&gt;&amp;lt;&amp;lt;&lt;/literal&gt;,
+   &lt;literal&gt;&amp;gt;&amp;gt;&lt;/literal&gt;,
+   &lt;literal&gt;-|-&lt;/literal&gt;,
+   &lt;literal&gt;&amp;amp;&amp;lt;&lt;/literal&gt;, and
+   &lt;literal&gt;&amp;amp;&amp;gt;&lt;/literal&gt;.
+   See &lt;xref linkend="range-operators-table"/&gt; for more information.
+</span>
+範囲型に関するGiSTあるいはSP-GiSTインデックスがあると、以下の範囲演算子を含む検索を高速に実行できます。
+<code class="literal">=</code>、<code class="literal">&amp;&amp;</code>、<code class="literal">&lt;@</code>、<code class="literal">@&gt;</code>、<code class="literal">&lt;&lt;</code>、<code class="literal">&gt;&gt;</code>、<code class="literal">-|-</code>、<code class="literal">&amp;&lt;</code>、および<code class="literal">&amp;&gt;</code>。
+多重範囲型に関するGiSTインデックスは、同じ多重範囲演算子のセットを含む問い合わせを高速にできます。
+範囲型に関するGiSTインデックスと多重範囲型に関するGiSTインデックスは、以下の範囲型から多重範囲型へ、および多重範囲型から範囲型への演算子を含む問い合わせを高速にできます。
+<code class="literal">&amp;&amp;</code>、<code class="literal">&lt;@</code>、<code class="literal">@&gt;</code>、<code class="literal">&lt;&lt;</code>、<code class="literal">&gt;&gt;</code>、<code class="literal">-|-</code>、<code class="literal">&amp;&lt;</code>、および<code class="literal">&amp;&gt;</code>。
+より詳細な情報は<a class="xref" href="functions-range.html#RANGE-OPERATORS-TABLE" title="表9.54 範囲演算子">表 9.54</a>を参照してください。
+  </p><p>
+<span class="original">
+   In addition, B-tree and hash indexes can be created for table columns of
+   range types.  For these index types, basically the only useful range
+   operation is equality.  There is a B-tree sort ordering defined for range
+   values, with corresponding &lt;literal&gt;&amp;lt;&lt;/literal&gt; and &lt;literal&gt;&amp;gt;&lt;/literal&gt; operators,
+   but the ordering is rather arbitrary and not usually useful in the real
+   world.  Range types' B-tree and hash support is primarily meant to
+   allow sorting and hashing internally in queries, rather than creation of
+   actual indexes.
+</span>
+さらに、範囲型のテーブル列にB-treeおよびハッシュインデックスを作ることもできます。
+これらのインデックスについては、基本的に、等値演算のみが有効な範囲の演算です。
+範囲の値についてB-treeのソート順が、<code class="literal">&lt;</code>および<code class="literal">&gt;</code>演算子について定義されていますが、現実にはこの順序はあまり意味がなく、有効ではありません。
+範囲型のB-treeとハッシュのサポートは実際にインデックスを作ることよりも、むしろ、検索時に内部的にソートやハッシュをできるようにするのが主な目的です。
+  </p></div><div class="sect2" id="RANGETYPES-CONSTRAINT"><div class="titlepage"><div><div><h3 class="title">8.17.10. 範囲の制約</h3></div></div></div><span class="original">
+  &lt;title&gt;Constraints on Ranges&lt;/title&gt;
+</span><a id="id-1.5.7.27.18.2" class="indexterm"></a><a id="id-1.5.7.27.18.3" class="indexterm"></a><p>
+<span class="original">
+   While &lt;literal&gt;UNIQUE&lt;/literal&gt; is a natural constraint for scalar
+   values, it is usually unsuitable for range types. Instead, an
+   exclusion constraint is often more appropriate
+   (see &lt;link linkend="sql-createtable-exclude"&gt;CREATE TABLE
+   ... CONSTRAINT ... EXCLUDE&lt;/link&gt;). Exclusion constraints allow the
+   specification of constraints such as &lt;quote&gt;non-overlapping&lt;/quote&gt; on a
+   range type. For example:
+</span>
+<code class="literal">UNIQUE</code>はスカラー値には自然な制約ですが、範囲型には通常は適当ではありません。
+代わりに排他(exclude)制約を使うことの方が適切なことが多いです(<a class="link" href="sql-createtable.html#SQL-CREATETABLE-EXCLUDE">CREATE TABLE ... CONSTRAINT ... EXCLUDE</a>を参照してください)。
+排他制約により、範囲型について<span class="quote">「<span class="quote">重なりがない</span>」</span>などといった制約を指定することができます。
+例えば、
+
+</p><pre class="programlisting">
+CREATE TABLE reservation (
+    during tsrange,
+    EXCLUDE USING GIST (during WITH &amp;&amp;)
+);
+</pre><p>
+
+<span class="original">
+   That constraint will prevent any overlapping values from existing
+   in the table at the same time:
+</span>
+この制約は、テーブル上で重なりのある値が同時に存在することを防ぎます。
+
+</p><pre class="programlisting">
+INSERT INTO reservation VALUES
+    ('[2010-01-01 11:30, 2010-01-01 15:00)');
+INSERT 0 1
+
+INSERT INTO reservation VALUES
+    ('[2010-01-01 14:45, 2010-01-01 15:45)');
+ERROR:  conflicting key value violates exclusion constraint "reservation_during_excl"
+DETAIL:  Key (during)=(["2010-01-01 14:45:00","2010-01-01 15:45:00")) conflicts
+with existing key (during)=(["2010-01-01 11:30:00","2010-01-01 15:00:00")).
+</pre><p>
+  </p><p>
+<span class="original">
+   You can use the &lt;link linkend="btree-gist"&gt;&lt;literal&gt;btree_gist&lt;/literal&gt;&lt;/link&gt;
+   extension to define exclusion constraints on plain scalar data types, which
+   can then be combined with range exclusions for maximum flexibility.  For
+   example, after &lt;literal&gt;btree_gist&lt;/literal&gt; is installed, the following
+   constraint will reject overlapping ranges only if the meeting room numbers
+   are equal:
+</span>
+<a class="link" href="btree-gist.html" title="F.9. btree_gist"><code class="literal">btree_gist</code></a>の拡張を使って通常のスカラーのデータ型について排他制約を定義することができます。
+これをさらに範囲の排他と組み合わせることで大きな柔軟性を得ることができます。
+例えば、<code class="literal">btree_gist</code>をインストールした時、次の制約は範囲の重なりについて、会議室の部屋番号も同じ時にのみ拒絶します。
+
+</p><pre class="programlisting">
+CREATE EXTENSION btree_gist;
+CREATE TABLE room_reservation (
+    room text,
+    during tsrange,
+    EXCLUDE USING GIST (room WITH =, during WITH &amp;&amp;)
+);
+
+INSERT INTO room_reservation VALUES
+    ('123A', '[2010-01-01 14:00, 2010-01-01 15:00)');
+INSERT 0 1
+
+INSERT INTO room_reservation VALUES
+    ('123A', '[2010-01-01 14:30, 2010-01-01 15:30)');
+ERROR:  conflicting key value violates exclusion constraint "room_reservation_room_during_excl"
+DETAIL:  Key (room, during)=(123A, ["2010-01-01 14:30:00","2010-01-01 15:30:00")) conflicts
+with existing key (room, during)=(123A, ["2010-01-01 14:00:00","2010-01-01 15:00:00")).
+
+INSERT INTO room_reservation VALUES
+    ('123B', '[2010-01-01 14:30, 2010-01-01 15:30)');
+INSERT 0 1
+</pre><p>
+  </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="rowtypes.html" title="8.16. 複合型">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="datatype.html" title="第8章 データ型">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="domains.html" title="8.18. ドメイン型">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">8.16. 複合型 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 8.18. ドメイン型</td></tr></table></div></body></html>

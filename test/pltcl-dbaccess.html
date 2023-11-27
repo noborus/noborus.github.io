@@ -1,0 +1,321 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>44.5. PL/Tclからのデータベースアクセス</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="pltcl-global.html" title="44.4. PL/Tclにおけるグローバルデータ" /><link rel="next" href="pltcl-trigger.html" title="44.6. PL/Tclのトリガ関数" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="pltcl.html" title="第44章 PL/Tcl — Tcl手続き言語">第44章 PL/Tcl — Tcl手続き言語</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : pltcl-dbaccess.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="pltcl-global.html" title="44.4. PL/Tclにおけるグローバルデータ">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="pltcl.html" title="第44章 PL/Tcl — Tcl手続き言語">上へ</a></td><td width="60%" align="center">44.5. PL/Tclからのデータベースアクセス</td><td width="20%" align="right"> <a accesskey="n" href="pltcl-trigger.html" title="44.6. PL/Tclのトリガ関数">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PLTCL-DBACCESS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">44.5. PL/Tclからのデータベースアクセス</h2></div></div></div><span class="original">
+    &lt;title&gt;Database Access from PL/Tcl&lt;/title&gt;
+</span><p>
+<span class="original">
+     In this section, we follow the usual Tcl convention of using question
+     marks, rather than brackets, to indicate an optional element in a
+     syntax synopsis.  The following commands are available to access
+     the database from the body of a PL/Tcl function:
+</span>
+この節では、通常のTclの規約に従い、構文の概要でオプションの要素を示すのに角括弧ではなく疑問符を使います。
+下記のコマンドは、PL/Tcl関数内からデータベースアクセスを行う時に使用できるコマンドです。
+
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal"><code class="function">spi_exec</code> ?<span class="optional">-count <em class="replaceable"><code>n</code></em></span>? ?<span class="optional">-array <em class="replaceable"><code>name</code></em></span>? <em class="replaceable"><code>command</code></em> ?<span class="optional"><em class="replaceable"><code>loop-body</code></em></span>?</code></span></dt><dd><p>
+<span class="original">
+        Executes an SQL command given as a string.  An error in the command
+        causes an error to be raised.  Otherwise, the return value of &lt;function&gt;spi_exec&lt;/function&gt;
+        is the number of rows processed (selected, inserted, updated, or
+        deleted) by the command, or zero if the command is a utility
+        statement.  In addition, if the command is a &lt;command&gt;SELECT&lt;/command&gt; statement, the
+        values of the selected columns are placed in Tcl variables as
+        described below.
+</span>
+文字列として与えられたSQL問い合わせを実行します。
+コマンド内のエラーは、エラーの発生となります。
+さもなければ、この<code class="function">spi_exec</code>の戻り値はコマンドによって処理（選択、挿入、更新、削除）された行数、または、コマンドがユーティリティ文の場合はゼロとなります。
+さらに、コマンドが<code class="command">SELECT</code>文の場合、選択された列の値は以下のようにTclの変数に格納されます。
+       </p><p>
+<span class="original">
+        The optional &lt;literal&gt;-count&lt;/literal&gt; value tells
+        &lt;function&gt;spi_exec&lt;/function&gt; the maximum number of rows
+        to process in the command.  The effect of this is comparable to
+        setting up a query as a cursor and then saying &lt;literal&gt;FETCH &lt;replaceable&gt;n&lt;/replaceable&gt;&lt;/literal&gt;.
+</span>
+<code class="literal">-count</code>オプションの値は、<code class="function">spi_exec</code>に対し、そのコマンドで処理する最大行数を指示します。
+これにより、問い合わせをカーソルとして設定し、<code class="literal">FETCH <em class="replaceable"><code>n</code></em></code>を実行することと同じことができます。
+       </p><p>
+<span class="original">
+        If the command is a &lt;command&gt;SELECT&lt;/command&gt; statement, the values of the
+        result columns are placed into Tcl variables named after the columns.
+        If the &lt;literal&gt;-array&lt;/literal&gt; option is given, the column values are
+        instead stored into elements of the named associative array, with the
+        column names used as array indexes.  In addition, the current row
+        number within the result (counting from zero) is stored into the array
+        element named &lt;quote&gt;&lt;literal&gt;.tupno&lt;/literal&gt;&lt;/quote&gt;, unless that name is
+        in use as a column name in the result.
+</span>
+コマンドが<code class="command">SELECT</code>文の場合、その結果得られた列の値は、列名にちなんだ名前のTcl変数に格納されます。
+<code class="literal">-array</code>オプションが付与された場合は、列の値は指定された名前の連想配列の要素に格納され、その配列のインデックスとして列名が使用されます。
+加えて、結果内での現在の行番号（ゼロから数えます）が<span class="quote">「<span class="quote"><code class="literal">.tupno</code></span>」</span>という名前の配列要素に格納されます。ただし、その名前が結果内の列名として使われていない場合に限られます。
+       </p><p>
+<span class="original">
+        If the command is a &lt;command&gt;SELECT&lt;/command&gt; statement and no &lt;replaceable&gt;loop-body&lt;/replaceable&gt;
+        script is given, then only the first row of results are stored into
+        Tcl variables or array elements; remaining rows, if any, are ignored.
+        No storing occurs if the query returns no rows.  (This case can be
+        detected by checking the result of &lt;function&gt;spi_exec&lt;/function&gt;.)
+        For example:
+&lt;programlisting&gt;
+spi_exec "SELECT count(*) AS cnt FROM pg_proc"
+&lt;/programlisting&gt;
+</span>
+問い合わせ文が<code class="command">SELECT</code>文、かつ、<em class="replaceable"><code>loop-body</code></em>スクリプトが付与されなかった場合、結果のうち最初の行だけがTclの変数または配列要素に格納されます。
+他にも行があったとしても、それらは無視されます。
+問い合わせが行を返さなかった場合は、変数への格納は発生しません
+（<code class="function">spi_exec</code>の戻り値を検査することで、これを検出することができます）。
+以下に例を示します。
+
+</p><pre class="programlisting">
+spi_exec "SELECT count(*) AS cnt FROM pg_proc"
+</pre><p>
+<span class="original">
+        will set the Tcl variable &lt;literal&gt;$cnt&lt;/literal&gt; to the number of rows in
+        the &lt;structname&gt;pg_proc&lt;/structname&gt; system catalog.
+</span>
+これは、<code class="literal">$cnt</code> Tcl変数を、<code class="structname">pg_proc</code>システムカタログの行数に設定します。
+       </p><p>
+<span class="original">
+        If the optional &lt;replaceable&gt;loop-body&lt;/replaceable&gt; argument is given, it is
+        a piece of Tcl script that is executed once for each row in the
+        query result.  (&lt;replaceable&gt;loop-body&lt;/replaceable&gt; is ignored if the given
+        command is not a &lt;command&gt;SELECT&lt;/command&gt;.)
+        The values of the current row's columns
+        are stored into Tcl variables or array elements before each iteration.
+        For example:
+</span>
+<em class="replaceable"><code>loop-body</code></em>オプション引数が付与された場合、それは、問い合わせの結果内の行それぞれに対して一度だけ実行される小さなTclスクリプトです
+（<em class="replaceable"><code>loop-body</code></em>は<code class="command">SELECT</code>以外の問い合わせで付与された場合は無視されます）。
+処理中の行の列値は、各繰り返しの前にTclの変数または配列要素に格納されます。
+以下に例を示します。
+</p><pre class="programlisting">
+spi_exec -array C "SELECT * FROM pg_class" {
+    elog DEBUG "have table $C(relname)"
+}
+</pre><p>
+<span class="original">
+        will print a log message for every row of &lt;literal&gt;pg_class&lt;/literal&gt;.  This
+        feature works similarly to other Tcl looping constructs; in
+        particular &lt;literal&gt;continue&lt;/literal&gt; and &lt;literal&gt;break&lt;/literal&gt; work in the
+        usual way inside the loop body.
+</span>
+これは、<code class="literal">pg_class</code>の各行に対してログメッセージを出力します。
+この機能は他のTclの繰り返し構文でも同様に動作します。
+特にループ本体内の<code class="literal">continue</code>と<code class="literal">break</code>は通常通り動作します。
+       </p><p>
+<span class="original">
+        If a column of a query result is null, the target
+        variable for it is &lt;quote&gt;unset&lt;/quote&gt; rather than being set.
+</span>
+問い合わせの結果、列がNULLであった場合、対象となる変数は代入されずに、<span class="quote">「<span class="quote">未設定状態</span>」</span>になります。
+       </p></dd><dt><span class="term"><code class="function">spi_prepare</code> <em class="replaceable"><code>query</code></em> <em class="replaceable"><code>typelist</code></em></span></dt><dd><p>
+<span class="original">
+        Prepares and saves a query plan for later execution.  The
+        saved plan will be retained for the life of the current
+        session.&lt;indexterm&gt;&lt;primary&gt;preparing a query&lt;/primary&gt;
+        &lt;secondary&gt;in PL/Tcl&lt;/secondary&gt;&lt;/indexterm&gt;
+</span>
+後の実行のために問い合わせ計画の準備、保存を行います。
+保存された計画は現在のセッションが終了するまで保持されます。
+<a id="id-1.8.9.9.2.1.2.2.1.1" class="indexterm"></a>
+       </p><p>
+<span class="original">
+        The query can use parameters, that is, placeholders for
+        values to be supplied whenever the plan is actually executed.
+        In the query string, refer to parameters
+        by the symbols &lt;literal&gt;$1&lt;/literal&gt; ... &lt;literal&gt;$&lt;replaceable&gt;n&lt;/replaceable&gt;&lt;/literal&gt;.
+        If the query uses parameters, the names of the parameter types
+        must be given as a Tcl list.  (Write an empty list for
+        &lt;replaceable&gt;typelist&lt;/replaceable&gt; if no parameters are used.)
+</span>
+問い合わせはパラメータ、つまり、計画が実際に実行される時に常に与えられる値用のプレースホルダを持つことができます。
+問い合わせ文字列の中では、<code class="literal">$1</code> ... <code class="literal">$<em class="replaceable"><code>n</code></em></code>というシンボルを使用して引数を参照してください。
+問い合わせがパラメータを使用する場合、Tclのリストとしてパラメータの型名を指定する必要があります。
+（パラメータを使用しない場合は<em class="replaceable"><code>typelist</code></em>には空のリストを指定してください。）
+       </p><p>
+<span class="original">
+        The return value from &lt;function&gt;spi_prepare&lt;/function&gt; is a query ID
+        to be used in subsequent calls to &lt;function&gt;spi_execp&lt;/function&gt;. See
+        &lt;function&gt;spi_execp&lt;/function&gt; for an example.
+</span>
+<code class="function">spi_prepare</code>の戻り値は問い合わせIDです。
+このIDは後に<code class="function">spi_execp</code>を呼び出す時に使用されます。
+使用例については<code class="function">spi_execp</code>を参照してください。
+       </p></dd><dt><span class="term"><code class="literal"><code class="function">spi_execp</code> ?<span class="optional">-count <em class="replaceable"><code>n</code></em></span>? ?<span class="optional">-array <em class="replaceable"><code>name</code></em></span>? ?<span class="optional">-nulls <em class="replaceable"><code>string</code></em></span>? <em class="replaceable"><code>queryid</code></em> ?<span class="optional"><em class="replaceable"><code>value-list</code></em></span>? ?<span class="optional"><em class="replaceable"><code>loop-body</code></em></span>?</code></span></dt><dd><p>
+<span class="original">
+        Executes a query previously prepared with &lt;function&gt;spi_prepare&lt;/function&gt;.
+        &lt;replaceable&gt;queryid&lt;/replaceable&gt; is the ID returned by
+        &lt;function&gt;spi_prepare&lt;/function&gt;.  If the query references parameters,
+        a &lt;replaceable&gt;value-list&lt;/replaceable&gt; must be supplied.  This
+        is a Tcl list of actual values for the parameters.  The list must be
+        the same length as the parameter type list previously given to
+        &lt;function&gt;spi_prepare&lt;/function&gt;.  Omit &lt;replaceable&gt;value-list&lt;/replaceable&gt;
+        if the query has no parameters.
+</span>
+<code class="function">spi_prepare</code>により事前に準備された問い合わせを実行します。
+<em class="replaceable"><code>queryid</code></em>は<code class="function">spi_prepare</code>により返されたIDです。
+その問い合わせがパラメータを参照する場合、<em class="replaceable"><code>value-list</code></em>を与える必要があります。
+これは、そのパラメータの実際の値を持つTclのリストです。
+このリストの長さは、事前に<code class="function">spi_prepare</code>で指定した引数型のリストの長さと同じでなければなりません。
+問い合わせにパラメータがない場合は、<em class="replaceable"><code>value-list</code></em>を省略してください。
+       </p><p>
+<span class="original">
+        The optional value for &lt;literal&gt;-nulls&lt;/literal&gt; is a string of spaces and
+        &lt;literal&gt;'n'&lt;/literal&gt; characters telling &lt;function&gt;spi_execp&lt;/function&gt;
+        which of the parameters are null values. If given, it must have exactly the
+        same length as the &lt;replaceable&gt;value-list&lt;/replaceable&gt;.  If it
+        is not given, all the parameter values are nonnull.
+</span>
+<code class="literal">-nulls</code>オプションの値は、空白文字と<code class="literal">'n'</code>という文字からなる文字列で、<code class="function">spi_execp</code>に対し、どの引数がNULL値かを示します。
+指定された場合、その文字列の長さは<em class="replaceable"><code>value-list</code></em>の長さと正確に一致していなければなりません。
+指定されない場合は、すべてのパラメータの値は非NULLです。
+       </p><p>
+<span class="original">
+        Except for the way in which the query and its parameters are specified,
+        &lt;function&gt;spi_execp&lt;/function&gt; works just like &lt;function&gt;spi_exec&lt;/function&gt;.
+        The &lt;literal&gt;-count&lt;/literal&gt;, &lt;literal&gt;-array&lt;/literal&gt;, and
+        &lt;replaceable&gt;loop-body&lt;/replaceable&gt; options are the same,
+        and so is the result value.
+</span>
+問い合わせとそのパラメータをどこで指定するのかという点を除き、<code class="function">spi_execp</code>は<code class="function">spi_exec</code>と同様に動作します。
+<code class="literal">-count</code>、<code class="literal">-array</code>、<em class="replaceable"><code>loop-body</code></em>オプションも、そして、結果の値も同じです。
+       </p><p>
+<span class="original">
+        Here's an example of a PL/Tcl function using a prepared plan:
+</span>
+ここで、プリペアド計画を使用した、PL/Tcl関数の例を示します。
+
+</p><pre class="programlisting">
+CREATE FUNCTION t1_count(integer, integer) RETURNS integer AS $$
+    if {![ info exists GD(plan) ]} {
+<span class="original">
+        # prepare the saved plan on the first call
+</span>
+        # 最初の呼び出しでは保存する計画を準備します。
+        set GD(plan) [ spi_prepare \
+                "SELECT count(*) AS cnt FROM t1 WHERE num &gt;= \$1 AND num &lt;= \$2" \
+                [ list int4 int4 ] ]
+    }
+    spi_execp -count 1 $GD(plan) [ list $1 $2 ]
+    return $cnt
+$$ LANGUAGE pltcl;
+</pre><p>
+
+<span class="original">
+        We need backslashes inside the query string given to
+        &lt;function&gt;spi_prepare&lt;/function&gt; to ensure that the
+        &lt;literal&gt;$&lt;replaceable&gt;n&lt;/replaceable&gt;&lt;/literal&gt; markers will be passed
+        through to &lt;function&gt;spi_prepare&lt;/function&gt; as-is, and not replaced by Tcl
+        variable substitution.
+</span>
+<code class="function">spi_prepare</code>に与える問い合わせ文字列の内側では、<code class="literal">$<em class="replaceable"><code>n</code></em></code>記号が確実にそのまま<code class="function">spi_prepare</code>に渡され、Tcl変数の代入による置き換えが起こらないようにバックスラッシュが必要です。
+
+       </p></dd><dt><span class="term"><code class="function">subtransaction</code> <em class="replaceable"><code>command</code></em></span></dt><dd><p>
+<span class="original">
+        The Tcl script contained in &lt;replaceable&gt;command&lt;/replaceable&gt; is
+        executed within an SQL subtransaction.  If the script returns an
+        error, that entire subtransaction is rolled back before returning the
+        error out to the surrounding Tcl code.
+        See &lt;xref linkend="pltcl-subtransactions"/&gt; for more details and an
+        example.
+</span>
+<em class="replaceable"><code>command</code></em>に含まれるTclスクリプトが、SQLサブトランザクション中で実行されます。
+スクリプトがエラーを返すと、上位のTclコードにエラーを返す前に、そのサブトランザクションをロールバックします。
+更なる詳細と使用例については<a class="xref" href="pltcl-subtransactions.html" title="44.9. PL/Tclにおける明示的サブトランザクション">44.9</a>を参照してください。
+       </p></dd><dt><span class="term"><code class="function">quote</code> <em class="replaceable"><code>string</code></em></span></dt><dd><p>
+<span class="original">
+        Doubles all occurrences of single quote and backslash characters
+        in the given string.  This can be used to safely quote strings
+        that are to be inserted into SQL commands given
+        to &lt;function&gt;spi_exec&lt;/function&gt; or
+        &lt;function&gt;spi_prepare&lt;/function&gt;.
+        For example, think about an SQL command string like:
+</span>
+指定された文字列内のすべての単一引用符とバックスラッシュ文字を二重化します。
+<code class="function">spi_exec</code>や<code class="function">spi_prepare</code>で与えられたSQL問い合わせに挿入される予定の文字列を安全に引用符付けするために、これを使用することができます。
+例えば、以下のような問い合わせ文字列を考えます。
+
+</p><pre class="programlisting">
+"SELECT '$val' AS ret"
+</pre><p>
+
+<span class="original">
+        where the Tcl variable &lt;literal&gt;val&lt;/literal&gt; actually contains
+        &lt;literal&gt;doesn't&lt;/literal&gt;. This would result
+        in the final command string:
+</span>
+ここで、<code class="literal">val</code> Tcl変数に<code class="literal">doesn't</code>が実際に含まれているものとします。
+これは最終的に以下の問い合わせ文字列になってしまいます。
+
+</p><pre class="programlisting">
+SELECT 'doesn't' AS ret
+</pre><p>
+
+<span class="original">
+        which would cause a parse error during
+        &lt;function&gt;spi_exec&lt;/function&gt; or
+        &lt;function&gt;spi_prepare&lt;/function&gt;.
+        To work properly, the submitted command should contain:
+</span>
+これでは、<code class="function">spi_exec</code>または<code class="function">spi_prepare</code>の実行中に解析エラーが発生してしまいます。
+正しく稼動させるには、実行したい問い合わせは以下のようにしなければなりません。
+
+</p><pre class="programlisting">
+SELECT 'doesn''t' AS ret
+</pre><p>
+
+<span class="original">
+        which can be formed in PL/Tcl using:
+</span>
+これは、PL/Tclでは以下により形成することができます。
+
+</p><pre class="programlisting">
+"SELECT '[ quote $val ]' AS ret"
+</pre><p>
+
+<span class="original">
+        One advantage of &lt;function&gt;spi_execp&lt;/function&gt; is that you don't
+        have to quote parameter values like this, since the parameters are never
+        parsed as part of an SQL command string.
+</span>
+<code class="function">spi_execp</code>の持つ1つの利点は、パラメータはSQL問い合わせ文字列の一部として解析されることがありませんので、このようにパラメータの値を引用符付けする必要がないことです。
+       </p></dd><dt><span class="term">
+       <code class="function">elog</code> <em class="replaceable"><code>level</code></em> <em class="replaceable"><code>msg</code></em>
+       <a id="id-1.8.9.9.2.1.6.1.4" class="indexterm"></a>
+       <a id="id-1.8.9.9.2.1.6.1.5" class="indexterm"></a>
+      </span></dt><dd><p>
+<span class="original">
+        Emits a log or error message. Possible levels are
+        &lt;literal&gt;DEBUG&lt;/literal&gt;, &lt;literal&gt;LOG&lt;/literal&gt;, &lt;literal&gt;INFO&lt;/literal&gt;,
+        &lt;literal&gt;NOTICE&lt;/literal&gt;, &lt;literal&gt;WARNING&lt;/literal&gt;, &lt;literal&gt;ERROR&lt;/literal&gt;, and
+        &lt;literal&gt;FATAL&lt;/literal&gt;. &lt;literal&gt;ERROR&lt;/literal&gt;
+        raises an error condition; if this is not trapped by the surrounding
+        Tcl code, the error propagates out to the calling query, causing
+        the current transaction or subtransaction to be aborted.  This
+        is effectively the same as the Tcl &lt;literal&gt;error&lt;/literal&gt; command.
+        &lt;literal&gt;FATAL&lt;/literal&gt; aborts the transaction and causes the current
+        session to shut down.  (There is probably no good reason to use
+        this error level in PL/Tcl functions, but it's provided for
+        completeness.)  The other levels only generate messages of different
+        priority levels.
+        Whether messages of a particular priority are reported to the client,
+        written to the server log, or both is controlled by the
+        &lt;xref linkend="guc-log-min-messages"/&gt; and
+        &lt;xref linkend="guc-client-min-messages"/&gt; configuration
+        variables. See &lt;xref linkend="runtime-config"/&gt;
+        and &lt;xref linkend="pltcl-error-handling"/&gt;
+        for more information.
+</span>
+ログまたはエラーメッセージを発行します。
+使用できるレベルは、<code class="literal">DEBUG</code>、<code class="literal">LOG</code>、<code class="literal">INFO</code>、<code class="literal">NOTICE</code>、<code class="literal">WARNING</code>、<code class="literal">ERROR</code>、および<code class="literal">FATAL</code>です。
+<code class="literal">ERROR</code>はエラー状態を発生します。
+その上位レベルのTclコードで例外が捕捉されなければ、このエラーは問い合わせ呼び出し処理の外部へ伝播され、その結果、現在のトランザクションもしくはサブトランザクションはアボートされます。
+これは実質的にTclの<code class="literal">error</code>コマンドと同一です。
+<code class="literal">FATAL</code>はトランザクションをアボートし、現在のセッションを停止させます。
+（PL/Tcl関数においてこのエラーレベルを使用すべき理由はおそらく存在しませんが、完全性のために用意されています。）
+他のレベルは、異なる重要度のメッセージを生成するだけです。
+<a class="xref" href="runtime-config-logging.html#GUC-LOG-MIN-MESSAGES">log_min_messages</a>と<a class="xref" href="runtime-config-client.html#GUC-CLIENT-MIN-MESSAGES">client_min_messages</a>設定パラメータは、特定の重要度のメッセージをクライアントに報告するか、サーバのログに書き出すか、あるいはその両方かを制御します。
+詳細については<a class="xref" href="runtime-config.html" title="第20章 サーバの設定">第20章</a>および<a class="xref" href="pltcl-error-handling.html" title="44.8. PL/Tclのエラー処理">44.8</a>を参照してください。
+       </p></dd></dl></div><p>
+    </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="pltcl-global.html" title="44.4. PL/Tclにおけるグローバルデータ">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="pltcl.html" title="第44章 PL/Tcl — Tcl手続き言語">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="pltcl-trigger.html" title="44.6. PL/Tclのトリガ関数">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">44.4. PL/Tclにおけるグローバルデータ </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 44.6. PL/Tclのトリガ関数</td></tr></table></div></body></html>

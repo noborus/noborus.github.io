@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>LISTEN</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-insert.html" title="INSERT" /><link rel="next" href="sql-load.html" title="LOAD" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : sql-listen.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-insert.html" title="INSERT">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">LISTEN</td><td width="20%" align="right"> <a accesskey="n" href="sql-load.html" title="LOAD">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-LISTEN"><div class="titlepage"></div><a id="id-1.9.3.153.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">LISTEN</span></h2><p>LISTEN<span class="original">
+  &lt;refpurpose&gt;listen for a notification&lt;/refpurpose&gt;
+</span> — 通知を監視する</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
+LISTEN <em class="replaceable"><code>channel</code></em>
+</pre></div><div class="refsect1" id="id-1.9.3.153.5"><h2>説明</h2><span class="original">
+  &lt;title&gt;Description&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;command&gt;LISTEN&lt;/command&gt; registers the current session as a
+   listener on the notification channel named &lt;replaceable
+   class="parameter"&gt;channel&lt;/replaceable&gt;.
+   If the current session is already registered as a listener for
+   this notification channel, nothing is done.
+</span>
+<code class="command">LISTEN</code>は現在のセッションを、通知チャネル<em class="replaceable"><code>channel</code></em>のリスナとして登録します。
+現在のセッションが既に指定した通知チャネルのリスナとして登録されている場合は、何も起こりません。
+  </p><p>
+<span class="original">
+   Whenever the command &lt;command&gt;NOTIFY &lt;replaceable
+   class="parameter"&gt;channel&lt;/replaceable&gt;&lt;/command&gt; is invoked, either
+   by this session or another one connected to the same database, all
+   the sessions currently listening on that notification channel are
+   notified, and each will in turn notify its connected client
+   application.
+</span>
+このセッションまたは同一データベースに接続している別のセッションによって<code class="command">NOTIFY <em class="replaceable"><code>channel</code></em></code>が実行されると、現在その通知チャネルを監視している全てのセッションに対して通知されます。
+次に、各セッションは接続中のクライアントアプリケーションにこれを通知します。
+  </p><p>
+<span class="original">
+   A session can be unregistered for a given notification channel with the
+   &lt;command&gt;UNLISTEN&lt;/command&gt; command.  A session's listen
+   registrations are automatically cleared when the session ends.
+</span>
+<code class="command">UNLISTEN</code>コマンドを使って、セッションに登録された指定通知チャネルを解除できます。
+また、セッションの監視登録はそのセッションが終了した時点で自動的に削除されます。
+  </p><p>
+<span class="original">
+   The method a client application must use to detect notification events depends on
+   which &lt;productname&gt;PostgreSQL&lt;/productname&gt; application programming interface it
+   uses.  With the &lt;application&gt;libpq&lt;/application&gt; library, the application issues
+   &lt;command&gt;LISTEN&lt;/command&gt; as an ordinary SQL command, and then must
+   periodically call the function &lt;function&gt;PQnotifies&lt;/function&gt; to find out
+   whether any notification events have been received.  Other interfaces such as
+   &lt;application&gt;libpgtcl&lt;/application&gt; provide higher-level methods for handling notify events; indeed,
+   with &lt;application&gt;libpgtcl&lt;/application&gt; the application programmer should not even issue
+   &lt;command&gt;LISTEN&lt;/command&gt; or &lt;command&gt;UNLISTEN&lt;/command&gt; directly.  See the
+   documentation for the interface you are using for more details.
+</span>
+クライアントアプリケーションが通知イベントを検出する方法は、使用している<span class="productname">PostgreSQL</span>アプリケーションプログラミングインタフェースに依存します。
+<span class="application">libpq</span>ライブラリを使用するアプリケーションでは、<code class="command">LISTEN</code>を通常のSQLコマンドとして発行し、その後、<code class="function">PQnotifies</code>ルーチンを定期的に呼び出して通知イベントが受信されたかどうかを調べる必要があります。
+<span class="application">libpgtcl</span>等の他のインタフェースには、通知イベントを扱うより高レベルな方法が用意されています。
+実際、<span class="application">libpgtcl</span>を使ったアプリケーションの場合、プログラマが<code class="command">LISTEN</code>や<code class="command">UNLISTEN</code>を直接発行する必要すらありません。
+詳細については、使用中のインタフェースのドキュメントを参照してください。
+  </p></div><div class="refsect1" id="id-1.9.3.153.6"><h2>パラメータ</h2><span class="original">
+  &lt;title&gt;Parameters&lt;/title&gt;
+</span><div class="variablelist"><dl class="variablelist"><dt><span class="term"><em class="replaceable"><code>channel</code></em></span></dt><dd><p>
+<span class="original">
+      Name of a notification channel (any identifier).
+</span>
+通知チャネルの名前です（任意の識別子）。
+     </p></dd></dl></div></div><div class="refsect1" id="id-1.9.3.153.7"><h2>注釈</h2><span class="original">
+  &lt;title&gt;Notes&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;command&gt;LISTEN&lt;/command&gt; takes effect at transaction commit.
+   If &lt;command&gt;LISTEN&lt;/command&gt; or &lt;command&gt;UNLISTEN&lt;/command&gt; is executed
+   within a transaction that later rolls back, the set of notification
+   channels being listened to is unchanged.
+</span>
+<code class="command">LISTEN</code>はトランザクションのコミット時に有効になります。
+<code class="command">LISTEN</code>または<code class="command">UNLISTEN</code>がトランザクション内で実行され、それがロールバックされた場合、監視している通知チャネルの集合は変更されません。
+  </p><p>
+<span class="original">
+   A transaction that has executed &lt;command&gt;LISTEN&lt;/command&gt; cannot be
+   prepared for two-phase commit.
+</span>
+<code class="command">LISTEN</code>を実行したトランザクションでは二相コミットの準備を行うことはできません。
+  </p><p>
+<span class="original">
+   There is a race condition when first setting up a listening session:
+   if concurrently-committing transactions are sending notify events,
+   exactly which of those will the newly listening session receive?
+   The answer is that the session will receive all events committed after
+   an instant during the transaction's commit step.  But that is slightly
+   later than any database state that the transaction could have observed
+   in queries.  This leads to the following rule for
+   using &lt;command&gt;LISTEN&lt;/command&gt;: first execute (and commit!) that
+   command, then in a new transaction inspect the database state as needed
+   by the application logic, then rely on notifications to find out about
+   subsequent changes to the database state.  The first few received
+   notifications might refer to updates already observed in the initial
+   database inspection, but this is usually harmless.
+</span>
+監視するセッションを最初に設定する時に、競合状態があります。
+同時にコミット中の複数のトランザクションが通知イベントを送った場合、新しく監視を始めたセッションはそのうちのどれをまさに受信するでしょうか。
+答は、トランザクションのコミット段階のある瞬間の後にコミットされたすべてのイベントを受信する、です。
+しかし、これは問い合わせにおいてトランザクションが気づくデータベースの状態よりもわずかに後です。
+ここから<code class="command">LISTEN</code>を使う場合の以下のような規則が導かれます。
+まずそのコマンドを実行する(そしてコミットする！)、それから新しいトランザクションでアプリケーションのロジックの必要に応じてデータベースの状態を検査する、それから通知に基づいてデータベースの状態に対するその後の変更を確認する。
+最初に受信した通知のいくつかはデータベースの最初の検査ですでに確認した更新を参照しているかもしれませんが、これは普通は無害です。
+  </p><p>
+<span class="original">
+   &lt;xref linkend="sql-notify"/&gt;
+   contains a more extensive
+   discussion of the use of &lt;command&gt;LISTEN&lt;/command&gt; and
+   &lt;command&gt;NOTIFY&lt;/command&gt;.
+</span>
+<a class="xref" href="sql-notify.html" title="NOTIFY"><span class="refentrytitle">NOTIFY</span></a>には、<code class="command">LISTEN</code>および<code class="command">NOTIFY</code>についてのより広範な説明があります。
+  </p></div><div class="refsect1" id="id-1.9.3.153.8"><h2>例</h2><span class="original">
+  &lt;title&gt;Examples&lt;/title&gt;
+</span><p>
+<span class="original">
+   Configure and execute a listen/notify sequence from
+   &lt;application&gt;psql&lt;/application&gt;:
+</span>
+<span class="application">psql</span>から、監視/通知処理の設定と実行を行います。
+
+</p><pre class="programlisting">
+LISTEN virtual;
+NOTIFY virtual;
+Asynchronous notification "virtual" received from server process with PID 8448.
+</pre></div><div class="refsect1" id="id-1.9.3.153.9"><h2>互換性</h2><span class="original">
+  &lt;title&gt;Compatibility&lt;/title&gt;
+</span><p>
+<span class="original">
+   There is no &lt;command&gt;LISTEN&lt;/command&gt; statement in the SQL
+   standard.
+</span>
+標準SQLに<code class="command">LISTEN</code>はありません。
+  </p></div><div class="refsect1" id="id-1.9.3.153.10"><h2>関連項目</h2><span class="original">
+  &lt;title&gt;See Also&lt;/title&gt;
+</span><span class="simplelist"><a class="xref" href="sql-notify.html" title="NOTIFY"><span class="refentrytitle">NOTIFY</span></a>, <a class="xref" href="sql-unlisten.html" title="UNLISTEN"><span class="refentrytitle">UNLISTEN</span></a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-insert.html" title="INSERT">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-load.html" title="LOAD">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">INSERT </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> LOAD</td></tr></table></div></body></html>

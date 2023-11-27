@@ -1,0 +1,1120 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>19.8. エラー報告とログ取得</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="runtime-config-query.html" title="19.7. 問い合わせ計画" /><link rel="next" href="runtime-config-statistics.html" title="19.9. 実行時統計情報" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="runtime-config.html" title="第19章 サーバの設定">第19章 サーバの設定</a></td><td width="20%" align="right"></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="runtime-config-query.html" title="19.7. 問い合わせ計画">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="runtime-config.html" title="第19章 サーバの設定">上へ</a></td><td width="60%" align="center">19.8. エラー報告とログ取得</td><td width="20%" align="right"> <a accesskey="n" href="runtime-config-statistics.html" title="19.9. 実行時統計情報">次へ</a></td></tr></table><hr /></div><div class="sect1" id="RUNTIME-CONFIG-LOGGING"><div class="titlepage"><div><div><h2 class="title" style="clear: both">19.8. エラー報告とログ取得</h2></div></div></div><!--
+    <title>Error Reporting and Logging</title>
+    --><a id="id-1.6.6.11.2" class="indexterm"></a><div class="sect2" id="RUNTIME-CONFIG-LOGGING-WHERE"><div class="titlepage"><div><div><h3 class="title">19.8.1. ログの出力先</h3></div></div></div><!--
+     <title>Where To Log</title>
+     --><a id="id-1.6.6.11.3.2" class="indexterm"></a><a id="id-1.6.6.11.3.3" class="indexterm"></a><div class="variablelist"><dl class="variablelist"><dt id="GUC-LOG-DESTINATION"><span class="term"><code class="varname">log_destination</code> (<code class="type">string</code>)
+      <a id="id-1.6.6.11.3.4.1.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+       <!--
+        <productname>PostgreSQL</productname> supports several methods
+         for logging server messages, including
+         <systemitem>stderr</systemitem>, <systemitem>csvlog</systemitem> and
+         <systemitem>syslog</systemitem>. On Windows,
+         <systemitem>eventlog</systemitem> is also supported. Set this
+         parameter to a list of desired log destinations separated by
+         commas. The default is to log to <systemitem>stderr</systemitem>
+         only.
+         This parameter can only be set in the <filename>postgresql.conf</filename>
+         file or on the server command line.
+        -->
+        <span class="productname">PostgreSQL</span>は、<span class="systemitem">stderr</span>、<span class="systemitem">csvlog</span>および<span class="systemitem">syslog</span>を含めて、サーバメッセージのログ取得に対し数種類の方法を提供します。
+Windowsでは、<span class="systemitem">eventlog</span>も同時に提供します。
+このパラメータを設定するには、コンマ区切りでお好みのログ出力先を記載します。
+デフォルトでは、ログは<span class="systemitem">stderr</span>のみに出力されます。
+このパラメータは<code class="filename">postgresql.conf</code>ファイル、または、サーバのコマンドラインでのみ設定されます。
+       </p><p>
+       <!--
+        If <systemitem>csvlog</systemitem> is included in <varname>log_destination</varname>,
+        log entries are output in <quote>comma separated
+        value</quote> (<acronym>CSV</acronym>) format, which is convenient for
+        loading logs into programs.
+        See <xref linkend="runtime-config-logging-csvlog"/> for details.
+        <xref linkend="guc-logging-collector"/> must be enabled to generate
+        CSV-format log output.
+       -->
+       <span class="systemitem">csvlog</span>が<code class="varname">log_destination</code>に含まれる場合、ログ項目はプログラムへの読み込みが簡便な<span class="quote">「<span class="quote">カンマ区切り値</span>」</span>書式（<acronym class="acronym">CSV</acronym>）で出力されます。
+詳細は<a class="xref" href="runtime-config-logging.html#RUNTIME-CONFIG-LOGGING-CSVLOG" title="19.8.4. CSV書式のログ出力の利用">19.8.4</a>を参照してください。
+CSV書式のログ出力を生成するためには<a class="xref" href="runtime-config-logging.html#GUC-LOGGING-COLLECTOR">logging_collector</a>を有効にする必要があります。
+       </p><p>
+<!--
+        When either <systemitem>stderr</systemitem> or
+        <systemitem>csvlog</systemitem> are included, the file
+        <filename>current_logfiles</filename> is created to record the location
+        of the log file(s) currently in use by the logging collector and the
+        associated logging destination. This provides a convenient way to
+        find the logs currently in use by the instance. Here is an example of
+        this file's content:
+-->
+<span class="systemitem">stderr</span>あるいは<span class="systemitem">csvlog</span>が含まれる場合、ログ収集機構が使用しているログファイルの場所と、その出力先を記録する<code class="filename">current_logfiles</code>が作られます。
+これにより、現在のインスタンスが使っているログを簡単に見つけることができます。
+このファイルの内容の例を示します。
+</p><pre class="programlisting">
+stderr log/postgresql.log
+csvlog log/postgresql.csv
+</pre><p>
+
+<!--
+        <filename>current_logfiles</filename> is recreated when a new log file
+        is created as an effect of rotation, and
+        when <varname>log_destination</varname> is reloaded.  It is removed when
+        neither <systemitem>stderr</systemitem>
+        nor <systemitem>csvlog</systemitem> are included
+        in <varname>log_destination</varname>, and when the logging collector is
+        disabled.
+-->
+ログローテーションの効果で新しいログファイルが作られると、<code class="filename">current_logfiles</code>は再作成され、<code class="varname">log_destination</code>は再ロードされます。
+このファイルは、<span class="systemitem">stderr</span>も<span class="systemitem">csvlog</span>も<code class="varname">log_destination</code>に含まれなくなり、かつログ収集機構が無効になったときに削除されます。
+       </p><div class="note"><h3 class="title">注記</h3><p>
+       <!--
+         On most Unix systems, you will need to alter the configuration of
+         your system's <application>syslog</application> daemon in order
+         to make use of the <systemitem>syslog</systemitem> option for
+         <varname>log_destination</varname>.  <productname>PostgreSQL</productname>
+         can log to <application>syslog</application> facilities
+         <literal>LOCAL0</literal> through <literal>LOCAL7</literal> (see <xref
+         linkend="guc-syslog-facility"/>), but the default
+         <application>syslog</application> configuration on most platforms
+         will discard all such messages.  You will need to add something like:
+        -->
+        <code class="varname">log_destination</code>で<span class="systemitem">syslog</span>オプションを使用できるようにするために、ほとんどのUnixシステムではシステムの<span class="application">syslog</span>デーモンの設定を変更しなければならないでしょう。
+<span class="productname">PostgreSQL</span>ではログを<code class="literal">LOCAL0</code>から<code class="literal">LOCAL7</code>までの<span class="application">syslog</span>ファシリティで記録することができます（<a class="xref" href="runtime-config-logging.html#GUC-SYSLOG-FACILITY">syslog_facility</a>を参照してください）。
+しかし、ほとんどのプラットフォームのデフォルトの<span class="application">syslog</span>設定ではこれらのメッセージはすべて破棄されます。
+うまく動作させるために<span class="application">syslog</span>デーモンの設定に以下のようなものを追加しなければならないでしょう。
+</p><pre class="programlisting">
+local0.*    /var/log/postgresql
+</pre><p>
+        <!--
+         to the  <application>syslog</application> daemon's configuration file
+         to make it work.
+        -->
+        </p><p>
+       <!--
+         On Windows, when you use the <literal>eventlog</literal>
+         option for <varname>log_destination</varname>, you should
+         register an event source and its library with the operating
+         system so that the Windows Event Viewer can display event
+         log messages cleanly.
+         See <xref linkend="event-log-registration"/> for details.
+        -->
+        Windowsで<code class="varname">log_destination</code>に対し<code class="literal">eventlog</code>オプションを使用する場合、Windows Event Viewer がイベントログメッセージを手際良く表示できるよう、オペレーティングシステムでイベントソースとそのライブラリを登録しなければなりません。
+        詳細は<a class="xref" href="event-log-registration.html" title="18.11. WindowsにおけるEvent Logの登録">18.11</a>を参照ください。
+        </p></div></dd><dt id="GUC-LOGGING-COLLECTOR"><span class="term"><code class="varname">logging_collector</code> (<code class="type">boolean</code>)
+      <a id="id-1.6.6.11.3.4.2.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+       <!--
+         This parameter enables the <firstterm>logging collector</firstterm>, which
+         is a background process that captures log messages
+         sent to <systemitem>stderr</systemitem> and redirects them into log files.
+         This approach is often more useful than
+         logging to <application>syslog</application>, since some types of messages
+         might not appear in <application>syslog</application> output.  (One common
+         example is dynamic-linker failure messages; another is error messages
+         produced by scripts such as <varname>archive_command</varname>.)
+         This parameter can only be set at server start.
+        -->
+このパラメータは<em class="firstterm">ログ収集機構</em>を有効にします。
+それは<span class="systemitem">stderr</span>に送られたログメッセージを捕捉し、ログファイルにリダイレクトするバックグラウンドプロセスです。
+この手法は<span class="application">syslog</span>へのログよりもしばしば有用です。
+メッセージの一部の種類が<span class="application">syslog</span>では出力されない可能性があるためです。
+（一般的な例として、ダイナミックリンカのエラーメッセージがあり、その他の例として<code class="varname">archive_command</code>のようなスクリプトにより生成されたエラーメッセージが挙げられます）。
+このパラメータはサーバ起動時のみ設定可能です。
+       </p><div class="note"><h3 class="title">注記</h3><p>
+       <!--
+         It is possible to log to <systemitem>stderr</systemitem> without using the
+         logging collector; the log messages will just go to wherever the
+         server's <systemitem>stderr</systemitem> is directed.  However, that method is
+         only suitable for low log volumes, since it provides no convenient
+         way to rotate log files.  Also, on some platforms not using the
+         logging collector can result in lost or garbled log output, because
+         multiple processes writing concurrently to the same log file can
+         overwrite each other's output.
+        -->
+        ログ収集機構を使用せずに<span class="systemitem">stderr</span>のログを取ることは可能です。
+        ログメッセージはサーバの<span class="systemitem">stderr</span>が指し示すいかなる場所にも向かうだけです。
+        しかし、その方法はログファイルを巡回させる都合のよい方法を提供しないので、ログ容量が小さい場合のみに適しています。
+        同時に、ログ収集機構を使用しないいくつかのプラットフォームにおいては、ログ出力が失われたり、文字化けします。なぜなら、同一のログファイルに同時に書き込みを行うマルチプロセッサはそれぞれの出力を上書きできるからです。
+        </p></div><div class="note"><h3 class="title">注記</h3><p>
+       <!--
+          The logging collector is designed to never lose messages.  This means
+          that in case of extremely high load, server processes could be
+          blocked while trying to send additional log messages when the
+          collector has fallen behind.  In contrast, <application>syslog</application>
+          prefers to drop messages if it cannot write them, which means it
+          may fail to log some messages in such cases but it will not block
+          the rest of the system.
+         -->
+ログ収集機構はメッセージを決して失わないために設計されています。
+これは、極端に高い負荷の場合、サーバプロセスはコレクタが遅れをとった場合、追加のログメッセージを送信しようと試みる時に阻止される可能性があります。
+それとは対象的に<span class="application">syslog</span>は、もし書き込みができなかったときメッセージの廃棄を選びます。
+これらの場合にはいくつかのログメッセージを失うことになりますが、残ったシステムを阻止しません。
+        </p></div></dd><dt id="GUC-LOG-DIRECTORY"><span class="term"><code class="varname">log_directory</code> (<code class="type">string</code>)
+      <a id="id-1.6.6.11.3.4.3.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+       <!--
+        When <varname>logging_collector</varname> is enabled,
+        this parameter determines the directory in which log files will be created.
+        It can be specified as an absolute path, or relative to the
+        cluster data directory.
+        This parameter can only be set in the <filename>postgresql.conf</filename>
+        file or on the server command line.
+        The default is <literal>log</literal>.
+       -->
+       <code class="varname">logging_collector</code>を有効と設定した場合、このパラメータはログファイルが作成されるディレクトリを確定します。
+        ディレクトリは、絶対パス、もしくはデータベースクラスタのディレクトリに対する相対パスで指定することができます。
+        このパラメータは<code class="filename">postgresql.conf</code>ファイル、またはサーバコマンドラインからのみ設定可能です。
+デフォルトは<code class="literal">log</code>です。
+       </p></dd><dt id="GUC-LOG-FILENAME"><span class="term"><code class="varname">log_filename</code> (<code class="type">string</code>)
+      <a id="id-1.6.6.11.3.4.4.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+       <!--
+        When <varname>logging_collector</varname> is enabled,
+        this parameter sets the file names of the created log files.  The value
+        is treated as a <function>strftime</function> pattern,
+        so <literal>%</literal>-escapes can be used to specify time-varying
+        file names.  (Note that if there are
+        any time-zone-dependent <literal>%</literal>-escapes, the computation
+        is done in the zone specified
+        by <xref linkend="guc-log-timezone"/>.)
+        The supported <literal>%</literal>-escapes are similar to those
+        listed in the Open Group's <ulink
+        url="http://pubs.opengroup.org/onlinepubs/009695399/functions/strftime.html">strftime
+        </ulink> specification.
+        Note that the system's <function>strftime</function> is not used
+        directly, so platform-specific (nonstandard) extensions do not work.
+        The default is <literal>postgresql-%Y-%m-%d_%H%M%S.log</literal>.
+       -->
+       <code class="varname">logging_collector</code>が有効な場合、このパラメータは作成されたログファイルのファイル名を設定します。
+値は<code class="function">strftime</code>パターンとして扱われるため、<code class="literal">%</code>エスケープを使用して、時刻によって変動するファイル名を指定することができます。
+（時間帯に依存した<code class="literal">%</code>エスケープが存在する場合、<a class="xref" href="runtime-config-logging.html#GUC-LOG-TIMEZONE">log_timezone</a>で指定された時間帯で計算が行われます。）
+サポートされている<code class="literal">%</code>-エスケープは<a class="ulink" href="http://pubs.opengroup.org/onlinepubs/009695399/functions/strftime.html" target="_top">strftime</a> 仕様によく似ています。
+システムの<span class="systemitem">strftime</span>は直接使用されないので、プラットフォーム固有の（非標準）の拡張は動作しません。
+デフォルトは<code class="literal">postgresql-%Y-%m-%d_%H%M%S.log</code>です。
+       </p><p>
+       <!--
+        If you specify a file name without escapes, you should plan to
+        use a log rotation utility to avoid eventually filling the
+        entire disk.  In releases prior to 8.4, if
+        no <literal>%</literal> escapes were
+        present, <productname>PostgreSQL</productname> would append
+        the epoch of the new log file's creation time, but this is no
+        longer the case.
+       -->
+       エスケープすることなくファイル名を指定する場合、ディスク全体を使い切ってしまうことを防止するためにログローテーションを行うユーティリティを使用することを計画しなければなりません。
+       8.4より前のリリースの<span class="productname">PostgreSQL</span>では、<code class="literal">%</code>エスケープがなければ、新しいログファイルの生成時のエポック時刻を付与しますが、これはもはや当てはまりません。
+       </p><p>
+       <!--
+        If CSV-format output is enabled in <varname>log_destination</varname>,
+        <literal>.csv</literal> will be appended to the timestamped
+        log file name to create the file name for CSV-format output.
+        (If <varname>log_filename</varname> ends in <literal>.log</literal>, the suffix is
+        replaced instead.)
+       -->
+       CSV書式の出力が<code class="varname">log_destination</code>で有効な場合、タイムスタンプ付きのログファイル名に<code class="literal">.csv</code>を付与し、最終的なCSV書式出力用のファイル名が作成されます。
+（log_filenameが<code class="literal">.log</code>で終わる場合は後置詞が置き換えられます。）
+       </p><p>
+       <!--
+        This parameter can only be set in the <filename>postgresql.conf</filename>
+        file or on the server command line.
+       -->
+このパラメータは<code class="filename">postgresql.conf</code>ファイルか、サーバコマンドラインのみ設定可能です。
+       </p></dd><dt id="GUC-LOG-FILE-MODE"><span class="term"><code class="varname">log_file_mode</code> (<code class="type">integer</code>)
+      <a id="id-1.6.6.11.3.4.5.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+       <!--
+        On Unix systems this parameter sets the permissions for log files
+        when <varname>logging_collector</varname> is enabled. (On Microsoft
+        Windows this parameter is ignored.)
+        The parameter value is expected to be a numeric mode
+        specified in the format accepted by the
+        <function>chmod</function> and <function>umask</function>
+        system calls.  (To use the customary octal format the number
+        must start with a <literal>0</literal> (zero).)
+       -->
+       Unixシステムにおいては、<code class="varname">logging_collector</code>が有効になっている場合、このパラメータはログファイルのパーミッションを設定します。
+       （Microsoft Windowsではこのパラメータは無視されます。）
+       パラメータの値は<code class="function">chmod</code> および <code class="function">umask</code>システムコールで許容されるフォーマットで指定される数値モードであると期待されます。
+       （慣例的な8進数フォーマットを使用する場合、番号は<code class="literal">0</code>（ゼロ）で始まらなければなりません。
+       </p><p>
+       <!--
+        The default permissions are <literal>0600</literal>, meaning only the
+        server owner can read or write the log files.  The other commonly
+        useful setting is <literal>0640</literal>, allowing members of the owner's
+        group to read the files.  Note however that to make use of such a
+        setting, you'll need to alter <xref linkend="guc-log-directory"/> to
+        store the files somewhere outside the cluster data directory.  In
+        any case, it's unwise to make the log files world-readable, since
+        they might contain sensitive data.
+       -->
+       デフォルトのパーミッションは<code class="literal">0600</code>で、意味するところはサーバの所有者のみログファイルの読み書きが可能です。
+       そのほか一般的に実用的な設定は<code class="literal">0640</code>で、所有者のグループはファイルを読み込めます。
+       しかし、これらの設定を活用するには<a class="xref" href="runtime-config-logging.html#GUC-LOG-DIRECTORY">log_directory</a>がクラスタデータディレクトリの外部のどこかにあるファイルを格納できるように変更する必要があります。
+       </p><p>
+<!--
+        This parameter can only be set in the <filename>postgresql.conf</filename>
+        file or on the server command line.
+       -->
+       このパラメータは<code class="filename">postgresql.conf</code>ファイル、またはサーバコマンドラインからのみ設定可能です。
+       </p></dd><dt id="GUC-LOG-ROTATION-AGE"><span class="term"><code class="varname">log_rotation_age</code> (<code class="type">integer</code>)
+      <a id="id-1.6.6.11.3.4.6.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+       <!--
+        When <varname>logging_collector</varname> is enabled,
+        this parameter determines the maximum lifetime of an individual log file.
+        After this many minutes have elapsed, a new log file will
+        be created.  Set to zero to disable time-based creation of
+        new log files.
+        This parameter can only be set in the <filename>postgresql.conf</filename>
+        file or on the server command line.
+       -->
+       <code class="varname">logging_collector</code>が有効な場合、このパラメータは個々のログファイルの最大寿命を決定します。
+ここで指定した時間（分単位）経過すると、新しいログファイルが生成されます。
+ゼロに設定することで、時間に基づいた新しいログファイルの生成は無効になります。
+このパラメータは、<code class="filename">postgresql.conf</code>ファイル、または、サーバのコマンドラインでのみで設定されます。
+       </p></dd><dt id="GUC-LOG-ROTATION-SIZE"><span class="term"><code class="varname">log_rotation_size</code> (<code class="type">integer</code>)
+      <a id="id-1.6.6.11.3.4.7.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+       <!--
+        When <varname>logging_collector</varname> is enabled,
+        this parameter determines the maximum size of an individual log file.
+        After this many kilobytes have been emitted into a log file,
+        a new log file will be created.  Set to zero to disable size-based
+        creation of new log files.
+        This parameter can only be set in the <filename>postgresql.conf</filename>
+        file or on the server command line.
+       -->
+<code class="varname">logging_collector</code>が有効な場合、このパラメータは個々のログファイルの最大容量を決定します。
+ここで指定したキロバイト分ログファイルに出力された後、新しいログファイルが生成されます。
+ゼロに設定することで、サイズに基づいた新しいログファイルの生成は無効になります。
+このパラメータは<code class="filename">postgresql.conf</code>ファイル、または、サーバのコマンドラインでのみで設定されます。
+       </p></dd><dt id="GUC-LOG-TRUNCATE-ON-ROTATION"><span class="term"><code class="varname">log_truncate_on_rotation</code> (<code class="type">boolean</code>)
+      <a id="id-1.6.6.11.3.4.8.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+       <!--
+        When <varname>logging_collector</varname> is enabled,
+        this parameter will cause <productname>PostgreSQL</productname> to truncate (overwrite),
+        rather than append to, any existing log file of the same name.
+        However, truncation will occur only when a new file is being opened
+        due to time-based rotation, not during server startup or size-based
+        rotation.  When off, pre-existing files will be appended to in
+        all cases.  For example, using this setting in combination with
+        a <varname>log_filename</varname> like <literal>postgresql-%H.log</literal>
+        would result in generating twenty-four hourly log files and then
+        cyclically overwriting them.
+        This parameter can only be set in the <filename>postgresql.conf</filename>
+        file or on the server command line.
+       -->
+       <code class="varname">logging_collector</code>が有効な場合、このパラメータにより、<span class="productname">PostgreSQL</span>は既存の同名のファイルに追加するのではなく、そのファイルを切り詰める（上書きする）ようになります。
+しかし、切り詰めは時間を基にしたローテーションのために新規にファイルが開かれた時にのみ発生し、サーバ起動時やサイズを基にしたローテーションでは発生しません。
+偽の場合、全ての場合において既存のファイルは追記されます。
+例えば、この設定を<code class="literal">postgresql-%H.log</code>のような<code class="varname">log_filename</code>と組み合わせて使用すると、24個の時別のログファイルが生成され、それらは周期的に上書きされることになります。
+このパラメータは<code class="filename">postgresql.conf</code>ファイル、または、サーバのコマンドラインで設定されます。
+       </p><p>
+<!--
+        Example:  To keep 7 days of logs, one log file per day named
+        <literal>server_log.Mon</literal>, <literal>server_log.Tue</literal>,
+        etc, and automatically overwrite last week's log with this week's log,
+        set <varname>log_filename</varname> to <literal>server_log.%a</literal>,
+        <varname>log_truncate_on_rotation</varname> to <literal>on</literal>, and
+        <varname>log_rotation_age</varname> to <literal>1440</literal>.
+-->
+例：7日間のログを保存し、毎日のログを <code class="literal">server_log.Mon</code>、<code class="literal">server_log.Tue</code>、等とし、そして自動的に前週のログを今週のログで上書きするには以下のように設定します。
+<code class="varname">log_filename</code> を <code class="literal">server_log.%a</code>とし、<code class="varname">log_truncate_on_rotation</code> を <code class="literal">on</code>にし、そして<code class="varname">log_rotation_age</code> を <code class="literal">1440</code>に設定します。
+       </p><p>
+<!--
+        Example: To keep 24 hours of logs, one log file per hour, but
+        also rotate sooner if the log file size exceeds 1GB, set
+        <varname>log_filename</varname> to <literal>server_log.%H%M</literal>,
+        <varname>log_truncate_on_rotation</varname> to <literal>on</literal>,
+        <varname>log_rotation_age</varname> to <literal>60</literal>, and
+        <varname>log_rotation_size</varname> to <literal>1000000</literal>.
+        Including <literal>%M</literal> in <varname>log_filename</varname> allows
+        any size-driven rotations that might occur to select a file name
+        different from the hour's initial file name.
+-->
+例：24時間のログを保持、1時間おきに1つのログファイルを作成、ただし、ログファイルのサイズが1ギガバイトを超えた場合それより早く切り替えさせるには、<code class="varname">log_filename</code>を<code class="literal">server_log.%H%M</code>にし、<code class="varname">log_truncate_on_rotation</code>を<code class="literal">on</code>にし、<code class="varname">log_rotation_age</code>を<code class="literal">60</code>にし、そして<code class="varname">log_rotation_size</code>を<code class="literal">1000000</code>に設定します。
+<code class="varname">log_filename</code>に<code class="literal">%M</code>を含めると、サイズを元にしたローテーションが時間毎の始めのファイル名とは異なる名前のファイルを選択するようにできます。
+       </p></dd><dt id="GUC-SYSLOG-FACILITY"><span class="term"><code class="varname">syslog_facility</code> (<code class="type">enum</code>)
+      <a id="id-1.6.6.11.3.4.9.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+       <!--
+        When logging to <application>syslog</application> is enabled, this parameter
+        determines the <application>syslog</application>
+        <quote>facility</quote> to be used.  You can choose
+        from <literal>LOCAL0</literal>, <literal>LOCAL1</literal>,
+        <literal>LOCAL2</literal>, <literal>LOCAL3</literal>, <literal>LOCAL4</literal>,
+        <literal>LOCAL5</literal>, <literal>LOCAL6</literal>, <literal>LOCAL7</literal>;
+        the default is <literal>LOCAL0</literal>. See also the
+        documentation of your system's
+        <application>syslog</application> daemon.
+        This parameter can only be set in the <filename>postgresql.conf</filename>
+        file or on the server command line.
+       -->
+       <span class="application">syslog</span>へのログ取得が有効な場合、このパラメータは<span class="application">syslog</span>の<span class="quote">「<span class="quote">facility</span>」</span>が使われるように確定します。
+<code class="literal">LOCAL0</code>、<code class="literal">LOCAL1</code>、<code class="literal">LOCAL2</code>、<code class="literal">LOCAL3</code>、<code class="literal">LOCAL4</code>、<code class="literal">LOCAL5</code>、<code class="literal">LOCAL6</code>、<code class="literal">LOCAL7</code>の中から選んでください。
+デフォルトは<code class="literal">LOCAL0</code>です。
+使用しているシステムの<span class="application">syslog</span>デーモンの文書を同時に参照してください。
+このパラメータは<code class="filename">postgresql.conf</code>ファイル、または、サーバのコマンドラインでのみで設定されます。
+       </p></dd><dt id="GUC-SYSLOG-IDENT"><span class="term"><code class="varname">syslog_ident</code> (<code class="type">string</code>)
+      <a id="id-1.6.6.11.3.4.10.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+       <!--
+         When logging to <application>syslog</application> is enabled, this parameter
+         determines the program name used to identify
+         <productname>PostgreSQL</productname> messages in
+         <application>syslog</application> logs. The default is
+         <literal>postgres</literal>.
+         This parameter can only be set in the <filename>postgresql.conf</filename>
+         file or on the server command line.
+        -->
+        <span class="application">syslog</span>にログ取得が有効な場合、このパラメータは<span class="application">syslog</span>ログ内の<span class="productname">PostgreSQL</span>メッセージを特定するのに使用するプログラム名を確定します。デフォルトは<code class="literal">postgres</code>です。
+このパラメータは、<code class="filename">postgresql.conf</code>ファイル、または、サーバのコマンドラインでのみで設定されます。
+        </p></dd><dt id="GUC-SYSLOG-SEQUENCE-NUMBERS"><span class="term"><code class="varname">syslog_sequence_numbers</code> (<code class="type">boolean</code>)
+        <a id="id-1.6.6.11.3.4.11.1.3" class="indexterm"></a>
+       </span></dt><dd><p>
+<!--
+         When logging to <application>syslog</application> and this is on (the
+         default), then each message will be prefixed by an increasing
+         sequence number (such as <literal>[2]</literal>).  This circumvents
+         the <quote>&#045;&#045;- last message repeated N times &#045;&#045;-</quote> suppression
+         that many syslog implementations perform by default.  In more modern
+         syslog implementations, repeated message suppression can be configured
+         (for example, <literal>$RepeatedMsgReduction</literal>
+         in <productname>rsyslog</productname>), so this might not be
+         necessary.  Also, you could turn this off if you actually want to
+         suppress repeated messages.
+-->
+<span class="application">syslog</span>にログを出力している場合で、これがオン（デフォルト）であると、各メッセージには（<code class="literal">[2]</code>のような）増加する順序数が頭に追加されます。
+これにより、多くのsyslogの実装がデフォルトで行う<span class="quote">「<span class="quote">--- last message repeated N times ---</span>」</span>による出力の抑止が回避されます。
+より近代的なsyslogの実装では、繰り返されるメッセージの抑止は設定変更できるので（たとえば、<span class="productname">rsyslog</span>)における<code class="literal">$RepeatedMsgReduction</code>）、この機能は必要ないかもしれません。
+繰り返されるメッセージを抑止したい場合には、これをオフにできます。
+        </p><p>
+<!--
+         This parameter can only be set in the <filename>postgresql.conf</filename>
+         file or on the server command line.
+-->
+このパラメータは、<code class="filename">postgresql.conf</code>ファイル、または、サーバのコマンドラインでのみで設定されます。
+        </p></dd><dt id="GUC-SYSLOG-SPLIT-MESSAGES"><span class="term"><code class="varname">syslog_split_messages</code> (<code class="type">boolean</code>)
+      <a id="id-1.6.6.11.3.4.12.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+<!--
+        When logging to <application>syslog</application> is enabled, this parameter
+        determines how messages are delivered to syslog.  When on (the
+        default), messages are split by lines, and long lines are split so
+        that they will fit into 1024 bytes, which is a typical size limit for
+        traditional syslog implementations.  When off, PostgreSQL server log
+        messages are delivered to the syslog service as is, and it is up to
+        the syslog service to cope with the potentially bulky messages.
+-->
+<span class="application">syslog</span>へのログ出力が有効な場合、このパラメータはメッセージがどのようにsyslogに送られるかを規定します。
+オンなら（デフォルト）、メッセージは行に分割され、長い行は、伝統的なsyslog実装のサイズ上限である1024バイト以内に分割されます。
+オフならば、PostgreSQLサーバログメッセージは、そのままsyslogサービスに送られます。
+大きなサイズになるかもしれないメッセージにどう対応するかは、syslogサービス次第となります。
+       </p><p>
+<!--
+        If syslog is ultimately logging to a text file, then the effect will
+        be the same either way, and it is best to leave the setting on, since
+        most syslog implementations either cannot handle large messages or
+        would need to be specially configured to handle them.  But if syslog
+        is ultimately writing into some other medium, it might be necessary or
+        more useful to keep messages logically together.
+-->
+もしsyslogが最終的にテキストファイルにログを出力するのであれば、どちらに設定しても効果は同じです。
+設定値をオンにしておくのが最善です。
+多くのsyslogの実装では、長いメッセージを扱えないか、長いメッセージを扱うための特別な設定が必要だからです。
+しかし、syslogが最終的に他のメディアに書き込むのであれば、メッセージを論理的に一緒にしておくことが必要か、もしくは有用です。
+       </p><p>
+<!--
+        This parameter can only be set in the <filename>postgresql.conf</filename>
+        file or on the server command line.
+-->
+このパラメータは、<code class="filename">postgresql.conf</code>ファイル、または、サーバのコマンドラインでのみで設定されます。
+       </p></dd><dt id="GUC-EVENT-SOURCE"><span class="term"><code class="varname">event_source</code> (<code class="type">string</code>)
+      <a id="id-1.6.6.11.3.4.13.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+       <!--
+        When logging to <application>event log</application> is enabled, this parameter
+        determines the program name used to identify
+        <productname>PostgreSQL</productname> messages in
+        the log. The default is <literal>PostgreSQL</literal>.
+        This parameter can only be set in the <filename>postgresql.conf</filename>
+        file or on the server command line.
+       -->
+       <span class="application">event log</span>へのログ取得が有効になっていると、このパラメータはログ中の<span class="productname">PostgreSQL</span>メッセージを特定するのに使用されるプログラム名を決定します。デフォルトは<code class="literal">PostgreSQL</code>です。このパラメータは、<code class="filename">postgresql.conf</code>ファイル、または、サーバのコマンドラインでのみで設定されます。
+       </p></dd></dl></div></div><div class="sect2" id="RUNTIME-CONFIG-LOGGING-WHEN"><div class="titlepage"><div><div><h3 class="title">19.8.2. いつログを取得するか</h3></div></div></div><!--
+     <title>When To Log</title>
+     --><div class="variablelist"><dl class="variablelist"><dt id="GUC-LOG-MIN-MESSAGES"><span class="term"><code class="varname">log_min_messages</code> (<code class="type">enum</code>)
+      <a id="id-1.6.6.11.4.2.1.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+<!--
+        Controls which <link linkend="runtime-config-severity-levels">message
+        levels</link> are written to the server log.
+        Valid values are <literal>DEBUG5</literal>, <literal>DEBUG4</literal>,
+        <literal>DEBUG3</literal>, <literal>DEBUG2</literal>, <literal>DEBUG1</literal>,
+        <literal>INFO</literal>, <literal>NOTICE</literal>, <literal>WARNING</literal>,
+        <literal>ERROR</literal>, <literal>LOG</literal>, <literal>FATAL</literal>, and
+        <literal>PANIC</literal>.  Each level includes all the levels that
+        follow it.  The later the level, the fewer messages are sent
+        to the log.  The default is <literal>WARNING</literal>.  Note that
+        <literal>LOG</literal> has a different rank here than in
+        <xref linkend="guc-client-min-messages"/>.
+        Only superusers can change this setting.
+       -->
+どの<a class="link" href="runtime-config-logging.html#RUNTIME-CONFIG-SEVERITY-LEVELS" title="表19.1 メッセージ深刻度レベル">メッセージレベル</a>をサーバログに書き込むかを管理します。
+有効な値は<code class="literal">DEBUG5</code>、<code class="literal">DEBUG4</code>、<code class="literal">DEBUG3</code>、<code class="literal">DEBUG2</code>、<code class="literal">DEBUG1</code>、<code class="literal">INFO</code>、<code class="literal">NOTICE</code>、<code class="literal">WARNING</code>、<code class="literal">ERROR</code>、<code class="literal">LOG</code>、<code class="literal">FATAL</code>、および<code class="literal">PANIC</code>です。
+それぞれの階層はその下の全ての階層を含みます。階層を低くする程、より少ないメッセージがログに送られます。
+デフォルトは<code class="literal">WARNING</code>です。
+ここでの<code class="literal">LOG</code>の優先順位が<a class="xref" href="runtime-config-client.html#GUC-CLIENT-MIN-MESSAGES">client_min_messages</a>の場合と異なることに注意してください。
+スーパーユーザのみこの設定を変更できます。
+       </p></dd><dt id="GUC-LOG-MIN-ERROR-STATEMENT"><span class="term"><code class="varname">log_min_error_statement</code> (<code class="type">enum</code>)
+      <a id="id-1.6.6.11.4.2.2.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+       <!--
+        Controls which SQL statements that cause an error
+        condition are recorded in the server log.  The current
+        SQL statement is included in the log entry for any message of
+        the specified
+        <link linkend="runtime-config-severity-levels">severity</link>
+        or higher.
+        Valid values are <literal>DEBUG5</literal>,
+        <literal>DEBUG4</literal>, <literal>DEBUG3</literal>,
+        <literal>DEBUG2</literal>, <literal>DEBUG1</literal>,
+        <literal>INFO</literal>, <literal>NOTICE</literal>,
+        <literal>WARNING</literal>, <literal>ERROR</literal>,
+        <literal>LOG</literal>,
+        <literal>FATAL</literal>, and <literal>PANIC</literal>.
+        The default is <literal>ERROR</literal>, which means statements
+        causing errors, log messages, fatal errors, or panics will be logged.
+        To effectively turn off logging of failing statements,
+        set this parameter to <literal>PANIC</literal>.
+        Only superusers can change this setting.
+       -->
+エラー条件の原因となったどのSQL文をサーバログに記録するかを制御します。
+設定した<a class="link" href="runtime-config-logging.html#RUNTIME-CONFIG-SEVERITY-LEVELS" title="表19.1 メッセージ深刻度レベル">レベル</a>以上のメッセージについては現在のSQL文がログに記録されます。
+有効な値は、<code class="literal">DEBUG5</code>、<code class="literal">DEBUG4</code>、<code class="literal">DEBUG3</code>、<code class="literal">DEBUG2</code>、<code class="literal">DEBUG1</code>、<code class="literal">INFO</code>、<code class="literal">NOTICE</code>、<code class="literal">WARNING</code>、<code class="literal">ERROR</code>、<code class="literal">LOG</code>、<code class="literal">FATAL</code>、<code class="literal">PANIC</code>です。
+デフォルトは<code class="literal">ERROR</code>です。
+エラー、ログメッセージ、致命的エラー、パニックを引き起こした文がログに記録されることを意味します。
+失敗した文の記録を実質的に無効にするには、このパラメータを<code class="literal">PANIC</code>に設定してください。
+スーパーユーザのみがこのオプションを変更することができます。
+       </p></dd><dt id="GUC-LOG-MIN-DURATION-STATEMENT"><span class="term"><code class="varname">log_min_duration_statement</code> (<code class="type">integer</code>)
+      <a id="id-1.6.6.11.4.2.3.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+       <!--
+         Causes the duration of each completed statement to be logged
+         if the statement ran for at least the specified number of
+         milliseconds.  Setting this to zero prints all statement durations.
+         Minus-one (the default) disables logging statement durations.
+         For example, if you set it to <literal>250ms</literal>
+         then all SQL statements that run 250ms or longer will be
+         logged.  Enabling this parameter can be helpful in tracking down
+         unoptimized queries in your applications.
+         Only superusers can change this setting.
+        -->
+        文の実行に少なくとも指定したミリ秒数かかった場合、それぞれの文の実行に要した時間をログに記録します。
+0に設定すれば、すべての文の実行時間が出力されます。
+-1（デフォルト）は、文実行時間の記録を無効にします。
+例えば、<code class="literal">250ms</code>と設定した場合、250msもしくはそれ以上長くかかった全てのSQL文がログとして残ります。
+このパラメータを有効にすることにより、アプリケーションで最適化されていない問い合わせを追跡するのが便利になります。
+スーパーユーザのみこの設定を変更できます。
+        </p><p>
+       <!--
+         For clients using extended query protocol, durations of the Parse,
+         Bind, and Execute steps are logged independently.
+        -->
+        拡張問い合わせプロトコルを使用するクライアントでは、Parse、Bind、Executeそれぞれの段階で要した時間が独立して記録されます。
+        </p><div class="note"><h3 class="title">注記</h3><p>
+       <!--
+         When using this option together with
+         <xref linkend="guc-log-statement"/>,
+         the text of statements that are logged because of
+         <varname>log_statement</varname> will not be repeated in the
+         duration log message.
+         If you are not using <application>syslog</application>, it is recommended
+         that you log the PID or session ID using
+         <xref linkend="guc-log-line-prefix"/>
+         so that you can link the statement message to the later
+         duration message using the process ID or session ID.
+        -->
+        このオプションと<a class="xref" href="runtime-config-logging.html#GUC-LOG-STATEMENT">log_statement</a>を一緒に使用する時、<code class="varname">log_statement</code>によってログされるテキスト文は、実行時間のログには重複されません。
+<span class="application">syslog</span>を使用していなければ、プロセスIDとセッションIDを使用して、文メッセージと後の実行時間メッセージを関連付けできるように、<a class="xref" href="runtime-config-logging.html#GUC-LOG-LINE-PREFIX">log_line_prefix</a>を使用してPIDまたはセッションIDをログに記録することを勧めます。
+        </p></div></dd></dl></div><p>
+    <!--
+     <xref linkend="runtime-config-severity-levels"/> explains the message
+     severity levels used by <productname>PostgreSQL</productname>.  If logging output
+     is sent to <systemitem>syslog</systemitem> or Windows'
+     <systemitem>eventlog</systemitem>, the severity levels are translated
+     as shown in the table.
+     -->
+     <a class="xref" href="runtime-config-logging.html#RUNTIME-CONFIG-SEVERITY-LEVELS" title="表19.1 メッセージ深刻度レベル">表 19.1</a>で、<span class="productname">PostgreSQL</span>で使用されるメッセージ深刻度レベルを説明します。
+ログ出力が<span class="systemitem">syslog</span>またはWindowsの<span class="systemitem">eventlog</span>に送られる場合、この深刻度レベルは表で示すように変換されます。
+    </p><div class="table" id="RUNTIME-CONFIG-SEVERITY-LEVELS"><p class="title"><strong>表19.1 メッセージ深刻度レベル</strong></p><div class="table-contents"><!--
+     <title>Message Severity Levels</title>
+     --><table class="table" summary="メッセージ深刻度レベル" border="1"><colgroup><col /><col /><col /><col /></colgroup><thead><tr><th>深刻度</th><th>使用方法</th><th><span class="systemitem">syslog</span></th><th><span class="systemitem">eventlog</span></th></tr></thead><tbody><tr><td><code class="literal">DEBUG1..DEBUG5</code></td><td>開発者が使用する連続的かつより詳細な情報を提供します。</td><td><code class="literal">DEBUG</code></td><td><code class="literal">INFORMATION</code></td></tr><tr><td><code class="literal">INFO</code></td><td><code class="command">VACUUM VERBOSE</code>の出力などの、
+        ユーザによって暗黙的に要求された情報を提供します。</td><td><code class="literal">INFO</code></td><td><code class="literal">INFORMATION</code></td></tr><tr><td><code class="literal">NOTICE</code></td><td>長い識別子の切り詰めに関する注意など、
+        ユーザの補助になる情報を提供します。</td><td><code class="literal">NOTICE</code></td><td><code class="literal">INFORMATION</code></td></tr><tr><td><code class="literal">WARNING</code></td><td>トランザクションブロック外での<code class="command">COMMIT</code>の様な、
+        ユーザへの警告を提供します。</td><td><code class="literal">NOTICE</code></td><td><code class="literal">WARNING</code></td></tr><tr><td><code class="literal">ERROR</code></td><td>現在のコマンドを中断させる原因となったエラーを報告します。</td><td><code class="literal">WARNING</code></td><td><code class="literal">ERROR</code></td></tr><tr><td><code class="literal">LOG</code></td><td>チェックポイントの活動の様な、
+        管理者に関心のある情報を報告します。</td><td><code class="literal">INFO</code></td><td><code class="literal">INFORMATION</code></td></tr><tr><td><code class="literal">FATAL</code></td><td>現在のセッションを中断させる原因となったエラーを報告します。</td><td><code class="literal">ERR</code></td><td><code class="literal">ERROR</code></td></tr><tr><td><code class="literal">PANIC</code></td><td>全てのデータベースセッションを中断させる原因となったエラーを報告します。</td><td><code class="literal">CRIT</code></td><td><code class="literal">ERROR</code></td></tr></tbody></table></div></div><br class="table-break" /></div><div class="sect2" id="RUNTIME-CONFIG-LOGGING-WHAT"><div class="titlepage"><div><div><h3 class="title">19.8.3. 何をログに</h3></div></div></div><!--
+     <title>What To Log</title>
+     --><div class="variablelist"><dl class="variablelist"><dt id="GUC-APPLICATION-NAME"><span class="term"><code class="varname">application_name</code> (<code class="type">string</code>)
+      <a id="id-1.6.6.11.5.2.1.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+       <!--
+        The <varname>application_name</varname> can be any string of less than
+        <symbol>NAMEDATALEN</symbol> characters (64 characters in a standard build).
+        It is typically set by an application upon connection to the server.
+        The name will be displayed in the <structname>pg_stat_activity</structname> view
+        and included in CSV log entries.  It can also be included in regular
+        log entries via the <xref linkend="guc-log-line-prefix"/> parameter.
+        Only printable ASCII characters may be used in the
+        <varname>application_name</varname> value. Other characters will be
+        replaced with question marks (<literal>?</literal>).
+       -->
+<code class="varname">application_name</code>は<code class="symbol">NAMEDATALEN</code>（標準構築では64）文字以下の任意の文字列を指定できます。
+通常はサーバへの接続時にアプリケーションによって設定されます。
+この名前は <code class="structname">pg_stat_activity</code>ビューに表示され、CSVログに含まれます。
+また<a class="xref" href="runtime-config-logging.html#GUC-LOG-LINE-PREFIX">log_line_prefix</a>パラメータにより通常のログ項目に含めることができます。
+<code class="varname">application_name</code>には表示可能なASCII文字のみ使用することができ、それ以外の文字は疑問符（<code class="literal">?</code>）に置換されます。
+       </p></dd><dt><span class="term"><code class="varname">debug_print_parse</code> (<code class="type">boolean</code>)
+      <a id="id-1.6.6.11.5.2.2.1.3" class="indexterm"></a>
+      <br /></span><span class="term"><code class="varname">debug_print_rewritten</code> (<code class="type">boolean</code>)
+      <a id="id-1.6.6.11.5.2.2.2.3" class="indexterm"></a>
+      <br /></span><span class="term"><code class="varname">debug_print_plan</code> (<code class="type">boolean</code>)
+      <a id="id-1.6.6.11.5.2.2.3.3" class="indexterm"></a>
+      </span></dt><dd><p>
+       <!--
+        These parameters enable various debugging output to be emitted.
+        When set, they print the resulting parse tree, the query rewriter
+        output, or the execution plan for each executed query.
+        These messages are emitted at <literal>LOG</literal> message level, so by
+        default they will appear in the server log but will not be sent to the
+        client.  You can change that by adjusting
+        <xref linkend="guc-client-min-messages"/> and/or
+        <xref linkend="guc-log-min-messages"/>.
+        These parameters are off by default.
+       -->
+       これらのパラメータは生成される各種デバッグ出力を有効にします。
+       設定すると実行された問い合わせそれぞれに対し、最終的な解析ツリー、問い合わせリライタの出力、実行計画を出力します。
+       これらのメッセージは<code class="literal">LOG</code>メッセージレベルで出力されますので、デフォルトではサーバログに出力され、クライアントには渡されません。
+       <a class="xref" href="runtime-config-client.html#GUC-CLIENT-MIN-MESSAGES">client_min_messages</a>、<a class="xref" href="runtime-config-logging.html#GUC-LOG-MIN-MESSAGES">log_min_messages</a>またはその両方を調整することで変更することができます。
+       デフォルトではこれらのパラメータは無効です。
+       </p></dd><dt><span class="term"><code class="varname">debug_pretty_print</code> (<code class="type">boolean</code>)
+      <a id="id-1.6.6.11.5.2.3.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+       <!--
+        When set, <varname>debug_pretty_print</varname> indents the messages
+        produced by <varname>debug_print_parse</varname>,
+        <varname>debug_print_rewritten</varname>, or
+        <varname>debug_print_plan</varname>.  This results in more readable
+        but much longer output than the <quote>compact</quote> format used when
+        it is off.  It is on by default.
+       -->
+       設定された場合、<code class="varname">debug_print_parse</code>、
+       <code class="varname">debug_print_rewritten</code>、または
+        <code class="varname">debug_print_plan</code>で生成されたメッセージを字下げします。設定されない場合の<span class="quote">「<span class="quote">コンパクト</span>」</span>形式よりもより見やすく、しかしより長いものとなります。デフォルトは有効です。
+       </p></dd><dt id="GUC-LOG-CHECKPOINTS"><span class="term"><code class="varname">log_checkpoints</code> (<code class="type">boolean</code>)
+      <a id="id-1.6.6.11.5.2.4.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+       <!--
+        Causes checkpoints and restartpoints to be logged in the server log.
+        Some statistics are included in the log messages, including the number
+        of buffers written and the time spent writing them.
+        This parameter can only be set in the <filename>postgresql.conf</filename>
+        file or on the server command line. The default is off.
+       -->
+       チェックポイントおよびリスタートポイントをサーバログに記録するようにします。
+       書き出されたバッファ数や書き出しに要した時間など、いくつかの統計情報がこのログメッセージに含まれます。
+このパラメータは<code class="filename">postgresql.conf</code>ファイルまたはサーバのコマンドラインでのみ設定可能です。
+デフォルトはoffです。
+       </p></dd><dt id="GUC-LOG-CONNECTIONS"><span class="term"><code class="varname">log_connections</code> (<code class="type">boolean</code>)
+      <a id="id-1.6.6.11.5.2.5.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+       <!--
+        Causes each attempted connection to the server to be logged,
+        as well as successful completion of client authentication.
+        Only superusers can change this parameter at session start,
+        and it cannot be changed at all within a session.
+        The default is <literal>off</literal>.
+       -->
+       これにより、クライアント認証の成功終了などのサーバへの接続試行がログに残ります。
+スーパーユーザだけがセッション開始時にこのパラメータを変更でき、セッションが開始された後は変更できません。
+デフォルトは<code class="literal">off</code>です。
+       </p><div class="note"><h3 class="title">注記</h3><p>
+       <!--
+         Some client programs, like <application>psql</application>, attempt
+         to connect twice while determining if a password is required, so
+         duplicate <quote>connection received</quote> messages do not
+         necessarily indicate a problem.
+        -->
+        <span class="application">psql</span>などクライアントプログラムは、パスワードが要求されているかどうか確認するまで2回接続を試みるので、二重の<span class="quote">「<span class="quote">connection received</span>」</span>メッセージは必ずしも問題を示すものではありません。
+        </p></div></dd><dt id="GUC-LOG-DISCONNECTIONS"><span class="term"><code class="varname">log_disconnections</code> (<code class="type">boolean</code>)
+      <a id="id-1.6.6.11.5.2.6.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+       <!--
+        Causes session terminations to be logged.  The log output
+        provides information similar to <varname>log_connections</varname>,
+        plus the duration of the session.
+        Only superusers can change this parameter at session start,
+        and it cannot be changed at all within a session.
+        The default is <literal>off</literal>.
+       -->
+セッションの終了をログします。
+ログ出力の情報は<code class="varname">log_connections</code>と同様で、更にセッションの経過時間が追加されます。
+スーパーユーザだけがセッション開始時にこのパラメータを変更でき、セッションが開始された後は変更できません。
+デフォルトは<code class="literal">off</code>です。
+       </p></dd><dt id="GUC-LOG-DURATION"><span class="term"><code class="varname">log_duration</code> (<code class="type">boolean</code>)
+      <a id="id-1.6.6.11.5.2.7.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+       <!--
+        Causes the duration of every completed statement to be logged.
+        The default is <literal>off</literal>.
+        Only superusers can change this setting.
+       -->
+       すべての完了した文について、その経過時間をログするようにします。
+デフォルトは<code class="literal">off</code>です。
+スーパーユーザのみがこの設定を変更することができます。
+       </p><p>
+       <!--
+        For clients using extended query protocol, durations of the Parse,
+        Bind, and Execute steps are logged independently.
+       -->
+       拡張問い合わせプロトコルを使用するクライアントでは、Parse、Bind、Executeそれぞれの段階で要した時間が独立して記録されます。
+       </p><div class="note"><h3 class="title">注記</h3><p>
+       <!--
+         The difference between setting this option and setting
+         <xref linkend="guc-log-min-duration-statement"/> to zero is that
+         exceeding <varname>log_min_duration_statement</varname> forces the text of
+         the query to be logged, but this option doesn't.  Thus, if
+         <varname>log_duration</varname> is <literal>on</literal> and
+         <varname>log_min_duration_statement</varname> has a positive value, all
+         durations are logged but the query text is included only for
+         statements exceeding the threshold.  This behavior can be useful for
+         gathering statistics in high-load installations.
+        -->
+        このオプションと<a class="xref" href="runtime-config-logging.html#GUC-LOG-MIN-DURATION-STATEMENT">log_min_duration_statement</a>を0に設定する方法との違いは、<code class="varname">log_min_duration_statement</code>を超えた場合、テキスト版の問い合わせが強制的に出力されるのに対して、このオプションでは出力されないという点です。
+したがって、<code class="varname">log_duration</code>が<code class="literal">on</code>、かつ、<code class="varname">log_min_duration_statement</code>が正の値を持つ場合、すべての経過時間がログに記録されますが、閾値を超えた文のみがテキスト版の問い合わせが含められるようになります。
+この動作は、高負荷なインストレーションで統計情報を収集する際に有用です。
+        </p></div></dd><dt id="GUC-LOG-ERROR-VERBOSITY"><span class="term"><code class="varname">log_error_verbosity</code> (<code class="type">enum</code>)
+      <a id="id-1.6.6.11.5.2.8.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+       <!--
+        Controls the amount of detail written in the server log for each
+        message that is logged.  Valid values are <literal>TERSE</literal>,
+        <literal>DEFAULT</literal>, and <literal>VERBOSE</literal>, each adding more
+        fields to displayed messages.  <literal>TERSE</literal> excludes
+        the logging of <literal>DETAIL</literal>, <literal>HINT</literal>,
+        <literal>QUERY</literal>, and <literal>CONTEXT</literal> error information.
+        <literal>VERBOSE</literal> output includes the <symbol>SQLSTATE</symbol> error
+        code (see also <xref linkend="errcodes-appendix"/>) and the source code file name, function name,
+        and line number that generated the error.
+        Only superusers can change this setting.
+       -->
+       ログ取得されるそれぞれのメッセージに対し、サーバログに書き込まれる詳細の量を制御します。
+       有効な値は、<code class="literal">TERSE</code>、<code class="literal">DEFAULT</code>、および<code class="literal">VERBOSE</code>で、それぞれは表示されるメッセージにより多くのフィールドを追加します。
+       <code class="literal">TERSE</code>は<code class="literal">DETAIL</code>、<code class="literal">HINT</code>、<code class="literal">QUERY</code>、および<code class="literal">CONTEXT</code>エラー情報を除外します。
+       <code class="literal">VERBOSE</code>出力は、<code class="symbol">SQLSTATE</code>エラーコード（<a class="xref" href="errcodes-appendix.html" title="付録A PostgreSQLエラーコード">付録A</a>も参照）、および、ソースコードファイル名、関数名、そしてエラーを生成した行番号を含みます。
+       スーパーユーザのみこの設定を変更できます。
+       </p></dd><dt id="GUC-LOG-HOSTNAME"><span class="term"><code class="varname">log_hostname</code> (<code class="type">boolean</code>)
+      <a id="id-1.6.6.11.5.2.9.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+       <!--
+        By default, connection log messages only show the IP address of the
+        connecting host. Turning this parameter on causes logging of the
+        host name as well.  Note that depending on your host name resolution
+        setup this might impose a non-negligible performance penalty.
+        This parameter can only be set in the <filename>postgresql.conf</filename>
+        file or on the server command line.
+       -->
+       デフォルトでは、接続ログメッセージは接続元ホストのIPアドレスのみを表示します。
+このパラメータを有効にすると、ホスト名もログに残るようになります。
+ホスト名解決方法の設定に依存しますが、これが無視できないほどの性能劣化を起こす可能性があることに注意してください。
+このパラメータは<code class="filename">postgresql.conf</code>ファイル内またはサーバのコマンドラインでのみ設定可能です。
+       </p></dd><dt id="GUC-LOG-LINE-PREFIX"><span class="term"><code class="varname">log_line_prefix</code> (<code class="type">string</code>)
+      <a id="id-1.6.6.11.5.2.10.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+       <!--
+         This is a <function>printf</function>-style string that is output at the
+         beginning of each log line.
+         <literal>%</literal> characters begin <quote>escape sequences</quote>
+         that are replaced with status information as outlined below.
+         Unrecognized escapes are ignored. Other
+         characters are copied straight to the log line. Some escapes are
+         only recognized by session processes, and will be treated as empty by
+         background processes such as the main server process. Status
+         information may be aligned either left or right by specifying a
+         numeric literal after the % and before the option. A negative
+         value will cause the status information to be padded on the
+         right with spaces to give it a minimum width, whereas a positive
+         value will pad on the left. Padding can be useful to aid human
+         readability in log files.
+         This parameter can only be set in the <filename>postgresql.conf</filename>
+         file or on the server command line. The default is
+         <literal>'%m [%p] '</literal> which logs a time stamp and the process ID.
+         -->
+        これは、各ログ行の先頭に出力する<code class="function">printf</code>の書式文字列です。
+<code class="literal">%</code>から始まる<span class="quote">「<span class="quote">エスケープシーケンス</span>」</span>は、後述の通りのステータス情報で置き換えられます。
+この他のエスケープは無視されます。
+他の文字はそのままログ行に出力されます。
+エスケープの中には、セッションプロセスによってのみ認識可能なものがあり、これらはメインサーバプロセスなどのバックグラウンドプロセスでは空文字として扱われます。
+状態情報はオプション名の%の後か前に数字を指定することにより、左寄せまた右寄せにすることができます。
+数字が負ならば状態情報を右側に空白を詰めて最小限の幅にし、正の値は左に空白を詰めます。
+ログファイルではパディングは人間の視認性を向上させるので有用です。
+このパラメータは、<code class="filename">postgresql.conf</code>ファイル、または、サーバのコマンドラインでのみで設定することができます。
+デフォルトは、タイムスタンプとプロセスIDをログ出力する<code class="literal">'%m [%p] '</code>です。
+
+         </p><div class="informaltable"><table class="informaltable" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>エスケープ</th><th>効果</th><th>セッションのみ</th></tr></thead><tbody><tr><td><code class="literal">%a</code></td><td>アプリケーション名</td><td><!--yes-->○</td></tr><tr><td><code class="literal">%u</code></td><td>ユーザ名</td><td><!--yes-->○</td></tr><tr><td><code class="literal">%d</code></td><td>データベース名</td><td><!--yes-->○</td></tr><tr><td><code class="literal">%r</code></td><td>遠隔ホスト名、またはIPアドレス、およびポート番号</td><td><!--yes-->○</td></tr><tr><td><code class="literal">%h</code></td><td>遠隔ホスト名、またはIPアドレス</td><td><!--yes-->○</td></tr><tr><td><code class="literal">%p</code></td><td>プロセス識別子</td><td><!--no-->×</td></tr><tr><td><code class="literal">%t</code></td><td>ミリ秒無しのタイムスタンプ</td><td><!--no-->×</td></tr><tr><td><code class="literal">%m</code></td><td>ミリ秒付きタイムスタンプ</td><td><!--no-->×</td></tr><tr><td><code class="literal">%n</code></td><td>ミリ秒付きタイムスタンプ（Unixエポックとして）</td><td><!--no-->×</td></tr><tr><td><code class="literal">%i</code></td><td>コマンドタグ。セッションの現在のコマンド種類</td><td><!--yes-->○</td></tr><tr><td><code class="literal">%e</code></td><td>SQLSTATE エラーコード</td><td><!--no-->×</td></tr><tr><td><code class="literal">%c</code></td><td>セッションID。下記参照</td><td><!--no-->×</td></tr><tr><td><code class="literal">%l</code></td><td>各セッションまたは各プロセスのログ行の番号。1から始まります。</td><td><!--no-->×</td></tr><tr><td><code class="literal">%s</code></td><td>プロセスの開始タイムスタンプ</td><td><!--no-->×</td></tr><tr><td><code class="literal">%v</code></td><td>仮想トランザクションID（backendID/localXID）</td><td><!--no-->×</td></tr><tr><td><code class="literal">%x</code></td><td>トランザクションID （未割り当ての場合は0）</td><td><!--no-->×</td></tr><tr><td><code class="literal">%q</code></td><td>何も出力しません。
+            非セッションプロセスではこのエスケープ以降の出力を停止します。
+            セッションプロセスでは無視されます。</td><td><!--no-->×</td></tr><tr><td><code class="literal">%%</code></td><td><code class="literal">%</code>文字そのもの</td><td><!--no-->×</td></tr></tbody></table></div><p>
+
+        <!--
+         The <literal>%c</literal> escape prints a quasi-unique session identifier,
+         consisting of two 4-byte hexadecimal numbers (without leading zeros)
+         separated by a dot.  The numbers are the process start time and the
+         process ID, so <literal>%c</literal> can also be used as a space saving way
+         of printing those items.  For example, to generate the session
+         identifier from <literal>pg_stat_activity</literal>, use this query:
+        -->
+        <code class="literal">%c</code>エスケープは、2つの4バイトの16進数（先頭のゼロは省略）をドットで区切った構成の、準一意なセッション識別子を表示します。
+この数値はプロセスの起動時間とそのプロセスIDです。
+したがって、<code class="literal">%c</code>を使用して、これらの項目を出力するための文字数を省略することができます。例として、<code class="literal">pg_stat_activity</code>からセッション識別子を生成するには以下の問い合わせを行ないます。
+</p><pre class="programlisting">
+SELECT to_hex(trunc(EXTRACT(EPOCH FROM backend_start))::integer) || '.' ||
+       to_hex(pid)
+FROM pg_stat_activity;
+</pre><p>
+
+       </p><div class="tip"><h3 class="title">ヒント</h3><p>
+       <!--
+         If you set a nonempty value for <varname>log_line_prefix</varname>,
+         you should usually make its last character be a space, to provide
+         visual separation from the rest of the log line.  A punctuation
+         character can be used too.
+        -->
+        <code class="varname">log_line_prefix</code>に空白文字以外の値を設定する場合、通常、ログ行の残りとの区切りを明確にするために、その最後の文字を空白文字にすべきです。
+句読点用の文字も使用できます。
+        </p></div><div class="tip"><h3 class="title">ヒント</h3><p>
+       <!--
+         <application>Syslog</application> produces its own
+         time stamp and process ID information, so you probably do not want to
+         include those escapes if you are logging to <application>syslog</application>.
+        -->
+        <span class="application">Syslog</span>は独自にタイムスタンプとプロセスID情報を生成します。
+ですのでおそらく、<span class="application">Syslog</span>にログを保管する場合は、こうしたエスケープを含めるとは考えないでしょう。
+        </p></div><div class="tip"><h3 class="title">ヒント</h3><p>
+<!--
+         The <literal>%q</literal> escape is useful when including information that is
+         only available in session (backend) context like user or database
+         name.  For example:
+-->
+<code class="literal">%q</code>エスケープは、ユーザやデータベース名のように、セッション（バックエンド）コンテキストでのみ存在する情報を含める場合に有用です。
+<code class="literal">%q</code>
+</p><pre class="programlisting">
+log_line_prefix = '%m [%p] %q%u@%d/%a '
+</pre><p>
+        </p></div></dd><dt id="GUC-LOG-LOCK-WAITS"><span class="term"><code class="varname">log_lock_waits</code> (<code class="type">boolean</code>)
+      <a id="id-1.6.6.11.5.2.11.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+       <!--
+        Controls whether a log message is produced when a session waits
+        longer than <xref linkend="guc-deadlock-timeout"/> to acquire a
+        lock.  This is useful in determining if lock waits are causing
+        poor performance.  The default is <literal>off</literal>.
+        Only superusers can change this setting.
+       -->
+セッションがロックの獲得までの間に<a class="xref" href="runtime-config-locks.html#GUC-DEADLOCK-TIMEOUT">deadlock_timeout</a>より長く待機する場合にログメッセージを生成するかどうかを制御します。
+これは、ロック待ちによって性能がでていないのかどうか確認する時に有用です。
+デフォルトは<code class="literal">off</code>です。
+スーパーユーザのみこの設定を変更できます。
+       </p></dd><dt id="GUC-LOG-STATEMENT"><span class="term"><code class="varname">log_statement</code> (<code class="type">enum</code>)
+      <a id="id-1.6.6.11.5.2.12.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+       <!--
+        Controls which SQL statements are logged. Valid values are
+        <literal>none</literal> (off), <literal>ddl</literal>, <literal>mod</literal>, and
+        <literal>all</literal> (all statements). <literal>ddl</literal> logs all data definition
+        statements, such as <command>CREATE</command>, <command>ALTER</command>, and
+        <command>DROP</command> statements. <literal>mod</literal> logs all
+        <literal>ddl</literal> statements, plus data-modifying statements
+        such as <command>INSERT</command>,
+        <command>UPDATE</command>, <command>DELETE</command>, <command>TRUNCATE</command>,
+        and <command>COPY FROM</command>.
+        <command>PREPARE</command>, <command>EXECUTE</command>, and
+        <command>EXPLAIN ANALYZE</command> statements are also logged if their
+        contained command is of an appropriate type.  For clients using
+        extended query protocol, logging occurs when an Execute message
+        is received, and values of the Bind parameters are included
+        (with any embedded single-quote marks doubled).
+       -->
+       どのSQL文をログに記録するかを制御します。
+有効な値は、<code class="literal">none</code>（off）、<code class="literal">ddl</code>、<code class="literal">mod</code>、および<code class="literal">all</code>（全てのメッセージ）です。
+<code class="literal">ddl</code>は、<code class="literal">CREATE</code>、<code class="literal">ALTER</code>、および<code class="literal">DROP</code>文といった、データ定義文を全てログに記録します。
+<code class="literal">mod</code>は、全ての<code class="literal">ddl</code>文に加え、<code class="literal">INSERT</code>、<code class="literal">UPDATE</code>、<code class="literal">DELETE</code>、<code class="literal">TRUNCATE</code>、および<code class="literal">COPY FROM</code>といった、データ変更文をログに記録します。
+<code class="literal">PREPARE</code>と<code class="literal">EXPLAIN ANALYZE</code>コマンドも、そこに含まれるコマンドが適切な種類であればログが録られます。
+拡張問い合わせプロトコルを使用するクライアントでは、Executeメッセージを受け取った時にBindパラメータの値が（すべての単一引用符が二重にされた状態で）含まれていた場合、ログに記録されます。
+       </p><p>
+       <!--
+        The default is <literal>none</literal>. Only superusers can change this
+        setting.
+       -->
+       デフォルトは<code class="literal">none</code>です。スーパーユーザのみこの設定を変更できます。
+       </p><div class="note"><h3 class="title">注記</h3><p>
+       <!--
+         Statements that contain simple syntax errors are not logged
+         even by the <varname>log_statement</varname> = <literal>all</literal> setting,
+         because the log message is emitted only after basic parsing has
+         been done to determine the statement type.  In the case of extended
+         query protocol, this setting likewise does not log statements that
+         fail before the Execute phase (i.e., during parse analysis or
+         planning).  Set <varname>log_min_error_statement</varname> to
+         <literal>ERROR</literal> (or lower) to log such statements.
+        -->
+        ログメッセージの発行は、基本解析により文の種類が決まった後に行われますので、<code class="varname">log_statement</code> = <code class="literal">all</code>という設定を行ったとしても、単純な構文エラーを持つ文は記録されません。
+拡張問い合わせプロトコルの場合も同様に、この設定ではExecute段階以前（つまり、解析や計画作成期間）に失敗した文は記録されません。
+こうした文のログを記録するには、<code class="varname">log_min_error_statement</code>を<code class="literal">ERROR</code>（以下）に設定してください。
+        </p></div></dd><dt id="GUC-LOG-REPLICATION-COMMANDS"><span class="term"><code class="varname">log_replication_commands</code> (<code class="type">boolean</code>)
+      <a id="id-1.6.6.11.5.2.13.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+<!--
+        Causes each replication command to be logged in the server log.
+        See <xref linkend="protocol-replication"/> for more information about
+        replication command. The default value is <literal>off</literal>.
+        Only superusers can change this setting.
+-->
+サーバログにレプリケーションコマンドを記録します。
+レプリケーションコマンドの更なる情報は<a class="xref" href="protocol-replication.html" title="53.4. ストリーミングレプリケーションプロトコル">53.4</a>をご覧ください。
+デフォルト値は<code class="literal">off</code>です。
+スーパーユーザだけがこの設定を変更できます。
+       </p></dd><dt id="GUC-LOG-TEMP-FILES"><span class="term"><code class="varname">log_temp_files</code> (<code class="type">integer</code>)
+      <a id="id-1.6.6.11.5.2.14.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+       <!--
+        Controls logging of temporary file names and sizes.
+        Temporary files can be
+        created for sorts, hashes, and temporary query results.
+        A log entry is made for each temporary file when it is deleted.
+        A value of zero logs all temporary file information, while positive
+        values log only files whose size is greater than or equal to
+        the specified number of kilobytes.  The
+        default setting is -1, which disables such logging.
+        Only superusers can change this setting.
+       -->
+       一時ファイルのファイル名とサイズのログ出力を制御します。
+一時ファイルはソート処理やハッシュ処理、一時的な問い合わせの結果のために作成されます。
+ログの項目はすべての一時ファイルそれぞれについて削除されたときに生成されます。
+0を指定すると、すべての一時ファイル情報のログが残ります。
+正の数を指定すると、指定した値のキロバイト以上の容量のファイルのみがログに残ります。
+デフォルトの設定は-1で、このログ出力を無効にします。
+スーパーユーザのみがこの設定を変更できます。
+       </p></dd><dt id="GUC-LOG-TIMEZONE"><span class="term"><code class="varname">log_timezone</code> (<code class="type">string</code>)
+      <a id="id-1.6.6.11.5.2.15.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+       <!--
+        Sets the time zone used for timestamps written in the server log.
+        Unlike <xref linkend="guc-timezone"/>, this value is cluster-wide,
+        so that all sessions will report timestamps consistently.
+        The built-in default is <literal>GMT</literal>, but that is typically
+        overridden in <filename>postgresql.conf</filename>; <application>initdb</application>
+        will install a setting there corresponding to its system environment.
+        See <xref linkend="datatype-timezones"/> for more information.
+        This parameter can only be set in the <filename>postgresql.conf</filename>
+        file or on the server command line.
+       -->
+サーバログに書き出す際に使用される時間帯を設定します。
+<a class="xref" href="runtime-config-client.html#GUC-TIMEZONE">TimeZone</a>と異なり、すべてのセッションで一貫性を持ってタイムスタンプが報告されるようにこの値はクラスタ全体に適用されます。
+組み込まれているデフォルトは<code class="literal">GMT</code>ですが、<code class="filename">postgresql.conf</code>により通常は上書きされます。<span class="application">initdb</span>によりこれらと関連した設定をシステム環境にインストールされます。
+詳細は<a class="xref" href="datatype-datetime.html#DATATYPE-TIMEZONES" title="8.5.3. 時間帯">8.5.3</a>を参照してください。
+このパラメータは<code class="filename">postgresql.conf</code>ファイル内またはサーバのコマンドラインでのみ設定することができます。
+       </p></dd></dl></div></div><div class="sect2" id="RUNTIME-CONFIG-LOGGING-CSVLOG"><div class="titlepage"><div><div><h3 class="title">19.8.4. CSV書式のログ出力の利用</h3></div></div></div><!--
+     <title>Using CSV-Format Log Output</title>
+     --><p>
+       <!--
+        Including <literal>csvlog</literal> in the <varname>log_destination</varname> list
+        provides a convenient way to import log files into a database table.
+        This option emits log lines in comma-separated-values
+        (<acronym>CSV</acronym>) format,
+        with these columns:
+        time stamp with milliseconds,
+        user name,
+        database name,
+        process ID,
+        client host:port number,
+        session ID,
+        per-session line number,
+        command tag,
+        session start time,
+        virtual transaction ID,
+        regular transaction ID,
+        error severity,
+        SQLSTATE code,
+        error message,
+        error message detail,
+        hint,
+        internal query that led to the error (if any),
+        character count of the error position therein,
+        error context,
+        user query that led to the error (if any and enabled by
+        <varname>log_min_error_statement</varname>),
+        character count of the error position therein,
+        location of the error in the PostgreSQL source code
+        (if <varname>log_error_verbosity</varname> is set to <literal>verbose</literal>),
+        and application name.
+        Here is a sample table definition for storing CSV-format log output:
+       -->
+       <code class="varname">log_destination</code>リストに<code class="literal">csvlog</code>を含めることは、ログファイルをデータベーステーブルにインポートする簡便な方法を提供します。このオプションはカンマ区切り値書式（<acronym class="acronym">CSV</acronym>）で以下の列を含むログ行を生成します。
+        ミリ秒単位のtimestamp、
+        ユーザ名、
+        データベース名、
+        プロセス識別子、
+        クライアントホスト：ポート番号、
+        セッション識別子、
+        セッション前行番号、
+        コマンドタグ、
+        セッション開始時間、
+        仮想トランザクション識別子、
+        通常トランザクション識別子、
+        エラーの深刻度、
+        SQL状態コード、
+        エラーメッセージ、
+        詳細エラーメッセージ、
+        ヒント、
+        エラーとなった内部的な問い合わせ（もしあれば）、
+        内部問い合わせにおけるエラー位置の文字数、
+        エラーの文脈、
+        PostgreSQLソースコード上のエラー発生場所（<code class="varname">log_error_verbosity</code>が<code class="literal">verbose</code>に設定されているならば）
+        アプリケーション名。
+以下にcsvlog出力を格納するためのテーブル定義のサンプルを示します。
+
+</p><pre class="programlisting">
+CREATE TABLE postgres_log
+(
+  log_time timestamp(3) with time zone,
+  user_name text,
+  database_name text,
+  process_id integer,
+  connection_from text,
+  session_id text,
+  session_line_num bigint,
+  command_tag text,
+  session_start_time timestamp with time zone,
+  virtual_transaction_id text,
+  transaction_id bigint,
+  error_severity text,
+  sql_state_code text,
+  message text,
+  detail text,
+  hint text,
+  internal_query text,
+  internal_query_pos integer,
+  context text,
+  query text,
+  query_pos integer,
+  location text,
+  application_name text,
+  PRIMARY KEY (session_id, session_line_num)
+);
+</pre><p>
+       </p><p>
+       <!--
+        To import a log file into this table, use the <command>COPY FROM</command>
+        command:
+       -->
+       このテーブルにインポートするためには、<code class="command">COPY FROM</code>コマンドを使用してください。
+
+</p><pre class="programlisting">
+COPY postgres_log FROM '/full/path/to/logfile.csv' WITH csv;
+</pre><p>
+       </p><p>
+       <!--
+       There are a few things you need to do to simplify importing CSV log
+       files:
+       -->
+       CSVログファイルをインポートする作業を単純にするためにいくつか必要な作業があります。
+
+       </p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p>
+          <!--
+            Set <varname>log_filename</varname> and
+            <varname>log_rotation_age</varname> to provide a consistent,
+            predictable naming scheme for your log files.  This lets you
+            predict what the file name will be and know when an individual log
+            file is complete and therefore ready to be imported.
+           -->
+           一貫性があり、予測可能なログファイル命名機構を提供するために、<code class="varname">log_filename</code>および<code class="varname">log_rotation_age</code>を設定してください。
+これによりどのようなファイル名になると、個々のログファイルが完了しインポートする準備が整ったかが推測できるようになります。
+         </p></li><li class="listitem"><p>
+          <!--
+            Set <varname>log_rotation_size</varname> to 0 to disable
+            size-based log rotation, as it makes the log file name difficult
+            to predict.
+           -->
+           ログファイル名の予測が困難になりますので、<code class="varname">log_rotation_size</code>を0にして容量を基にしたログの回転を無効にしてください。
+           </p></li><li class="listitem"><p>
+<!--
+           Set <varname>log_truncate_on_rotation</varname> to <literal>on</literal> so
+           that old log data isn't mixed with the new in the same file.
+-->
+同じファイルに古いログデータと新しいログデータが混在しないようにするために、<code class="varname">log_truncate_on_rotation</code>を<code class="literal">on</code>に設定してください。
+          </p></li><li class="listitem"><p>
+         <!--
+           The table definition above includes a primary key specification.
+           This is useful to protect against accidentally importing the same
+           information twice.  The <command>COPY</command> command commits all of the
+           data it imports at one time, so any error will cause the entire
+           import to fail.  If you import a partial log file and later import
+           the file again when it is complete, the primary key violation will
+           cause the import to fail.  Wait until the log is complete and
+           closed before importing.  This procedure will also protect against
+           accidentally importing a partial line that hasn't been completely
+           written, which would also cause <command>COPY</command> to fail.
+          -->
+          上のテーブル定義には主キーの指定が含まれています。
+これにより、同じ情報が2回インポートされる事故を防止するために有用です。
+<code class="command">COPY</code>コマンドは、一度にインポートするすべてのデータをコミットしますので、何か1つでもエラーがあればインポート全体が失敗します。
+ログファイルの一部をインポートし、そのファイルが完了した後に再度インポートしようとした場合、主キー違反によりインポートが失敗します。
+インポートする前に、ログファイルの完了を待ち、閉じるまで待機してください。
+この手順は、<code class="command">COPY</code>が失敗する原因となる、完全に書き込まれなかった欠落した行をインポートするという事故も防止します。
+          </p></li></ol></div><p>
+      </p></div><div class="sect2" id="id-1.6.6.11.7"><div class="titlepage"><div><div><h3 class="title">19.8.5. プロセスの表題</h3></div></div></div><!--
+    <title>Process Title</title>
+--><p>
+<!--
+     These settings control how process titles of server processes are
+     modified.  Process titles are typically viewed using programs like
+     <application>ps</application> or, on Windows, <application>Process Explorer</application>.
+     See <xref linkend="monitoring-ps"/> for details.
+-->
+これらの設定項目は、<code class="command">ps</code>で見えるサーバプロセスの表題を変更します。
+プロセスの表題は、典型的には<span class="application">ps</span>、あるいはWindowsにおいては<span class="application">Process Explorer</span>で見ることができます。
+詳細については、<a class="xref" href="monitoring-ps.html" title="28.1. 標準的なUnixツール">28.1</a>を参照してください。
+    </p><div class="variablelist"><dl class="variablelist"><dt id="GUC-CLUSTER-NAME"><span class="term"><code class="varname">cluster_name</code> (<code class="type">string</code>)
+      <a id="id-1.6.6.11.7.3.1.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+<!--
+        Sets the cluster name that appears in the process title for all
+        server processes in this cluster. The name can be any string of less
+        than <symbol>NAMEDATALEN</symbol> characters (64 characters in a standard
+        build). Only printable ASCII characters may be used in the
+        <varname>cluster_name</varname> value. Other characters will be
+        replaced with question marks (<literal>?</literal>).  No name is shown
+        if this parameter is set to the empty string <literal>''</literal> (which is
+        the default). This parameter can only be set at server start.
+-->
+このクラスタ内のすべてのサーバプロセス表題にクラスタ名を設定します。
+クラスタ名は<code class="symbol">NAMEDATALEN</code>文字(標準のビルドでは64文字)より少ない文字列です。
+表示可能なASCII文字だけが<code class="varname">cluster_name</code>の値として設定できます。
+他の文字は、疑問符(<code class="literal">?</code>)に置き換えられます。
+空文字<code class="literal">''</code>(これがデフォルト値です)が設定されると、クラスタ名は表示されません。
+このパラメータはサーバ起動時にのみ設定できます。
+       </p></dd><dt id="GUC-UPDATE-PROCESS-TITLE"><span class="term"><code class="varname">update_process_title</code> (<code class="type">boolean</code>)
+      <a id="id-1.6.6.11.7.3.2.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+<!--
+        Enables updating of the process title every time a new SQL command
+        is received by the server.
+        This setting defaults to <literal>on</literal> on most platforms, but it
+        defaults to <literal>off</literal> on Windows due to that platform's larger
+        overhead for updating the process title.
+        Only superusers can change this setting.
+-->
+サーバが新しいSQLコマンドを受け取る時に毎回、プロセスタイトルを更新できるようにします。
+この設定値はたいていのプラットフォームで<code class="literal">on</code>がデフォルトになっていますが、Windowsではプロセスタイトルを更新するオーバヘッドが大きいため、<code class="literal">off</code>がデフォルトになっています。
+スーパーユーザのみがこの設定を変更することができます。
+       </p></dd></dl></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="runtime-config-query.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="runtime-config.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="runtime-config-statistics.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">19.7. 問い合わせ計画 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 19.9. 実行時統計情報</td></tr></table></div></body></html>

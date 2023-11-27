@@ -1,0 +1,1147 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>28.4. 進捗状況のレポート</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="monitoring-locks.html" title="28.3. ロックの表示" /><link rel="next" href="dynamic-trace.html" title="28.5. 動的追跡" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="monitoring.html" title="第28章 データベース活動状況の監視">第28章 データベース活動状況の監視</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : progress-reporting.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="monitoring-locks.html" title="28.3. ロックの表示">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="monitoring.html" title="第28章 データベース活動状況の監視">上へ</a></td><td width="60%" align="center">28.4. 進捗状況のレポート</td><td width="20%" align="right"> <a accesskey="n" href="dynamic-trace.html" title="28.5. 動的追跡">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PROGRESS-REPORTING"><div class="titlepage"><div><div><h2 class="title" style="clear: both">28.4. 進捗状況のレポート</h2></div></div></div><span class="original">
+  &lt;title&gt;Progress Reporting&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; has the ability to report the progress of
+   certain commands during command execution.  Currently, the only commands
+   which support progress reporting are &lt;command&gt;ANALYZE&lt;/command&gt;,
+   &lt;command&gt;CLUSTER&lt;/command&gt;,
+   &lt;command&gt;CREATE INDEX&lt;/command&gt;, &lt;command&gt;VACUUM&lt;/command&gt;,
+   &lt;command&gt;COPY&lt;/command&gt;,
+   and &lt;xref linkend="protocol-replication-base-backup"/&gt; (i.e., replication
+   command that &lt;xref linkend="app-pgbasebackup"/&gt; issues to take
+   a base backup).
+   This may be expanded in the future.
+</span>
+<span class="productname">PostgreSQL</span>は、何らかのコマンドの実行中に進捗状況をレポートする能力があります。
+現在、進捗状況のレポートをサポートしているのは、<code class="command">ANALYZE</code>、<code class="command">CLUSTER</code>、<code class="command">CREATE INDEX</code>、<code class="command">VACUUM</code>、<code class="command">COPY</code>、および、<a class="xref" href="protocol-replication.html#PROTOCOL-REPLICATION-BASE-BACKUP">BASE_BACKUP</a>(すなわち、<a class="xref" href="app-pgbasebackup.html" title="pg_basebackup"><span class="refentrytitle"><span class="application">pg_basebackup</span></span></a>がベースバックアップのために発行するレプリケーションコマンド)のみです。
+将来的にサポートされるコマンドが拡大される可能性があります。
+  </p><div class="sect2" id="ANALYZE-PROGRESS-REPORTING"><div class="titlepage"><div><div><h3 class="title">28.4.1. ANALYZEの進捗状況のレポート</h3></div></div></div><span class="original">
+  &lt;title&gt;ANALYZE Progress Reporting&lt;/title&gt;
+</span><a id="id-1.6.15.11.3.2" class="indexterm"></a><p>
+<span class="original">
+   Whenever &lt;command&gt;ANALYZE&lt;/command&gt; is running, the
+   &lt;structname&gt;pg_stat_progress_analyze&lt;/structname&gt; view will contain a
+   row for each backend that is currently running that command.  The tables
+   below describe the information that will be reported and provide
+   information about how to interpret it.
+</span>
+<code class="command">ANALYZE</code>が実行されているときにはいつでも、<code class="structname">pg_stat_progress_analyze</code>ビューには現在コマンドを実行している各バックエンドごとの行が含まれます。
+以下の表は、報告される情報を説明し、どのように解釈するかの情報を提供します。
+  </p><div class="table" id="PG-STAT-PROGRESS-ANALYZE-VIEW"><p class="title"><strong>表28.36 <code class="structname">pg_stat_progress_analyze</code>ビュー</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;&lt;structname&gt;pg_stat_progress_analyze&lt;/structname&gt; View&lt;/title&gt;
+</span><table class="table" summary="pg_stat_progress_analyzeビュー" border="1"><colgroup><col /></colgroup><thead><tr><th class="catalog_table_entry"><p class="column_definition">
+<span class="original">
+       Column Type
+</span>
+列 型
+      </p>
+      <p>
+<span class="original">
+       Description
+</span>
+説明
+      </p></th></tr></thead><tbody><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">pid</code> <code class="type">integer</code>
+      </p>
+      <p>
+<span class="original">
+       Process ID of backend.
+</span>
+バックエンドのプロセスIDです。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">datid</code> <code class="type">oid</code>
+      </p>
+      <p>
+<span class="original">
+       OID of the database to which this backend is connected.
+</span>
+バックエンドが接続されているデータベースのOIDです。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">datname</code> <code class="type">name</code>
+      </p>
+      <p>
+<span class="original">
+       Name of the database to which this backend is connected.
+</span>
+バックエンドが接続されているデータベース名です。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">relid</code> <code class="type">oid</code>
+      </p>
+      <p>
+<span class="original">
+       OID of the table being analyzed.
+</span>
+解析されているテーブルのOIDです。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">phase</code> <code class="type">text</code>
+      </p>
+      <p>
+<span class="original">
+       Current processing phase. See &lt;xref linkend="analyze-phases"/&gt;.
+</span>
+現在処理中のフェーズです。
+<a class="xref" href="progress-reporting.html#ANALYZE-PHASES" title="表28.37 ANALYZEのフェーズ">表 28.37</a>を参照してください。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">sample_blks_total</code> <code class="type">bigint</code>
+      </p>
+      <p>
+<span class="original">
+       Total number of heap blocks that will be sampled.
+</span>
+サンプルされるヒープブロックの総数です。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">sample_blks_scanned</code> <code class="type">bigint</code>
+      </p>
+      <p>
+<span class="original">
+       Number of heap blocks scanned.
+</span>
+スキャンされたヒープブロックの数です。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">ext_stats_total</code> <code class="type">bigint</code>
+      </p>
+      <p>
+<span class="original">
+       Number of extended statistics.
+</span>
+拡張統計情報の個数です。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">ext_stats_computed</code> <code class="type">bigint</code>
+      </p>
+      <p>
+<span class="original">
+       Number of extended statistics computed. This counter only advances
+       when the phase is &lt;literal&gt;computing extended statistics&lt;/literal&gt;.
+</span>
+計算された拡張統計情報の個数です。
+このカウンタはフェーズが<code class="literal">computing extended statistics</code>の時にのみ増加します。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">child_tables_total</code> <code class="type">bigint</code>
+      </p>
+      <p>
+<span class="original">
+       Number of child tables.
+</span>
+子テーブルの数です。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">child_tables_done</code> <code class="type">bigint</code>
+      </p>
+      <p>
+<span class="original">
+       Number of child tables scanned. This counter only advances when the
+       phase is &lt;literal&gt;acquiring inherited sample rows&lt;/literal&gt;.
+</span>
+スキャンされた子テーブルの数です。
+このカウンタはフェーズが<code class="literal">acquiring inherited sample rows</code>の時にのみ増加します。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">current_child_table_relid</code> <code class="type">oid</code>
+      </p>
+      <p>
+<span class="original">
+       OID of the child table currently being scanned. This field is
+       only valid when the phase is
+       &lt;literal&gt;acquiring inherited sample rows&lt;/literal&gt;.
+</span>
+現在スキャンされている子テーブルのOIDです。
+このフィールドはフェーズが<code class="literal">acquiring inherited sample rows</code>の時のみ有効です。
+      </p></td></tr></tbody></table></div></div><br class="table-break" /><div class="table" id="ANALYZE-PHASES"><p class="title"><strong>表28.37 ANALYZEのフェーズ</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;ANALYZE Phases&lt;/title&gt;
+</span><table class="table" summary="ANALYZEのフェーズ" border="1"><colgroup><col class="col1" /><col class="col2" /></colgroup><thead><tr><th>フェーズ</th><th>説明</th></tr></thead><tbody><tr><td><code class="literal">initializing</code></td><td>
+<span class="original">
+       The command is preparing to begin scanning the heap.  This phase is
+       expected to be very brief.
+</span>
+コマンドはヒープをスキャンし始める準備をしています。
+このフェーズは非常に短時間であると予想されます。
+      </td></tr><tr><td><code class="literal">acquiring sample rows</code></td><td>
+<span class="original">
+       The command is currently scanning the table given by
+       &lt;structfield&gt;relid&lt;/structfield&gt; to obtain sample rows.
+</span>
+コマンドはサンプル行を得るため、<code class="structfield">relid</code>で指定されたテーブルを現在スキャンしています。
+      </td></tr><tr><td><code class="literal">acquiring inherited sample rows</code></td><td>
+<span class="original">
+       The command is currently scanning child tables to obtain sample rows.
+       Columns &lt;structfield&gt;child_tables_total&lt;/structfield&gt;,
+       &lt;structfield&gt;child_tables_done&lt;/structfield&gt;, and
+       &lt;structfield&gt;current_child_table_relid&lt;/structfield&gt; contain the
+       progress information for this phase.
+</span>
+コマンドはサンプル行を得るため、子テーブルを現在スキャンしています。
+列<code class="structfield">child_tables_total</code>、<code class="structfield">child_tables_done</code>、<code class="structfield">current_child_table_relid</code>はこのフェーズの進捗情報を含みます。
+      </td></tr><tr><td><code class="literal">computing statistics</code></td><td>
+<span class="original">
+       The command is computing statistics from the sample rows obtained
+       during the table scan.
+</span>
+コマンドはテーブルスキャンの間に得られたサンプルから統計情報を計算しています。
+      </td></tr><tr><td><code class="literal">computing extended statistics</code></td><td>
+<span class="original">
+       The command is computing extended statistics from the sample rows
+       obtained during the table scan.
+</span>
+コマンドはテーブルスキャンの間に得られたサンプルから拡張統計情報を計算しています。
+      </td></tr><tr><td><code class="literal">finalizing analyze</code></td><td>
+<span class="original">
+       The command is updating &lt;structname&gt;pg_class&lt;/structname&gt;. When this
+       phase is completed, &lt;command&gt;ANALYZE&lt;/command&gt; will end.
+</span>
+コマンドは<code class="structname">pg_class</code>を更新しています。
+このフェーズが完了すれば、<code class="command">ANALYZE</code>は終わります。
+      </td></tr></tbody></table></div></div><br class="table-break" /><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+    Note that when &lt;command&gt;ANALYZE&lt;/command&gt; is run on a partitioned table,
+    all of its partitions are also recursively analyzed.
+    In that case, &lt;command&gt;ANALYZE&lt;/command&gt;
+    progress is reported first for the parent table, whereby its inheritance
+    statistics are collected, followed by that for each partition.
+</span>
+<code class="command">ANALYZE</code>がパーティションテーブルで実行される場合は、そのパーティションテーブルのすべても再帰的に解析されることに注意してください。
+その場合、<code class="command">ANALYZE</code>の進捗はまず親テーブルについて報告され、それによってその継承の統計情報が集められ、各パーティションの報告が続きます。
+   </p></div></div><div class="sect2" id="CREATE-INDEX-PROGRESS-REPORTING"><div class="titlepage"><div><div><h3 class="title">28.4.2. CREATE INDEXの進捗状況のレポート</h3></div></div></div><span class="original">
+  &lt;title&gt;CREATE INDEX Progress Reporting&lt;/title&gt;
+</span><a id="id-1.6.15.11.4.2" class="indexterm"></a><p>
+<span class="original">
+   Whenever &lt;command&gt;CREATE INDEX&lt;/command&gt; or &lt;command&gt;REINDEX&lt;/command&gt; is running, the
+   &lt;structname&gt;pg_stat_progress_create_index&lt;/structname&gt; view will contain
+   one row for each backend that is currently creating indexes.  The tables
+   below describe the information that will be reported and provide information
+   about how to interpret it.
+</span>
+<code class="command">CREATE INDEX</code>や<code class="command">REINDEX</code>が実行中であるときにはいつでも、<code class="structname">pg_stat_progress_create_index</code>ビューには現在インデックスを作成している各バックエンドごとの行が含まれます。
+以下の表は、報告される情報を説明し、どのように解釈するかの情報を提供します。
+  </p><div class="table" id="PG-STAT-PROGRESS-CREATE-INDEX-VIEW"><p class="title"><strong>表28.38 <code class="structname">pg_stat_progress_create_index</code>ビュー</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;&lt;structname&gt;pg_stat_progress_create_index&lt;/structname&gt; View&lt;/title&gt;
+</span><table class="table" summary="pg_stat_progress_create_indexビュー" border="1"><colgroup><col /></colgroup><thead><tr><th class="catalog_table_entry"><p class="column_definition">
+<span class="original">
+       Column Type
+</span>
+列 型
+      </p>
+      <p>
+<span class="original">
+       Description
+</span>
+説明
+      </p></th></tr></thead><tbody><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">pid</code> <code class="type">integer</code>
+      </p>
+      <p>
+<span class="original">
+       Process ID of backend.
+</span>
+バックエンドのプロセスIDです。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">datid</code> <code class="type">oid</code>
+      </p>
+      <p>
+<span class="original">
+       OID of the database to which this backend is connected.
+</span>
+バックエンドが接続されているデータベースのOIDです。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">datname</code> <code class="type">name</code>
+      </p>
+      <p>
+<span class="original">
+       Name of the database to which this backend is connected.
+</span>
+バックエンドが接続されているデータベースの名前です。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">relid</code> <code class="type">oid</code>
+      </p>
+      <p>
+<span class="original">
+       OID of the table on which the index is being created.
+</span>
+インデックスが作られているテーブルのOIDです。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">index_relid</code> <code class="type">oid</code>
+      </p>
+      <p>
+<span class="original">
+       OID of the index being created or reindexed.  During a
+       non-concurrent &lt;command&gt;CREATE INDEX&lt;/command&gt;, this is 0.
+</span>
+作成または再作成されているインデックスのOIDです。
+同時作成ではない<code class="command">CREATE INDEX</code>のときは、これは0です。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">command</code> <code class="type">text</code>
+      </p>
+      <p>
+<span class="original">
+       The command that is running: &lt;literal&gt;CREATE INDEX&lt;/literal&gt;,
+       &lt;literal&gt;CREATE INDEX CONCURRENTLY&lt;/literal&gt;,
+       &lt;literal&gt;REINDEX&lt;/literal&gt;, or &lt;literal&gt;REINDEX CONCURRENTLY&lt;/literal&gt;.
+</span>
+実行しているコマンドで、
+<code class="literal">CREATE INDEX</code>、
+<code class="literal">CREATE INDEX CONCURRENTLY</code>、
+<code class="literal">REINDEX</code>または<code class="literal">REINDEX CONCURRENTLY</code>です。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">phase</code> <code class="type">text</code>
+      </p>
+      <p>
+<span class="original">
+       Current processing phase of index creation.  See &lt;xref linkend="create-index-phases"/&gt;.
+</span>
+現在処理中のインデックス作成のフェーズです。
+<a class="xref" href="progress-reporting.html#CREATE-INDEX-PHASES" title="表28.39 CREATE INDEXのフェーズ">表 28.39</a>を参照してください。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">lockers_total</code> <code class="type">bigint</code>
+      </p>
+      <p>
+<span class="original">
+       Total number of lockers to wait for, when applicable.
+</span>
+該当するときに、待機するロック取得者の総数です。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">lockers_done</code> <code class="type">bigint</code>
+      </p>
+      <p>
+<span class="original">
+       Number of lockers already waited for.
+</span>
+既に待機したロック取得者の数です。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">current_locker_pid</code> <code class="type">bigint</code>
+      </p>
+      <p>
+<span class="original">
+       Process ID of the locker currently being waited for.
+</span>
+現在待機しているロック取得者のプロセスIDです。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">blocks_total</code> <code class="type">bigint</code>
+      </p>
+      <p>
+<span class="original">
+       Total number of blocks to be processed in the current phase.
+</span>
+現在のフェーズで処理されることになっているブロックの総数です。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">blocks_done</code> <code class="type">bigint</code>
+      </p>
+      <p>
+<span class="original">
+       Number of blocks already processed in the current phase.
+</span>
+現在のフェーズで既に処理されたブロック数です。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">tuples_total</code> <code class="type">bigint</code>
+      </p>
+      <p>
+<span class="original">
+       Total number of tuples to be processed in the current phase.
+</span>
+現在のフェーズで処理されることになっているタプルの総数です。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">tuples_done</code> <code class="type">bigint</code>
+      </p>
+      <p>
+<span class="original">
+       Number of tuples already processed in the current phase.
+</span>
+現在のフェーズで既に処理されたタプル数です。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">partitions_total</code> <code class="type">bigint</code>
+      </p>
+      <p>
+<span class="original">
+       When creating an index on a partitioned table, this column is set to
+       the total number of partitions on which the index is to be created.
+       This field is &lt;literal&gt;0&lt;/literal&gt; during a &lt;literal&gt;REINDEX&lt;/literal&gt;.
+</span>
+パーティションテーブル上のインデックスを作成するとき、この列にはインデックスが作られることになっているパーティションの総数が設定されます。
+このフィールドは<code class="literal">REINDEX</code>実行中は<code class="literal">0</code>になります。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">partitions_done</code> <code class="type">bigint</code>
+      </p>
+      <p>
+<span class="original">
+       When creating an index on a partitioned table, this column is set to
+       the number of partitions on which the index has been created.
+       This field is &lt;literal&gt;0&lt;/literal&gt; during a &lt;literal&gt;REINDEX&lt;/literal&gt;.
+</span>
+パーティションテーブル上のインデックスを作成するとき、この列にはインデックスが既に作成されたパーティションの数が設定されます。
+このフィールドは<code class="literal">REINDEX</code>実行中は<code class="literal">0</code>になります。
+      </p></td></tr></tbody></table></div></div><br class="table-break" /><div class="table" id="CREATE-INDEX-PHASES"><p class="title"><strong>表28.39 CREATE INDEXのフェーズ</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;CREATE INDEX Phases&lt;/title&gt;
+</span><table class="table" summary="CREATE INDEXのフェーズ" border="1"><colgroup><col class="col1" /><col class="col2" /></colgroup><thead><tr><th>フェーズ</th><th>説明</th></tr></thead><tbody><tr><td><code class="literal">initializing</code></td><td>
+<span class="original">
+       &lt;command&gt;CREATE INDEX&lt;/command&gt; or &lt;command&gt;REINDEX&lt;/command&gt; is preparing to create the index.  This
+       phase is expected to be very brief.
+</span>
+<code class="command">CREATE INDEX</code>や<code class="command">REINDEX</code>はインデックスを作る準備をしています。
+このフェーズはごく短時間になると予想されます。
+      </td></tr><tr><td><code class="literal">waiting for writers before build</code></td><td>
+<span class="original">
+       &lt;command&gt;CREATE INDEX CONCURRENTLY&lt;/command&gt; or &lt;command&gt;REINDEX CONCURRENTLY&lt;/command&gt; is waiting for transactions
+       with write locks that can potentially see the table to finish.
+       This phase is skipped when not in concurrent mode.
+       Columns &lt;structname&gt;lockers_total&lt;/structname&gt;, &lt;structname&gt;lockers_done&lt;/structname&gt;
+       and &lt;structname&gt;current_locker_pid&lt;/structname&gt; contain the progress
+       information for this phase.
+</span>
+<code class="command">CREATE INDEX CONCURRENTLY</code>や<code class="command">REINDEX CONCURRENTLY</code>は、潜在的にテーブルを参照するかもしれない書き込みロックを伴うトランザクションが終了するのを待機しています。
+本フェーズは同時モードでないときには省かれます。
+列<code class="structname">lockers_total</code>、<code class="structname">lockers_done</code>、および、<code class="structname">current_locker_pid</code>には本フェーズの進行情報が入ります。
+      </td></tr><tr><td><code class="literal">building index</code></td><td>
+<span class="original">
+       The index is being built by the access method-specific code.  In this phase,
+       access methods that support progress reporting fill in their own progress data,
+       and the subphase is indicated in this column.  Typically,
+       &lt;structname&gt;blocks_total&lt;/structname&gt; and &lt;structname&gt;blocks_done&lt;/structname&gt;
+       will contain progress data, as well as potentially
+       &lt;structname&gt;tuples_total&lt;/structname&gt; and &lt;structname&gt;tuples_done&lt;/structname&gt;.
+</span>
+インデックスがアクセスメソッド固有のコードにより作成されています。
+本フェーズでは、進捗レポートをサポートするアクセスメソッドが自身の進捗データを記入し、また、サブフェーズはこの列で示されます。
+典型的には、<code class="structname">blocks_total</code>と<code class="structname">blocks_done</code>が、さらにあるいは<code class="structname">tuples_total</code>と<code class="structname">tuples_done</code>も、進捗データを含みます。
+      </td></tr><tr><td><code class="literal">waiting for writers before validation</code></td><td>
+<span class="original">
+       &lt;command&gt;CREATE INDEX CONCURRENTLY&lt;/command&gt; or &lt;command&gt;REINDEX CONCURRENTLY&lt;/command&gt; is waiting for transactions
+       with write locks that can potentially write into the table to finish.
+       This phase is skipped when not in concurrent mode.
+       Columns &lt;structname&gt;lockers_total&lt;/structname&gt;, &lt;structname&gt;lockers_done&lt;/structname&gt;
+       and &lt;structname&gt;current_locker_pid&lt;/structname&gt; contain the progress
+       information for this phase.
+</span>
+<code class="command">CREATE INDEX CONCURRENTLY</code>や<code class="command">REINDEX CONCURRENTLY</code>は、潜在的にテーブルに書き込みするかもしれない書き込みロックを伴うトランザクションが終了するのを待機しています。
+本フェーズは同時モードでないときには省かれます。
+列<code class="structname">lockers_total</code>、<code class="structname">lockers_done</code>、および、<code class="structname">current_locker_pid</code>には本フェーズの進行情報が入ります。
+      </td></tr><tr><td><code class="literal">index validation: scanning index</code></td><td>
+<span class="original">
+       &lt;command&gt;CREATE INDEX CONCURRENTLY&lt;/command&gt; is scanning the index searching
+       for tuples that need to be validated.
+       This phase is skipped when not in concurrent mode.
+       Columns &lt;structname&gt;blocks_total&lt;/structname&gt; (set to the total size of the index)
+       and &lt;structname&gt;blocks_done&lt;/structname&gt; contain the progress information for this phase.
+</span>
+<code class="command">CREATE INDEX CONCURRENTLY</code>は確認が必要なタプルに対するインデックス検索をスキャンしています。
+本フェーズは同時モードでないときには省かれます。
+列<code class="structname">blocks_total</code>（インデックスの総サイズが設定される）と<code class="structname">blocks_done</code>に本フェーズの進行情報が入ります。
+      </td></tr><tr><td><code class="literal">index validation: sorting tuples</code></td><td>
+<span class="original">
+       &lt;command&gt;CREATE INDEX CONCURRENTLY&lt;/command&gt; is sorting the output of the
+       index scanning phase.
+</span>
+<code class="command">CREATE INDEX CONCURRENTLY</code>はインデックスをスキャンするフェーズ(scanning index)の出力をソートしています。
+      </td></tr><tr><td><code class="literal">index validation: scanning table</code></td><td>
+<span class="original">
+       &lt;command&gt;CREATE INDEX CONCURRENTLY&lt;/command&gt; is scanning the table
+       to validate the index tuples collected in the previous two phases.
+       This phase is skipped when not in concurrent mode.
+       Columns &lt;structname&gt;blocks_total&lt;/structname&gt; (set to the total size of the table)
+       and &lt;structname&gt;blocks_done&lt;/structname&gt; contain the progress information for this phase.
+</span>
+<code class="command">CREATE INDEX CONCURRENTLY</code>は、前の2フェーズで収集されたインデックスのタプルを確認するためテーブルをスキャンしています。
+本フェーズは同時モードでないときには省かれます。
+列<code class="structname">blocks_total</code>（テーブルの総サイズが設定される）と<code class="structname">blocks_done</code>に本フェーズの進行情報が入ります。
+      </td></tr><tr><td><code class="literal">waiting for old snapshots</code></td><td>
+<span class="original">
+       &lt;command&gt;CREATE INDEX CONCURRENTLY&lt;/command&gt; or &lt;command&gt;REINDEX CONCURRENTLY&lt;/command&gt; is waiting for transactions
+       that can potentially see the table to release their snapshots.  This
+       phase is skipped when not in concurrent mode.
+       Columns &lt;structname&gt;lockers_total&lt;/structname&gt;, &lt;structname&gt;lockers_done&lt;/structname&gt;
+       and &lt;structname&gt;current_locker_pid&lt;/structname&gt; contain the progress
+       information for this phase.
+</span>
+<code class="command">CREATE INDEX CONCURRENTLY</code>や<code class="command">REINDEX CONCURRENTLY</code>は、潜在的にテーブルを参照するかもしれないトランザクションがそれらのスナップショットを解放するのを待機しています。
+本フェーズは同時モードでないときには省かれます。
+列<code class="structname">lockers_total</code>、<code class="structname">lockers_done</code>、および、<code class="structname">current_locker_pid</code>には本フェーズの進行情報が入ります。
+      </td></tr><tr><td><code class="literal">waiting for readers before marking dead</code></td><td>
+<span class="original">
+       &lt;command&gt;REINDEX CONCURRENTLY&lt;/command&gt; is waiting for transactions
+       with read locks on the table to finish, before marking the old index dead.
+       This phase is skipped when not in concurrent mode.
+       Columns &lt;structname&gt;lockers_total&lt;/structname&gt;, &lt;structname&gt;lockers_done&lt;/structname&gt;
+       and &lt;structname&gt;current_locker_pid&lt;/structname&gt; contain the progress
+       information for this phase.
+</span>
+<code class="command">REINDEX CONCURRENTLY</code>は、古いインデックスに無効と印付けする前に、テーブルへの読み取りロックを伴うトランザクションが終了するのを待機しています。
+本フェーズは同時モードでないときには省かれます。
+列<code class="structname">lockers_total</code>、<code class="structname">lockers_done</code>、および、<code class="structname">current_locker_pid</code>には本フェーズの進行情報が入ります。
+      </td></tr><tr><td><code class="literal">waiting for readers before dropping</code></td><td>
+<span class="original">
+       &lt;command&gt;REINDEX CONCURRENTLY&lt;/command&gt; is waiting for transactions
+       with read locks on the table to finish, before dropping the old index.
+       This phase is skipped when not in concurrent mode.
+       Columns &lt;structname&gt;lockers_total&lt;/structname&gt;, &lt;structname&gt;lockers_done&lt;/structname&gt;
+       and &lt;structname&gt;current_locker_pid&lt;/structname&gt; contain the progress
+       information for this phase.
+</span>
+<code class="command">REINDEX CONCURRENTLY</code>は、古いインデックスを削除する前に、テーブルへの読み取りロックを伴うトランザクションが終了するのを待機しています。
+本フェーズは同時モードでないときには省かれます。
+列<code class="structname">lockers_total</code>、<code class="structname">lockers_done</code>、および、<code class="structname">current_locker_pid</code>には本フェーズの進行情報が入ります。
+      </td></tr></tbody></table></div></div><br class="table-break" /></div><div class="sect2" id="VACUUM-PROGRESS-REPORTING"><div class="titlepage"><div><div><h3 class="title">28.4.3. VACUUMの進捗状況のレポート</h3></div></div></div><span class="original">
+  &lt;title&gt;VACUUM Progress Reporting&lt;/title&gt;
+</span><a id="id-1.6.15.11.5.2" class="indexterm"></a><p>
+<span class="original">
+   Whenever &lt;command&gt;VACUUM&lt;/command&gt; is running, the
+   &lt;structname&gt;pg_stat_progress_vacuum&lt;/structname&gt; view will contain
+   one row for each backend (including autovacuum worker processes) that is
+   currently vacuuming.  The tables below describe the information
+   that will be reported and provide information about how to interpret it.
+   Progress for &lt;command&gt;VACUUM FULL&lt;/command&gt; commands is reported via
+   &lt;structname&gt;pg_stat_progress_cluster&lt;/structname&gt;
+   because both &lt;command&gt;VACUUM FULL&lt;/command&gt; and &lt;command&gt;CLUSTER&lt;/command&gt;
+   rewrite the table, while regular &lt;command&gt;VACUUM&lt;/command&gt; only modifies it
+   in place. See &lt;xref linkend='cluster-progress-reporting'/&gt;.
+</span>
+<code class="command">VACUUM</code>を実行するときはいつでも、<code class="structname">pg_stat_progress_vacuum</code>ビューは、現在バキューム処理している（自動バキュームワーカプロセスを含む）それぞれのバックエンドごとに１行を格納します。
+以下の表は、報告される情報を説明し、どのように解釈するかの情報を提供します。
+<code class="command">VACUUM FULL</code>コマンドの進捗は<code class="structname">pg_stat_progress_cluster</code>でレポートされます。これは、通常の<code class="command">VACUUM</code>はテーブル内を書き換えするのみである一方、<code class="command">VACUUM FULL</code>と<code class="command">CLUSTER</code>はいずれもテーブルを再作成するためです。
+<a class="xref" href="progress-reporting.html#CLUSTER-PROGRESS-REPORTING" title="28.4.4. CLUSTERの進捗状況のレポート">28.4.4</a>を参照してください。
+  </p><div class="table" id="PG-STAT-PROGRESS-VACUUM-VIEW"><p class="title"><strong>表28.40 <code class="structname">pg_stat_progress_vacuum</code>ビュー</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;&lt;structname&gt;pg_stat_progress_vacuum&lt;/structname&gt; View&lt;/title&gt;
+</span><table class="table" summary="pg_stat_progress_vacuumビュー" border="1"><colgroup><col /></colgroup><thead><tr><th class="catalog_table_entry"><p class="column_definition">
+<span class="original">
+       Column Type
+</span>
+列 型
+      </p>
+      <p>
+<span class="original">
+       Description
+</span>
+説明
+      </p></th></tr></thead><tbody><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">pid</code> <code class="type">integer</code>
+      </p>
+      <p>
+<span class="original">
+       Process ID of backend.
+</span>
+バックエンドのプロセスIDです。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">datid</code> <code class="type">oid</code>
+      </p>
+      <p>
+<span class="original">
+       OID of the database to which this backend is connected.
+</span>
+バックエンドが接続されているデータベースのOIDです。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">datname</code> <code class="type">name</code>
+      </p>
+      <p>
+<span class="original">
+       Name of the database to which this backend is connected.
+</span>
+バックエンドが接続されているデータベースの名前です。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">relid</code> <code class="type">oid</code>
+      </p>
+      <p>
+<span class="original">
+       OID of the table being vacuumed.
+</span>
+バキューム処理が行われているテーブルのOIDです。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">phase</code> <code class="type">text</code>
+      </p>
+      <p>
+<span class="original">
+       Current processing phase of vacuum.  See &lt;xref linkend="vacuum-phases"/&gt;.
+</span>
+現在処理しているバキュームのフェーズです。
+<a class="xref" href="progress-reporting.html#VACUUM-PHASES" title="表28.41 VACUUMのフェーズ">表 28.41</a>を参照してください。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">heap_blks_total</code> <code class="type">bigint</code>
+      </p>
+      <p>
+<span class="original">
+       Total number of heap blocks in the table.  This number is reported
+       as of the beginning of the scan; blocks added later will not be (and
+       need not be) visited by this &lt;command&gt;VACUUM&lt;/command&gt;.
+</span>
+テーブルのヒープブロックの総数です。
+この数字は、スキャンの開始を基点としてレポートされます。
+後に追加されるブロックは、この<code class="command">VACUUM</code>によって処理されません（必要もありません）。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">heap_blks_scanned</code> <code class="type">bigint</code>
+      </p>
+      <p>
+<span class="original">
+       Number of heap blocks scanned.  Because the
+       &lt;link linkend="storage-vm"&gt;visibility map&lt;/link&gt; is used to optimize scans,
+       some blocks will be skipped without inspection; skipped blocks are
+       included in this total, so that this number will eventually become
+       equal to &lt;structfield&gt;heap_blks_total&lt;/structfield&gt; when the vacuum is complete.
+       This counter only advances when the phase is &lt;literal&gt;scanning heap&lt;/literal&gt;.
+</span>
+スキャンされたヒープブロックの数です。
+<a class="link" href="storage-vm.html" title="73.4. 可視性マップ">可視性マップ</a>がスキャンを最適化するために使用されるため、いくつかのブロックが検査されずに読み飛ばされます。
+読み飛ばされたブロックはこの総数に含まれ、そのためこの数字はバキューム処理が完了した時に、最終的に<code class="structfield">heap_blks_total</code>と同じになります。
+このカウンタは、フェーズが<code class="literal">scanning heap</code>の時にのみ増加します。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">heap_blks_vacuumed</code> <code class="type">bigint</code>
+      </p>
+      <p>
+<span class="original">
+       Number of heap blocks vacuumed.  Unless the table has no indexes, this
+       counter only advances when the phase is &lt;literal&gt;vacuuming heap&lt;/literal&gt;.
+       Blocks that contain no dead tuples are skipped, so the counter may
+       sometimes skip forward in large increments.
+</span>
+バキューム処理されたヒープブロックの数です。
+テーブルにインデックスが１つでも存在するなら、このカウンタはフェーズが<code class="literal">vacuuming heap</code>の時にのみ増加します。
+無効なタプルが含まれていないブロックは読み飛ばされ、それゆえカウンタは時々大きな増加量で早送りされます。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">index_vacuum_count</code> <code class="type">bigint</code>
+      </p>
+      <p>
+<span class="original">
+       Number of completed index vacuum cycles.
+</span>
+完了したインデックスバキュームサイクルの数です。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">max_dead_tuples</code> <code class="type">bigint</code>
+      </p>
+      <p>
+<span class="original">
+       Number of dead tuples that we can store before needing to perform
+       an index vacuum cycle, based on
+       &lt;xref linkend="guc-maintenance-work-mem"/&gt;.
+</span>
+インデックスバキュームサイクルの実行に必要となる前に格納できる、<a class="xref" href="runtime-config-resource.html#GUC-MAINTENANCE-WORK-MEM">maintenance_work_mem</a>に基づいた、無効なタプルの数です。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">num_dead_tuples</code> <code class="type">bigint</code>
+      </p>
+      <p>
+<span class="original">
+       Number of dead tuples collected since the last index vacuum cycle.
+</span>
+最後のインデックスバキュームサイクルから収集された無効タプルの数です。
+      </p></td></tr></tbody></table></div></div><br class="table-break" /><div class="table" id="VACUUM-PHASES"><p class="title"><strong>表28.41 VACUUMのフェーズ</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;VACUUM Phases&lt;/title&gt;
+</span><table class="table" summary="VACUUMのフェーズ" border="1"><colgroup><col class="col1" /><col class="col2" /></colgroup><thead><tr><th>フェーズ</th><th>説明</th></tr></thead><tbody><tr><td><code class="literal">initializing</code></td><td>
+<span class="original">
+       &lt;command&gt;VACUUM&lt;/command&gt; is preparing to begin scanning the heap.  This
+       phase is expected to be very brief.
+</span>
+<code class="command">VACUUM</code>は、ヒープをスキャンし始める準備をしています。
+このフェーズは、非常に短時間であると予想されます。
+     </td></tr><tr><td><code class="literal">scanning heap</code></td><td>
+<span class="original">
+       &lt;command&gt;VACUUM&lt;/command&gt; is currently scanning the heap.  It will prune and
+       defragment each page if required, and possibly perform freezing
+       activity.  The &lt;structfield&gt;heap_blks_scanned&lt;/structfield&gt; column can be used
+       to monitor the progress of the scan.
+</span>
+<code class="command">VACUUM</code>は、現在ヒープをスキャン中です。
+必要であればそれぞれのページを切り取り、デフラグし、場合によってはフリーズ活動を実行します。
+スキャンの進捗状況の監視に<code class="structfield">heap_blks_scanned</code>列が使用できます。
+     </td></tr><tr><td><code class="literal">vacuuming indexes</code></td><td>
+<span class="original">
+       &lt;command&gt;VACUUM&lt;/command&gt; is currently vacuuming the indexes.  If a table has
+       any indexes, this will happen at least once per vacuum, after the heap
+       has been completely scanned.  It may happen multiple times per vacuum
+       if &lt;xref linkend="guc-maintenance-work-mem"/&gt; (or, in the case of autovacuum,
+       &lt;xref linkend="guc-autovacuum-work-mem"/&gt; if set) is insufficient to store
+       the number of dead tuples found.
+</span>
+<code class="command">VACUUM</code>は、現在インデックスをバキューム処理中です。
+テーブルにインデックスが存在する場合、ヒープが完全にスキャンされた後に、バキューム実行ごとに少なくとも１回発生します。
+<a class="xref" href="runtime-config-resource.html#GUC-MAINTENANCE-WORK-MEM">maintenance_work_mem</a>が、発見された無効タプルの数量を格納するのに不十分な場合（または、自動バキュームの場合は<a class="xref" href="runtime-config-resource.html#GUC-AUTOVACUUM-WORK-MEM">autovacuum_work_mem</a>が設定されている場合）は、バキューム実行ごとに複数回発生する可能性があります。
+     </td></tr><tr><td><code class="literal">vacuuming heap</code></td><td>
+<span class="original">
+       &lt;command&gt;VACUUM&lt;/command&gt; is currently vacuuming the heap.  Vacuuming the heap
+       is distinct from scanning the heap, and occurs after each instance of
+       vacuuming indexes.  If &lt;structfield&gt;heap_blks_scanned&lt;/structfield&gt; is less than
+       &lt;structfield&gt;heap_blks_total&lt;/structfield&gt;, the system will return to scanning
+       the heap after this phase is completed; otherwise, it will begin
+       cleaning up indexes after this phase is completed.
+</span>
+<code class="command">VACUUM</code>は、現在ヒープをバキューム処理中です。
+ヒープのバキュームは、ヒープのスキャンと異なり、インデックスをバキューム処理するそれぞれのインスタンスの後に発生します。
+<code class="structfield">heap_blks_scanned</code>が<code class="structfield">heap_blks_total</code>より少ない場合、システムはこのフェーズの完了後にヒープのスキャン処理に戻ります。
+さもなければ、このフェーズの完了後にインデックスの整理を始めます。
+     </td></tr><tr><td><code class="literal">cleaning up indexes</code></td><td>
+<span class="original">
+       &lt;command&gt;VACUUM&lt;/command&gt; is currently cleaning up indexes.  This occurs after
+       the heap has been completely scanned and all vacuuming of the indexes
+       and the heap has been completed.
+</span>
+<code class="command">VACUUM</code>は、現在インデックスの整理処理中です。
+これは、ヒープが完全にスキャンされ、インデックスとヒープが完全にすべてバキューム処理された後に発生します。
+     </td></tr><tr><td><code class="literal">truncating heap</code></td><td>
+<span class="original">
+       &lt;command&gt;VACUUM&lt;/command&gt; is currently truncating the heap so as to return
+       empty pages at the end of the relation to the operating system.  This
+       occurs after cleaning up indexes.
+</span>
+<code class="command">VACUUM</code>は、現在リレーションの終点の空のページをオペレーティングシステムに戻すためにヒープを切り詰めています。
+これは、インデックスの整理処理後に発生します。
+     </td></tr><tr><td><code class="literal">performing final cleanup</code></td><td>
+<span class="original">
+       &lt;command&gt;VACUUM&lt;/command&gt; is performing final cleanup.  During this phase,
+       &lt;command&gt;VACUUM&lt;/command&gt; will vacuum the free space map, update statistics
+       in &lt;literal&gt;pg_class&lt;/literal&gt;, and report statistics to the cumulative
+       statistics system. When this phase is completed, &lt;command&gt;VACUUM&lt;/command&gt; will end.
+</span>
+《機械翻訳》<code class="command">VACUUM</code>は最終クリーンアップを実行しています。
+このフェーズ中に、<code class="command">VACUUM</code>は空き領域マップを真空にし、<code class="literal">pg_class</code>内の統計を更新し、累積統計システムに統計を報告します。
+このフェーズが完了すると、<code class="command">VACUUM</code>は終了します。
+     </td></tr></tbody></table></div></div><br class="table-break" /></div><div class="sect2" id="CLUSTER-PROGRESS-REPORTING"><div class="titlepage"><div><div><h3 class="title">28.4.4. CLUSTERの進捗状況のレポート</h3></div></div></div><span class="original">
+  &lt;title&gt;CLUSTER Progress Reporting&lt;/title&gt;
+</span><a id="id-1.6.15.11.6.2" class="indexterm"></a><p>
+<span class="original">
+   Whenever &lt;command&gt;CLUSTER&lt;/command&gt; or &lt;command&gt;VACUUM FULL&lt;/command&gt; is
+   running, the &lt;structname&gt;pg_stat_progress_cluster&lt;/structname&gt; view will
+   contain a row for each backend that is currently running either command.
+   The tables below describe the information that will be reported and
+   provide information about how to interpret it.
+</span>
+<code class="command">CLUSTER</code>や<code class="command">VACUUM FULL</code>が実行されているときにはいつでも、<code class="structname">pg_stat_progress_cluster</code>ビューには現在いずれかのコマンドを実行している各バックエンドごとの行が含まれます。
+以下の表は、報告される情報を説明し、どのように解釈するかの情報を提供します。
+  </p><div class="table" id="PG-STAT-PROGRESS-CLUSTER-VIEW"><p class="title"><strong>表28.42 <code class="structname">pg_stat_progress_cluster</code>ビュー</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;&lt;structname&gt;pg_stat_progress_cluster&lt;/structname&gt; View&lt;/title&gt;
+</span><table class="table" summary="pg_stat_progress_clusterビュー" border="1"><colgroup><col /></colgroup><thead><tr><th class="catalog_table_entry"><p class="column_definition">
+<span class="original">
+       Column Type
+</span>
+列 型
+      </p>
+      <p>
+<span class="original">
+       Description
+</span>
+説明
+      </p></th></tr></thead><tbody><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">pid</code> <code class="type">integer</code>
+      </p>
+      <p>
+<span class="original">
+       Process ID of backend.
+</span>
+バックエンドのプロセスIDです。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">datid</code> <code class="type">oid</code>
+      </p>
+      <p>
+<span class="original">
+       OID of the database to which this backend is connected.
+</span>
+バックエンドが接続されているデータベースのOIDです。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">datname</code> <code class="type">name</code>
+      </p>
+      <p>
+<span class="original">
+       Name of the database to which this backend is connected.
+</span>
+バックエンドが接続されているデータベースの名前です。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">relid</code> <code class="type">oid</code>
+      </p>
+      <p>
+<span class="original">
+       OID of the table being clustered.
+</span>
+クラスタ化されているテーブルのOIDです。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">command</code> <code class="type">text</code>
+      </p>
+      <p>
+<span class="original">
+       The command that is running. Either &lt;literal&gt;CLUSTER&lt;/literal&gt; or &lt;literal&gt;VACUUM FULL&lt;/literal&gt;.
+</span>
+実行しているコマンドです。
+<code class="literal">CLUSTER</code>か<code class="literal">VACUUM FULL</code>のいずれかです。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">phase</code> <code class="type">text</code>
+      </p>
+      <p>
+<span class="original">
+       Current processing phase. See &lt;xref linkend="cluster-phases"/&gt;.
+</span>
+現在処理しているフェーズです。
+<a class="xref" href="progress-reporting.html#CLUSTER-PHASES" title="表28.43 CLUSTERとVACUUM FULLのフェーズ">表 28.43</a>を参照してください。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">cluster_index_relid</code> <code class="type">oid</code>
+      </p>
+      <p>
+<span class="original">
+       If the table is being scanned using an index, this is the OID of the
+       index being used; otherwise, it is zero.
+</span>
+テーブルがインデックスを使ってスキャンされているのであれば、これは使われているインデックスのOIDで、さもなくばゼロです。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">heap_tuples_scanned</code> <code class="type">bigint</code>
+      </p>
+      <p>
+<span class="original">
+       Number of heap tuples scanned.
+       This counter only advances when the phase is
+       &lt;literal&gt;seq scanning heap&lt;/literal&gt;,
+       &lt;literal&gt;index scanning heap&lt;/literal&gt;
+       or &lt;literal&gt;writing new heap&lt;/literal&gt;.
+</span>
+スキャンされたヒープタプルの数です。
+このカウンタは、フェーズが<code class="literal">seq scanning heap</code>、<code class="literal">index scanning heap</code>、または、<code class="literal">writing new heap</code>であるときのみ増加します。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">heap_tuples_written</code> <code class="type">bigint</code>
+      </p>
+      <p>
+<span class="original">
+       Number of heap tuples written.
+       This counter only advances when the phase is
+       &lt;literal&gt;seq scanning heap&lt;/literal&gt;,
+       &lt;literal&gt;index scanning heap&lt;/literal&gt;
+       or &lt;literal&gt;writing new heap&lt;/literal&gt;.
+</span>
+書かれたヒープタプルの数です。
+このカウンタは、フェーズが<code class="literal">seq scanning heap</code>、<code class="literal">index scanning heap</code>、または、<code class="literal">writing new heap</code>であるときのみ増加します。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">heap_blks_total</code> <code class="type">bigint</code>
+      </p>
+      <p>
+<span class="original">
+       Total number of heap blocks in the table.  This number is reported
+       as of the beginning of &lt;literal&gt;seq scanning heap&lt;/literal&gt;.
+</span>
+テーブル内のヒープブロックの総数です。
+この数には<code class="literal">seq scanning heap</code>の開始時の値が報告されます。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">heap_blks_scanned</code> <code class="type">bigint</code>
+      </p>
+      <p>
+<span class="original">
+       Number of heap blocks scanned.  This counter only advances when the
+       phase is &lt;literal&gt;seq scanning heap&lt;/literal&gt;.
+</span>
+スキャンされたヒープブロックの数です。
+このカウンタは、フェーズが<code class="literal">seq scanning heap</code>であるときのみ増加します。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">index_rebuild_count</code> <code class="type">bigint</code>
+      </p>
+      <p>
+<span class="original">
+       Number of indexes rebuilt.  This counter only advances when the phase
+       is &lt;literal&gt;rebuilding index&lt;/literal&gt;.
+</span>
+インデックス再作成の数です。
+このカウンタはフェーズが<code class="literal">rebuilding index</code>であるときのみ増加します。
+      </p></td></tr></tbody></table></div></div><br class="table-break" /><div class="table" id="CLUSTER-PHASES"><p class="title"><strong>表28.43 CLUSTERとVACUUM FULLのフェーズ</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;CLUSTER and VACUUM FULL Phases&lt;/title&gt;
+</span><table class="table" summary="CLUSTERとVACUUM FULLのフェーズ" border="1"><colgroup><col class="col1" /><col class="col2" /></colgroup><thead><tr><th>フェーズ</th><th>説明</th></tr></thead><tbody><tr><td><code class="literal">initializing</code></td><td>
+<span class="original">
+       The command is preparing to begin scanning the heap.  This phase is
+       expected to be very brief.
+</span>
+コマンドはヒープのスキャンを開始する準備をしています。
+本フェーズはごく短時間になると予想されます。
+     </td></tr><tr><td><code class="literal">seq scanning heap</code></td><td>
+<span class="original">
+       The command is currently scanning the table using a sequential scan.
+</span>
+コマンドは現在、テーブルをシーケンシャルスキャンを使ってスキャンしています。
+     </td></tr><tr><td><code class="literal">index scanning heap</code></td><td>
+<span class="original">
+       &lt;command&gt;CLUSTER&lt;/command&gt; is currently scanning the table using an index scan.
+</span>
+<code class="command">CLUSTER</code>は現在、インデックススキャンを使ってテーブルをスキャンしています。
+     </td></tr><tr><td><code class="literal">sorting tuples</code></td><td>
+<span class="original">
+       &lt;command&gt;CLUSTER&lt;/command&gt; is currently sorting tuples.
+</span>
+<code class="command">CLUSTER</code>は現在、タプルをソートしています。
+     </td></tr><tr><td><code class="literal">writing new heap</code></td><td>
+<span class="original">
+       &lt;command&gt;CLUSTER&lt;/command&gt; is currently writing the new heap.
+</span>
+<code class="command">CLUSTER</code>が新しいヒープに書き込んでいます。
+     </td></tr><tr><td><code class="literal">swapping relation files</code></td><td>
+<span class="original">
+       The command is currently swapping newly-built files into place.
+</span>
+コマンドは現在、新たに構築したファイルを置き換えて設置しています。
+     </td></tr><tr><td><code class="literal">rebuilding index</code></td><td>
+<span class="original">
+       The command is currently rebuilding an index.
+</span>
+コマンドは現在、インデックスを再構築しています。
+     </td></tr><tr><td><code class="literal">performing final cleanup</code></td><td>
+<span class="original">
+       The command is performing final cleanup.  When this phase is
+       completed, &lt;command&gt;CLUSTER&lt;/command&gt;
+       or &lt;command&gt;VACUUM FULL&lt;/command&gt; will end.
+</span>
+コマンドは現在、最終クリーンアップを実行中です。
+このフェーズが完了すると、<code class="command">CLUSTER</code>や<code class="command">VACUUM FULL</code>は終了します。
+     </td></tr></tbody></table></div></div><br class="table-break" /></div><div class="sect2" id="BASEBACKUP-PROGRESS-REPORTING"><div class="titlepage"><div><div><h3 class="title">28.4.5. ベースバックアップの進捗状況のレポート</h3></div></div></div><span class="original">
+  &lt;title&gt;Base Backup Progress Reporting&lt;/title&gt;
+</span><a id="id-1.6.15.11.7.2" class="indexterm"></a><p>
+<span class="original">
+   Whenever an application like &lt;application&gt;pg_basebackup&lt;/application&gt;
+   is taking a base backup, the
+   &lt;structname&gt;pg_stat_progress_basebackup&lt;/structname&gt;
+   view will contain a row for each WAL sender process that is currently
+   running the &lt;command&gt;BASE_BACKUP&lt;/command&gt; replication command
+   and streaming the backup. The tables below describe the information
+   that will be reported and provide information about how to interpret it.
+</span>
+<span class="application">pg_basebackup</span>のようなアプリケーションがベースバックアップを取る時はいつでも、<code class="structname">pg_stat_progress_basebackup</code>ビューには現在<code class="command">BASE_BACKUP</code>レプリケーションコマンドを実行し、バックアップをストリームしている各WAL送信プロセスごとの行が含まれます。
+以下の表は、報告される情報を説明し、どのように解釈するかの情報を提供します。
+  </p><div class="table" id="PG-STAT-PROGRESS-BASEBACKUP-VIEW"><p class="title"><strong>表28.44 <code class="structname">pg_stat_progress_basebackup</code>ビュー</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;&lt;structname&gt;pg_stat_progress_basebackup&lt;/structname&gt; View&lt;/title&gt;
+</span><table class="table" summary="pg_stat_progress_basebackupビュー" border="1"><colgroup><col /></colgroup><thead><tr><th class="catalog_table_entry"><p class="column_definition">
+<span class="original">
+       Column Type
+</span>
+列 型
+      </p>
+      <p>
+<span class="original">
+       Description
+</span>
+説明
+      </p></th></tr></thead><tbody><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">pid</code> <code class="type">integer</code>
+      </p>
+      <p>
+<span class="original">
+       Process ID of a WAL sender process.
+</span>
+WAL送信プロセスのプロセスIDです。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">phase</code> <code class="type">text</code>
+      </p>
+      <p>
+<span class="original">
+       Current processing phase. See &lt;xref linkend="basebackup-phases"/&gt;.
+</span>
+現在処理中のフェーズです。
+<a class="xref" href="progress-reporting.html#BASEBACKUP-PHASES" title="表28.45 ベースバックアップのフェーズ">表 28.45</a>を参照してください。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">backup_total</code> <code class="type">bigint</code>
+      </p>
+      <p>
+<span class="original">
+       Total amount of data that will be streamed. This is estimated and
+       reported as of the beginning of
+       &lt;literal&gt;streaming database files&lt;/literal&gt; phase. Note that
+       this is only an approximation since the database
+       may change during &lt;literal&gt;streaming database files&lt;/literal&gt; phase
+       and WAL log may be included in the backup later. This is always
+       the same value as &lt;structfield&gt;backup_streamed&lt;/structfield&gt;
+       once the amount of data streamed exceeds the estimated
+       total size. If the estimation is disabled in
+       &lt;application&gt;pg_basebackup&lt;/application&gt;
+       (i.e., &lt;literal&gt;&amp;#45;-no-estimate-size&lt;/literal&gt; option is specified),
+       this is &lt;literal&gt;NULL&lt;/literal&gt;.
+</span>
+ストリームされるデータの総量です。
+これは推定され、<code class="literal">streaming database files</code>フェーズの最初に報告されます。
+データベースは<code class="literal">streaming database files</code>フェーズの間に変化するかもしれませんし、WALログが後ほどバックアップに含められますので、これは近似でしかないことに注意してください。
+ストリームされたデータ量が推定された総量を超えたら、これは常に<code class="structfield">backup_streamed</code>と同じ値です。
+<span class="application">pg_basebackup</span>で推定が無効にされて(すなわち、<code class="literal">--no-estimate-size</code>オプションが指定されて)いれば、<code class="literal">NULL</code>です。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">backup_streamed</code> <code class="type">bigint</code>
+      </p>
+      <p>
+<span class="original">
+       Amount of data streamed. This counter only advances
+       when the phase is &lt;literal&gt;streaming database files&lt;/literal&gt; or
+       &lt;literal&gt;transferring wal files&lt;/literal&gt;.
+</span>
+ストリームされるデータの量です。
+このカウンタはフェーズが<code class="literal">streaming database files</code>または<code class="literal">transferring wal files</code>の時にのみ増加します。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">tablespaces_total</code> <code class="type">bigint</code>
+      </p>
+      <p>
+<span class="original">
+       Total number of tablespaces that will be streamed.
+</span>
+ストリームされるテーブル空間の総数です。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">tablespaces_streamed</code> <code class="type">bigint</code>
+      </p>
+      <p>
+<span class="original">
+       Number of tablespaces streamed. This counter only
+       advances when the phase is &lt;literal&gt;streaming database files&lt;/literal&gt;.
+</span>
+ストリームされたテーブル空間の数です。
+このカウンタはフェーズが<code class="literal">streaming database files</code>の時にのみ増加します。
+      </p></td></tr></tbody></table></div></div><br class="table-break" /><div class="table" id="BASEBACKUP-PHASES"><p class="title"><strong>表28.45 ベースバックアップのフェーズ</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;Base Backup Phases&lt;/title&gt;
+</span><table class="table" summary="ベースバックアップのフェーズ" border="1"><colgroup><col class="col1" /><col class="col2" /></colgroup><thead><tr><th>フェーズ</th><th>説明</th></tr></thead><tbody><tr><td><code class="literal">initializing</code></td><td>
+<span class="original">
+       The WAL sender process is preparing to begin the backup.
+       This phase is expected to be very brief.
+</span>
+WAL送信プロセスはバックアップを開始する準備をしています。
+このフェーズはごく短時間になると予想されます。
+      </td></tr><tr><td><code class="literal">waiting for checkpoint to finish</code></td><td>
+<span class="original">
+       The WAL sender process is currently performing
+       &lt;function&gt;pg_backup_start&lt;/function&gt; to prepare to
+       take a base backup, and waiting for the start-of-backup
+       checkpoint to finish.
+</span>
+WAL送信プロセスは、ベースバックアップを取る準備をするために現在<code class="function">pg_backup_start</code>を実行し、バックアップ開始チェックポイントが完了するのを待っています。
+      </td></tr><tr><td><code class="literal">estimating backup size</code></td><td>
+<span class="original">
+       The WAL sender process is currently estimating the total amount
+       of database files that will be streamed as a base backup.
+</span>
+WAL送信プロセスは、ベースバックアップとしてストリームされるデータベースファイルの総量を現在推定しています。
+      </td></tr><tr><td><code class="literal">streaming database files</code></td><td>
+<span class="original">
+       The WAL sender process is currently streaming database files
+       as a base backup.
+</span>
+WAL送信プロセスはデータベースファイルをベースバックアップとして現在ストリームしています。
+      </td></tr><tr><td><code class="literal">waiting for wal archiving to finish</code></td><td>
+<span class="original">
+       The WAL sender process is currently performing
+       &lt;function&gt;pg_backup_stop&lt;/function&gt; to finish the backup,
+       and waiting for all the WAL files required for the base backup
+       to be successfully archived.
+       If either &lt;literal&gt;&amp;#45;-wal-method=none&lt;/literal&gt; or
+       &lt;literal&gt;&amp;#45;-wal-method=stream&lt;/literal&gt; is specified in
+       &lt;application&gt;pg_basebackup&lt;/application&gt;, the backup will end
+       when this phase is completed.
+</span>
+WAL送信プロセスは現在<code class="function">pg_backup_stop</code>を実行してバックアップを終了しており、ベースバックアップに必要なすべてのWALファイルが正常にアーカイブされるのを待機しています。
+<span class="application">pg_basebackup</span>で<code class="literal">--wal-method=none</code>または<code class="literal">--wal-method=stream</code>が指定された場合、バックアップはこのフェーズが完了した時点で終了します。
+      </td></tr><tr><td><code class="literal">transferring wal files</code></td><td>
+<span class="original">
+       The WAL sender process is currently transferring all WAL logs
+       generated during the backup. This phase occurs after
+       &lt;literal&gt;waiting for wal archiving to finish&lt;/literal&gt; phase if
+       &lt;literal&gt;&amp;#45;-wal-method=fetch&lt;/literal&gt; is specified in
+       &lt;application&gt;pg_basebackup&lt;/application&gt;. The backup will end
+       when this phase is completed.
+</span>
+WAL送信プロセスはバックアップ中に生成されたWALログをすべて現在転送しています。
+<span class="application">pg_basebackup</span>で<code class="literal">--wal-method=fetch</code>が指定されていれば、このフェーズが<code class="literal">waiting for wal archiving to finish</code>の次に来ます。
+バックアップはこのフェーズが完了したら終了します。
+      </td></tr></tbody></table></div></div><br class="table-break" /></div><div class="sect2" id="COPY-PROGRESS-REPORTING"><div class="titlepage"><div><div><h3 class="title">28.4.6. COPYの進捗状況のレポート</h3></div></div></div><span class="original">
+  &lt;title&gt;COPY Progress Reporting&lt;/title&gt;
+</span><a id="id-1.6.15.11.8.2" class="indexterm"></a><p>
+<span class="original">
+   Whenever &lt;command&gt;COPY&lt;/command&gt; is running, the
+   &lt;structname&gt;pg_stat_progress_copy&lt;/structname&gt; view will contain one row
+   for each backend that is currently running a &lt;command&gt;COPY&lt;/command&gt; command.
+   The table below describes the information that will be reported and provides
+   information about how to interpret it.
+</span>
+<code class="command">COPY</code>が実行されているときはいつでも、<code class="structname">pg_stat_progress_copy</code>ビューには現在<code class="command">COPY</code>コマンドを実行している各バックエンドごとの行が含まれます。
+以下の表は、報告される情報を説明し、どのように解釈するかの情報を提供します。
+  </p><div class="table" id="PG-STAT-PROGRESS-COPY-VIEW"><p class="title"><strong>表28.46 <code class="structname">pg_stat_progress_copy</code> View</strong></p><div class="table-contents"><table class="table" summary="pg_stat_progress_copy View" border="1"><colgroup><col /></colgroup><thead><tr><th class="catalog_table_entry"><p class="column_definition">
+<span class="original">
+       Column Type
+</span>
+列 型
+      </p>
+      <p>
+<span class="original">
+       Description
+</span>
+説明
+      </p></th></tr></thead><tbody><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">pid</code> <code class="type">integer</code>
+      </p>
+      <p>
+<span class="original">
+       Process ID of backend.
+</span>
+バックエンドのプロセスIDです。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">datid</code> <code class="type">oid</code>
+      </p>
+      <p>
+<span class="original">
+       OID of the database to which this backend is connected.
+</span>
+バックエンドが接続されているデータベースのOIDです。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">datname</code> <code class="type">name</code>
+      </p>
+      <p>
+<span class="original">
+       Name of the database to which this backend is connected.
+</span>
+バックエンドが接続されているデータベース名です。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">relid</code> <code class="type">oid</code>
+      </p>
+      <p>
+<span class="original">
+       OID of the table on which the &lt;command&gt;COPY&lt;/command&gt; command is
+       executed. It is set to &lt;literal&gt;0&lt;/literal&gt; if copying from a
+       &lt;command&gt;SELECT&lt;/command&gt; query.
+</span>
+<code class="command">COPY</code>コマンドが実行されるテーブルのOIDです。
+<code class="command">SELECT</code>問い合わせからコピーする場合は<code class="literal">0</code>に設定されます。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">command</code> <code class="type">text</code>
+      </p>
+      <p>
+<span class="original">
+       The command that is running: &lt;literal&gt;COPY FROM&lt;/literal&gt;, or
+       &lt;literal&gt;COPY TO&lt;/literal&gt;.
+</span>
+実行しているコマンドで、
+<code class="literal">COPY FROM</code>または<code class="literal">COPY TO</code>です。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">type</code> <code class="type">text</code>
+      </p>
+      <p>
+<span class="original">
+       The io type that the data is read from or written to:
+       &lt;literal&gt;FILE&lt;/literal&gt;, &lt;literal&gt;PROGRAM&lt;/literal&gt;,
+       &lt;literal&gt;PIPE&lt;/literal&gt; (for &lt;command&gt;COPY FROM STDIN&lt;/command&gt; and
+       &lt;command&gt;COPY TO STDOUT&lt;/command&gt;), or &lt;literal&gt;CALLBACK&lt;/literal&gt;
+       (used for example during the initial table synchronization in
+       logical replication).
+</span>
+データの読み取りまたは書き込みが行われる入出力の種類で、
+<code class="literal">FILE</code>、
+<code class="literal">PROGRAM</code>、
+<code class="literal">PIPE</code>（<code class="command">COPY FROM STDIN</code>および<code class="command">COPY TO STDOUT</code>用）、
+または<code class="literal">CALLBACK</code>（たとえば、論理レプリケーションの初期テーブル同期中に使用されます）です。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">bytes_processed</code> <code class="type">bigint</code>
+      </p>
+      <p>
+<span class="original">
+       Number of bytes already processed by &lt;command&gt;COPY&lt;/command&gt; command.
+</span>
+<code class="command">COPY</code>コマンドで既に処理されたバイト数です。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">bytes_total</code> <code class="type">bigint</code>
+      </p>
+      <p>
+<span class="original">
+       Size of source file for &lt;command&gt;COPY FROM&lt;/command&gt; command in bytes.
+       It is set to &lt;literal&gt;0&lt;/literal&gt; if not available.
+</span>
+<code class="command">COPY FROM</code>コマンドのコピー元ファイルのバイト数でのサイズです。
+利用できない場合は<code class="literal">0</code>に設定されます。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">tuples_processed</code> <code class="type">bigint</code>
+      </p>
+      <p>
+<span class="original">
+       Number of tuples already processed by &lt;command&gt;COPY&lt;/command&gt; command.
+</span>
+<code class="command">COPY</code>コマンドで既に処理されたタプル数です。
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">tuples_excluded</code> <code class="type">bigint</code>
+      </p>
+      <p>
+<span class="original">
+       Number of tuples not processed because they were excluded by the
+       &lt;command&gt;WHERE&lt;/command&gt; clause of the &lt;command&gt;COPY&lt;/command&gt; command.
+</span>
+<code class="command">COPY</code>コマンドの<code class="command">WHERE</code>句で除外されたために処理されなかったタプル数です。
+      </p></td></tr></tbody></table></div></div><br class="table-break" /></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="monitoring-locks.html" title="28.3. ロックの表示">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="monitoring.html" title="第28章 データベース活動状況の監視">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="dynamic-trace.html" title="28.5. 動的追跡">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">28.3. ロックの表示 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 28.5. 動的追跡</td></tr></table></div></body></html>

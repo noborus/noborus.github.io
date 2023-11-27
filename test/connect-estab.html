@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>52.2. 接続の確立</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="query-path.html" title="52.1. 問い合わせの経路" /><link rel="next" href="parser-stage.html" title="52.3. 構文解析過程" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="overview.html" title="第52章 PostgreSQL内部の概要">第52章 PostgreSQL内部の概要</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : connect-estab.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="query-path.html" title="52.1. 問い合わせの経路">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="overview.html" title="第52章 PostgreSQL内部の概要">上へ</a></td><td width="60%" align="center">52.2. 接続の確立</td><td width="20%" align="right"> <a accesskey="n" href="parser-stage.html" title="52.3. 構文解析過程">次へ</a></td></tr></table><hr /></div><div class="sect1" id="CONNECT-ESTAB"><div class="titlepage"><div><div><h2 class="title" style="clear: both">52.2. 接続の確立</h2></div></div></div><span class="original">
+   &lt;title&gt;How Connections Are Established&lt;/title&gt;
+</span><p>
+<span class="original">
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; implements a
+    &lt;quote&gt;process per user&lt;/quote&gt; client/server model.
+    In this model, every
+    &lt;glossterm linkend="glossary-client"&gt;client process&lt;/glossterm&gt;
+    connects to exactly one
+    &lt;glossterm linkend="glossary-backend"&gt;backend process&lt;/glossterm&gt;.
+    As we do not know ahead of time how many connections will be made,
+    we have to use a &lt;quote&gt;supervisor process&lt;/quote&gt; that spawns a new
+    backend process every time a connection is requested. This supervisor
+    process is called
+    &lt;glossterm linkend="glossary-postmaster"&gt;postmaster&lt;/glossterm&gt;
+    and listens at a specified TCP/IP port for incoming connections.
+    Whenever it detects a request for a connection, it spawns a new
+    backend process.  Those backend processes communicate with each
+    other and with other processes of the
+    &lt;glossterm linkend="glossary-instance"&gt;instance&lt;/glossterm&gt;
+    using &lt;firstterm&gt;semaphores&lt;/firstterm&gt; and
+    &lt;glossterm linkend="glossary-shared-memory"&gt;shared memory&lt;/glossterm&gt;
+    to ensure data integrity throughout concurrent data access.
+</span>
+<span class="productname">PostgreSQL</span>は<span class="quote">「<span class="quote">1プロセスに1ユーザ</span>」</span>のクライアント/サーバモデルを実装しています。
+このモデルでは、各<a class="glossterm" href="glossary.html#GLOSSARY-CLIENT"><em class="glossterm"><a class="glossterm" href="glossary.html#GLOSSARY-CLIENT" title="Client【クライアント】（プロセス）">クライアントプロセス</a></em></a>は厳密に1つの<a class="glossterm" href="glossary.html#GLOSSARY-BACKEND"><em class="glossterm"><a class="glossterm" href="glossary.html#GLOSSARY-BACKEND" title="Backend【バックエンド】（プロセス）">バックエンドプロセス</a></em></a>に接続します。
+いくつの接続が行われるか事前にわからないので、接続要求の度に新しいバックエンドプロセスを作る<span class="quote">「<span class="quote">スーパーバイザプロセス</span>」</span>を使わなければなりません。
+このスーパーバイザプロセスは<a class="glossterm" href="glossary.html#GLOSSARY-POSTMASTER"><em class="glossterm"><a class="glossterm" href="glossary.html#GLOSSARY-POSTMASTER" title="Postmaster（プロセス）">postmaster</a></em></a>と呼ばれ、指定されたTCP/IPポートで入ってくる接続要求を監視します。
+接続要求を検出すると、新しいバックエンドプロセスを生み出します。
+このバックエンドプロセスは<em class="firstterm">セマフォ</em>と<a class="glossterm" href="glossary.html#GLOSSARY-SHARED-MEMORY"><em class="glossterm"><a class="glossterm" href="glossary.html#GLOSSARY-SHARED-MEMORY" title="Shared memory【共有メモリ】">共有メモリ</a></em></a>を活用してお互いに連絡を取り合い、<a class="glossterm" href="glossary.html#GLOSSARY-INSTANCE"><em class="glossterm"><a class="glossterm" href="glossary.html#GLOSSARY-INSTANCE" title="Instance【インスタンス】">instance</a></em></a>の他のプロセスと通信し、同時にデータにアクセスしても整合性が保たれるようにします。
+   </p><p>
+<span class="original">
+    The client process can be any program that understands the
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; protocol described in
+    &lt;xref linkend="protocol"/&gt;.  Many clients are based on the
+    C-language library &lt;application&gt;libpq&lt;/application&gt;, but several independent
+    implementations of the protocol exist, such as the Java
+    &lt;application&gt;JDBC&lt;/application&gt; driver.
+</span>
+クライアントプロセスは<a class="xref" href="protocol.html" title="第55章 フロントエンド/バックエンドプロトコル">第55章</a>に記載された<span class="productname">PostgreSQL</span>プロトコルを理解できるどんなプログラムでも構いません。
+多くのクライアントは<span class="application">libpq</span> C言語ライブラリに基づいていますが、Java <span class="application">JDBC</span>ドライバのようにいくつかの独立したプロトコル実装も存在します。
+   </p><p>
+<span class="original">
+    Once a connection is established, the client process can send a query
+    to the backend process it's connected to. The query is transmitted using
+    plain text, i.e., there is no parsing done in the client. The backend
+    process parses the query, creates an &lt;firstterm&gt;execution plan&lt;/firstterm&gt;,
+    executes the plan, and returns the retrieved rows to the client
+    by transmitting them over the established connection.
+</span>
+いったん接続が確立されると、クライアントプロセスは接続されたバックエンドプロセスに問い合わせを送ることができます。
+問い合わせは平文で送信されます。
+つまり、クライアントでは構文解析を行いません。
+バックエンドプロセスは問い合わせの構文解析を行い、<em class="firstterm">実行計画</em>を作り、そして計画を実行し、抽出した行を確立された接続を通じてクライアントに返します。
+   </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="query-path.html" title="52.1. 問い合わせの経路">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="overview.html" title="第52章 PostgreSQL内部の概要">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="parser-stage.html" title="52.3. 構文解析過程">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">52.1. 問い合わせの経路 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 52.3. 構文解析過程</td></tr></table></div></body></html>

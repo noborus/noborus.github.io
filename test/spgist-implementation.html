@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>69.4. 実装</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="spgist-extensibility.html" title="69.3. 拡張性" /><link rel="next" href="spgist-examples.html" title="69.5. 例" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="spgist.html" title="第69章 SP-GiSTインデックス">第69章 SP-GiSTインデックス</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : spgist-implementation.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="spgist-extensibility.html" title="69.3. 拡張性">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="spgist.html" title="第69章 SP-GiSTインデックス">上へ</a></td><td width="60%" align="center">69.4. 実装</td><td width="20%" align="right"> <a accesskey="n" href="spgist-examples.html" title="69.5. 例">次へ</a></td></tr></table><hr /></div><div class="sect1" id="SPGIST-IMPLEMENTATION"><div class="titlepage"><div><div><h2 class="title" style="clear: both">69.4. 実装</h2></div></div></div><span class="original">
+ &lt;title&gt;Implementation&lt;/title&gt;
+</span><p>
+<span class="original">
+   This section covers implementation details and other tricks that are
+   useful for implementers of &lt;acronym&gt;SP-GiST&lt;/acronym&gt; operator classes to
+   know.
+</span>
+この節では、<acronym class="acronym">SP-GiST</acronym>の演算子クラスを実装する人にとって知っていると役に立つ、実装についての詳細とその他の秘訣について説明します。
+  </p><div class="sect2" id="SPGIST-LIMITS"><div class="titlepage"><div><div><h3 class="title">69.4.1. SP-GiSTの制限</h3></div></div></div><span class="original">
+  &lt;title&gt;SP-GiST Limits&lt;/title&gt;
+</span><p>
+<span class="original">
+   Individual leaf tuples and inner tuples must fit on a single index page
+   (8kB by default).  Therefore, when indexing values of variable-length
+   data types, long values can only be supported by methods such as radix
+   trees, in which each level of the tree includes a prefix that is short
+   enough to fit on a page, and the final leaf level includes a suffix also
+   short enough to fit on a page.  The operator class should set
+   &lt;structfield&gt;longValuesOK&lt;/structfield&gt; to true only if it is prepared to arrange for
+   this to happen.  Otherwise, the &lt;acronym&gt;SP-GiST&lt;/acronym&gt; core will
+   reject any request to index a value that is too large to fit
+   on an index page.
+</span>
+それぞれのリーフタプルおよび内部タプルは1つのインデックスページ内(デフォルトで8kB)に収まらなければなりません。
+従って、可変長のデータ型の値をインデックス付けするときは、長い値は基数木のようなメソッドによってのみサポートされます。つまり、ツリーのそれぞれのレベルではページに収まる短さの接頭辞を含み、最後のリーフレベルでは、やはりページに収まる短さの接尾辞を含む、というようなものです。
+このようなことが発生する場合の対応の準備ができている場合のみ、演算子クラスは<code class="structfield">longValuesOK</code>を真にセットするべきです。
+そうでなければ、<acronym class="acronym">SP-GiST</acronym>のコアは、インデックスページに収めるには大きすぎる値についてのインデックス付け要求を拒絶します。
+  </p><p>
+<span class="original">
+   Likewise, it is the operator class's responsibility that inner tuples
+   do not grow too large to fit on an index page; this limits the number
+   of child nodes that can be used in one inner tuple, as well as the
+   maximum size of a prefix value.
+</span>
+同様に、内部タプルが大きくなりすぎてインデックスページに収まらない、ということにならないようにするのは、演算子クラスの責任です。
+これにより、1つの内部タプルで使うことができる子ノードの数、および接頭辞の値の最大サイズが制限されます。
+  </p><p>
+<span class="original">
+   Another limitation is that when an inner tuple's node points to a set
+   of leaf tuples, those tuples must all be in the same index page.
+   (This is a design decision to reduce seeking and save space in the
+   links that chain such tuples together.)  If the set of leaf tuples
+   grows too large for a page, a split is performed and an intermediate
+   inner tuple is inserted.  For this to fix the problem, the new inner
+   tuple &lt;emphasis&gt;must&lt;/emphasis&gt; divide the set of leaf values into more than one
+   node group.  If the operator class's &lt;function&gt;picksplit&lt;/function&gt; function
+   fails to do that, the &lt;acronym&gt;SP-GiST&lt;/acronym&gt; core resorts to
+   extraordinary measures described in &lt;xref linkend="spgist-all-the-same"/&gt;.
+</span>
+内部タプルのノードがリーフタプルの集合を指しているとき、それらのタプルはすべて同じインデックスページ内になければならない、という制限もあります。
+(これは、シークの回数を減らし、そのようなタプルを一つにつなげるリンクに必要なスペースを減らす、という設計上の決定によるものです。)
+リーフタプルの集合が大きくなって1ページに収まらなくなると、分割が実行され、中間の内部タプルが挿入されます。
+これで問題を解決するためには、新しい内部タプルは、リーフの値の集合を2つ以上のノードのグループに分割し<span class="emphasis"><em>なければなりません</em></span>。
+演算子クラスの<code class="function">picksplit</code>関数がそれをするのに失敗したときは、<acronym class="acronym">SP-GiST</acronym>のコアは、<a class="xref" href="spgist-implementation.html#SPGIST-ALL-THE-SAME" title="69.4.3. 「All-the-Same」内部タプル">69.4.3</a>に記述されている特別な手段に頼ることになります。
+  </p><p>
+<span class="original">
+   When &lt;structfield&gt;longValuesOK&lt;/structfield&gt; is true, it is expected
+   that successive levels of the &lt;acronym&gt;SP-GiST&lt;/acronym&gt; tree will
+   absorb more and more information into the prefixes and node labels of
+   the inner tuples, making the required leaf datum smaller and smaller,
+   so that eventually it will fit on a page.
+   To prevent bugs in operator classes from causing infinite insertion
+   loops, the &lt;acronym&gt;SP-GiST&lt;/acronym&gt; core will raise an error if the
+   leaf datum does not become any smaller within ten cycles
+   of &lt;function&gt;choose&lt;/function&gt; method calls.
+</span>
+<code class="structfield">longValuesOK</code>が真であれば、<acronym class="acronym">SP-GiST</acronym>ツリーの後続のレベルは、より多くの情報を接頭辞と内部タプルのノードラベルへと吸収し、要求されるリーフデータより小さくして、最終的には1ページに収まるようになることが期待されます。
+演算子クラスのバグが無限の挿入ループを引き起こすのを防ぐために、<code class="function">choose</code>メソッドの呼び出しの10サイクル以内でリーフデータが少しも小さくならなければ、<acronym class="acronym">SP-GiST</acronym>コアはエラーを発生します。
+  </p></div><div class="sect2" id="SPGIST-NULL-LABELS"><div class="titlepage"><div><div><h3 class="title">69.4.2. ノードラベルのないSP-GiST</h3></div></div></div><span class="original">
+  &lt;title&gt;SP-GiST Without Node Labels&lt;/title&gt;
+</span><p>
+<span class="original">
+   Some tree algorithms use a fixed set of nodes for each inner tuple;
+   for example, in a quad-tree there are always exactly four nodes
+   corresponding to the four quadrants around the inner tuple's centroid
+   point.  In such a case the code typically works with the nodes by
+   number, and there is no need for explicit node labels.  To suppress
+   node labels (and thereby save some space), the &lt;function&gt;picksplit&lt;/function&gt;
+   function can return NULL for the &lt;structfield&gt;nodeLabels&lt;/structfield&gt; array,
+   and likewise the &lt;function&gt;choose&lt;/function&gt; function can return NULL for
+   the &lt;structfield&gt;prefixNodeLabels&lt;/structfield&gt; array during
+   a &lt;literal&gt;spgSplitTuple&lt;/literal&gt; action.
+   This will in turn result in &lt;structfield&gt;nodeLabels&lt;/structfield&gt; being NULL during
+   subsequent calls to &lt;function&gt;choose&lt;/function&gt; and &lt;function&gt;inner_consistent&lt;/function&gt;.
+   In principle, node labels could be used for some inner tuples and omitted
+   for others in the same index.
+</span>
+木構造のアルゴリズムには、それぞれの内部タプルに対して固定された集合のノードを使うものがあります。
+例えば四分木では、内部タプルの中心点の周りの4つの象限に対応するちょうど4つのノードが必ずあります。
+このような場合、コードは典型的には数字を使ったノードで動作し、明示的なノードラベルは必要ありません。
+ノードラベルを使わない(そしてそれによりいくらかのスペースを節約する)ために、<code class="function">picksplit</code>関数は<code class="structfield">nodeLabels</code>配列としてNULLを返すことができ、同様に<code class="function">choose</code>関数は<code class="literal">spgSplitTuple</code>アクションの間<code class="structfield">prefixNodeLabels</code>配列としてNULLを返すことができます。
+この結果、その後の<code class="function">choose</code>関数および<code class="function">inner_consistent</code>関数の呼び出しにおいても<code class="structfield">nodeLabels</code>はNULLになります。
+原則として、ノードラベルは同じインデックス中の一部の内部タプルに使い、他の内部タプルには省略する、ということができます。
+  </p><p>
+<span class="original">
+   When working with an inner tuple having unlabeled nodes, it is an error
+   for &lt;function&gt;choose&lt;/function&gt; to return &lt;literal&gt;spgAddNode&lt;/literal&gt;, since the set
+   of nodes is supposed to be fixed in such cases.
+</span>
+ラベルのないノードを持つ内部タプルを処理するときに、<code class="function">choose</code>が<code class="literal">spgAddNode</code>を返すのはエラーです。というのは、この場合、ノードの集合は固定されていると想定されるからです。
+  </p></div><div class="sect2" id="SPGIST-ALL-THE-SAME"><div class="titlepage"><div><div><h3 class="title">69.4.3. <span class="quote">「<span class="quote">All-the-Same</span>」</span>内部タプル</h3></div></div></div><span class="original">
+  &lt;title&gt;&lt;quote&gt;All-the-Same&lt;/quote&gt; Inner Tuples&lt;/title&gt;
+</span><p>
+<span class="original">
+   The &lt;acronym&gt;SP-GiST&lt;/acronym&gt; core can override the results of the
+   operator class's &lt;function&gt;picksplit&lt;/function&gt; function when
+   &lt;function&gt;picksplit&lt;/function&gt; fails to divide the supplied leaf values into
+   at least two node categories.  When this happens, the new inner tuple
+   is created with multiple nodes that each have the same label (if any)
+   that &lt;function&gt;picksplit&lt;/function&gt; gave to the one node it did use, and the
+   leaf values are divided at random among these equivalent nodes.
+   The &lt;literal&gt;allTheSame&lt;/literal&gt; flag is set on the inner tuple to warn the
+   &lt;function&gt;choose&lt;/function&gt; and &lt;function&gt;inner_consistent&lt;/function&gt; functions that the
+   tuple does not have the node set that they might otherwise expect.
+</span>
+<code class="function">picksplit</code>が入力のリーフ値を少なくとも2つのノード分類に分割できなかった場合、<acronym class="acronym">SP-GiST</acronym>のコアは演算子クラスの<code class="function">picksplit</code>関数の結果を無効にすることがあります。
+これが起きると、複数のノードを持つ新しい内部タプルが作成されます。それぞれのノードは、<code class="function">picksplit</code>が一つのノードに付与したもの(あれば)と同じラベルを持ち、リーフ値はこれらの等価なノード間でランダムに分割されます。
+内部タプルには<code class="literal">allTheSame</code>のフラグがセットされ、<code class="function">choose</code>関数および<code class="function">inner_consistent</code>関数に対し、そのタプルが通常期待されるようなノードの集合を持っていないことを警告します。
+  </p><p>
+<span class="original">
+   When dealing with an &lt;literal&gt;allTheSame&lt;/literal&gt; tuple, a &lt;function&gt;choose&lt;/function&gt;
+   result of &lt;literal&gt;spgMatchNode&lt;/literal&gt; is interpreted to mean that the new
+   value can be assigned to any of the equivalent nodes; the core code will
+   ignore the supplied  &lt;structfield&gt;nodeN&lt;/structfield&gt; value and descend into one
+   of the nodes at random (so as to keep the tree balanced).  It is an
+   error for &lt;function&gt;choose&lt;/function&gt; to return &lt;literal&gt;spgAddNode&lt;/literal&gt;, since
+   that would make the nodes not all equivalent; the
+   &lt;literal&gt;spgSplitTuple&lt;/literal&gt; action must be used if the value to be inserted
+   doesn't match the existing nodes.
+</span>
+<code class="literal">allTheSame</code>の処理において、<code class="function">choose</code>の<code class="literal">spgMatchNode</code>という結果は、新しい値は等価なノードのどれに割り当てられても良い、という意味に解釈されます。
+コアのコードは入力された<code class="structfield">nodeN</code>の値を無視し、(ツリーの平衡を保つために)ノードの1つにランダムに降りていきます。
+<code class="function">choose</code>が<code class="literal">spgAddNode</code>を返すのはエラーです。というのは、そうするとすべてのノードが等価ではなくなるからです。
+挿入する値が既存のノードとマッチしない時は、<code class="literal">spgSplitTuple</code>のアクションを使わなければなりません。
+  </p><p>
+<span class="original">
+   When dealing with an &lt;literal&gt;allTheSame&lt;/literal&gt; tuple, the
+   &lt;function&gt;inner_consistent&lt;/function&gt; function should return either all or none
+   of the nodes as targets for continuing the index search, since they are
+   all equivalent.  This may or may not require any special-case code,
+   depending on how much the &lt;function&gt;inner_consistent&lt;/function&gt; function normally
+   assumes about the meaning of the nodes.
+</span>
+<code class="literal">allTheSame</code>のタプルの処理において、すべてのノードは等価なので、<code class="function">inner_consistent</code>関数は、インデックス検索を続けるためのターゲットとして、すべてのノードを返すか、ノードを1つも返さないかのいずれかであるべきです。
+このために、特殊ケースを扱うコードが必要になるかもしれませんし、必要ないかもしれません。それは、<code class="function">inner_consistent</code>関数が、通常、ノードの意味についてどの程度のことを仮定しているかに依存します。
+  </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="spgist-extensibility.html" title="69.3. 拡張性">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="spgist.html" title="第69章 SP-GiSTインデックス">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="spgist-examples.html" title="69.5. 例">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">69.3. 拡張性 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 69.5. 例</td></tr></table></div></body></html>

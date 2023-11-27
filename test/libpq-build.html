@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>34.21. libpqプログラムの構築</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="libpq-threading.html" title="34.20. スレッド化プログラムの振舞い" /><link rel="next" href="libpq-example.html" title="34.22. サンプルプログラム" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="libpq.html" title="第34章 libpq — C ライブラリ">第34章 <span class="application">libpq</span> — C ライブラリ</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : libpq-build.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="libpq-threading.html" title="34.20. スレッド化プログラムの振舞い">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="libpq.html" title="第34章 libpq — C ライブラリ">上へ</a></td><td width="60%" align="center">34.21. <span class="application">libpq</span>プログラムの構築</td><td width="20%" align="right"> <a accesskey="n" href="libpq-example.html" title="34.22. サンプルプログラム">次へ</a></td></tr></table><hr /></div><div class="sect1" id="LIBPQ-BUILD"><div class="titlepage"><div><div><h2 class="title" style="clear: both">34.21. <span class="application">libpq</span>プログラムの構築</h2></div></div></div><span class="original">
+  &lt;title&gt;Building &lt;application&gt;libpq&lt;/application&gt; Programs&lt;/title&gt;
+</span><a id="id-1.7.3.28.2" class="indexterm"></a><a id="id-1.7.3.28.3" class="indexterm"></a><p>
+<span class="original">
+   To build (i.e., compile and link) a program using
+   &lt;application&gt;libpq&lt;/application&gt; you need to do all of the following
+   things:
+</span>
+<span class="application">libpq</span>を使用するプログラムの構築(つまり、コンパイルとリンク)を行うためには、以下をすべて実施する必要があります。
+
+   </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+      Include the &lt;filename&gt;libpq-fe.h&lt;/filename&gt; header file:
+</span>
+<code class="filename">libpq-fe.h</code>ヘッダファイルをインクルードします。
+</p><pre class="programlisting">
+#include &lt;libpq-fe.h&gt;
+</pre><p>
+<span class="original">
+      If you failed to do that then you will normally get error messages
+      from your compiler similar to:
+</span>
+これを忘れると、通常コンパイラから以下のようなエラーメッセージが発生します。
+</p><pre class="screen">
+foo.c: In function `main':
+foo.c:34: `PGconn' undeclared (first use in this function)
+foo.c:35: `PGresult' undeclared (first use in this function)
+foo.c:54: `CONNECTION_BAD' undeclared (first use in this function)
+foo.c:68: `PGRES_COMMAND_OK' undeclared (first use in this function)
+foo.c:95: `PGRES_TUPLES_OK' undeclared (first use in this function)
+</pre><p>
+     </p></li><li class="listitem"><p>
+<span class="original">
+      Point your compiler to the directory where the &lt;productname&gt;PostgreSQL&lt;/productname&gt; header
+      files were installed, by supplying the
+      &lt;literal&gt;-I&lt;replaceable&gt;directory&lt;/replaceable&gt;&lt;/literal&gt; option
+      to your compiler.  (In some cases the compiler will look into
+      the directory in question by default, so you can omit this
+      option.)  For instance, your compile command line could look
+      like:
+</span>
+コンパイラに<code class="literal">-I<em class="replaceable"><code>directory</code></em></code>オプションを付与することで、コンパイラに<span class="productname">PostgreSQL</span>ヘッダファイルをインストールしたディレクトリを通知します。
+（デフォルトでこのディレクトリを検索するコンパイラもあります。
+その場合はこのオプションを省くことができます。）
+例えば、以下のようなコンパイルコマンドになります。
+</p><pre class="programlisting">
+cc -c -I/usr/local/pgsql/include testprog.c
+</pre><p>
+<span class="original">
+      If you are using makefiles then add the option to the
+      &lt;varname&gt;CPPFLAGS&lt;/varname&gt; variable:
+</span>
+Makefileを使用しているのであれば、<code class="varname">CPPFLAGS</code>変数にこのオプションを追加してください。
+</p><pre class="programlisting">
+CPPFLAGS += -I/usr/local/pgsql/include
+</pre><p>
+     </p><p>
+<span class="original">
+      If there is any chance that your program might be compiled by
+      other users then you should not hardcode the directory location
+      like that.  Instead, you can run the utility
+      &lt;command&gt;pg_config&lt;/command&gt;&lt;indexterm&gt;&lt;primary&gt;pg_config&lt;/primary&gt;&lt;secondary
+      sortas="libpq"&gt;with libpq&lt;/secondary&gt;&lt;/indexterm&gt; to find out where the header
+      files are on the local system:
+</span>
+他のユーザがそのプログラムをコンパイルする可能性がある場合は、上のようにディレクトリの場所を直接書き込むべきではありません。
+その代わりに<code class="command">pg_config</code><a id="id-1.7.3.28.4.2.2.2.2" class="indexterm"></a>ユーティリティを実行して、各システムにおけるヘッダファイルの在処を検索させることができます。
+</p><pre class="screen">
+<code class="prompt">$</code> pg_config --includedir
+<code class="computeroutput">/usr/local/include</code>
+</pre><p>
+     </p><p>
+<span class="original">
+      If you
+      have &lt;command&gt;pkg-config&lt;/command&gt;&lt;indexterm&gt;&lt;primary&gt;pkg-config&lt;/primary&gt;&lt;secondary sortas="libpq"&gt;with
+      libpq&lt;/secondary&gt;&lt;/indexterm&gt; installed, you can run instead:
+</span>
+もしも、<code class="command">pkg-config</code>がインストールされている場合、代わりとして以下を実行します。<a id="id-1.7.3.28.4.2.2.3.2" class="indexterm"></a>
+</p><pre class="screen">
+<code class="prompt">$</code> pkg-config --cflags libpq
+<code class="computeroutput">-I/usr/local/include</code>
+</pre><p>
+<span class="original">
+      Note that this will already include the &lt;option&gt;-I&lt;/option&gt; in front of
+      the path.
+</span>
+これは既にパスの最前部で<code class="option">-I</code>が含まれていることに注意してください。
+     </p><p>
+<span class="original">
+      Failure to specify the correct option to the compiler will
+      result in an error message such as:
+</span>
+正確なオプションを指定できなかった結果、コンパイラは以下のようなエラーメッセージを生成します。
+</p><pre class="screen">
+testlibpq.c:8:22: libpq-fe.h: No such file or directory
+</pre><p>
+     </p></li><li class="listitem"><p>
+<span class="original">
+      When linking the final program, specify the option
+      &lt;literal&gt;-lpq&lt;/literal&gt; so that the &lt;application&gt;libpq&lt;/application&gt;
+      library gets pulled in, as well as the option
+      &lt;literal&gt;-L&lt;replaceable&gt;directory&lt;/replaceable&gt;&lt;/literal&gt; to point
+      the compiler to the directory where the
+      &lt;application&gt;libpq&lt;/application&gt; library resides.  (Again, the
+      compiler will search some directories by default.)  For maximum
+      portability, put the &lt;option&gt;-L&lt;/option&gt; option before the
+      &lt;option&gt;-lpq&lt;/option&gt; option.  For example:
+</span>
+最終的なプログラムのリンク時、<code class="literal">-lpq</code>オプションを指定して、<span class="application">libpq</span>ライブラリを組み込んでください。
+同時に<code class="literal">-L<em class="replaceable"><code>directory</code></em></code>オプションを指定して、コンパイラに<span class="application">libpq</span>ライブラリの在処を通知してください。
+（繰り返しますが、コンパイラはデフォルトでいくつかのディレクトリを検索します。）
+移植性を最大にするために、<code class="option">-lpq</code>オプションの前に<code class="option">-L</code>を記述してください。
+以下に例を示します。
+</p><pre class="programlisting">
+cc -o testprog testprog1.o testprog2.o -L/usr/local/pgsql/lib -lpq
+</pre><p>
+     </p><p>
+<span class="original">
+      You can find out the library directory using
+      &lt;command&gt;pg_config&lt;/command&gt; as well:
+</span>
+同様に<code class="command">pg_config</code>を使用してライブラリのあるディレクトリを見つけることもできます。
+</p><pre class="screen">
+<code class="prompt">$</code> pg_config --libdir
+<code class="computeroutput">/usr/local/pgsql/lib</code>
+</pre><p>
+     </p><p>
+<span class="original">
+      Or again use &lt;command&gt;pkg-config&lt;/command&gt;:
+</span>
+さもなくば、この場合もやはり<code class="command">pkg-config</code>を使用します。
+</p><pre class="screen">
+<code class="prompt">$</code> pkg-config --libs libpq
+<code class="computeroutput">-L/usr/local/pgsql/lib -lpq</code>
+</pre><p>
+<span class="original">
+      Note again that this prints the full options, not only the path.
+</span>
+重ねて、これはパスのみならず全てのオプションを表示することに注意してください。
+     </p><p>
+<span class="original">
+      Error messages that point to problems in this area could look like
+      the following:
+</span>
+この部分で問題があった場合のエラーメッセージは以下のようなものになります。
+</p><pre class="screen">
+testlibpq.o: In function `main':
+testlibpq.o(.text+0x60): undefined reference to `PQsetdbLogin'
+testlibpq.o(.text+0x71): undefined reference to `PQstatus'
+testlibpq.o(.text+0xa4): undefined reference to `PQerrorMessage'
+</pre><p>
+<span class="original">
+      This means you forgot &lt;option&gt;-lpq&lt;/option&gt;.
+</span>
+これは<code class="option">-lpq</code>の付け忘れを示します。
+</p><pre class="screen">
+/usr/bin/ld: cannot find -lpq
+</pre><p>
+<span class="original">
+      This means you forgot the &lt;option&gt;-L&lt;/option&gt; option or did not
+      specify the right directory.
+</span>
+これは<code class="option">-L</code>の付け忘れ、あるいは、ディレクトリ指定の間違いを示します。
+     </p></li></ul></div><p>
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="libpq-threading.html" title="34.20. スレッド化プログラムの振舞い">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="libpq.html" title="第34章 libpq — C ライブラリ">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="libpq-example.html" title="34.22. サンプルプログラム">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">34.20. スレッド化プログラムの振舞い </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 34.22. サンプルプログラム</td></tr></table></div></body></html>

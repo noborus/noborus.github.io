@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>44.4. PL/Tclにおけるグローバルデータ</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="pltcl-data.html" title="44.3. PL/Tclにおけるデータの値" /><link rel="next" href="pltcl-dbaccess.html" title="44.5. PL/Tclからのデータベースアクセス" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="pltcl.html" title="第44章 PL/Tcl — Tcl手続き言語">第44章 PL/Tcl — Tcl手続き言語</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : pltcl-global.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="pltcl-data.html" title="44.3. PL/Tclにおけるデータの値">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="pltcl.html" title="第44章 PL/Tcl — Tcl手続き言語">上へ</a></td><td width="60%" align="center">44.4. PL/Tclにおけるグローバルデータ</td><td width="20%" align="right"> <a accesskey="n" href="pltcl-dbaccess.html" title="44.5. PL/Tclからのデータベースアクセス">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PLTCL-GLOBAL"><div class="titlepage"><div><div><h2 class="title" style="clear: both">44.4. PL/Tclにおけるグローバルデータ</h2></div></div></div><span class="original">
+    &lt;title&gt;Global Data in PL/Tcl&lt;/title&gt;
+</span><a id="id-1.8.9.8.2" class="indexterm"></a><a id="id-1.8.9.8.3" class="indexterm"></a><p>
+<span class="original">
+     Sometimes it
+     is useful to have some global data that is held between two
+     calls to a function or is shared between different functions.
+     This is easily done in PL/Tcl, but there are some restrictions that
+     must be understood.
+</span>
+ある関数の複数の呼び出し間で保持される、もしくは、異なる関数間で共有されるような、いくつかのグローバルデータを持つことが有意な場合があります。
+これはPL/Tclで簡単に実現できますが、理解する必要がある制限がいくつかあります。
+    </p><p>
+<span class="original">
+     For security reasons, PL/Tcl executes functions called by any one SQL
+     role in a separate Tcl interpreter for that role.  This prevents
+     accidental or malicious interference by one user with the behavior of
+     another user's PL/Tcl functions.  Each such interpreter will have its own
+     values for any &lt;quote&gt;global&lt;/quote&gt; Tcl variables.  Thus, two PL/Tcl
+     functions will share the same global variables if and only if they are
+     executed by the same SQL role.  In an application wherein a single
+     session executes code under multiple SQL roles (via &lt;literal&gt;SECURITY
+     DEFINER&lt;/literal&gt; functions, use of &lt;command&gt;SET ROLE&lt;/command&gt;, etc.) you may need to
+     take explicit steps to ensure that PL/Tcl functions can share data.  To
+     do that, make sure that functions that should communicate are owned by
+     the same user, and mark them &lt;literal&gt;SECURITY DEFINER&lt;/literal&gt;.  You must of
+     course take care that such functions can't be used to do anything
+     unintended.
+</span>
+セキュリティ上の理由のため、PL/Tclは、任意のSQLロールによって呼び出された関数をそのロール用の別のTclインタプリタで実行します。
+これにより、あるユーザの事故または悪意によって他のユーザのPL/Tcl関数の動作が干渉されてしまうことを防ぎます。
+こうしたインタプリタはそれぞれ独自の<span class="quote">「<span class="quote">グローバル</span>」</span>なTcl変数を持ちます。
+したがって、同じSQLロールにより実行されていれば、２つのPL/Tcl関数は同じグローバル変数を共有します。
+単一セッション内で（<code class="literal">SECURITY DEFINER</code>関数または<code class="command">SET ROLE</code>などを通して）複数のSQLロールでコードを実行するアプリケーションでは、PL/Tcl関数が確実にデータを共有できるように明示的な処理を行う必要があるかもしれません。
+このためには、通信しなければならない関数が同一ユーザで所有されていること、および、それが<code class="literal">SECURITY DEFINER</code>として印がついていることを確実にしてください。
+当然ながら、こうした関数が意図しない動作を行うために使われることのないよう注意しなければなりません。
+    </p><p>
+<span class="original">
+     All PL/TclU functions used in a session execute in the same Tcl
+     interpreter, which of course is distinct from the interpreter(s)
+     used for PL/Tcl functions.  So global data is automatically shared
+     between PL/TclU functions.  This is not considered a security risk
+     because all PL/TclU functions execute at the same trust level,
+     namely that of a database superuser.
+</span>
+セッション内で使用されるすべてのPL/TclU関数は、当然ながらPL/Tcl関数とは別のインタプリタですが、同一のTclインタプリタ内で実行されます。
+このためPL/TclU関数間ではグローバルデータは自動的に共有されます。
+すべてのPL/TclU関数は同じ信頼レベル、すなわちデータベーススーパーユーザで実行されますので、これはセキュリティ上危険とはみなされません。
+    </p><p>
+<span class="original">
+     To help protect PL/Tcl functions from unintentionally interfering
+     with each other, a global
+     array is made available to each function via the &lt;function&gt;upvar&lt;/function&gt;
+     command. The global name of this variable is the function's internal
+     name, and the local name is &lt;literal&gt;GD&lt;/literal&gt;.  It is recommended that
+     &lt;literal&gt;GD&lt;/literal&gt; be used
+     for persistent private data of a function.  Use regular Tcl global
+     variables only for values that you specifically intend to be shared among
+     multiple functions.  (Note that the &lt;literal&gt;GD&lt;/literal&gt; arrays are only
+     global within a particular interpreter, so they do not bypass the
+     security restrictions mentioned above.)
+</span>
+PL/Tcl関数が予期しない相互作用に巻き込まれないようにするために、<code class="function">upvar</code>コマンドを使用することによって、各関数でアクセスできるグローバルな配列を作成することができます。
+この変数のグローバル名は関数の内部名で、ローカル名は<code class="literal">GD</code>となります。
+関数の永続局所データでは<code class="literal">GD</code>を使用することを推奨します。
+複数の関数で共用させる予定の値に対してのみ、通常のTclのグローバル変数を使用してください。
+（<code class="literal">GD</code>配列が特定のインタプリタ内のみでグローバルであることに注意してください。
+このため、これらは上記のセキュリティ制限を迂回することはありません。）
+    </p><p>
+<span class="original">
+     An example of using &lt;literal&gt;GD&lt;/literal&gt; appears in the
+     &lt;function&gt;spi_execp&lt;/function&gt; example below.
+</span>
+後述の<code class="function">spi_execp</code>の例の中に<code class="literal">GD</code>の使用例があります。
+    </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="pltcl-data.html" title="44.3. PL/Tclにおけるデータの値">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="pltcl.html" title="第44章 PL/Tcl — Tcl手続き言語">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="pltcl-dbaccess.html" title="44.5. PL/Tclからのデータベースアクセス">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">44.3. PL/Tclにおけるデータの値 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 44.5. PL/Tclからのデータベースアクセス</td></tr></table></div></body></html>

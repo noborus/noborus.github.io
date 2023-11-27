@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>49.10. ロジカルデコーディングための2相コミット</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="logicaldecoding-streaming.html" title="49.9. ロジカルデコーディングための大規模トランザクションのストリーミング" /><link rel="next" href="replication-origins.html" title="第50章 レプリケーション進捗の追跡" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="logicaldecoding.html" title="第49章 ロジカルデコーディング">第49章 ロジカルデコーディング</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : logicaldecoding-two-phase-commits.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="logicaldecoding-streaming.html" title="49.9. ロジカルデコーディングための大規模トランザクションのストリーミング">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="logicaldecoding.html" title="第49章 ロジカルデコーディング">上へ</a></td><td width="60%" align="center">49.10. ロジカルデコーディングための2相コミット</td><td width="20%" align="right"> <a accesskey="n" href="replication-origins.html" title="第50章 レプリケーション進捗の追跡">次へ</a></td></tr></table><hr /></div><div class="sect1" id="LOGICALDECODING-TWO-PHASE-COMMITS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">49.10. ロジカルデコーディングための2相コミット</h2></div></div></div><span class="original">
+   &lt;title&gt;Two-phase Commit Support for Logical Decoding&lt;/title&gt;
+</span><p>
+<span class="original">
+    With the basic output plugin callbacks (eg., &lt;function&gt;begin_cb&lt;/function&gt;,
+    &lt;function&gt;change_cb&lt;/function&gt;, &lt;function&gt;commit_cb&lt;/function&gt; and
+    &lt;function&gt;message_cb&lt;/function&gt;) two-phase commit commands like
+    &lt;command&gt;PREPARE TRANSACTION&lt;/command&gt;, &lt;command&gt;COMMIT PREPARED&lt;/command&gt;
+    and &lt;command&gt;ROLLBACK PREPARED&lt;/command&gt; are not decoded. While the
+    &lt;command&gt;PREPARE TRANSACTION&lt;/command&gt; is ignored,
+    &lt;command&gt;COMMIT PREPARED&lt;/command&gt; is decoded as a &lt;command&gt;COMMIT&lt;/command&gt;
+    and &lt;command&gt;ROLLBACK PREPARED&lt;/command&gt; is decoded as a
+    &lt;command&gt;ROLLBACK&lt;/command&gt;.
+</span>
+基本的な出力プラグインコールバック(例えば、<code class="function">begin_cb</code>、<code class="function">change_cb</code>、<code class="function">commit_cb</code>、<code class="function">message_cb</code>)では、<code class="command">PREPARE TRANSACTION</code>、<code class="command">COMMIT PREPARED</code>、<code class="command">ROLLBACK PREPARED</code>のような2相コミットコマンドはデコードされません。
+<code class="command">PREPARE TRANSACTION</code>は無視されますが、<code class="command">COMMIT PREPARED</code>は<code class="command">COMMIT</code>としてデコードされ、<code class="command">ROLLBACK PREPARED</code>は<code class="command">ROLLBACK</code>としてデコードされます。
+   </p><p>
+<span class="original">
+    To support the streaming of two-phase commands, an output plugin needs to
+    provide additional callbacks. There are multiple two-phase commit callbacks
+    that are required, (&lt;function&gt;begin_prepare_cb&lt;/function&gt;,
+    &lt;function&gt;prepare_cb&lt;/function&gt;, &lt;function&gt;commit_prepared_cb&lt;/function&gt;,
+    &lt;function&gt;rollback_prepared_cb&lt;/function&gt; and
+    &lt;function&gt;stream_prepare_cb&lt;/function&gt;) and an optional callback
+    (&lt;function&gt;filter_prepare_cb&lt;/function&gt;).
+</span>
+2相コマンドのストリーミングをサポートするために、出力プラグインは追加のコールバックを提供する必要があります。
+複数の必要な2相コミットコールバック(<code class="function">begin_prepare_cb</code>、<code class="function">prepare_cb</code>、<code class="function">commit_prepared_cb</code>、<code class="function">rollback_prepared_cb</code>、<code class="function">stream_prepare_cb</code>)とオプションのコールバック(<code class="function">filter_prepare_cb</code>)があります。
+   </p><p>
+<span class="original">
+    If the output plugin callbacks for decoding two-phase commit commands are
+    provided, then on &lt;command&gt;PREPARE TRANSACTION&lt;/command&gt;, the changes of
+    that transaction are decoded, passed to the output plugin, and the
+    &lt;function&gt;prepare_cb&lt;/function&gt; callback is invoked. This differs from the
+    basic decoding setup where changes are only passed to the output plugin
+    when a transaction is committed. The start of a prepared transaction is
+    indicated by the &lt;function&gt;begin_prepare_cb&lt;/function&gt; callback.
+</span>
+2相コミットコマンドをデコードするための出力プラグインコールバックが提供されている場合、<code class="command">PREPARE TRANSACTION</code>で、そのトランザクションの変更がデコードされ、出力プラグインに渡され、<code class="function">prepare_cb</code>コールバックが呼び出されます。
+これは、トランザクションがコミットされたときにのみ変更が出力プラグインに渡される基本的なデコード設定とは異なります。
+準備されたトランザクションの開始は、<code class="function">begin_prepare_cb</code>コールバックによって示されます。
+   </p><p>
+<span class="original">
+    When a prepared transaction is rolled back using the
+    &lt;command&gt;ROLLBACK PREPARED&lt;/command&gt;, then the
+    &lt;function&gt;rollback_prepared_cb&lt;/function&gt; callback is invoked and when the
+    prepared transaction is committed using &lt;command&gt;COMMIT PREPARED&lt;/command&gt;,
+    then the &lt;function&gt;commit_prepared_cb&lt;/function&gt; callback is invoked.
+</span>
+準備されたトランザクションが<code class="command">ROLLBACK PREPARED</code>を使用してロールバックされると、<code class="function">rollback_prepared_cb</code>コールバックが呼び出されます。
+準備されたトランザクションが<code class="command">COMMIT PREPARED</code>を使用してコミットされると、<code class="function">commit_prepared_cb</code>コールバックが呼び出されます。
+   </p><p>
+<span class="original">
+    Optionally the output plugin can define filtering rules via
+    &lt;function&gt;filter_prepare_cb&lt;/function&gt; to decode only specific transaction
+    in two phases.  This can be achieved by pattern matching on the
+    &lt;parameter&gt;gid&lt;/parameter&gt; or via lookups using the
+    &lt;parameter&gt;xid&lt;/parameter&gt;.
+</span>
+オプションで、出力プラグインは<code class="function">filter_prepare_cb</code>を使ってフィルタリング規則を定義し、特定のトランザクションのみを2つの相でデコードすることができます。
+これは<em class="parameter"><code>gid</code></em>でパターンマッチングを行うか、<em class="parameter"><code>xid</code></em>を使って検索することで実現できます。
+   </p><p>
+<span class="original">
+    The users that want to decode prepared transactions need to be careful about
+    below mentioned points:
+</span>
+準備されたトランザクションをデコードしようとするユーザは、以下の点に注意する必要があります。
+
+    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+       If the prepared transaction has locked [user] catalog tables exclusively
+       then decoding prepare can block till the main transaction is committed.
+</span>
+準備されたトランザクションが[user]カタログテーブルを排他的にロックしている場合、メイントランザクションがコミットされるまで準備のデコードをブロックできます。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       The logical replication solution that builds distributed two phase commit
+       using this feature can deadlock if the prepared transaction has locked
+       [user] catalog tables exclusively. To avoid this users must refrain from
+       having locks on catalog tables (e.g. explicit &lt;command&gt;LOCK&lt;/command&gt; command)
+       in such transactions.
+       See &lt;xref linkend="logicaldecoding-synchronous-caveats"/&gt; for the details.
+</span>
+この機能を使用して分散2相コミットを構築するロジカルレプリケーションソリューションは、準備されたトランザクションが[user]カタログテーブルを排他的にロックした場合にデッドロックを発生する可能性があります。
+これを回避するために、ユーザはこのようなトランザクションでカタログテーブルをロック(例えば明示的な<code class="command">LOCK</code>コマンド)しないようにしなければなりません。
+詳細については<a class="xref" href="logicaldecoding-synchronous.html#LOGICALDECODING-SYNCHRONOUS-CAVEATS" title="49.8.2. 警告">49.8.2</a>を参照してください。
+      </p></li></ul></div><p>
+   </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="logicaldecoding-streaming.html" title="49.9. ロジカルデコーディングための大規模トランザクションのストリーミング">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="logicaldecoding.html" title="第49章 ロジカルデコーディング">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="replication-origins.html" title="第50章 レプリケーション進捗の追跡">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">49.9. ロジカルデコーディングための大規模トランザクションのストリーミング </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 第50章 レプリケーション進捗の追跡</td></tr></table></div></body></html>

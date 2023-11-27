@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>22.3. ロールのメンバ資格</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="role-attributes.html" title="22.2. ロールの属性" /><link rel="next" href="role-removal.html" title="22.4. ロールの削除" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="user-manag.html" title="第22章 データベースロール">第22章 データベースロール</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : role-membership.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="role-attributes.html" title="22.2. ロールの属性">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="user-manag.html" title="第22章 データベースロール">上へ</a></td><td width="60%" align="center">22.3. ロールのメンバ資格</td><td width="20%" align="right"> <a accesskey="n" href="role-removal.html" title="22.4. ロールの削除">次へ</a></td></tr></table><hr /></div><div class="sect1" id="ROLE-MEMBERSHIP"><div class="titlepage"><div><div><h2 class="title" style="clear: both">22.3. ロールのメンバ資格</h2></div></div></div><span class="original">
+  &lt;title&gt;Role Membership&lt;/title&gt;
+</span><a id="id-1.6.9.7.2" class="indexterm"></a><a id="id-1.6.9.7.3" class="indexterm"></a><p>
+<span class="original">
+   It is frequently convenient to group users together to ease
+   management of privileges: that way, privileges can be granted to, or
+   revoked from, a group as a whole.  In &lt;productname&gt;PostgreSQL&lt;/productname&gt;
+   this is done by creating a role that represents the group, and then
+   granting &lt;firstterm&gt;membership&lt;/firstterm&gt; in the group role to individual user
+   roles.
+</span>
+権限の管理を簡単にするために、ユーザをグループにまとめることはしばしば便利です。
+グループ全体に対して権限を与えることも、取り消すこともできます。
+<span class="productname">PostgreSQL</span>では、グループを表すロールを作成することで行われます。
+そして、そのグループロールに個々のユーザロールの<em class="firstterm">メンバ資格</em>を与えます。
+  </p><p>
+<span class="original">
+   To set up a group role, first create the role:
+</span>
+グループロールを設定するには、まずロールを作成します。
+</p><pre class="synopsis">
+CREATE ROLE <em class="replaceable"><code>name</code></em>;
+</pre><p>
+<span class="original">
+   Typically a role being used as a group would not have the &lt;literal&gt;LOGIN&lt;/literal&gt;
+   attribute, though you can set it if you wish.
+</span>
+通常、グループとして使用されるロールには<code class="literal">LOGIN</code>属性を持たせません。
+しかし、そうしたければ持たせることもできます。
+  </p><p>
+<span class="original">
+   Once the group role exists, you can add and remove members using the
+   &lt;link linkend="sql-grant"&gt;&lt;command&gt;GRANT&lt;/command&gt;&lt;/link&gt; and
+   &lt;link linkend="sql-revoke"&gt;&lt;command&gt;REVOKE&lt;/command&gt;&lt;/link&gt; commands:
+</span>
+グループロールをいったん作成すれば、<a class="link" href="sql-grant.html" title="GRANT"><code class="command">GRANT</code></a>および<a class="link" href="sql-revoke.html" title="REVOKE"><code class="command">REVOKE</code></a>コマンドを使用してメンバの追加と削除を行うことができます。
+</p><pre class="synopsis">
+GRANT <em class="replaceable"><code>group_role</code></em> TO <em class="replaceable"><code>role1</code></em>, ... ;
+REVOKE <em class="replaceable"><code>group_role</code></em> FROM <em class="replaceable"><code>role1</code></em>, ... ;
+</pre><p>
+<span class="original">
+   You can grant membership to other group roles, too (since there isn't
+   really any distinction between group roles and non-group roles).  The
+   database will not let you set up circular membership loops.  Also,
+   it is not permitted to grant membership in a role to
+   &lt;literal&gt;PUBLIC&lt;/literal&gt;.
+</span>
+他のグループロールへのメンバ資格を与えることもできます。
+（グループロールと非グループロールとの間には実際には区別がないからです。）
+データベースはグループのメンバ資格がループし、循環するような設定はさせません。
+また、ロール内のメンバ資格を<code class="literal">PUBLIC</code>に付与することはできません。
+  </p><p>
+<span class="original">
+   The members of a group role can use the privileges of the role in two
+   ways.  First, every member of a group can explicitly do
+   &lt;link linkend="sql-set-role"&gt;&lt;command&gt;SET ROLE&lt;/command&gt;&lt;/link&gt; to
+   temporarily &lt;quote&gt;become&lt;/quote&gt; the group role.  In this state, the
+   database session has access to the privileges of the group role rather
+   than the original login role, and any database objects created are
+   considered owned by the group role not the login role.  Second, member
+   roles that have the &lt;literal&gt;INHERIT&lt;/literal&gt; attribute automatically have use
+   of the privileges of roles of which they are members, including any
+   privileges inherited by those roles.
+   As an example, suppose we have done:
+</span>
+グループロールのメンバは、2つの方法でロールの権限を使用することができます。
+1つ目は、グループ内のすべてのメンバは明示的に、一時的にそのグループロールに<span class="quote">「<span class="quote">なる</span>」</span>ために<a class="link" href="sql-set-role.html" title="SET ROLE"><code class="command">SET ROLE</code></a>を行うことができます。
+この状態では、データベースセッションは元々のログインロールの権限ではなくグループの権限でアクセスされます。
+そして、作成されたデータベースオブジェクトの所有者はログインロールではなくグループロールであるとみなされます。
+2つ目は、<code class="literal">INHERIT</code>属性を持つメンバロールは、それらがメンバとなるロールの権限を自動的に使用します。これには、ロールによって継承されるいかなる権限も含んでいます。
+例えば、以下の状態を想定します。
+</p><pre class="programlisting">
+CREATE ROLE joe LOGIN INHERIT;
+CREATE ROLE admin NOINHERIT;
+CREATE ROLE wheel NOINHERIT;
+GRANT admin TO joe;
+GRANT wheel TO admin;
+</pre><p>
+<span class="original">
+   Immediately after connecting as role &lt;literal&gt;joe&lt;/literal&gt;, a database
+   session will have use of privileges granted directly to &lt;literal&gt;joe&lt;/literal&gt;
+   plus any privileges granted to &lt;literal&gt;admin&lt;/literal&gt;, because &lt;literal&gt;joe&lt;/literal&gt;
+   &lt;quote&gt;inherits&lt;/quote&gt; &lt;literal&gt;admin&lt;/literal&gt;'s privileges.  However, privileges
+   granted to &lt;literal&gt;wheel&lt;/literal&gt; are not available, because even though
+   &lt;literal&gt;joe&lt;/literal&gt; is indirectly a member of &lt;literal&gt;wheel&lt;/literal&gt;, the
+   membership is via &lt;literal&gt;admin&lt;/literal&gt; which has the &lt;literal&gt;NOINHERIT&lt;/literal&gt;
+   attribute.  After:
+</span>
+<code class="literal">joe</code>ロールで接続するとすぐに、<code class="literal">joe</code>は<code class="literal">admin</code>権限を<span class="quote">「<span class="quote">継承</span>」</span>しますので、そのデータベースセッションでは<code class="literal">joe</code>に直接与えられた権限に加えて、<code class="literal">admin</code>に与えられた権限を使用することができます。
+しかし、<code class="literal">wheel</code>に与えられた権限は利用できません。
+<code class="literal">joe</code>は間接的に<code class="literal">wheel</code>のメンバですが、<code class="literal">admin</code>経由のメンバ資格は<code class="literal">NOINHERIT</code>属性を持っているためです。
+</p><pre class="programlisting">
+SET ROLE admin;
+</pre><p>
+<span class="original">
+   the session would have use of only those privileges granted to
+   &lt;literal&gt;admin&lt;/literal&gt;, and not those granted to &lt;literal&gt;joe&lt;/literal&gt;.  After:
+</span>
+を行った後、セッションは<code class="literal">admin</code>に与えられた権限のみを使用できるようになります。
+<code class="literal">joe</code>に与えられた権限は使用できなくなります。
+</p><pre class="programlisting">
+SET ROLE wheel;
+</pre><p>
+<span class="original">
+   the session would have use of only those privileges granted to
+   &lt;literal&gt;wheel&lt;/literal&gt;, and not those granted to either &lt;literal&gt;joe&lt;/literal&gt;
+   or &lt;literal&gt;admin&lt;/literal&gt;.  The original privilege state can be restored
+   with any of:
+</span>
+を行った後、セッションは<code class="literal">wheel</code>に与えられた権限のみを使用できるようになり、<code class="literal">joe</code>や<code class="literal">admin</code>に与えられた権限は使用できなくなります。
+元の状態の権限に戻すには、以下のいずれかを行います。
+</p><pre class="programlisting">
+SET ROLE joe;
+SET ROLE NONE;
+RESET ROLE;
+</pre><p>
+  </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+    The &lt;command&gt;SET ROLE&lt;/command&gt; command always allows selecting any role
+    that the original login role is directly or indirectly a member of.
+    Thus, in the above example, it is not necessary to become
+    &lt;literal&gt;admin&lt;/literal&gt; before becoming &lt;literal&gt;wheel&lt;/literal&gt;.
+</span>
+<code class="command">SET ROLE</code>コマンドによりいつでも、元のログインロールが直接あるいは間接的にメンバ資格を持つすべてのロールを選ぶことができます。
+従って、上の例において、<code class="literal">wheel</code>になる前に<code class="literal">admin</code>になることは必要ありません。
+   </p></div><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+    In the SQL standard, there is a clear distinction between users and roles,
+    and users do not automatically inherit privileges while roles do.  This
+    behavior can be obtained in &lt;productname&gt;PostgreSQL&lt;/productname&gt; by giving
+    roles being used as SQL roles the &lt;literal&gt;INHERIT&lt;/literal&gt; attribute, while
+    giving roles being used as SQL users the &lt;literal&gt;NOINHERIT&lt;/literal&gt; attribute.
+    However, &lt;productname&gt;PostgreSQL&lt;/productname&gt; defaults to giving all roles
+    the &lt;literal&gt;INHERIT&lt;/literal&gt; attribute, for backward compatibility with pre-8.1
+    releases in which users always had use of permissions granted to groups
+    they were members of.
+</span>
+標準SQLでは、ユーザとロールとの間に明確な違いがあり、ユーザはロールのように自動的に権限を継承することができません。
+<span class="productname">PostgreSQL</span>でこの振舞いを実現させるには、SQLロールとして使用するロールには<code class="literal">INHERIT</code>属性を付与し、SQLユーザとして使用するロールには<code class="literal">NOINHERIT</code>属性を付与します。
+しかし、8.1リリースより前との互換性を保持するために、<span class="productname">PostgreSQL</span>はデフォルトで、すべてのロールに<code class="literal">INHERIT</code>属性を付与します。
+以前は、ユーザは常にメンバとして属するグループに付与された権限を常に使用できました。
+   </p></div><p>
+<span class="original">
+   The role attributes &lt;literal&gt;LOGIN&lt;/literal&gt;, &lt;literal&gt;SUPERUSER&lt;/literal&gt;,
+   &lt;literal&gt;CREATEDB&lt;/literal&gt;, and &lt;literal&gt;CREATEROLE&lt;/literal&gt; can be thought of as
+   special privileges, but they are never inherited as ordinary privileges
+   on database objects are.  You must actually &lt;command&gt;SET ROLE&lt;/command&gt; to a
+   specific role having one of these attributes in order to make use of
+   the attribute.  Continuing the above example, we might choose to
+   grant &lt;literal&gt;CREATEDB&lt;/literal&gt; and &lt;literal&gt;CREATEROLE&lt;/literal&gt; to the
+   &lt;literal&gt;admin&lt;/literal&gt; role.  Then a session connecting as role &lt;literal&gt;joe&lt;/literal&gt;
+   would not have these privileges immediately, only after doing
+   &lt;command&gt;SET ROLE admin&lt;/command&gt;.
+</span>
+<code class="literal">LOGIN</code>、<code class="literal">SUPERUSER</code>、<code class="literal">CREATEDB</code>、および<code class="literal">CREATEROLE</code>ロール属性は、特別な権限とみなすことができますが、データベースオブジェクトに対する通常の権限のように継承されません。
+こうした属性の1つを使用できるようにするためには、その属性を特定のロールに設定するように実際に<code class="command">SET ROLE</code>を行う必要があります。
+上の例を続けると、<code class="literal">admin</code>ロールに<code class="literal">CREATEDB</code>権限と<code class="literal">CREATEROLE</code>権限を付与することを選ぶことができます。
+こうすると、<code class="literal">joe</code>ロールとして接続するセッションでは、すぐさまこれらの権限を持ちません。
+<code class="command">SET ROLE admin</code>を行った後で、この権限を持ちます。
+  </p><p>
+  </p><p>
+<span class="original">
+   To destroy a group role, use &lt;link
+   linkend="sql-droprole"&gt;&lt;command&gt;DROP ROLE&lt;/command&gt;&lt;/link&gt;:
+</span>
+グループロールを削除するには、<a class="link" href="sql-droprole.html" title="DROP ROLE"><code class="command">DROP ROLE</code></a>を使用してください。
+</p><pre class="synopsis">
+DROP ROLE <em class="replaceable"><code>name</code></em>;
+</pre><p>
+<span class="original">
+   Any memberships in the group role are automatically revoked (but the
+   member roles are not otherwise affected).
+</span>
+グループロール内のメンバ資格も自動的に取り上げられます。
+（しかし、メンバロールには何も影響ありません。）
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="role-attributes.html" title="22.2. ロールの属性">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="user-manag.html" title="第22章 データベースロール">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="role-removal.html" title="22.4. ロールの削除">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">22.2. ロールの属性 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 22.4. ロールの削除</td></tr></table></div></body></html>

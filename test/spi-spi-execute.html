@@ -1,0 +1,335 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>SPI_execute</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="spi-spi-finish.html" title="SPI_finish" /><link rel="next" href="spi-spi-exec.html" title="SPI_exec" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="spi-interface.html" title="47.1. インタフェース関数">47.1. インタフェース関数</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : spi-spi-execute.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="spi-spi-finish.html" title="SPI_finish">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="spi-interface.html" title="47.1. インタフェース関数">上へ</a></td><td width="60%" align="center">SPI_execute</td><td width="20%" align="right"> <a accesskey="n" href="spi-spi-exec.html" title="SPI_exec">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SPI-SPI-EXECUTE"><div class="titlepage"></div><a id="id-1.8.12.8.4.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">SPI_execute</span></h2><p>SPI_execute<span class="original">
+  &lt;refpurpose&gt;execute a command&lt;/refpurpose&gt;
+</span> — コマンドを実行する</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
+int SPI_execute(const char * <em class="parameter"><code>command</code></em>, bool <em class="parameter"><code>read_only</code></em>, long <em class="parameter"><code>count</code></em>)
+</pre></div><div class="refsect1" id="id-1.8.12.8.4.5"><h2>説明</h2><span class="original">
+  &lt;title&gt;Description&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;function&gt;SPI_execute&lt;/function&gt; executes the specified SQL command
+   for &lt;parameter&gt;count&lt;/parameter&gt; rows.  If &lt;parameter&gt;read_only&lt;/parameter&gt;
+   is &lt;literal&gt;true&lt;/literal&gt;, the command must be read-only, and execution overhead
+   is somewhat reduced.
+</span>
+<code class="function">SPI_execute</code>は指定したSQLコマンドを、<em class="parameter"><code>count</code></em>行分実行します。
+<em class="parameter"><code>read_only</code></em>が<code class="literal">true</code>の場合、そのコマンドは読み取りのみでなければなりませんが、多少のオーバーヘッドが削減されます。
+  </p><p>
+<span class="original">
+   This function can only be called from a connected C function.
+</span>
+この関数は接続済みのC関数からのみ呼び出し可能です。
+  </p><p>
+<span class="original">
+   If &lt;parameter&gt;count&lt;/parameter&gt; is zero then the command is executed
+   for all rows that it applies to.  If &lt;parameter&gt;count&lt;/parameter&gt;
+   is greater than zero, then no more than &lt;parameter&gt;count&lt;/parameter&gt; rows
+   will be retrieved; execution stops when the count is reached, much like
+   adding a &lt;literal&gt;LIMIT&lt;/literal&gt; clause to the query. For example,
+</span>
+<em class="parameter"><code>count</code></em>が0の場合、そのコマンドを、適用される全ての行に対して実行します。
+<em class="parameter"><code>count</code></em>が0より多ければ、<em class="parameter"><code>count</code></em>を超えない数の行が取り出されます。
+問い合わせに<code class="literal">LIMIT</code>句と追加するの同じように、countに達すれば、実行は止まります。
+例えば、
+</p><pre class="programlisting">
+SPI_execute("SELECT * FROM foo", true, 5);
+</pre><p>
+<span class="original">
+   will retrieve at most 5 rows from the table.  Note that such a limit
+   is only effective when the command actually returns rows.  For example,
+</span>
+は、テーブルから多くても5行しか取り出しません。
+この制限はコマンドが実際に行を返した場合にのみ有効なことに注意して下さい。
+例えば
+</p><pre class="programlisting">
+SPI_execute("INSERT INTO foo SELECT * FROM bar", false, 5);
+</pre><p>
+<span class="original">
+   inserts all rows from &lt;structname&gt;bar&lt;/structname&gt;, ignoring the
+   &lt;parameter&gt;count&lt;/parameter&gt; parameter.  However, with
+</span>
+は、<em class="parameter"><code>count</code></em>パラメータを無視して、<code class="structname">bar</code>からすべての行を挿入します。
+しかし、
+</p><pre class="programlisting">
+SPI_execute("INSERT INTO foo SELECT * FROM bar RETURNING *", false, 5);
+</pre><p>
+<span class="original">
+   at most 5 rows would be inserted, since execution would stop after the
+   fifth &lt;literal&gt;RETURNING&lt;/literal&gt; result row is retrieved.
+</span>
+は、5番目の<code class="literal">RETURNING</code>の結果行を取り出した後に実行が止まりますので、多くても5行を挿入するだけです。
+  </p><p>
+<span class="original">
+   You can pass multiple commands in one string;
+   &lt;function&gt;SPI_execute&lt;/function&gt; returns the
+   result for the command executed last.  The &lt;parameter&gt;count&lt;/parameter&gt;
+   limit applies to each command separately (even though only the last
+   result will actually be returned).  The limit is not applied to any
+   hidden commands generated by rules.
+</span>
+複数のコマンドを1つの文字列として渡すことができます。
+<code class="function">SPI_execute</code>は最後に実行したコマンドの結果を返します。
+<em class="parameter"><code>count</code></em>制限は（最後の結果が返されただけだとしても）それぞれのコマンドに独立に適用されます。
+この制限はルールによって生成される隠れたコマンドには適用されません。
+  </p><p>
+<span class="original">
+   When &lt;parameter&gt;read_only&lt;/parameter&gt; is &lt;literal&gt;false&lt;/literal&gt;,
+   &lt;function&gt;SPI_execute&lt;/function&gt; increments the command
+   counter and computes a new &lt;firstterm&gt;snapshot&lt;/firstterm&gt; before executing each
+   command in the string.  The snapshot does not actually change if the
+   current transaction isolation level is &lt;literal&gt;SERIALIZABLE&lt;/literal&gt; or &lt;literal&gt;REPEATABLE READ&lt;/literal&gt;, but in
+   &lt;literal&gt;READ COMMITTED&lt;/literal&gt; mode the snapshot update allows each command to
+   see the results of newly committed transactions from other sessions.
+   This is essential for consistent behavior when the commands are modifying
+   the database.
+</span>
+<em class="parameter"><code>read_only</code></em>が<code class="literal">false</code>の場合、文字列内の各コマンドを実行する前に<code class="function">SPI_execute</code>はコマンドカウンタを増分し、新しい<em class="firstterm">スナップショット</em>を作成します。
+このスナップショットは、現在のトランザクション分離レベルが<code class="literal">SERIALIZABLE</code>または<code class="literal">REPEATABLE READ</code>の場合は変更されません。
+しかし、<code class="literal">READ COMMITTED</code>モードでは、このスナップショットは更新され、他のセッションで新しくコミットされたトランザクションの結果を各コマンドから参照できます。
+これは、そのコマンドがデータベースを変更する場合、一貫性の維持に重要です。
+  </p><p>
+<span class="original">
+   When &lt;parameter&gt;read_only&lt;/parameter&gt; is &lt;literal&gt;true&lt;/literal&gt;,
+   &lt;function&gt;SPI_execute&lt;/function&gt; does not update either the snapshot
+   or the command counter, and it allows only plain &lt;command&gt;SELECT&lt;/command&gt;
+   commands to appear in the command string.  The commands are executed
+   using the snapshot previously established for the surrounding query.
+   This execution mode is somewhat faster than the read/write mode due
+   to eliminating per-command overhead.  It also allows genuinely
+   &lt;firstterm&gt;stable&lt;/firstterm&gt; functions to be built: since successive executions
+   will all use the same snapshot, there will be no change in the results.
+</span>
+<em class="parameter"><code>read_only</code></em>が<code class="literal">true</code>の場合は、<code class="function">SPI_execute</code>はスナップショットもコマンドカウンタも更新しません。
+さらに、普通の<code class="command">SELECT</code>コマンドのみをコマンド文字列内に記述することができます。
+このコマンドは、その前後の問い合わせによって事前に確立済みのスナップショットを使用して実行されます。
+この実行モードは読み書きモードよりもコマンドごとのオーバーヘッドが省略される分多少高速です。
+また、これにより本当に<em class="firstterm">安定（stable）</em>な関数を構築することができます。
+つまり、連続した実行は全て同じスナップショットを使用しますので、結果は変わることがないということです。
+  </p><p>
+<span class="original">
+   It is generally unwise to mix read-only and read-write commands within
+   a single function using SPI; that could result in very confusing behavior,
+   since the read-only queries would not see the results of any database
+   updates done by the read-write queries.
+</span>
+一般的に、SPIを使用する1つの関数内で読み取りのみコマンドと読み書きコマンドを混在させることは勧めません。
+読み取りのみの問い合わせでは、読み書き問い合わせでなされたデータベースの更新結果を参照しないため、非常に混乱した動作に陥ることがあります。
+  </p><p>
+<span class="original">
+   The actual number of rows for which the (last) command was executed
+   is returned in the global variable &lt;varname&gt;SPI_processed&lt;/varname&gt;.
+   If the return value of the function is &lt;symbol&gt;SPI_OK_SELECT&lt;/symbol&gt;,
+   &lt;symbol&gt;SPI_OK_INSERT_RETURNING&lt;/symbol&gt;,
+   &lt;symbol&gt;SPI_OK_DELETE_RETURNING&lt;/symbol&gt;, or
+   &lt;symbol&gt;SPI_OK_UPDATE_RETURNING&lt;/symbol&gt;,
+   then you can use the
+   global pointer &lt;literal&gt;SPITupleTable *SPI_tuptable&lt;/literal&gt; to
+   access the result rows.  Some utility commands (such as
+   &lt;command&gt;EXPLAIN&lt;/command&gt;) also return row sets, and &lt;literal&gt;SPI_tuptable&lt;/literal&gt;
+   will contain the result in these cases too. Some utility commands
+   (&lt;command&gt;COPY&lt;/command&gt;, &lt;command&gt;CREATE TABLE AS&lt;/command&gt;) don't return a row set, so
+   &lt;literal&gt;SPI_tuptable&lt;/literal&gt; is NULL, but they still return the number of
+   rows processed in &lt;varname&gt;SPI_processed&lt;/varname&gt;.
+</span>
+（最後の）コマンドが実行した実際の行数は、<code class="varname">SPI_processed</code>グローバル変数に返されます。
+関数の戻り値が<code class="symbol">SPI_OK_SELECT</code>、<code class="symbol">SPI_OK_INSERT_RETURNING</code>、<code class="symbol">SPI_OK_DELETE_RETURNING</code>、または<code class="symbol">SPI_OK_UPDATE_RETURNING</code>の場合、<code class="literal">SPITupleTable *SPI_tuptable</code>グローバルポインタを使用して、結果の行にアクセスすることができます。
+また、一部のユーティリティコマンド（<code class="command">EXPLAIN</code>など）は行セットを返しますが、この場合も<code class="literal">SPI_tuptable</code>にはその結果が含まれます。
+一部のユーティリティコマンド（<code class="command">COPY</code>, <code class="command">CREATE TABLE AS</code>）は行セットを返しません。
+このため<code class="literal">SPI_tuptable</code>はNULLですが、<code class="varname">SPI_processed</code>の中で処理行数を返します。
+  </p><p>
+<span class="original">
+   The structure &lt;structname&gt;SPITupleTable&lt;/structname&gt; is defined
+   thus:
+</span>
+<code class="structname">SPITupleTable</code>構造体は以下のように定義されています。
+</p><pre class="programlisting">
+typedef struct SPITupleTable
+{
+<span class="original">
+    /* Public members */
+    TupleDesc   tupdesc;        /* tuple descriptor */
+    HeapTuple  *vals;           /* array of tuples */
+    uint64      numvals;        /* number of valid tuples */
+</span>
+    /* 公開メンバ */
+    TupleDesc   tupdesc;        /* タプル記述子 */
+    HeapTuple  *vals;           /* タプルの配列 */
+    uint64      numvals;        /* 有効なタプルの数 */
+
+<span class="original">
+    /* Private members, not intended for external callers */
+    uint64      alloced;        /* allocated length of vals array */
+    MemoryContext tuptabcxt;    /* memory context of result table */
+    slist_node  next;           /* link for internal bookkeeping */
+    SubTransactionId subid;     /* subxact in which tuptable was created */
+</span>
+    /* 非公開メンバ、外部呼び出し側のためのものではない */
+    uint64      alloced;        /* vals配列に割り当てられた長さ */
+    MemoryContext tuptabcxt;    /* 結果テーブルのメモリコンテキスト */
+    slist_node  next;           /* 内部情報のためのリンク */
+    SubTransactionId subid;     /* SPITupleTableが生成されたサブトランザクション */
+} SPITupleTable;
+</pre><p>
+<span class="original">
+   The fields &lt;structfield&gt;tupdesc&lt;/structfield&gt;,
+   &lt;structfield&gt;vals&lt;/structfield&gt;, and
+   &lt;structfield&gt;numvals&lt;/structfield&gt;
+   can be used by SPI callers; the remaining fields are internal.
+   &lt;structfield&gt;vals&lt;/structfield&gt; is an array of pointers to rows.
+   The number of rows is given by &lt;structfield&gt;numvals&lt;/structfield&gt;
+   (for somewhat historical reasons, this count is also returned
+   in &lt;varname&gt;SPI_processed&lt;/varname&gt;).
+   &lt;structfield&gt;tupdesc&lt;/structfield&gt; is a row descriptor which you can pass to
+   SPI functions dealing with rows.
+</span>
+フィールド<code class="structfield">tupdesc</code>、<code class="structfield">vals</code>、<code class="structfield">numvals</code>はSPIの呼び出し側で使えます。残りのフィールドは内部のものです。
+<code class="structfield">vals</code>は行へのポインタの配列です。
+行数は<code class="structfield">numvals</code>で与えられます(ちょっとした歴史的理由により、この数は<code class="varname">SPI_processed</code>でも返されます)。
+<code class="structfield">tupdesc</code>は、行を扱うSPI関数に渡すことのできる行記述子です。
+  </p><p>
+<span class="original">
+   &lt;function&gt;SPI_finish&lt;/function&gt; frees all
+   &lt;structname&gt;SPITupleTable&lt;/structname&gt;s allocated during the current
+   C function.  You can free a particular result table earlier, if you
+   are done with it, by calling &lt;function&gt;SPI_freetuptable&lt;/function&gt;.
+</span>
+<code class="function">SPI_finish</code>は、現在のC関数で割り当てられた<code class="structname">SPITupleTable</code>をすべて解放します。
+<code class="function">SPI_freetuptable</code>を呼び出して解放する場合、特定の結果テーブルを早めに解放することができます。
+  </p></div><div class="refsect1" id="id-1.8.12.8.4.6"><h2>引数</h2><span class="original">
+  &lt;title&gt;Arguments&lt;/title&gt;
+</span><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">const char * <em class="parameter"><code>command</code></em></code></span></dt><dd><p>
+<span class="original">
+      string containing command to execute
+</span>
+実行するコマンドを含む文字列。
+     </p></dd><dt><span class="term"><code class="literal">bool <em class="parameter"><code>read_only</code></em></code></span></dt><dd><span class="original">
+     &lt;para&gt;&lt;literal&gt;true&lt;/literal&gt; for read-only execution&lt;/para&gt;
+</span><p>
+読み取りのみの実行の場合<code class="literal">true</code>。
+     </p></dd><dt><span class="term"><code class="literal">long <em class="parameter"><code>count</code></em></code></span></dt><dd><p>
+<span class="original">
+      maximum number of rows to return,
+      or &lt;literal&gt;0&lt;/literal&gt; for no limit
+</span>
+返される行の最大数。無制限なら<code class="literal">0</code>。
+     </p></dd></dl></div></div><div class="refsect1" id="id-1.8.12.8.4.7"><h2>戻り値</h2><span class="original">
+  &lt;title&gt;Return Value&lt;/title&gt;
+</span><p>
+<span class="original">
+   If the execution of the command was successful then one of the
+   following (nonnegative) values will be returned:
+</span>
+コマンドの実行に成功した場合、以下のいずれかの（非負の）値が返されます。
+
+   </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="symbol">SPI_OK_SELECT</code></span></dt><dd><p>
+<span class="original">
+       if a &lt;command&gt;SELECT&lt;/command&gt; (but not &lt;command&gt;SELECT
+       INTO&lt;/command&gt;) was executed
+</span>
+<code class="command">SELECT</code>（<code class="command">SELECT INTO</code>を除く）が実行された場合。
+      </p></dd><dt><span class="term"><code class="symbol">SPI_OK_SELINTO</code></span></dt><dd><p>
+<span class="original">
+       if a &lt;command&gt;SELECT INTO&lt;/command&gt; was executed
+</span>
+<code class="command">SELECT INTO</code>が実行された場合。
+      </p></dd><dt><span class="term"><code class="symbol">SPI_OK_INSERT</code></span></dt><dd><p>
+<span class="original">
+       if an &lt;command&gt;INSERT&lt;/command&gt; was executed
+</span>
+<code class="command">INSERT</code>が実行された場合。
+      </p></dd><dt><span class="term"><code class="symbol">SPI_OK_DELETE</code></span></dt><dd><p>
+<span class="original">
+       if a &lt;command&gt;DELETE&lt;/command&gt; was executed
+</span>
+<code class="command">DELETE</code>が実行された場合。
+      </p></dd><dt><span class="term"><code class="symbol">SPI_OK_UPDATE</code></span></dt><dd><p>
+<span class="original">
+       if an &lt;command&gt;UPDATE&lt;/command&gt; was executed
+</span>
+<code class="command">UPDATE</code>が実行された場合。
+      </p></dd><dt><span class="term"><code class="symbol">SPI_OK_INSERT_RETURNING</code></span></dt><dd><p>
+<span class="original">
+       if an &lt;command&gt;INSERT RETURNING&lt;/command&gt; was executed
+</span>
+<code class="command">INSERT RETURNING</code>が実行された場合。
+      </p></dd><dt><span class="term"><code class="symbol">SPI_OK_DELETE_RETURNING</code></span></dt><dd><p>
+<span class="original">
+       if a &lt;command&gt;DELETE RETURNING&lt;/command&gt; was executed
+</span>
+<code class="command">DELETE RETURNING</code>が実行された場合。
+      </p></dd><dt><span class="term"><code class="symbol">SPI_OK_UPDATE_RETURNING</code></span></dt><dd><p>
+<span class="original">
+       if an &lt;command&gt;UPDATE RETURNING&lt;/command&gt; was executed
+</span>
+<code class="command">UPDATE RETURNING</code>が実行された場合。
+      </p></dd><dt><span class="term"><code class="symbol">SPI_OK_UTILITY</code></span></dt><dd><p>
+<span class="original">
+       if a utility command (e.g., &lt;command&gt;CREATE TABLE&lt;/command&gt;)
+       was executed
+</span>
+ユーティリティコマンド（<code class="command">CREATE TABLE</code>など）が実行された場合。
+      </p></dd><dt><span class="term"><code class="symbol">SPI_OK_REWRITTEN</code></span></dt><dd><p>
+<span class="original">
+       if the command was rewritten into another kind of command (e.g.,
+       &lt;command&gt;UPDATE&lt;/command&gt; became an &lt;command&gt;INSERT&lt;/command&gt;) by a &lt;link linkend="rules"&gt;rule&lt;/link&gt;.
+</span>
+<a class="link" href="rules.html" title="第41章 ルールシステム">ルール</a>によって（例えば、<code class="command">UPDATE</code>が<code class="command">INSERT</code>になったような）あるコマンドが他の種類のコマンドに書き換えられた場合です。
+      </p></dd></dl></div><p>
+  </p><p>
+<span class="original">
+   On error, one of the following negative values is returned:
+</span>
+エラーの場合、以下のいずれかの負の値が返されます。
+
+   </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="symbol">SPI_ERROR_ARGUMENT</code></span></dt><dd><p>
+<span class="original">
+       if &lt;parameter&gt;command&lt;/parameter&gt; is &lt;symbol&gt;NULL&lt;/symbol&gt; or
+       &lt;parameter&gt;count&lt;/parameter&gt; is less than 0
+</span>
+<em class="parameter"><code>command</code></em>が<code class="symbol">NULL</code>、あるいは<em class="parameter"><code>count</code></em>が0未満の場合。
+      </p></dd><dt><span class="term"><code class="symbol">SPI_ERROR_COPY</code></span></dt><dd><p>
+<span class="original">
+       if &lt;command&gt;COPY TO stdout&lt;/command&gt; or &lt;command&gt;COPY FROM stdin&lt;/command&gt;
+       was attempted
+</span>
+<code class="command">COPY TO stdout</code>あるいは<code class="command">COPY FROM stdin</code>が試行された場合。
+      </p></dd><dt><span class="term"><code class="symbol">SPI_ERROR_TRANSACTION</code></span></dt><dd><p>
+<span class="original">
+       if a transaction manipulation command was attempted
+       (&lt;command&gt;BEGIN&lt;/command&gt;,
+       &lt;command&gt;COMMIT&lt;/command&gt;,
+       &lt;command&gt;ROLLBACK&lt;/command&gt;,
+       &lt;command&gt;SAVEPOINT&lt;/command&gt;,
+       &lt;command&gt;PREPARE TRANSACTION&lt;/command&gt;,
+       &lt;command&gt;COMMIT PREPARED&lt;/command&gt;,
+       &lt;command&gt;ROLLBACK PREPARED&lt;/command&gt;,
+       or any variant thereof)
+</span>
+トランザクション操作を行うコマンド（<code class="command">BEGIN</code>、<code class="command">COMMIT</code>、<code class="command">ROLLBACK</code>、<code class="command">SAVEPOINT</code>、<code class="command">PREPARE TRANSACTION</code>、<code class="command">COMMIT PREPARED</code>、<code class="command">ROLLBACK PREPARED</code>、およびこれらの亜種）が試行された場合。
+      </p></dd><dt><span class="term"><code class="symbol">SPI_ERROR_OPUNKNOWN</code></span></dt><dd><p>
+<span class="original">
+       if the command type is unknown (shouldn't happen)
+</span>
+コマンド種類が不明な場合（起きてはなりません）。
+      </p></dd><dt><span class="term"><code class="symbol">SPI_ERROR_UNCONNECTED</code></span></dt><dd><p>
+<span class="original">
+       if called from an unconnected C function
+</span>
+未接続のC関数から呼び出された場合
+      </p></dd></dl></div><p>
+  </p></div><div class="refsect1" id="id-1.8.12.8.4.8"><h2>注意</h2><span class="original">
+  &lt;title&gt;Notes&lt;/title&gt;
+</span><p>
+<span class="original">
+   All SPI query-execution functions set both
+   &lt;varname&gt;SPI_processed&lt;/varname&gt; and
+   &lt;varname&gt;SPI_tuptable&lt;/varname&gt; (just the pointer, not the contents
+   of the structure).  Save these two global variables into local
+   C function variables if you need to access the result table of
+   &lt;function&gt;SPI_execute&lt;/function&gt; or another query-execution function
+   across later calls.
+</span>
+SPI問い合わせ実行関数はすべて<code class="varname">SPI_processed</code>と<code class="varname">SPI_tuptable</code>の両方を変更します（ポインタのみで、構造体の内容は変更しません）。
+<code class="function">SPI_exec</code>や他の問い合わせ実行関数の結果テーブルを後の呼び出しでまたがってアクセスしたいのであれば、これら2つのグローバル変数を局所的なプロシージャ変数に保存してください。
+  </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="spi-spi-finish.html" title="SPI_finish">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="spi-interface.html" title="47.1. インタフェース関数">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="spi-spi-exec.html" title="SPI_exec">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">SPI_finish </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> SPI_exec</td></tr></table></div></body></html>

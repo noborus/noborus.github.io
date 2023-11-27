@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>64.4. インデックスのロック処理に関する検討</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="index-scanning.html" title="64.3. インデックススキャン" /><link rel="next" href="index-unique-checks.html" title="64.5. インデックス一意性検査" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="indexam.html" title="第64章 インデックスアクセスメソッドのインタフェース定義">第64章 インデックスアクセスメソッドのインタフェース定義</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : index-locking.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="index-scanning.html" title="64.3. インデックススキャン">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="indexam.html" title="第64章 インデックスアクセスメソッドのインタフェース定義">上へ</a></td><td width="60%" align="center">64.4. インデックスのロック処理に関する検討</td><td width="20%" align="right"> <a accesskey="n" href="index-unique-checks.html" title="64.5. インデックス一意性検査">次へ</a></td></tr></table><hr /></div><div class="sect1" id="INDEX-LOCKING"><div class="titlepage"><div><div><h2 class="title" style="clear: both">64.4. インデックスのロック処理に関する検討</h2></div></div></div><span class="original">
+  &lt;title&gt;Index Locking Considerations&lt;/title&gt;
+</span><p>
+<span class="original">
+   Index access methods must handle concurrent updates
+   of the index by multiple processes.
+   The core &lt;productname&gt;PostgreSQL&lt;/productname&gt; system obtains
+   &lt;literal&gt;AccessShareLock&lt;/literal&gt; on the index during an index scan, and
+   &lt;literal&gt;RowExclusiveLock&lt;/literal&gt; when updating the index (including plain
+   &lt;command&gt;VACUUM&lt;/command&gt;).  Since these lock types do not conflict, the access
+   method is responsible for handling any fine-grained locking it might need.
+   An &lt;literal&gt;ACCESS EXCLUSIVE&lt;/literal&gt; lock on the index as a whole will be
+   taken only during index creation, destruction, or &lt;command&gt;REINDEX&lt;/command&gt;
+   (&lt;literal&gt;SHARE UPDATE EXCLUSIVE&lt;/literal&gt; is taken instead with
+   &lt;literal&gt;CONCURRENTLY&lt;/literal&gt;).
+</span>
+インデックスアクセスメソッドは、複数のプロセスによるインデックスの同時更新を取り扱えなければなりません。
+<span class="productname">PostgreSQL</span>コアシステムはインデックススキャン中にインデックスに対して<code class="literal">AccessShareLock</code>を獲得します。
+また、（通常の<code class="command">VACUUM</code>を含む）インデックスの更新中に<code class="literal">RowExclusiveLock</code>を獲得します。
+これらの種類のロックは競合しませんので、アクセスメソッドは必要になるかもしれない粒度の細かなロック処理に関して責任を持ちます。
+インデックスの生成、破棄、<code class="command">REINDEX</code>時にインデックス全体に対する<code class="literal">ACCESS EXCLUSIVE</code>ロックが獲得されます(<code class="literal">CONCURRENTLY</code>では代わりに<code class="literal">SHARE UPDATE EXCLUSIVE</code>が取得されます)。
+  </p><p>
+<span class="original">
+   Building an index type that supports concurrent updates usually requires
+   extensive and subtle analysis of the required behavior.  For the b-tree
+   and hash index types, you can read about the design decisions involved in
+   &lt;filename&gt;src/backend/access/nbtree/README&lt;/filename&gt; and
+   &lt;filename&gt;src/backend/access/hash/README&lt;/filename&gt;.
+</span>
+同時更新をサポートするインデックス種類を構築することは通常、必要な動作について広範かつ微細にわたる解析が必要です。
+B-treeおよびハッシュインデックス種類では、<code class="filename">src/backend/access/nbtree/README</code>と <code class="filename">src/backend/access/hash/README</code>にある設計に関する決定事項を読むことができます。
+  </p><p>
+<span class="original">
+   Aside from the index's own internal consistency requirements, concurrent
+   updates create issues about consistency between the parent table (the
+   &lt;firstterm&gt;heap&lt;/firstterm&gt;) and the index.  Because
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; separates accesses
+   and updates of the heap from those of the index, there are windows in
+   which the index might be inconsistent with the heap.  We handle this problem
+   with the following rules:
+</span>
+インデックス自身の内部的な一貫性要求の他に、同時実行更新には、親テーブル（<em class="firstterm">ヒープ</em>）とインデックス間の一貫性に関する問題が発生します。
+<span class="productname">PostgreSQL</span>はヒープへのアクセスおよび更新とインデックスへのアクセスおよび更新を分離していますので、インデックスとヒープとの間の一貫性が無くなる間隔が存在します。
+以下の規則でこうした問題を扱います。
+
+    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+       A new heap entry is made before making its index entries.  (Therefore
+       a concurrent index scan is likely to fail to see the heap entry.
+       This is okay because the index reader would be uninterested in an
+       uncommitted row anyway.  But see &lt;xref linkend="index-unique-checks"/&gt;.)
+</span>
+新しいヒープ項目はインデックス項目を作成する前に作成されます。
+（このため、同時実行インデックススキャンはヒープエントリを確認する時によく失敗します。
+インデックスの読み取りは、未コミットの行を対象としませんので問題ありません。
+しかし、<a class="xref" href="index-unique-checks.html" title="64.5. インデックス一意性検査">64.5</a>を参照してください。）
+      </p></li><li class="listitem"><p>
+<span class="original">
+       When a heap entry is to be deleted (by &lt;command&gt;VACUUM&lt;/command&gt;), all its
+       index entries must be removed first.
+</span>
+ヒープエントリが（<code class="command">VACUUM</code>によって）削除される時、これに対するすべてのインデックス項目が先に削除されます。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       An index scan must maintain a pin
+       on the index page holding the item last returned by
+       &lt;function&gt;amgettuple&lt;/function&gt;, and &lt;function&gt;ambulkdelete&lt;/function&gt; cannot delete
+       entries from pages that are pinned by other backends.  The need
+       for this rule is explained below.
+</span>
+インデックススキャンは、最後に<code class="function">amgettuple</code>が返した項目を保持するインデックスページ上のピンを管理しなければなりません。
+また、<code class="function">ambulkdelete</code>は、他のバックエンドがピンを持つページから項目を削除することはできません。
+この規則の必要性については後で説明します。
+      </p></li></ul></div><p>
+
+<span class="original">
+   Without the third rule, it is possible for an index reader to
+   see an index entry just before it is removed by &lt;command&gt;VACUUM&lt;/command&gt;, and
+   then to arrive at the corresponding heap entry after that was removed by
+   &lt;command&gt;VACUUM&lt;/command&gt;.
+   This creates no serious problems if that item
+   number is still unused when the reader reaches it, since an empty
+   item slot will be ignored by &lt;function&gt;heap_fetch()&lt;/function&gt;.  But what if a
+   third backend has already re-used the item slot for something else?
+   When using an MVCC-compliant snapshot, there is no problem because
+   the new occupant of the slot is certain to be too new to pass the
+   snapshot test.  However, with a non-MVCC-compliant snapshot (such as
+   &lt;literal&gt;SnapshotAny&lt;/literal&gt;), it would be possible to accept and return
+   a row that does not in fact match the scan keys.  We could defend
+   against this scenario by requiring the scan keys to be rechecked
+   against the heap row in all cases, but that is too expensive.  Instead,
+   we use a pin on an index page as a proxy to indicate that the reader
+   might still be &lt;quote&gt;in flight&lt;/quote&gt; from the index entry to the matching
+   heap entry.  Making &lt;function&gt;ambulkdelete&lt;/function&gt; block on such a pin ensures
+   that &lt;command&gt;VACUUM&lt;/command&gt; cannot delete the heap entry before the reader
+   is done with it.  This solution costs little in run time, and adds blocking
+   overhead only in the rare cases where there actually is a conflict.
+</span>
+３番目の規則がないと、<code class="command">VACUUM</code>によって削除される直前に、インデックス読み取りがインデックス項目を見つけ、そして、<code class="command">VACUUM</code>によって削除された後に対応するヒープ項目に達する可能性があります。
+空の項目スロットは<code class="function">heap_fetch()</code>で無視されますので、これは読み取りが達した時にその項目番号が未使用である場合でも大きな問題は起こりません。
+しかし、第三のバックエンドがすでにその項目スロットを他のものに再使用した場合はどうなるでしょうか？
+そのスロット内の新しいものが、スナップショット試験を通過するには新しすぎることが確実ですので、MVCCに則ったスナップショットを使用する場合は問題ありません。
+しかし、MVCCに則らないスナップショット(<code class="literal">SnapshotAny</code>など)では、実際にはスキャンキーに合わない行を受付け、返す可能性があります。
+すべての場合においてヒープ行に対しスキャンキーの再検査を行うことを必須とすることで、こうした状況から保護することができますが、これは高価すぎます。
+代わりに、読み取りがまだ一致するヒープ項目へのインデックス項目の<span class="quote">「<span class="quote">作業中</span>」</span>であることを示す代理として、インデックスページに対するピンを使用します。
+このピンに対して<code class="function">ambulkdelete</code>がブロックするようにすることで、読み取りの作業が終わる前に<code class="command">VACUUM</code>がそのヒープ項目を削除できないことを確実にします。
+実行時におけるこの対策のコストは小さく、実際に競合が発生するごく稀な場合にのみブロックするためのオーバーヘッドが加わります。
+  </p><p>
+<span class="original">
+   This solution requires that index scans be &lt;quote&gt;synchronous&lt;/quote&gt;: we have
+   to fetch each heap tuple immediately after scanning the corresponding index
+   entry.  This is expensive for a number of reasons.  An
+   &lt;quote&gt;asynchronous&lt;/quote&gt; scan in which we collect many TIDs from the index,
+   and only visit the heap tuples sometime later, requires much less index
+   locking overhead and can allow a more efficient heap access pattern.
+   Per the above analysis, we must use the synchronous approach for
+   non-MVCC-compliant snapshots, but an asynchronous scan is workable
+   for a query using an MVCC snapshot.
+</span>
+この対策は、インデックススキャンが<span class="quote">「<span class="quote">同期</span>」</span>していることを要求します。
+対応するインデックス項目のスキャンの後即座に各ヒープタプルを取り出さなければなりません。
+多くの理由のため、これは高価です。
+インデックスから多くのTIDを収集し、少し後でのみヒープタプルにアクセスする<span class="quote">「<span class="quote">非同期</span>」</span>スキャンでは、必要なロック処理オーバーヘッドがかなり少なくなり、また、より効率的なヒープへのアクセスパターンを取ることができます。
+上の解析に従うと、MVCCに則らないスナップショットでは同期方式を使用しなければなりませんが、問い合わせがMVCCスナップショットを使用する場合は非同期スキャンを使用することができます。
+  </p><p>
+<span class="original">
+   In an &lt;function&gt;amgetbitmap&lt;/function&gt; index scan, the access method does not
+   keep an index pin on any of the returned tuples.  Therefore
+   it is only safe to use such scans with MVCC-compliant snapshots.
+</span>
+<code class="function">amgetbitmap</code>インデックススキャンでは、アクセスメソッドは返されるタプル上にインデックスピンをまったく保持しません。
+したがって、MVCCに則ったスナップショットでこうしたスキャンを使用することのみが安全です。
+  </p><p>
+<span class="original">
+   When the &lt;structfield&gt;ampredlocks&lt;/structfield&gt; flag is not set, any scan using that
+   index access method within a serializable transaction will acquire a
+   nonblocking predicate lock on the full index.  This will generate a
+   read-write conflict with the insert of any tuple into that index by a
+   concurrent serializable transaction.  If certain patterns of read-write
+   conflicts are detected among a set of concurrent serializable
+   transactions, one of those transactions may be canceled to protect data
+   integrity.  When the flag is set, it indicates that the index access
+   method implements finer-grained predicate locking, which will tend to
+   reduce the frequency of such transaction cancellations.
+</span>
+<code class="structfield">ampredlocks</code>フラグが設定されていない場合、シリアライザブルトランザクション内でそのインデックスアクセスメソッドを使用するスキャンはいずれもインデックス全体に対するブロックしない述語ロックを獲得します。
+これは、同時実行のシリアライザブルトランザクションによるそのインデックスへの何らかのタプル挿入で、読み書きの競合が発生することがあります。
+同時実行のシリアライザブルトランザクションの集合の中で特定の読み書きの競合パターンが検知された場合、データの整合性を保護するためにこれらのトランザクションの１つはキャンセルされます。
+このフラグが設定されている場合、こうしたトランザクションのキャンセルの頻度を低減することになる、より粒度の細かな述語ロックをインデックスアクセスメソッドが実装していることを示します。
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="index-scanning.html" title="64.3. インデックススキャン">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="indexam.html" title="第64章 インデックスアクセスメソッドのインタフェース定義">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="index-unique-checks.html" title="64.5. インデックス一意性検査">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">64.3. インデックススキャン </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 64.5. インデックス一意性検査</td></tr></table></div></body></html>

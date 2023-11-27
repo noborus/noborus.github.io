@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>19.10. GSSAPIによる安全なTCP/IP接続</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="ssl-tcp.html" title="19.9. SSLによる安全なTCP/IP接続" /><link rel="next" href="ssh-tunnels.html" title="19.11. SSHトンネルを使った安全なTCP/IP接続" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="runtime.html" title="第19章 サーバの準備と運用">第19章 サーバの準備と運用</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : gssapi-enc.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="ssl-tcp.html" title="19.9. SSLによる安全なTCP/IP接続">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="runtime.html" title="第19章 サーバの準備と運用">上へ</a></td><td width="60%" align="center">19.10. GSSAPIによる安全なTCP/IP接続</td><td width="20%" align="right"> <a accesskey="n" href="ssh-tunnels.html" title="19.11. SSHトンネルを使った安全なTCP/IP接続">次へ</a></td></tr></table><hr /></div><div class="sect1" id="GSSAPI-ENC"><div class="titlepage"><div><div><h2 class="title" style="clear: both">19.10. GSSAPIによる安全なTCP/IP接続</h2></div></div></div><span class="original">
+  &lt;title&gt;Secure TCP/IP Connections with GSSAPI Encryption&lt;/title&gt;
+</span><a id="id-1.6.6.13.2" class="indexterm"></a><p>
+<span class="original">
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; also has native support for
+   using &lt;acronym&gt;GSSAPI&lt;/acronym&gt; to encrypt client/server communications for
+   increased security.  Support requires that a &lt;acronym&gt;GSSAPI&lt;/acronym&gt;
+   implementation (such as MIT Kerberos) is installed on both client and server
+   systems, and that support in &lt;productname&gt;PostgreSQL&lt;/productname&gt; is
+   enabled at build time (see &lt;xref linkend="installation"/&gt;).
+</span>
+セキュリティを強化する目的でクライアント／サーバの通信を暗号化するために<span class="productname">PostgreSQL</span>もまた<acronym class="acronym">GSSAPI</acronym>の利用を直接サポートしています。
+このサポートには<acronym class="acronym">GSSAPI</acronym>の実装（MIT Kerberosなど）がクライアントとサーバシステムの両方にインストールされていて、<span class="productname">PostgreSQL</span>の構築時にそのサポートが有効になっていること（<a class="xref" href="installation.html" title="第17章 ソースコードからインストール">第17章</a>参照）が必要です。
+  </p><div class="sect2" id="GSSAPI-SETUP"><div class="titlepage"><div><div><h3 class="title">19.10.1. 基本的な設定</h3></div></div></div><span class="original">
+   &lt;title&gt;Basic Setup&lt;/title&gt;
+</span><p>
+<span class="original">
+    The &lt;productname&gt;PostgreSQL&lt;/productname&gt; server will listen for both
+    normal and &lt;acronym&gt;GSSAPI&lt;/acronym&gt;-encrypted connections on the same TCP
+    port, and will negotiate with any connecting client whether to
+    use &lt;acronym&gt;GSSAPI&lt;/acronym&gt; for encryption (and for authentication).  By
+    default, this decision is up to the client (which means it can be
+    downgraded by an attacker); see &lt;xref linkend="auth-pg-hba-conf"/&gt; about
+    setting up the server to require the use of &lt;acronym&gt;GSSAPI&lt;/acronym&gt; for
+    some or all connections.
+</span>
+<span class="productname">PostgreSQL</span>サーバは通常の接続と<acronym class="acronym">GSSAPI</acronym>による暗号化接続の両方を同じTCPポートで待ち受け、接続しようとするクライアントと<acronym class="acronym">GSSAPI</acronym>による暗号化（そして認証）を使うかどうかを交渉します。
+デフォルトではこの決定はクライアントに任されます（これは攻撃者によってダウングレードできることを意味します）。
+サーバが一部あるいはすべての接続で<acronym class="acronym">GSSAPI</acronym>を使うことを要求する設定に関しては<a class="xref" href="auth-pg-hba-conf.html" title="21.1. pg_hba.confファイル">21.1</a>をご覧ください。
+   </p><p>
+<span class="original">
+    When using &lt;acronym&gt;GSSAPI&lt;/acronym&gt; for encryption, it is common to
+    use &lt;acronym&gt;GSSAPI&lt;/acronym&gt; for authentication as well, since the
+    underlying mechanism will determine both client and server identities
+    (according to the &lt;acronym&gt;GSSAPI&lt;/acronym&gt; implementation) in any
+    case.  But this is not required;
+    another &lt;productname&gt;PostgreSQL&lt;/productname&gt; authentication method
+    can be chosen to perform additional verification.
+</span>
+常に基盤の仕組みがクライアントとサーバの身元を（<acronym class="acronym">GSSAPI</acronym>の実装により）特定するため、暗号化に<acronym class="acronym">GSSAPI</acronym>を使用する際は、<acronym class="acronym">GSSAPI</acronym>を認証にも使うのが一般的です。
+しかしこれは必須ではありません。追加の認証を行うために、<span class="productname">PostgreSQL</span>の他の認証方法を選択することができます。
+   </p><p>
+<span class="original">
+    Other than configuration of the negotiation
+    behavior, &lt;acronym&gt;GSSAPI&lt;/acronym&gt; encryption requires no setup beyond
+    that which is necessary for GSSAPI authentication.  (For more information
+    on configuring that, see &lt;xref linkend="gssapi-auth"/&gt;.)
+</span>
+この交渉の挙動を設定すること以外には<acronym class="acronym">GSSAPI</acronym>暗号化では、GSSAPI認証に必要な設定はこれ以上ありません。
+（設定のより詳細に関しては<a class="xref" href="gssapi-auth.html" title="21.6. GSSAPI認証">21.6</a>をご覧ください。）
+   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ssl-tcp.html" title="19.9. SSLによる安全なTCP/IP接続">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="runtime.html" title="第19章 サーバの準備と運用">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="ssh-tunnels.html" title="19.11. SSHトンネルを使った安全なTCP/IP接続">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">19.9. SSLによる安全なTCP/IP接続 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 19.11. <span class="application">SSH</span>トンネルを使った安全なTCP/IP接続</td></tr></table></div></body></html>

@@ -1,0 +1,385 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>14.4. データベースへのデータ投入</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="explicit-joins.html" title="14.3. 明示的なJOIN句でプランナを制御する" /><link rel="next" href="non-durability.html" title="14.5. 永続性がない設定" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="performance-tips.html" title="第14章 性能に関するヒント">第14章 性能に関するヒント</a></td><td width="20%" align="right"></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="explicit-joins.html" title="14.3. 明示的なJOIN句でプランナを制御する">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="performance-tips.html" title="第14章 性能に関するヒント">上へ</a></td><td width="60%" align="center">14.4. データベースへのデータ投入</td><td width="20%" align="right"> <a accesskey="n" href="non-durability.html" title="14.5. 永続性がない設定">次へ</a></td></tr></table><hr /></div><div class="sect1" id="POPULATE"><div class="titlepage"><div><div><h2 class="title" style="clear: both">14.4. データベースへのデータ投入</h2></div></div></div><!--
+  <title>Populating a Database</title>
+--><p>
+<!--
+   One might need to insert a large amount of data when first populating
+   a database. This section contains some suggestions on how to make
+   this process as efficient as possible.
+-->
+データベースにデータを初期投入するために、大量のテーブル挿入操作を行う必要がままあります。
+本節では、この作業を効率良く行うためのちょっとした提言を示します。
+  </p><div class="sect2" id="DISABLE-AUTOCOMMIT"><div class="titlepage"><div><div><h3 class="title">14.4.1. 自動コミットをオフにする</h3></div></div></div><!--
+   <title>Disable Autocommit</title>
+--><a id="id-1.5.13.7.3.2" class="indexterm"></a><p>
+<!--
+    When using multiple <command>INSERT</command>s, turn off autocommit and just do
+    one commit at the end.  (In plain
+    SQL, this means issuing <command>BEGIN</command> at the start and
+    <command>COMMIT</command> at the end.  Some client libraries might
+    do this behind your back, in which case you need to make sure the
+    library does it when you want it done.)  If you allow each
+    insertion to be committed separately,
+    <productname>PostgreSQL</productname> is doing a lot of work for
+    each row that is added.  An additional benefit of doing all
+    insertions in one transaction is that if the insertion of one row
+    were to fail then the insertion of all rows inserted up to that
+    point would be rolled back, so you won't be stuck with partially
+    loaded data.
+-->
+複数回の<code class="command">INSERT</code>を実行するのであれば、自動コミットを無効にして最後に1回だけコミットしてください。
+（普通のSQLでは、これは<code class="command">BEGIN</code>を開始時に、<code class="command">COMMIT</code>を最後に発行することを意味します。
+クライアント用ライブラリの中にはこれを背後で実行するものもあります。
+その場合は、要望通りにライブラリが行っているかどうかを確認しなければなりません。）
+各挿入操作で個別にコミットすることを許すと、<span class="productname">PostgreSQL</span>は行を追加する度に多くの作業をしなければなりません。
+1つのトランザクションですべての挿入を行うことによるもう1つの利点は、1つの行の挿入に失敗した場合、その時点までに挿入されたすべての行がロールバックされることです。
+その結果、一部のみがロードされたデータの対処に困ることはありません。
+   </p></div><div class="sect2" id="POPULATE-COPY-FROM"><div class="titlepage"><div><div><h3 class="title">14.4.2. <code class="command">COPY</code>の使用</h3></div></div></div><!--
+   <title>Use <command>COPY</command></title>
+--><p>
+<!--
+    Use <xref linkend="sql-copy"/> to load
+    all the rows in one command, instead of using a series of
+    <command>INSERT</command> commands.  The <command>COPY</command>
+    command is optimized for loading large numbers of rows; it is less
+    flexible than <command>INSERT</command>, but incurs significantly
+    less overhead for large data loads. Since <command>COPY</command>
+    is a single command, there is no need to disable autocommit if you
+    use this method to populate a table.
+-->
+単一コマンドですべての行をロードするために一連の<code class="command">INSERT</code>コマンドではなく、<a class="xref" href="sql-copy.html" title="COPY"><span class="refentrytitle">COPY</span></a>を使用してください。
+<code class="command">COPY</code>コマンドは行を大量にロードすることに最適化されています。
+このコマンドは<code class="command">INSERT</code>に比べ柔軟性に欠けていますが、大量のデータロードにおけるオーバーヘッドを大きく低減します。
+<code class="command">COPY</code>コマンドでテーブルにデータを投入する場合、コマンドは1つなので、自動コミットを無効にする必要はありません。
+   </p><p>
+<!--
+    If you cannot use <command>COPY</command>, it might help to use <xref
+    linkend="sql-prepare"/> to create a
+    prepared <command>INSERT</command> statement, and then use
+    <command>EXECUTE</command> as many times as required.  This avoids
+    some of the overhead of repeatedly parsing and planning
+    <command>INSERT</command>. Different interfaces provide this facility
+    in different ways; look for <quote>prepared statements</quote> in the interface
+    documentation.
+-->
+<code class="command">COPY</code>を使用できない場合、準備された<code class="command">INSERT</code>文を<a class="xref" href="sql-prepare.html" title="PREPARE"><span class="refentrytitle">PREPARE</span></a>を使用して作成し、必要数回だけ<code class="command">EXECUTE</code>を実行する方が良いでしょう。
+これにより、繰り返し行われる<code class="command">INSERT</code>の解析と計画作成分のオーバーヘッドを省くことになります。
+この機能のための方法はインタフェースによって異なります。
+このインタフェースの文書の<span class="quote">「<span class="quote">準備された文</span>」</span>を参照してください。
+   </p><p>
+<!--
+    Note that loading a large number of rows using
+    <command>COPY</command> is almost always faster than using
+    <command>INSERT</command>, even if <command>PREPARE</command> is used and
+    multiple insertions are batched into a single transaction.
+-->
+<code class="command">COPY</code>を使用した大量の行のロードは、ほとんどすべての場合において、<code class="command">INSERT</code>を使用するロードよりも高速です。
+たとえ複数の挿入を単一トランザクションにまとめたとしても、またその際に<code class="command">PREPARE</code>を使用したとしても、これは当てはまります。
+   </p><p>
+<!--
+    <command>COPY</command> is fastest when used within the same
+    transaction as an earlier <command>CREATE TABLE</command> or
+    <command>TRUNCATE</command> command. In such cases no WAL
+    needs to be written, because in case of an error, the files
+    containing the newly loaded data will be removed anyway.
+    However, this consideration only applies when
+    <xref linkend="guc-wal-level"/> is <literal>minimal</literal> for
+    non-partitioned tables as all commands must write WAL otherwise.
+-->
+<code class="command">COPY</code>は、前もって行われる<code class="command">CREATE TABLE</code>または<code class="command">TRUNCATE</code>コマンドと同一トランザクションで行った場合に、最速です。
+この場合、エラーが起きた場合に新しくロードされるデータを含むファイルがとにかく削除されますので、WALを書き出す必要がありません。
+しかし、<a class="xref" href="runtime-config-wal.html#GUC-WAL-LEVEL">wal_level</a>が非パーティションテーブルに対して<code class="literal">minimal</code>に設定されている場合のみにこの方法は当てはまります。
+この他の場合には、すべてのコマンドをWALに書き出さなければならないためです。
+   </p></div><div class="sect2" id="POPULATE-RM-INDEXES"><div class="titlepage"><div><div><h3 class="title">14.4.3. インデックスを削除する</h3></div></div></div><!--
+   <title>Remove Indexes</title>
+--><p>
+<!--
+    If you are loading a freshly created table, the fastest method is to
+    create the table, bulk load the table's data using
+    <command>COPY</command>, then create any indexes needed for the
+    table.  Creating an index on pre-existing data is quicker than
+    updating it incrementally as each row is loaded.
+-->
+新規に作成したテーブルをロードする時、最速の方法は、テーブルを作成し、<code class="command">COPY</code>を使用した一括ロードを行い、そのテーブルに必要なインデックスを作成することです。
+既存のデータに対するインデックスを作成する方が、各行がロードされる度に段階的に更新するよりも高速です。
+   </p><p>
+<!--
+    If you are adding large amounts of data to an existing table,
+    it might be a win to drop the indexes,
+    load the table, and then recreate the indexes.  Of course, the
+    database performance for other users might suffer
+    during the time the indexes are missing.  One should also think
+    twice before dropping a unique index, since the error checking
+    afforded by the unique constraint will be lost while the index is
+    missing.
+-->
+既存のテーブルに大量のデータを追加しているのであれば、インデックスを削除し、テーブルをロード、その後にインデックスを再作成する方がよいかもしれません。
+もちろん、他のユーザから見ると、インデックスが存在しない間データベースの性能は悪化します。
+また、一意性インデックスを削除する前には熟考しなければなりません。
+一意性制約によるエラー検査がその期間行われないからです。
+   </p></div><div class="sect2" id="POPULATE-RM-FKEYS"><div class="titlepage"><div><div><h3 class="title">14.4.4. 外部キー制約の削除</h3></div></div></div><!--
+   <title>Remove Foreign Key Constraints</title>
+--><p>
+<!--
+    Just as with indexes, a foreign key constraint can be checked
+    <quote>in bulk</quote> more efficiently than row-by-row.  So it might be
+    useful to drop foreign key constraints, load data, and re-create
+    the constraints.  Again, there is a trade-off between data load
+    speed and loss of error checking while the constraint is missing.
+-->
+インデックスの場合と同様、外部キー制約は一行一行検査するよりも効率的に、<span class="quote">「<span class="quote">まとめて</span>」</span>検査することができます。
+従って、外部キー制約を削除し、データをロード、そして、制約を再作成する方法は有用となることがあります。
+繰り返しますが、データロードの速度と、制約が存在しない間のエラー検査がないという点とのトレードオフがあります。
+   </p><p>
+<!--
+    What's more, when you load data into a table with existing foreign key
+    constraints, each new row requires an entry in the server's list of
+    pending trigger events (since it is the firing of a trigger that checks
+    the row's foreign key constraint).  Loading many millions of rows can
+    cause the trigger event queue to overflow available memory, leading to
+    intolerable swapping or even outright failure of the command.  Therefore
+    it may be <emphasis>necessary</emphasis>, not just desirable, to drop and re-apply
+    foreign keys when loading large amounts of data.  If temporarily removing
+    the constraint isn't acceptable, the only other recourse may be to split
+    up the load operation into smaller transactions.
+-->
+外部キー制約をすでに持つテーブルにデータをロードする時、新しい行はそれぞれ(行の外部キー制約を検査するトリガを発行しますので)サーバの待機中トリガイベントのリスト内に項目を要求します。
+数百万の行をロードすると、トリガイベントのキューが利用可能なメモリをオーバーフローさせてしまい、耐えられないほどのスワッピングが発生してしまう、最悪はそのコマンドが完全に失敗してしまう可能性があります。
+したがって単に好ましいだけでなく、大量のデータをロードする時には外部キーを削除し再度適用することが<span class="emphasis"><em>必要</em></span>かもしれません。
+一時的な制約削除が受け入れられない場合に他に取り得る手段は、ロード操作をより小さなトランザクションに分割することだけかもしれません。
+   </p></div><div class="sect2" id="POPULATE-WORK-MEM"><div class="titlepage"><div><div><h3 class="title">14.4.5. <code class="varname">maintenance_work_mem</code>を増やす</h3></div></div></div><!--
+   <title>Increase <varname>maintenance_work_mem</varname></title>
+--><p>
+<!--
+    Temporarily increasing the <xref linkend="guc-maintenance-work-mem"/>
+    configuration variable when loading large amounts of data can
+    lead to improved performance.  This will help to speed up <command>CREATE
+    INDEX</command> commands and <command>ALTER TABLE ADD FOREIGN KEY</command> commands.
+    It won't do much for <command>COPY</command> itself, so this advice is
+    only useful when you are using one or both of the above techniques.
+-->
+大規模なデータをロードする時<a class="xref" href="runtime-config-resource.html#GUC-MAINTENANCE-WORK-MEM">maintenance_work_mem</a>設定変数を一時的に増やすことで性能を向上させることができます。
+これは、<code class="command">CREATE INDEX</code>コマンドと<code class="command">ALTER TABLE ADD FOREIGN KEY</code>の速度向上に役立ちます。
+<code class="command">COPY</code>自体には大して役立ちませんので、この助言は、上述の技法の片方または両方を使用している時にのみ有用です。
+   </p></div><div class="sect2" id="POPULATE-MAX-WAL-SIZE"><div class="titlepage"><div><div><h3 class="title">14.4.6. <code class="varname">max_wal_size</code>を増やす</h3></div></div></div><!--
+   <title>Increase <varname>max_wal_size</varname></title>
+--><p>
+<!--
+    Temporarily increasing the <xref linkend="guc-max-wal-size"/>
+    configuration variable can also
+    make large data loads faster.  This is because loading a large
+    amount of data into <productname>PostgreSQL</productname> will
+    cause checkpoints to occur more often than the normal checkpoint
+    frequency (specified by the <varname>checkpoint_timeout</varname>
+    configuration variable). Whenever a checkpoint occurs, all dirty
+    pages must be flushed to disk. By increasing
+    <varname>max_wal_size</varname> temporarily during bulk
+    data loads, the number of checkpoints that are required can be
+    reduced.
+-->
+大規模なデータをロードする時<a class="xref" href="runtime-config-wal.html#GUC-MAX-WAL-SIZE">max_wal_size</a>設定変数を一時的に増やすことで高速化することができます。
+大量のデータを<span class="productname">PostgreSQL</span>にロードすることで、通常のチェックポイントの頻度（<code class="varname">checkpoint_timeout</code>設定変数により指定されます）よりも頻繁にチェックポイントが発生するためです。
+チェックポイントが発生すると、すべてのダーティページ（ディスクに未書き込みの変更済みメモリページ）はディスクに吐き出されなければなりません。
+大量のデータロードの際に一時的に<code class="varname">max_wal_size</code>を増加させることで、必要なチェックポイント数を減らすことができます。
+   </p></div><div class="sect2" id="POPULATE-PITR"><div class="titlepage"><div><div><h3 class="title">14.4.7. WALアーカイブ処理とストリーミングレプリケーションの無効化</h3></div></div></div><!--
+   <title>Disable WAL Archival and Streaming Replication</title>
+--><p>
+<!--
+    When loading large amounts of data into an installation that uses
+    WAL archiving or streaming replication, it might be faster to take a
+    new base backup after the load has completed than to process a large
+    amount of incremental WAL data.  To prevent incremental WAL logging
+    while loading, disable archiving and streaming replication, by setting
+    <xref linkend="guc-wal-level"/> to <literal>minimal</literal>,
+    <xref linkend="guc-archive-mode"/> to <literal>off</literal>, and
+    <xref linkend="guc-max-wal-senders"/> to zero.
+    But note that changing these settings requires a server restart.
+-->
+大量のデータをWALアーカイブ処理またはストリーミングレプリケーションを使用するインストレーションにロードする時、増加する大量のWALデータを処理するより、ロードが完了した後に新しくベースバックアップを取る方が高速です。
+ロード中のWALログの増加を防ぐためには、<a class="xref" href="runtime-config-wal.html#GUC-WAL-LEVEL">wal_level</a>を<code class="literal">minimal</code>に、<a class="xref" href="runtime-config-wal.html#GUC-ARCHIVE-MODE">archive_mode</a>を<code class="literal">off</code>に、<a class="xref" href="runtime-config-replication.html#GUC-MAX-WAL-SENDERS">max_wal_senders</a>をゼロに設定することにより、アーカイブ処理とストリーミングレプリケーションを無効にしてください。
+しかし、これらの変数を変更するにはサーバの再起動が必要な点に注意してください。
+   </p><p>
+<!--
+    Aside from avoiding the time for the archiver or WAL sender to
+    process the WAL data,
+    doing this will actually make certain commands faster, because they
+    are designed not to write WAL at all if <varname>wal_level</varname>
+    is <literal>minimal</literal>.  (They can guarantee crash safety more cheaply
+    by doing an <function>fsync</function> at the end than by writing WAL.)
+    This applies to the following commands:
+-->
+こうすると、WALデータを処理する保管処理またはWAL送信処理にかかる時間がかからないことの他に、実際のところ、特定のコマンドをより高速にします。
+<code class="varname">wal_level</code>が<code class="literal">minimal</code>の場合、これらのコマンドではWALへの書き出しは全く予定されないためです。
+（これらは最後に<code class="function">fsync</code>を実行することで、WALへの書き込みより安価にクラッシュした場合の安全性を保証することができます。）
+これは以下のコマンドで当てはまります。
+    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+       <code class="command">CREATE TABLE AS SELECT</code>
+      </p></li><li class="listitem"><p>
+<!--
+       <command>CREATE INDEX</command> (and variants such as
+       <command>ALTER TABLE ADD PRIMARY KEY</command>)
+-->
+<code class="command">CREATE INDEX</code> (または<code class="command">ALTER TABLE ADD PRIMARY KEY</code>などの亜種）
+      </p></li><li class="listitem"><p>
+       <code class="command">ALTER TABLE SET TABLESPACE</code>
+      </p></li><li class="listitem"><p>
+       <code class="command">CLUSTER</code>
+      </p></li><li class="listitem"><p>
+<!--
+       <command>COPY FROM</command>, when the target table has been
+       created or truncated earlier in the same transaction
+-->
+同一トランザクションで前もって対象テーブルが作成された、あるいは、消去された場合の<code class="command">COPY FROM</code>
+      </p></li></ul></div><p>
+   </p></div><div class="sect2" id="POPULATE-ANALYZE"><div class="titlepage"><div><div><h3 class="title">14.4.8. 最後に<code class="command">ANALYZE</code>を実行</h3></div></div></div><!--
+   <title>Run <command>ANALYZE</command> Afterwards</title>
+--><p>
+<!--
+    Whenever you have significantly altered the distribution of data
+    within a table, running <xref linkend="sql-analyze"/> is strongly recommended. This
+    includes bulk loading large amounts of data into the table.  Running
+    <command>ANALYZE</command> (or <command>VACUUM ANALYZE</command>)
+    ensures that the planner has up-to-date statistics about the
+    table.  With no statistics or obsolete statistics, the planner might
+    make poor decisions during query planning, leading to poor
+    performance on any tables with inaccurate or nonexistent
+    statistics.  Note that if the autovacuum daemon is enabled, it might
+    run <command>ANALYZE</command> automatically; see
+    <xref linkend="vacuum-for-statistics"/>
+    and <xref linkend="autovacuum"/> for more information.
+-->
+テーブル内のデータ分布を大きく変更した時は毎回、<a class="xref" href="sql-analyze.html" title="ANALYZE"><span class="refentrytitle">ANALYZE</span></a>を実行することを強く勧めます。
+これは、テーブルに大量のデータをまとめてロードする場合も含まれます。
+<code class="command">ANALYZE</code>（または<code class="command">VACUUM ANALYZE</code>）を実行することで、確実にプランナがテーブルに関する最新の統計情報を持つことができます。
+統計情報が存在しない、または古い場合、プランナは、そのテーブルに対する問い合わせの性能を損なわせる、お粗末な問い合わせ計画を選択する可能性があります。
+自動バキュームデーモンが有効な場合、<code class="command">ANALYZE</code>が自動的に実行されます。
+詳細は<a class="xref" href="routine-vacuuming.html#VACUUM-FOR-STATISTICS" title="24.1.3. プランナ用の統計情報の更新">24.1.3</a>および<a class="xref" href="routine-vacuuming.html#AUTOVACUUM" title="24.1.6. 自動バキュームデーモン">24.1.6</a>を参照してください。
+   </p></div><div class="sect2" id="POPULATE-PG-DUMP"><div class="titlepage"><div><div><h3 class="title">14.4.9. <span class="application">pg_dump</span>に関するいくつかの注意</h3></div></div></div><!--
+   <title>Some Notes About <application>pg_dump</application></title>
+--><p>
+<!--
+    Dump scripts generated by <application>pg_dump</application> automatically apply
+    several, but not all, of the above guidelines.  To reload a
+    <application>pg_dump</application> dump as quickly as possible, you need to
+    do a few extra things manually.  (Note that these points apply while
+    <emphasis>restoring</emphasis> a dump, not while <emphasis>creating</emphasis> it.
+    The same points apply whether loading a text dump with
+    <application>psql</application> or using <application>pg_restore</application> to load
+    from a <application>pg_dump</application> archive file.)
+-->
+<span class="application">pg_dump</span>で生成されるダンプスクリプトは自動的に上のガイドラインのいくつかを適用します（すべてではありません）。
+<span class="application">pg_dump</span>ダンプをできる限り高速にリロードするには、手作業で更に数作業が必要です。
+（これらは<span class="emphasis"><em>作成</em></span>時に適用するものではなく、ダンプを<span class="emphasis"><em>復元</em></span>する時に適用するものです。
+<span class="application">psql</span>を使用してテキスト形式のダンプをロードする時と<span class="application">pg_dump</span>のアーカイブファイルから<span class="application">pg_restore</span>を使用してロードする時にも同じことが適用できます。）
+   </p><p>
+<!--
+    By default, <application>pg_dump</application> uses <command>COPY</command>, and when
+    it is generating a complete schema-and-data dump, it is careful to
+    load data before creating indexes and foreign keys.  So in this case
+    several guidelines are handled automatically.  What is left
+    for you to do is to:
+-->
+デフォルトでは、<span class="application">pg_dump</span>は<code class="command">COPY</code>を使用します。
+スキーマとデータのダンプ全体を生成する場合、インデックスと外部キー制約を作成する前にデータをロードすることに注意してください。
+ですので、この場合、ガイドラインのいくつかは自動的に行われます。
+残された作業は以下のとおりです。
+    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<!--
+       Set appropriate (i.e., larger than normal) values for
+       <varname>maintenance_work_mem</varname> and
+       <varname>max_wal_size</varname>.
+-->
+<code class="varname">maintenance_work_mem</code>および<code class="varname">max_wal_size</code>を適切な（つまり通常よりも大きな）値に設定します。
+      </p></li><li class="listitem"><p>
+<!--
+       If using WAL archiving or streaming replication, consider disabling
+       them during the restore. To do that, set <varname>archive_mode</varname>
+       to <literal>off</literal>,
+       <varname>wal_level</varname> to <literal>minimal</literal>, and
+       <varname>max_wal_senders</varname> to zero before loading the dump.
+       Afterwards, set them back to the right values and take a fresh
+       base backup.
+-->
+WALアーカイブ処理またはストリーミングレプリケーションを使用する場合は、リストア時にこれを無効にすることを検討してください。
+このためにはダンプをロードする前に<code class="varname">archive_mode</code>を<code class="literal">off</code>に、<code class="varname">wal_level</code>を<code class="literal">minimal</code>に、<code class="varname">max_wal_senders</code>をゼロに設定してください。
+その後それらを正しい値に戻し、新規にベースバックアップを取ってください。
+      </p></li><li class="listitem"><p>
+<!--
+       Experiment with the parallel dump and restore modes of both
+       <application>pg_dump</application> and <application>pg_restore</application> and find the
+       optimal number of concurrent jobs to use. Dumping and restoring in
+       parallel by means of the <option>-j</option> option should give you a
+       significantly higher performance over the serial mode.
+-->
+<span class="application">pg_dump</span>と<span class="application">pg_restore</span>で、並列ダンプとリストア方式を実験して、利用する並列なジョブの最適な数を見つけて下さい。
+<code class="option">-j</code>オプションでダンプとリストアを並列に行なうのは逐次方式よりも大きく性能を向上させるでしょう。
+      </p></li><li class="listitem"><p>
+<!--
+       Consider whether the whole dump should be restored as a single
+       transaction.  To do that, pass the <option>-1</option> or
+       <option>&#045;&#045;single-transaction</option> command-line option to
+       <application>psql</application> or <application>pg_restore</application>. When using this
+       mode, even the smallest of errors will rollback the entire restore,
+       possibly discarding many hours of processing.  Depending on how
+       interrelated the data is, that might seem preferable to manual cleanup,
+       or not.  <command>COPY</command> commands will run fastest if you use a single
+       transaction and have WAL archiving turned off.
+-->
+ダンプ全体を単一トランザクションとしてリストアすべきかどうか検討してください。
+このためには<span class="application">psql</span>または<span class="application">pg_restore</span>に<code class="option">-1</code>または<code class="option">--single-transaction</code>コマンドラインオプションを指定してください。
+このモードを使用する場合、たとえ小さなエラーであっても、エラーがあればリストア全体がロールバックされます。
+データ同士の関連性がどの程度あるかに依存しますが、手作業での整理の際には好まれるかと思います。さもなくばあまり勧めません。
+単一トランザクションで実行し、WALアーカイブを無効にしている場合、<code class="command">COPY</code>コマンドは最も高速に行われます。
+      </p></li><li class="listitem"><p>
+<!--
+       If multiple CPUs are available in the database server, consider using
+       <application>pg_restore</application>'s <option>&#045;-jobs</option> option.  This
+       allows concurrent data loading and index creation.
+-->
+データベースサーバで複数のCPUが利用できるのであれば、<span class="application">pg_restore</span>の<code class="option">--jobs</code>オプションの利用を検討してください。
+これによりデータのロードとインデックスの作成を同時に行うことができます。
+      </p></li><li class="listitem"><p>
+<!--
+       Run <command>ANALYZE</command> afterwards.
+-->
+この後で<code class="command">ANALYZE</code>を実行してください。
+      </p></li></ul></div><p>
+   </p><p>
+<!--
+    A data-only dump will still use <command>COPY</command>, but it does not
+    drop or recreate indexes, and it does not normally touch foreign
+    keys.
+-->
+データのみのダンプも<code class="command">COPY</code>コマンドを使用しますが、インデックスの削除と再作成を行いません。
+また、通常は外部キー制約を変更しません。
+
+     <a href="#ftn.id-1.5.13.7.11.4.2" class="footnote"><sup class="footnote" id="id-1.5.13.7.11.4.2">[12]</sup></a>
+
+<!--
+    So when loading a data-only dump, it is up to you to drop and recreate
+    indexes and foreign keys if you wish to use those techniques.
+    It's still useful to increase <varname>max_wal_size</varname>
+    while loading the data, but don't bother increasing
+    <varname>maintenance_work_mem</varname>; rather, you'd do that while
+    manually recreating indexes and foreign keys afterwards.
+    And don't forget to <command>ANALYZE</command> when you're done; see
+    <xref linkend="vacuum-for-statistics"/>
+    and <xref linkend="autovacuum"/> for more information.
+-->
+したがって、データのみのダンプをロードする時、上の技法を使用したければ自らインデックスと外部キーを削除、再作成しなければなりません。
+データをロードする時に<code class="varname">max_wal_size</code>を増やすことも有用です。
+しかし、<code class="varname">maintenance_work_mem</code>を増やすことは考えないでください。
+これは、後でインデックスと外部キーを手作業で再作成する時に行う方がよいでしょう。
+また、実行した後で<code class="command">ANALYZE</code>を行うことを忘れないでください。
+詳細は<a class="xref" href="routine-vacuuming.html#VACUUM-FOR-STATISTICS" title="24.1.3. プランナ用の統計情報の更新">24.1.3</a>および<a class="xref" href="routine-vacuuming.html#AUTOVACUUM" title="24.1.6. 自動バキュームデーモン">24.1.6</a>を参照してください。
+   </p></div><div class="footnotes"><br /><hr style="width:100; text-align:left;margin-left: 0" /><div id="ftn.id-1.5.13.7.11.4.2" class="footnote"><p><a href="#id-1.5.13.7.11.4.2" class="para"><sup class="para">[12] </sup></a>
+<!--
+       You can get the effect of disabling foreign keys by using
+       the <option>&#045;&#045;disable-triggers</option> option &mdash; but realize that
+       that eliminates, rather than just postpones, foreign key
+       validation, and so it is possible to insert bad data if you use it.
+-->
+<code class="option">--disable-triggers</code>オプションを使用して、外部キーを無効にさせることができます。
+しかし、これは外部キー制約を遅らせるのではなく、除去することに注意してください。
+そのため、これを使用すると不正なデータを挿入することができてしまいます。
+      </p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="explicit-joins.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="performance-tips.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="non-durability.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">14.3. 明示的な<code class="literal">JOIN</code>句でプランナを制御する </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 14.5. 永続性がない設定</td></tr></table></div></body></html>

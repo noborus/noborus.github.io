@@ -1,0 +1,547 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>pg_amcheck</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="app-ecpg.html" title="ecpg" /><link rel="next" href="app-pgbasebackup.html" title="pg_basebackup" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="reference-client.html" title="PostgreSQLクライアントアプリケーション">PostgreSQLクライアントアプリケーション</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : app-pgamcheck.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="app-ecpg.html" title="ecpg">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="reference-client.html" title="PostgreSQLクライアントアプリケーション">上へ</a></td><td width="60%" align="center"><span class="application">pg_amcheck</span></td><td width="20%" align="right"> <a accesskey="n" href="app-pgbasebackup.html" title="pg_basebackup">次へ</a></td></tr></table><hr /></div><div class="refentry" id="APP-PGAMCHECK"><div class="titlepage"></div><a id="id-1.9.4.9.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle"><span class="application">pg_amcheck</span></span></h2><p>pg_amcheck<span class="original">
+  &lt;refpurpose&gt;checks for corruption in one or more
+  &lt;productname&gt;PostgreSQL&lt;/productname&gt; databases&lt;/refpurpose&gt;
+</span> — 一つ以上の<span class="productname">PostgreSQL</span>データベースに破損がないかどうかを検査する</p></div><div class="refsynopsisdiv"><h2>概要</h2><div class="cmdsynopsis"><p id="id-1.9.4.9.4.1"><code class="command">pg_amcheck</code> [<em class="replaceable"><code>option</code></em>...] [<em class="replaceable"><code>dbname</code></em>]</p></div></div><div class="refsect1" id="id-1.9.4.9.5"><h2>説明</h2><span class="original">
+  &lt;title&gt;Description&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;application&gt;pg_amcheck&lt;/application&gt; supports running
+   &lt;xref linkend="amcheck"/&gt;'s corruption checking functions against one or
+   more databases, with options to select which schemas, tables and indexes to
+   check, which kinds of checking to perform, and whether to perform the checks
+   in parallel, and if so, the number of parallel connections to establish and
+   use.
+</span>
+<span class="application">pg_amcheck</span>は、一つ以上のデータベースに対して、どのスキーマ、テーブル、インデックスを検査すべきか、どの種類の検査を実行するか、検査を並列に行うかどうか、並列に行うなら並列接続をいくつ確立するかを指定して<a class="xref" href="amcheck.html" title="F.2. amcheck">amcheck</a>の破損検査関数を実行します。
+  </p><p>
+<span class="original">
+   Only ordinary and toast table relations, materialized views, sequences, and
+   btree indexes are currently supported.  Other relation types are silently
+   skipped.
+</span>
+《マッチ度[64.331210]》テーブルリレーションとBツリーインデックスのみが今の所サポートされています。
+他のリレーションタイプは暗黙のうちにスキップされます。
+  </p><p>
+<span class="original">
+   If &lt;literal&gt;dbname&lt;/literal&gt; is specified, it should be the name of a
+   single database to check, and no other database selection options should
+   be present. Otherwise, if any database selection options are present,
+   all matching databases will be checked. If no such options are present,
+   the default database will be checked. Database selection options include
+   &lt;option&gt;&amp;#45;-all&lt;/option&gt;, &lt;option&gt;&amp;#45;-database&lt;/option&gt; and
+   &lt;option&gt;&amp;#45;-exclude-database&lt;/option&gt;. They also include
+   &lt;option&gt;&amp;#45;-relation&lt;/option&gt;, &lt;option&gt;&amp;#45;-exclude-relation&lt;/option&gt;,
+   &lt;option&gt;&amp;#45;-table&lt;/option&gt;, &lt;option&gt;&amp;#45;-exclude-table&lt;/option&gt;,
+   &lt;option&gt;&amp;#45;-index&lt;/option&gt;, and &lt;option&gt;&amp;#45;-exclude-index&lt;/option&gt;,
+   but only when such options are used with a three-part pattern
+   (e.g. &lt;option&gt;mydb*.myschema*.myrel*&lt;/option&gt;).  Finally, they include
+   &lt;option&gt;&amp;#45;-schema&lt;/option&gt; and &lt;option&gt;&amp;#45;-exclude-schema&lt;/option&gt;
+   when such options are used with a two-part pattern
+   (e.g. &lt;option&gt;mydb*.myschema*&lt;/option&gt;).
+</span>
+<code class="literal">dbname</code>を指定するときは、検査すべき単一のデータベース名であるべきで、他のデータベースを選択するオプションは指定すべきではありません。
+そうではなくてデータベースの選択オプションが指定されていると、一致するデータベースがすべて検査されます。
+オプションを指定しない場合は、デフォルトのデータベースが検査されます。
+データベース選択オプションには次のものが含まれます。
+<code class="option">--all</code>、<code class="option">--database</code>、<code class="option">--exclude-database</code>。
+また、次のオプションも含まれます。
+<code class="option">--relation</code>、<code class="option">--exclude-relation</code>、<code class="option">--table</code>、<code class="option">--exclude-table</code>、<code class="option">--index</code>、<code class="option">--exclude-index</code>。
+しかし、これらのオプションは、3つの部分からなるパターン（つまり<code class="option">mydb*.myschema*.myrel*</code>）を指定したときにのみ使用できます。
+最後に、2つの部分からなるパターン（つまり<code class="option">mydb*.myschema*</code>）を指定した時に使用できる<code class="option">--schema</code>と<code class="option">--exclude-schema</code>があります。
+  </p><p>
+<span class="original">
+   &lt;replaceable&gt;dbname&lt;/replaceable&gt; can also be a
+   &lt;link linkend="libpq-connstring"&gt;connection string&lt;/link&gt;.
+</span>
+<em class="replaceable"><code>dbname</code></em>は、<a class="link" href="libpq-connect.html#LIBPQ-CONNSTRING" title="34.1.1. 接続文字列">接続文字列</a>でも構いません。
+  </p></div><div class="refsect1" id="id-1.9.4.9.6"><h2>オプション</h2><span class="original">
+  &lt;title&gt;Options&lt;/title&gt;
+</span><p>
+<span class="original">
+   The following command-line options control what is checked:
+</span>
+以下のコマンドラインオプションは、何を検査するかを制御します。
+
+   </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="option">-a</code><br /></span><span class="term"><code class="option">--all</code></span></dt><dd><p>
+<span class="original">
+       Check all databases, except for any excluded via
+       &lt;option&gt;&amp;#45;-exclude-database&lt;/option&gt;.
+</span>
+<code class="option">--exclude-database</code>で除外したものを除くすべてのデータベースを検査します。
+      </p></dd><dt><span class="term"><code class="option">-d <em class="replaceable"><code>pattern</code></em></code><br /></span><span class="term"><code class="option">--database=<em class="replaceable"><code>pattern</code></em></code></span></dt><dd><p>
+<span class="original">
+       Check databases matching the specified
+       &lt;link linkend="app-psql-patterns"&gt;&lt;replaceable class="parameter"&gt;pattern&lt;/replaceable&gt;&lt;/link&gt;,
+       except for any excluded by &lt;option&gt;&amp;#45;-exclude-database&lt;/option&gt;.
+       This option can be specified more than once.
+</span>
+<code class="option">--exclude-database</code>で除外したものを除き、指定した<a class="link" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン"><em class="replaceable"><code>パターン</code></em></a>にマッチするデータベースを検査します。
+このオプションは2回以上指定できます。
+      </p></dd><dt><span class="term"><code class="option">-D <em class="replaceable"><code>pattern</code></em></code><br /></span><span class="term"><code class="option">--exclude-database=<em class="replaceable"><code>pattern</code></em></code></span></dt><dd><p>
+<span class="original">
+       Exclude databases matching the given
+       &lt;link linkend="app-psql-patterns"&gt;&lt;replaceable class="parameter"&gt;pattern&lt;/replaceable&gt;&lt;/link&gt;.
+       This option can be specified more than once.
+</span>
+与えられた<a class="link" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン"><em class="replaceable"><code>パターン</code></em></a>にマッチするデータベースを除外します。
+このオプションは2回以上指定できます。
+      </p></dd><dt><span class="term"><code class="option">-i <em class="replaceable"><code>pattern</code></em></code><br /></span><span class="term"><code class="option">--index=<em class="replaceable"><code>pattern</code></em></code></span></dt><dd><p>
+<span class="original">
+       Check indexes matching the specified
+       &lt;link linkend="app-psql-patterns"&gt;&lt;replaceable class="parameter"&gt;pattern&lt;/replaceable&gt;&lt;/link&gt;,
+       unless they are otherwise excluded.
+       This option can be specified more than once.
+</span>
+除外されていない限り、指定した<a class="link" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン"><em class="replaceable"><code>パターン</code></em></a>にマッチするインデックスを検査します。
+このオプションは2回以上指定できます。
+      </p><p>
+<span class="original">
+       This is similar to the &lt;option&gt;&amp;#45;-relation&lt;/option&gt; option, except that
+       it applies only to indexes, not to other relation types.
+</span>
+《マッチ度[74.015748]》これは、インデックスにのみ適用され、テーブルには適用されないことを除いて<code class="option">--relation</code>オプションに類似しています。
+      </p></dd><dt><span class="term"><code class="option">-I <em class="replaceable"><code>pattern</code></em></code><br /></span><span class="term"><code class="option">--exclude-index=<em class="replaceable"><code>pattern</code></em></code></span></dt><dd><p>
+<span class="original">
+       Exclude indexes matching the specified
+       &lt;link linkend="app-psql-patterns"&gt;&lt;replaceable class="parameter"&gt;pattern&lt;/replaceable&gt;&lt;/link&gt;.
+       This option can be specified more than once.
+</span>
+与えられた<a class="link" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン"><em class="replaceable"><code>パターン</code></em></a>にマッチするインデックスを除外します。
+このオプションは2回以上指定できます。
+      </p><p>
+<span class="original">
+       This is similar to the &lt;option&gt;&amp;#45;-exclude-relation&lt;/option&gt; option,
+       except that it applies only to indexes, not other relation types.
+</span>
+《マッチ度[77.272727]》これは、インデックスにのみ適用され、テーブルには適用されないことを除いて<code class="option">--exclude-relation</code>オプションに類似しています。
+      </p></dd><dt><span class="term"><code class="option">-r <em class="replaceable"><code>pattern</code></em></code><br /></span><span class="term"><code class="option">--relation=<em class="replaceable"><code>pattern</code></em></code></span></dt><dd><p>
+<span class="original">
+       Check relations matching the specified
+       &lt;link linkend="app-psql-patterns"&gt;&lt;replaceable class="parameter"&gt;pattern&lt;/replaceable&gt;&lt;/link&gt;,
+       unless they are otherwise excluded.
+       This option can be specified more than once.
+</span>
+除外されていない限り、<a class="link" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン"><em class="replaceable"><code>パターン</code></em></a>にマッチするリレーションを検査します。
+このオプションは2回以上指定できます。
+      </p><p>
+<span class="original">
+       Patterns may be unqualified, e.g. &lt;literal&gt;myrel*&lt;/literal&gt;, or they
+       may be schema-qualified, e.g. &lt;literal&gt;myschema*.myrel*&lt;/literal&gt; or
+       database-qualified and schema-qualified, e.g.
+       &lt;literal&gt;mydb*.myscheam*.myrel*&lt;/literal&gt;. A database-qualified
+       pattern will add matching databases to the list of databases to be
+       checked.
+</span>
+パターンはたとえば<code class="literal">myrel*</code>のように修飾されていなくても、<code class="literal">myschema*.myrel*</code>のようにスキーマ修飾されていても、<code class="literal">mydb*.myscheam*.myrel*</code>のようにデータベース及びスキーマ修飾されていても構いません。
+データベース修飾パターンは、マッチするデータベースを検査対象のデータベースのリストに追加します。
+      </p></dd><dt><span class="term"><code class="option">-R <em class="replaceable"><code>pattern</code></em></code><br /></span><span class="term"><code class="option">--exclude-relation=<em class="replaceable"><code>pattern</code></em></code></span></dt><dd><p>
+<span class="original">
+       Exclude relations matching the specified
+       &lt;link linkend="app-psql-patterns"&gt;&lt;replaceable class="parameter"&gt;pattern&lt;/replaceable&gt;&lt;/link&gt;.
+       This option can be specified more than once.
+</span>
+指定された<a class="link" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン"><em class="replaceable"><code>パターン</code></em></a>にマッチするリレーションを除外します。
+このオプションは2回以上指定できます。
+      </p><p>
+<span class="original">
+       As with &lt;option&gt;&amp;#45;-relation&lt;/option&gt;, the
+       &lt;link linkend="app-psql-patterns"&gt;&lt;replaceable class="parameter"&gt;pattern&lt;/replaceable&gt;&lt;/link&gt; may be unqualified, schema-qualified,
+       or database- and schema-qualified.
+</span>
+<code class="option">--relation</code>におけるのと同様、<a class="link" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン"><em class="replaceable"><code>パターン</code></em></a>は修飾なし、スキーマ修飾、スキーマとデータベース修飾のどれでも構いません。
+      </p></dd><dt><span class="term"><code class="option">-s <em class="replaceable"><code>pattern</code></em></code><br /></span><span class="term"><code class="option">--schema=<em class="replaceable"><code>pattern</code></em></code></span></dt><dd><p>
+<span class="original">
+       Check tables and indexes in schemas matching the specified
+       &lt;link linkend="app-psql-patterns"&gt;&lt;replaceable class="parameter"&gt;pattern&lt;/replaceable&gt;&lt;/link&gt;, unless they are otherwise excluded.
+       This option can be specified more than once.
+</span>
+除外されていない限り、指定した<a class="link" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン"><em class="replaceable"><code>パターン</code></em></a>にマッチするスキーマ内のテーブルとインデックスを検査します。
+このオプションは2回以上指定できます。
+      </p><p>
+<span class="original">
+       To select only tables in schemas matching a particular pattern,
+       consider using something like
+       &lt;literal&gt;&amp;#45;-table=SCHEMAPAT.* &amp;#45;-no-dependent-indexes&lt;/literal&gt;.
+       To select only indexes, consider using something like
+       &lt;literal&gt;&amp;#45;-index=SCHEMAPAT.*&lt;/literal&gt;.
+</span>
+特定のパターンにマッチするスキーマ内のテーブルだけを選択するには、<code class="literal">--table=SCHEMAPAT.* --no-dependent-indexes</code>のような使い方を考慮してください。
+インデックスのみを選択するには、<code class="literal">--index=SCHEMAPAT.*</code>のような使い方を考慮してください。
+      </p><p>
+<span class="original">
+       A schema pattern may be database-qualified. For example, you may
+       write &lt;literal&gt;&amp;#45;-schema=mydb*.myschema*&lt;/literal&gt; to select
+       schemas matching &lt;literal&gt;myschema*&lt;/literal&gt; in databases matching
+       &lt;literal&gt;mydb*&lt;/literal&gt;.
+</span>
+スキーマパターンはデータベース修飾でも構いません。
+たとえば、<code class="literal">mydb*</code>にマッチするデータベース内の<code class="literal">myschema*</code>にマッチするスキーマを選択するには、<code class="literal">--schema=mydb*.myschema*</code>のように書くことができます。
+      </p></dd><dt><span class="term"><code class="option">-S <em class="replaceable"><code>pattern</code></em></code><br /></span><span class="term"><code class="option">--exclude-schema=<em class="replaceable"><code>pattern</code></em></code></span></dt><dd><p>
+<span class="original">
+       Exclude tables and indexes in schemas matching the specified
+       &lt;link linkend="app-psql-patterns"&gt;&lt;replaceable class="parameter"&gt;pattern&lt;/replaceable&gt;&lt;/link&gt;.
+       This option can be specified more than once.
+</span>
+指定した<a class="link" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン"><em class="replaceable"><code>パターン</code></em></a>にマッチするスキーマ内のテーブルとインデックスを除外します。
+このオプションは2回以上指定できます。
+      </p><p>
+<span class="original">
+       As with &lt;option&gt;&amp;#45;-schema&lt;/option&gt;, the pattern may be
+       database-qualified.
+</span>
+<code class="option">--schema</code>と同様、パターンはデータベース修飾でも構いません。
+      </p></dd><dt><span class="term"><code class="option">-t <em class="replaceable"><code>pattern</code></em></code><br /></span><span class="term"><code class="option">--table=<em class="replaceable"><code>pattern</code></em></code></span></dt><dd><p>
+<span class="original">
+       Check tables matching the specified
+       &lt;link linkend="app-psql-patterns"&gt;&lt;replaceable class="parameter"&gt;pattern&lt;/replaceable&gt;&lt;/link&gt;,
+       unless they are otherwise excluded.
+       This option can be specified more than once.
+</span>
+除外されていない限り、指定した<a class="link" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン"><em class="replaceable"><code>パターン</code></em></a>にマッチするスキーマ内のテーブルを検査します。
+このオプションは2回以上指定できます。
+      </p><p>
+<span class="original">
+       This is similar to the &lt;option&gt;&amp;#45;-relation&lt;/option&gt; option, except that
+       it applies only to tables, materialized views, and sequences, not to
+       indexes.
+</span>
+《マッチ度[64.864865]》これは、テーブルにのみ適用され、インデックスには適用されないことを除いて<code class="option">--relation</code>オプションに類似しています。
+      </p></dd><dt><span class="term"><code class="option">-T <em class="replaceable"><code>pattern</code></em></code><br /></span><span class="term"><code class="option">--exclude-table=<em class="replaceable"><code>pattern</code></em></code></span></dt><dd><p>
+<span class="original">
+       Exclude tables matching the specified
+       &lt;link linkend="app-psql-patterns"&gt;&lt;replaceable class="parameter"&gt;pattern&lt;/replaceable&gt;&lt;/link&gt;.
+       This option can be specified more than once.
+</span>
+指定した<a class="link" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン"><em class="replaceable"><code>パターン</code></em></a>にマッチするテーブルを除外します。
+このオプションは2回以上指定できます。
+      </p><p>
+<span class="original">
+       This is similar to the &lt;option&gt;&amp;#45;-exclude-relation&lt;/option&gt; option,
+       except that it applies only to tables, materialized views, and
+       sequences, not to indexes.
+</span>
+《マッチ度[66.666667]》これは、テーブルにのみ適用され、インデックスには適用されないことを除いて<code class="option">--exclude-relation</code>オプションに類似しています。
+      </p></dd><dt><span class="term"><code class="option">--no-dependent-indexes</code></span></dt><dd><p>
+<span class="original">
+       By default, if a table is checked, any btree indexes of that table
+       will also be checked, even if they are not explicitly selected by
+       an option such as &lt;literal&gt;&amp;#45;-index&lt;/literal&gt; or
+       &lt;literal&gt;&amp;#45;-relation&lt;/literal&gt;. This option suppresses that behavior.
+</span>
+デフォルトでは、<code class="literal">--index</code>や<code class="literal">--relation</code>オプションで明示的に選択されていなくても、テーブルが検査される際にそのテーブルのBツリーインデックスも検査されます。
+このオプションはこの振る舞いを抑止します。
+      </p></dd><dt><span class="term"><code class="option">--no-dependent-toast</code></span></dt><dd><p>
+<span class="original">
+       By default, if a table is checked, its toast table, if any, will also
+       be checked, even if it is not explicitly selected by an option
+       such as &lt;literal&gt;&amp;#45;-table&lt;/literal&gt; or &lt;literal&gt;&amp;#45;-relation&lt;/literal&gt;.
+       This option suppresses that behavior.
+</span>
+デフォルトでは、<code class="literal">--table</code>や<code class="literal">--relation</code>オプションで明示的に選択されていなくても、テーブルが検査される際にそのテーブルのトーストテーブルも検査されます。
+このオプションはこの振る舞いを抑止します。
+      </p></dd><dt><span class="term"><code class="option">--no-strict-names</code></span></dt><dd><p>
+<span class="original">
+       By default, if an argument to &lt;literal&gt;&amp;#45;-database&lt;/literal&gt;,
+       &lt;literal&gt;&amp;#45;-table&lt;/literal&gt;, &lt;literal&gt;&amp;#45;-index&lt;/literal&gt;,
+       or &lt;literal&gt;&amp;#45;-relation&lt;/literal&gt; matches no objects, it is a fatal
+       error. This option downgrades that error to a warning.
+</span>
+デフォルトでは、<code class="literal">--database</code>、<code class="literal">--table</code>、<code class="literal">--index</code>、<code class="literal">--relation</code>への引数がどのオブジェクトにもマッチしなければ、フェイタルエラーが起こります。
+このオプションはそのエラーをワーニングへと格下げします。
+      </p></dd></dl></div><p>
+  </p><p>
+<span class="original">
+   The following command-line options control checking of tables:
+</span>
+次のコマンドラインオプションはテーブルの検査を制御します。
+
+   </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="option">--exclude-toast-pointers</code></span></dt><dd><p>
+<span class="original">
+       By default, whenever a toast pointer is encountered in a table,
+       a lookup is performed to ensure that it references apparently-valid
+       entries in the toast table. These checks can be quite slow, and this
+       option can be used to skip them.
+</span>
+デフォルトでは、テーブル中のトーストポインタに遭遇すると必ずトーストテーブル中の明らかに有効なエントリを参照していることを確認するために検索が行われます。
+このチェックは非常に遅くなることがあり、このオプションはこれを省略するために使うことができます。
+      </p></dd><dt><span class="term"><code class="option">--on-error-stop</code></span></dt><dd><p>
+<span class="original">
+       After reporting all corruptions on the first page of a table where
+       corruption is found, stop processing that table relation and move on
+       to the next table or index.
+</span>
+破損が見つかった最初のテーブルのページに関してすべての破損の報告を行った後そのテーブルリレーションの処理を中断し、次のテーブルあるいはインデックスに進みます。
+      </p><p>
+<span class="original">
+       Note that index checking always stops after the first corrupt page.
+       This option only has meaning relative to table relations.
+</span>
+インデックスの検査は、最初の破損したページの後で常に停止することに留意してください。
+このオプションは、テーブルリレーションに関してのみ意味があります。
+      </p></dd><dt><span class="term"><code class="option">--skip=<em class="replaceable"><code>option</code></em></code></span></dt><dd><p>
+<span class="original">
+       If &lt;literal&gt;all-frozen&lt;/literal&gt; is given, table corruption checks
+       will skip over pages in all tables that are marked as all frozen.
+</span>
+<code class="literal">all-frozen</code>が与えられると、テーブル破損検査は、すべて凍結されていると印が付いたすべてのテーブルの中のページをスキップします。
+      </p><p>
+<span class="original">
+       If &lt;literal&gt;all-visible&lt;/literal&gt; is given, table corruption checks
+       will skip over pages in all tables that are marked as all visible.
+</span>
+<code class="literal">all-visible</code>が与えられると、テーブル破損検査は、すべて可視と印が付いたすべてのテーブルの中のページをスキップします。
+      </p><p>
+<span class="original">
+       By default, no pages are skipped.  This can be specified as
+       &lt;literal&gt;none&lt;/literal&gt;, but since this is the default, it need not be
+       mentioned.
+</span>
+デフォルトではページをスキップすることはありません。
+<code class="literal">none</code>と指定することもできますが、これがデフォルトなのでそのように指定する必要はありません。
+      </p></dd><dt><span class="term"><code class="option">--startblock=<em class="replaceable"><code>block</code></em></code></span></dt><dd><p>
+<span class="original">
+       Start checking at the specified block number. An error will occur if
+       the table relation being checked has fewer than this number of blocks.
+       This option does not apply to indexes, and is probably only useful
+       when checking a single table relation. See &lt;literal&gt;&amp;#45;-endblock&lt;/literal&gt;
+       for further caveats.
+</span>
+指定したブロック番号から検査を開始します。
+検査しているテーブルリレーションのブロック数がこのブロック数よりも小さければエラーが生じます。
+このオプションはインデックスには適用されず、おそらく単一のテーブルリレーションを検査するときにのみ意味があるでしょう。
+それ以外の警告については<code class="literal">--endblock</code>を参照してください。
+      </p></dd><dt><span class="term"><code class="option">--endblock=<em class="replaceable"><code>block</code></em></code></span></dt><dd><p>
+<span class="original">
+       End checking at the specified block number.  An error will occur if the
+       table relation being checked has fewer than this number of blocks.
+       This option does not apply to indexes, and is probably only useful when
+       checking a single table relation. If both a regular table and a toast
+       table are checked, this option will apply to both, but higher-numbered
+       toast blocks may still be accessed while validating toast pointers,
+       unless that is suppressed using
+       &lt;option&gt;&amp;#45;-exclude-toast-pointers&lt;/option&gt;.
+</span>
+指定したブロック番号で検査を終了します。
+検査しているテーブルリレーションのブロック数がこのブロック数よりも小さければエラーが生じます。
+このオプションはインデックスには適用されず、おそらく単一のテーブルリレーションを検査するときにのみ意味があるでしょう。
+通常のテーブルとトーストテーブルの両方が検査される際にはこのオプションはその両方に適用されますが、<code class="option">--exclude-toast-pointers</code>を使って抑止していない限りトーストポインタを検証中により大きな番号のブロックがアクセスされるかも知れません。
+      </p></dd></dl></div><p>
+  </p><p>
+<span class="original">
+   The following command-line options control checking of B-tree indexes:
+</span>
+以下のコマンドラインオプションはBツリーインデックスの検査を制御します。
+
+   </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="option">--heapallindexed</code></span></dt><dd><p>
+<span class="original">
+       For each index checked, verify the presence of all heap tuples as index
+       tuples in the index using &lt;xref linkend="amcheck"/&gt;'s
+       &lt;option&gt;heapallindexed&lt;/option&gt; option.
+</span>
+検査しているインデックスごとに、<a class="xref" href="amcheck.html" title="F.2. amcheck">amcheck</a>の<code class="option">heapallindexed</code>オプションを使ってすべてのヒープタプルがインデックス中のインデックスタプルとして存在していることを検証します。
+      </p></dd><dt><span class="term"><code class="option">--parent-check</code></span></dt><dd><p>
+<span class="original">
+       For each btree index checked, use &lt;xref linkend="amcheck"/&gt;'s
+       &lt;function&gt;bt_index_parent_check&lt;/function&gt; function, which performs
+       additional checks of parent/child relationships during index checking.
+</span>
+検査しているBツリーインデックスごとに、インデックス検査中に親／子関係の追加の検査を行う<a class="xref" href="amcheck.html" title="F.2. amcheck">amcheck</a>の<code class="function">bt_index_parent_check</code>関数を使います。
+      </p><p>
+<span class="original">
+       The default is to use &lt;application&gt;amcheck&lt;/application&gt;'s
+       &lt;function&gt;bt_index_check&lt;/function&gt; function, but note that use of the
+       &lt;option&gt;&amp;#45;-rootdescend&lt;/option&gt; option implicitly selects
+       &lt;function&gt;bt_index_parent_check&lt;/function&gt;.
+</span>
+デフォルトでは<span class="application">amcheck</span>の<code class="function">bt_index_check</code>関数を使いますが、<code class="option">--rootdescend</code>オプションを使うと暗黙的に<code class="function">bt_index_parent_check</code>を選択することに注意してください。
+      </p></dd><dt><span class="term"><code class="option">--rootdescend</code></span></dt><dd><p>
+<span class="original">
+       For each index checked, re-find tuples on the leaf level by performing a
+       new search from the root page for each tuple using
+       &lt;xref linkend="amcheck"/&gt;'s &lt;option&gt;rootdescend&lt;/option&gt; option.
+</span>
+検査しているインデックスごとに、<a class="xref" href="amcheck.html" title="F.2. amcheck">amcheck</a>の<code class="option">rootdescend</code>オプションを使い、各タプルに関してルートページから新たに検索を実施してリーフレベルのタプルを再発見します。
+      </p><p>
+<span class="original">
+       Use of this option implicitly also selects the
+       &lt;option&gt;&amp;#45;-parent-check&lt;/option&gt; option.
+</span>
+このオプションを使うと<code class="option">--parent-check</code>オプションも暗黙的に選択します。
+      </p><p>
+<span class="original">
+       This form of verification was originally written to help in the
+       development of btree index features.  It may be of limited use or even
+       of no use in helping detect the kinds of corruption that occur in
+       practice.  It may also cause corruption checking to take considerably
+       longer and consume considerably more resources on the server.
+</span>
+この形式の検証は、元々はBツリーインデックスの機能の開発を支援するために作られました。
+実際に発生する類の破損を検出するための支援としては限定的、あるいはまったく無用かも知れません。
+また、これは破損検査に要する時間がかなり長くなったり、サーバでかなり多くのリソースを消費する原因になるかも知れません。
+      </p></dd></dl></div><p>
+  </p><div class="warning"><h3 class="title">警告</h3><p>
+<span class="original">
+    The extra checks performed against B-tree indexes when the
+    &lt;option&gt;&amp;#45;-parent-check&lt;/option&gt; option or the
+    &lt;option&gt;&amp;#45;-rootdescend&lt;/option&gt; option is specified require
+    relatively strong relation-level locks.  These checks are the only
+    checks that will block concurrent data modification from
+    &lt;command&gt;INSERT&lt;/command&gt;, &lt;command&gt;UPDATE&lt;/command&gt;, and
+    &lt;command&gt;DELETE&lt;/command&gt; commands.
+</span>
+<code class="option">--parent-check</code>オプション、あるいは<code class="option">--rootdescend</code>オプションが指定された時にBツリーインデックスに対して行われる追加の検査では、比較的強いリレーションレベルのロックが必要です。
+この検査だけが、<code class="command">INSERT</code>、<code class="command">UPDATE</code>、<code class="command">DELETE</code>コマンドによる並行するデータ変更をブロックする検査です。
+   </p></div><p>
+<span class="original">
+   The following command-line options control the connection to the server:
+</span>
+以下のコマンドラインオプションは、サーバへの接続を制御します。
+
+   </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="option">-h <em class="replaceable"><code>hostname</code></em></code><br /></span><span class="term"><code class="option">--host=<em class="replaceable"><code>hostname</code></em></code></span></dt><dd><p>
+<span class="original">
+       Specifies the host name of the machine on which the server is running.
+       If the value begins with a slash, it is used as the directory for the
+       Unix domain socket.
+</span>
+サーバが実行中のマシンのホスト名を指定します。
+値がスラッシュで始まると、Unixドメインソケットのディレクトリとして使用されます。
+      </p></dd><dt><span class="term"><code class="option">-p <em class="replaceable"><code>port</code></em></code><br /></span><span class="term"><code class="option">--port=<em class="replaceable"><code>port</code></em></code></span></dt><dd><p>
+<span class="original">
+       Specifies the TCP port or local Unix domain socket file extension on
+       which the server is listening for connections.
+</span>
+TCPポートあるいはサーバが接続をリッスンしているマシン上のUnixドメインソケットファイルの拡張子を指定します。
+      </p></dd><dt><span class="term"><code class="option">-U</code><br /></span><span class="term"><code class="option">--username=<em class="replaceable"><code>username</code></em></code></span></dt><dd><p>
+<span class="original">
+       User name to connect as.
+</span>
+接続するユーザ名です。
+      </p></dd><dt><span class="term"><code class="option">-w</code><br /></span><span class="term"><code class="option">--no-password</code></span></dt><dd><p>
+<span class="original">
+       Never issue a password prompt.  If the server requires password
+       authentication and a password is not available by other means such as
+       a &lt;filename&gt;.pgpass&lt;/filename&gt; file, the connection attempt will fail.
+       This option can be useful in batch jobs and scripts where no user is
+       present to enter a password.
+</span>
+決してパスワードプロンプトを表示しません。
+サーバがパスワード認証を要求し、パスワードが<code class="filename">.pgpass</code>ファイルなどの他の方法で提供されない場合は接続の試みは失敗します。
+このオプションはパスワードを入力するユーザが存在しないバッチジョブやスクリプトで有用かも知れません。
+      </p></dd><dt><span class="term"><code class="option">-W</code><br /></span><span class="term"><code class="option">--password</code></span></dt><dd><p>
+<span class="original">
+       Force &lt;application&gt;pg_amcheck&lt;/application&gt; to prompt for a password
+       before connecting to a database.
+</span>
+<span class="application">pg_amcheck</span>がデータベースに接続する前にパスワードのプロンプトを表示することを強制します。
+      </p><p>
+<span class="original">
+       This option is never essential, since
+       &lt;application&gt;pg_amcheck&lt;/application&gt; will automatically prompt for a
+       password if the server demands password authentication.  However,
+       &lt;application&gt;pg_amcheck&lt;/application&gt; will waste a connection attempt
+       finding out that the server wants a password.  In some cases it is
+       worth typing &lt;option&gt;-W&lt;/option&gt; to avoid the extra connection attempt.
+</span>
+サーバがパスワード認証を必要とするときには<span class="application">pg_amcheck</span>はパスワードを自動的に要求するので、このオプションは絶対に必要というものではありません。
+しかし、<span class="application">pg_amcheck</span>はサーバがパスワードを必要としているかどうかを確認するために無駄な接続の試みをします。
+ある種の状況では余分な接続の試みを避けるために<code class="option">-W</code>をタイプする価値があります。
+      </p></dd><dt><span class="term"><code class="option">--maintenance-db=<em class="replaceable"><code>dbname</code></em></code></span></dt><dd><p>
+<span class="original">
+       Specifies a database or
+       &lt;link linkend="libpq-connstring"&gt;connection string&lt;/link&gt; to be
+       used to discover the list of databases to be checked. If neither
+       &lt;option&gt;&amp;#45;-all&lt;/option&gt; nor any option including a database pattern is
+       used, no such connection is required and this option does nothing.
+       Otherwise, any connection string parameters other than
+       the database name which are included in the value for this option
+       will also be used when connecting to the databases
+       being checked. If this option is omitted, the default is
+       &lt;literal&gt;postgres&lt;/literal&gt; or, if that fails,
+       &lt;literal&gt;template1&lt;/literal&gt;.
+</span>
+データベースあるいは検査対象データベースのリストを発見するために使われる<a class="link" href="libpq-connect.html#LIBPQ-CONNSTRING" title="34.1.1. 接続文字列">接続文字列</a>を指定します。
+<code class="option">--all</code>あるいはデータベースパターンを含むオプションが使われていなければ、そうした接続は必要ではなく、このオプションは何もしません。
+そうでなければ、このオプションの値に含まれるデータベース名が、検査対象のデータベースに接続する際にも使われます。
+このオプションが省略されるとデフォルトは<code class="literal">postgres</code>、あるいはそれが失敗すれば<code class="literal">template1</code>となります。
+      </p></dd></dl></div><p>
+  </p><p>
+<span class="original">
+   Other options are also available:
+</span>
+他のオプションも利用可能です。
+
+   </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="option">-e</code><br /></span><span class="term"><code class="option">--echo</code></span></dt><dd><p>
+<span class="original">
+      Echo to stdout all SQL sent to the server.
+</span>
+サーバに送られたすべてのSQLを標準出力にそのまま表示します。
+      </p></dd><dt><span class="term"><code class="option">-j <em class="replaceable"><code>num</code></em></code><br /></span><span class="term"><code class="option">--jobs=<em class="replaceable"><code>num</code></em></code></span></dt><dd><p>
+<span class="original">
+       Use &lt;replaceable&gt;num&lt;/replaceable&gt; concurrent connections to the server,
+       or one per object to be checked, whichever is less.
+</span>
+サーバへの<em class="replaceable"><code>num</code></em>並列接続か、検査対象オブジェクト1つにつき1本の接続のどちらか少ない方を使います。
+      </p><p>
+<span class="original">
+       The default is to use a single connection.
+</span>
+デフォルトでは単一の接続を使います。
+      </p></dd><dt><span class="term"><code class="option">-P</code><br /></span><span class="term"><code class="option">--progress</code></span></dt><dd><p>
+<span class="original">
+       Show progress information. Progress information includes the number
+       of relations for which checking has been completed, and the total
+       size of those relations. It also includes the total number of relations
+       that will eventually be checked, and the estimated size of those
+       relations.
+</span>
+進捗状況の情報を表示します。
+進捗状況情報には、検査が完了したリレーションの数と（検査が完了した）リレーションの合計サイズが含まれます。
+最終的に検査されるリレーションの全数と（これら（最終的に検査される）の）リレーションのサイズの見積もりも含まれます。
+      </p></dd><dt><span class="term"><code class="option">-v</code><br /></span><span class="term"><code class="option">--verbose</code></span></dt><dd><p>
+<span class="original">
+       Print more messages. In particular, this will print a message for
+       each relation being checked, and will increase the level of detail
+       shown for server errors.
+</span>
+より多くのメッセージを表示します。
+とりわけ、これは検査している個々のリレーションを表示し、サーバエラーに関しては詳細度のレベルを上げます。
+      </p></dd><dt><span class="term"><code class="option">-V</code><br /></span><span class="term"><code class="option">--version</code></span></dt><dd><p>
+<span class="original">
+       Print the &lt;application&gt;pg_amcheck&lt;/application&gt; version and exit.
+</span>
+<span class="application">pg_amcheck</span>のバージョンを表示して終了します。
+      </p></dd><dt><span class="term"><code class="option">--install-missing</code><br /></span><span class="term"><code class="option">--install-missing=<em class="replaceable"><code>schema</code></em></code></span></dt><dd><p>
+<span class="original">
+       Install any missing extensions that are required to check the
+       database(s).  If not yet installed, each extension's objects will be
+       installed into the given
+       &lt;replaceable class="parameter"&gt;schema&lt;/replaceable&gt;, or if not specified
+       into schema &lt;literal&gt;pg_catalog&lt;/literal&gt;.
+</span>
+データベースを検査するのに必要な拡張で漏れているものをインストールします。
+もしまだインストールされていなければ、各拡張のオブジェクトは与えられた<em class="replaceable"><code>schema</code></em>、あるいは指定されていなければ<code class="literal">pg_catalog</code>スキーマにインストールされます。
+      </p><p>
+<span class="original">
+       At present, the only required extension is &lt;xref linkend="amcheck"/&gt;.
+</span>
+今の所唯一必要な拡張は<a class="xref" href="amcheck.html" title="F.2. amcheck">amcheck</a>です。
+      </p></dd><dt><span class="term"><code class="option">-?</code><br /></span><span class="term"><code class="option">--help</code></span></dt><dd><p>
+<span class="original">
+       Show help about &lt;application&gt;pg_amcheck&lt;/application&gt; command line
+       arguments, and exit.
+</span>
+<span class="application">pg_amcheck</span>コマンド行引数に関するヘルプを表示して終了します。
+      </p></dd></dl></div><p>
+  </p></div><div class="refsect1" id="id-1.9.4.9.7"><h2>注釈</h2><span class="original">
+  &lt;title&gt;Notes&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;application&gt;pg_amcheck&lt;/application&gt; is designed to work with
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; 14.0 and later.
+</span>
+<span class="application">pg_amcheck</span> は<span class="productname">PostgreSQL</span> 14.0以降で動作するように設計されています。
+  </p></div><div class="refsect1" id="id-1.9.4.9.8"><h2>関連項目</h2><span class="original">
+  &lt;title&gt;See Also&lt;/title&gt;
+</span><span class="simplelist"><a class="xref" href="amcheck.html" title="F.2. amcheck">amcheck</a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="app-ecpg.html" title="ecpg">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="reference-client.html" title="PostgreSQLクライアントアプリケーション">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="app-pgbasebackup.html" title="pg_basebackup">次へ</a></td></tr><tr><td width="40%" align="left" valign="top"><span class="application">ecpg</span> </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> <span class="application">pg_basebackup</span></td></tr></table></div></body></html>

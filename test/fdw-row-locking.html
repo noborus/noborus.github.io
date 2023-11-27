@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>59.5. 外部データラッパでの行ロック</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="fdw-planning.html" title="59.4. 外部データラッパの問い合わせプラン作成" /><link rel="next" href="tablesample-method.html" title="第60章 テーブルサンプリングメソッドの書き方" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="fdwhandler.html" title="第59章 外部データラッパの作成">第59章 外部データラッパの作成</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : fdw-row-locking.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="fdw-planning.html" title="59.4. 外部データラッパの問い合わせプラン作成">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="fdwhandler.html" title="第59章 外部データラッパの作成">上へ</a></td><td width="60%" align="center">59.5. 外部データラッパでの行ロック</td><td width="20%" align="right"> <a accesskey="n" href="tablesample-method.html" title="第60章 テーブルサンプリングメソッドの書き方">次へ</a></td></tr></table><hr /></div><div class="sect1" id="FDW-ROW-LOCKING"><div class="titlepage"><div><div><h2 class="title" style="clear: both">59.5. 外部データラッパでの行ロック</h2></div></div></div><span class="original">
+    &lt;title&gt;Row Locking in Foreign Data Wrappers&lt;/title&gt;
+</span><p>
+<span class="original">
+     If an FDW's underlying storage mechanism has a concept of locking
+     individual rows to prevent concurrent updates of those rows, it is
+     usually worthwhile for the FDW to perform row-level locking with as
+     close an approximation as practical to the semantics used in
+     ordinary &lt;productname&gt;PostgreSQL&lt;/productname&gt; tables.  There are multiple
+     considerations involved in this.
+</span>
+FDWの元になる記憶機構が、行の同時更新を防ぐために個々の行をロックするという概念を持っているなら、<span class="productname">PostgreSQL</span>の通常のテーブルで使われている意味にできる限り現実的で近い行単位のロックをFDWが実施することは価値があるでしょう。
+これに関していくつかの考慮点があります。
+    </p><p>
+<span class="original">
+     One key decision to be made is whether to perform &lt;firstterm&gt;early
+     locking&lt;/firstterm&gt; or &lt;firstterm&gt;late locking&lt;/firstterm&gt;.  In early locking, a row is
+     locked when it is first retrieved from the underlying store, while in
+     late locking, the row is locked only when it is known that it needs to
+     be locked.  (The difference arises because some rows may be discarded by
+     locally-checked restriction or join conditions.)  Early locking is much
+     simpler and avoids extra round trips to a remote store, but it can cause
+     locking of rows that need not have been locked, resulting in reduced
+     concurrency or even unexpected deadlocks.  Also, late locking is only
+     possible if the row to be locked can be uniquely re-identified later.
+     Preferably the row identifier should identify a specific version of the
+     row, as &lt;productname&gt;PostgreSQL&lt;/productname&gt; TIDs do.
+</span>
+なされるべき重要な決定の一つは、<em class="firstterm">早いロック</em>を実行するか<em class="firstterm">遅いロック</em>を実行するか、です。
+早いロックでは、行は、元となる記憶機構から最初に取り出されたときにロックされます。
+一方、遅いロックでは、行は、それがロックされる必要があることがわかってからロックされます。
+（この違いは、一部の行がローカルで検査される制約や結合条件によって除外されるために発生します。）
+早いロックの方がずっと単純ですし、リモートの記憶機構との間の余分なやりとりもなくて済みますが、ロックしなくても良い行をロックするかもしれませんし、結果的に同時実行性が低下したり、予期しないデッドロックさえ発生します。
+一方で、遅いロックは、ロックすべき行が後で一意に再識別できる場合にのみ可能です。
+できれば、<span class="productname">PostgreSQL</span>のTIDがそうしているように、行識別子は行の特定のバージョンを識別できるのが望ましいです。
+    </p><p>
+<span class="original">
+     By default, &lt;productname&gt;PostgreSQL&lt;/productname&gt; ignores locking considerations
+     when interfacing to FDWs, but an FDW can perform early locking without
+     any explicit support from the core code.  The API functions described
+     in &lt;xref linkend="fdw-callbacks-row-locking"/&gt;, which were added
+     in &lt;productname&gt;PostgreSQL&lt;/productname&gt; 9.5, allow an FDW to use late locking if
+     it wishes.
+</span>
+デフォルトでは<span class="productname">PostgreSQL</span>はFDWとのやりとりにおいてロックの考慮をしませんが、FDWはコアのコードからの明示的なサポートなしに、早いロックを実行することができます。
+<span class="productname">PostgreSQL</span>バージョン9.5で追加された<a class="xref" href="fdw-callbacks.html#FDW-CALLBACKS-ROW-LOCKING" title="59.2.6. 行ロックのためのFDWルーチン">59.2.6</a>に記載されたAPI関数を使うことで、望むならFDWで遅いロックを使うことも可能です。
+    </p><p>
+<span class="original">
+     An additional consideration is that in &lt;literal&gt;READ COMMITTED&lt;/literal&gt;
+     isolation mode, &lt;productname&gt;PostgreSQL&lt;/productname&gt; may need to re-check
+     restriction and join conditions against an updated version of some
+     target tuple.  Rechecking join conditions requires re-obtaining copies
+     of the non-target rows that were previously joined to the target tuple.
+     When working with standard &lt;productname&gt;PostgreSQL&lt;/productname&gt; tables, this is
+     done by including the TIDs of the non-target tables in the column list
+     projected through the join, and then re-fetching non-target rows when
+     required.  This approach keeps the join data set compact, but it
+     requires inexpensive re-fetch capability, as well as a TID that can
+     uniquely identify the row version to be re-fetched.  By default,
+     therefore, the approach used with foreign tables is to include a copy of
+     the entire row fetched from a foreign table in the column list projected
+     through the join.  This puts no special demands on the FDW but can
+     result in reduced performance of merge and hash joins.  An FDW that is
+     capable of meeting the re-fetch requirements can choose to do it the
+     first way.
+</span>
+さらなる考慮点は、<code class="literal">READ COMMITTED</code>分離モードにおいて、<span class="productname">PostgreSQL</span>は対象のタプルの更新されたバージョンに対して制約と結合条件の再検査を行う必要があるかもしれないということです。
+結合条件を再検査するには、前回取得対象のタプルと結合された、取得対象外の行の複製を再取得する必要があります。
+<span class="productname">PostgreSQL</span>の標準テーブルを使うときは、結合を通じて生成される列リストに対象でないテーブルのTIDを含めて、必要な時には対象でない行を再フェッチすることで解決しています。
+この方法は結合のデータセットを小さくできますが、安価な再フェッチ機能と再フェッチすべきバージョンの行を一意に特定できるTIDが必要になります。
+そのためデフォルトで外部テーブルに対して使われる方法は、外部テーブルからフェッチされた行全体を結合を通じて生成した列リストに含めるというものです。
+これによりFDWに対する特別な要請はなくなりますが、マージ結合およびハッシュ結合に置いてパフォーマンスが低下する結果となるかもしれません。
+再フェッチの要求を満たすことができるFDWでは最初の方法を選択するのも良いでしょう。
+    </p><p>
+<span class="original">
+     For an &lt;command&gt;UPDATE&lt;/command&gt; or &lt;command&gt;DELETE&lt;/command&gt; on a foreign table, it
+     is recommended that the &lt;literal&gt;ForeignScan&lt;/literal&gt; operation on the target
+     table perform early locking on the rows that it fetches, perhaps via the
+     equivalent of &lt;command&gt;SELECT FOR UPDATE&lt;/command&gt;.  An FDW can detect whether
+     a table is an &lt;command&gt;UPDATE&lt;/command&gt;/&lt;command&gt;DELETE&lt;/command&gt; target at plan time
+     by comparing its relid to &lt;literal&gt;root-&amp;gt;parse-&amp;gt;resultRelation&lt;/literal&gt;,
+     or at execution time by using &lt;function&gt;ExecRelationIsTargetRelation()&lt;/function&gt;.
+     An alternative possibility is to perform late locking within the
+     &lt;function&gt;ExecForeignUpdate&lt;/function&gt; or &lt;function&gt;ExecForeignDelete&lt;/function&gt;
+     callback, but no special support is provided for this.
+</span>
+外部テーブルに対する<code class="command">UPDATE</code>や<code class="command">DELETE</code>では、対象テーブルに対する<code class="literal">ForeignScan</code>操作はフェッチする行を、恐らくは<code class="command">SELECT FOR UPDATE</code>と同等なものを用いてロックすることが推奨されます。
+FDWはテーブルが<code class="command">UPDATE</code>または<code class="command">DELETE</code>の対象かどうかを、計画時にそのrelidを<code class="literal">root-&gt;parse-&gt;resultRelation</code>と比較することで、あるいは実行時に<code class="function">ExecRelationIsTargetRelation()</code>を使うことで検知できます。
+これに代わる可能性として、<code class="function">ExecForeignUpdate</code>または<code class="function">ExecForeignDelete</code>のコールバック内で遅いロックを実行することがありますが、これについて特別なサポートは提供されません。
+    </p><p>
+<span class="original">
+     For foreign tables that are specified to be locked by a &lt;command&gt;SELECT
+     FOR UPDATE/SHARE&lt;/command&gt; command, the &lt;literal&gt;ForeignScan&lt;/literal&gt; operation can
+     again perform early locking by fetching tuples with the equivalent
+     of &lt;command&gt;SELECT FOR UPDATE/SHARE&lt;/command&gt;.  To perform late locking
+     instead, provide the callback functions defined
+     in &lt;xref linkend="fdw-callbacks-row-locking"/&gt;.
+     In &lt;function&gt;GetForeignRowMarkType&lt;/function&gt;, select rowmark option
+     &lt;literal&gt;ROW_MARK_EXCLUSIVE&lt;/literal&gt;, &lt;literal&gt;ROW_MARK_NOKEYEXCLUSIVE&lt;/literal&gt;,
+     &lt;literal&gt;ROW_MARK_SHARE&lt;/literal&gt;, or &lt;literal&gt;ROW_MARK_KEYSHARE&lt;/literal&gt; depending
+     on the requested lock strength.  (The core code will act the same
+     regardless of which of these four options you choose.)
+     Elsewhere, you can detect whether a foreign table was specified to be
+     locked by this type of command by using &lt;function&gt;get_plan_rowmark&lt;/function&gt; at
+     plan time, or &lt;function&gt;ExecFindRowMark&lt;/function&gt; at execution time; you must
+     check not only whether a non-null rowmark struct is returned, but that
+     its &lt;structfield&gt;strength&lt;/structfield&gt; field is not &lt;literal&gt;LCS_NONE&lt;/literal&gt;.
+</span>
+<code class="command">SELECT FOR UPDATE/SHARE</code>コマンドによりロックすることが指定された外部テーブルについて、<code class="literal">ForeignScan</code>の操作では<code class="command">SELECT FOR UPDATE/SHARE</code>と同等なものを使ってタプルをフェッチすることで、ここでも早いロックを実行できます。
+逆に遅いロックを実行するには、<a class="xref" href="fdw-callbacks.html#FDW-CALLBACKS-ROW-LOCKING" title="59.2.6. 行ロックのためのFDWルーチン">59.2.6</a>で定義されるコールバック関数を提供して下さい。
+<code class="function">GetForeignRowMarkType</code>では、要求されたロックの強度に応じて、rowmarkのオプション<code class="literal">ROW_MARK_EXCLUSIVE</code>、<code class="literal">ROW_MARK_NOKEYEXCLUSIVE</code>、<code class="literal">ROW_MARK_SHARE</code>または<code class="literal">ROW_MARK_KEYSHARE</code>を選択して下さい。
+（コアのコードは、この4つのオプションのどれが選ばれたかに関係なく、同じ動作をします。）
+その他には、この種のコマンドによって外部テーブルのロックが指定されたかどうかを、計画時に<code class="function">get_plan_rowmark</code>を使うことで、あるいは実行時に<code class="function">ExecFindRowMark</code>を使うことで検知できます。
+このとき、NULLでないrowmark構造体が戻されるかどうかだけでなく、その<code class="structfield">strength</code>フィールドが<code class="literal">LCS_NONE</code>でないことも確認しなければなりません。
+    </p><p>
+<span class="original">
+     Lastly, for foreign tables that are used in an &lt;command&gt;UPDATE&lt;/command&gt;,
+     &lt;command&gt;DELETE&lt;/command&gt; or &lt;command&gt;SELECT FOR UPDATE/SHARE&lt;/command&gt; command but
+     are not specified to be row-locked, you can override the default choice
+     to copy entire rows by having &lt;function&gt;GetForeignRowMarkType&lt;/function&gt; select
+     option &lt;literal&gt;ROW_MARK_REFERENCE&lt;/literal&gt; when it sees lock strength
+     &lt;literal&gt;LCS_NONE&lt;/literal&gt;.  This will cause &lt;function&gt;RefetchForeignRow&lt;/function&gt; to
+     be called with that value for &lt;structfield&gt;markType&lt;/structfield&gt;; it should then
+     re-fetch the row without acquiring any new lock.  (If you have
+     a &lt;function&gt;GetForeignRowMarkType&lt;/function&gt; function but don't wish to re-fetch
+     unlocked rows, select option &lt;literal&gt;ROW_MARK_COPY&lt;/literal&gt;
+     for &lt;literal&gt;LCS_NONE&lt;/literal&gt;.)
+</span>
+最後に、<code class="command">UPDATE</code>、<code class="command">DELETE</code>または<code class="command">SELECT FOR UPDATE/SHARE</code>コマンドで使用されたが、行ロックの指定はされなかった外部テーブルについて、ロック強度が<code class="literal">LCS_NONE</code>になっているときに<code class="function">GetForeignRowMarkType</code>でオプション<code class="literal">ROW_MARK_REFERENCE</code>を選択すれば、すべての行を複製するというデフォルトの動作を変更することができます。
+これにより、<code class="structfield">markType</code>にその値を入れて<code class="function">RefetchForeignRow</code>が呼び出されるようになります。
+このとき、新しいロックを取得することなく行を再取得します。
+（<code class="function">GetForeignRowMarkType</code>関数を使うが、ロックしていない行を再フェッチしたくない場合は、<code class="literal">LCS_NONE</code>についてオプション<code class="literal">ROW_MARK_COPY</code>を選択して下さい。）
+    </p><p>
+<span class="original">
+     See &lt;filename&gt;src/include/nodes/lockoptions.h&lt;/filename&gt;, the comments
+     for &lt;type&gt;RowMarkType&lt;/type&gt; and &lt;type&gt;PlanRowMark&lt;/type&gt;
+     in &lt;filename&gt;src/include/nodes/plannodes.h&lt;/filename&gt;, and the comments for
+     &lt;type&gt;ExecRowMark&lt;/type&gt; in &lt;filename&gt;src/include/nodes/execnodes.h&lt;/filename&gt; for
+     additional information.
+</span>
+さらなる情報は、<code class="filename">src/include/nodes/lockoptions.h</code>、<code class="filename">src/include/nodes/plannodes.h</code>での<code class="type">RowMarkType</code>と<code class="type">PlanRowMark</code>についてのコメント、<code class="filename">src/include/nodes/execnodes.h</code>での<code class="type">ExecRowMark</code>についてのコメントを参照して下さい。
+    </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="fdw-planning.html" title="59.4. 外部データラッパの問い合わせプラン作成">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="fdwhandler.html" title="第59章 外部データラッパの作成">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="tablesample-method.html" title="第60章 テーブルサンプリングメソッドの書き方">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">59.4. 外部データラッパの問い合わせプラン作成 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 第60章 テーブルサンプリングメソッドの書き方</td></tr></table></div></body></html>

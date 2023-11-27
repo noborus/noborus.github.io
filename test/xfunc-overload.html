@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>38.6. 関数のオーバーロード</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="xfunc-sql.html" title="38.5. 問い合わせ言語（SQL）関数" /><link rel="next" href="xfunc-volatility.html" title="38.7. 関数の変動性分類" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="extend.html" title="第38章 SQLの拡張">第38章 <acronym class="acronym">SQL</acronym>の拡張</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : xfunc-overload.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="xfunc-sql.html" title="38.5. 問い合わせ言語（SQL）関数">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="extend.html" title="第38章 SQLの拡張">上へ</a></td><td width="60%" align="center">38.6. 関数のオーバーロード</td><td width="20%" align="right"> <a accesskey="n" href="xfunc-volatility.html" title="38.7. 関数の変動性分類">次へ</a></td></tr></table><hr /></div><div class="sect1" id="XFUNC-OVERLOAD"><div class="titlepage"><div><div><h2 class="title" style="clear: both">38.6. 関数のオーバーロード</h2></div></div></div><span class="original">
+   &lt;title&gt;Function Overloading&lt;/title&gt;
+</span><a id="id-1.8.3.10.2" class="indexterm"></a><a id="id-1.8.3.10.3" class="indexterm"></a><p>
+<span class="original">
+    More than one function can be defined with the same SQL name, so long
+    as the arguments they take are different.  In other words,
+    function names can be &lt;firstterm&gt;overloaded&lt;/firstterm&gt;.  Whether or not
+    you use it, this capability entails security precautions when calling
+    functions in databases where some users mistrust other users; see
+    &lt;xref linkend="typeconv-func"/&gt;.  When a query is executed, the server
+    will determine which function to call from the data types and the number
+    of the provided arguments.  Overloading can also be used to simulate
+    functions with a variable number of arguments, up to a finite maximum
+    number.
+</span>
+使用する引数が異なるのであれば、同じSQL名の関数を1つ以上定義することができます。
+つまり、関数名は<em class="firstterm">オーバーロード</em>が可能です。
+使うかどうかに関わりなく、この能力は、あるユーザが他のユーザを信用しないデータベースで関数を呼び出す時に、セキュリティの事前の対策を必要とします。<a class="xref" href="typeconv-func.html" title="10.3. 関数">10.3</a>を参照してください。
+問い合わせが実行された時、サーバは与えられた引数のデータ型と数によって呼び出すべき関数を決定します。
+またオーバーロードを使用して、有限個の可変長引数を持つ関数を模擬することができます。
+   </p><p>
+<span class="original">
+    When creating a family of overloaded functions, one should be
+    careful not to create ambiguities.  For instance, given the
+    functions:
+</span>
+オーバーロード関数を作成する時、曖昧さが発生しないように注意しなければなりません。
+例えば、以下のような関数を考えてみます。
+</p><pre class="programlisting">
+CREATE FUNCTION test(int, real) RETURNS ...
+CREATE FUNCTION test(smallint, double precision) RETURNS ...
+</pre><p>
+<span class="original">
+    it is not immediately clear which function would be called with
+    some trivial input like &lt;literal&gt;test(1, 1.5)&lt;/literal&gt;.  The
+    currently implemented resolution rules are described in
+    &lt;xref linkend="typeconv"/&gt;, but it is unwise to design a system that subtly
+    relies on this behavior.
+</span>
+<code class="literal">test(1, 1.5)</code>のような平凡な入力でも、どちらの関数を呼び出すのかはすぐには明確ではありません。
+現在実装されている解決規則は<a class="xref" href="typeconv.html" title="第10章 型変換">第10章</a>にて説明していますが、この動作に巧妙に依存するようにシステムを設計することは推奨しません。
+   </p><p>
+<span class="original">
+    A function that takes a single argument of a composite type should
+    generally not have the same name as any attribute (field) of that type.
+    Recall that &lt;literal&gt;&lt;replaceable&gt;attribute&lt;/replaceable&gt;(&lt;replaceable&gt;table&lt;/replaceable&gt;)&lt;/literal&gt;
+    is considered equivalent
+    to &lt;literal&gt;&lt;replaceable&gt;table&lt;/replaceable&gt;.&lt;replaceable&gt;attribute&lt;/replaceable&gt;&lt;/literal&gt;.
+    In the case that there is an
+    ambiguity between a function on a composite type and an attribute of
+    the composite type, the attribute will always be used.  It is possible
+    to override that choice by schema-qualifying the function name
+    (that is, &lt;literal&gt;&lt;replaceable&gt;schema&lt;/replaceable&gt;.&lt;replaceable&gt;func&lt;/replaceable&gt;(&lt;replaceable&gt;table&lt;/replaceable&gt;)
+    &lt;/literal&gt;) but it's better to
+    avoid the problem by not choosing conflicting names.
+</span>
+一般的に、1つの複合型の引数を取る関数は、その型の属性（フィールド）と同じ名前を持ってはいけません。
+<code class="literal"><em class="replaceable"><code>attribute</code></em>(<em class="replaceable"><code>table</code></em>)</code>が<code class="literal"><em class="replaceable"><code>table</code></em>.<em class="replaceable"><code>attribute</code></em></code>と等価とみなされることを思い出してください。
+複合型に対する関数と複合型の属性との間に曖昧さがあるような場合、属性の方が常に使用されます。
+この振舞いは関数名をスキーマで修飾する（つまり、<code class="literal"><em class="replaceable"><code>schema</code></em>.<em class="replaceable"><code>func</code></em>(<em class="replaceable"><code>table</code></em>)</code>）ことにより変更できますが、競合する名前を使用しないことで問題を防ぐ方が良いでしょう。
+   </p><p>
+<span class="original">
+    Another possible conflict is between variadic and non-variadic functions.
+    For instance, it is possible to create both &lt;literal&gt;foo(numeric)&lt;/literal&gt; and
+    &lt;literal&gt;foo(VARIADIC numeric[])&lt;/literal&gt;.  In this case it is unclear which one
+    should be matched to a call providing a single numeric argument, such as
+    &lt;literal&gt;foo(10.1)&lt;/literal&gt;.  The rule is that the function appearing
+    earlier in the search path is used, or if the two functions are in the
+    same schema, the non-variadic one is preferred.
+</span>
+可変長引数を取る関数と可変長引数を取らない関数の間に、他にも競合する可能性があります。
+例えば、<code class="literal">foo(numeric)</code>と<code class="literal">foo(VARIADIC numeric[])</code>の両方を作成することが可能です。
+この場合、単一の数値引数を取った呼び出し、例えば<code class="literal">foo(10.1)</code>をどちらに一致するものとすべきか不明瞭です。
+検索パスのより前にある関数が使われる、もし2つの関数が同一スキーマにあれば可変長引数を取らない関数が優先されるというのが、この場合の規則です。
+   </p><p>
+<span class="original">
+    When overloading C-language functions, there is an additional
+    constraint: The C name of each function in the family of
+    overloaded functions must be different from the C names of all
+    other functions, either internal or dynamically loaded.  If this
+    rule is violated, the behavior is not portable.  You might get a
+    run-time linker error, or one of the functions will get called
+    (usually the internal one).  The alternative form of the
+    &lt;literal&gt;AS&lt;/literal&gt; clause for the SQL &lt;command&gt;CREATE
+    FUNCTION&lt;/command&gt; command decouples the SQL function name from
+    the function name in the C source code.  For instance:
+</span>
+C言語関数をオーバーロードする場合、さらに制限があります。
+オーバーロードされた関数群内の各関数のCの名前は、内部か動的ロードされたかに関係なく他のすべての関数のCの名前と異なる必要があります。
+この規則に反した場合は、この動作は移植性がありません。
+実行時リンカエラーになるかもしれませんし、関数群のどれか（たいていは内部関数）が呼び出されるかもしれません。
+<code class="command">CREATE FUNCTION</code> SQLコマンドの別形式の<code class="literal">AS</code>句は、SQL関数名とCソースコード内の関数名とを分離します。
+以下に例を示します。
+</p><pre class="programlisting">
+CREATE FUNCTION test(int) RETURNS int
+    AS '<em class="replaceable"><code>filename</code></em>', 'test_1arg'
+    LANGUAGE C;
+CREATE FUNCTION test(int, int) RETURNS int
+    AS '<em class="replaceable"><code>filename</code></em>', 'test_2arg'
+    LANGUAGE C;
+</pre><p>
+<span class="original">
+    The names of the C functions here reflect one of many possible conventions.
+</span>
+ここでのC関数の名前は多くの取り得る規約の1つを反映しています。
+   </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="xfunc-sql.html" title="38.5. 問い合わせ言語（SQL）関数">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="extend.html" title="第38章 SQLの拡張">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="xfunc-volatility.html" title="38.7. 関数の変動性分類">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">38.5. 問い合わせ言語（<acronym class="acronym">SQL</acronym>）関数 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 38.7. 関数の変動性分類</td></tr></table></div></body></html>

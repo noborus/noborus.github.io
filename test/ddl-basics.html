@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>5.1. テーブルの基本</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="ddl.html" title="第5章 データ定義" /><link rel="next" href="ddl-default.html" title="5.2. デフォルト値" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="ddl.html" title="第5章 データ定義">第5章 データ定義</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : ddl-basics.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="ddl.html" title="第5章 データ定義">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="ddl.html" title="第5章 データ定義">上へ</a></td><td width="60%" align="center">5.1. テーブルの基本</td><td width="20%" align="right"> <a accesskey="n" href="ddl-default.html" title="5.2. デフォルト値">次へ</a></td></tr></table><hr /></div><div class="sect1" id="DDL-BASICS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">5.1. テーブルの基本</h2></div></div></div><span class="original">
+  &lt;title&gt;Table Basics&lt;/title&gt;
+</span><a id="id-1.5.4.3.2" class="indexterm"></a><a id="id-1.5.4.3.3" class="indexterm"></a><a id="id-1.5.4.3.4" class="indexterm"></a><a id="id-1.5.4.3.5" class="indexterm"></a><a id="id-1.5.4.3.6" class="indexterm"></a><a id="id-1.5.4.3.7" class="indexterm"></a><p>
+<span class="original">
+   A table in a relational database is much like a table on paper: It
+   consists of rows and columns.  The number and order of the columns
+   is fixed, and each column has a name.  The number of rows is
+   variable &amp;mdash; it reflects how much data is stored at a given moment.
+   SQL does not make any guarantees about the order of the rows in a
+   table.  When a table is read, the rows will appear in an unspecified order,
+   unless sorting is explicitly requested.  This is covered in &lt;xref
+   linkend="queries"/&gt;.  Furthermore, SQL does not assign unique
+   identifiers to rows, so it is possible to have several completely
+   identical rows in a table.  This is a consequence of the
+   mathematical model that underlies SQL but is usually not desirable.
+   Later in this chapter we will see how to deal with this issue.
+</span>
+リレーショナルデータベースのテーブルは、紙に書く表によく似ています。
+テーブルは行と列からできています。
+列の数と順序は固定されており、それぞれの列に名前が付けられています。
+行の数は可変です。
+つまり行の数とは、その時点でどれだけのデータが格納されているのかを示すものです。
+SQLではテーブル内の行の順序は保証されません。
+テーブルを読み込むと、明示的に並び替えが要求されない限り、行は不特定な順序で返されます。
+これについては<a class="xref" href="queries.html" title="第7章 問い合わせ">第7章</a>を参照してください。
+さらに、SQLでは行に固有の識別子が割り当てられないので、テーブル内にまったく同一の行がいくつも存在することがあり得ます。
+これは、SQLの基礎をなす数学的モデルの帰結ですが、通常は好ましいことではありません。
+この問題の対処法については、本章で後述します。
+  </p><p>
+<span class="original">
+   Each column has a data type.  The data type constrains the set of
+   possible values that can be assigned to a column and assigns
+   semantics to the data stored in the column so that it can be used
+   for computations.  For instance, a column declared to be of a
+   numerical type will not accept arbitrary text strings, and the data
+   stored in such a column can be used for mathematical computations.
+   By contrast, a column declared to be of a character string type
+   will accept almost any kind of data but it does not lend itself to
+   mathematical calculations, although other operations such as string
+   concatenation are available.
+</span>
+それぞれの列にデータ型があります。
+データ型によって、列に割り当てられる値が制限されます。
+また、列に格納されているデータに意味が割り当てられ、データを計算に使用できるようになります。
+例えば、数値型と宣言された列は任意のテキスト文字列は受け付けません。
+そして、数値型の列に格納されているデータは算術計算に使用できます。
+これに対して、文字列型と宣言された列はほとんど全ての種類のデータを受け付けます。
+しかし、文字列の結合といった演算には使用できますが、算術計算には使用できません。
+  </p><p>
+<span class="original">
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; includes a sizable set of
+   built-in data types that fit many applications.  Users can also
+   define their own data types.  Most built-in data types have obvious
+   names and semantics, so we defer a detailed explanation to &lt;xref
+   linkend="datatype"/&gt;.  Some of the frequently used data types are
+   &lt;type&gt;integer&lt;/type&gt; for whole numbers, &lt;type&gt;numeric&lt;/type&gt; for
+   possibly fractional numbers, &lt;type&gt;text&lt;/type&gt; for character
+   strings, &lt;type&gt;date&lt;/type&gt; for dates, &lt;type&gt;time&lt;/type&gt; for
+   time-of-day values, and &lt;type&gt;timestamp&lt;/type&gt; for values
+   containing both date and time.
+</span>
+<span class="productname">PostgreSQL</span>には、様々なアプリケーションに対応した多数のデータ型の集合が組み込まれています。
+またユーザが独自のデータ型を定義することも可能です。
+組み込みデータ型のほとんどにはわかりやすい名前と意味が付けられているので、詳しい説明はここでは行わず、<a class="xref" href="datatype.html" title="第8章 データ型">第8章</a>で行います。
+よく使用されるデータ型としては、整数を表す<code class="type">integer</code>、小数も表すことができる<code class="type">numeric</code>、文字列を表す<code class="type">text</code>、日付を表す<code class="type">date</code>、時刻を表す<code class="type">time</code>、そして日付と時刻の両方を含む<code class="type">timestamp</code>があります。
+  </p><a id="id-1.5.4.3.11" class="indexterm"></a><a id="id-1.5.4.3.12" class="indexterm"></a><p>
+<span class="original">
+   To create a table, you use the aptly named &lt;xref
+   linkend="sql-createtable"/&gt; command.
+   In this command you specify at least a name for the new table, the
+   names of the columns and the data type of each column.  For
+   example:
+</span>
+テーブルを作成するには、その名の通り<a class="xref" href="sql-createtable.html" title="CREATE TABLE"><span class="refentrytitle">CREATE TABLE</span></a>コマンドを使用します。
+このコマンドで最低限指定する必要があるのは、新規テーブル名、列名、各列のデータ型です。
+例を示します。
+</p><pre class="programlisting">
+CREATE TABLE my_first_table (
+    first_column text,
+    second_column integer
+);
+</pre><p>
+<span class="original">
+   This creates a table named &lt;literal&gt;my_first_table&lt;/literal&gt; with
+   two columns.  The first column is named
+   &lt;literal&gt;first_column&lt;/literal&gt; and has a data type of
+   &lt;type&gt;text&lt;/type&gt;; the second column has the name
+   &lt;literal&gt;second_column&lt;/literal&gt; and the type &lt;type&gt;integer&lt;/type&gt;.
+   The table and column names follow the identifier syntax explained
+   in &lt;xref linkend="sql-syntax-identifiers"/&gt;.  The type names are
+   usually also identifiers, but there are some exceptions.  Note that the
+   column list is comma-separated and surrounded by parentheses.
+</span>
+これで2列からなる<code class="literal">my_first_table</code>という名前のテーブルが作成されます。
+最初の列の名前は<code class="literal">first_column</code>で、そのデータ型は<code class="type">text</code>です。
+2番目の列の名前は<code class="literal">second_column</code>で、そのデータ型は<code class="type">integer</code>です。
+テーブル名および列名は、<a class="xref" href="sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS" title="4.1.1. 識別子とキーワード">4.1.1</a>で説明した識別子の構文に従います。
+型名も通常は識別子ですが、例外もあります。
+列リストはカンマで区切り、括弧で囲むことに注意してください。
+  </p><p>
+<span class="original">
+   Of course, the previous example was heavily contrived.  Normally,
+   you would give names to your tables and columns that convey what
+   kind of data they store.  So let's look at a more realistic
+   example:
+</span>
+先ほどの例は、説明が目的であるため現実的ではありません。
+通常、テーブルおよび列の名前は、どのようなデータが格納されているかわかるような名前にします。
+以下に、より現実的な例を示します。
+</p><pre class="programlisting">
+CREATE TABLE products (
+    product_no integer,
+    name text,
+    price numeric
+);
+</pre><p>
+<span class="original">
+   (The &lt;type&gt;numeric&lt;/type&gt; type can store fractional components, as
+   would be typical of monetary amounts.)
+</span>
+（<code class="type">numeric</code>型は小数を格納することができ、金額を扱う場合はこれが一般的です。）
+  </p><div class="tip"><h3 class="title">ヒント</h3><p>
+<span class="original">
+    When you create many interrelated tables it is wise to choose a
+    consistent naming pattern for the tables and columns.  For
+    instance, there is a choice of using singular or plural nouns for
+    table names, both of which are favored by some theorist or other.
+</span>
+相関するテーブルを数多く作成する場合は、テーブルと列の命名規則を一貫させるのが賢明です。
+例えば、テーブル名に単数形あるいは複数形どちらの名詞を使用するかという選択肢があります（これは論者によって好みが分かれています）。
+   </p></div><p>
+<span class="original">
+   There is a limit on how many columns a table can contain.
+   Depending on the column types, it is between 250 and 1600.
+   However, defining a table with anywhere near this many columns is
+   highly unusual and often a questionable design.
+</span>
+テーブルに含めることができる列の数には制限があります。
+制限は、列の型に応じて250〜1600の間となります。
+しかし、これほど多くの列を使用することは稀ですし、そのような場合は設計に問題があることも多いのです。
+  </p><a id="id-1.5.4.3.17" class="indexterm"></a><a id="id-1.5.4.3.18" class="indexterm"></a><p>
+<span class="original">
+   If you no longer need a table, you can remove it using the &lt;xref
+   linkend="sql-droptable"/&gt; command.
+   For example:
+</span>
+必要のないテーブルができた場合は、<a class="xref" href="sql-droptable.html" title="DROP TABLE"><span class="refentrytitle">DROP TABLE</span></a>コマンドを使用してそのテーブルを削除できます。
+例を示します。
+</p><pre class="programlisting">
+DROP TABLE my_first_table;
+DROP TABLE products;
+</pre><p>
+<span class="original">
+   Attempting to drop a table that does not exist is an error.
+   Nevertheless, it is common in SQL script files to unconditionally
+   try to drop each table before creating it, ignoring any error
+   messages, so that the script works whether or not the table exists.
+   (If you like, you can use the &lt;literal&gt;DROP TABLE IF EXISTS&lt;/literal&gt; variant
+   to avoid the error messages, but this is not standard SQL.)
+</span>
+存在しないテーブルを削除しようとすると、エラーになります。
+もっともテーブルが存在するかどうか関係なくスクリプト全体を動作させることができるように、テーブルを作成する前に、エラーメッセージを無視して無条件に削除操作を行うことは、SQLスクリプトファイルではよく行われることです。
+（この操作を行いたければ、エラーメッセージの出力を防ぐ<code class="literal">DROP TABLE IF EXISTS</code>という構文を使用することができます。
+しかし、これは標準SQLではありません。）
+  </p><p>
+<span class="original">
+   If you need to modify a table that already exists, see &lt;xref
+   linkend="ddl-alter"/&gt; later in this chapter.
+</span>
+既に存在するテーブルを変更する方法については、本章で後述する<a class="xref" href="ddl-alter.html" title="5.6. テーブルの変更">5.6</a>を参照してください。
+  </p><p>
+<span class="original">
+   With the tools discussed so far you can create fully functional
+   tables.  The remainder of this chapter is concerned with adding
+   features to the table definition to ensure data integrity,
+   security, or convenience.  If you are eager to fill your tables with
+   data now you can skip ahead to &lt;xref linkend="dml"/&gt; and read the
+   rest of this chapter later.
+</span>
+これまでに説明したツールを使用して、十分に機能するテーブルを作成できます。
+本章の残りでは、テーブル定義に機能を追加して、データの整合性、安全性、利便性を確実にする方法について述べていきます。
+この時点でテーブルにデータを入力したければ、本章の残りを後回しにして<a class="xref" href="dml.html" title="第6章 データ操作">第6章</a>に進んでも構いません。
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ddl.html" title="第5章 データ定義">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="ddl.html" title="第5章 データ定義">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="ddl-default.html" title="5.2. デフォルト値">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第5章 データ定義 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 5.2. デフォルト値</td></tr></table></div></body></html>

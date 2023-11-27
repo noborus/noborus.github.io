@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>11.5. 複数のインデックスの組み合わせ</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="indexes-ordering.html" title="11.4. インデックスとORDER BY" /><link rel="next" href="indexes-unique.html" title="11.6. 一意インデックス" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="indexes.html" title="第11章 インデックス">第11章 インデックス</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : indexes-bitmap-scans.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="indexes-ordering.html" title="11.4. インデックスとORDER BY">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="indexes.html" title="第11章 インデックス">上へ</a></td><td width="60%" align="center">11.5. 複数のインデックスの組み合わせ</td><td width="20%" align="right"> <a accesskey="n" href="indexes-unique.html" title="11.6. 一意インデックス">次へ</a></td></tr></table><hr /></div><div class="sect1" id="INDEXES-BITMAP-SCANS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">11.5. 複数のインデックスの組み合わせ</h2></div></div></div><span class="original">
+  &lt;title&gt;Combining Multiple Indexes&lt;/title&gt;
+</span><a id="id-1.5.10.9.2" class="indexterm"></a><a id="id-1.5.10.9.3" class="indexterm"></a><a id="id-1.5.10.9.4" class="indexterm"></a><a id="id-1.5.10.9.5" class="indexterm"></a><p>
+<span class="original">
+   A single index scan can only use query clauses that use the index's
+   columns with operators of its operator class and are joined with
+   &lt;literal&gt;AND&lt;/literal&gt;.  For example, given an index on &lt;literal&gt;(a, b)&lt;/literal&gt;
+   a query condition like &lt;literal&gt;WHERE a = 5 AND b = 6&lt;/literal&gt; could
+   use the index, but a query like &lt;literal&gt;WHERE a = 5 OR b = 6&lt;/literal&gt; could not
+   directly use the index.
+</span>
+単一のインデックススキャンは、インデックスの列をその演算子クラスの演算子で使用する問い合わせ句と、それを<code class="literal">AND</code>結合したものでのみ使用されます。
+例えば、<code class="literal">(a, b)</code>というインデックスと<code class="literal">WHERE a = 5 AND b = 6</code>という問い合わせでは、インデックスが使用されます。
+しかし、<code class="literal">WHERE a = 5 OR b = 6</code>のような問い合わせではインデックスは直接使用されません。
+  </p><p>
+<span class="original">
+   Fortunately,
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; has the ability to combine multiple indexes
+   (including multiple uses of the same index) to handle cases that cannot
+   be implemented by single index scans.  The system can form &lt;literal&gt;AND&lt;/literal&gt;
+   and &lt;literal&gt;OR&lt;/literal&gt; conditions across several index scans.  For example,
+   a query like &lt;literal&gt;WHERE x = 42 OR x = 47 OR x = 53 OR x = 99&lt;/literal&gt;
+   could be broken down into four separate scans of an index on &lt;literal&gt;x&lt;/literal&gt;,
+   each scan using one of the query clauses.  The results of these scans are
+   then ORed together to produce the result.  Another example is that if we
+   have separate indexes on &lt;literal&gt;x&lt;/literal&gt; and &lt;literal&gt;y&lt;/literal&gt;, one possible
+   implementation of a query like &lt;literal&gt;WHERE x = 5 AND y = 6&lt;/literal&gt; is to
+   use each index with the appropriate query clause and then AND together
+   the index results to identify the result rows.
+</span>
+幸いにも、<span class="productname">PostgreSQL</span>は、単一のインデックススキャンでは実装できない場合を扱うために、複数のインデックス（同じインデックスの複数回使用を含む）を組み合わせる機能を持ちます。
+システムは複数のインデックススキャンを跨がる、<code class="literal">AND</code>条件および<code class="literal">OR</code>条件を形成できます。
+例えば、
+<code class="literal">WHERE x = 42 OR x = 47 OR x = 53 OR x = 99</code>という問い合わせは、問い合わせ句の1つを使用して<code class="literal">x</code>上のインデックスをスキャンする4つのスキャンに分割することができます。
+その後、これらのスキャンの結果はOR演算でまとめられ、結果を生成します。
+他の例として<code class="literal">x</code>と<code class="literal">y</code>に別個のインデックスがある場合を考えます。
+<code class="literal">WHERE x = 5 AND y = 6</code>のような問い合わせに対して取り得る実装は、適切な問い合わせ句で各インデックスを使用し、インデックスの結果をANDでまとめ、結果行を識別することです。
+  </p><p>
+<span class="original">
+   To combine multiple indexes, the system scans each needed index and
+   prepares a &lt;firstterm&gt;bitmap&lt;/firstterm&gt; in memory giving the locations of
+   table rows that are reported as matching that index's conditions.
+   The bitmaps are then ANDed and ORed together as needed by the query.
+   Finally, the actual table rows are visited and returned.  The table rows
+   are visited in physical order, because that is how the bitmap is laid
+   out; this means that any ordering of the original indexes is lost, and
+   so a separate sort step will be needed if the query has an &lt;literal&gt;ORDER
+   BY&lt;/literal&gt; clause.  For this reason, and because each additional index scan
+   adds extra time, the planner will sometimes choose to use a simple index
+   scan even though additional indexes are available that could have been
+   used as well.
+</span>
+複数のインデックスを組み合わせるために、システムは必要なインデックスそれぞれをスキャンし、インデックス条件に適合するものと報告されたテーブル行の位置を与えるためにメモリ上に<em class="firstterm">ビットマップ</em>を準備します。
+その後、このビットマップは問い合わせで必要とされたように、ANDまたはOR演算されます。
+最後に、実際のテーブル行がアクセスされ、返されます。
+テーブル行は物理的な順番でアクセスされます。
+ビットマップにこの順番で格納されているからです。
+これは、元のインデックスの順序が失われていることを意味します。
+そのため、もし問い合わせが<code class="literal">ORDER BY</code>句を持つ場合、この他のソート手続きが必要となります。
+この理由、および、追加のインデックススキャンそれぞれのために余計な時間が加わることから、プランナは追加のインデックスが同様に使用できる場合であっても、単純なインデックススキャンを選択することがあります。
+  </p><p>
+<span class="original">
+   In all but the simplest applications, there are various combinations of
+   indexes that might be useful, and the database developer must make
+   trade-offs to decide which indexes to provide.  Sometimes multicolumn
+   indexes are best, but sometimes it's better to create separate indexes
+   and rely on the index-combination feature.  For example, if your
+   workload includes a mix of queries that sometimes involve only column
+   &lt;literal&gt;x&lt;/literal&gt;, sometimes only column &lt;literal&gt;y&lt;/literal&gt;, and sometimes both
+   columns, you might choose to create two separate indexes on
+   &lt;literal&gt;x&lt;/literal&gt; and &lt;literal&gt;y&lt;/literal&gt;, relying on index combination to
+   process the queries that use both columns.  You could also create a
+   multicolumn index on &lt;literal&gt;(x, y)&lt;/literal&gt;.  This index would typically be
+   more efficient than index combination for queries involving both
+   columns, but as discussed in &lt;xref linkend="indexes-multicolumn"/&gt;, it
+   would be almost useless for queries involving only &lt;literal&gt;y&lt;/literal&gt;, so it
+   should not be the only index.  A combination of the multicolumn index
+   and a separate index on &lt;literal&gt;y&lt;/literal&gt; would serve reasonably well.  For
+   queries involving only &lt;literal&gt;x&lt;/literal&gt;, the multicolumn index could be
+   used, though it would be larger and hence slower than an index on
+   &lt;literal&gt;x&lt;/literal&gt; alone.  The last alternative is to create all three
+   indexes, but this is probably only reasonable if the table is searched
+   much more often than it is updated and all three types of query are
+   common.  If one of the types of query is much less common than the
+   others, you'd probably settle for creating just the two indexes that
+   best match the common types.
+</span>
+もっとも単純なアプリケーション以外のほとんどすべてのアプリケーションでは、インデックスの有用な組み合わせはいろいろあります。
+このため、データベース開発者は妥協点を探してどのようなインデックスを提供するかを決定しなければなりません。
+複数列インデックスが最善な場合がありますし、別々のインデックスを作成し、インデックスの組み合わせ機能に依存する方が優れている場合もあります。
+例えば、作業に<code class="literal">x</code>列のみを含む場合と<code class="literal">y</code>列のみを含む場合、両方の列を含む場合が混在する問い合わせが含まれる場合、<code class="literal">x</code>と<code class="literal">y</code>に対し、別個に2つのインデックスを作成し、両方の列を使用する問い合わせを処理する時にインデックスの組み合わせに依存することを選ぶことができます。
+また、<code class="literal">(x, y)</code>に対する複数列インデックスを作成することもできます。
+両方の列を含む問い合わせでは、通常このインデックスの方がインデックスの組み合わせよりも効率的です。
+しかし、<a class="xref" href="indexes-multicolumn.html" title="11.3. 複数列インデックス">11.3</a>で説明した通り、<code class="literal">y</code>のみを含む問い合わせではほとんど意味がありません。
+従って、このインデックスのみとすることはできません。
+複数列インデックスと<code class="literal">y</code>に対する別のインデックスの組み合わせがかなりよく役に立ちます。
+<code class="literal">x</code>のみを含む問い合わせでは、複数列インデックスを使用することができます。
+しかし、これはより大きくなりますので、<code class="literal">x</code> のみインデックスよりも低速になります。
+最後の別方法は、3つのインデックスすべてを作成することです。
+しかしこれはおそらく、テーブルの検索頻度が更新頻度よりもかなり高く、3種類の問い合わせすべてが良く使用される場合のみ合理的です。
+問い合わせの中の1つの頻度が他よりも少なければ、おそらく良く使用される種類にもっとも合うように2つだけインデックスを作成した方がよいでしょう。
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="indexes-ordering.html" title="11.4. インデックスとORDER BY">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="indexes.html" title="第11章 インデックス">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="indexes-unique.html" title="11.6. 一意インデックス">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">11.4. インデックスと<code class="literal">ORDER BY</code> </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 11.6. 一意インデックス</td></tr></table></div></body></html>

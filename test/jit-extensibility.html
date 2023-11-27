@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>32.4. 拡張性</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="jit-configuration.html" title="32.3. 設定" /><link rel="next" href="regress.html" title="第33章 リグレッションテスト" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="jit.html" title="第32章 実行時コンパイル(JIT)">第32章 実行時コンパイル(<acronym class="acronym">JIT</acronym>)</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : jit-extensibility.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="jit-configuration.html" title="32.3. 設定">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="jit.html" title="第32章 実行時コンパイル(JIT)">上へ</a></td><td width="60%" align="center">32.4. 拡張性</td><td width="20%" align="right"> <a accesskey="n" href="regress.html" title="第33章 リグレッションテスト">次へ</a></td></tr></table><hr /></div><div class="sect1" id="JIT-EXTENSIBILITY"><div class="titlepage"><div><div><h2 class="title" style="clear: both">32.4. 拡張性</h2></div></div></div><span class="original">
+  &lt;title&gt;Extensibility&lt;/title&gt;
+</span><div class="sect2" id="JIT-EXTENSIBILITY-BITCODE"><div class="titlepage"><div><div><h3 class="title">32.4.1. 拡張のためのインライン展開サポート</h3></div></div></div><span class="original">
+   &lt;title&gt;Inlining Support for Extensions&lt;/title&gt;
+</span><p>
+<span class="original">
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt;'s &lt;acronym&gt;JIT&lt;/acronym&gt;
+    implementation can inline the bodies of functions
+    of types &lt;literal&gt;C&lt;/literal&gt; and &lt;literal&gt;internal&lt;/literal&gt;, as well as
+    operators based on such functions.  To do so for functions in extensions,
+    the definitions of those functions need to be made available.
+    When using &lt;link linkend="extend-pgxs"&gt;PGXS&lt;/link&gt; to build an extension
+    against a server that has been compiled with LLVM JIT support, the
+    relevant files will be built and installed automatically.
+</span>
+<span class="productname">PostgreSQL</span>の<acronym class="acronym">JIT</acronym>実装は、<code class="literal">C</code>と<code class="literal">internal</code>型の関数の本体をインライン展開できます。そうした関数に基づく演算子も同様です。
+拡張の関数に同じことを行うには、関数の定義が入手可能である必要があります。
+LLVM JITサポートがコンパイルされているサーバに対して<a class="link" href="extend-pgxs.html" title="38.18. 拡張構築基盤">PGXS</a>を使って拡張をビルドする際に、関連するファイルは自動的にビルドされ、インストールされます。
+   </p><p>
+<span class="original">
+    The relevant files have to be installed into
+    &lt;filename&gt;$pkglibdir/bitcode/$extension/&lt;/filename&gt; and a summary of them
+    into &lt;filename&gt;$pkglibdir/bitcode/$extension.index.bc&lt;/filename&gt;, where
+    &lt;literal&gt;$pkglibdir&lt;/literal&gt; is the directory returned by
+    &lt;literal&gt;pg_config &amp;#45;-pkglibdir&lt;/literal&gt; and &lt;literal&gt;$extension&lt;/literal&gt;
+    is the base name of the extension's shared library.
+</span>
+関連するファイルは<code class="filename">$pkglibdir/bitcode/$extension/</code>に、そのサマリは<code class="filename">$pkglibdir/bitcode/$extension.index.bc</code>にインストールされなければなりません。
+ここで、<code class="literal">$pkglibdir</code>は、<code class="literal">pg_config --pkglibdir</code>が返すディレクトリで、<code class="literal">$extension</code>は拡張の共有ライブラリのベース名です。
+
+    </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+      For functions built into &lt;productname&gt;PostgreSQL&lt;/productname&gt; itself,
+      the bitcode is installed into
+      &lt;literal&gt;$pkglibdir/bitcode/postgres&lt;/literal&gt;.
+</span>
+<span class="productname">PostgreSQL</span>自身に組み込まれた関数については、ビットコードが<code class="literal">$pkglibdir/bitcode/postgres</code>にインストールされます。
+     </p></div><p>
+   </p></div><div class="sect2" id="JIT-PLUGGABLE"><div class="titlepage"><div><div><h3 class="title">32.4.2. プラグ可能<acronym class="acronym">JIT</acronym>プロバイダ</h3></div></div></div><span class="original">
+   &lt;title&gt;Pluggable &lt;acronym&gt;JIT&lt;/acronym&gt; Providers&lt;/title&gt;
+</span><p>
+<span class="original">
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; provides a &lt;acronym&gt;JIT&lt;/acronym&gt;
+    implementation based on &lt;productname&gt;LLVM&lt;/productname&gt;.  The interface to
+    the &lt;acronym&gt;JIT&lt;/acronym&gt; provider is pluggable and the provider can be
+    changed without recompiling (although currently, the build process only
+    provides inlining support data for &lt;productname&gt;LLVM&lt;/productname&gt;).
+    The active provider is chosen via the setting
+    &lt;xref linkend="guc-jit-provider"/&gt;.
+</span>
+<span class="productname">PostgreSQL</span>は<span class="productname">LLVM</span>に基づいた<acronym class="acronym">JIT</acronym>実装を提供します。
+<acronym class="acronym">JIT</acronym>プロバイダのインタフェースはプラグ可能で、プロバイダは再コンパイルすることなく変更できます。（ただし今のところ、ビルドプロセスは<span class="productname">LLVM</span>用のインライン展開サポートデータのみを提供しています。)
+有効なプロバイダは<a class="xref" href="runtime-config-client.html#GUC-JIT-PROVIDER">jit_provider</a>の設定で選択できます。
+   </p><div class="sect3" id="id-1.6.19.9.3.3"><div class="titlepage"><div><div><h4 class="title">32.4.2.1. <acronym class="acronym">JIT</acronym>プロバイダインタフェース</h4></div></div></div><span class="original">
+    &lt;title&gt;&lt;acronym&gt;JIT&lt;/acronym&gt; Provider Interface&lt;/title&gt;
+</span><p>
+<span class="original">
+     A &lt;acronym&gt;JIT&lt;/acronym&gt; provider is loaded by dynamically loading the
+     named shared library. The normal library search path is used to locate
+     the library. To provide the required &lt;acronym&gt;JIT&lt;/acronym&gt; provider
+     callbacks and to indicate that the library is actually a
+     &lt;acronym&gt;JIT&lt;/acronym&gt; provider, it needs to provide a C function named
+     &lt;function&gt;_PG_jit_provider_init&lt;/function&gt;. This function is passed a
+     struct that needs to be filled with the callback function pointers for
+     individual actions:
+</span>
+名前付きの共有ライブラリをロードすることにより、<acronym class="acronym">JIT</acronym>は動的にロードされます。
+ライブラリを特定するために通常のライブラリサーチパスが使用されます。
+必要な<acronym class="acronym">JIT</acronym>プロバイダコールバックを提供し、かつそのライブラリが実際に<acronym class="acronym">JIT</acronym>プロバイダであることを示すために、<code class="function">_PG_jit_provider_init</code>という名前のC関数を提供する必要があります。
+この関数には構造体が渡され、その構造体には各々の動作用のコールバック関数へのポインタが設定される必要があります。
+</p><pre class="programlisting">
+struct JitProviderCallbacks
+{
+    JitProviderResetAfterErrorCB reset_after_error;
+    JitProviderReleaseContextCB release_context;
+    JitProviderCompileExprCB compile_expr;
+};
+
+extern void _PG_jit_provider_init(JitProviderCallbacks *cb);
+</pre><p>
+    </p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="jit-configuration.html" title="32.3. 設定">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="jit.html" title="第32章 実行時コンパイル(JIT)">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="regress.html" title="第33章 リグレッションテスト">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">32.3. 設定 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 第33章 リグレッションテスト</td></tr></table></div></body></html>

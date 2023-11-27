@@ -1,0 +1,2783 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>pgbench</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="app-pgbasebackup.html" title="pg_basebackup" /><link rel="next" href="app-pgconfig.html" title="pg_config" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="reference-client.html" title="PostgreSQLクライアントアプリケーション">PostgreSQLクライアントアプリケーション</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : pgbench.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="app-pgbasebackup.html" title="pg_basebackup">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="reference-client.html" title="PostgreSQLクライアントアプリケーション">上へ</a></td><td width="60%" align="center"><span class="application">pgbench</span></td><td width="20%" align="right"> <a accesskey="n" href="app-pgconfig.html" title="pg_config">次へ</a></td></tr></table><hr /></div><div class="refentry" id="PGBENCH"><div class="titlepage"></div><a id="id-1.9.4.11.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle"><span class="application">pgbench</span></span></h2><p>pgbench<span class="original">
+  &lt;refpurpose&gt;run a benchmark test on &lt;productname&gt;PostgreSQL&lt;/productname&gt;&lt;/refpurpose&gt;
+</span> — <span class="productname">PostgreSQL</span>に対してベンチマーク試験を行う</p></div><div class="refsynopsisdiv"><h2>概要</h2><div class="cmdsynopsis"><p id="id-1.9.4.11.4.1"><code class="command">pgbench</code>  <code class="option">-i</code>  [<em class="replaceable"><code>option</code></em>...] [<em class="replaceable"><code>dbname</code></em>]</p></div><div class="cmdsynopsis"><p id="id-1.9.4.11.4.2"><code class="command">pgbench</code> [<em class="replaceable"><code>option</code></em>...] [<em class="replaceable"><code>dbname</code></em>]</p></div></div><div class="refsect1" id="id-1.9.4.11.5"><h2>説明</h2><span class="original">
+  &lt;title&gt;Description&lt;/title&gt;
+</span><p>
+<span class="original">
+  &lt;application&gt;pgbench&lt;/application&gt; is a simple program for running benchmark
+  tests on &lt;productname&gt;PostgreSQL&lt;/productname&gt;.  It runs the same sequence of SQL
+  commands over and over, possibly in multiple concurrent database sessions,
+  and then calculates the average transaction rate (transactions per second).
+  By default, &lt;application&gt;pgbench&lt;/application&gt; tests a scenario that is
+  loosely based on TPC-B, involving five &lt;command&gt;SELECT&lt;/command&gt;,
+  &lt;command&gt;UPDATE&lt;/command&gt;, and &lt;command&gt;INSERT&lt;/command&gt; commands per transaction.
+  However, it is easy to test other cases by writing your own transaction
+  script files.
+</span>
+<span class="application">pgbench</span>は<span class="productname">PostgreSQL</span>上でベンチマーク試験を行う単純なプログラムです。
+これは同一のSQLコマンドの並びを何度も実行します。複数の同時実行データベースセッションで実行することもできます。
+そして、トランザクションの速度（1秒当たりのトランザクション数）の平均を計算します。
+デフォルトで<span class="application">pgbench</span>は、1トランザクション当たり5つの<code class="command">SELECT</code>、<code class="command">UPDATE</code>、<code class="command">INSERT</code>コマンドを含むおおよそTPC-Bに基いたシナリオを試験します。
+しかし、独自のトランザクションスクリプトファイルを作成することで他の試験ケースを簡単に実行することができます。
+ </p><p>
+<span class="original">
+  Typical output from &lt;application&gt;pgbench&lt;/application&gt; looks like:
+</span>
+<span class="application">pgbench</span>の典型的な出力を以下に示します。
+
+</p><pre class="screen">
+transaction type: &lt;builtin: TPC-B (sort of)&gt;
+scaling factor: 10
+query mode: simple
+number of clients: 10
+number of threads: 1
+maximum number of tries: 1
+number of transactions per client: 1000
+number of transactions actually processed: 10000/10000
+number of failed transactions: 0 (0.000%)
+latency average = 11.013 ms
+latency stddev = 7.351 ms
+initial connection time = 45.758 ms
+tps = 896.967014 (without initial connection time)
+</pre><p>
+
+<span class="original">
+  The first seven lines report some of the most important parameter
+  settings.
+  The sixth line reports the maximum number of tries for transactions with
+  serialization or deadlock errors (see &lt;xref linkend="failures-and-retries"/&gt;
+  for more information).
+  The eighth line reports the number of transactions completed
+  and intended (the latter being just the product of number of clients
+  and number of transactions per client); these will be equal unless the run
+  failed before completion or some SQL command(s) failed.  (In
+  &lt;option&gt;-T&lt;/option&gt; mode, only the actual number of transactions is printed.)
+  The next line reports the number of failed transactions due to
+  serialization or deadlock errors (see &lt;xref linkend="failures-and-retries"/&gt;
+  for more information).
+  The last line reports the number of transactions per second.
+</span>
+《機械翻訳》最初の7行では、最も重要なパラメータ設定の一部がレポートされます。
+6行目では、シリアライゼーション・エラーまたはデッドロック・エラーのあるトランザクションの最大試行回数がレポートされます(詳細は<a class="xref" href="pgbench.html#FAILURES-AND-RETRIES" title="Failures and Serialization/Deadlock Retries">Failures and Serialization/Deadlock Retries</a>を参照してください)。
+8行目では、完了したトランザクション数と意図したトランザクション数がレポートされます(後者はクライアント数とクライアント当たりのトランザクション数の積にすぎません)。
+これらは、完了前に実行が失敗した場合や一部のSQLコマンドが失敗した場合を除いて等しくなります(<code class="option">-T</code>モードでは、実際のトランザクション数のみが出力されます)。
+次の行では、シリアライゼーション・エラーまたはデッドロック・エラーが原因で失敗したトランザクション数がレポートされます(<a class="xref" href="pgbench.html#FAILURES-AND-RETRIES" title="Failures and Serialization/Deadlock Retries">Failures and Serialization/Deadlock Retries</a>を参照してください)。
+最後の行では、1秒当たりのトランザクション数がレポートされます。
+ </p><p>
+<span class="original">
+   The default TPC-B-like transaction test requires specific tables to be
+   set up beforehand.  &lt;application&gt;pgbench&lt;/application&gt; should be invoked with
+   the &lt;option&gt;-i&lt;/option&gt; (initialize) option to create and populate these
+   tables.  (When you are testing a custom script, you don't need this
+   step, but will instead need to do whatever setup your test needs.)
+   Initialization looks like:
+</span>
+デフォルトのTPC-Bと似たトランザクション試験では、あらかじめ設定する特定のテーブルが必要です。
+これらのテーブルを作成し、データを投入するためには、<code class="option">-i</code>(初期化)オプションを付けて<span class="application">pgbench</span>を呼び出さなければなりません。
+(独自スクリプトを試験する場合、この手順は必要ありません。
+しかし代わりに試験に必要な何らかの設定を行わなければならないでしょう。)
+初期化は以下のようになります。
+
+</p><pre class="programlisting">
+pgbench -i [<span class="optional"> <em class="replaceable"><code>other-options</code></em> </span>] <em class="replaceable"><code>dbname</code></em>
+</pre><p>
+
+<span class="original">
+   where &lt;replaceable&gt;dbname&lt;/replaceable&gt; is the name of the already-created
+   database to test in.  (You may also need &lt;option&gt;-h&lt;/option&gt;,
+   &lt;option&gt;-p&lt;/option&gt;, and/or &lt;option&gt;-U&lt;/option&gt; options to specify how to
+   connect to the database server.)
+</span>
+ここで<em class="replaceable"><code>dbname</code></em>は試験用に前もって作成されたデータベースの名前です。
+（またデータベースサーバの接続方法を指定するために、<code class="option">-h</code>、<code class="option">-p</code>、<code class="option">-U</code>が必要になるかもしれません。）
+  </p><div class="caution"><h3 class="title">注意</h3><p>
+<span class="original">
+    &lt;literal&gt;pgbench -i&lt;/literal&gt; creates four tables &lt;structname&gt;pgbench_accounts&lt;/structname&gt;,
+    &lt;structname&gt;pgbench_branches&lt;/structname&gt;, &lt;structname&gt;pgbench_history&lt;/structname&gt;, and
+    &lt;structname&gt;pgbench_tellers&lt;/structname&gt;,
+    destroying any existing tables of these names.
+    Be very careful to use another database if you have tables having these
+    names!
+</span>
+<code class="literal">pgbench -i</code>は4つのテーブル<code class="structname">pgbench_accounts</code>、<code class="structname">pgbench_branches</code>、<code class="structname">pgbench_history</code>、<code class="structname">pgbench_tellers</code>を作成します。
+もしあればこうした名前のテーブルは破壊されます。
+もし同じ名前のテーブルが存在する場合にはよく注意してください。
+   </p></div><p>
+<span class="original">
+   At the default &lt;quote&gt;scale factor&lt;/quote&gt; of 1, the tables initially
+   contain this many rows:
+</span>
+デフォルトの<span class="quote">「<span class="quote">倍数</span>」</span>の1では、テーブルは初期状態で以下の行数を含みます。
+</p><pre class="screen">
+table                   # of rows
+---------------------------------
+pgbench_branches        1
+pgbench_tellers         10
+pgbench_accounts        100000
+pgbench_history         0
+</pre><p>
+<span class="original">
+   You can (and, for most purposes, probably should) increase the number
+   of rows by using the &lt;option&gt;-s&lt;/option&gt; (scale factor) option.  The
+   &lt;option&gt;-F&lt;/option&gt; (fillfactor) option might also be used at this point.
+</span>
+<code class="option">-s</code>（倍数）オプションを使用して行数を増加させることができます（また、ほとんどの目的ではおそらく増加させるべきです）。
+また、<code class="option">-F</code> （フィルファクタ）オプションをここで使用しても構いません。
+  </p><p>
+<span class="original">
+   Once you have done the necessary setup, you can run your benchmark
+   with a command that doesn't include &lt;option&gt;-i&lt;/option&gt;, that is
+</span>
+一度この必要な設定を行った後、以下のように<code class="option">-i</code>を持たないコマンドでベンチマークを行うことができます。
+
+</p><pre class="programlisting">
+pgbench [<span class="optional"> <em class="replaceable"><code>options</code></em> </span>] <em class="replaceable"><code>dbname</code></em>
+</pre><p>
+
+<span class="original">
+   In nearly all cases, you'll need some options to make a useful test.
+   The most important options are &lt;option&gt;-c&lt;/option&gt; (number of clients),
+   &lt;option&gt;-t&lt;/option&gt; (number of transactions), &lt;option&gt;-T&lt;/option&gt; (time limit),
+   and &lt;option&gt;-f&lt;/option&gt; (specify a custom script file).
+   See below for a full list.
+</span>
+ほとんどすべての場合、有用な試験とするためにいくつかのオプションが必要になります。
+最重要オプションは<code class="option">-c</code>（クライアント数）、<code class="option">-t</code>（トランザクション数）、<code class="option">-T</code> (制限時間)、<code class="option">-f</code>（独自スクリプトファイルの指定）です。
+以下の全一覧を参照してください。
+  </p></div><div class="refsect1" id="id-1.9.4.11.6"><h2>オプション</h2><span class="original">
+  &lt;title&gt;Options&lt;/title&gt;
+</span><p>
+<span class="original">
+   The following is divided into three subsections.  Different options are
+   used during database initialization and while running benchmarks, but some
+   options are useful in both cases.
+</span>
+以下では、データベース初期化時に使用されるオプション、ベンチマーク実行時に使用されるオプション、どちらの場合でも使われるオプションの３つに分けて説明します。
+  </p><div class="refsect2" id="PGBENCH-INIT-OPTIONS"><h3>初期化用のオプション</h3><span class="original">
+  &lt;title&gt;Initialization Options&lt;/title&gt;
+</span><p>
+<span class="original">
+    &lt;application&gt;pgbench&lt;/application&gt; accepts the following command-line
+    initialization arguments:
+</span>
+<span class="application">pgbench</span>は以下の初期化用のコマンドライン引数を受け付けます。
+
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><em class="replaceable"><code>dbname</code></em></span></dt><dd><p>
+<span class="original">
+        Specifies the name of the database to test in. If this is
+        not specified, the environment variable
+        &lt;envar&gt;PGDATABASE&lt;/envar&gt; is used. If that is not set, the
+        user name specified for the connection is used.
+</span>
+試験するデータベースの名前を指定します。
+これが指定されていない場合、環境変数<code class="envar">PGDATABASE</code>が使用されます。
+この変数も設定されていない場合は、接続のために指定されたユーザ名が使用されます。
+       </p></dd><dt><span class="term"><code class="option">-i</code><br /></span><span class="term"><code class="option">--initialize</code></span></dt><dd><p>
+<span class="original">
+        Required to invoke initialization mode.
+</span>
+初期化モードを呼び出すために必要です。
+       </p></dd><dt><span class="term"><code class="option">-I <em class="replaceable"><code>init_steps</code></em></code><br /></span><span class="term"><code class="option">--init-steps=<em class="replaceable"><code>init_steps</code></em></code></span></dt><dd><p>
+<span class="original">
+        Perform just a selected set of the normal initialization steps.
+        &lt;replaceable&gt;init_steps&lt;/replaceable&gt; specifies the
+        initialization steps to be performed, using one character per step.
+        Each step is invoked in the specified order.
+        The default is &lt;literal&gt;dtgvp&lt;/literal&gt;.
+        The available steps are:
+</span>
+標準の初期化ステップの内、選択したものだけを実行します。
+<em class="replaceable"><code>init_steps</code></em>では、各ステップ毎に1文字を使って、実行する初期化ステップを指定します。
+各ステップは指定した順で実行されます。
+デフォルトは<code class="literal">dtgvp</code>です。
+有効なステップは以下の通りです。
+
+        </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">d</code> (Drop)</span></dt><dd><p>
+<span class="original">
+            Drop any existing &lt;application&gt;pgbench&lt;/application&gt; tables.
+</span>
+既存の<span class="application">pgbench</span>のテーブルを全て削除します。
+           </p></dd><dt><span class="term"><code class="literal">t</code> (create Tables)</span></dt><dd><p>
+<span class="original">
+            Create the tables used by the
+            standard &lt;application&gt;pgbench&lt;/application&gt; scenario, namely
+            &lt;structname&gt;pgbench_accounts&lt;/structname&gt;,
+            &lt;structname&gt;pgbench_branches&lt;/structname&gt;,
+            &lt;structname&gt;pgbench_history&lt;/structname&gt;, and
+            &lt;structname&gt;pgbench_tellers&lt;/structname&gt;.
+</span>
+標準の<span class="application">pgbench</span>シナリオで使われるテーブル、すなわち<code class="structname">pgbench_accounts</code>、<code class="structname">pgbench_branches</code>、<code class="structname">pgbench_history</code>および<code class="structname">pgbench_tellers</code>を作成します。
+           </p></dd><dt><span class="term"><code class="literal">g</code>または<code class="literal">G</code> (Generate data, クライアント側、またはサーバ側)</span></dt><dd><p>
+<span class="original">
+            Generate data and load it into the standard tables,
+            replacing any data already present.
+</span>
+データを生成し、既存データを置き換えて、標準の各テーブルに読み込みます。
+           </p><p>
+<span class="original">
+            With &lt;literal&gt;g&lt;/literal&gt; (client-side data generation),
+            data is generated in &lt;command&gt;pgbench&lt;/command&gt; client and then
+            sent to the server. This uses the client/server bandwidth
+            extensively through a &lt;command&gt;COPY&lt;/command&gt;.
+            &lt;command&gt;pgbench&lt;/command&gt; uses the FREEZE option with version 14 or later
+            of &lt;productname&gt;PostgreSQL&lt;/productname&gt; to speed up
+            subsequent &lt;command&gt;VACUUM&lt;/command&gt;, unless partitions are enabled.
+            Using &lt;literal&gt;g&lt;/literal&gt; causes logging to print one message
+            every 100,000 rows while generating data for the
+            &lt;structname&gt;pgbench_accounts&lt;/structname&gt; table.
+</span>
+《マッチ度[55.746141]》<code class="literal">g</code>(クライアント側データ生成)は、データは<code class="command">pgbench</code>クライアントで生成されてからサーバに送られます。
+これは<code class="command">COPY</code>でクライアント/サーバの帯域を大きく使います。
+<code class="literal">g</code>を使うと、<code class="structname">pgbench_accounts</code>テーブルのためにデータを生成する間、100,000行毎にメッセージを1つログ出力するようになります。
+           </p><p>
+<span class="original">
+            With &lt;literal&gt;G&lt;/literal&gt; (server-side data generation),
+            only small queries are sent from the &lt;command&gt;pgbench&lt;/command&gt;
+            client and then data is actually generated in the server.
+            No significant bandwidth is required for this variant, but
+            the server will do more work.
+            Using &lt;literal&gt;G&lt;/literal&gt; causes logging not to print any progress
+            message while generating data.
+</span>
+<code class="literal">G</code>(サーバ側データ生成)では、小さな問い合わせだけが<code class="command">pgbench</code>クライアントから送られ、データは実際にはサーバで生成されます。
+こちらは帯域を著しく要求することはありませんが、サーバが、より多くの作業をすることになります。
+<code class="literal">G</code>を使うと、データを生成する間は進捗メッセージをログ出力しなくなります。
+           </p><p>
+<span class="original">
+            The default initialization behavior uses client-side data
+            generation (equivalent to &lt;literal&gt;g&lt;/literal&gt;).
+</span>
+デフォルトの初期化動作は、クライアント側のデータ生成(<code class="literal">g</code>と同じ)を使います。
+           </p></dd><dt><span class="term"><code class="literal">v</code> (Vacuum)</span></dt><dd><p>
+<span class="original">
+            Invoke &lt;command&gt;VACUUM&lt;/command&gt; on the standard tables.
+</span>
+標準の各テーブルに対して<code class="command">VACUUM</code>を実行します。
+           </p></dd><dt><span class="term"><code class="literal">p</code> (create Primary keys)</span></dt><dd><p>
+<span class="original">
+            Create primary key indexes on the standard tables.
+</span>
+標準の各テーブルにプライマリキーインデックスを作成します。
+           </p></dd><dt><span class="term"><code class="literal">f</code> (create Foreign keys)</span></dt><dd><p>
+<span class="original">
+            Create foreign key constraints between the standard tables.
+            (Note that this step is not performed by default.)
+</span>
+標準のテーブル間に外部キー制約を作成します。
+（このステップはデフォルトでは実行されないことに注意してください）
+           </p></dd></dl></div></dd><dt><span class="term"><code class="option">-F</code> <em class="replaceable"><code>fillfactor</code></em><br /></span><span class="term"><code class="option">--fillfactor=</code><em class="replaceable"><code>fillfactor</code></em></span></dt><dd><p>
+<span class="original">
+        Create the &lt;structname&gt;pgbench_accounts&lt;/structname&gt;,
+        &lt;structname&gt;pgbench_tellers&lt;/structname&gt; and
+        &lt;structname&gt;pgbench_branches&lt;/structname&gt; tables with the given fillfactor.
+        Default is 100.
+</span>
+指定したフィルファクタで<code class="structname">pgbench_accounts</code>、<code class="structname">pgbench_tellers</code>、<code class="structname">pgbench_branches</code>テーブルを作成します。
+デフォルトは100です。
+       </p></dd><dt><span class="term"><code class="option">-n</code><br /></span><span class="term"><code class="option">--no-vacuum</code></span></dt><dd><p>
+<span class="original">
+        Perform no vacuuming during initialization.
+        (This option suppresses the &lt;literal&gt;v&lt;/literal&gt; initialization step,
+        even if it was specified in &lt;option&gt;-I&lt;/option&gt;.)
+</span>
+初期化でバキュームを実行しません。
+（このオプションは<code class="option">-I</code>で指定されていたとしても初期化ステップ<code class="literal">v</code>を抑止します。）
+       </p></dd><dt><span class="term"><code class="option">-q</code><br /></span><span class="term"><code class="option">--quiet</code></span></dt><dd><p>
+<span class="original">
+        Switch logging to quiet mode, producing only one progress message per 5
+        seconds. The default logging prints one message each 100,000 rows, which
+        often outputs many lines per second (especially on good hardware).
+</span>
+ログ処理を、5秒に１つの進行メッセージのみを生成する静寂モードに切り替えます。
+デフォルトのログ処理では、100,000行毎にメッセージを１つ出力し、（特に優れたハードウェアでは）1秒当たりに多くのメッセージを出力します。
+       </p><p>
+<span class="original">
+        This setting has no effect if &lt;literal&gt;G&lt;/literal&gt; is specified
+        in &lt;option&gt;-I&lt;/option&gt;.
+</span>
+<code class="option">-I</code>の中で<code class="literal">G</code>が指定されていれば、この設定は影響しません。
+       </p></dd><dt><span class="term"><code class="option">-s</code> <em class="replaceable"><code>scale_factor</code></em><br /></span><span class="term"><code class="option">--scale=</code><em class="replaceable"><code>scale_factor</code></em></span></dt><dd><p>
+<span class="original">
+        Multiply the number of rows generated by the scale factor.
+        For example, &lt;literal&gt;-s 100&lt;/literal&gt; will create 10,000,000 rows
+        in the &lt;structname&gt;pgbench_accounts&lt;/structname&gt; table. Default is 1.
+        When the scale is 20,000 or larger, the columns used to
+        hold account identifiers (&lt;structfield&gt;aid&lt;/structfield&gt; columns)
+        will switch to using larger integers (&lt;type&gt;bigint&lt;/type&gt;),
+        in order to be big enough to hold the range of account
+        identifiers.
+</span>
+この倍率で生成される行数を積算します。
+例えば、<code class="literal">-s 100</code>は <code class="structname">pgbench_accounts</code>テーブルに10,000,000行を生成することを意味します。
+デフォルトは1です。
+この倍率が20000以上になると、アカウント識別子の範囲を保持できる程度に大きくなるように、アカウント識別子を保持するために使用される列（<code class="structfield">aid</code>列）はより大きな整数（<code class="type">bigint</code>）を使用するように切り替わります。
+       </p></dd><dt><span class="term"><code class="option">--foreign-keys</code></span></dt><dd><p>
+<span class="original">
+        Create foreign key constraints between the standard tables.
+        (This option adds the &lt;literal&gt;f&lt;/literal&gt; step to the initialization
+        step sequence, if it is not already present.)
+</span>
+標準テーブル間で外部キー制約を作成します。
+（このオプションは初期化ステップの並びに、もし無かったなら<code class="literal">f</code>ステップを追加します。）
+       </p></dd><dt><span class="term"><code class="option">--index-tablespace=<em class="replaceable"><code>index_tablespace</code></em></code></span></dt><dd><p>
+<span class="original">
+        Create indexes in the specified tablespace, rather than the default
+        tablespace.
+</span>
+デフォルトのテーブル空間ではなく、指定したテーブル空間の中にインデックスを作成します。
+       </p></dd><dt><span class="term"><code class="option">--partition-method=<em class="replaceable"><code>NAME</code></em></code></span></dt><dd><p>
+<span class="original">
+        Create a partitioned &lt;literal&gt;pgbench_accounts&lt;/literal&gt; table with
+        &lt;replaceable&gt;NAME&lt;/replaceable&gt; method.
+        Expected values are &lt;literal&gt;range&lt;/literal&gt; or &lt;literal&gt;hash&lt;/literal&gt;.
+        This option requires that &lt;option&gt;&amp;#45;-partitions&lt;/option&gt; is set to non-zero.
+        If unspecified, default is &lt;literal&gt;range&lt;/literal&gt;.
+</span>
+<em class="replaceable"><code>NAME</code></em>メソッドでパーティション化された<code class="literal">pgbench_accounts</code>テーブルを作成します。
+期待される値は<code class="literal">range</code>または<code class="literal">hash</code>です。
+このオプションは<code class="option">--partitions</code>が0でない値に設定されていることを要求します。
+指定されなければ、デフォルトは<code class="literal">range</code>です。
+       </p></dd><dt><span class="term"><code class="option">--partitions=<em class="replaceable"><code>NUM</code></em></code></span></dt><dd><p>
+<span class="original">
+        Create a partitioned &lt;literal&gt;pgbench_accounts&lt;/literal&gt; table with
+        &lt;replaceable&gt;NUM&lt;/replaceable&gt; partitions of nearly equal size for
+        the scaled number of accounts.
+        Default is &lt;literal&gt;0&lt;/literal&gt;, meaning no partitioning.
+</span>
+アカウントの数に比例したほぼ等しい大きさの<em class="replaceable"><code>NUM</code></em>個のパーティションにパーティション化された<code class="literal">pgbench_accounts</code>テーブルを作成します。
+デフォルトは<code class="literal">0</code>で、パーティション化しないことを意味します。
+       </p></dd><dt><span class="term"><code class="option">--tablespace=<em class="replaceable"><code>tablespace</code></em></code></span></dt><dd><p>
+<span class="original">
+        Create tables in the specified tablespace, rather than the default
+        tablespace.
+</span>
+デフォルトのテーブル空間ではなく、指定したテーブル空間の中にテーブルを作成します。
+       </p></dd><dt><span class="term"><code class="option">--unlogged-tables</code></span></dt><dd><p>
+<span class="original">
+        Create all tables as unlogged tables, rather than permanent tables.
+</span>
+永続テーブルではなくログを取らないテーブルとしてテーブルを作成します。
+       </p></dd></dl></div><p>
+   </p></div><div class="refsect2" id="PGBENCH-RUN-OPTIONS"><h3>ベンチマーク用オプション</h3><span class="original">
+  &lt;title&gt;Benchmarking Options&lt;/title&gt;
+</span><p>
+<span class="original">
+    &lt;application&gt;pgbench&lt;/application&gt; accepts the following command-line
+    benchmarking arguments:
+</span>
+<span class="application">pgbench</span>は以下のベンチマーク用コマンドライン引数を受け付けます。
+
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="option">-b</code> <em class="replaceable"><code>scriptname[@weight]</code></em><br /></span><span class="term"><code class="option">--builtin</code>=<em class="replaceable"><code>scriptname[@weight]</code></em></span></dt><dd><p>
+<span class="original">
+        Add the specified built-in script to the list of scripts to be executed.
+        Available built-in scripts are: &lt;literal&gt;tpcb-like&lt;/literal&gt;,
+        &lt;literal&gt;simple-update&lt;/literal&gt; and &lt;literal&gt;select-only&lt;/literal&gt;.
+        Unambiguous prefixes of built-in names are accepted.
+        With the special name &lt;literal&gt;list&lt;/literal&gt;, show the list of built-in scripts
+        and exit immediately.
+</span>
+指定の組み込みスクリプトを実行するスクリプトのリストに追加します。
+利用可能な組み込みのスクリプトは、<code class="literal">tpcb-like</code>、<code class="literal">simple-update</code>、<code class="literal">select-only</code>です。
+組み込みの名前の曖昧な接頭辞も受け付けられます。
+特別な名前<code class="literal">list</code>を使うと、組み込みスクリプトのリストを表示して、即座に終了します。
+       </p><p>
+<span class="original">
+        Optionally, write an integer weight after &lt;literal&gt;@&lt;/literal&gt; to
+        adjust the probability of selecting this script versus other ones.
+        The default weight is 1.
+        See below for details.
+</span>
+オプションで、<code class="literal">@</code>の後に整数のweight（重み）を書くことで、他のスクリプトと比較してそのスクリプトが選ばれる確率を調整することができます。
+デフォルトの重みは1です。
+詳細は以下を参照してください。
+       </p></dd><dt><span class="term"><code class="option">-c</code> <em class="replaceable"><code>clients</code></em><br /></span><span class="term"><code class="option">--client=</code><em class="replaceable"><code>clients</code></em></span></dt><dd><p>
+<span class="original">
+        Number of clients simulated, that is, number of concurrent database
+        sessions.  Default is 1.
+</span>
+模擬するクライアント数、つまり、同時に実行されるデータベースセッション数です。
+デフォルトは1です。
+       </p></dd><dt><span class="term"><code class="option">-C</code><br /></span><span class="term"><code class="option">--connect</code></span></dt><dd><p>
+<span class="original">
+        Establish a new connection for each transaction, rather than
+        doing it just once per client session.
+        This is useful to measure the connection overhead.
+</span>
+各クライアントセッションが一度だけ接続を確立するのではなく、各トランザクションが新しい接続を確立します。
+これは接続オーバーヘッドを測定する場合に有用です。
+       </p></dd><dt><span class="term"><code class="option">-d</code><br /></span><span class="term"><code class="option">--debug</code></span></dt><dd><p>
+<span class="original">
+        Print debugging output.
+</span>
+デバッグ用出力を表示します。
+       </p></dd><dt><span class="term"><code class="option">-D</code> <em class="replaceable"><code>varname</code></em><code class="literal">=</code><em class="replaceable"><code>value</code></em><br /></span><span class="term"><code class="option">--define=</code><em class="replaceable"><code>varname</code></em><code class="literal">=</code><em class="replaceable"><code>value</code></em></span></dt><dd><p>
+<span class="original">
+        Define a variable for use by a custom script (see below).
+        Multiple &lt;option&gt;-D&lt;/option&gt; options are allowed.
+</span>
+独自スクリプト（後述）で使用される変数を定義します。
+複数の<code class="option">-D</code>オプションを使用することができます。
+       </p></dd><dt><span class="term"><code class="option">-f</code> <em class="replaceable"><code>filename[@weight]</code></em><br /></span><span class="term"><code class="option">--file=</code><em class="replaceable"><code>filename[@weight]</code></em></span></dt><dd><p>
+<span class="original">
+        Add a transaction script read from &lt;replaceable&gt;filename&lt;/replaceable&gt;
+        to the list of scripts to be executed.
+</span>
+<em class="replaceable"><code>filename</code></em>から読み取ったトランザクションスクリプトを実行されるスクリプトのリストに追加します。
+       </p><p>
+<span class="original">
+        Optionally, write an integer weight after &lt;literal&gt;@&lt;/literal&gt; to
+        adjust the probability of selecting this script versus other ones.
+        The default weight is 1.
+        (To use a script file name that includes an &lt;literal&gt;@&lt;/literal&gt;
+        character, append a weight so that there is no ambiguity, for
+        example &lt;literal&gt;filen@me@1&lt;/literal&gt;.)
+        See below for details.
+</span>
+オプションで、<code class="literal">@</code>の後に整数のweight（重み）をつけることで、他のスクリプトと比較してそのスクリプトが選ばれる確率を調整することができます。
+デフォルトの重みは1です。
+（<code class="literal">@</code>文字を含むスクリプトファイル名を使用するには、 <code class="literal">filen@me@1</code> のように曖昧さがないように重みを付けます。）
+詳細は以下を参照してください。
+       </p></dd><dt><span class="term"><code class="option">-j</code> <em class="replaceable"><code>threads</code></em><br /></span><span class="term"><code class="option">--jobs=</code><em class="replaceable"><code>threads</code></em></span></dt><dd><p>
+<span class="original">
+        Number of worker threads within &lt;application&gt;pgbench&lt;/application&gt;.
+        Using more than one thread can be helpful on multi-CPU machines.
+        Clients are distributed as evenly as possible among available threads.
+        Default is 1.
+</span>
+<span class="application">pgbench</span>内のワーカスレッド数です。
+複数のスレッドを使用することはマルチCPUマシンで有用になります。
+クライアントは利用可能なスレッドの間でできる限り均等に分散されます。
+デフォルトは1です。
+       </p></dd><dt><span class="term"><code class="option">-l</code><br /></span><span class="term"><code class="option">--log</code></span></dt><dd><p>
+<span class="original">
+        Write information about each transaction to a log file.
+        See below for details.
+</span>
+各トランザクションに関する情報をログファイルに書き出します。
+詳細は以下を参照してください。
+       </p></dd><dt><span class="term"><code class="option">-L</code> <em class="replaceable"><code>limit</code></em><br /></span><span class="term"><code class="option">--latency-limit=</code><em class="replaceable"><code>limit</code></em></span></dt><dd><p>
+<span class="original">
+        Transactions that last more than &lt;replaceable&gt;limit&lt;/replaceable&gt; milliseconds
+        are counted and reported separately, as &lt;firstterm&gt;late&lt;/firstterm&gt;.
+</span>
+<em class="replaceable"><code>limit</code></em>ミリ秒以上続くトランザクションが計数され、別途<em class="firstterm">遅いトランザクション</em>として報告されます。
+       </p><p>
+<span class="original">
+        When throttling is used (&lt;option&gt;&amp;#45;-rate=...&lt;/option&gt;), transactions that
+        lag behind schedule by more than &lt;replaceable&gt;limit&lt;/replaceable&gt; ms, and thus
+        have no hope of meeting the latency limit, are not sent to the server
+        at all. They are counted and reported separately as
+        &lt;firstterm&gt;skipped&lt;/firstterm&gt;.
+</span>
+制限が使用されると(<code class="option">--rate=...</code>)、<em class="replaceable"><code>limit</code></em>ミリ秒以上遅延がスケジュールされたトランザクションは遅延制限を満たす可能性がないため、サーバに送信されることは決してありません。
+これらのトランザクションは計数され、別途<em class="firstterm">スキップされた</em>として報告されます。
+       </p><p>
+<span class="original">
+        When the &lt;option&gt;&amp;#45;-max-tries&lt;/option&gt; option is used, a transaction
+        which fails due to a serialization anomaly or from a deadlock will not
+        be retried if the total time of all its tries is greater than
+        &lt;replaceable&gt;limit&lt;/replaceable&gt; ms. To limit only the time of tries
+        and not their number, use &lt;literal&gt;&amp;#45;-max-tries=0&lt;/literal&gt;. By
+        default, the option &lt;option&gt;&amp;#45;-max-tries&lt;/option&gt; is set to 1 and
+        transactions with serialization/deadlock errors are not retried. See
+        &lt;xref linkend="failures-and-retries"/&gt; for more information about
+        retrying such transactions.
+</span>
+《機械翻訳》<code class="option">--max-tries</code>オプションが使用されている場合、シリアライゼーション異常またはデッドロックのために失敗したトランザクションは、すべての試行の合計時間が<em class="replaceable"><code>limit</code></em>より大きい場合、再試行されません。
+試行回数ではなく試行時間のみを制限するには、<code class="literal">--max-tries=0</code>を使用します。
+デフォルトでは、<code class="option">--max-tries</code>オプションは1に設定されており、シリアライゼーション/デッドロック・エラーのあるトランザクションは再試行されません。
+このようなトランザクションの再試行の詳細は<a class="xref" href="pgbench.html#FAILURES-AND-RETRIES" title="Failures and Serialization/Deadlock Retries">Failures and Serialization/Deadlock Retries</a>を参照してください。
+       </p></dd><dt><span class="term"><code class="option">-M</code> <em class="replaceable"><code>querymode</code></em><br /></span><span class="term"><code class="option">--protocol=</code><em class="replaceable"><code>querymode</code></em></span></dt><dd><p>
+<span class="original">
+        Protocol to use for submitting queries to the server:
+</span>
+サーバへ問い合わせを送信するために使用するプロトコルです。
+          </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><span class="original">
+            &lt;para&gt;&lt;literal&gt;simple&lt;/literal&gt;: use simple query protocol.&lt;/para&gt;
+</span><p><code class="literal">simple</code>: 簡易問い合わせプロトコルを使用します。</p></li><li class="listitem"><span class="original">
+            &lt;para&gt;&lt;literal&gt;extended&lt;/literal&gt;: use extended query protocol.&lt;/para&gt;
+</span><p><code class="literal">extended</code>: 拡張問い合わせプロトコルを使用します。</p></li><li class="listitem"><span class="original">
+            &lt;para&gt;&lt;literal&gt;prepared&lt;/literal&gt;: use extended query protocol with prepared statements.&lt;/para&gt;
+</span><p><code class="literal">prepared</code>: プリペアドステートメントを伴う拡張問い合わせプロトコルを使用します。</p></li></ul></div><p>
+
+<span class="original">
+        In the &lt;literal&gt;prepared&lt;/literal&gt; mode, &lt;application&gt;pgbench&lt;/application&gt;
+        reuses the parse analysis result starting from the second query
+        iteration, so &lt;application&gt;pgbench&lt;/application&gt; runs faster
+        than in other modes.
+</span>
+<code class="literal">prepared</code>モードでは、<span class="application">pgbench</span>は問い合わせの2回目の繰り返しからは構文解析結果を再利用しますので、<span class="application">pgbench</span>は他のモードよりも速く動作します。
+       </p><p>
+<span class="original">
+        The default is simple query protocol.  (See &lt;xref linkend="protocol"/&gt;
+        for more information.)
+</span>
+デフォルトは簡易問い合わせプロトコルです。
+（詳しい情報は<a class="xref" href="protocol.html" title="第55章 フロントエンド/バックエンドプロトコル">第55章</a>を参照してください）
+       </p></dd><dt><span class="term"><code class="option">-n</code><br /></span><span class="term"><code class="option">--no-vacuum</code></span></dt><dd><p>
+<span class="original">
+        Perform no vacuuming before running the test.
+        This option is &lt;emphasis&gt;necessary&lt;/emphasis&gt;
+        if you are running a custom test scenario that does not include
+        the standard tables &lt;structname&gt;pgbench_accounts&lt;/structname&gt;,
+        &lt;structname&gt;pgbench_branches&lt;/structname&gt;, &lt;structname&gt;pgbench_history&lt;/structname&gt;, and
+        &lt;structname&gt;pgbench_tellers&lt;/structname&gt;.
+</span>
+試験を実行する前にバキュームを行いません。
+<code class="structname">pgbench_accounts</code>、<code class="structname">pgbench_branches</code>、<code class="structname">pgbench_history</code>、
+<code class="structname">pgbench_tellers</code>標準テーブルを含まない独自試験シナリオを実行する場合、このオプションは<span class="emphasis"><em>必要</em></span>です。
+       </p></dd><dt><span class="term"><code class="option">-N</code><br /></span><span class="term"><code class="option">--skip-some-updates</code></span></dt><dd><p>
+<span class="original">
+        Run built-in simple-update script.
+        Shorthand for &lt;option&gt;-b simple-update&lt;/option&gt;.
+</span>
+組み込みのsimple-update（単純な更新）のスクリプトを実行します。
+<code class="option">-b simple-update</code>の短縮形です。
+       </p></dd><dt><span class="term"><code class="option">-P</code> <em class="replaceable"><code>sec</code></em><br /></span><span class="term"><code class="option">--progress=</code><em class="replaceable"><code>sec</code></em></span></dt><dd><p>
+<span class="original">
+        Show progress report every &lt;replaceable&gt;sec&lt;/replaceable&gt; seconds.  The report
+        includes the time since the beginning of the run, the TPS since the
+        last report, and the transaction latency average, standard deviation,
+        and the number of failed transactions since the last report. Under
+        throttling (&lt;option&gt;-R&lt;/option&gt;), the latency is computed with respect
+        to the transaction scheduled start time, not the actual transaction
+        beginning time, thus it also includes the average schedule lag time.
+        When &lt;option&gt;&amp;#45;-max-tries&lt;/option&gt; is used to enable transaction retries
+        after serialization/deadlock errors, the report includes the number of
+        retried transactions and the sum of all retries.
+</span>
+《マッチ度[59.090909]》<em class="replaceable"><code>sec</code></em>秒毎の進捗レポートを表示します。
+レポートには起動からの経過時間、前回レポート時からのTPS、前回レポート時からのトランザクションの平均待ち時間、標準偏差を含んでいます。
+(<code class="option">-R</code>)オプションによる制限下では、待ち時間はトランザクションの実開始時間ではなく、予定開始時間で算出されていますので、平均予定遅延時間が含まれています。
+       </p></dd><dt><span class="term"><code class="option">-r</code><br /></span><span class="term"><code class="option">--report-per-command</code></span></dt><dd><p>
+<span class="original">
+        Report the following statistics for each command after the benchmark
+        finishes: the average per-statement latency (execution time from the
+        perspective of the client), the number of failures, and the number of
+        retries after serialization or deadlock errors in this command.  The
+        report displays retry statistics only if the
+        &lt;option&gt;&amp;#45;-max-tries&lt;/option&gt; option is not equal to 1.
+</span>
+《機械翻訳》ベンチマークの終了後、各コマンドについて、文ごとの平均待機時間(クライアントから見た実行時間)、失敗回数、およびこのコマンドのシリアライゼーション・エラーまたはデッドロック・エラー後の再試行回数の統計をレポートします。
+レポートに再試行統計が表示されるのは、<code class="option">--max-tries</code>オプションが1以外の場合のみです。
+       </p></dd><dt><span class="term"><code class="option">-R</code> <em class="replaceable"><code>rate</code></em><br /></span><span class="term"><code class="option">--rate=</code><em class="replaceable"><code>rate</code></em></span></dt><dd><p>
+<span class="original">
+        Execute transactions targeting the specified rate instead of running
+        as fast as possible (the default).  The rate is given in transactions
+        per second.  If the targeted rate is above the maximum possible rate,
+        the rate limit won't impact the results.
+</span>
+トランザクションを可能な限り高速（デフォルト）で実行するのではなく、指定された目標レートで実行します。
+レートは1秒あたりのトランザクション数で与えられます。目標レートが実施可能な最大レートを越えている場合、レート制限は結果に影響を与えません。
+       </p><p>
+<span class="original">
+        The rate is targeted by starting transactions along a
+        Poisson-distributed schedule time line.  The expected start time
+        schedule moves forward based on when the client first started, not
+        when the previous transaction ended.  That approach means that when
+        transactions go past their original scheduled end time, it is
+        possible for later ones to catch up again.
+</span>
+レートはトランザクションの開始予定タイムラインがポアソン分布に沿う事を目標としています。
+期待される開始時刻の予定は、前トランザクションの終了時ではなくクライアントの初期起動時に基づいて動かします。
+このアプローチはトランザクションがオリジナルの終了予定時刻を過ぎた場合でも、後でまた追い付けることを意味します。
+       </p><p>
+<span class="original">
+        When throttling is active, the transaction latency reported at the
+        end of the run is calculated from the scheduled start times, so it
+        includes the time each transaction had to wait for the previous
+        transaction to finish. The wait time is called the schedule lag time,
+        and its average and maximum are also reported separately. The
+        transaction latency with respect to the actual transaction start time,
+        i.e., the time spent executing the transaction in the database, can be
+        computed by subtracting the schedule lag time from the reported
+        latency.
+</span>
+制限がアクティブになると、実行終了時に報告されるトランザクション待ち時間は、予定開始時刻から計算されるので、
+各トランザクションが前トランザクションの終了を待たねばならなかった時間を含んでいます。
+この待ち時間はスケジュールラグタイムと呼ばれ、平均と最大値も別々に報告されます。
+実トランザクション開始時刻についてのトランザクション待ち時間、つまりデータベース内でトランザクションの実行に要した時間は、報告された待ち時間からスケジュールラグタイムを減算することで算出することができます。
+       </p><p>
+<span class="original">
+        If &lt;option&gt;&amp;#45;-latency-limit&lt;/option&gt; is used together with &lt;option&gt;&amp;#45;-rate&lt;/option&gt;,
+        a transaction can lag behind so much that it is already over the
+        latency limit when the previous transaction ends, because the latency
+        is calculated from the scheduled start time. Such transactions are
+        not sent to the server, but are skipped altogether and counted
+        separately.
+</span>
+<code class="option">--latency-limit</code>が<code class="option">--rate</code>と一緒に指定された場合、トランザクションは、先行するトランザクションが終了した際にすでに遅延制限を超えていて、非常に遅れてしまうことがあり得ます。
+そのようなトランザクションはサーバに送信さることなくスキップされ、別途カウントされます。
+       </p><p>
+<span class="original">
+        A high schedule lag time is an indication that the system cannot
+        process transactions at the specified rate, with the chosen number of
+        clients and threads. When the average transaction execution time is
+        longer than the scheduled interval between each transaction, each
+        successive transaction will fall further behind, and the schedule lag
+        time will keep increasing the longer the test run is. When that
+        happens, you will have to reduce the specified transaction rate.
+</span>
+スケジュールラグタイムの高い値は、システムが選択されたクライアント数とスレッド数で、指定されたレートでトランザクションを処理できなかったことを示しています。
+トランザクションの平均実行時間が各トランザクション間で予定されていた間隔より長い場合、各逐次トランザクションは更に遅くなり、
+スケジュールラグタイムはテスト実行がより長く増加し続けます。
+これが起こる場合、指定トランザクションレートを減らす必要があります。
+       </p></dd><dt><span class="term"><code class="option">-s</code> <em class="replaceable"><code>scale_factor</code></em><br /></span><span class="term"><code class="option">--scale=</code><em class="replaceable"><code>scale_factor</code></em></span></dt><dd><p>
+<span class="original">
+        Report the specified scale factor in &lt;application&gt;pgbench&lt;/application&gt;'s
+        output.  With the built-in tests, this is not necessary; the
+        correct scale factor will be detected by counting the number of
+        rows in the &lt;structname&gt;pgbench_branches&lt;/structname&gt; table.
+        However, when testing only custom benchmarks (&lt;option&gt;-f&lt;/option&gt; option),
+        the scale factor will be reported as 1 unless this option is used.
+</span>
+<span class="application">pgbench</span>の出力で指定した倍率を報告します。
+これは組み込みの試験では必要ありません。
+正確な倍率が<code class="structname">pgbench_branches</code>テーブルの行数を数えることで検出されます。
+しかし、独自ベンチマーク（<code class="option">-f</code>オプション）のみを試験している場合、このオプションを使用しない限り、倍率は1として報告されます。
+       </p></dd><dt><span class="term"><code class="option">-S</code><br /></span><span class="term"><code class="option">--select-only</code></span></dt><dd><p>
+<span class="original">
+        Run built-in select-only script.
+        Shorthand for &lt;option&gt;-b select-only&lt;/option&gt;.
+</span>
+組み込みのselect-only（SELECTのみ）のスクリプトを実行します。
+<code class="option">-b select-only</code>の短縮形です。
+       </p></dd><dt><span class="term"><code class="option">-t</code> <em class="replaceable"><code>transactions</code></em><br /></span><span class="term"><code class="option">--transactions=</code><em class="replaceable"><code>transactions</code></em></span></dt><dd><p>
+<span class="original">
+        Number of transactions each client runs.  Default is 10.
+</span>
+各クライアントが実行するトランザクション数です。
+デフォルトは10です。
+       </p></dd><dt><span class="term"><code class="option">-T</code> <em class="replaceable"><code>seconds</code></em><br /></span><span class="term"><code class="option">--time=</code><em class="replaceable"><code>seconds</code></em></span></dt><dd><p>
+<span class="original">
+        Run the test for this many seconds, rather than a fixed number of
+        transactions per client. &lt;option&gt;-t&lt;/option&gt; and
+        &lt;option&gt;-T&lt;/option&gt; are mutually exclusive.
+</span>
+クライアントあたりのトランザクション数を固定で指定するよりも長くテストを実行したい場合、ここに指定した秒数でテストを実行します。
+<code class="option">-t</code>と<code class="option">-T</code>は互いに排他的です。
+       </p></dd><dt><span class="term"><code class="option">-v</code><br /></span><span class="term"><code class="option">--vacuum-all</code></span></dt><dd><p>
+<span class="original">
+        Vacuum all four standard tables before running the test.
+        With neither &lt;option&gt;-n&lt;/option&gt; nor &lt;option&gt;-v&lt;/option&gt;, &lt;application&gt;pgbench&lt;/application&gt; will vacuum the
+        &lt;structname&gt;pgbench_tellers&lt;/structname&gt; and &lt;structname&gt;pgbench_branches&lt;/structname&gt;
+        tables, and will truncate &lt;structname&gt;pgbench_history&lt;/structname&gt;.
+</span>
+試験前に4つの標準テーブルすべてをバキュームします。
+<code class="option">-n</code>も<code class="option">-v</code>もなければ、<span class="application">pgbench</span>は<code class="structname">pgbench_tellers</code>と<code class="structname">pgbench_branches</code>テーブルをバキュームし、<code class="structname">pgbench_history</code>内のデータをすべて消去します。
+       </p></dd><dt><span class="term"><code class="option">--aggregate-interval=<em class="replaceable"><code>seconds</code></em></code></span></dt><dd><p>
+<span class="original">
+        Length of aggregation interval (in seconds).  May be used only
+        with &lt;option&gt;-l&lt;/option&gt; option.  With this option, the log contains
+        per-interval summary data, as described below.
+</span>
+集約間隔の長さ（秒単位）です。
+これは<code class="option">-l</code>と一緒でのみ使用できます。
+このオプションを付けると、ログには以下で説明するような指定間隔単位の要約が含まれます。
+       </p></dd><dt><span class="term"><code class="option">--failures-detailed</code></span></dt><dd><p>
+<span class="original">
+        Report failures in per-transaction and aggregation logs, as well as in
+        the main and per-script reports, grouped by the following types:
+</span>
+《機械翻訳》トランザクションごとおよび集約ログ、メインレポートおよびスクリプトごとのレポートで、次のタイプにグループ化された失敗をレポートします。
+        </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>serialization failures;</p></li><li class="listitem"><p>deadlock failures;</p></li></ul></div><p>
+        See <a class="xref" href="pgbench.html#FAILURES-AND-RETRIES" title="Failures and Serialization/Deadlock Retries">Failures and Serialization/Deadlock Retries</a> for more information.
+       </p></dd><dt><span class="term"><code class="option">--log-prefix=<em class="replaceable"><code>prefix</code></em></code></span></dt><dd><p>
+<span class="original">
+        Set the filename prefix for the log files created by
+        &lt;option&gt;&amp;#45;-log&lt;/option&gt;.  The default is &lt;literal&gt;pgbench_log&lt;/literal&gt;.
+</span>
+<code class="option">--log</code>により作成されるログファイルのファイル名の先頭につける文字列を設定します。
+デフォルトは<code class="literal">pgbench_log</code>です。
+       </p></dd><dt><span class="term"><code class="option">--max-tries=<em class="replaceable"><code>number_of_tries</code></em></code></span></dt><dd><p>
+<span class="original">
+        Enable retries for transactions with serialization/deadlock errors and
+        set the maximum number of these tries. This option can be combined with
+        the &lt;option&gt;&amp;#45;-latency-limit&lt;/option&gt; option which limits the total time
+        of all transaction tries; moreover, you cannot use an unlimited number
+        of tries (&lt;literal&gt;&amp;#45;-max-tries=0&lt;/literal&gt;) without
+        &lt;option&gt;&amp;#45;-latency-limit&lt;/option&gt; or &lt;option&gt;&amp;#45;-time&lt;/option&gt;.
+        The default value is 1 and transactions with serialization/deadlock
+        errors are not retried. See &lt;xref linkend="failures-and-retries"/&gt;
+        for more information about retrying such transactions.
+</span>
+《機械翻訳》シリアル化/デッドロック・エラーのあるトランザクションの再試行を有効にし、これらの試行の最大数を設定します。
+このオプションは、すべてのトランザクション試行の合計時間を制限する<code class="option">--latency-limit</code>オプションと組み合せることができます。
+また、<code class="option">--latency-limit</code>または<code class="option">--time</code>を指定せずに試行回数を無制限に使用することはできません(<code class="literal">--max-tries=0</code>)。
+デフォルト値は1で、シリアル化/デッドロック・エラーのあるトランザクションは再試行されません。
+このようなトランザクションの再試行の詳細は、<a class="xref" href="pgbench.html#FAILURES-AND-RETRIES" title="Failures and Serialization/Deadlock Retries">Failures and Serialization/Deadlock Retries</a>を参照してください。
+       </p></dd><dt><span class="term"><code class="option">--progress-timestamp</code></span></dt><dd><p>
+<span class="original">
+        When showing progress (option &lt;option&gt;-P&lt;/option&gt;), use a timestamp
+        (Unix epoch) instead of the number of seconds since the
+        beginning of the run.  The unit is in seconds, with millisecond
+        precision after the dot.
+        This helps compare logs generated by various tools.
+</span>
+進捗を表示（<code class="option">-P</code>オプション）しているとき、実行開始以後の経過秒数の代わりにタイムスタンプ（Unixエポック時刻）を使用します。
+単位は秒で、ドットの後にミリ秒の精度が付きます。
+これは様々なツールで生成されたログを比較するのに役立つでしょう。
+       </p></dd><dt><span class="term"><code class="option">--random-seed=</code><em class="replaceable"><code>seed</code></em></span></dt><dd><p>
+<span class="original">
+        Set random generator seed.  Seeds the system random number generator,
+        which then produces a sequence of initial generator states, one for
+        each thread.
+        Values for &lt;replaceable&gt;seed&lt;/replaceable&gt; may be:
+        &lt;literal&gt;time&lt;/literal&gt; (the default, the seed is based on the current time),
+        &lt;literal&gt;rand&lt;/literal&gt; (use a strong random source, failing if none
+        is available), or an unsigned decimal integer value.
+        The random generator is invoked explicitly from a pgbench script
+        (&lt;literal&gt;random...&lt;/literal&gt; functions) or implicitly (for instance option
+        &lt;option&gt;&amp;#45;-rate&lt;/option&gt; uses it to schedule transactions).
+        When explicitly set, the value used for seeding is shown on the terminal.
+        Any value allowed for &lt;replaceable&gt;seed&lt;/replaceable&gt; may also be
+        provided through the environment variable
+        &lt;literal&gt;PGBENCH_RANDOM_SEED&lt;/literal&gt;.
+        To ensure that the provided seed impacts all possible uses, put this option
+        first or use the environment variable.
+</span>
+ランダムジェネレータのシードを設定します。
+各スレッド毎の初期ジェネレータ状態から一連の値を生成する、システム乱数ジェネレータの種となります。
+<em class="replaceable"><code>seed</code></em>の値は以下が可能です。
+<code class="literal">time</code>（デフォルト、現在時刻に基づくシード）、<code class="literal">rand</code>（強いランダムソースを使用、使用できなければ失敗します）、あるいは符号無し整数値です。
+ランダムジェネレータはpgbenchスクリプト（<code class="literal">random...</code>関数）から明示的に、あるいは暗黙に（例えばオプション<code class="option">--rate</code>がトランザクションのスケジュールに使用します）、実行されます。
+明示的に設定した場合、シードに使われる値はターミナルにあらわれます。
+<em class="replaceable"><code>seed</code></em>に与えることのできる値は何であれ、環境変数<code class="literal">PGBENCH_RANDOM_SEED</code>を通して付与しても良いです。
+設定したシードがありうる全ての実行に影響を及ぼすようにするためには、本オプションを最初に置くか、環境変数を使ってください。
+      </p><p>
+<span class="original">
+        Setting the seed explicitly allows to reproduce a &lt;command&gt;pgbench&lt;/command&gt;
+        run exactly, as far as random numbers are concerned.
+        As the random state is managed per thread, this means the exact same
+        &lt;command&gt;pgbench&lt;/command&gt; run for an identical invocation if there is one
+        client per thread and there are no external or data dependencies.
+        From a statistical viewpoint reproducing runs exactly is a bad idea because
+        it can hide the performance variability or improve performance unduly,
+        e.g., by hitting the same pages as a previous run.
+        However, it may also be of great help for debugging, for instance
+        re-running a tricky case which leads to an error.
+        Use wisely.
+</span>
+明示的にシードを設定することは、乱数に関しては、正確に<code class="command">pgbench</code>実行を再現することを可能にします。
+ランダム状態はスレッド毎に制御されているので、スレッド毎に一つのクライアントであり、外的な依存やデータ依存が無い場合、同一の起動に対して正確に同じ<code class="command">pgbench</code>実行することを意味します。
+統計的観点からは、性能のばらつきを隠したり、例えば前回実行と同じページにヒットすることで不当に性能改善するので、正確な再現実行は悪い考えです。
+しかしながら、例えばエラーを起こすトリッキーなケースを再実行するなど、デバッグには大きな助けとなるでしょう。
+賢く使ってください。
+       </p></dd><dt><span class="term"><code class="option">--sampling-rate=<em class="replaceable"><code>rate</code></em></code></span></dt><dd><p>
+<span class="original">
+        Sampling rate, used when writing data into the log, to reduce the
+        amount of log generated. If this option is given, only the specified
+        fraction of transactions are logged. 1.0 means all transactions will
+        be logged, 0.05 means only 5% of the transactions will be logged.
+</span>
+データをログに書き出す際に使用される、生成されるログの量を減少するためのサンプリング割合です。
+このオプションが指定された場合、指定された割合のトランザクションがログに残ります。
+1.0はすべてのトランザクションが、0.05はトランザクションの5%のみがログに残ることを意味します。
+       </p><p>
+<span class="original">
+        Remember to take the sampling rate into account when processing the
+        log file. For example, when computing TPS values, you need to multiply
+        the numbers accordingly (e.g., with 0.01 sample rate, you'll only get
+        1/100 of the actual TPS).
+</span>
+ログファイルを処理する際にはこのサンプリング割合を考慮することを忘れないでください。
+例えば、TPS値を計算する際には、比例した数を掛け合わせなければなりません（例：サンプリング割合が0.01の場合実際のTPSの1/100を得るだけです。）
+       </p></dd><dt><span class="term"><code class="option">--show-script=</code><em class="replaceable"><code>scriptname</code></em></span></dt><dd><p>
+<span class="original">
+        Show the actual code of builtin script &lt;replaceable&gt;scriptname&lt;/replaceable&gt;
+        on stderr, and exit immediately.
+</span>
+組み込みスクリプト<em class="replaceable"><code>scriptname</code></em>の実際のコードを標準エラーに出力し、即座に終了します。
+       </p></dd><dt><span class="term"><code class="option">--verbose-errors</code></span></dt><dd><p>
+<span class="original">
+        Print messages about all errors and failures (errors without retrying)
+        including which limit for retries was exceeded and how far it was
+        exceeded for the serialization/deadlock failures. (Note that in this
+        case the output can be significantly increased.).
+        See &lt;xref linkend="failures-and-retries"/&gt; for more information.
+</span>
+《機械翻訳》すべてのエラーと失敗(再試行しないエラー)に関するメッセージを表示します。
+これには、どの再試行制限を超えたか、およびシリアライゼーション/デッドロックの失敗でどの程度超えたかが含まれます(この場合、出力が大幅に増加することに注意してください)。
+詳細は<a class="xref" href="pgbench.html#FAILURES-AND-RETRIES" title="Failures and Serialization/Deadlock Retries">Failures and Serialization/Deadlock Retries</a>を参照してください。
+       </p></dd></dl></div><p>
+   </p></div><div class="refsect2" id="PGBENCH-COMMON-OPTIONS"><h3>共通オプション</h3><span class="original">
+  &lt;title&gt;Common Options&lt;/title&gt;
+</span><p>
+<span class="original">
+    &lt;application&gt;pgbench&lt;/application&gt; also accepts the following common command-line
+    arguments for connection parameters:
+</span>
+<span class="application">pgbench</span>は接続パラメータとして以下の共通コマンドライン引数も受け付けます。
+
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="option">-h</code> <em class="replaceable"><code>hostname</code></em><br /></span><span class="term"><code class="option">--host=</code><em class="replaceable"><code>hostname</code></em></span></dt><dd><p>
+<span class="original">
+        The database server's host name
+</span>
+      データベースサーバのホスト名
+       </p></dd><dt><span class="term"><code class="option">-p</code> <em class="replaceable"><code>port</code></em><br /></span><span class="term"><code class="option">--port=</code><em class="replaceable"><code>port</code></em></span></dt><dd><p>
+<span class="original">
+        The database server's port number
+</span>
+データベースサーバのポート番号
+       </p></dd><dt><span class="term"><code class="option">-U</code> <em class="replaceable"><code>login</code></em><br /></span><span class="term"><code class="option">--username=</code><em class="replaceable"><code>login</code></em></span></dt><dd><p>
+<span class="original">
+        The user name to connect as
+</span>
+接続ユーザ名
+       </p></dd><dt><span class="term"><code class="option">-V</code><br /></span><span class="term"><code class="option">--version</code></span></dt><dd><p>
+<span class="original">
+        Print the &lt;application&gt;pgbench&lt;/application&gt; version and exit.
+</span>
+<span class="application">pgbench</span>のバージョンを表示し、終了します。
+       </p></dd><dt><span class="term"><code class="option">-?</code><br /></span><span class="term"><code class="option">--help</code></span></dt><dd><p>
+<span class="original">
+        Show help about &lt;application&gt;pgbench&lt;/application&gt; command line
+        arguments, and exit.
+</span>
+<span class="application">pgbench</span>のコマンドライン引数の説明を表示し、終了します。
+       </p></dd></dl></div><p>
+   </p></div></div><div class="refsect1" id="id-1.9.4.11.7"><h2>終了ステータス</h2><span class="original">
+  &lt;title&gt;Exit Status&lt;/title&gt;
+</span><p>
+<span class="original">
+   A successful run will exit with status 0.  Exit status 1 indicates static
+   problems such as invalid command-line options or internal errors which
+   are supposed to never occur.  Early errors that occur when starting
+   benchmark such as initial connection failures also exit with status 1.
+   Errors during the run such as database errors or problems in the script
+   will result in exit status 2. In the latter case,
+   &lt;application&gt;pgbench&lt;/application&gt; will print partial results.
+</span>
+《マッチ度[62.017167]》実行に成功すればステータス0で終了します。
+終了ステータス1は、無効なコマンドラインオプションのような静的な問題を示します。
+データベースエラーやスクリプトでの問題などの実行中のエラーは終了ステータス2になります。
+後者の場合、<span class="application">pgbench</span>は部分的な結果を表示します。
+  </p></div><div class="refsect1" id="id-1.9.4.11.8"><h2>環境</h2><span class="original">
+  &lt;title&gt;Environment&lt;/title&gt;
+</span><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="envar">PGDATABASE</code><br /></span><span class="term"><code class="envar">PGHOST</code><br /></span><span class="term"><code class="envar">PGPORT</code><br /></span><span class="term"><code class="envar">PGUSER</code></span></dt><dd><p>
+<span class="original">
+      Default connection parameters.
+</span>
+デフォルトの接続パラメータです。
+     </p></dd></dl></div><p>
+<span class="original">
+   This utility, like most other &lt;productname&gt;PostgreSQL&lt;/productname&gt; utilities,
+   uses the environment variables supported by &lt;application&gt;libpq&lt;/application&gt;
+   (see &lt;xref linkend="libpq-envars"/&gt;).
+</span>
+このユーティリティは、他のほとんどの<span class="productname">PostgreSQL</span>ユーティリティと同様、<span class="application">libpq</span>でサポートされる環境変数を使用します（<a class="xref" href="libpq-envars.html" title="34.15. 環境変数">34.15</a>を参照してください）。
+  </p><p>
+<span class="original">
+   The environment variable &lt;envar&gt;PG_COLOR&lt;/envar&gt; specifies whether to use
+   color in diagnostic messages. Possible values are
+   &lt;literal&gt;always&lt;/literal&gt;, &lt;literal&gt;auto&lt;/literal&gt; and
+   &lt;literal&gt;never&lt;/literal&gt;.
+</span>
+環境変数<code class="envar">PG_COLOR</code>は診断メッセージで色を使うかどうかを指定します。
+可能な値は<code class="literal">always</code>、<code class="literal">auto</code>、<code class="literal">never</code>です。
+  </p></div><div class="refsect1" id="id-1.9.4.11.9"><h2>注釈</h2><span class="original">
+  &lt;title&gt;Notes&lt;/title&gt;
+</span><div class="refsect2" id="TRANSACTIONS-AND-SCRIPTS"><h3><span class="application">pgbench</span>で実際に実行される<span class="quote">「<span class="quote">トランザクション</span>」</span>は何か?</h3><span class="original">
+  &lt;title&gt;What Is the &lt;quote&gt;Transaction&lt;/quote&gt; Actually Performed in &lt;application&gt;pgbench&lt;/application&gt;?&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;application&gt;pgbench&lt;/application&gt; executes test scripts chosen randomly
+   from a specified list.
+   The scripts may include built-in scripts specified with &lt;option&gt;-b&lt;/option&gt;
+   and user-provided scripts specified with &lt;option&gt;-f&lt;/option&gt;.
+   Each script may be given a relative weight specified after an
+   &lt;literal&gt;@&lt;/literal&gt; so as to change its selection probability.
+   The default weight is &lt;literal&gt;1&lt;/literal&gt;.
+   Scripts with a weight of &lt;literal&gt;0&lt;/literal&gt; are ignored.
+</span>
+<span class="application">pgbench</span>は指定したリストからランダムに選択したテストスクリプトを実行します。
+これには<code class="option">-b</code>の組み込みスクリプトと<code class="option">-f</code>のユーザ定義カスタムスクリプトが含まれることがあります。
+各スクリプトには<code class="literal">@</code>の後に指定される相対的な重みを与えることができ、それが選ばれる確率を変更することができます。
+デフォルトの重みは<code class="literal">1</code>です。
+重みが<code class="literal">0</code>のスクリプトは無視されます。
+ </p><p>
+<span class="original">
+   The default built-in transaction script (also invoked with &lt;option&gt;-b tpcb-like&lt;/option&gt;)
+   issues seven commands per transaction over randomly chosen &lt;literal&gt;aid&lt;/literal&gt;,
+   &lt;literal&gt;tid&lt;/literal&gt;, &lt;literal&gt;bid&lt;/literal&gt; and &lt;literal&gt;delta&lt;/literal&gt;.
+   The scenario is inspired by the TPC-B benchmark, but is not actually TPC-B,
+   hence the name.
+</span>
+デフォルトの組み込みトランザクションスクリプト（<code class="option">-b tpcb-like</code>とすることでも実行されます）は、<code class="literal">aid</code>、<code class="literal">tid</code>、<code class="literal">bid</code>、<code class="literal">delta</code>からランダムに選択され、トランザクション毎に7つのコマンドを発行します。
+このシナリオはTPC-Bベンチマークに示唆を受けたものですが、実際にはTPC-Bではないので、この名前になっています。
+  </p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p><code class="literal">BEGIN;</code></p></li><li class="listitem"><p><code class="literal">UPDATE pgbench_accounts SET abalance = abalance + :delta WHERE aid = :aid;</code></p></li><li class="listitem"><p><code class="literal">SELECT abalance FROM pgbench_accounts WHERE aid = :aid;</code></p></li><li class="listitem"><p><code class="literal">UPDATE pgbench_tellers SET tbalance = tbalance + :delta WHERE tid = :tid;</code></p></li><li class="listitem"><p><code class="literal">UPDATE pgbench_branches SET bbalance = bbalance + :delta WHERE bid = :bid;</code></p></li><li class="listitem"><p><code class="literal">INSERT INTO pgbench_history (tid, bid, aid, delta, mtime) VALUES (:tid, :bid, :aid, :delta, CURRENT_TIMESTAMP);</code></p></li><li class="listitem"><p><code class="literal">END;</code></p></li></ol></div><p>
+<span class="original">
+   If you select the &lt;literal&gt;simple-update&lt;/literal&gt; built-in (also &lt;option&gt;-N&lt;/option&gt;),
+   steps 4 and 5 aren't included in the transaction.
+   This will avoid update contention on these tables, but
+   it makes the test case even less like TPC-B.
+</span>
+<code class="literal">simple-update</code>の組み込みを選択した（あるいは<code class="option">-N</code>を指定した）場合、第4ステップと第5ステップはトランザクションに含まれません。
+これにより、これらのテーブルに対する更新の競合を避けられますが、テストケースはさらにTPC-Bらしくなくなります。
+  </p><p>
+<span class="original">
+   If you select the &lt;literal&gt;select-only&lt;/literal&gt; built-in (also &lt;option&gt;-S&lt;/option&gt;),
+   only the &lt;command&gt;SELECT&lt;/command&gt; is issued.
+</span>
+<code class="literal">select-only</code>の組み込みを選択した（あるいは<code class="option">-S</code>を指定した）場合、<code class="command">SELECT</code>のみが発行されます。
+  </p></div><div class="refsect2" id="id-1.9.4.11.9.3"><h3>独自スクリプト</h3><span class="original">
+  &lt;title&gt;Custom Scripts&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;application&gt;pgbench&lt;/application&gt; has support for running custom
+   benchmark scenarios by replacing the default transaction script
+   (described above) with a transaction script read from a file
+   (&lt;option&gt;-f&lt;/option&gt; option).  In this case a &lt;quote&gt;transaction&lt;/quote&gt;
+   counts as one execution of a script file.
+</span>
+<span class="application">pgbench</span>は、ファイルから読み込んだトランザクションスクリプト（<code class="option">-f</code>オプション）でデフォルトのトランザクションスクリプト（上述）を置き換えて独自のベンチマークシナリオを実行する機能をサポートします。
+この場合、<span class="quote">「<span class="quote">トランザクション</span>」</span>はスクリプトファイルの1回の実行として数えられます。
+  </p><p>
+<span class="original">
+   A script file contains one or more SQL commands terminated by
+   semicolons.  Empty lines and lines beginning with
+   &lt;literal&gt;&amp;#45;-&lt;/literal&gt; are ignored.  Script files can also contain
+   &lt;quote&gt;meta commands&lt;/quote&gt;, which are interpreted by &lt;application&gt;pgbench&lt;/application&gt;
+   itself, as described below.
+</span>
+スクリプトファイルにはセミコロンで終了するSQLコマンドが1つ以上含まれます。
+空行および<code class="literal">--</code>から始まる行は無視されます。
+スクリプトファイルの行には、<span class="application">pgbench</span>自身が解釈する<span class="quote">「<span class="quote">メタコマンド</span>」</span>（後述）も記述することができます。
+  </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+    Before &lt;productname&gt;PostgreSQL&lt;/productname&gt; 9.6, SQL commands in script files
+    were terminated by newlines, and so they could not be continued across
+    lines.  Now a semicolon is &lt;emphasis&gt;required&lt;/emphasis&gt; to separate consecutive
+    SQL commands (though an SQL command does not need one if it is followed
+    by a meta command).  If you need to create a script file that works with
+    both old and new versions of &lt;application&gt;pgbench&lt;/application&gt;, be sure to write
+    each SQL command on a single line ending with a semicolon.
+</span>
+<span class="productname">PostgreSQL</span>の9.6より前では、スクリプトファイル内のSQLコマンドは改行で終了しており、そのため行をまたがって継続することができませんでした。
+これからは連続するSQLコマンドを区切るためにセミコロンが<span class="emphasis"><em>必要</em></span>です（ただし、SQLコマンドの後にメタコマンドが続く場合は、セミコロンは必要ありません）。
+<span class="application">pgbench</span>の古いバージョンと新しいバージョンの両方で動作するスクリプトを作る必要があるなら、各SQLコマンドを1行で書き、終わりにセミコロンを付けるようにしてください。
+   </p><p>
+<span class="original">
+    It is assumed that pgbench scripts do not contain incomplete blocks of SQL
+    transactions. If at runtime the client reaches the end of the script without
+    completing the last transaction block, it will be aborted.
+</span>
+《機械翻訳》pgbenchスクリプトにはSQLトランザクションの不完全なブロックが含まれていないと想定されています。
+実行時にクライアントが最後のトランザクションブロックを完了せずにスクリプトの最後に到達した場合、クライアントは中断されます。
+   </p></div><p>
+<span class="original">
+   There is a simple variable-substitution facility for script files.
+   Variable names must consist of letters (including non-Latin letters),
+   digits, and underscores, with the first character not being a digit.
+   Variables can be set by the command-line &lt;option&gt;-D&lt;/option&gt; option,
+   explained above, or by the meta commands explained below.
+   In addition to any variables preset by &lt;option&gt;-D&lt;/option&gt; command-line options,
+   there are a few variables that are preset automatically, listed in
+   &lt;xref linkend="pgbench-automatic-variables"/&gt;. A value specified for these
+   variables using &lt;option&gt;-D&lt;/option&gt; takes precedence over the automatic presets.
+   Once set, a variable's
+   value can be inserted into an SQL command by writing
+   &lt;literal&gt;:&lt;/literal&gt;&lt;replaceable&gt;variablename&lt;/replaceable&gt;.  When running more than
+   one client session, each session has its own set of variables.
+   &lt;application&gt;pgbench&lt;/application&gt; supports up to 255 variable uses in one
+   statement.
+</span>
+スクリプトファイル向けの簡単な変数置換機能があります。
+変数名は最初の文字が数字以外で文字（非ラテン文字を含む）、数字およびアンダースコアで構成されていなければなりません。
+上で説明したように変数を<code class="option">-D</code>コマンドラインオプションで設定することができます。
+また、後で説明するようにメタコマンドで設定することもできます。
+<code class="option">-D</code>コマンドラインオプションで設定された変数の他に、<a class="xref" href="pgbench.html#PGBENCH-AUTOMATIC-VARIABLES" title="表287 pgbench Automatic Variables">表 287</a>に記載されているように、自動的に設定される変数がいくつかあります。
+<code class="option">-D</code> を使ってこれらの変数に設定された値は、自動設定の値より優先されます。
+一度設定すると、変数の値は、<code class="literal">:</code><em class="replaceable"><code>variablename</code></em>と書かれてSQLコマンドに挿入されます。
+1つ以上のクライアントセッションが実行される場合、セッション毎に独自の変数群を持ちます。
+<span class="application">pgbench</span>は1つの文内で255個までの変数の利用をサポートします。
+  </p><div class="table" id="PGBENCH-AUTOMATIC-VARIABLES"><p class="title"><strong>表287 pgbench Automatic Variables</strong></p><div class="table-contents"><table class="table" summary="pgbench Automatic Variables" border="1"><colgroup><col class="col1" /><col class="col2" /></colgroup><thead><tr><th>変数</th><th>説明</th></tr></thead><tbody><tr><td> <code class="literal">client_id</code> </td><td>クライアントセッションを識別する一意の数値（ゼロから始まる）</td></tr><tr><td> <code class="literal">default_seed</code> </td><td>デフォルトでハッシュ関数や疑似ランダム置換関数で使われるシード</td></tr><tr><td> <code class="literal">random_seed</code> </td><td>ランダムジェネレータのシード（<code class="option">-D</code>で上書きされていないなら）</td></tr><tr><td> <code class="literal">scale</code> </td><td>現在のスケールファクタ</td></tr></tbody></table></div></div><br class="table-break" /><p>
+<span class="original">
+   Script file meta commands begin with a backslash (&lt;literal&gt;\&lt;/literal&gt;) and
+   normally extend to the end of the line, although they can be continued
+   to additional lines by writing backslash-return.
+   Arguments to a meta command are separated by white space.
+   These meta commands are supported:
+</span>
+スクリプトファイルのメタコマンドはバックスラッシュ（<code class="literal">\</code>）から始まり、通常は行末まで続きますが、バックスラッシュと改行を書くことで、追加の行に続けることができます。
+メタコマンドへの引数は空白文字で区切られます。
+以下のメタコマンドがサポートされています。
+  </p><div class="variablelist"><dl class="variablelist"><dt id="PGBENCH-METACOMMAND-GSET"><span class="term">
+     <code class="literal">\gset [<em class="replaceable"><code>prefix</code></em>]</code>
+     <code class="literal">\aset [<em class="replaceable"><code>prefix</code></em>]</code>
+    </span></dt><dd><p>
+<span class="original">
+      These commands may be used to end SQL queries, taking the place of the
+      terminating semicolon (&lt;literal&gt;;&lt;/literal&gt;).
+</span>
+このコマンドは、終了を意味するセミコロン(<code class="literal">;</code>)の置き換えで、SQL問い合わせを終えるために使われます。
+     </p><p>
+<span class="original">
+      When the &lt;literal&gt;\gset&lt;/literal&gt; command is used, the preceding SQL query is
+      expected to return one row, the columns of which are stored into variables
+      named after column names, and prefixed with &lt;replaceable&gt;prefix&lt;/replaceable&gt;
+      if provided.
+</span>
+<code class="literal">\gset</code>コマンドが使われると、それまでのSQL問い合わせは1行を返すものと期待され、その行の列は列名にちなんだ名前の変数に格納されます。<em class="replaceable"><code>prefix</code></em>が指定されていれば、変数名の前に付きます。
+     </p><p>
+<span class="original">
+      When the &lt;literal&gt;\aset&lt;/literal&gt; command is used, all combined SQL queries
+      (separated by &lt;literal&gt;\;&lt;/literal&gt;) have their columns stored into variables
+      named after column names, and prefixed with &lt;replaceable&gt;prefix&lt;/replaceable&gt;
+      if provided. If a query returns no row, no assignment is made and the variable
+      can be tested for existence to detect this. If a query returns more than one
+      row, the last value is kept.
+</span>
+<code class="literal">\aset</code>コマンドが使われると、(<code class="literal">\;</code>で分けられた)すべての結合したSQL問い合わせは、その列が列名にちなんだ名前の変数に格納されます。<em class="replaceable"><code>prefix</code></em>が指定されていれば、変数名の前に付きます。
+問い合わせが行を返さなければ、割り当ては行なわれませんので、これを検出するために変数の存在をテストできます。
+問い合わせが2行以上返した場合、最後の値が保持されます。
+     </p><p>
+<span class="original">
+      &lt;literal&gt;\gset&lt;/literal&gt; and &lt;literal&gt;\aset&lt;/literal&gt; cannot be used in
+      pipeline mode, since the query results are not yet available by the time
+      the commands would need them.
+</span>
+<code class="literal">\gset</code>と<code class="literal">\aset</code>はパイプラインモードでは使用できません。
+これは、コマンドで必要になるまでに問い合わせの結果がまだ利用できないためです。
+     </p><p>
+<span class="original">
+      The following example puts the final account balance from the first query
+      into variable &lt;replaceable&gt;abalance&lt;/replaceable&gt;, and fills variables
+      &lt;replaceable&gt;p_two&lt;/replaceable&gt; and &lt;replaceable&gt;p_three&lt;/replaceable&gt;
+      with integers from the third query.
+      The result of the second query is discarded.
+      The result of the two last combined queries are stored in variables
+      &lt;replaceable&gt;four&lt;/replaceable&gt; and &lt;replaceable&gt;five&lt;/replaceable&gt;.
+</span>
+以下の例は、最初の問い合わせからの最終的な口座残高を変数<em class="replaceable"><code>abalance</code></em>に入れ、変数<em class="replaceable"><code>p_two</code></em>と<em class="replaceable"><code>p_three</code></em>を3番目の問い合わせからの整数で埋めます。
+2番目の問い合わせの結果は捨てられます。
+最後の2つの結合した問い合わせの結果は、変数<em class="replaceable"><code>four</code></em>と<em class="replaceable"><code>five</code></em>に格納されます。
+</p><pre class="programlisting">
+UPDATE pgbench_accounts
+  SET abalance = abalance + :delta
+  WHERE aid = :aid
+  RETURNING abalance \gset
+<span class="original">
+&amp;#45;- compound of two queries
+</span>
+-- 2つの問い合わせの組み合わせ
+SELECT 1 \;
+SELECT 2 AS two, 3 AS three \gset p_
+SELECT 4 AS four \; SELECT 5 AS five \aset
+</pre></dd><dt><span class="term"><code class="literal">\if</code> <em class="replaceable"><code>expression</code></em><br /></span><span class="term"><code class="literal">\elif</code> <em class="replaceable"><code>expression</code></em><br /></span><span class="term"><code class="literal">\else</code><br /></span><span class="term"><code class="literal">\endif</code></span></dt><dd><p>
+<span class="original">
+      This group of commands implements nestable conditional blocks,
+      similarly to &lt;literal&gt;psql&lt;/literal&gt;'s &lt;xref linkend="psql-metacommand-if"/&gt;.
+      Conditional expressions are identical to those with &lt;literal&gt;\set&lt;/literal&gt;,
+      with non-zero values interpreted as true.
+</span>
+このコマンド群は<code class="literal">psql</code>の<a class="xref" href="app-psql.html#PSQL-METACOMMAND-IF"><code class="literal">\if</code> <em class="replaceable"><code>expression</code></em></a>と似た、入れ子にできる条件ブロックを実現します。
+条件式は<code class="literal">\set</code>と同じで、非ゼロ値は真と解釈されます。
+     </p></dd><dt id="PGBENCH-METACOMMAND-SET"><span class="term">
+     <code class="literal">\set <em class="replaceable"><code>varname</code></em> <em class="replaceable"><code>expression</code></em></code>
+    </span></dt><dd><p>
+<span class="original">
+      Sets variable &lt;replaceable&gt;varname&lt;/replaceable&gt; to a value calculated
+      from &lt;replaceable&gt;expression&lt;/replaceable&gt;.
+      The expression may contain the &lt;literal&gt;NULL&lt;/literal&gt; constant,
+      Boolean constants &lt;literal&gt;TRUE&lt;/literal&gt; and &lt;literal&gt;FALSE&lt;/literal&gt;,
+      integer constants such as &lt;literal&gt;5432&lt;/literal&gt;,
+      double constants such as &lt;literal&gt;3.14159&lt;/literal&gt;,
+      references to variables &lt;literal&gt;:&lt;/literal&gt;&lt;replaceable&gt;variablename&lt;/replaceable&gt;,
+      &lt;link linkend="pgbench-builtin-operators"&gt;operators&lt;/link&gt;
+      with their usual SQL precedence and associativity,
+      &lt;link linkend="pgbench-builtin-functions"&gt;function calls&lt;/link&gt;,
+      SQL &lt;link linkend="functions-case"&gt;&lt;token&gt;CASE&lt;/token&gt; generic conditional
+      expressions&lt;/link&gt; and parentheses.
+</span>
+<em class="replaceable"><code>varname</code></em>変数を<em class="replaceable"><code>expression</code></em>から計算された値に設定します。
+式（expression）には、<code class="literal">NULL</code>定数、真理値定数の<code class="literal">TRUE</code>と<code class="literal">FALSE</code>、<code class="literal">5432</code>のような整数の定数、<code class="literal">3.14159</code>のような倍精度実数の定数、変数を参照する <code class="literal">:</code><em class="replaceable"><code>variablename</code></em>、通常のSQLの優先度と結合規則での<a class="link" href="pgbench.html#PGBENCH-BUILTIN-OPERATORS" title="組み込み演算子">演算子</a>、<a class="link" href="pgbench.html#PGBENCH-BUILTIN-FUNCTIONS" title="組み込み関数">関数呼び出し</a>、SQLの<a class="link" href="functions-conditional.html#FUNCTIONS-CASE" title="9.18.1. CASE"><code class="token">CASE</code>一般条件式</a>および括弧を含むことができます。
+     </p><p>
+<span class="original">
+      Functions and most operators return &lt;literal&gt;NULL&lt;/literal&gt; on
+      &lt;literal&gt;NULL&lt;/literal&gt; input.
+</span>
+関数と大部分の演算子は<code class="literal">NULL</code>入力に<code class="literal">NULL</code>を返します。
+     </p><p>
+<span class="original">
+      For conditional purposes, non zero numerical values are
+      &lt;literal&gt;TRUE&lt;/literal&gt;, zero numerical values and &lt;literal&gt;NULL&lt;/literal&gt;
+      are &lt;literal&gt;FALSE&lt;/literal&gt;.
+</span>
+条件の用途では非ゼロの数値は<code class="literal">TRUE</code>、ゼロ数値と<code class="literal">NULL</code>は<code class="literal">FALSE</code>です。
+     </p><p>
+<span class="original">
+      Too large or small integer and double constants, as well as
+      integer arithmetic operators (&lt;literal&gt;+&lt;/literal&gt;,
+      &lt;literal&gt;-&lt;/literal&gt;, &lt;literal&gt;*&lt;/literal&gt; and &lt;literal&gt;/&lt;/literal&gt;)
+      raise errors on overflows.
+</span>
+大きすぎるもしくは小さすぎる整数や倍精度実数の定数は、整数算術演算子(<code class="literal">+</code>、<code class="literal">-</code>、<code class="literal">*</code>、<code class="literal">/</code>)と同様にオーバーフローエラーになります。
+     </p><p>
+<span class="original">
+      When no final &lt;token&gt;ELSE&lt;/token&gt; clause is provided to a
+      &lt;token&gt;CASE&lt;/token&gt;, the default value is &lt;literal&gt;NULL&lt;/literal&gt;.
+</span>
+<code class="token">CASE</code>に最後の<code class="token">ELSE</code>句が与えられないとき、デフォルト値は<code class="literal">NULL</code>です。
+     </p><p>
+<span class="original">
+      Examples:
+</span>
+例
+</p><pre class="programlisting">
+\set ntellers 10 * :scale
+\set aid (1021 * random(1, 100000 * :scale)) % \
+           (100000 * :scale) + 1
+\set divx CASE WHEN :x &lt;&gt; 0 THEN :y/:x ELSE NULL END
+</pre></dd><dt><span class="term">
+     <code class="literal">\sleep <em class="replaceable"><code>number</code></em> [ us | ms | s ]</code>
+    </span></dt><dd><p>
+<span class="original">
+      Causes script execution to sleep for the specified duration in
+      microseconds (&lt;literal&gt;us&lt;/literal&gt;), milliseconds (&lt;literal&gt;ms&lt;/literal&gt;) or seconds
+      (&lt;literal&gt;s&lt;/literal&gt;).  If the unit is omitted then seconds are the default.
+      &lt;replaceable&gt;number&lt;/replaceable&gt; can be either an integer constant or a
+      &lt;literal&gt;:&lt;/literal&gt;&lt;replaceable&gt;variablename&lt;/replaceable&gt; reference to a variable
+      having an integer value.
+</span>
+スクリプトの実行をマイクロ秒（<code class="literal">us</code>）、ミリ秒（<code class="literal">ms</code>）、秒（<code class="literal">s</code>）単位で指定した間待機させます。
+単位を省略した場合、デフォルトは秒です。
+<em class="replaceable"><code>number</code></em>は整数定数か整数値を持つ変数への<code class="literal">:</code><em class="replaceable"><code>variablename</code></em>参照のいずれかです。
+     </p><p>
+<span class="original">
+      Example:
+</span>
+例
+</p><pre class="programlisting">
+\sleep 10 ms
+</pre></dd><dt><span class="term">
+     <code class="literal">\setshell <em class="replaceable"><code>varname</code></em> <em class="replaceable"><code>command</code></em> [ <em class="replaceable"><code>argument</code></em> ... ]</code>
+    </span></dt><dd><p>
+<span class="original">
+      Sets variable &lt;replaceable&gt;varname&lt;/replaceable&gt; to the result of the shell command
+      &lt;replaceable&gt;command&lt;/replaceable&gt; with the given &lt;replaceable&gt;argument&lt;/replaceable&gt;(s).
+      The command must return an integer value through its standard output.
+</span>
+<em class="replaceable"><code>command</code></em>シェルコマンドを指定の<em class="replaceable"><code>argument</code></em>で実行した結果を<em class="replaceable"><code>varname</code></em>変数に設定します。
+このコマンドは標準出力を通して整数値を返さなければなりません。
+     </p><p>
+<span class="original">
+      &lt;replaceable&gt;command&lt;/replaceable&gt; and each &lt;replaceable&gt;argument&lt;/replaceable&gt; can be either
+      a text constant or a &lt;literal&gt;:&lt;/literal&gt;&lt;replaceable&gt;variablename&lt;/replaceable&gt; reference
+      to a variable. If you want to use an &lt;replaceable&gt;argument&lt;/replaceable&gt; starting
+      with a colon, write an additional colon at the beginning of
+      &lt;replaceable&gt;argument&lt;/replaceable&gt;.
+</span>
+<em class="replaceable"><code>command</code></em>および各<em class="replaceable"><code>argument</code></em>は、テキスト定数または変数を参照する<code class="literal">:</code><em class="replaceable"><code>variablename</code></em>とすることができます。
+コロンから始まる<em class="replaceable"><code>argument</code></em>を使用したい場合、<em class="replaceable"><code>argument</code></em>の先頭にさらにコロンを付けなければなりません。
+     </p><p>
+<span class="original">
+      Example:
+</span>
+例:
+</p><pre class="programlisting">
+\setshell variable_to_be_assigned command literal_argument :variable ::literal_starting_with_colon
+</pre></dd><dt><span class="term">
+     <code class="literal">\shell <em class="replaceable"><code>command</code></em> [ <em class="replaceable"><code>argument</code></em> ... ]</code>
+    </span></dt><dd><p>
+<span class="original">
+      Same as &lt;literal&gt;\setshell&lt;/literal&gt;, but the result of the command
+      is discarded.
+</span>
+<code class="literal">\setshell</code>と同じですが、コマンドの結果は廃棄されます。
+     </p><p>
+<span class="original">
+      Example:
+</span>
+例:
+</p><pre class="programlisting">
+\shell command literal_argument :variable ::literal_starting_with_colon
+</pre></dd><dt id="PGBENCH-METACOMMAND-PIPELINE"><span class="term"><code class="literal">\startpipeline</code><br /></span><span class="term"><code class="literal">\endpipeline</code></span></dt><dd><p>
+<span class="original">
+        These commands delimit the start and end of a pipeline of SQL
+        statements.  In pipeline mode, statements are sent to the server
+        without waiting for the results of previous statements.  See
+        &lt;xref linkend="libpq-pipeline-mode"/&gt; for more details.
+        Pipeline mode requires the use of extended query protocol.
+</span>
+これらのコマンドは、SQL文のパイプラインの開始と終了を区切ります。
+パイプラインモードでは、文は前の文の結果を待つことなくサーバに送信されます。
+詳細は<a class="xref" href="libpq-pipeline-mode.html" title="34.5. パイプラインモード">34.5</a>を参照してください。
+パイプラインモードでは、拡張問い合わせプロトコルを使用する必要があります。
+     </p></dd></dl></div></div><div class="refsect2" id="PGBENCH-BUILTIN-OPERATORS"><h3>組み込み演算子</h3><span class="original">
+  &lt;title&gt;Built-in Operators&lt;/title&gt;
+</span><p>
+<span class="original">
+   The arithmetic, bitwise, comparison and logical operators listed in
+   &lt;xref linkend="pgbench-operators"/&gt; are built into &lt;application&gt;pgbench&lt;/application&gt;
+   and may be used in expressions appearing in
+   &lt;link linkend="pgbench-metacommand-set"&gt;&lt;literal&gt;\set&lt;/literal&gt;&lt;/link&gt;.
+   The operators are listed in increasing precedence order.
+   Except as noted, operators taking two numeric inputs will produce
+   a double value if either input is double, otherwise they produce
+   an integer result.
+</span>
+<a class="xref" href="pgbench.html#PGBENCH-OPERATORS" title="表288 pgbenchの演算子">表 288</a>に載っている算術、ビットごと、比較、論理の演算子は<span class="application">pgbench</span>に組み込まれていて、<a class="link" href="pgbench.html#PGBENCH-METACOMMAND-SET"><code class="literal">\set</code></a>の式で使用できます。
+演算子は優先度の低い順に載っています。
+注意書きがある場合を除いて、2つの数値を取る演算子は、入力の片方が倍精度実数であれば倍精度実数の値を結果とし、そうでなければ整数の結果になります。
+  </p><div class="table" id="PGBENCH-OPERATORS"><p class="title"><strong>表288 pgbenchの演算子</strong></p><div class="table-contents"><span class="original">
+    &lt;title&gt;pgbench Operators&lt;/title&gt;
+</span><table class="table" summary="pgbenchの演算子" border="1"><colgroup><col /></colgroup><thead><tr><th class="func_table_entry"><p class="func_signature">
+<span class="original">
+        Operator
+</span>
+        演算子
+       </p>
+       <p>
+<span class="original">
+        Description
+</span>
+        説明
+       </p>
+       <p>
+<span class="original">
+        Example(s)
+</span>
+        例
+       </p></th></tr></thead><tbody><tr><td class="func_table_entry"><p class="func_signature">
+        <em class="replaceable"><code>boolean</code></em> <code class="literal">OR</code> <em class="replaceable"><code>boolean</code></em>
+        → <code class="returnvalue"><em class="replaceable"><code>boolean</code></em></code>
+       </p>
+       <p>
+<span class="original">
+        Logical OR
+</span>
+論理OR
+       </p>
+       <p>
+        <code class="literal">5 or 0</code>
+        → <code class="returnvalue">TRUE</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <em class="replaceable"><code>boolean</code></em> <code class="literal">AND</code> <em class="replaceable"><code>boolean</code></em>
+        → <code class="returnvalue"><em class="replaceable"><code>boolean</code></em></code>
+       </p>
+       <p>
+<span class="original">
+        Logical AND
+</span>
+論理AND
+       </p>
+       <p>
+        <code class="literal">3 and 0</code>
+        → <code class="returnvalue">FALSE</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="literal">NOT</code> <em class="replaceable"><code>boolean</code></em>
+        → <code class="returnvalue"><em class="replaceable"><code>boolean</code></em></code>
+       </p>
+       <p>
+<span class="original">
+        Logical NOT
+</span>
+論理NOT
+       </p>
+       <p>
+        <code class="literal">not false</code>
+        → <code class="returnvalue">TRUE</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <em class="replaceable"><code>boolean</code></em> <code class="literal">IS [NOT] (NULL|TRUE|FALSE)</code>
+        → <code class="returnvalue"><em class="replaceable"><code>boolean</code></em></code>
+       </p>
+       <p>
+<span class="original">
+        Boolean value tests
+</span>
+ブール値のテスト
+       </p>
+       <p>
+        <code class="literal">1 is null</code>
+        → <code class="returnvalue">FALSE</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <em class="replaceable"><code>value</code></em> <code class="literal">ISNULL|NOTNULL</code>
+        → <code class="returnvalue"><em class="replaceable"><code>boolean</code></em></code>
+       </p>
+       <p>
+<span class="original">
+        Nullness tests
+</span>
+NULLであるかのテスト
+       </p>
+       <p>
+        <code class="literal">1 notnull</code>
+        → <code class="returnvalue">TRUE</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <em class="replaceable"><code>number</code></em> <code class="literal">=</code> <em class="replaceable"><code>number</code></em>
+        → <code class="returnvalue"><em class="replaceable"><code>boolean</code></em></code>
+       </p>
+       <p>
+<span class="original">
+        Equal
+</span>
+等価
+       </p>
+       <p>
+        <code class="literal">5 = 4</code>
+        → <code class="returnvalue">FALSE</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <em class="replaceable"><code>number</code></em> <code class="literal">&lt;&gt;</code> <em class="replaceable"><code>number</code></em>
+        → <code class="returnvalue"><em class="replaceable"><code>boolean</code></em></code>
+       </p>
+       <p>
+<span class="original">
+        Not equal
+</span>
+不等
+       </p>
+       <p>
+        <code class="literal">5 &lt;&gt; 4</code>
+        → <code class="returnvalue">TRUE</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <em class="replaceable"><code>number</code></em> <code class="literal">!=</code> <em class="replaceable"><code>number</code></em>
+        → <code class="returnvalue"><em class="replaceable"><code>boolean</code></em></code>
+       </p>
+       <p>
+<span class="original">
+        Not equal
+</span>
+不等
+       </p>
+       <p>
+        <code class="literal">5 != 5</code>
+        → <code class="returnvalue">FALSE</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <em class="replaceable"><code>number</code></em> <code class="literal">&lt;</code> <em class="replaceable"><code>number</code></em>
+        → <code class="returnvalue"><em class="replaceable"><code>boolean</code></em></code>
+       </p>
+       <p>
+<span class="original">
+        Less than
+</span>
+より小さい
+       </p>
+       <p>
+        <code class="literal">5 &lt; 4</code>
+        → <code class="returnvalue">FALSE</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <em class="replaceable"><code>number</code></em> <code class="literal">&lt;=</code> <em class="replaceable"><code>number</code></em>
+        → <code class="returnvalue"><em class="replaceable"><code>boolean</code></em></code>
+       </p>
+       <p>
+<span class="original">
+        Less than or equal to
+</span>
+以下
+       </p>
+       <p>
+        <code class="literal">5 &lt;= 4</code>
+        → <code class="returnvalue">FALSE</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <em class="replaceable"><code>number</code></em> <code class="literal">&gt;</code> <em class="replaceable"><code>number</code></em>
+        → <code class="returnvalue"><em class="replaceable"><code>boolean</code></em></code>
+       </p>
+       <p>
+<span class="original">
+        Greater than
+</span>
+より大きい
+       </p>
+       <p>
+        <code class="literal">5 &gt; 4</code>
+        → <code class="returnvalue">TRUE</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <em class="replaceable"><code>number</code></em> <code class="literal">&gt;=</code> <em class="replaceable"><code>number</code></em>
+        → <code class="returnvalue"><em class="replaceable"><code>boolean</code></em></code>
+       </p>
+       <p>
+<span class="original">
+        Greater than or equal to
+</span>
+以上
+       </p>
+       <p>
+        <code class="literal">5 &gt;= 4</code>
+        → <code class="returnvalue">TRUE</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <em class="replaceable"><code>integer</code></em> <code class="literal">|</code> <em class="replaceable"><code>integer</code></em>
+        → <code class="returnvalue"><em class="replaceable"><code>integer</code></em></code>
+       </p>
+       <p>
+<span class="original">
+        Bitwise OR
+</span>
+ビット毎のOR
+       </p>
+       <p>
+        <code class="literal">1 | 2</code>
+        → <code class="returnvalue">3</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <em class="replaceable"><code>integer</code></em> <code class="literal">#</code> <em class="replaceable"><code>integer</code></em>
+        → <code class="returnvalue"><em class="replaceable"><code>integer</code></em></code>
+       </p>
+       <p>
+<span class="original">
+        Bitwise XOR
+</span>
+ビット毎のXOR
+       </p>
+       <p>
+        <code class="literal">1 # 3</code>
+        → <code class="returnvalue">2</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <em class="replaceable"><code>integer</code></em> <code class="literal">&amp;</code> <em class="replaceable"><code>integer</code></em>
+        → <code class="returnvalue"><em class="replaceable"><code>integer</code></em></code>
+       </p>
+       <p>
+<span class="original">
+        Bitwise AND
+</span>
+ビット毎のAND
+       </p>
+       <p>
+        <code class="literal">1 &amp; 3</code>
+        → <code class="returnvalue">1</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="literal">~</code> <em class="replaceable"><code>integer</code></em>
+        → <code class="returnvalue"><em class="replaceable"><code>integer</code></em></code>
+       </p>
+       <p>
+<span class="original">
+        Bitwise NOT
+</span>
+ビット毎のNOT
+       </p>
+       <p>
+        <code class="literal">~ 1</code>
+        → <code class="returnvalue">-2</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <em class="replaceable"><code>integer</code></em> <code class="literal">&lt;&lt;</code> <em class="replaceable"><code>integer</code></em>
+        → <code class="returnvalue"><em class="replaceable"><code>integer</code></em></code>
+       </p>
+       <p>
+<span class="original">
+        Bitwise shift left
+</span>
+ビット毎の左シフト
+       </p>
+       <p>
+        <code class="literal">1 &lt;&lt; 2</code>
+        → <code class="returnvalue">4</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <em class="replaceable"><code>integer</code></em> <code class="literal">&gt;&gt;</code> <em class="replaceable"><code>integer</code></em>
+        → <code class="returnvalue"><em class="replaceable"><code>integer</code></em></code>
+       </p>
+       <p>
+<span class="original">
+        Bitwise shift right
+</span>
+ビット毎の右シフト
+       </p>
+       <p>
+        <code class="literal">8 &gt;&gt; 2</code>
+        → <code class="returnvalue">2</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <em class="replaceable"><code>number</code></em> <code class="literal">+</code> <em class="replaceable"><code>number</code></em>
+        → <code class="returnvalue"><em class="replaceable"><code>number</code></em></code>
+       </p>
+       <p>
+<span class="original">
+        Addition
+</span>
+加算
+       </p>
+       <p>
+        <code class="literal">5 + 4</code>
+        → <code class="returnvalue">9</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <em class="replaceable"><code>number</code></em> <code class="literal">-</code> <em class="replaceable"><code>number</code></em>
+        → <code class="returnvalue"><em class="replaceable"><code>number</code></em></code>
+       </p>
+       <p>
+<span class="original">
+        Subtraction
+</span>
+減算
+       </p>
+       <p>
+        <code class="literal">3 - 2.0</code>
+        → <code class="returnvalue">1.0</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <em class="replaceable"><code>number</code></em> <code class="literal">*</code> <em class="replaceable"><code>number</code></em>
+        → <code class="returnvalue"><em class="replaceable"><code>number</code></em></code>
+       </p>
+       <p>
+<span class="original">
+        Multiplication
+</span>
+乗算
+       </p>
+       <p>
+        <code class="literal">5 * 4</code>
+        → <code class="returnvalue">20</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <em class="replaceable"><code>number</code></em> <code class="literal">/</code> <em class="replaceable"><code>number</code></em>
+        → <code class="returnvalue"><em class="replaceable"><code>number</code></em></code>
+       </p>
+       <p>
+<span class="original">
+        Division (truncates the result towards zero if both inputs are integers)
+</span>
+除算(入力が両方とも整数であれば、結果は0に向けて丸められる)
+       </p>
+       <p>
+        <code class="literal">5 / 3</code>
+        → <code class="returnvalue">1</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <em class="replaceable"><code>integer</code></em> <code class="literal">%</code> <em class="replaceable"><code>integer</code></em>
+        → <code class="returnvalue"><em class="replaceable"><code>integer</code></em></code>
+       </p>
+       <p>
+<span class="original">
+        Modulo (remainder)
+</span>
+剰余(余り)
+       </p>
+       <p>
+        <code class="literal">3 % 2</code>
+        → <code class="returnvalue">1</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="literal">-</code> <em class="replaceable"><code>number</code></em>
+        → <code class="returnvalue"><em class="replaceable"><code>number</code></em></code>
+       </p>
+       <p>
+<span class="original">
+        Negation
+</span>
+符号反転
+       </p>
+       <p>
+        <code class="literal">- 2.0</code>
+        → <code class="returnvalue">-2.0</code>
+       </p></td></tr></tbody></table></div></div><br class="table-break" /></div><div class="refsect2" id="PGBENCH-BUILTIN-FUNCTIONS"><h3>組み込み関数</h3><span class="original">
+  &lt;title&gt;Built-In Functions&lt;/title&gt;
+</span><p>
+<span class="original">
+   The functions listed in &lt;xref linkend="pgbench-functions"/&gt; are built
+   into &lt;application&gt;pgbench&lt;/application&gt; and may be used in expressions appearing in
+   &lt;link linkend="pgbench-metacommand-set"&gt;&lt;literal&gt;\set&lt;/literal&gt;&lt;/link&gt;.
+</span>
+<a class="xref" href="pgbench.html#PGBENCH-FUNCTIONS" title="表289 pgbenchの関数">表 289</a>に示す関数は<span class="application">pgbench</span>に組み込まれており、<a class="link" href="pgbench.html#PGBENCH-METACOMMAND-SET"><code class="literal">\set</code></a>に現れる式の中で使うことができます。
+  </p><span class="original"> list pgbench functions in alphabetical order </span><div class="table" id="PGBENCH-FUNCTIONS"><p class="title"><strong>表289 pgbenchの関数</strong></p><div class="table-contents"><span class="original">
+    &lt;title&gt;pgbench Functions&lt;/title&gt;
+</span><table class="table" summary="pgbenchの関数" border="1"><colgroup><col /></colgroup><thead><tr><th class="func_table_entry"><p class="func_signature">
+<span class="original">
+        Function
+</span>
+        関数
+       </p>
+       <p>
+<span class="original">
+        Description
+</span>
+        説明
+       </p>
+       <p>
+<span class="original">
+        Example(s)
+</span>
+        例
+       </p></th></tr></thead><tbody><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="function">abs</code> ( <em class="replaceable"><code>number</code></em> )
+<span class="original">
+        &lt;returnvalue&gt;&lt;/returnvalue&gt; same type as input
+</span>
+        → <code class="returnvalue"></code>入力と同じ型
+       </p>
+       <p>
+<span class="original">
+        Absolute value
+</span>
+絶対値
+       </p>
+       <p>
+        <code class="literal">abs(-17)</code>
+        → <code class="returnvalue">17</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="function">debug</code> ( <em class="replaceable"><code>number</code></em> )
+<span class="original">
+        &lt;returnvalue&gt;&lt;/returnvalue&gt; same type as input
+</span>
+        → <code class="returnvalue"></code>入力と同じ型
+       </p>
+       <p>
+<span class="original">
+        Prints the argument to &lt;systemitem&gt;stderr&lt;/systemitem&gt;,
+        and returns the argument.
+</span>
+引数を<span class="systemitem">stderr</span>に出力し、引数を返す。
+       </p>
+       <p>
+        <code class="literal">debug(5432.1)</code>
+        → <code class="returnvalue">5432.1</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="function">double</code> ( <em class="replaceable"><code>number</code></em> )
+        → <code class="returnvalue">double</code>
+       </p>
+       <p>
+<span class="original">
+        Casts to double.
+</span>
+倍精度実数にキャストする。
+       </p>
+       <p>
+        <code class="literal">double(5432)</code>
+        → <code class="returnvalue">5432.0</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="function">exp</code> ( <em class="replaceable"><code>number</code></em> )
+        → <code class="returnvalue">double</code>
+       </p>
+       <p>
+<span class="original">
+        Exponential (&lt;literal&gt;e&lt;/literal&gt; raised to the given power)
+</span>
+指数(<code class="literal">e</code>の指定した冪)
+       </p>
+       <p>
+        <code class="literal">exp(1.0)</code>
+        → <code class="returnvalue">2.718281828459045</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="function">greatest</code> ( <em class="replaceable"><code>number</code></em> [<span class="optional">, <code class="literal">...</code> </span>] )
+        → <code class="returnvalue"></code> <code class="type">double</code> if any argument is double, else <code class="type">integer</code>
+       </p>
+       <p>
+<span class="original">
+        Selects the largest value among the arguments.
+</span>
+引数の中で最大の値を選択する。
+       </p>
+       <p>
+        <code class="literal">greatest(5, 4, 3, 2)</code>
+        → <code class="returnvalue">5</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="function">hash</code> ( <em class="parameter"><code>value</code></em> [<span class="optional">, <em class="parameter"><code>seed</code></em> </span>] )
+        → <code class="returnvalue">integer</code>
+       </p>
+       <p>
+<span class="original">
+        This is an alias for &lt;function&gt;hash_murmur2&lt;/function&gt;.
+</span>
+これは<code class="function">hash_murmur2</code>の別名です。
+       </p>
+       <p>
+        <code class="literal">hash(10, 5432)</code>
+        → <code class="returnvalue">-5817877081768721676</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="function">hash_fnv1a</code> ( <em class="parameter"><code>value</code></em> [<span class="optional">, <em class="parameter"><code>seed</code></em> </span>] )
+        → <code class="returnvalue">integer</code>
+       </p>
+       <p>
+<span class="original">
+        Computes &lt;ulink url="https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function"&gt;FNV-1a hash&lt;/ulink&gt;.
+</span>
+<a class="ulink" href="https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function" target="_top">FNV-1aハッシュ</a>を計算する。
+       </p>
+       <p>
+        <code class="literal">hash_fnv1a(10, 5432)</code>
+        → <code class="returnvalue">-7793829335365542153</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="function">hash_murmur2</code> ( <em class="parameter"><code>value</code></em> [<span class="optional">, <em class="parameter"><code>seed</code></em> </span>] )
+        → <code class="returnvalue">integer</code>
+       </p>
+       <p>
+<span class="original">
+        Computes &lt;ulink url="https://en.wikipedia.org/wiki/MurmurHash"&gt;MurmurHash2 hash&lt;/ulink&gt;.
+</span>
+<a class="ulink" href="https://en.wikipedia.org/wiki/MurmurHash" target="_top">MurmurHash2ハッシュ</a>を計算する。
+       </p>
+       <p>
+        <code class="literal">hash_murmur2(10, 5432)</code>
+        → <code class="returnvalue">-5817877081768721676</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="function">int</code> ( <em class="replaceable"><code>number</code></em> )
+        → <code class="returnvalue">integer</code>
+       </p>
+       <p>
+<span class="original">
+        Casts to integer.
+</span>
+整数にキャストする。
+       </p>
+       <p>
+        <code class="literal">int(5.4 + 3.8)</code>
+        → <code class="returnvalue">9</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="function">least</code> ( <em class="replaceable"><code>number</code></em> [<span class="optional">, <code class="literal">...</code> </span>] )
+        → <code class="returnvalue"></code> <code class="type">double</code> if any argument is double, else <code class="type">integer</code>
+       </p>
+       <p>
+<span class="original">
+        Selects the smallest value among the arguments.
+</span>
+引数の中で最小の値を選択する。
+       </p>
+       <p>
+        <code class="literal">least(5, 4, 3, 2.1)</code>
+        → <code class="returnvalue">2.1</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="function">ln</code> ( <em class="replaceable"><code>number</code></em> )
+        → <code class="returnvalue">double</code>
+       </p>
+       <p>
+<span class="original">
+        Natural logarithm
+</span>
+自然対数
+       </p>
+       <p>
+        <code class="literal">ln(2.718281828459045)</code>
+        → <code class="returnvalue">1.0</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+<code class="function">mod</code> ( <em class="replaceable"><code>integer</code></em>, <em class="replaceable"><code>integer</code></em> )
+        → <code class="returnvalue">integer</code>
+       </p>
+       <p>
+<span class="original">
+        Modulo (remainder)
+</span>
+剰余(余り)
+       </p>
+       <p>
+        <code class="literal">mod(54, 32)</code>
+        → <code class="returnvalue">22</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="function">permute</code> ( <em class="parameter"><code>i</code></em>, <em class="parameter"><code>size</code></em> [, <em class="parameter"><code>seed</code></em> ] )
+        → <code class="returnvalue">integer</code>
+       </p>
+       <p>
+<span class="original">
+        Permuted value of &lt;parameter&gt;i&lt;/parameter&gt;, in the range
+        &lt;literal&gt;[0, size)&lt;/literal&gt;.  This is the new position of
+        &lt;parameter&gt;i&lt;/parameter&gt; (modulo &lt;parameter&gt;size&lt;/parameter&gt;) in a
+        pseudorandom permutation of the integers &lt;literal&gt;0...size-1&lt;/literal&gt;,
+        parameterized by &lt;parameter&gt;seed&lt;/parameter&gt;, see below.
+</span>
+<code class="literal">[0, size)</code>の範囲の<em class="parameter"><code>i</code></em>の順列値。
+これは、<em class="parameter"><code>seed</code></em>によってパラメーター化された整数<code class="literal">0...size-1</code>の疑似ランダム置換における<em class="parameter"><code>i</code></em> (modulo <em class="parameter"><code>size</code></em>）の新しい位置です。
+以下を参照してください。
+       </p>
+       <p>
+        <code class="literal">permute(0, 4)</code>
+<span class="original">
+        &lt;returnvalue&gt;an integer between 0 and 3&lt;/returnvalue&gt;
+</span>
+        → <code class="returnvalue">0と3の間の整数</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="function">pi</code> ()
+        → <code class="returnvalue">double</code>
+       </p>
+       <p>
+<span class="original">
+        Approximate value of &lt;phrase role="symbol_font"&gt;&amp;pi;&lt;/phrase&gt;
+</span>
+<span class="symbol_font">π</span>の近似値
+       </p>
+       <p>
+        <code class="literal">pi()</code>
+        → <code class="returnvalue">3.14159265358979323846</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="function">pow</code> ( <em class="parameter"><code>x</code></em>, <em class="parameter"><code>y</code></em> )
+        → <code class="returnvalue">double</code>
+       </p>
+       <p class="func_signature">
+        <code class="function">power</code> ( <em class="parameter"><code>x</code></em>, <em class="parameter"><code>y</code></em> )
+        → <code class="returnvalue">double</code>
+       </p>
+       <p>
+<span class="original">
+        &lt;parameter&gt;x&lt;/parameter&gt; raised to the power of &lt;parameter&gt;y&lt;/parameter&gt;
+</span>
+<em class="parameter"><code>x</code></em>の<em class="parameter"><code>y</code></em>乗
+       </p>
+       <p>
+        <code class="literal">pow(2.0, 10)</code>
+        → <code class="returnvalue">1024.0</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="function">random</code> ( <em class="parameter"><code>lb</code></em>, <em class="parameter"><code>ub</code></em> )
+        → <code class="returnvalue">integer</code>
+       </p>
+       <p>
+<span class="original">
+        Computes a uniformly-distributed random integer in &lt;literal&gt;[lb,
+        ub]&lt;/literal&gt;.
+</span>
+<code class="literal">[lb, ub]</code>内の一様分布の整数の乱数を計算する。
+       </p>
+       <p>
+        <code class="literal">random(1, 10)</code>
+<span class="original">
+        &lt;returnvalue&gt;an integer between 1 and 10&lt;/returnvalue&gt;
+</span>
+        → <code class="returnvalue">1と10の間の整数</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="function">random_exponential</code> ( <em class="parameter"><code>lb</code></em>, <em class="parameter"><code>ub</code></em>, <em class="parameter"><code>parameter</code></em> )
+        → <code class="returnvalue">integer</code>
+       </p>
+       <p>
+<span class="original">
+        Computes an exponentially-distributed random integer in &lt;literal&gt;[lb,
+        ub]&lt;/literal&gt;, see below.
+</span>
+<code class="literal">[lb, ub]</code>内の指数分布の整数の乱数を計算する、後述。
+       </p>
+       <p>
+        <code class="literal">random_exponential(1, 10, 3.0)</code>
+<span class="original">
+        &lt;returnvalue&gt;an integer between 1 and 10&lt;/returnvalue&gt;
+</span>
+        → <code class="returnvalue">1と10の間の整数</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="function">random_gaussian</code> ( <em class="parameter"><code>lb</code></em>, <em class="parameter"><code>ub</code></em>, <em class="parameter"><code>parameter</code></em> )
+        → <code class="returnvalue">integer</code>
+       </p>
+       <p>
+<span class="original">
+        Computes a Gaussian-distributed random integer in &lt;literal&gt;[lb,
+        ub]&lt;/literal&gt;, see below.
+</span>
+<code class="literal">[lb, ub]</code>内のガウス分布の整数の乱数を計算する、後述。
+       </p>
+       <p>
+        <code class="literal">random_gaussian(1, 10, 2.5)</code>
+<span class="original">
+        &lt;returnvalue&gt;an integer between 1 and 10&lt;/returnvalue&gt;
+</span>
+        → <code class="returnvalue">1と10の間の整数</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="function">random_zipfian</code> ( <em class="parameter"><code>lb</code></em>, <em class="parameter"><code>ub</code></em>, <em class="parameter"><code>parameter</code></em> )
+        → <code class="returnvalue">integer</code>
+       </p>
+       <p>
+<span class="original">
+        Computes a Zipfian-distributed random integer in &lt;literal&gt;[lb,
+        ub]&lt;/literal&gt;, see below.
+</span>
+<code class="literal">[lb, ub]</code>内のジップ分布の整数の乱数を計算する、後述。
+       </p>
+       <p>
+        <code class="literal">random_zipfian(1, 10, 1.5)</code>
+<span class="original">
+        &lt;returnvalue&gt;an integer between 1 and 10&lt;/returnvalue&gt;
+</span>
+        → <code class="returnvalue">1と10の間の整数</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="function">sqrt</code> ( <em class="replaceable"><code>number</code></em> )
+        → <code class="returnvalue">double</code>
+       </p>
+       <p>
+<span class="original">
+        Square root
+</span>
+平方根
+       </p>
+       <p>
+        <code class="literal">sqrt(2.0)</code>
+        → <code class="returnvalue">1.414213562</code>
+       </p></td></tr></tbody></table></div></div><br class="table-break" /><p>
+<span class="original">
+    The &lt;literal&gt;random&lt;/literal&gt; function generates values using a uniform
+    distribution, that is all the values are drawn within the specified
+    range with equal probability. The &lt;literal&gt;random_exponential&lt;/literal&gt;,
+    &lt;literal&gt;random_gaussian&lt;/literal&gt; and &lt;literal&gt;random_zipfian&lt;/literal&gt;
+    functions require an additional double parameter which determines the precise
+    shape of the distribution.
+</span>
+<code class="literal">random</code>関数は一様分布を使って値を生成します。
+つまり、すべての値は指定された範囲内で同じ確率で発生します。
+<code class="literal">random_exponential</code>、<code class="literal">random_gaussian</code>、および、<code class="literal">random_zipfian</code>関数は追加の倍精度実数のパラメータを必要とし、それによって分布の正確な形が決まります。
+   </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+      For an exponential distribution, &lt;replaceable&gt;parameter&lt;/replaceable&gt;
+      controls the distribution by truncating a quickly-decreasing
+      exponential distribution at &lt;replaceable&gt;parameter&lt;/replaceable&gt;, and then
+      projecting onto integers between the bounds.
+      To be precise, with
+</span>
+指数分布では、<em class="replaceable"><code>parameter</code></em>が分布を制御します。
+急速に減少する指数分布を<em class="replaceable"><code>parameter</code></em>で切り捨て、境界範囲内の整数に射影します。
+正確には、以下の式に従います。
+</p><div class="literallayout"><p><br />
+f(x) = exp(-parameter * (x - min) / (max - min + 1)) / (1 - exp(-parameter))<br />
+</p></div><p>
+<span class="original">
+      Then value &lt;replaceable&gt;i&lt;/replaceable&gt; between &lt;replaceable&gt;min&lt;/replaceable&gt; and
+      &lt;replaceable&gt;max&lt;/replaceable&gt; inclusive is drawn with probability:
+      &lt;literal&gt;f(i) - f(i + 1)&lt;/literal&gt;.
+</span>
+これにより、<em class="replaceable"><code>min</code></em>と<em class="replaceable"><code>max</code></em>の間（両端を含む）の間の値<em class="replaceable"><code>i</code></em>が<code class="literal">f(i) - f(i + 1)</code>の確率で生成されます。
+     </p><p>
+<span class="original">
+      Intuitively, the larger the &lt;replaceable&gt;parameter&lt;/replaceable&gt;, the more
+      frequently values close to &lt;replaceable&gt;min&lt;/replaceable&gt; are accessed, and the
+      less frequently values close to &lt;replaceable&gt;max&lt;/replaceable&gt; are accessed.
+      The closer to 0 &lt;replaceable&gt;parameter&lt;/replaceable&gt; is, the flatter (more
+      uniform) the access distribution.
+      A crude approximation of the distribution is that the most frequent 1%
+      values in the range, close to &lt;replaceable&gt;min&lt;/replaceable&gt;, are drawn
+      &lt;replaceable&gt;parameter&lt;/replaceable&gt;% of the time.
+      The &lt;replaceable&gt;parameter&lt;/replaceable&gt; value must be strictly positive.
+</span>
+直感的には、<em class="replaceable"><code>parameter</code></em>が大きければ、<em class="replaceable"><code>min</code></em>に近い値が発生する確率が高くなり、<em class="replaceable"><code>max</code></em>に近い値が発生する確率が低くなります。
+<em class="replaceable"><code>parameter</code></em>が0に近ければ、発生の分布はより平ら（より一様）になります。
+大雑把に分布を近似すると、<em class="replaceable"><code>min</code></em>に近い最頻の1%の範囲の値は、<em class="replaceable"><code>parameter</code></em>%の割合で発生します。
+<em class="replaceable"><code>parameter</code></em>の値は厳密に正でなければなりません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      For a Gaussian distribution, the interval is mapped onto a standard
+      normal distribution (the classical bell-shaped Gaussian curve) truncated
+      at &lt;literal&gt;-parameter&lt;/literal&gt; on the left and &lt;literal&gt;+parameter&lt;/literal&gt;
+      on the right.
+      Values in the middle of the interval are more likely to be drawn.
+      To be precise, if &lt;literal&gt;PHI(x)&lt;/literal&gt; is the cumulative distribution
+      function of the standard normal distribution, with mean &lt;literal&gt;mu&lt;/literal&gt;
+      defined as &lt;literal&gt;(max + min) / 2.0&lt;/literal&gt;, with
+</span>
+ガウス分布では、標準的な正規分布（古典的なベルの形をしたガウス曲線）で、左に<code class="literal">-parameter</code>、右に<code class="literal">+parameter</code>のところで切り捨てられたものに間隔が射影されます。
+間隔の中間の値が発生する確率が最も高くなります。
+正確に言うと、<code class="literal">PHI(x)</code>は標準正規分布の累積分布関数、平均値<code class="literal">mu</code>を<code class="literal">(max + min) / 2.0</code>と定義し、さらに
+</p><div class="literallayout"><p><br />
+f(x) = PHI(2.0 * parameter * (x - mu) / (max - min + 1)) /<br />
+       (2.0 * PHI(parameter) - 1)<br />
+</p></div><p>
+<span class="original">
+      then value &lt;replaceable&gt;i&lt;/replaceable&gt; between &lt;replaceable&gt;min&lt;/replaceable&gt; and
+      &lt;replaceable&gt;max&lt;/replaceable&gt; inclusive is drawn with probability:
+      &lt;literal&gt;f(i + 0.5) - f(i - 0.5)&lt;/literal&gt;.
+      Intuitively, the larger the &lt;replaceable&gt;parameter&lt;/replaceable&gt;, the more
+      frequently values close to the middle of the interval are drawn, and the
+      less frequently values close to the &lt;replaceable&gt;min&lt;/replaceable&gt; and
+      &lt;replaceable&gt;max&lt;/replaceable&gt; bounds. About 67% of values are drawn from the
+      middle &lt;literal&gt;1.0 / parameter&lt;/literal&gt;, that is a relative
+      &lt;literal&gt;0.5 / parameter&lt;/literal&gt; around the mean, and 95% in the middle
+      &lt;literal&gt;2.0 / parameter&lt;/literal&gt;, that is a relative
+      &lt;literal&gt;1.0 / parameter&lt;/literal&gt; around the mean; for instance, if
+      &lt;replaceable&gt;parameter&lt;/replaceable&gt; is 4.0, 67% of values are drawn from the
+      middle quarter (1.0 / 4.0) of the interval (i.e., from
+      &lt;literal&gt;3.0 / 8.0&lt;/literal&gt; to &lt;literal&gt;5.0 / 8.0&lt;/literal&gt;) and 95% from
+      the middle half (&lt;literal&gt;2.0 / 4.0&lt;/literal&gt;) of the interval (second and third
+      quartiles). The minimum allowed &lt;replaceable&gt;parameter&lt;/replaceable&gt;
+      value is 2.0.
+</span>
+とすると、<em class="replaceable"><code>min</code></em>と<em class="replaceable"><code>max</code></em>の間（両端を含む）の値<em class="replaceable"><code>i</code></em>が発生する確率は<code class="literal">f(i + 0.5) - f(i - 0.5)</code>になります。
+直感的には、<em class="replaceable"><code>parameter</code></em>が大きくなれば、間隔の中間に近い値になる確率が高く、また、<em class="replaceable"><code>min</code></em>と<em class="replaceable"><code>max</code></em>の境界に近い値になる確率は低くなります。
+約67%の値は、中間の<code class="literal">1.0 / parameter</code>の範囲、つまり平均値から<code class="literal">0.5 / parameter</code>の範囲から、また95%は中間の<code class="literal">2.0 / parameter</code>の範囲、つまり平均値から<code class="literal">1.0 / parameter</code>の範囲に発生します。
+例えば<em class="replaceable"><code>parameter</code></em>が4.0なら、67%の値は間隔の中間の4分の1(1.0/4.0)から（つまり<code class="literal">3.0 / 8.0</code>から<code class="literal">5.0 / 8.0</code>まで）、95%は間隔の中間の半分（<code class="literal">2.0 / 4.0</code>）から（2番目と3番目の四分位）から発生します。
+許される最小の<em class="replaceable"><code>parameter</code></em>値は2.0です。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      &lt;literal&gt;random_zipfian&lt;/literal&gt; generates a bounded Zipfian
+      distribution.
+      &lt;replaceable&gt;parameter&lt;/replaceable&gt; defines how skewed the distribution
+      is. The larger the &lt;replaceable&gt;parameter&lt;/replaceable&gt;, the more
+      frequently values closer to the beginning of the interval are drawn.
+      The distribution is such that, assuming the range starts from 1,
+      the ratio of the probability of drawing &lt;replaceable&gt;k&lt;/replaceable&gt;
+      versus drawing &lt;replaceable&gt;k+1&lt;/replaceable&gt; is
+      &lt;literal&gt;((&lt;replaceable&gt;k&lt;/replaceable&gt;+1)/&lt;replaceable&gt;k&lt;/replaceable&gt;)**&lt;replaceable&gt;parameter&lt;/replaceable&gt;&lt;/literal&gt;.
+      For example, &lt;literal&gt;random_zipfian(1, ..., 2.5)&lt;/literal&gt; produces
+      the value &lt;literal&gt;1&lt;/literal&gt; about &lt;literal&gt;(2/1)**2.5 =
+      5.66&lt;/literal&gt; times more frequently than &lt;literal&gt;2&lt;/literal&gt;, which
+      itself is produced &lt;literal&gt;(3/2)**2.5 = 2.76&lt;/literal&gt; times more
+      frequently than &lt;literal&gt;3&lt;/literal&gt;, and so on.
+</span>
+<code class="literal">random_zipfian</code>は制限付きのジップ分布を生成します。
+<em class="replaceable"><code>parameter</code></em>はどれほど歪んだ分布かを定義します。
+より大きい<em class="replaceable"><code>parameter</code></em>ほど、より高頻度に区間の始点に近い値が描かれます。
+範囲が1から始まるとして、<em class="replaceable"><code>k</code></em>を描く確率と<em class="replaceable"><code>k+1</code></em>を描く確率の比が<code class="literal">((<em class="replaceable"><code>k</code></em>+1)/<em class="replaceable"><code>k</code></em>)**<em class="replaceable"><code>parameter</code></em></code>という分布になります。
+例えば、<code class="literal">random_zipfian(1, ..., 2.5)</code>は、値<code class="literal">1</code>を<code class="literal">2</code>の約<code class="literal">(2/1)**2.5 = 5.66</code>倍高い頻度で生成し、値<code class="literal">2</code>を<code class="literal">3</code>の約<code class="literal">(3/2)**2.5 = 2.76</code>倍高い頻度で生成し、以下同様に続きます。
+     </p><p>
+<span class="original">
+      &lt;application&gt;pgbench&lt;/application&gt;'s implementation is based on
+      "Non-Uniform Random Variate Generation", Luc Devroye, p. 550-551,
+      Springer 1986.  Due to limitations of that algorithm,
+      the &lt;replaceable&gt;parameter&lt;/replaceable&gt; value is restricted to
+      the range [1.001, 1000].
+</span>
+<span class="application">pgbench</span>の実装は「Non-Uniform Random Variate Generation」Luc Devroye(Springer 1986, p. 550-551)に基づいており、<em class="replaceable"><code>parameter</code></em>値は[1.001, 1000]の範囲に限定されています。
+     </p></li></ul></div><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+      When designing a benchmark which selects rows non-uniformly, be aware
+      that the rows chosen may be correlated with other data such as IDs from
+      a sequence or the physical row ordering, which may skew performance
+      measurements.
+</span>
+行を不均一に選択するベンチマークを設計する場合、選択された行はシーケンスからのIDや物理的な行の順序など他のデータと相関している可能性があり、性能測定に影響を与える可能性があることに留意してください。
+    </p><p>
+<span class="original">
+      To avoid this, you may wish to use the &lt;function&gt;permute&lt;/function&gt;
+      function, or some other additional step with similar effect, to shuffle
+      the selected rows and remove such correlations.
+</span>
+これを避けるには、<code class="function">permute</code>関数、または同様の効果を持つ他の追加手順を使用して、選択した行をシャッフルし、そのような相関関係を削除することをお勧めします。
+    </p></div><p>
+<span class="original">
+    Hash functions &lt;literal&gt;hash&lt;/literal&gt;, &lt;literal&gt;hash_murmur2&lt;/literal&gt; and
+    &lt;literal&gt;hash_fnv1a&lt;/literal&gt; accept an input value and an optional seed parameter.
+    In case the seed isn't provided the value of &lt;literal&gt;:default_seed&lt;/literal&gt;
+    is used, which is initialized randomly unless set by the command-line
+    &lt;literal&gt;-D&lt;/literal&gt; option.
+</span>
+ハッシュ関数<code class="literal">hash</code>、<code class="literal">hash_murmur2</code>および<code class="literal">hash_fnv1a</code>は入力値とオプションシードパラメータを受け付けます。
+シードが与えられなかった場合、<code class="literal">:default_seed</code>の値が使われます。これは、コマンドライン<code class="literal">-D</code>オプションで設定されない限りランダムに初期化されたものです。
+  </p><p>
+<span class="original">
+    &lt;literal&gt;permute&lt;/literal&gt; accepts an input value, a size, and an optional
+    seed parameter.  It generates a pseudorandom permutation of integers in
+    the range &lt;literal&gt;[0, size)&lt;/literal&gt;, and returns the index of the input
+    value in the permuted values.  The permutation chosen is parameterized by
+    the seed, which defaults to &lt;literal&gt;:default_seed&lt;/literal&gt;, if not
+    specified.  Unlike the hash functions, &lt;literal&gt;permute&lt;/literal&gt; ensures
+    that there are no collisions or holes in the output values.  Input values
+    outside the interval are interpreted modulo the size.  The function raises
+    an error if the size is not positive.  &lt;function&gt;permute&lt;/function&gt; can be
+    used to scatter the distribution of non-uniform random functions such as
+    &lt;literal&gt;random_zipfian&lt;/literal&gt; or &lt;literal&gt;random_exponential&lt;/literal&gt;
+    so that values drawn more often are not trivially correlated.  For
+    instance, the following &lt;application&gt;pgbench&lt;/application&gt; script
+    simulates a possible real world workload typical for social media and
+    blogging platforms where a few accounts generate excessive load:
+</span>
+<code class="literal">permute</code>は、入力値とサイズとオプションシードパラメータを受け付けます。
+<code class="literal">[0, size)</code>の範囲の整数の疑似ランダム置換を生成し、並べ換えられた値の入力値のインデックスを返します。
+選択される並べ換えはシードによってパラメータ化され、指定されていない場合<code class="literal">:default_seed</code>がデフォルトになります。
+ハッシュ関数とは異なり、<code class="literal">permute</code>は出力値に衝突や穴がないことを保証します。
+区間外の入力値は、サイズを法として解釈されます。サイズが正でない場合、関数はエラーを発生させます。
+<code class="function">permute</code>は<code class="literal">random_zipfian</code>や<code class="literal">random_exponential</code>のような不均一なランダム関数の分布を分散させて、より頻繁に導出される値が自明に相関しないようにすることができます。
+たとえば、以下の<span class="application">pgbench</span>スクリプトは、僅かなアカウントが過大な負荷を生成するソーシャルメディアやブログのプラットフォームで起こりえる現実世界のワークロードをシミュレートします。
+
+</p><pre class="programlisting">
+\set size 1000000
+\set r random_zipfian(1, :size, 1.07)
+\set k 1 + permute(:r, :size)
+</pre><p>
+
+<span class="original">
+    In some cases several distinct distributions are needed which don't correlate
+    with each other and this is when the optional seed parameter comes in handy:
+</span>
+一部のケースでは、互いに無関係ないくつかの異なる分布が必要で、これはオプションのシードパラメータが役立ちます。
+
+</p><pre class="programlisting">
+\set k1 1 + permute(:r, :size, :default_seed + 123)
+\set k2 1 + permute(:r, :size, :default_seed + 321)
+</pre><p>
+
+<span class="original">
+    A similar behavior can also be approximated with &lt;function&gt;hash&lt;/function&gt;:
+</span>
+同様の動作は、<code class="function">hash</code>でも近似的に行うことができます。
+
+</p><pre class="programlisting">
+\set size 1000000
+\set r random_zipfian(1, 100 * :size, 1.07)
+\set k 1 + abs(hash(:r)) % :size
+</pre><p>
+
+<span class="original">
+    However, since &lt;function&gt;hash&lt;/function&gt; generates collisions, some values
+    will not be reachable and others will be more frequent than expected from
+    the original distribution.
+</span>
+しかし、<code class="function">hash</code>は衝突を発生させるため、到達できない値もあれば、元の分布から予想されるよりも頻度が高い値もあります。
+  </p><p>
+<span class="original">
+   As an example, the full definition of the built-in TPC-B-like
+   transaction is:
+</span>
+例えば、組み込みのTPC-Bのようなトランザクションの完全な定義を示します。
+
+</p><pre class="programlisting">
+\set aid random(1, 100000 * :scale)
+\set bid random(1, 1 * :scale)
+\set tid random(1, 10 * :scale)
+\set delta random(-5000, 5000)
+BEGIN;
+UPDATE pgbench_accounts SET abalance = abalance + :delta WHERE aid = :aid;
+SELECT abalance FROM pgbench_accounts WHERE aid = :aid;
+UPDATE pgbench_tellers SET tbalance = tbalance + :delta WHERE tid = :tid;
+UPDATE pgbench_branches SET bbalance = bbalance + :delta WHERE bid = :bid;
+INSERT INTO pgbench_history (tid, bid, aid, delta, mtime) VALUES (:tid, :bid, :aid, :delta, CURRENT_TIMESTAMP);
+END;
+</pre><p>
+
+<span class="original">
+   This script allows each iteration of the transaction to reference
+   different, randomly-chosen rows.  (This example also shows why it's
+   important for each client session to have its own variables &amp;mdash;
+   otherwise they'd not be independently touching different rows.)
+</span>
+ このスクリプトにより、トランザクションを繰り返す度に異なる、ランダムに選ばれた行を参照することができます。
+ （この例はまた、各クライアントセッションがなぜ独自の変数を持つことが重要なのかも表しています。
+ これがないと、異なる行を独立して参照することができないのです。）
+  </p></div><div class="refsect2" id="id-1.9.4.11.9.6"><h3>トランザクション毎のログ処理</h3><span class="original">
+  &lt;title&gt;Per-Transaction Logging&lt;/title&gt;
+</span><p>
+<span class="original">
+   With the &lt;option&gt;-l&lt;/option&gt; option (but without
+   the &lt;option&gt;&amp;#45;-aggregate-interval&lt;/option&gt; option),
+   &lt;application&gt;pgbench&lt;/application&gt; writes information about each transaction
+   to a log file.  The log file will be named
+   &lt;filename&gt;&lt;replaceable&gt;prefix&lt;/replaceable&gt;.&lt;replaceable&gt;nnn&lt;/replaceable&gt;&lt;/filename&gt;,
+   where &lt;replaceable&gt;prefix&lt;/replaceable&gt; defaults to &lt;literal&gt;pgbench_log&lt;/literal&gt;, and
+   &lt;replaceable&gt;nnn&lt;/replaceable&gt; is the PID of the
+   &lt;application&gt;pgbench&lt;/application&gt; process.
+   The prefix can be changed by using the &lt;option&gt;&amp;#45;-log-prefix&lt;/option&gt; option.
+   If the &lt;option&gt;-j&lt;/option&gt; option is 2 or higher, so that there are multiple
+   worker threads, each will have its own log file. The first worker will
+   use the same name for its log file as in the standard single worker case.
+   The additional log files for the other workers will be named
+   &lt;filename&gt;&lt;replaceable&gt;prefix&lt;/replaceable&gt;.&lt;replaceable&gt;nnn&lt;/replaceable&gt;.&lt;replaceable&gt;mmm&lt;/replaceable&gt;&lt;/filename&gt;,
+   where &lt;replaceable&gt;mmm&lt;/replaceable&gt; is a sequential number for each worker starting
+   with 1.
+</span>
+（<code class="option">--aggregate-interval</code>オプションなしで）<code class="option">-l</code>オプションを使用すると、<span class="application">pgbench</span>は各トランザクションに関する情報をログファイルに書き出します。
+ログファイルの名前は<code class="filename"><em class="replaceable"><code>prefix</code></em>.<em class="replaceable"><code>nnn</code></em></code>で、<em class="replaceable"><code>prefix</code></em>のデフォルトは<code class="literal">pgbench_log</code>、<em class="replaceable"><code>nnn</code></em>は<span class="application">pgbench</span>プロセスのPIDです。
+ファイル名の先頭の文字列は<code class="option">--log-prefix</code>オプションを使って変更することができます。
+<code class="option">-j</code>オプションが2以上で複数のワーカスレッドがある場合、それぞれが独自のログファイルを持つことになります。
+最初のワーカは標準的な単一ワーカの場合と同じ名前を持つログファイルを使用します。
+他のワーカ用の追加のログファイルは<code class="filename"><em class="replaceable"><code>prefix</code></em>.<em class="replaceable"><code>nnn</code></em>.<em class="replaceable"><code>mmm</code></em></code>と命名され、ここで<em class="replaceable"><code>mmm</code></em>は1から始まる各ワーカの連番です。
+  </p><p>
+<span class="original">
+   Each line in a log file describes one transaction.
+   It contains the following space-separated fields:
+</span>
+《機械翻訳》ログ・ファイルの各行には1つのトランザクションが記述されています。
+このログ・ファイルには、スペースで区切られた次のフィールドが含まれています:
+
+   </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><em class="replaceable"><code>client_id</code></em></span></dt><dd><p>
+<span class="original">
+       identifies the client session that ran the transaction
+</span>
+《機械翻訳》はトランザクションを実行したクライアント・セッションを識別します
+      </p></dd><dt><span class="term"><em class="replaceable"><code>transaction_no</code></em></span></dt><dd><p>
+<span class="original">
+       counts how many transactions have been run by that session
+</span>
+《機械翻訳》そのセッションで実行されたトランザクションの数をカウントします。
+      </p></dd><dt><span class="term"><em class="replaceable"><code>time</code></em></span></dt><dd><p>
+<span class="original">
+       transaction's elapsed time, in microseconds
+</span>
+《機械翻訳》トランザクションの経過時間(マイクロ秒)
+      </p></dd><dt><span class="term"><em class="replaceable"><code>script_no</code></em></span></dt><dd><p>
+<span class="original">
+       identifies the script file that was used for the transaction
+       (useful when multiple scripts are specified
+       with &lt;option&gt;-f&lt;/option&gt; or &lt;option&gt;-b&lt;/option&gt;)
+</span>
+《機械翻訳》トランザクションに使用されたスクリプト・ファイルを示します(複数のスクリプトが<code class="option">-f</code>または<code class="option">-b</code>で指定されている場合に便利です)。
+      </p></dd><dt><span class="term"><em class="replaceable"><code>time_epoch</code></em></span></dt><dd><p>
+<span class="original">
+       transaction's completion time, as a Unix-epoch time stamp
+</span>
+《機械翻訳》トランザクションの完了時刻(Unixエポックタイムスタンプ)
+      </p></dd><dt><span class="term"><em class="replaceable"><code>time_us</code></em></span></dt><dd><p>
+<span class="original">
+       fractional-second part of transaction's completion time, in
+       microseconds
+</span>
+《機械翻訳》fractional-トランザクションの完了時間の秒部分(マイクロ秒)
+      </p></dd><dt><span class="term"><em class="replaceable"><code>schedule_lag</code></em></span></dt><dd><p>
+<span class="original">
+       transaction start delay, that is the difference between the
+       transaction's scheduled start time and the time it actually
+       started, in microseconds
+       (present only if &lt;option&gt;&amp;#45;-rate&lt;/option&gt; is specified)
+</span>
+《機械翻訳》トランザクション開始遅延、つまりトランザクションのスケジュールされた開始時刻と実際に開始された時刻の差をマイクロ秒単位で表したものです(<code class="option">--rate</code>が指定されている場合にのみ存在します)。
+      </p></dd><dt><span class="term"><em class="replaceable"><code>retries</code></em></span></dt><dd><p>
+<span class="original">
+       count of retries after serialization or deadlock errors during the
+       transaction
+       (present only if &lt;option&gt;&amp;#45;-max-tries&lt;/option&gt; is not equal to one)
+</span>
+《機械翻訳》シリアライゼーション後のライゼーションエラーまたはデッドロックエラー後の再試行回数(<code class="option">--max-tries</code>が1でない場合にのみ存在する)
+      </p></dd></dl></div><p>
+  </p><p>
+<span class="original">
+   When both &lt;option&gt;&amp;#45;-rate&lt;/option&gt; and &lt;option&gt;&amp;#45;-latency-limit&lt;/option&gt; are used,
+   the &lt;replaceable&gt;time&lt;/replaceable&gt; for a skipped transaction will be reported as
+   &lt;literal&gt;skipped&lt;/literal&gt;.
+   If the transaction ends with a failure, its &lt;replaceable&gt;time&lt;/replaceable&gt;
+   will be reported as &lt;literal&gt;failed&lt;/literal&gt;. If you use the
+   &lt;option&gt;&amp;#45;-failures-detailed&lt;/option&gt; option, the
+   &lt;replaceable&gt;time&lt;/replaceable&gt; of the failed transaction will be reported as
+   &lt;literal&gt;serialization&lt;/literal&gt; or
+   &lt;literal&gt;deadlock&lt;/literal&gt; depending on the type of failure (see
+   &lt;xref linkend="failures-and-retries"/&gt; for more information).
+</span>
+《機械翻訳》<code class="option">--rate</code>と<code class="option">--latency-limit</code>の両方を使用すると、スキップされたトランザクションの<em class="replaceable"><code>time</code></em>は<code class="literal">skipped</code>として報告されます。
+トランザクションが失敗で終了した場合、<em class="replaceable"><code>time</code></em>は<code class="literal">failed</code>として報告されます。
+<code class="option">--failures-detailed</code>オプションを使用すると、失敗したトランザクションの<em class="replaceable"><code>time</code></em>は、障害のタイプに応じて<code class="literal">serialization</code>または<code class="literal">deadlock</code>として報告されます(詳細は<a class="xref" href="pgbench.html#FAILURES-AND-RETRIES" title="Failures and Serialization/Deadlock Retries">Failures and Serialization/Deadlock Retries</a>を参照してください)。
+  </p><p>
+<span class="original">
+   Here is a snippet of a log file generated in a single-client run:
+</span>
+単一クライアントでの実行で生成されたログファイルの一部を示します。
+</p><pre class="screen">
+0 199 2241 0 1175850568 995598
+0 200 2465 0 1175850568 998079
+0 201 2513 0 1175850569 608
+0 202 2038 0 1175850569 2663
+</pre><p>
+
+<span class="original">
+   Another example with &lt;literal&gt;&amp;#45;-rate=100&lt;/literal&gt;
+   and &lt;literal&gt;&amp;#45;-latency-limit=5&lt;/literal&gt; (note the additional
+   &lt;replaceable&gt;schedule_lag&lt;/replaceable&gt; column):
+</span>
+<code class="literal">--rate=100</code>と<code class="literal">--latency-limit=5</code>を指定した例を示します。(<em class="replaceable"><code>schedule_lag</code></em>列が追加されていることに注意)
+</p><pre class="screen">
+0 81 4621 0 1412881037 912698 3005
+0 82 6173 0 1412881037 914578 4304
+0 83 skipped 0 1412881037 914578 5217
+0 83 skipped 0 1412881037 914578 5099
+0 83 4722 0 1412881037 916203 3108
+0 84 4142 0 1412881037 918023 2333
+0 85 2465 0 1412881037 919759 740
+</pre><p>
+<span class="original">
+   In this example, transaction 82 was late, because its latency (6.173 ms) was
+   over the 5 ms limit. The next two transactions were skipped, because they
+   were already late before they were even started.
+</span>
+この例では、トランザクション82は遅延(6.173ミリ秒)が5ミリ秒を越えており、遅れています。
+次の2つのトランザクションは、開始する前にすでに遅れてしまっているため、スキップされています。
+  </p><p>
+<span class="original">
+   The following example shows a snippet of a log file with failures and
+   retries, with the maximum number of tries set to 10 (note the additional
+   &lt;replaceable&gt;retries&lt;/replaceable&gt; column):
+</span>
+《機械翻訳》次の例は、最大試行回数を10に設定した失敗と再試行のログ・ファイルのスニペットを示しています(追加<em class="replaceable"><code>再試行</code></em>列に注意)。
+</p><pre class="screen">
+3 0 47423 0 1499414498 34501 3
+3 1 8333 0 1499414498 42848 0
+3 2 8358 0 1499414498 51219 0
+4 0 72345 0 1499414498 59433 6
+1 3 41718 0 1499414498 67879 4
+1 4 8416 0 1499414498 76311 0
+3 3 33235 0 1499414498 84469 3
+0 0 failed 0 1499414498 84905 9
+2 0 failed 0 1499414498 86248 9
+3 4 8307 0 1499414498 92788 0
+</pre><p>
+  </p><p>
+<span class="original">
+   If the &lt;option&gt;&amp;#45;-failures-detailed&lt;/option&gt; option is used, the type of
+   failure is reported in the &lt;replaceable&gt;time&lt;/replaceable&gt; like this:
+</span>
+《機械翻訳》<code class="option">--failures-detailed</code>オプションを使用すると、障害のタイプは次のように<em class="replaceable"><code>時間</code></em>で報告されます。
+</p><pre class="screen">
+3 0 47423 0 1499414498 34501 3
+3 1 8333 0 1499414498 42848 0
+3 2 8358 0 1499414498 51219 0
+4 0 72345 0 1499414498 59433 6
+1 3 41718 0 1499414498 67879 4
+1 4 8416 0 1499414498 76311 0
+3 3 33235 0 1499414498 84469 3
+0 0 serialization 0 1499414498 84905 9
+2 0 serialization 0 1499414498 86248 9
+3 4 8307 0 1499414498 92788 0
+</pre><p>
+  </p><p>
+<span class="original">
+   When running a long test on hardware that can handle a lot of transactions,
+   the log files can become very large.  The &lt;option&gt;&amp;#45;-sampling-rate&lt;/option&gt; option
+   can be used to log only a random sample of transactions.
+</span>
+大量のトランザクションを処理することができるハードウェアで長時間試験を実行する場合、ログファイルは非常に大きくなる可能性があります。
+<code class="option">--sampling-rate</code>オプションを使用して、トランザクションのランダムなサンプルだけをログに記録することができます。
+  </p></div><div class="refsect2" id="id-1.9.4.11.9.7"><h3>ログ処理の集約</h3><span class="original">
+  &lt;title&gt;Aggregated Logging&lt;/title&gt;
+</span><p>
+<span class="original">
+   With the &lt;option&gt;&amp;#45;-aggregate-interval&lt;/option&gt; option, a different
+   format is used for the log files.  Each log line describes one
+   aggregation interval.  It contains the following space-separated
+   fields:
+</span>
+《機械翻訳》<code class="option">--aggregate-interval</code>オプションを使用すると、ログ・ファイルに異なるフォーマットが使用されます。
+各ログ行は1つの集約間隔を記述します。
+このログ行には、スペースで区切られた次のフィールドが含まれます:
+
+   </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><em class="replaceable"><code>interval_start</code></em></span></dt><dd><p>
+<span class="original">
+       start time of the interval, as a Unix-epoch time stamp
+</span>
+《機械翻訳》間隔の開始時刻、Unixエポック・タイム・スタンプとして)
+      </p></dd><dt><span class="term"><em class="replaceable"><code>num_transactions</code></em></span></dt><dd><p>
+<span class="original">
+       number of transactions within the interval
+</span>
+《機械翻訳》インターバル内のトランザクション数
+      </p></dd><dt><span class="term"><em class="replaceable"><code>sum_latency</code></em></span></dt><dd><p>
+<span class="original">
+       sum of transaction latencies
+</span>
+《機械翻訳》トランザクション待ち時間の合計
+      </p></dd><dt><span class="term"><em class="replaceable"><code>sum_latency_2</code></em></span></dt><dd><p>
+<span class="original">
+       sum of squares of transaction latencies
+</span>
+《機械翻訳》トランザクション待ち時間の平方和
+      </p></dd><dt><span class="term"><em class="replaceable"><code>min_latency</code></em></span></dt><dd><p>
+<span class="original">
+       minimum transaction latency
+</span>
+《機械翻訳》最小トランザクション待ち時間
+      </p></dd><dt><span class="term"><em class="replaceable"><code>max_latency</code></em></span></dt><dd><p>
+<span class="original">
+       maximum transaction latency
+</span>
+《機械翻訳》最大トランザクション待ち時間
+      </p></dd><dt><span class="term"><em class="replaceable"><code>sum_lag</code></em></span></dt><dd><p>
+<span class="original">
+       sum of transaction start delays
+       (zero unless &lt;option&gt;&amp;#45;-rate&lt;/option&gt; is specified)
+</span>
+《機械翻訳》トランザクション開始遅延の合計(<code class="option">--rate</code>が指定されていない場合は0)
+      </p></dd><dt><span class="term"><em class="replaceable"><code>sum_lag_2</code></em></span></dt><dd><p>
+<span class="original">
+       sum of squares of transaction start delays
+       (zero unless &lt;option&gt;&amp;#45;-rate&lt;/option&gt; is specified)
+</span>
+《機械翻訳》トランザクション開始遅延の平方和(<code class="option">--rate</code>が指定されていない場合は0)
+      </p></dd><dt><span class="term"><em class="replaceable"><code>min_lag</code></em></span></dt><dd><p>
+<span class="original">
+       minimum transaction start delay
+       (zero unless &lt;option&gt;&amp;#45;-rate&lt;/option&gt; is specified)
+</span>
+《機械翻訳》最小トランザクション開始遅延(<code class="option">--rate</code>が指定されていない場合は0)
+      </p></dd><dt><span class="term"><em class="replaceable"><code>max_lag</code></em></span></dt><dd><p>
+<span class="original">
+       maximum transaction start delay
+       (zero unless &lt;option&gt;&amp;#45;-rate&lt;/option&gt; is specified)
+</span>
+《機械翻訳》最大トランザクション開始遅延(<code class="option">--rate</code>が指定されていない場合は0)
+      </p></dd><dt><span class="term"><em class="replaceable"><code>skipped</code></em></span></dt><dd><p>
+<span class="original">
+       number of transactions skipped because they would have started too late
+       (zero unless &lt;option&gt;&amp;#45;-rate&lt;/option&gt;
+       and &lt;option&gt;&amp;#45;-latency-limit&lt;/option&gt; are specified)
+</span>
+《機械翻訳》開始が遅すぎたためにスキップされたトランザクションの数(<code class="option">--rate</code>と<code class="option">--latency-limit</code>が指定されていない場合は0)
+      </p></dd><dt><span class="term"><em class="replaceable"><code>retried</code></em></span></dt><dd><p>
+<span class="original">
+       number of retried transactions
+       (zero unless &lt;option&gt;&amp;#45;-max-tries&lt;/option&gt; is not equal to one)
+</span>
+《機械翻訳》再試行されたトランザクションの数(<code class="option">--max-tries</code>が1でない場合は0)
+      </p></dd><dt><span class="term"><em class="replaceable"><code>retries</code></em></span></dt><dd><p>
+<span class="original">
+       number of retries after serialization or deadlock errors
+       (zero unless &lt;option&gt;&amp;#45;-max-tries&lt;/option&gt; is not equal to one)
+</span>
+《機械翻訳》シリアライゼーションエラーまたはデッドロックエラー後の再試行回数(<code class="option">--max-tries</code>が1でない場合は0)
+      </p></dd><dt><span class="term"><em class="replaceable"><code>serialization_failures</code></em></span></dt><dd><p>
+<span class="original">
+       number of transactions that got a serialization error and were not
+       retried afterwards
+       (zero unless &lt;option&gt;&amp;#45;-failures-detailed&lt;/option&gt; is specified)
+</span>
+《機械翻訳》シリアライゼーションエラーが発生し、その後再試行されなかったトランザクションの数(<code class="option">--failures-detailed</code>が指定されていない場合は0)
+      </p></dd><dt><span class="term"><em class="replaceable"><code>deadlock_failures</code></em></span></dt><dd><p>
+<span class="original">
+       number of transactions that got a deadlock error and were not
+       retried afterwards
+       (zero unless &lt;option&gt;&amp;#45;-failures-detailed&lt;/option&gt; is specified)
+</span>
+《機械翻訳》デッドロック・エラーが発生し、その後再試行されなかったトランザクションの数(<code class="option">--failures-detailed</code>が指定されていない場合は0)
+      </p></dd></dl></div><p>
+  </p><p>
+<span class="original">
+   Here is some example output generated with these options:
+</span>
+《機械翻訳》以下に、これらのオプションで生成された出力例を示します。
+</p><pre class="screen">
+<strong class="userinput"><code>pgbench --aggregate-interval=10 --time=20 --client=10 --log --rate=1000 --latency-limit=10 --failures-detailed --max-tries=10 test</code></strong>
+
+1650260552 5178 26171317 177284491527 1136 44462 2647617 7321113867 0 9866 64 7564 28340 4148 0
+1650260562 4808 25573984 220121792172 1171 62083 3037380 9666800914 0 9998 598 7392 26621 4527 0
+</pre><p>
+  </p><p>
+<span class="original">
+   Notice that while the plain (unaggregated) log format shows which script
+   was used for each transaction, the aggregated format does not. Therefore if
+   you need per-script data, you need to aggregate the data on your own.
+</span>
+《マッチ度[91.284404]》通常の（集約されていない）ログファイルは、各トランザクションについてどのスクリプトファイルが使用されたかを示しますが、集約されたログにはそれがないことに注意してください。
+このためスクリプト単位のデータが必要な場合は、自身でデータを集約する必要があります。
+  </p></div><div class="refsect2" id="id-1.9.4.11.9.8"><h3>Per-Statement Report</h3><p>
+<span class="original">
+   With the &lt;option&gt;-r&lt;/option&gt; option, &lt;application&gt;pgbench&lt;/application&gt;
+   collects the following statistics for each statement:
+</span>
+《機械翻訳》<code class="option">-r</code>オプションを使用すると、<span class="application">pgbench</span>は文ごとに次の統計情報を収集します。
+   </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+         &lt;literal&gt;latency&lt;/literal&gt; &amp;mdash; elapsed transaction time for each
+         statement. &lt;application&gt;pgbench&lt;/application&gt; reports an average value
+         of all successful runs of the statement.
+</span>
+《機械翻訳》<code class="literal">latency</code>—経過トランザクション時間。
+<span class="application">pgbench</span>は文のすべての成功した実行の平均値を報告します。
+       </p></li><li class="listitem"><p>
+<span class="original">
+         The number of failures in this statement. See
+         &lt;xref linkend="failures-and-retries"/&gt; for more information.
+</span>
+《機械翻訳》この文の失敗数。
+詳細は<a class="xref" href="pgbench.html#FAILURES-AND-RETRIES" title="Failures and Serialization/Deadlock Retries">Failures and Serialization/Deadlock Retries</a>を参照してください。
+       </p></li><li class="listitem"><p>
+<span class="original">
+         The number of retries after a serialization or a deadlock error in this
+         statement. See &lt;xref linkend="failures-and-retries"/&gt; for more information.
+</span>
+《機械翻訳》この文のシリアライゼーションエラーまたはデッドロックエラー後の再試行回数。
+詳細は<a class="xref" href="pgbench.html#FAILURES-AND-RETRIES" title="Failures and Serialization/Deadlock Retries">Failures and Serialization/Deadlock Retries</a>を参照してください。
+       </p></li></ul></div><p>
+  </p><p>
+<span class="original">
+   The report displays retry statistics only if the &lt;option&gt;&amp;#45;-max-tries&lt;/option&gt;
+   option is not equal to 1.
+</span>
+《機械翻訳》レポートに再試行統計情報が表示されるのは、<code class="option">--max-tries</code>オプションが1に等しくない場合だけです。
+  </p><p>
+<span class="original">
+   All values are computed for each statement executed by every client and are
+   reported after the benchmark has finished.
+</span>
+《機械翻訳》すべての値は、各クライアントによって実行される文ごとに計算され、ベンチマークが終了した後に報告されます。
+  </p><p>
+<span class="original">
+   For the default script, the output will look similar to this:
+</span>
+標準スクリプトでは、次のような出力になります。
+</p><pre class="screen">
+starting vacuum...end.
+transaction type: &lt;builtin: TPC-B (sort of)&gt;
+scaling factor: 1
+query mode: simple
+number of clients: 10
+number of threads: 1
+maximum number of tries: 1
+number of transactions per client: 1000
+number of transactions actually processed: 10000/10000
+number of failed transactions: 0 (0.000%)
+number of transactions above the 50.0 ms latency limit: 1311/10000 (13.110 %)
+latency average = 28.488 ms
+latency stddev = 21.009 ms
+initial connection time = 69.068 ms
+tps = 346.224794 (without initial connection time)
+statement latencies in milliseconds and failures:
+   0.012  0  \set aid random(1, 100000 * :scale)
+   0.002  0  \set bid random(1, 1 * :scale)
+   0.002  0  \set tid random(1, 10 * :scale)
+   0.002  0  \set delta random(-5000, 5000)
+   0.319  0  BEGIN;
+   0.834  0  UPDATE pgbench_accounts SET abalance = abalance + :delta WHERE aid = :aid;
+   0.641  0  SELECT abalance FROM pgbench_accounts WHERE aid = :aid;
+  11.126  0  UPDATE pgbench_tellers SET tbalance = tbalance + :delta WHERE tid = :tid;
+  12.961  0  UPDATE pgbench_branches SET bbalance = bbalance + :delta WHERE bid = :bid;
+   0.634  0  INSERT INTO pgbench_history (tid, bid, aid, delta, mtime) VALUES (:tid, :bid, :aid, :delta, CURRENT_TIMESTAMP);
+   1.957  0  END;
+</pre><p>
+
+<span class="original">
+   Another example of output for the default script using serializable default
+   transaction isolation level (&lt;command&gt;PGOPTIONS='-c
+   default_transaction_isolation=serializable' pgbench ...&lt;/command&gt;):
+</span>
+《機械翻訳》シリアライザブルデフォルトトランザクション隔離レベルを使用したデフォルトスクリプトの別の出力例(<code class="command">PGOPTIONS='-c default_transaction_isolation=serializable'pgbench.</code>):
+</p><pre class="screen">
+starting vacuum...end.
+transaction type: &lt;builtin: TPC-B (sort of)&gt;
+scaling factor: 1
+query mode: simple
+number of clients: 10
+number of threads: 1
+maximum number of tries: 10
+number of transactions per client: 1000
+number of transactions actually processed: 6317/10000
+number of failed transactions: 3683 (36.830%)
+number of transactions retried: 7667 (76.670%)
+total number of retries: 45339
+number of transactions above the 50.0 ms latency limit: 106/6317 (1.678 %)
+latency average = 17.016 ms
+latency stddev = 13.283 ms
+initial connection time = 45.017 ms
+tps = 186.792667 (without initial connection time)
+statement latencies in milliseconds, failures and retries:
+  0.006     0      0  \set aid random(1, 100000 * :scale)
+  0.001     0      0  \set bid random(1, 1 * :scale)
+  0.001     0      0  \set tid random(1, 10 * :scale)
+  0.001     0      0  \set delta random(-5000, 5000)
+  0.385     0      0  BEGIN;
+  0.773     0      1  UPDATE pgbench_accounts SET abalance = abalance + :delta WHERE aid = :aid;
+  0.624     0      0  SELECT abalance FROM pgbench_accounts WHERE aid = :aid;
+  1.098   320   3762  UPDATE pgbench_tellers SET tbalance = tbalance + :delta WHERE tid = :tid;
+  0.582  3363  41576  UPDATE pgbench_branches SET bbalance = bbalance + :delta WHERE bid = :bid;
+  0.465     0      0  INSERT INTO pgbench_history (tid, bid, aid, delta, mtime) VALUES (:tid, :bid, :aid, :delta, CURRENT_TIMESTAMP);
+  1.933     0      0  END;
+</pre><p>
+<span class="original">
+   If multiple script files are specified, all statistics are reported
+   separately for each script file.
+</span>
+《マッチ度[83.000000]》複数のスクリプトファイルが定義された場合、平均値はそれぞれのスクリプトファイル毎に分けて報告されます。
+  </p><p>
+<span class="original">
+   Note that collecting the additional timing information needed for
+   per-statement latency computation adds some overhead.  This will slow
+   average execution speed and lower the computed TPS.  The amount
+   of slowdown varies significantly depending on platform and hardware.
+   Comparing average TPS values with and without latency reporting enabled
+   is a good way to measure if the timing overhead is significant.
+</span>
+ステートメント毎のレイテンシを計算するために必要となる、追加のタイミング情報を収集することは、オーバーヘッドが加わることに注意してください。
+これは平均実行速度を遅くし、計測TPSを小さくするでしょう。
+低下量はプラットフォームとハードウェアに依存して著しく変わります。
+レイテンシの報告を有効にする、有効にしないで平均TPS値を比較することは、タイミング・オーバーヘッドが顕著かどうかを測定するには良い方法です。
+  </p></div><div class="refsect2" id="FAILURES-AND-RETRIES"><h3>Failures and Serialization/Deadlock Retries</h3><p>
+<span class="original">
+   When executing &lt;application&gt;pgbench&lt;/application&gt;, there are three main types
+   of errors:
+</span>
+《機械翻訳》<span class="application">pgbench</span>の実行時に発生する主なエラーには以下の3種類があります。
+   </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+         Errors of the main program. They are the most serious and always result
+         in an immediate exit from &lt;application&gt;pgbench&lt;/application&gt; with the
+         corresponding error message. They include:
+</span>
+《機械翻訳》メインプログラムのエラーです。
+これらは最も深刻で、常に<span class="application">pgbench</span>を即座に終了し、対応するエラーメッセージが表示されます。
+これらのエラーには以下のようなものがあります:
+         </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: circle; "><li class="listitem"><p>
+<span class="original">
+               errors at the beginning of &lt;application&gt;pgbench&lt;/application&gt;
+               (e.g. an invalid option value);
+</span>
+《機械翻訳》<span class="application">pgbench</span>の先頭のエラー(例えば無効なオプション値);
+             </p></li><li class="listitem"><p>
+<span class="original">
+               errors in the initialization mode (e.g. the query to create
+               tables for built-in scripts fails);
+</span>
+《機械翻訳》初期化モードでエラーが発生する(例えば、組み込みスクリプト用のテーブルを作成するクエリが失敗する)。
+             </p></li><li class="listitem"><p>
+<span class="original">
+               errors before starting threads (e.g. could not connect to the
+               database server, syntax error in the meta command, thread
+               creation failure);
+</span>
+《機械翻訳》スレッドを開始する前のエラー(データベース・サーバに接続できない、メタ・コマンドの構文エラー、スレッド作成の失敗など)
+             </p></li><li class="listitem"><p>
+<span class="original">
+               internal &lt;application&gt;pgbench&lt;/application&gt; errors (which are
+               supposed to never occur...).
+</span>
+《機械翻訳》内部<span class="application">pgbench</span>エラーです(決して発生しないはずです.)。
+             </p></li></ul></div></li><li class="listitem"><p>
+<span class="original">
+         Errors when the thread manages its clients (e.g. the client could not
+         start a connection to the database server / the socket for connecting
+         the client to the database server has become invalid). In such cases
+         all clients of this thread stop while other threads continue to work.
+</span>
+《機械翻訳》スレッドがクライアントを管理するときのエラー(クライアントがデータベース・サーバへの接続を開始できなかった/クライアントをデータベース・サーバに接続するためのソケットが無効になったなど)。
+このような場合、このスレッドのすべてのクライアントは停止し、他のスレッドは作業を継続します。
+       </p></li><li class="listitem"><p>
+<span class="original">
+         Direct client errors. They lead to immediate exit from
+         &lt;application&gt;pgbench&lt;/application&gt; with the corresponding error message
+         only in the case of an internal &lt;application&gt;pgbench&lt;/application&gt;
+         error (which are supposed to never occur...). Otherwise in the worst
+         case they only lead to the abortion of the failed client while other
+         clients continue their run (but some client errors are handled without
+         an abortion of the client and reported separately, see below). Later in
+         this section it is assumed that the discussed errors are only the
+         direct client errors and they are not internal
+         &lt;application&gt;pgbench&lt;/application&gt; errors.
+</span>
+《機械翻訳》直接的なクライアントエラーです。
+内部<span class="application">pgbench</span>エラーの場合にのみ<span class="application">pgbench</span>を即座に終了し、対応するエラーメッセージが表示されます(これは決して発生しないはずです.)。
+そうでなければ、最悪の場合には、他のクライアントが実行を継続している間に、失敗したクライアントが中断されるだけです(ただし、クライアントエラーの中には、クライアントの中断なしに処理され、別途報告されるものもあります。
+以下を参照してください)。
+この節の後半では、議論されているエラーは直接的なクライアントエラーだけであり、内部<span class="application">pgbench</span>エラーではないと仮定します。
+       </p></li></ul></div><p>
+  </p><p>
+<span class="original">
+   A client's run is aborted in case of a serious error; for example, the
+   connection with the database server was lost or the end of script was reached
+   without completing the last transaction. In addition, if execution of an SQL
+   or meta command fails for reasons other than serialization or deadlock errors,
+   the client is aborted. Otherwise, if an SQL command fails with serialization or
+   deadlock errors, the client is not aborted. In such cases, the current
+   transaction is rolled back, which also includes setting the client variables
+   as they were before the run of this transaction (it is assumed that one
+   transaction script contains only one transaction; see
+   &lt;xref linkend="transactions-and-scripts"/&gt; for more information).
+   Transactions with serialization or deadlock errors are repeated after
+   rollbacks until they complete successfully or reach the maximum
+   number of tries (specified by the &lt;option&gt;&amp;#45;-max-tries&lt;/option&gt; option) / the maximum
+   time of retries (specified by the &lt;option&gt;&amp;#45;-latency-limit&lt;/option&gt; option) / the end
+   of benchmark (specified by the &lt;option&gt;&amp;#45;-time&lt;/option&gt; option). If
+   the last trial run fails, this transaction will be reported as failed but
+   the client is not aborted and continues to work.
+</span>
+《機械翻訳》重大なエラーが発生した場合、クライアントの実行は中断されます。
+たとえば、データベース・サーバーとの接続が失われた場合や、最後のトランザクションを完了せずにスクリプトの終了に達した場合などです。
+また、SQLまたはメタ・コマンドの実行がシリアル化またはデッドロック・エラー以外の理由で失敗した場合、クライアントは中断されます。
+そうでない場合、SQLコマンドがシリアル化またはデッドロック・エラーで失敗した場合、クライアントは中断されません。
+このような場合、現在のトランザクションがロールバックされます。
+これには、クライアント変数がこのトランザクションの実行前の状態に設定されます(1つのトランザクション・スクリプトには1つのトランザクションのみが含まれていると仮定されます。
+詳細は<a class="xref" href="pgbench.html#TRANSACTIONS-AND-SCRIPTS" title="pgbenchで実際に実行される「トランザクション」は何か?">What Is the "Transaction" Actually Performed in pgbench?</a>を参照してください)。
+シリアル化またはデッドロック・エラーのあるトランザクションは、正常に完了するか、最大試行回数(<code class="option">--max-tries</code>オプションで指定)/最大再試行時間(<code class="option">--latency-limit</code>オプションで指定)/ベンチマークの終了(<code class="option">--time</code>オプションで指定)に達するまで、ロールバック後に繰り返されます。
+最後の試運転が失敗した場合、このトランザクションは失敗として報告されますが、クライアントは中断されずに処理を続行します。
+  </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+    Without specifying the &lt;option&gt;&amp;#45;-max-tries&lt;/option&gt; option, a transaction will
+    never be retried after a serialization or deadlock error because its default
+    value is 1. Use an unlimited number of tries (&lt;literal&gt;&amp;#45;-max-tries=0&lt;/literal&gt;)
+    and the &lt;option&gt;&amp;#45;-latency-limit&lt;/option&gt; option to limit only the maximum time
+    of tries. You can also use the &lt;option&gt;&amp;#45;-time&lt;/option&gt; option to limit the
+    benchmark duration under an unlimited number of tries.
+</span>
+《機械翻訳》<code class="option">--max-tries</code>オプションを指定しない場合、デフォルト値が1であるため、シリアライゼーションエラーまたはデッドロックエラーの後にトランザクションが再試行されることはありません。
+試行回数を無制限にし(<code class="literal">--max-tries=0</code>)、<code class="option">--latency-limit</code>オプションを使用して、試行の最大時間のみを制限します。
+また、<code class="option">--time</code>オプションを使用して、試行回数を無制限にしてベンチマーク期間を制限することもできます。
+   </p><p>
+<span class="original">
+    Be careful when repeating scripts that contain multiple transactions: the
+    script is always retried completely, so successful transactions can be
+    performed several times.
+</span>
+《機械翻訳》複数のトランザクションを含むスクリプトを繰り返す場合は注意が必要です。
+スクリプトは常に完全に再試行されるため、成功したトランザクションが複数回実行される可能性があります。
+   </p><p>
+<span class="original">
+    Be careful when repeating transactions with shell commands. Unlike the
+    results of SQL commands, the results of shell commands are not rolled back,
+    except for the variable value of the &lt;command&gt;\setshell&lt;/command&gt; command.
+</span>
+《機械翻訳》シェル・コマンドでトランザクションを繰り返す場合は注意してください。
+SQLコマンドの結果とは異なり、<code class="command">\setshell</code>コマンドの変数値を除いて、シェル・コマンドの結果はロールバックされません。
+   </p></div><p>
+<span class="original">
+   The latency of a successful transaction includes the entire time of
+   transaction execution with rollbacks and retries. The latency is measured
+   only for successful transactions and commands but not for failed transactions
+   or commands.
+</span>
+《機械翻訳》成功したトランザクションの待機時間には、ロールバックおよび再試行によるトランザクションの実行時間全体が含まれます。
+待機時間は、成功したトランザクションおよびコマンドについてのみ測定され、失敗したトランザクションまたはコマンドについては測定されません。
+  </p><p>
+<span class="original">
+   The main report contains the number of failed transactions. If the
+   &lt;option&gt;&amp;#45;-max-tries&lt;/option&gt; option is not equal to 1, the main report also
+   contains statistics related to retries: the total number of retried
+   transactions and total number of retries. The per-script report inherits all
+   these fields from the main report. The per-statement report displays retry
+   statistics only if the &lt;option&gt;&amp;#45;-max-tries&lt;/option&gt; option is not equal to 1.
+</span>
+《機械翻訳》メイン・レポートには、失敗したトランザクションの数が含まれます。
+<code class="option">--max-tries</code>オプションが1以外の場合、メイン・レポートには再試行に関する統計(再試行されたトランザクションの合計数と再試行の合計数)も含まれます。
+スクリプト単位のレポートは、メイン・レポートからこれらのフィールドをすべて継承します。
+文単位のレポートには、<code class="option">--max-tries</code>オプションが1以外の場合にのみ再試行の統計が表示されます。
+  </p><p>
+<span class="original">
+   If you want to group failures by basic types in per-transaction and
+   aggregation logs, as well as in the main and per-script reports, use the
+   &lt;option&gt;&amp;#45;-failures-detailed&lt;/option&gt; option. If you also want to distinguish
+   all errors and failures (errors without retrying) by type including which
+   limit for retries was exceeded and how much it was exceeded by for the
+   serialization/deadlock failures, use the &lt;option&gt;&amp;#45;-verbose-errors&lt;/option&gt;
+   option.
+</span>
+《機械翻訳》トランザクション・ログおよび集約ログ、メイン・レポートおよびスクリプト・レポートで障害を基本タイプ別にグループ化する場合は、<code class="option">--failures-detailed</code>オプションを使用します。
+また、すべてのエラーおよび障害(再試行しない場合のエラー)をタイプ別に区別する場合は、<code class="option">--verbose-errors</code>オプションを使用します。
+これには、シリアル化/デッドロック障害でどの再試行制限を超えたか、どの程度超えたかなどが含まれます。
+  </p></div><div class="refsect2" id="id-1.9.4.11.9.10"><h3>優れた実践</h3><span class="original">
+  &lt;title&gt;Good Practices&lt;/title&gt;
+</span><p>
+<span class="original">
+   It is very easy to use &lt;application&gt;pgbench&lt;/application&gt; to produce completely
+   meaningless numbers.  Here are some guidelines to help you get useful
+   results.
+</span>
+まったく無意味な数値を生み出すように<span class="application">pgbench</span>を使用することは非常に簡単です。
+以下に有意な結果を生み出す手助けとなるガイドラインをいくつか示します。
+  </p><p>
+<span class="original">
+   In the first place, &lt;emphasis&gt;never&lt;/emphasis&gt; believe any test that runs
+   for only a few seconds.  Use the &lt;option&gt;-t&lt;/option&gt; or &lt;option&gt;-T&lt;/option&gt; option
+   to make the run last at least a few minutes, so as to average out noise.
+   In some cases you could need hours to get numbers that are reproducible.
+   It's a good idea to try the test run a few times, to find out if your
+   numbers are reproducible or not.
+</span>
+まず第一に、数秒で終わる試験を<span class="emphasis"><em>決して</em></span>信用しないでください。
+<code class="option">-t</code>または<code class="option">-T</code>オプションを使って、雑音を取り除くために、少なくとも数分試験にかかるようにしてください。
+再現可能な数値を得るために数時間必要になる場合もあります。
+数回試験を繰り返し、数値が再現できるかどうか確認することを勧めます。
+  </p><p>
+<span class="original">
+   For the default TPC-B-like test scenario, the initialization scale factor
+   (&lt;option&gt;-s&lt;/option&gt;) should be at least as large as the largest number of
+   clients you intend to test (&lt;option&gt;-c&lt;/option&gt;); else you'll mostly be
+   measuring update contention.  There are only &lt;option&gt;-s&lt;/option&gt; rows in
+   the &lt;structname&gt;pgbench_branches&lt;/structname&gt; table, and every transaction wants to
+   update one of them, so &lt;option&gt;-c&lt;/option&gt; values in excess of &lt;option&gt;-s&lt;/option&gt;
+   will undoubtedly result in lots of transactions blocked waiting for
+   other transactions.
+</span>
+デフォルトのTPC-Bのような試験シナリオでは、初期倍率（<code class="option">-s</code>）を試験予定のクライアント数（<code class="option">-c</code>）の最大値と同程度にしなければなりません。
+<code class="structname">pgbench_branches</code>テーブルには<code class="option">-s</code>行しかありません。
+また、全トランザクションはその内の1つを更新しようとします。
+ですので、<code class="option">-c</code>値を<code class="option">-s</code>より大きくすると、他のトランザクションを待機するためにブロックされるトランザクションが多くなることは間違いありません。
+  </p><p>
+<span class="original">
+   The default test scenario is also quite sensitive to how long it's been
+   since the tables were initialized: accumulation of dead rows and dead space
+   in the tables changes the results.  To understand the results you must keep
+   track of the total number of updates and when vacuuming happens.  If
+   autovacuum is enabled it can result in unpredictable changes in measured
+   performance.
+</span>
+デフォルトの試験シナリオはまた、テーブルを初期化してからの経過時間に非常に敏感です。
+テーブル内の不要行や不要空間の累積により結果が変わります。
+結果を理解するためには、更新された行数とバキューム時期を把握する必要があります。
+自動バキュームが有効な場合、性能を測定する上で結果は予測できないほど変わる可能性があります。
+  </p><p>
+<span class="original">
+   A limitation of &lt;application&gt;pgbench&lt;/application&gt; is that it can itself become
+   the bottleneck when trying to test a large number of client sessions.
+   This can be alleviated by running &lt;application&gt;pgbench&lt;/application&gt; on a different
+   machine from the database server, although low network latency will be
+   essential.  It might even be useful to run several &lt;application&gt;pgbench&lt;/application&gt;
+   instances concurrently, on several client machines, against the same
+   database server.
+</span>
+<span class="application">pgbench</span>の制限は、多くのクライアントセッションを試験しようとする際に<span class="application">pgbench</span>自身がボトルネックになる可能性があることです。
+これは、データベースサーバとは別のマシンで<span class="application">pgbench</span>を実行することで緩和させることが可能です。
+しかし、多少のネットワーク遅延が重要です。
+同一データベースサーバに対し複数のクライアントマシンから複数の<span class="application">pgbench</span>インスタンスを同時に実行することが有用かもしれません。
+  </p></div><div class="refsect2" id="id-1.9.4.11.9.11"><h3>セキュリティ</h3><span class="original">
+  &lt;title&gt;Security&lt;/title&gt;
+</span><p>
+<span class="original">
+    If untrusted users have access to a database that has not adopted a
+    &lt;link linkend="ddl-schemas-patterns"&gt;secure schema usage pattern&lt;/link&gt;,
+    do not run &lt;application&gt;pgbench&lt;/application&gt; in that
+    database.  &lt;application&gt;pgbench&lt;/application&gt; uses unqualified names and
+    does not manipulate the search path.
+</span>
+<a class="link" href="ddl-schemas.html#DDL-SCHEMAS-PATTERNS" title="5.9.6. 使用パターン">安全なスキーマの利用パターン</a>を適用していないデータベースに信頼できないユーザがアクセス可能な場合、そのデータベースで<span class="application">pgbench</span>を実行しないでください。
+<span class="application">pgbench</span>は修飾していない名前を使っており、またサーチパスを操作していません。
+  </p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="app-pgbasebackup.html" title="pg_basebackup">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="reference-client.html" title="PostgreSQLクライアントアプリケーション">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="app-pgconfig.html" title="pg_config">次へ</a></td></tr><tr><td width="40%" align="left" valign="top"><span class="application">pg_basebackup</span> </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> <span class="application">pg_config</span></td></tr></table></div></body></html>

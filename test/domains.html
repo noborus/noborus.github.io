@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>8.18. ドメイン型</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="rangetypes.html" title="8.17. 範囲型" /><link rel="next" href="datatype-oid.html" title="8.19. オブジェクト識別子データ型" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="datatype.html" title="第8章 データ型">第8章 データ型</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : domains.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="rangetypes.html" title="8.17. 範囲型">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="datatype.html" title="第8章 データ型">上へ</a></td><td width="60%" align="center">8.18. ドメイン型</td><td width="20%" align="right"> <a accesskey="n" href="datatype-oid.html" title="8.19. オブジェクト識別子データ型">次へ</a></td></tr></table><hr /></div><div class="sect1" id="DOMAINS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">8.18. ドメイン型</h2></div></div></div><span class="original">
+   &lt;title&gt;Domain Types&lt;/title&gt;
+</span><a id="id-1.5.7.28.2" class="indexterm"></a><a id="id-1.5.7.28.3" class="indexterm"></a><a id="id-1.5.7.28.4" class="indexterm"></a><a id="id-1.5.7.28.5" class="indexterm"></a><p>
+<span class="original">
+    A &lt;firstterm&gt;domain&lt;/firstterm&gt; is a user-defined data type that is
+    based on another &lt;firstterm&gt;underlying type&lt;/firstterm&gt;.  Optionally,
+    it can have constraints that restrict its valid values to a subset of
+    what the underlying type would allow.  Otherwise it behaves like the
+    underlying type &amp;mdash; for example, any operator or function that
+    can be applied to the underlying type will work on the domain type.
+    The underlying type can be any built-in or user-defined base type,
+    enum type, array type, composite type, range type, or another domain.
+</span>
+<em class="firstterm">ドメイン</em>は他の<em class="firstterm">基となる型</em>を元にしたユーザ定義のデータ型です。
+オプションとして基となる型が許可する型のサブセットの有効な値を制限する制約を持つことができます。
+他は基となる型のように振る舞います。—例えば、基となる型に適用できる演算子や関数はドメイン型でも動作します。
+ビルトインもしくはユーザが定義した基本型や列挙型、配列型、複合化型、範囲型もしくは他のドメインが基となる型になれます。
+   </p><p>
+<span class="original">
+    For example, we could create a domain over integers that accepts only
+    positive integers:
+</span>
+例として正の整数のみを許容する整数型のドメインを作成します。
+</p><pre class="programlisting">
+CREATE DOMAIN posint AS integer CHECK (VALUE &gt; 0);
+CREATE TABLE mytable (id posint);
+INSERT INTO mytable VALUES(1);   -- works
+INSERT INTO mytable VALUES(-1);  -- fails
+</pre><p>
+   </p><p>
+<span class="original">
+    When an operator or function of the underlying type is applied to a
+    domain value, the domain is automatically down-cast to the underlying
+    type.  Thus, for example, the result of &lt;literal&gt;mytable.id - 1&lt;/literal&gt;
+    is considered to be of type &lt;type&gt;integer&lt;/type&gt; not &lt;type&gt;posint&lt;/type&gt;.
+    We could write &lt;literal&gt;(mytable.id - 1)::posint&lt;/literal&gt; to cast the
+    result back to &lt;type&gt;posint&lt;/type&gt;, causing the domain's constraints
+    to be rechecked.  In this case, that would result in an error if the
+    expression had been applied to an &lt;structfield&gt;id&lt;/structfield&gt; value of
+    1.  Assigning a value of the underlying type to a field or variable of
+    the domain type is allowed without writing an explicit cast, but the
+    domain's constraints will be checked.
+</span>
+基となる型の演算子や関数にドメインの値が適用されると、ドメインは自動的に基となる型にダウンキャストされます。
+このため、例えば、<code class="literal">mytable.id - 1</code>の結果は<code class="type">posint</code>ではなく、<code class="type">integer</code>型として考えられます。
+ドメイン制約の再チェックが発生するので<code class="type">posint</code>型にキャストするために<code class="literal">(mytable.id - 1)::posint</code>と記述することができます。
+このケースでは、式に<code class="structfield">id</code>の値として1が与えられると結果はエラーになるでしょう。
+明確なキャストを書かずにドメイン型の変数やフィールドに基となる型の値を代入することが許容されていますが、ドメインの制約はチェックされます。
+   </p><p>
+<span class="original">
+    For additional information see &lt;xref linkend="sql-createdomain"/&gt;.
+</span>
+より詳細な情報は<a class="xref" href="sql-createdomain.html" title="CREATE DOMAIN"><span class="refentrytitle">CREATE DOMAIN</span></a>を確認ください。
+   </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="rangetypes.html" title="8.17. 範囲型">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="datatype.html" title="第8章 データ型">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="datatype-oid.html" title="8.19. オブジェクト識別子データ型">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">8.17. 範囲型 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 8.19. オブジェクト識別子データ型</td></tr></table></div></body></html>

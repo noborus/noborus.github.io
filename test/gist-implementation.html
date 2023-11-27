@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>68.4. 実装</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="gist-extensibility.html" title="68.3. 拡張性" /><link rel="next" href="gist-examples.html" title="68.5. 例" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="gist.html" title="第68章 GiSTインデックス">第68章 GiSTインデックス</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : gist-implementation.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="gist-extensibility.html" title="68.3. 拡張性">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="gist.html" title="第68章 GiSTインデックス">上へ</a></td><td width="60%" align="center">68.4. 実装</td><td width="20%" align="right"> <a accesskey="n" href="gist-examples.html" title="68.5. 例">次へ</a></td></tr></table><hr /></div><div class="sect1" id="GIST-IMPLEMENTATION"><div class="titlepage"><div><div><h2 class="title" style="clear: both">68.4. 実装</h2></div></div></div><span class="original">
+ &lt;title&gt;Implementation&lt;/title&gt;
+</span><div class="sect2" id="GIST-BUFFERING-BUILD"><div class="titlepage"><div><div><h3 class="title">68.4.1. GiSTインデックス構築法</h3></div></div></div><span class="original">
+  &lt;title&gt;GiST Index Build Methods&lt;/title&gt;
+</span><p>
+<span class="original">
+   The simplest way to build a GiST index is just to insert all the entries,
+   one by one.  This tends to be slow for large indexes, because if the
+   index tuples are scattered across the index and the index is large enough
+   to not fit in cache, a lot of random I/O will be
+   needed.  &lt;productname&gt;PostgreSQL&lt;/productname&gt; supports two alternative
+   methods for initial build of a GiST index: &lt;firstterm&gt;sorted&lt;/firstterm&gt;
+   and &lt;firstterm&gt;buffered&lt;/firstterm&gt; modes.
+</span>
+GiSTインデックスを構築する一番簡単な方法は、全項目を単に1つ1つ挿入することです。
+インデックスタプルがインデックス全体に分散し、インデックスがキャッシュに収まらない程大規模である場合、大量のランダムI/Oを必要としますので、これは大規模なインデックスに対して低速になりがちです。
+<span class="productname">PostgreSQL</span>はGiSTインデックスの初期構築のために他に2つの方法をサポートします。<em class="firstterm">ソート処理</em>モードと<em class="firstterm">バッファ処理</em>モードです。
+  </p><p>
+<span class="original">
+   The sorted method is only available if each of the opclasses used by the
+   index provides a &lt;function&gt;sortsupport&lt;/function&gt; function, as described
+   in &lt;xref linkend="gist-extensibility"/&gt;.  If they do, this method is
+   usually the best, so it is used by default.
+</span>
+ソート処理法は、インデックスで使われる演算子クラスのそれぞれが、<a class="xref" href="gist-extensibility.html" title="68.3. 拡張性">68.3</a>に記載されているように<code class="function">sortsupport</code>を提供している場合にのみ利用可能です。
+もしそうであれば、この方法が普通は最善ですので、デフォルトで使われます。
+  </p><p>
+<span class="original">
+   The buffered method works by not inserting tuples directly into the index
+   right away.  It can dramatically reduce the amount of random I/O needed
+   for non-ordered data sets.  For well-ordered data sets the benefit is
+   smaller or non-existent, because only a small number of pages receive new
+   tuples at a time, and those pages fit in cache even if the index as a
+   whole does not.
+</span>
+バッファ処理法はタプルを直ちに直接インデックスに挿入しないことで動作します。
+これは、順序付けられていないデータ群に対して必要とされるランダムI/Oの量を劇的に減らすかもしれません。
+十分に順序付けられたデータ群では、一度にわずかなページ数のみが新しいタプルを受け取り、そのためインデックス全体がキャッシュに収まらなくてもこれらのページがキャッシュ内に収まりますので、利点はより小さく、または利点がなくなります。
+  </p><p>
+<span class="original">
+   The buffered method needs to call the &lt;function&gt;penalty&lt;/function&gt;
+   function more often than the simple method does, which consumes some
+   extra CPU resources. Also, the buffers need temporary disk space, up to
+   the size of the resulting index. Buffering can also influence the quality
+   of the resulting index, in both positive and negative directions. That
+   influence depends on various factors, like the distribution of the input
+   data and the operator class implementation.
+</span>
+バッファ処理法は、<code class="function">penalty</code>関数を単純な方法よりもより多く呼び出すことが必要で、余計にCPUリソースを消費します。
+またバッファは、最大作成されるインデックスと同じサイズまで、一時的にディスク容量を必要とします。
+バッファ処理は作成されるインデックスの品質にも、良くも悪くも、影響を与えます。
+この影響は、入力データの分布や演算子クラスの実装等、様々な要因に依存します。
+  </p><p>
+<span class="original">
+   If sorting is not possible, then by default a GiST index build switches
+   to the buffering method when the index size reaches
+   &lt;xref linkend="guc-effective-cache-size"/&gt;.  Buffering can be manually
+   forced or prevented by the &lt;literal&gt;buffering&lt;/literal&gt; parameter to the
+   CREATE INDEX command.  The default behavior is good for most cases, but
+   turning buffering off might speed up the build somewhat if the input data
+   is ordered.
+</span>
+ソートが可能でない場合、デフォルトでは、インデックスのサイズが<a class="xref" href="runtime-config-query.html#GUC-EFFECTIVE-CACHE-SIZE">effective_cache_size</a>に達した時にGiSTインデックス構築はバッファ処理法に切り替わります。
+バッファ処理はCREATE INDEXコマンドの<code class="literal">buffering</code>パラメータによって、手動で強制あるいは無効にできます。
+デフォルトの動作は大抵の場合良好です。
+しかし、入力データが順序付けされている場合、バッファ処理を無効にすることで構築が多少高速になります。
+  </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="gist-extensibility.html" title="68.3. 拡張性">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="gist.html" title="第68章 GiSTインデックス">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="gist-examples.html" title="68.5. 例">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">68.3. 拡張性 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 68.5. 例</td></tr></table></div></body></html>

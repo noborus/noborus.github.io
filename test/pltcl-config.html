@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>44.11. PL/Tclの設定</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="pltcl-transactions.html" title="44.10. トランザクション制御" /><link rel="next" href="pltcl-procnames.html" title="44.12. Tclプロシージャ名" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="pltcl.html" title="第44章 PL/Tcl — Tcl手続き言語">第44章 PL/Tcl — Tcl手続き言語</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : pltcl-config.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="pltcl-transactions.html" title="44.10. トランザクション制御">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="pltcl.html" title="第44章 PL/Tcl — Tcl手続き言語">上へ</a></td><td width="60%" align="center">44.11. PL/Tclの設定</td><td width="20%" align="right"> <a accesskey="n" href="pltcl-procnames.html" title="44.12. Tclプロシージャ名">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PLTCL-CONFIG"><div class="titlepage"><div><div><h2 class="title" style="clear: both">44.11. PL/Tclの設定</h2></div></div></div><span class="original">
+    &lt;title&gt;PL/Tcl Configuration&lt;/title&gt;
+</span><p>
+<span class="original">
+     This section lists configuration parameters that
+     affect &lt;application&gt;PL/Tcl&lt;/application&gt;.
+</span>
+この節では、<span class="application">PL/Tcl</span>に影響がある設定パラメータを列挙します。
+    </p><div class="variablelist"><dl class="variablelist"><dt id="GUC-PLTCL-START-PROC"><span class="term">
+       <code class="varname">pltcl.start_proc</code> (<code class="type">string</code>)
+       <a id="id-1.8.9.15.3.1.1.3" class="indexterm"></a>
+       <a id="id-1.8.9.15.3.1.1.4" class="indexterm"></a>
+      </span></dt><dd><p>
+<span class="original">
+        This parameter, if set to a nonempty string, specifies the name
+        (possibly schema-qualified) of a parameterless PL/Tcl function that
+        is to be executed whenever a new Tcl interpreter is created for
+        PL/Tcl.  Such a function can perform per-session initialization, such
+        as loading additional Tcl code.  A new Tcl interpreter is created
+        when a PL/Tcl function is first executed in a database session, or
+        when an additional interpreter has to be created because a PL/Tcl
+        function is called by a new SQL role.
+</span>
+このパラメータが空文字以外に設定された場合、PL/Tclのための新しいTclインタプリタが作成された際に実行すべきパラメータなしのPL/Tcl関数の名前（スキーマ修飾される場合もあります）を指定します。
+そうした関数は、追加のTclコードをロードするような、Tclセッションごとの初期化を実施できます。
+データベースセッションの中で新しいPL/Tcl関数が最初に実行された際、あるいはPL/Tcl関数が新しいロールから呼び出されたためにインタプリタを追加で作成しなければならない際に、新しいTclインタプリタが作られます。
+       </p><p>
+<span class="original">
+        The referenced function must be written in the &lt;literal&gt;pltcl&lt;/literal&gt;
+        language, and must not be marked &lt;literal&gt;SECURITY DEFINER&lt;/literal&gt;.
+        (These restrictions ensure that it runs in the interpreter it's
+        supposed to initialize.)  The current user must have permission to
+        call it, too.
+</span>
+参照されている関数は<code class="literal">pltcl</code>言語で記述しなければならず、また<code class="literal">SECURITY DEFINER</code>としてマークされていてはいけません。
+（この制約により、その関数が初期化すると想定しているインタプリタ内で実行されることが保証されます。）
+また、現在のユーザはその関数を呼び出すことが許可されていなければなりません。
+       </p><p>
+<span class="original">
+        If the function fails with an error it will abort the function call
+        that caused the new interpreter to be created and propagate out to
+        the calling query, causing the current transaction or subtransaction
+        to be aborted.  Any actions already done within Tcl won't be undone;
+        however, that interpreter won't be used again.  If the language is
+        used again the initialization will be attempted again within a fresh
+        Tcl interpreter.
+</span>
+関数がエラーで失敗すると、関数呼び出しをアボートし、その結果新しいインタプリタが作成され、エラーは呼び出し元のクエリに伝搬し、現在のトランザクションあるいはサブトランザクションがアボートします。
+Tcl内でそれまでに行われた操作は取り消されません。
+しかし、インタプリタは再使用できません。
+言語が再び使用されると、新しいTclインタプリタ内で初期化が再び試みられます。
+       </p><p>
+<span class="original">
+        Only superusers can change this setting.  Although this setting
+        can be changed within a session, such changes will not affect Tcl
+        interpreters that have already been created.
+</span>
+スーパーユーザだけがこの設定を変更できます。
+この設定はセッション内で変更できますが、すでに作成されたTclインタプリタには影響しません。
+       </p></dd><dt id="GUC-PLTCLU-START-PROC"><span class="term">
+       <code class="varname">pltclu.start_proc</code> (<code class="type">string</code>)
+       <a id="id-1.8.9.15.3.2.1.3" class="indexterm"></a>
+       <a id="id-1.8.9.15.3.2.1.4" class="indexterm"></a>
+      </span></dt><dd><p>
+<span class="original">
+        This parameter is exactly like &lt;varname&gt;pltcl.start_proc&lt;/varname&gt;,
+        except that it applies to PL/TclU.  The referenced function must
+        be written in the &lt;literal&gt;pltclu&lt;/literal&gt; language.
+</span>
+このパラメータはPL/TclUに適用される点を除けば、<code class="varname">pltcl.start_proc</code>と完全に類似しています。
+参照される関数は<code class="literal">pltclu</code>言語で書かれていなければなりません。
+       </p></dd></dl></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="pltcl-transactions.html" title="44.10. トランザクション制御">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="pltcl.html" title="第44章 PL/Tcl — Tcl手続き言語">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="pltcl-procnames.html" title="44.12. Tclプロシージャ名">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">44.10. トランザクション制御 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 44.12. Tclプロシージャ名</td></tr></table></div></body></html>

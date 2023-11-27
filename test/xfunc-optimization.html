@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>38.11. 関数最適化に関する情報</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="xfunc-c.html" title="38.10. C言語関数" /><link rel="next" href="xaggr.html" title="38.12. ユーザ定義の集約" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="extend.html" title="第38章 SQLの拡張">第38章 <acronym class="acronym">SQL</acronym>の拡張</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : xfunc-optimization.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="xfunc-c.html" title="38.10. C言語関数">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="extend.html" title="第38章 SQLの拡張">上へ</a></td><td width="60%" align="center">38.11. 関数最適化に関する情報</td><td width="20%" align="right"> <a accesskey="n" href="xaggr.html" title="38.12. ユーザ定義の集約">次へ</a></td></tr></table><hr /></div><div class="sect1" id="XFUNC-OPTIMIZATION"><div class="titlepage"><div><div><h2 class="title" style="clear: both">38.11. 関数最適化に関する情報</h2></div></div></div><span class="original">
+   &lt;title&gt;Function Optimization Information&lt;/title&gt;
+</span><a id="id-1.8.3.15.2" class="indexterm"></a><a id="id-1.8.3.15.3" class="indexterm"></a><p>
+<span class="original">
+    By default, a function is just a &lt;quote&gt;black box&lt;/quote&gt; that the
+    database system knows very little about the behavior of.  However,
+    that means that queries using the function may be executed much less
+    efficiently than they could be.  It is possible to supply additional
+    knowledge that helps the planner optimize function calls.
+</span>
+デフォルトでは、関数は、データベースシステムがその振舞いについてごく一部しか知らない単なる<span class="quote">「<span class="quote">ブラックボックス</span>」</span>です。
+しかし、これは、関数を使う問い合わせがその実力よりもずっと効率悪く実行されるかもしれないことを意味します。
+プランナが関数呼び出しを最適化するのを助ける補足の情報を提供することが可能です。
+   </p><p>
+<span class="original">
+    Some basic facts can be supplied by declarative annotations provided in
+    the &lt;link linkend="sql-createfunction"&gt;&lt;command&gt;CREATE FUNCTION&lt;/command&gt;&lt;/link&gt; command.  Most important of
+    these is the function's &lt;link linkend="xfunc-volatility"&gt;volatility
+    category&lt;/link&gt; (&lt;literal&gt;IMMUTABLE&lt;/literal&gt;, &lt;literal&gt;STABLE&lt;/literal&gt;,
+    or &lt;literal&gt;VOLATILE&lt;/literal&gt;); one should always be careful to
+    specify this correctly when defining a function.
+    The parallel safety property (&lt;literal&gt;PARALLEL
+    UNSAFE&lt;/literal&gt;, &lt;literal&gt;PARALLEL RESTRICTED&lt;/literal&gt;, or
+    &lt;literal&gt;PARALLEL SAFE&lt;/literal&gt;) must also be specified if you hope
+    to use the function in parallelized queries.
+    It can also be useful to specify the function's estimated execution
+    cost, and/or the number of rows a set-returning function is estimated
+    to return.  However, the declarative way of specifying those two
+    facts only allows specifying a constant value, which is often
+    inadequate.
+</span>
+基本的な事実のいくつかは<a class="link" href="sql-createfunction.html" title="CREATE FUNCTION"><code class="command">CREATE FUNCTION</code></a>コマンドで宣言的な注釈として提供されます。
+この中でも最も重要なものは、関数の<a class="link" href="xfunc-volatility.html" title="38.7. 関数の変動性分類">変動性分類</a>(<code class="literal">IMMUTABLE</code>、<code class="literal">STABLE</code>または<code class="literal">VOLATILE</code>)です。関数を定義する時にはこれを正しく指定するよう常に注意すべきです。
+並列問い合わせでその関数を使いたいのなら、並列処理での安全性の性質(<code class="literal">PARALLEL UNSAFE</code>、<code class="literal">PARALLEL RESTRICTED</code>または<code class="literal">PARALLEL SAFE</code>)も指定しなければなりません。
+関数の推定実行コストや集合を返す関数が返すと推定される行数を指定することも有用な場合があります。
+しかし、この2つの事実を指定する宣言的な方法は定数を指定することしか許しておらず、それは多くの場合不適切です。
+   </p><p>
+<span class="original">
+    It is also possible to attach a &lt;firstterm&gt;planner support
+    function&lt;/firstterm&gt; to an SQL-callable function (called
+    its &lt;firstterm&gt;target function&lt;/firstterm&gt;), and thereby provide
+    knowledge about the target function that is too complex to be
+    represented declaratively.  Planner support functions have to be
+    written in C (although their target functions might not be), so this is
+    an advanced feature that relatively few people will use.
+</span>
+SQLで呼び出せる関数(対応する<em class="firstterm">対象関数</em>と呼ばれます)に<em class="firstterm">プランナサポート関数</em>を結び付け、それによって複雑すぎて宣言的に表現できない対象関数に関する知識を提供することも可能です。
+(対象関数はそうではありませんが)プランナサポート関数はCで書かなければなりませんので、これは比較的少数の人が使う先進的な機能です。
+   </p><p>
+<span class="original">
+    A planner support function must have the SQL signature
+</span>
+プランナサポート関数には以下のSQLシグネチャがなければなりません。
+</p><pre class="programlisting">
+supportfn(internal) returns internal
+</pre><p>
+<span class="original">
+    It is attached to its target function by specifying
+    the &lt;literal&gt;SUPPORT&lt;/literal&gt; clause when creating the target function.
+</span>
+対象関数を作成する時に<code class="literal">SUPPORT</code>句を指定することで対象関数に結び付けられます。
+   </p><p>
+<span class="original">
+    The details of the API for planner support functions can be found in
+    file &lt;filename&gt;src/include/nodes/supportnodes.h&lt;/filename&gt; in the
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; source code.  Here we provide
+    just an overview of what planner support functions can do.
+    The set of possible requests to a support function is extensible,
+    so more things might be possible in future versions.
+</span>
+プランナサポート関数のAPIの詳細は、<span class="productname">PostgreSQL</span>ソースコードのファイル<code class="filename">src/include/nodes/supportnodes.h</code>で見つけられます。
+ここではプランナサポート関数ができることの概略を説明するにとどめます。
+サポート関数へ可能なリクエストの集合は拡張可能ですので、将来のバージョンではより多くのことが可能になっているでしょう。
+   </p><p>
+<span class="original">
+    Some function calls can be simplified during planning based on
+    properties specific to the function.  For example,
+    &lt;literal&gt;int4mul(n, 1)&lt;/literal&gt; could be simplified to
+    just &lt;literal&gt;n&lt;/literal&gt;.  This type of transformation can be
+    performed by a planner support function, by having it implement
+    the &lt;literal&gt;SupportRequestSimplify&lt;/literal&gt; request type.
+    The support function will be called for each instance of its target
+    function found in a query parse tree.  If it finds that the particular
+    call can be simplified into some other form, it can build and return a
+    parse tree representing that expression.  This will automatically work
+    for operators based on the function, too &amp;mdash; in the example just
+    given, &lt;literal&gt;n * 1&lt;/literal&gt; would also be simplified to
+    &lt;literal&gt;n&lt;/literal&gt;.
+    (But note that this is just an example; this particular
+    optimization is not actually performed by
+    standard &lt;productname&gt;PostgreSQL&lt;/productname&gt;.)
+    We make no guarantee that &lt;productname&gt;PostgreSQL&lt;/productname&gt; will
+    never call the target function in cases that the support function could
+    simplify.  Ensure rigorous equivalence between the simplified
+    expression and an actual execution of the target function.
+</span>
+一部の関数呼び出しでは、関数固有の属性に基づいて計画作成中に単純化できます。
+例えば、<code class="literal">int4mul(n, 1)</code>は<code class="literal">n</code>だけに単純化できます。
+この種の変形は、<code class="literal">SupportRequestSimplify</code>リクエスト型プランナサポート関数に実装することにより実行されます。
+問い合わせ解析木で見つかった対象関数それぞれに対して、サポート関数が呼び出されます。
+特定の呼出しが別の形に単純化できることが分かれば、その式を表現する解析木を作成して返します。
+これは、その関数に基づく演算子に対しても自動的に行なわれます—上の例では<code class="literal">n * 1</code>も<code class="literal">n</code>へと単純化されます。
+(しかし、これは単なる例であることに注意してください。この特定の最適化は、標準の<span class="productname">PostgreSQL</span>では実際には行なわれません。)
+サポート関数が単純化する状況では、<span class="productname">PostgreSQL</span>が対象関数を呼び出すことはないとは保証しません。
+単純化された式と対象関数の実際の実行が厳密に等しいことを確実にしてください。
+   </p><p>
+<span class="original">
+    For target functions that return &lt;type&gt;boolean&lt;/type&gt;, it is often useful to estimate
+    the fraction of rows that will be selected by a &lt;literal&gt;WHERE&lt;/literal&gt; clause using that
+    function.  This can be done by a support function that implements
+    the &lt;literal&gt;SupportRequestSelectivity&lt;/literal&gt; request type.
+</span>
+<code class="type">boolean</code>を返す対象関数に対しては、その関数を使った<code class="literal">WHERE</code>句により選択される行の割合を推定するのが有用な場合がよくあります。
+これは<code class="literal">SupportRequestSelectivity</code>リクエスト型を実装したサポート関数で行なえます。
+   </p><p>
+<span class="original">
+    If the target function's run time is highly dependent on its inputs,
+    it may be useful to provide a non-constant cost estimate for it.
+    This can be done by a support function that implements
+    the &lt;literal&gt;SupportRequestCost&lt;/literal&gt; request type.
+</span>
+対象関数の実行時間が、その入力に大きく依存する場合には、それに対応する定数でないコスト推定を提供するのが有用でしょう。
+これは<code class="literal">SupportRequestCost</code>リクエスト型を実装したサポート関数で行なえます。
+   </p><p>
+<span class="original">
+    For target functions that return sets, it is often useful to provide
+    a non-constant estimate for the number of rows that will be returned.
+    This can be done by a support function that implements
+    the &lt;literal&gt;SupportRequestRows&lt;/literal&gt; request type.
+</span>
+集合を返す対象関数に対しては、その関数が返す行の数の定数でない推定を提供するのが有用な場合がよくあります。
+これは<code class="literal">SupportRequestRows</code>リクエスト型を実装したサポート関数で行なえます。
+   </p><p>
+<span class="original">
+    For target functions that return &lt;type&gt;boolean&lt;/type&gt;, it may be possible to
+    convert a function call appearing in &lt;literal&gt;WHERE&lt;/literal&gt; into an indexable operator
+    clause or clauses.  The converted clauses might be exactly equivalent
+    to the function's condition, or they could be somewhat weaker (that is,
+    they might accept some values that the function condition does not).
+    In the latter case the index condition is said to
+    be &lt;firstterm&gt;lossy&lt;/firstterm&gt;; it can still be used to scan an index,
+    but the function call will have to be executed for each row returned by
+    the index to see if it really passes the &lt;literal&gt;WHERE&lt;/literal&gt; condition or not.
+    To create such conditions, the support function must implement
+    the &lt;literal&gt;SupportRequestIndexCondition&lt;/literal&gt; request type.
+</span>
+<code class="type">boolean</code>を返す対象関数に対しては、<code class="literal">WHERE</code>句に現れる関数呼び出しをインデックス可能な演算子句に変換できる場合があります。
+変換された句は、正確にその関数の条件と等しいか幾分弱い(すなわち、関数の条件が受け付けない値も受け付けるかもしれません)でしょう。
+後者の場合、インデックスの条件は<em class="firstterm">損失がある</em>と言われます。それでもインデックスの走査には使えますが、それが本当に<code class="literal">WHERE</code>条件を満たすのかどうか、インデックスにより返された各行に対して関数呼び出しを実行しないといけません。
+そのような条件を作るには、サポート関数は<code class="literal">SupportRequestIndexCondition</code>リクエスト型を実装しなければなりません。
+   </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="xfunc-c.html" title="38.10. C言語関数">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="extend.html" title="第38章 SQLの拡張">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="xaggr.html" title="38.12. ユーザ定義の集約">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">38.10. C言語関数 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 38.12. ユーザ定義の集約</td></tr></table></div></body></html>

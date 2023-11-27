@@ -1,0 +1,428 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>26.1. SQLによるダンプ</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="backup.html" title="第26章 バックアップとリストア" /><link rel="next" href="backup-file.html" title="26.2. ファイルシステムレベルのバックアップ" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="backup.html" title="第26章 バックアップとリストア">第26章 バックアップとリストア</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : backup-dump.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="backup.html" title="第26章 バックアップとリストア">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="backup.html" title="第26章 バックアップとリストア">上へ</a></td><td width="60%" align="center">26.1. <acronym class="acronym">SQL</acronym>によるダンプ</td><td width="20%" align="right"> <a accesskey="n" href="backup-file.html" title="26.2. ファイルシステムレベルのバックアップ">次へ</a></td></tr></table><hr /></div><div class="sect1" id="BACKUP-DUMP"><div class="titlepage"><div><div><h2 class="title" style="clear: both">26.1. <acronym class="acronym">SQL</acronym>によるダンプ</h2></div></div></div><span class="original">
+  &lt;title&gt;&lt;acronym&gt;SQL&lt;/acronym&gt; Dump&lt;/title&gt;
+</span><p>
+<span class="original">
+   The idea behind this dump method is to generate a file with SQL
+   commands that, when fed back to the server, will recreate the
+   database in the same state as it was at the time of the dump.
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; provides the utility program
+   &lt;xref linkend="app-pgdump"/&gt; for this purpose. The basic usage of this
+   command is:
+</span>
+このダンプ方法の背景にはSQLコマンドでファイルを生成し、そのファイルをサーバが再度読み込みを行った時に、ダンプした時点と同じ状態が再構築されるという意図があります。
+この目的のため、<span class="productname">PostgreSQL</span>は<a class="xref" href="app-pgdump.html" title="pg_dump"><span class="refentrytitle"><span class="application">pg_dump</span></span></a>ユーティリティプログラムを提供しています。
+このコマンドの基本となる使い方は以下の通りです。
+</p><pre class="synopsis">
+pg_dump <em class="replaceable"><code>dbname</code></em> &gt; <em class="replaceable"><code>dumpfile</code></em>
+</pre><p>
+<span class="original">
+   As you see, &lt;application&gt;pg_dump&lt;/application&gt; writes its result to the
+   standard output. We will see below how this can be useful.
+   While the above command creates a text file, &lt;application&gt;pg_dump&lt;/application&gt;
+   can create files in other formats that allow for parallelism and more
+   fine-grained control of object restoration.
+</span>
+見てわかる通り、<span class="application">pg_dump</span>は結果を標準出力に書き出します。
+これがどのように活用できるかをこれから説明します。
+上記のコマンドはテキストファイルを作成しますが、<span class="application">pg_dump</span>は並列処理を可能にしたり、オブジェクトのリストアをより細かく制御できる他のフォーマットでファイルを作れます。
+  </p><p>
+<span class="original">
+   &lt;application&gt;pg_dump&lt;/application&gt; is a regular &lt;productname&gt;PostgreSQL&lt;/productname&gt;
+   client application (albeit a particularly clever one). This means
+   that you can perform this backup procedure from any remote host that has
+   access to the database. But remember that &lt;application&gt;pg_dump&lt;/application&gt;
+   does not operate with special permissions. In particular, it must
+   have read access to all tables that you want to back up, so in order
+   to back up the entire database you almost always have to run it as a
+   database superuser.  (If you do not have sufficient privileges to back up
+   the entire database, you can still back up portions of the database to which
+   you do have access using options such as
+   &lt;option&gt;-n &lt;replaceable&gt;schema&lt;/replaceable&gt;&lt;/option&gt;
+   or &lt;option&gt;-t &lt;replaceable&gt;table&lt;/replaceable&gt;&lt;/option&gt;.)
+</span>
+<span class="application">pg_dump</span>は、<span class="productname">PostgreSQL</span>の通常のクライアントアプリケーションです（その中でも特に優れた機能を発揮するものですが）。
+ということは、データベースに接続可能なあらゆるリモートホストからこのバックアップ手順を実行できます。
+しかし、<span class="application">pg_dump</span>は特別な権限で実行される訳ではないことを忘れないでください。
+特に、バックアップを行う全てのテーブルに対して読み取り権限が必要ですので、データベース全体のバックアップを実行する場合、ほとんど常にデータベースのスーパーユーザとして実行しなければなりません。
+(もしデータベース全体のバックアップを取るのに十分な権限を持っていない場合には、<code class="option">-n <em class="replaceable"><code>schema</code></em></code>もしくは、<code class="option">-t <em class="replaceable"><code>table</code></em></code>のようなオプションを使って、データベースのアクセス権のある部分をバックアップできます。)
+  </p><p>
+<span class="original">
+   To specify which database server &lt;application&gt;pg_dump&lt;/application&gt; should
+   contact, use the command line options &lt;option&gt;-h
+   &lt;replaceable&gt;host&lt;/replaceable&gt;&lt;/option&gt; and &lt;option&gt;-p &lt;replaceable&gt;port&lt;/replaceable&gt;&lt;/option&gt;. The
+   default host is the local host or whatever your
+   &lt;envar&gt;PGHOST&lt;/envar&gt; environment variable specifies. Similarly,
+   the default port is indicated by the &lt;envar&gt;PGPORT&lt;/envar&gt;
+   environment variable or, failing that, by the compiled-in default.
+   (Conveniently, the server will normally have the same compiled-in
+   default.)
+</span>
+<span class="application">pg_dump</span>を行うデータベースサーバを特定するにはコマンドラインの<code class="option">-h <em class="replaceable"><code>host</code></em></code>オプションと<code class="option">-p <em class="replaceable"><code>port</code></em></code>オプションを使用します。
+デフォルトのホストはローカルホスト、または<code class="envar">PGHOST</code>環境変数で指定したものです。
+同様に、デフォルトのポートは<code class="envar">PGPORT</code>環境変数で指定されているか、うまく行かない場合にはコンパイル時の設定がデフォルトとなります（そこはうまくできていて、サーバは通常コンパイル時の設定をデフォルトとします）。
+  </p><p>
+<span class="original">
+   Like any other &lt;productname&gt;PostgreSQL&lt;/productname&gt; client application,
+   &lt;application&gt;pg_dump&lt;/application&gt; will by default connect with the database
+   user name that is equal to the current operating system user name. To override
+   this, either specify the &lt;option&gt;-U&lt;/option&gt; option or set the
+   environment variable &lt;envar&gt;PGUSER&lt;/envar&gt;. Remember that
+   &lt;application&gt;pg_dump&lt;/application&gt; connections are subject to the normal
+   client authentication mechanisms (which are described in &lt;xref
+   linkend="client-authentication"/&gt;).
+</span>
+他の<span class="productname">PostgreSQL</span>のクライアントアプリケーションのように、<span class="application">pg_dump</span>はデフォルトでオペレーティングシステムの現在のユーザ名と同じデータベースユーザ名で接続します。
+これを書き換えるには<code class="option">-U</code>オプションを付けるか<code class="envar">PGUSER</code>環境変数を設定します。
+<span class="application">pg_dump</span>の接続は（<a class="xref" href="client-authentication.html" title="第21章 クライアント認証">第21章</a>で説明されている）通常のクライアント認証方法によることを思い出してください。
+  </p><p>
+<span class="original">
+   An important advantage of &lt;application&gt;pg_dump&lt;/application&gt; over the other backup
+   methods described later is that &lt;application&gt;pg_dump&lt;/application&gt;'s output can
+   generally be re-loaded into newer versions of &lt;productname&gt;PostgreSQL&lt;/productname&gt;,
+   whereas file-level backups and continuous archiving are both extremely
+   server-version-specific.  &lt;application&gt;pg_dump&lt;/application&gt; is also the only method
+   that will work when transferring a database to a different machine
+   architecture, such as going from a 32-bit to a 64-bit server.
+</span>
+後で述べる他のバックアップ手法に対する<span class="application">pg_dump</span>の重要な利点は、<span class="application">pg_dump</span>の出力は一般に新しいバージョンの<span class="productname">PostgreSQL</span>に再ロードできるということです。
+一方、ファイルレベルのバックアップと継続的アーカイブは両方とも非常にサーバ、バージョン依存です。
+<span class="application">pg_dump</span>は、32ビットから64ビットのサーバに移行するなどの異なるマシンアーキテクチャにデータベースを移す場合に上手くいく唯一の方法でもあります。
+  </p><p>
+<span class="original">
+   Dumps created by &lt;application&gt;pg_dump&lt;/application&gt; are internally consistent,
+   meaning, the dump represents a snapshot of the database at the time
+   &lt;application&gt;pg_dump&lt;/application&gt; began running. &lt;application&gt;pg_dump&lt;/application&gt; does not
+   block other operations on the database while it is working.
+   (Exceptions are those operations that need to operate with an
+   exclusive lock, such as most forms of &lt;command&gt;ALTER TABLE&lt;/command&gt;.)
+</span>
+<span class="application">pg_dump</span>で作成されたダンプは、内部的に整合性があります。
+つまり、ダンプは<span class="application">pg_dump</span>が開始された際のデータベースのスナップショットを示しています。
+<span class="application">pg_dump</span>の操作はデータベースに対する他の作業を妨げません（<code class="command">ALTER TABLE</code>のほとんどの形態であるような排他的ロックが必要な作業は例外です）。
+  </p><div class="sect2" id="BACKUP-DUMP-RESTORE"><div class="titlepage"><div><div><h3 class="title">26.1.1. ダンプのリストア</h3></div></div></div><span class="original">
+   &lt;title&gt;Restoring the Dump&lt;/title&gt;
+</span><p>
+<span class="original">
+    Text files created by &lt;application&gt;pg_dump&lt;/application&gt; are intended to
+    be read in by the &lt;application&gt;psql&lt;/application&gt; program. The
+    general command form to restore a dump is
+</span>
+<span class="application">pg_dump</span>で作成されたテキストファイルは<span class="application">psql</span>プログラムで読み込まれることを意図しています。
+以下に、ダンプをリストアする一般的なコマンドを示します。
+</p><pre class="synopsis">
+psql <em class="replaceable"><code>dbname</code></em> &lt; <em class="replaceable"><code>dumpfile</code></em>
+</pre><p>
+<span class="original">
+    where &lt;replaceable class="parameter"&gt;dumpfile&lt;/replaceable&gt; is the
+    file output by the &lt;application&gt;pg_dump&lt;/application&gt; command. The database &lt;replaceable
+    class="parameter"&gt;dbname&lt;/replaceable&gt; will not be created by this
+    command, so you must create it yourself from &lt;literal&gt;template0&lt;/literal&gt;
+    before executing &lt;application&gt;psql&lt;/application&gt; (e.g., with
+    &lt;literal&gt;createdb -T template0 &lt;replaceable
+    class="parameter"&gt;dbname&lt;/replaceable&gt;&lt;/literal&gt;).  &lt;application&gt;psql&lt;/application&gt;
+    supports options similar to &lt;application&gt;pg_dump&lt;/application&gt; for specifying
+    the database server to connect to and the user name to use. See
+    the &lt;xref linkend="app-psql"/&gt; reference page for more information.
+    Non-text file dumps are restored using the &lt;xref
+    linkend="app-pgrestore"/&gt; utility.
+</span>
+ここで<em class="replaceable"><code>dumpfile</code></em>は<span class="application">pg_dump</span>コマンドにより出力されたファイルです。
+<em class="replaceable"><code>dbname</code></em>データベースはこのコマンドでは作成されません。
+（例えば<code class="literal">createdb -T template0 <em class="replaceable"><code>dbname</code></em></code> のようにして）<span class="application">psql</span>を実行する前に自分で<code class="literal">template0</code>から作成してください。
+<span class="application">psql</span>は<span class="application">pg_dump</span>と似たような、接続データベースサーバと使用するユーザ名を指定するオプションに対応しています。
+詳細については、<a class="xref" href="app-psql.html" title="psql"><span class="refentrytitle"><span class="application">psql</span></span></a>のリファレンスページを参照してください。
+テキスト形式ではないダンプファイルは<a class="xref" href="app-pgrestore.html" title="pg_restore"><span class="refentrytitle"><span class="application">pg_restore</span></span></a> ユーティリティを使いリストアします。
+   </p><p>
+<span class="original">
+    Before restoring an SQL dump, all the users who own objects or were
+    granted permissions on objects in the dumped database must already
+    exist. If they do not, the restore will fail to recreate the
+    objects with the original ownership and/or permissions.
+    (Sometimes this is what you want, but usually it is not.)
+</span>
+SQLダンプのリストアを実行する前に、ダンプされたデータベース内のオブジェクトを所有するユーザやそのオブジェクト上に権限を与えられたユーザも存在しなければなりません。
+存在していない場合、リストアはそのオブジェクトの元々の所有権や付与された権限を再作成することができません
+（このようにしたい場合もあるでしょうが、通常そうではありません）。
+   </p><p>
+<span class="original">
+    By default, the &lt;application&gt;psql&lt;/application&gt; script will continue to
+    execute after an SQL error is encountered. You might wish to run
+    &lt;application&gt;psql&lt;/application&gt; with
+    the &lt;literal&gt;ON_ERROR_STOP&lt;/literal&gt; variable set to alter that
+    behavior and have &lt;application&gt;psql&lt;/application&gt; exit with an
+    exit status of 3 if an SQL error occurs:
+</span>
+デフォルトで<span class="application">psql</span>スクリプトは、SQLエラーが起きた後も実行を継続します。
+<code class="literal">ON_ERROR_STOP</code>変数を設定して<span class="application">psql</span>を実行することで、その動作を変更し、SQLエラーが起きた場合に<span class="application">psql</span>が、終了ステータス3で終了するようにしたいと思うかもしれません。
+</p><pre class="programlisting">
+psql --set ON_ERROR_STOP=on <em class="replaceable"><code>dbname</code></em> &lt; <em class="replaceable"><code>dumpfile</code></em>
+</pre><p>
+<span class="original">
+    Either way, you will only have a partially restored database.
+    Alternatively, you can specify that the whole dump should be
+    restored as a single transaction, so the restore is either fully
+    completed or fully rolled back. This mode can be specified by
+    passing the &lt;option&gt;-1&lt;/option&gt; or &lt;option&gt;&amp;#45;-single-transaction&lt;/option&gt;
+    command-line options to &lt;application&gt;psql&lt;/application&gt;. When using this
+    mode, be aware that even a minor error can rollback a
+    restore that has already run for many hours. However, that might
+    still be preferable to manually cleaning up a complex database
+    after a partially restored dump.
+</span>
+どちらにしても、部分的にリストアされたデータベースにしかなりません。
+他に、ダンプ全体を1つのトランザクションとしてリストアするように指定することができます。
+こうすれば、リストアが完全に終わるか、完全にロールバックされるかのどちらかになります。
+このモードは、<span class="application">psql</span>のコマンドラインオプションに<code class="option">-1</code>または<code class="option">--single-transaction</code>を渡すことで指定できます。
+このモードを使用する場合、数時間かけて実行していたリストアが軽微なエラーでロールバックしてしまうことに注意してください。
+しかし、部分的にリストアされたダンプから手作業で複雑なデータベースを整理するよりまだましかもしれません。
+   </p><p>
+<span class="original">
+    The ability of &lt;application&gt;pg_dump&lt;/application&gt; and &lt;application&gt;psql&lt;/application&gt; to
+    write to or read from pipes makes it possible to dump a database
+    directly from one server to another, for example:
+</span>
+<span class="application">pg_dump</span>と<span class="application">psql</span>ではパイプから読み書きができるので、あるサーバから別のサーバへデータベースを直接ダンプできます。
+以下に例を示します。
+</p><pre class="programlisting">
+pg_dump -h <em class="replaceable"><code>host1</code></em> <em class="replaceable"><code>dbname</code></em> | psql -h <em class="replaceable"><code>host2</code></em> <em class="replaceable"><code>dbname</code></em>
+</pre><p>
+   </p><div class="important"><h3 class="title">重要</h3><p>
+<span class="original">
+     The dumps produced by &lt;application&gt;pg_dump&lt;/application&gt; are relative to
+     &lt;literal&gt;template0&lt;/literal&gt;. This means that any languages, procedures,
+     etc. added via &lt;literal&gt;template1&lt;/literal&gt; will also be dumped by
+     &lt;application&gt;pg_dump&lt;/application&gt;. As a result, when restoring, if you are
+     using a customized &lt;literal&gt;template1&lt;/literal&gt;, you must create the
+     empty database from &lt;literal&gt;template0&lt;/literal&gt;, as in the example
+     above.
+</span>
+<span class="application">pg_dump</span>で作成されるダンプは<code class="literal">template0</code>と相対関係にあります。
+つまり<code class="literal">template1</code>を経由して追加されたあらゆる言語、プロシージャなども<span class="application">pg_dump</span>によりダンプされます。
+その結果としてリストアする際に、カスタマイズされた<code class="literal">template1</code>を使用している場合は、上記の例のように、<code class="literal">template0</code>から空のデータベースを作成する必要があります。
+    </p></div><p>
+<span class="original">
+    After restoring a backup, it is wise to run &lt;link
+    linkend="sql-analyze"&gt;&lt;command&gt;ANALYZE&lt;/command&gt;&lt;/link&gt; on each
+    database so the query optimizer has useful statistics;
+    see &lt;xref linkend="vacuum-for-statistics"/&gt;
+    and &lt;xref linkend="autovacuum"/&gt; for more information.
+    For more advice on how to load large amounts of data
+    into &lt;productname&gt;PostgreSQL&lt;/productname&gt; efficiently, refer to &lt;xref
+    linkend="populate"/&gt;.
+</span>
+バックアップをリストアした後、問い合わせオプティマイザが有用な統計情報を使用できるように、各データベースに対して<a class="link" href="sql-analyze.html" title="ANALYZE"><code class="command">ANALYZE</code></a>を実行することを勧めます。
+より詳しくは、<a class="xref" href="routine-vacuuming.html#VACUUM-FOR-STATISTICS" title="25.1.3. プランナ用の統計情報の更新">25.1.3</a> と <a class="xref" href="routine-vacuuming.html#AUTOVACUUM" title="25.1.6. 自動バキュームデーモン">25.1.6</a>を参照してください。
+効率的に大規模なデータを<span class="productname">PostgreSQL</span>にロードする方法に関するより多くの勧告については、<a class="xref" href="populate.html" title="14.4. データベースへのデータ投入">14.4</a>を参照してください。
+   </p></div><div class="sect2" id="BACKUP-DUMP-ALL"><div class="titlepage"><div><div><h3 class="title">26.1.2. <span class="application">pg_dumpall</span>の使用</h3></div></div></div><span class="original">
+   &lt;title&gt;Using &lt;application&gt;pg_dumpall&lt;/application&gt;&lt;/title&gt;
+</span><p>
+<span class="original">
+    &lt;application&gt;pg_dump&lt;/application&gt; dumps only a single database at a time,
+    and it does not dump information about roles or tablespaces
+    (because those are cluster-wide rather than per-database).
+    To support convenient dumping of the entire contents of a database
+    cluster, the &lt;xref linkend="app-pg-dumpall"/&gt; program is provided.
+    &lt;application&gt;pg_dumpall&lt;/application&gt; backs up each database in a given
+    cluster, and also preserves cluster-wide data such as role and
+    tablespace definitions. The basic usage of this command is:
+</span>
+<span class="application">pg_dump</span>は一度に単一のデータベースのみをダンプします。
+また、ロールやテーブル空間についての情報はダンプしません。
+（これらはテーブル毎ではなくクラスタ全体のものだからです。）
+データベースクラスタの全内容の簡便なダンプをサポートするために、<a class="xref" href="app-pg-dumpall.html" title="pg_dumpall"><span class="refentrytitle"><span class="application">pg_dumpall</span></span></a>プログラムが提供されています。
+<span class="application">pg_dumpall</span>は指定されたクラスタの各データベースのバックアップを行い、そして、ロールやテーブル空間定義などのクラスタ全体にわたるデータを保存します。
+このコマンドの基本的な使用方法は
+</p><pre class="synopsis">
+pg_dumpall &gt; <em class="replaceable"><code>dumpfile</code></em>
+</pre><p>
+です。
+<span class="original">
+    The resulting dump can be restored with &lt;application&gt;psql&lt;/application&gt;:
+</span>
+ダンプの結果は<span class="application">psql</span>でリストアできます。
+</p><pre class="synopsis">
+psql -f <em class="replaceable"><code>dumpfile</code></em> postgres
+</pre><p>
+<span class="original">
+    (Actually, you can specify any existing database name to start from,
+    but if you are loading into an empty cluster then &lt;literal&gt;postgres&lt;/literal&gt;
+    should usually be used.)  It is always necessary to have
+    database superuser access when restoring a &lt;application&gt;pg_dumpall&lt;/application&gt;
+    dump, as that is required to restore the role and tablespace information.
+    If you use tablespaces, make sure that the tablespace paths in the
+    dump are appropriate for the new installation.
+</span>
+（実際、開始時に任意の既存のデータベース名を指定することができますが、空のクラスタ内にロードする場合は、通常 <code class="literal">postgres</code> を使用すべきです。）
+ロールやテーブル空間の情報をリストアしなければならないので、<span class="application">pg_dumpall</span>のダンプをリストアする時には、データベーススーパーユーザのアクセス権限を確実に必要とします。
+テーブル空間を使用している場合、ダンプ内のテーブル空間のパスが新しいインストレーションで適切であることを確認してください。
+   </p><p>
+<span class="original">
+    &lt;application&gt;pg_dumpall&lt;/application&gt; works by emitting commands to re-create
+    roles, tablespaces, and empty databases, then invoking
+    &lt;application&gt;pg_dump&lt;/application&gt; for each database.  This means that while
+    each database will be internally consistent, the snapshots of
+    different databases are not synchronized.
+</span>
+<span class="application">pg_dumpall</span>はコマンドを発令することによりロール、テーブル空間、およびデータベースを再作成し、それぞれのデータベースに対して<span class="application">pg_dump</span>を起動します。
+このことは、それぞれのデータベースには内部的に矛盾がない一方、異なるデータベースのスナップショットは完全に同期しないことを示しています。
+   </p><p>
+<span class="original">
+    Cluster-wide data can be dumped alone using the
+    &lt;application&gt;pg_dumpall&lt;/application&gt; &lt;option&gt;&amp;#45;-globals-only&lt;/option&gt; option.
+    This is necessary to fully backup the cluster if running the
+    &lt;application&gt;pg_dump&lt;/application&gt; command on individual databases.
+</span>
+クラスタレベルでのデータは<span class="application">pg_dumpall</span> の<code class="option">--globals-only</code> オプションを使用して出力することができます。
+このコマンドは個々のデータベースに<span class="application">pg_dump</span> コマンドを実行しつつ、フルバックアップを取得する際に必要です。
+   </p></div><div class="sect2" id="BACKUP-DUMP-LARGE"><div class="titlepage"><div><div><h3 class="title">26.1.3. 大規模データベースの扱い</h3></div></div></div><span class="original">
+   &lt;title&gt;Handling Large Databases&lt;/title&gt;
+</span><p>
+<span class="original">
+    Some operating systems have maximum file size limits that cause
+    problems when creating large &lt;application&gt;pg_dump&lt;/application&gt; output files.
+    Fortunately, &lt;application&gt;pg_dump&lt;/application&gt; can write to the standard
+    output, so you can use standard Unix tools to work around this
+    potential problem.  There are several possible methods:
+</span>
+オペレーティングシステムの中には最大ファイルサイズに制限があるものがあり、大きな<span class="application">pg_dump</span>出力ファイルを作成しているときに問題を引き起こします。
+幸運なことに、<span class="application">pg_dump</span>は標準出力に書き出すことができますので、Unix標準のツールを使ってこの潜在的な問題を解決できます。
+取りうる方法がいくつか存在します。
+   </p><p><span class="original">
+    &lt;title&gt;Use compressed dumps.&lt;/title&gt;
+</span><strong>圧縮ダンプの使用. </strong>
+<span class="original">
+     You can use your favorite compression program, for example
+     &lt;application&gt;gzip&lt;/application&gt;:
+</span>
+たとえば、自分が愛用している<span class="application">gzip</span>のような圧縮プログラムが使えます。
+
+</p><pre class="programlisting">
+pg_dump <em class="replaceable"><code>dbname</code></em> | gzip &gt; <em class="replaceable"><code>filename</code></em>.gz
+</pre><p>
+
+<span class="original">
+     Reload with:
+</span>
+元に戻すには次のようにします。
+
+</p><pre class="programlisting">
+gunzip -c <em class="replaceable"><code>filename</code></em>.gz | psql <em class="replaceable"><code>dbname</code></em>
+</pre><p>
+
+<span class="original">
+     or:
+</span>
+あるいは次のようにもできます。
+
+</p><pre class="programlisting">
+cat <em class="replaceable"><code>filename</code></em>.gz | gunzip | psql <em class="replaceable"><code>dbname</code></em>
+</pre><p>
+    </p><p><span class="original">
+    &lt;title&gt;Use &lt;command&gt;split&lt;/command&gt;.&lt;/title&gt;
+</span><strong><code class="command">split</code>の使用. </strong>
+<span class="original">
+     The &lt;command&gt;split&lt;/command&gt; command
+     allows you to split the output into smaller files that are
+     acceptable in size to the underlying file system. For example, to
+     make 2 gigabyte chunks:
+</span>
+<code class="command">split</code>コマンドで結果を使用しているファイルシステムが受け付けられる大きさに分割することができます。
+例えば2メガバイトずつに分割するには次のようにします。
+
+</p><pre class="programlisting">
+pg_dump <em class="replaceable"><code>dbname</code></em> | split -b 2G - <em class="replaceable"><code>filename</code></em>
+</pre><p>
+
+<span class="original">
+     Reload with:
+</span>
+元に戻すには次のようにします。
+
+</p><pre class="programlisting">
+cat <em class="replaceable"><code>filename</code></em>* | psql <em class="replaceable"><code>dbname</code></em>
+</pre><p>
+
+<span class="original">
+     If using GNU &lt;application&gt;split&lt;/application&gt;, it is possible to
+     use it and &lt;application&gt;gzip&lt;/application&gt; together:
+</span>
+GNU <span class="application">split</span>を使用している場合は、次のように<span class="application">gzip</span>を一緒に使うことでファイルの圧縮が出来ます。
+
+</p><pre class="programlisting">
+pg_dump <em class="replaceable"><code>dbname</code></em> | split -b 2G --filter='gzip &gt; $FILE.gz'
+</pre><p>
+
+<span class="original">
+     It can be restored using &lt;command&gt;zcat&lt;/command&gt;.
+</span>
+圧縮されたファイルは<code class="command">zcat</code>を使ってリストア出来ます。
+    </p><p><span class="original">
+    &lt;title&gt;Use &lt;application&gt;pg_dump&lt;/application&gt;'s custom dump format.&lt;/title&gt;
+</span><strong><span class="application">pg_dump</span>のカスタムダンプ書式の使用. </strong>
+<span class="original">
+     If &lt;productname&gt;PostgreSQL&lt;/productname&gt; was built on a system with the
+     &lt;application&gt;zlib&lt;/application&gt; compression library installed, the custom dump
+     format will compress data as it writes it to the output file. This will
+     produce dump file sizes similar to using &lt;command&gt;gzip&lt;/command&gt;, but it
+     has the added advantage that tables can be restored selectively. The
+     following command dumps a database using the custom dump format:
+</span>
+もし<span class="productname">PostgreSQL</span>が<span class="application">zlib</span>圧縮ライブラリインストール済みのシステム上で構築されたのなら、カスタムダンプ書式では出力ファイルに書き出す時にデータを圧縮します。
+<code class="command">gzip</code>を使用した時と似通ったダンプサイズとなりますが、テーブルの復元を部分的に行えるという点で優れていると言えます。
+以下のコマンドは、カスタムダンプ書式でのデータベースのダンプを行います。
+
+</p><pre class="programlisting">
+pg_dump -Fc <em class="replaceable"><code>dbname</code></em> &gt; <em class="replaceable"><code>filename</code></em>
+</pre><p>
+
+<span class="original">
+     A custom-format dump is not a script for &lt;application&gt;psql&lt;/application&gt;, but
+     instead must be restored with &lt;application&gt;pg_restore&lt;/application&gt;, for example:
+</span>
+カスタム書式のダンプは<span class="application">psql</span>用のスクリプトではありませんので、代わりに<span class="application">pg_restore</span>でリストアしなければなりません。
+例えば以下のようにします。
+
+</p><pre class="programlisting">
+pg_restore -d <em class="replaceable"><code>dbname</code></em> <em class="replaceable"><code>filename</code></em>
+</pre><p>
+
+<span class="original">
+     See the &lt;xref linkend="app-pgdump"/&gt; and &lt;xref
+     linkend="app-pgrestore"/&gt; reference pages for details.
+</span>
+詳細は<a class="xref" href="app-pgdump.html" title="pg_dump"><span class="refentrytitle"><span class="application">pg_dump</span></span></a>と<a class="xref" href="app-pgrestore.html" title="pg_restore"><span class="refentrytitle"><span class="application">pg_restore</span></span></a>のリファレンスページを参照してください。
+    </p><p>
+<span class="original">
+    For very large databases, you might need to combine &lt;command&gt;split&lt;/command&gt;
+    with one of the other two approaches.
+</span>
+巨大なデータベースに対しては、そのほかの２つの手法のうちの１つと一緒に<code class="command">split</code>を組み合わせる必要があるかもしれません。
+   </p><p><span class="original">
+    &lt;title&gt;Use &lt;application&gt;pg_dump&lt;/application&gt;'s parallel dump feature.&lt;/title&gt;
+</span><strong><span class="application">pg_dump</span>の並列実行. </strong>
+<span class="original">
+     To speed up the dump of a large database, you can use
+     &lt;application&gt;pg_dump&lt;/application&gt;'s parallel mode. This will dump
+     multiple tables at the same time. You can control the degree of
+     parallelism with the &lt;command&gt;-j&lt;/command&gt; parameter. Parallel dumps
+     are only supported for the "directory" archive format.
+</span>
+<span class="application">pg_dump</span>を並列実行することで、大きなデータベースのダンプを高速に実行することができます。
+これは同時に複数テーブルのダンプを実行します。
+並列度は<code class="command">-j</code>パラメータを指定することで制御できます。
+並列ダンプはディレクトリダンプ書式のみサポートします。
+
+</p><pre class="programlisting">
+pg_dump -j <em class="replaceable"><code>num</code></em> -F d -f <em class="replaceable"><code>out.dir</code></em> <em class="replaceable"><code>dbname</code></em>
+</pre><p>
+
+<span class="original">
+     You can use &lt;command&gt;pg_restore -j&lt;/command&gt; to restore a dump in parallel.
+     This will work for any archive of either the "custom" or the "directory"
+     archive mode, whether or not it has been created with &lt;command&gt;pg_dump -j&lt;/command&gt;.
+</span>
+<code class="command">pg_restore -j</code>コマンドでダンプファイルを並列でリストアすることができます。
+これは<code class="command">pg_dump -j</code>でダンプファイルが作成されたか、否かにかかわらず、カスタムもしくはディレクトリダンプ書式で作成されたダンプファイルに使用できます。
+    </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="backup.html" title="第26章 バックアップとリストア">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="backup.html" title="第26章 バックアップとリストア">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="backup-file.html" title="26.2. ファイルシステムレベルのバックアップ">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第26章 バックアップとリストア </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 26.2. ファイルシステムレベルのバックアップ</td></tr></table></div></body></html>

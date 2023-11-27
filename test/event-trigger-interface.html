@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>40.3. C言語によるイベントトリガ関数の書き方</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="event-trigger-matrix.html" title="40.2. イベントトリガ起動マトリクス" /><link rel="next" href="event-trigger-example.html" title="40.4. 完全なイベントトリガの例" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="event-triggers.html" title="第40章 イベントトリガ">第40章 イベントトリガ</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : event-trigger-interface.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="event-trigger-matrix.html" title="40.2. イベントトリガ起動マトリクス">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="event-triggers.html" title="第40章 イベントトリガ">上へ</a></td><td width="60%" align="center">40.3. C言語によるイベントトリガ関数の書き方</td><td width="20%" align="right"> <a accesskey="n" href="event-trigger-example.html" title="40.4. 完全なイベントトリガの例">次へ</a></td></tr></table><hr /></div><div class="sect1" id="EVENT-TRIGGER-INTERFACE"><div class="titlepage"><div><div><h2 class="title" style="clear: both">40.3. C言語によるイベントトリガ関数の書き方</h2></div></div></div><span class="original">
+   &lt;title&gt;Writing Event Trigger Functions in C&lt;/title&gt;
+</span><a id="id-1.8.5.8.2" class="indexterm"></a><a id="id-1.8.5.8.3" class="indexterm"></a><p>
+<span class="original">
+    This section describes the low-level details of the interface to an
+    event trigger function. This information is only needed when writing
+    event trigger functions in C. If you are using a higher-level language
+    then these details are handled for you. In most cases you should
+    consider using a procedural language before writing your event triggers
+    in C. The documentation of each procedural language explains how to
+    write an event trigger in that language.
+</span>
+本節ではトリガ関数とのインタフェースについて低レベルな詳細を説明します。
+この情報はC言語でトリガ関数を作成する時にのみ必要です。
+高レベルな言語で作成すれば、こうした詳細は代わりに扱ってもらえます。
+たいていの場合、Cでトリガを作成する前に手続き言語を使用することを検討すべきです。
+各手続き言語の文書で、その言語を使用したイベントトリガの作成方法を説明します。
+   </p><p>
+<span class="original">
+    Event trigger functions must use the &lt;quote&gt;version 1&lt;/quote&gt; function
+    manager interface.
+</span>
+トリガ関数は<span class="quote">「<span class="quote">version 1</span>」</span>関数マネージャインタフェースを使わなくてはいけません。
+   </p><p>
+<span class="original">
+    When a function is called by the event trigger manager, it is not passed
+    any normal arguments, but it is passed a &lt;quote&gt;context&lt;/quote&gt; pointer
+    pointing to a &lt;structname&gt;EventTriggerData&lt;/structname&gt; structure. C functions can
+    check whether they were called from the event trigger manager or not by
+    executing the macro:
+</span>
+関数がイベントトリガマネージャから呼び出される時は、通常の引数が渡されるのではなく、<code class="structname">EventTriggerData</code>構造体を指す<span class="quote">「<span class="quote">context</span>」</span>ポインタが渡されます。
+C関数は、イベントトリガマネージャから呼び出されたのかどうかを以下のマクロを実行することで検査することができます。
+</p><pre class="programlisting">
+CALLED_AS_EVENT_TRIGGER(fcinfo)
+</pre><p>
+<span class="original">
+    which expands to:
+</span>
+これは以下に展開されます。
+</p><pre class="programlisting">
+((fcinfo)-&gt;context != NULL &amp;&amp; IsA((fcinfo)-&gt;context, EventTriggerData))
+</pre><p>
+<span class="original">
+    If this returns true, then it is safe to cast
+    &lt;literal&gt;fcinfo-&amp;gt;context&lt;/literal&gt; to type &lt;literal&gt;EventTriggerData
+    *&lt;/literal&gt; and make use of the pointed-to
+    &lt;structname&gt;EventTriggerData&lt;/structname&gt; structure.  The function must
+    &lt;emphasis&gt;not&lt;/emphasis&gt; alter the &lt;structname&gt;EventTriggerData&lt;/structname&gt;
+    structure or any of the data it points to.
+</span>
+もしこれが真を返す場合、<code class="literal">fcinfo-&gt;context</code>を<code class="literal">EventTriggerData *</code>型にキャストし、指された<code class="structname">EventTriggerData</code>構造体を使用することは安全です。
+その関数は、<code class="structname">TriggerData</code>構造体やそれが指すどのようなデータも変更しては<span class="emphasis"><em>いけません</em></span>。
+   </p><p>
+<span class="original">
+    &lt;structname&gt;struct EventTriggerData&lt;/structname&gt; is defined in
+    &lt;filename&gt;commands/event_trigger.h&lt;/filename&gt;:
+</span>
+<code class="structname">struct EventTriggerData</code>は<code class="filename">commands/event_trigger.h</code>の中で定義されています。
+
+</p><pre class="programlisting">
+typedef struct EventTriggerData
+{
+    NodeTag     type;
+<span class="original">
+    const char *event;      /* event name */
+    Node       *parsetree;  /* parse tree */
+    CommandTag  tag;        /* command tag */
+</span>
+    const char *event;      /* イベント名 */
+    Node       *parsetree;  /* 解析ツリー */
+    CommandTag  tag;        /* コマンドタグ */
+} EventTriggerData;
+</pre><p>
+
+<span class="original">
+    where the members are defined as follows:
+</span>
+メンバは下記のように定義されています。
+
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="structfield">type</code></span></dt><dd><p>
+<span class="original">
+        Always &lt;literal&gt;T_EventTriggerData&lt;/literal&gt;.
+</span>
+常に<code class="literal">T_EventTriggerData</code>です。
+       </p></dd><dt><span class="term"><code class="structfield">event</code></span></dt><dd><p>
+<span class="original">
+        Describes the event for which the function is called, one of
+        &lt;literal&gt;"ddl_command_start"&lt;/literal&gt;, &lt;literal&gt;"ddl_command_end"&lt;/literal&gt;,
+        &lt;literal&gt;"sql_drop"&lt;/literal&gt;, &lt;literal&gt;"table_rewrite"&lt;/literal&gt;.
+        See &lt;xref linkend="event-trigger-definition"/&gt; for the meaning of these
+        events.
+</span>
+その関数が呼び出されたイベント、<code class="literal">"ddl_command_start"</code>、<code class="literal">"ddl_command_end"</code>、<code class="literal">"sql_drop"</code>、<code class="literal">"table_rewrite"</code>のうちの１つを記述します。
+これらのイベントの内容は、<a class="xref" href="event-trigger-definition.html" title="40.1. イベントトリガ動作の概要">40.1</a>を参照してください。
+       </p></dd><dt><span class="term"><code class="structfield">parsetree</code></span></dt><dd><p>
+<span class="original">
+        A pointer to the parse tree of the command.  Check the PostgreSQL
+        source code for details.  The parse tree structure is subject to change
+        without notice.
+</span>
+コマンドの解析ツリーへのポインタです。
+詳細はPostgreSQLのソースコードを確認してください。
+解析ツリーの構造は予告なく変更されることがあります。
+       </p></dd><dt><span class="term"><code class="structfield">tag</code></span></dt><dd><p>
+<span class="original">
+        The command tag associated with the event for which the event trigger
+        is run, for example &lt;literal&gt;"CREATE FUNCTION"&lt;/literal&gt;.
+</span>
+イベントトリガの実行対象となるイベントに関連するコマンドタグです。たとえば、<code class="literal">"CREATE FUNCTION"</code>です。
+       </p></dd></dl></div><p>
+   </p><p>
+<span class="original">
+    An event trigger function must return a &lt;symbol&gt;NULL&lt;/symbol&gt; pointer
+    (&lt;emphasis&gt;not&lt;/emphasis&gt; an SQL null value, that is, do not
+    set &lt;parameter&gt;isNull&lt;/parameter&gt; true).
+</span>
+イベントトリガ関数は<code class="symbol">NULL</code>ポインタ（SQLのNULLでは<span class="emphasis"><em>ありません</em></span>。したがって、<em class="parameter"><code>isNull</code></em>は真にはなりません）を返さなければなりません。
+   </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="event-trigger-matrix.html" title="40.2. イベントトリガ起動マトリクス">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="event-triggers.html" title="第40章 イベントトリガ">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="event-trigger-example.html" title="40.4. 完全なイベントトリガの例">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">40.2. イベントトリガ起動マトリクス </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 40.4. 完全なイベントトリガの例</td></tr></table></div></body></html>

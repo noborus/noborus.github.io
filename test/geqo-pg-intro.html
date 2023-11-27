@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>62.3. PostgreSQLの遺伝的問い合わせ最適化（GEQO）</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="geqo-intro2.html" title="62.2. 遺伝的アルゴリズム" /><link rel="next" href="geqo-biblio.html" title="62.4. さらに深く知るには" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="geqo.html" title="第62章 遺伝的問い合わせ最適化">第62章 遺伝的問い合わせ最適化</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : geqo-pg-intro.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="geqo-intro2.html" title="62.2. 遺伝的アルゴリズム">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="geqo.html" title="第62章 遺伝的問い合わせ最適化">上へ</a></td><td width="60%" align="center">62.3. PostgreSQLの遺伝的問い合わせ最適化（<acronym class="acronym">GEQO</acronym>）</td><td width="20%" align="right"> <a accesskey="n" href="geqo-biblio.html" title="62.4. さらに深く知るには">次へ</a></td></tr></table><hr /></div><div class="sect1" id="GEQO-PG-INTRO"><div class="titlepage"><div><div><h2 class="title" style="clear: both">62.3. PostgreSQLの遺伝的問い合わせ最適化（<acronym class="acronym">GEQO</acronym>）</h2></div></div></div><span class="original">
+   &lt;title&gt;Genetic Query Optimization (&lt;acronym&gt;GEQO&lt;/acronym&gt;) in PostgreSQL&lt;/title&gt;
+</span><p>
+<span class="original">
+    The &lt;acronym&gt;GEQO&lt;/acronym&gt; module approaches the query
+    optimization problem as though it were the well-known traveling salesman
+    problem (&lt;acronym&gt;TSP&lt;/acronym&gt;).
+    Possible query plans are encoded as integer strings. Each string
+    represents the join order from one relation of the query to the next.
+    For example, the join tree
+</span>
+<acronym class="acronym">GEQO</acronym>のモジュールは、問い合わせ最適化問題をあたかもよく知られている巡回セールスマン問題（<acronym class="acronym">TSP</acronym>）のように扱います。
+可能な問い合わせプランは、整数の文字列として符号化されます。
+それぞれの文字列は、問い合わせの1つのリレーションから次へと結合の順番を表します。
+例えば、以下の結合ツリーは整数文字列「4-1-3-2」によって符号化されています。
+</p><pre class="literallayout">
+   /\
+  /\ 2
+ /\ 3
+4  1
+</pre><p>
+<span class="original">
+    is encoded by the integer string '4-1-3-2',
+    which means, first join relation '4' and '1', then '3', and
+    then '2', where 1, 2, 3, 4 are relation IDs within the
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; optimizer.
+</span>
+これが意味するのは、まずリレーション「4」と「1」を、次に「3」を、そして「2」を結合するということです。
+ここで1、2、3、4は<span class="productname">PostgreSQL</span>オプティマイザ内でリレーションIDを表します。
+   </p><p>
+<span class="original">
+    Specific characteristics of the &lt;acronym&gt;GEQO&lt;/acronym&gt;
+    implementation in &lt;productname&gt;PostgreSQL&lt;/productname&gt;
+    are:
+</span>
+<span class="productname">PostgreSQL</span>における<acronym class="acronym">GEQO</acronym>実装の特有な特徴は下記の様なものです。
+
+    </p><div class="itemizedlist"><ul class="itemizedlist compact" style="list-style-type: bullet; "><li class="listitem" style="list-style-type: disc"><p>
+<span class="original">
+       Usage of a &lt;firstterm&gt;steady state&lt;/firstterm&gt; &lt;acronym&gt;GA&lt;/acronym&gt; (replacement of the least fit
+       individuals in a population, not whole-generational replacement)
+       allows fast convergence towards improved query plans. This is
+       essential for query handling with reasonable time;
+</span>
+<em class="firstterm">定常状態</em><acronym class="acronym">GA</acronym>の使用（世代全体の置き換えではなく、個体の中で適応度の低いものだけの置き換え）は、改良された問い合わせ計画へ素早い収束を可能にします。
+これは、妥当な時間内での問い合わせ処理にはきわめて重要です。
+      </p></li><li class="listitem" style="list-style-type: disc"><p>
+<span class="original">
+       Usage of &lt;firstterm&gt;edge recombination crossover&lt;/firstterm&gt;
+       which is especially suited to keep edge losses low for the
+       solution of the &lt;acronym&gt;TSP&lt;/acronym&gt; by means of a
+       &lt;acronym&gt;GA&lt;/acronym&gt;;
+</span>
+<acronym class="acronym">GA</acronym>による<acronym class="acronym">TSP</acronym>の解決策の辺損失を低く抑えるため、非常に適した<em class="firstterm">辺再組合せ交叉</em>を使用します。
+      </p></li><li class="listitem" style="list-style-type: disc"><p>
+<span class="original">
+       Mutation as genetic operator is deprecated so that no repair
+       mechanisms are needed to generate legal &lt;acronym&gt;TSP&lt;/acronym&gt; tours.
+</span>
+<acronym class="acronym">TSP</acronym>の合法な巡回を行うために必要な修復処理を要求しないように、遺伝的演算子の突然変異は無視しています。
+      </p></li></ul></div><p>
+   </p><p>
+<span class="original">
+    Parts of the &lt;acronym&gt;GEQO&lt;/acronym&gt; module are adapted from D. Whitley's
+    Genitor algorithm.
+</span>
+<acronym class="acronym">GEQO</acronym>モジュールの部品は D. WhitleyのGenitorアルゴリズムを適合させたものです。
+   </p><p>
+<span class="original">
+    The &lt;acronym&gt;GEQO&lt;/acronym&gt; module allows
+    the &lt;productname&gt;PostgreSQL&lt;/productname&gt; query optimizer to
+    support large join queries effectively through
+    non-exhaustive search.
+</span>
+<acronym class="acronym">GEQO</acronym>モジュールにより、<span class="productname">PostgreSQL</span>問い合わせオプティマイザが、大きな結合問い合わせをしらみつぶし検索以外の方法で実行することが可能になります。
+   </p><div class="sect2" id="id-1.10.13.5.6"><div class="titlepage"><div><div><h3 class="title">62.3.1. <acronym class="acronym">GEQO</acronym>を使用した計画候補の生成</h3></div></div></div><span class="original">
+   &lt;title&gt;Generating Possible Plans with &lt;acronym&gt;GEQO&lt;/acronym&gt;&lt;/title&gt;
+</span><p>
+<span class="original">
+    The &lt;acronym&gt;GEQO&lt;/acronym&gt; planning process uses the standard planner
+    code to generate plans for scans of individual relations.  Then join
+    plans are developed using the genetic approach.  As shown above, each
+    candidate join plan is represented by a sequence in which to join
+    the base relations.  In the initial stage, the &lt;acronym&gt;GEQO&lt;/acronym&gt;
+    code simply generates some possible join sequences at random.  For each
+    join sequence considered, the standard planner code is invoked to
+    estimate the cost of performing the query using that join sequence.
+    (For each step of the join sequence, all three possible join strategies
+    are considered; and all the initially-determined relation scan plans
+    are available.  The estimated cost is the cheapest of these
+    possibilities.)  Join sequences with lower estimated cost are considered
+    &lt;quote&gt;more fit&lt;/quote&gt; than those with higher cost.  The genetic algorithm
+    discards the least fit candidates.  Then new candidates are generated
+    by combining genes of more-fit candidates &amp;mdash; that is, by using
+    randomly-chosen portions of known low-cost join sequences to create
+    new sequences for consideration.  This process is repeated until a
+    preset number of join sequences have been considered; then the best
+    one found at any time during the search is used to generate the finished
+    plan.
+</span>
+<acronym class="acronym">GEQO</acronym>の計画作成では、個々のリレーションのスキャンに対する計画を生成するために標準のプランナが使用されます。
+そして、結合計画が遺伝的手法を用いて展開されます。
+上で示した通り、
+結合計画候補はそれぞれ、基本リレーションの結合順によって表現されています。
+初期段階では、<acronym class="acronym">GEQO</acronym>コードは単純にランダムに取り得る結合順をいくつか生成します。
+考慮された結合順それぞれについて、標準プランナコードが呼び出され、その結合順を使用して問い合わせを行った場合のコストを推定します。
+（結合順の各段階において、全体で3つの取り得る結合戦略が考慮されます。
+そして、あらかじめ決められたリレーションスキャン計画もすべて利用可能です。
+推定コストとはこれらの可能性の中から最も安価なものです。）
+より低い推定コストの結合順を、より高い推定コストのものより<span class="quote">「<span class="quote">より高い適応度</span>」</span>と判断します。
+遺伝的アルゴリズムは適応度が低い候補を破棄します。
+そして、より多く合致する候補の遺伝子を組み合わせて、つまり、検討すべき新しい順序を作成するために既知の低コスト結合順をランダムに位置を選択して、新しい候補が生成されます。
+事前に設定された数まで結合順を検討するまで、この処理が繰り返されます。
+そして、この検索の間にもっとも優れたものが、最終的な計画を生成するために使用されます。
+   </p><p>
+<span class="original">
+    This process is inherently nondeterministic, because of the randomized
+    choices made during both the initial population selection and subsequent
+    &lt;quote&gt;mutation&lt;/quote&gt; of the best candidates.  To avoid surprising changes
+    of the selected plan, each run of the GEQO algorithm restarts its
+    random number generator with the current &lt;xref linkend="guc-geqo-seed"/&gt;
+    parameter setting.  As long as &lt;varname&gt;geqo_seed&lt;/varname&gt; and the other
+    GEQO parameters are kept fixed, the same plan will be generated for a
+    given query (and other planner inputs such as statistics).  To experiment
+    with different search paths, try changing &lt;varname&gt;geqo_seed&lt;/varname&gt;.
+</span>
+初期の群を選択する時、および、その後の最善の候補の<span class="quote">「<span class="quote">突然変異</span>」</span>の時に無作為な選択がなされますので、この処理は生来非決定論的なものです。
+選択された計画の予期せぬ変化を避けるために、GEQOアルゴリズムの各実行では乱数生成器を現在の<a class="xref" href="runtime-config-query.html#GUC-GEQO-SEED">geqo_seed</a>パラメータ設定で再スタートさせます。
+<code class="varname">geqo_seed</code>とその他のGEQOパラメータが変更されない限り、一定の問い合わせ（と統計のようなプランナへの他の入力）に対しては同じ計画が生成されます。
+異なる検索パスで実験するためには、<code class="varname">geqo_seed</code>を変更してみて下さい。
+   </p></div><div class="sect2" id="GEQO-FUTURE"><div class="titlepage"><div><div><h3 class="title">62.3.2. <span class="productname">PostgreSQL</span> <acronym class="acronym">GEQO</acronym>の今後の実装作業</h3></div></div></div><span class="original">
+   &lt;title&gt;Future Implementation Tasks for
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; &lt;acronym&gt;GEQO&lt;/acronym&gt;&lt;/title&gt;
+</span><p>
+<span class="original">
+      Work is still needed to improve the genetic algorithm parameter
+      settings.
+      In file &lt;filename&gt;src/backend/optimizer/geqo/geqo_main.c&lt;/filename&gt;,
+      routines
+      &lt;function&gt;gimme_pool_size&lt;/function&gt; and &lt;function&gt;gimme_number_generations&lt;/function&gt;,
+      we have to find a compromise for the parameter settings
+      to satisfy two competing demands:
+</span>
+遺伝的アルゴリズムのパラメータ設定を改善するためにはまだ課題が残っています。
+<code class="filename">src/backend/optimizer/geqo/geqo_main.c</code>の<code class="function">gimme_pool_size</code>と<code class="function">gimme_number_generations</code>というルーチンでは、次の2つの相反する要求を満たす妥協点を見つけなければいけません。
+      </p><div class="itemizedlist"><ul class="itemizedlist compact" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+         Optimality of the query plan
+</span>
+問い合わせ計画の最適性
+        </p></li><li class="listitem"><p>
+<span class="original">
+         Computing time
+</span>
+計算時間
+        </p></li></ul></div><p>
+     </p><p>
+<span class="original">
+      In the current implementation, the fitness of each candidate join
+      sequence is estimated by running the standard planner's join selection
+      and cost estimation code from scratch.  To the extent that different
+      candidates use similar sub-sequences of joins, a great deal of work
+      will be repeated.  This could be made significantly faster by retaining
+      cost estimates for sub-joins.  The problem is to avoid expending
+      unreasonable amounts of memory on retaining that state.
+</span>
+現在の実装では、各結合順候補の適応度は標準プランナの結合選択と、一から作成したコスト推定コードを実行して推定されます。
+異なる候補が同様の副結合順で使用されるにつれて、多くの作業が繰り返されることになります。
+これは、副結合のコスト推定を記憶することで、非常に高速になるはずです。
+この状態を記憶するために要するメモリ量が非合理的に拡大することを防止することが問題です。
+     </p><p>
+<span class="original">
+      At a more basic level, it is not clear that solving query optimization
+      with a GA algorithm designed for TSP is appropriate.  In the TSP case,
+      the cost associated with any substring (partial tour) is independent
+      of the rest of the tour, but this is certainly not true for query
+      optimization.  Thus it is questionable whether edge recombination
+      crossover is the most effective mutation procedure.
+</span>
+最も基本的なレベルでは、TSP用に設計されたGAアルゴリズムを用いた問い合わせ最適化の解法が適切かどうかは明確ではありません。
+TSPの場合は、部分文字列（巡回経路の一部）に関連付けられたコストは残りの巡回経路と独立していますが、これは問い合わせ最適化の場合には確実に成り立ちません。
+したがって、辺再組合せ交叉が最も有効な突然変異手続きかどうかは疑わしいと言えます。
+     </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="geqo-intro2.html" title="62.2. 遺伝的アルゴリズム">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="geqo.html" title="第62章 遺伝的問い合わせ最適化">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="geqo-biblio.html" title="62.4. さらに深く知るには">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">62.2. 遺伝的アルゴリズム </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 62.4. さらに深く知るには</td></tr></table></div></body></html>

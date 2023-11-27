@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>64.1. インデックスの基本的API構造</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="indexam.html" title="第64章 インデックスアクセスメソッドのインタフェース定義" /><link rel="next" href="index-functions.html" title="64.2. インデックスアクセスメソッド関数" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="indexam.html" title="第64章 インデックスアクセスメソッドのインタフェース定義">第64章 インデックスアクセスメソッドのインタフェース定義</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : index-api.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="indexam.html" title="第64章 インデックスアクセスメソッドのインタフェース定義">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="indexam.html" title="第64章 インデックスアクセスメソッドのインタフェース定義">上へ</a></td><td width="60%" align="center">64.1. インデックスの基本的API構造</td><td width="20%" align="right"> <a accesskey="n" href="index-functions.html" title="64.2. インデックスアクセスメソッド関数">次へ</a></td></tr></table><hr /></div><div class="sect1" id="INDEX-API"><div class="titlepage"><div><div><h2 class="title" style="clear: both">64.1. インデックスの基本的API構造</h2></div></div></div><span class="original">
+  &lt;title&gt;Basic API Structure for Indexes&lt;/title&gt;
+</span><p>
+<span class="original">
+   Each index access method is described by a row in the
+   &lt;link linkend="catalog-pg-am"&gt;&lt;structname&gt;pg_am&lt;/structname&gt;&lt;/link&gt;
+   system catalog.  The &lt;structname&gt;pg_am&lt;/structname&gt; entry
+   specifies a name and a &lt;firstterm&gt;handler function&lt;/firstterm&gt; for the index
+   access method.  These entries can be created and deleted using the
+   &lt;xref linkend="sql-create-access-method"/&gt; and
+   &lt;xref linkend="sql-drop-access-method"/&gt; SQL commands.
+</span>
+各インデックスメソッドは<a class="link" href="catalog-pg-am.html" title="53.3. pg_am"><code class="structname">pg_am</code></a>システムカタログの行で説明されます。
+<code class="structname">pg_am</code>エントリはインデックスアクセスメソッドの名前と<em class="firstterm">ハンドラ関数</em>を指定します。
+これらのエントリはSQLコマンド<a class="xref" href="sql-create-access-method.html" title="CREATE ACCESS METHOD"><span class="refentrytitle">CREATE ACCESS METHOD</span></a>と<a class="xref" href="sql-drop-access-method.html" title="DROP ACCESS METHOD"><span class="refentrytitle">DROP ACCESS METHOD</span></a>を使って、作成および削除することができます。
+  </p><p>
+<span class="original">
+   An index access method handler function must be declared to accept a
+   single argument of type &lt;type&gt;internal&lt;/type&gt; and to return the
+   pseudo-type &lt;type&gt;index_am_handler&lt;/type&gt;.  The argument is a dummy value that
+   simply serves to prevent handler functions from being called directly from
+   SQL commands.  The result of the function must be a palloc'd struct of
+   type &lt;structname&gt;IndexAmRoutine&lt;/structname&gt;, which contains everything
+   that the core code needs to know to make use of the index access method.
+   The &lt;structname&gt;IndexAmRoutine&lt;/structname&gt; struct, also called the access
+   method's &lt;firstterm&gt;API struct&lt;/firstterm&gt;, includes fields specifying assorted
+   fixed properties of the access method, such as whether it can support
+   multicolumn indexes.  More importantly, it contains pointers to support
+   functions for the access method, which do all of the real work to access
+   indexes.  These support functions are plain C functions and are not
+   visible or callable at the SQL level.  The support functions are described
+   in &lt;xref linkend="index-functions"/&gt;.
+</span>
+インデックスメソッドのハンドラ関数は、<code class="type">internal</code>型の引数を1つ取り、疑似型<code class="type">index_am_handler</code>を返すものとして宣言しなければなりません。
+引数は単にハンドラ関数がSQLコマンドから直接呼び出されるのを防ぐためのダミーの値です。
+関数の結果は型<code class="structname">IndexAmRoutine</code>のpallocされた構造体でなければならず、そこにはインデックスアクセスメソッドを使用するためにコアコードが知っている必要のあるすべてのことが含まれています。
+<code class="structname">IndexAmRoutine</code>構造体は、アクセスメソッドの<em class="firstterm">API構造体</em>とも呼ばれ、複数列のインデックスをサポートするかどうかなどといった、アクセスメソッドに関する様々な既定の属性を指定するフィールドが含まれます。
+さらに重要なことに、この構造体にはアクセスメソッドのサポート関数へのポインタが含まれ、これによってインデックスにアクセスするためのすべての実際の処理が行われます。
+これらのサポート関数は単なるCの関数で、SQLレベルでは見ることも呼び出すこともできません。
+サポート関数は<a class="xref" href="index-functions.html" title="64.2. インデックスアクセスメソッド関数">64.2</a>で説明されています。
+  </p><p>
+<span class="original">
+   The structure &lt;structname&gt;IndexAmRoutine&lt;/structname&gt; is defined thus:
+</span>
+構造体<code class="structname">IndexAmRoutine</code>は以下のように定義されています。
+</p><pre class="programlisting">
+typedef struct IndexAmRoutine
+{
+    NodeTag     type;
+
+    /*
+     * Total number of strategies (operators) by which we can traverse/search
+     * this AM.  Zero if AM does not have a fixed set of strategy assignments.
+     */
+    uint16      amstrategies;
+    /* total number of support functions that this AM uses */
+    uint16      amsupport;
+    /* opclass options support function number or 0 */
+    uint16      amoptsprocnum;
+    /* does AM support ORDER BY indexed column's value? */
+    bool        amcanorder;
+    /* does AM support ORDER BY result of an operator on indexed column? */
+    bool        amcanorderbyop;
+    /* does AM support backward scanning? */
+    bool        amcanbackward;
+    /* does AM support UNIQUE indexes? */
+    bool        amcanunique;
+    /* does AM support multi-column indexes? */
+    bool        amcanmulticol;
+    /* does AM require scans to have a constraint on the first index column? */
+    bool        amoptionalkey;
+    /* does AM handle ScalarArrayOpExpr quals? */
+    bool        amsearcharray;
+    /* does AM handle IS NULL/IS NOT NULL quals? */
+    bool        amsearchnulls;
+    /* can index storage data type differ from column data type? */
+    bool        amstorage;
+    /* can an index of this type be clustered on? */
+    bool        amclusterable;
+    /* does AM handle predicate locks? */
+    bool        ampredlocks;
+    /* does AM support parallel scan? */
+    bool        amcanparallel;
+    /* does AM support columns included with clause INCLUDE? */
+    bool        amcaninclude;
+    /* does AM use maintenance_work_mem? */
+    bool        amusemaintenanceworkmem;
+    /* OR of parallel vacuum flags */
+    uint8       amparallelvacuumoptions;
+    /* type of data stored in index, or InvalidOid if variable */
+    Oid         amkeytype;
+
+    /* interface functions */
+    ambuild_function ambuild;
+    ambuildempty_function ambuildempty;
+    aminsert_function aminsert;
+    ambulkdelete_function ambulkdelete;
+    amvacuumcleanup_function amvacuumcleanup;
+    amcanreturn_function amcanreturn;   /* can be NULL */
+    amcostestimate_function amcostestimate;
+    amoptions_function amoptions;
+    amproperty_function amproperty;     /* can be NULL */
+    ambuildphasename_function ambuildphasename;   /* can be NULL */
+    amvalidate_function amvalidate;
+    amadjustmembers_function amadjustmembers; /* can be NULL */
+    ambeginscan_function ambeginscan;
+    amrescan_function amrescan;
+    amgettuple_function amgettuple;     /* can be NULL */
+    amgetbitmap_function amgetbitmap;   /* can be NULL */
+    amendscan_function amendscan;
+    ammarkpos_function ammarkpos;       /* can be NULL */
+    amrestrpos_function amrestrpos;     /* can be NULL */
+
+    /* interface functions to support parallel index scans */
+    amestimateparallelscan_function amestimateparallelscan;    /* can be NULL */
+    aminitparallelscan_function aminitparallelscan;    /* can be NULL */
+    amparallelrescan_function amparallelrescan;    /* can be NULL */
+} IndexAmRoutine;
+</pre><p>
+  </p><p>
+<span class="original">
+   To be useful, an index access method must also have one or more
+   &lt;firstterm&gt;operator families&lt;/firstterm&gt; and
+   &lt;firstterm&gt;operator classes&lt;/firstterm&gt; defined in
+   &lt;link linkend="catalog-pg-opfamily"&gt;&lt;structname&gt;pg_opfamily&lt;/structname&gt;&lt;/link&gt;,
+   &lt;link linkend="catalog-pg-opclass"&gt;&lt;structname&gt;pg_opclass&lt;/structname&gt;&lt;/link&gt;,
+   &lt;link linkend="catalog-pg-amop"&gt;&lt;structname&gt;pg_amop&lt;/structname&gt;&lt;/link&gt;, and
+   &lt;link linkend="catalog-pg-amproc"&gt;&lt;structname&gt;pg_amproc&lt;/structname&gt;&lt;/link&gt;.
+   These entries allow the planner
+   to determine what kinds of query qualifications can be used with
+   indexes of this access method.  Operator families and classes are described
+   in &lt;xref linkend="xindex"/&gt;, which is prerequisite material for reading
+   this chapter.
+</span>
+使い易くするために、インデックスアクセスメソッドはまた、<a class="link" href="catalog-pg-opfamily.html" title="53.35. pg_opfamily"><code class="structname">pg_opfamily</code></a>、<a class="link" href="catalog-pg-opclass.html" title="53.33. pg_opclass"><code class="structname">pg_opclass</code></a>、<a class="link" href="catalog-pg-amop.html" title="53.4. pg_amop"><code class="structname">pg_amop</code></a>および<a class="link" href="catalog-pg-amproc.html" title="53.5. pg_amproc"><code class="structname">pg_amproc</code></a>内で定義される、複数の<em class="firstterm">演算子族</em>と<em class="firstterm">演算子クラス</em>を持ちます。
+これらの項目により、プランナは、このアクセスメソッドのインデックスがどのような問い合わせ条件に対して使用できるかを決定することができます。
+演算子族と演算子クラスについては、<a class="xref" href="xindex.html" title="38.16. インデックス拡張機能へのインタフェース">38.16</a>で説明します。
+これは本章を読む上で必要となる資料です。
+  </p><p>
+<span class="original">
+   An individual index is defined by a
+   &lt;link linkend="catalog-pg-class"&gt;&lt;structname&gt;pg_class&lt;/structname&gt;&lt;/link&gt;
+   entry that describes it as a physical relation, plus a
+   &lt;link linkend="catalog-pg-index"&gt;&lt;structname&gt;pg_index&lt;/structname&gt;&lt;/link&gt;
+   entry that shows the logical content of the index &amp;mdash; that is, the set
+   of index columns it has and the semantics of those columns, as captured by
+   the associated operator classes.  The index columns (key values) can be
+   either simple columns of the underlying table or expressions over the table
+   rows.  The index access method normally has no interest in where the index
+   key values come from (it is always handed precomputed key values) but it
+   will be very interested in the operator class information in
+   &lt;structname&gt;pg_index&lt;/structname&gt;.  Both of these catalog entries can be
+   accessed as part of the &lt;structname&gt;Relation&lt;/structname&gt; data structure that is
+   passed to all operations on the index.
+</span>
+個々のインデックスは、インデックスを物理的なリレーションとして記述する<a class="link" href="catalog-pg-class.html" title="53.11. pg_class"><code class="structname">pg_class</code></a>項目と、インデックスの論理的な内容、つまり、インデックスが持つインデックス列の集合とその列の意味を、関連する演算子クラスで再現されたものとして表す<a class="link" href="catalog-pg-index.html" title="53.26. pg_index"><code class="structname">pg_index</code></a>項目とで定義されます。
+インデックス列（キー値）は、背後のテーブルの単純な列、あるいは、テーブル行に対する式とすることができます。
+通常、インデックスアクセスメソッドはインデックスキー値が何を表すかについて考慮しません。
+（常に計算済みのキー値として扱われます。）
+しかし、<code class="structname">pg_index</code>内の演算子クラスの情報を深く考慮します。
+この両方のカタログ項目は、インデックスに対するすべての操作に渡される<code class="structname">Relation</code>データ構造の一部としてアクセスすることができます。
+  </p><p>
+<span class="original">
+   Some of the flag fields of &lt;structname&gt;IndexAmRoutine&lt;/structname&gt; have nonobvious
+   implications.  The requirements of &lt;structfield&gt;amcanunique&lt;/structfield&gt;
+   are discussed in &lt;xref linkend="index-unique-checks"/&gt;.
+   The &lt;structfield&gt;amcanmulticol&lt;/structfield&gt; flag asserts that the
+   access method supports multi-key-column indexes, while
+   &lt;structfield&gt;amoptionalkey&lt;/structfield&gt; asserts that it allows scans
+   where no indexable restriction clause is given for the first index column.
+   When &lt;structfield&gt;amcanmulticol&lt;/structfield&gt; is false,
+   &lt;structfield&gt;amoptionalkey&lt;/structfield&gt; essentially says whether the
+   access method supports full-index scans without any restriction clause.
+   Access methods that support multiple index columns &lt;emphasis&gt;must&lt;/emphasis&gt;
+   support scans that omit restrictions on any or all of the columns after
+   the first; however they are permitted to require some restriction to
+   appear for the first index column, and this is signaled by setting
+   &lt;structfield&gt;amoptionalkey&lt;/structfield&gt; false.
+   One reason that an index AM might set
+   &lt;structfield&gt;amoptionalkey&lt;/structfield&gt; false is if it doesn't index
+   null values.  Since most indexable operators are
+   strict and hence cannot return true for null inputs,
+   it is at first sight attractive to not store index entries for null values:
+   they could never be returned by an index scan anyway.  However, this
+   argument fails when an index scan has no restriction clause for a given
+   index column.  In practice this means that
+   indexes that have &lt;structfield&gt;amoptionalkey&lt;/structfield&gt; true must
+   index nulls, since the planner might decide to use such an index
+   with no scan keys at all.  A related restriction is that an index
+   access method that supports multiple index columns &lt;emphasis&gt;must&lt;/emphasis&gt;
+   support indexing null values in columns after the first, because the planner
+   will assume the index can be used for queries that do not restrict
+   these columns.  For example, consider an index on (a,b) and a query with
+   &lt;literal&gt;WHERE a = 4&lt;/literal&gt;.  The system will assume the index can be
+   used to scan for rows with &lt;literal&gt;a = 4&lt;/literal&gt;, which is wrong if the
+   index omits rows where &lt;literal&gt;b&lt;/literal&gt; is null.
+   It is, however, OK to omit rows where the first indexed column is null.
+   An index access method that does index nulls may also set
+   &lt;structfield&gt;amsearchnulls&lt;/structfield&gt;, indicating that it supports
+   &lt;literal&gt;IS NULL&lt;/literal&gt; and &lt;literal&gt;IS NOT NULL&lt;/literal&gt; clauses as search
+   conditions.
+</span>
+<code class="structname">IndexAmRoutine</code>のフラグフィールドの中には、意味がわかりにくいものがあります。
+<code class="structfield">amcanunique</code>の必要条件は<a class="xref" href="index-unique-checks.html" title="64.5. インデックス一意性検査">64.5</a>で説明されています。
+<code class="structfield">amcanmulticol</code>フラグはアクセスメソッドが複数キー列に対するインデックスをサポートすることを表し、<code class="structfield">amoptionalkey</code>は、インデックス可能な制限句が最初のインデックス列に指定されていないスキャンを許可することを表します。
+<code class="structfield">amcanmulticol</code>が偽の場合、<code class="structfield">amoptionalkey</code>は基本的に、アクセスメソッドが制限句なしで完全なインデックススキャンをサポートするかどうかを表します。
+複数列に対するインデックスをサポートするアクセスメソッドは、最初の列以降のすべてまたは一部の列に関する制限がなくてもスキャンをサポート<span class="emphasis"><em>しなければなりません</em></span>。
+しかし、最初のインデックス列にいくつかの制限を要求することは認められています。
+これは、<code class="structfield">amoptionalkey</code>を偽に設定することで通知されます。
+インデックスアクセスメソッドが<code class="structfield">amoptionalkey</code>を偽にする１つの理由は、NULLをインデックス付けしない場合です。
+ほとんどのインデックス可能な演算子は厳密で、NULL値の入力に対して真を返すことができませんので、NULLに対してインデックス項目を格納しないことは一見魅力的です。
+これはインデックススキャンによって何も返しません。
+しかし、最初のインデックス列に対する制限がないインデックススキャンでは、この引数は失敗します。
+プランナがこうしたスキャンキーをまったく持たないインデックスを使用することを決定する可能性がありますので、実際これは、<code class="structfield">amoptionalkey</code>が真のインデックスはNULLインデックスを持たなければならないことを意味します。
+関連する制限として、プランナはこれらの列を制限しない問い合わせでインデックスを使用できることを前提とするため、複数のインデックス列をサポートするインデックスアクセスメソッドは1番目の後の列でNULL値のインデックスをサポート<span class="emphasis"><em></em></span>しなければならないということがあります。
+例えば、(a,b)に対するインデックスに、<code class="literal">WHERE a = 4</code>という条件で問い合わせを行うことを考えてみます。
+システムは、このインデックスを<code class="literal">a = 4</code>を持つ行をスキャンすることに使用できるものと仮定します。
+これはもし、<code class="literal">b</code>がNULLの場合の行をインデックスが省略する場合は間違っています。
+しかし、最初のインデックス列がNULLの場合に行を省略することは問題ありません
+また、NULLをインデックス付けするインデックスアクセスメソッドは<code class="structfield">amsearchnulls</code>を設定する可能性があります。
+これは検索条件として<code class="literal">IS NULL</code>および<code class="literal">IS NOT NULL</code>句をサポートすることを示します。
+  </p><p>
+<span class="original">
+   The &lt;structfield&gt;amcaninclude&lt;/structfield&gt; flag indicates whether the
+   access method supports &lt;quote&gt;included&lt;/quote&gt; columns, that is it can
+   store (without processing) additional columns beyond the key column(s).
+   The requirements of the preceding paragraph apply only to the key
+   columns.  In particular, the combination
+   of &lt;structfield&gt;amcanmulticol&lt;/structfield&gt;=&lt;literal&gt;false&lt;/literal&gt;
+   and &lt;structfield&gt;amcaninclude&lt;/structfield&gt;=&lt;literal&gt;true&lt;/literal&gt; is
+   sensible: it means that there can only be one key column, but there can
+   also be included column(s).  Also, included columns must be allowed to be
+   null, independently of &lt;structfield&gt;amoptionalkey&lt;/structfield&gt;.
+</span>
+<code class="structfield">amcaninclude</code>フラグは、このアクセスメソッドが（処理することなく）キー列以外の追加の列を格納することができる<span class="quote">「<span class="quote">included</span>」</span>列をサポートしているかどうかを示します。
+前段落の要件はキー列にのみ適用されます。
+とりわけ、<code class="structfield">amcanmulticol</code>=<code class="literal">false</code>と<code class="structfield">amcaninclude</code>=<code class="literal">true</code>の組み合わせは実用的です。
+これは単一のキー列だけが存在しつつも、include列が存在することができることを示しています。
+また、<code class="structfield">amoptionalkey</code>とは独立して、include列はNULLにすることができなければなりません。
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="indexam.html" title="第64章 インデックスアクセスメソッドのインタフェース定義">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="indexam.html" title="第64章 インデックスアクセスメソッドのインタフェース定義">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="index-functions.html" title="64.2. インデックスアクセスメソッド関数">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第64章 インデックスアクセスメソッドのインタフェース定義 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 64.2. インデックスアクセスメソッド関数</td></tr></table></div></body></html>

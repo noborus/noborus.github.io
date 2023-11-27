@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>12.2. テーブルとインデックス</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="textsearch-intro.html" title="12.1. 導入" /><link rel="next" href="textsearch-controls.html" title="12.3. テキスト検索の制御" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="textsearch.html" title="第12章 全文検索">第12章 全文検索</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : textsearch-tables.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="textsearch-intro.html" title="12.1. 導入">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="textsearch.html" title="第12章 全文検索">上へ</a></td><td width="60%" align="center">12.2. テーブルとインデックス</td><td width="20%" align="right"> <a accesskey="n" href="textsearch-controls.html" title="12.3. テキスト検索の制御">次へ</a></td></tr></table><hr /></div><div class="sect1" id="TEXTSEARCH-TABLES"><div class="titlepage"><div><div><h2 class="title" style="clear: both">12.2. テーブルとインデックス</h2></div></div></div><span class="original">
+  &lt;title&gt;Tables and Indexes&lt;/title&gt;
+</span><p>
+<span class="original">
+   The examples in the previous section illustrated full text matching using
+   simple constant strings.  This section shows how to search table data,
+   optionally using indexes.
+</span>
+前の節の例では、単純な文字列定数を使った全文検索照合を説明しました。この節では、テーブルのデータを検索する方法、そしてインデックスを使う方法を示します。
+  </p><div class="sect2" id="TEXTSEARCH-TABLES-SEARCH"><div class="titlepage"><div><div><h3 class="title">12.2.1. テーブルを検索する</h3></div></div></div><span class="original">
+   &lt;title&gt;Searching a Table&lt;/title&gt;
+</span><p>
+<span class="original">
+    It is possible to do a full text search without an index.  A simple query
+    to print the &lt;structname&gt;title&lt;/structname&gt; of each row that contains the word
+    &lt;literal&gt;friend&lt;/literal&gt; in its &lt;structfield&gt;body&lt;/structfield&gt; field is:
+</span>
+インデックスがなくても全文検索をすることは可能です。<code class="structfield">body</code>フィールド中の<code class="literal">friend</code>という単語を含む行の<code class="structname">title</code>を印刷する単純な問い合わせは次のようになります。
+
+</p><pre class="programlisting">
+SELECT title
+FROM pgweb
+WHERE to_tsvector('english', body) @@ to_tsquery('english', 'friend');
+</pre><p>
+
+<span class="original">
+    This will also find related words such as &lt;literal&gt;friends&lt;/literal&gt;
+    and &lt;literal&gt;friendly&lt;/literal&gt;, since all these are reduced to the same
+    normalized lexeme.
+</span>
+同時に、これは、<code class="literal">friends</code>、<code class="literal">friendly</code>のように、関連する単語を見つけ出します。これらはすべて同じ正規化された語彙素に帰結するからです。
+   </p><p>
+<span class="original">
+    The query above specifies that the &lt;literal&gt;english&lt;/literal&gt; configuration
+    is to be used to parse and normalize the strings.  Alternatively we
+    could omit the configuration parameters:
+</span>
+上の問い合わせは<code class="literal">english</code>設定を使って文字列をパースして正規化することを指定しています。別の方法としては、設定パラメータを省略することができます。
+
+</p><pre class="programlisting">
+SELECT title
+FROM pgweb
+WHERE to_tsvector(body) @@ to_tsquery('friend');
+</pre><p>
+
+<span class="original">
+    This query will use the configuration set by &lt;xref
+    linkend="guc-default-text-search-config"/&gt;.
+</span>
+この問い合わせは<a class="xref" href="runtime-config-client.html#GUC-DEFAULT-TEXT-SEARCH-CONFIG">default_text_search_config</a>で設定された設定を使用します。
+   </p><p>
+<span class="original">
+    A more complex example is to
+    select the ten most recent documents that contain &lt;literal&gt;create&lt;/literal&gt; and
+    &lt;literal&gt;table&lt;/literal&gt; in the &lt;structname&gt;title&lt;/structname&gt; or &lt;structname&gt;body&lt;/structname&gt;:
+</span>
+もっと複雑な例として、<code class="literal">create</code>と<code class="literal">table</code>を<code class="structname">title</code>または<code class="structname">body</code>に含む文書のうち新しい順に10個選ぶというものを示します。
+
+</p><pre class="programlisting">
+SELECT title
+FROM pgweb
+WHERE to_tsvector(title || ' ' || body) @@ to_tsquery('create &amp; table')
+ORDER BY last_mod_date DESC
+LIMIT 10;
+</pre><p>
+
+<span class="original">
+    For clarity we omitted the &lt;function&gt;coalesce&lt;/function&gt; function calls
+    which would be needed to find rows that contain &lt;literal&gt;NULL&lt;/literal&gt;
+    in one of the two fields.
+</span>
+細かいことですが、この例では、二つのうち一つのフィールドに<code class="literal">NULL</code>を含む行を探すために必要な<code class="function">coalesce</code>関数の呼び出しを省略しています。
+   </p><p>
+<span class="original">
+    Although these queries will work without an index, most applications
+    will find this approach too slow, except perhaps for occasional ad-hoc
+    searches.  Practical use of text searching usually requires creating
+    an index.
+</span>
+これらの問い合わせはインデックスなしでも動きますが、たまに実行する一時的な問い合わせ用を除くと、たいていの用途には遅すぎます。
+実用上は、インデックスを作成することが必要なのが普通です。
+   </p></div><div class="sect2" id="TEXTSEARCH-TABLES-INDEX"><div class="titlepage"><div><div><h3 class="title">12.2.2. インデックスの作成</h3></div></div></div><span class="original">
+   &lt;title&gt;Creating Indexes&lt;/title&gt;
+</span><p>
+<span class="original">
+    We can create a &lt;acronym&gt;GIN&lt;/acronym&gt; index (&lt;xref
+    linkend="textsearch-indexes"/&gt;) to speed up text searches:
+</span>
+テキスト検索を高速化するために、<acronym class="acronym">GIN</acronym>インデックス(<a class="xref" href="textsearch-indexes.html" title="12.9. テキスト検索に好ましいインデックス種類">12.9</a>)を作ることができます。
+
+</p><pre class="programlisting">
+CREATE INDEX pgweb_idx ON pgweb USING GIN (to_tsvector('english', body));
+</pre><p>
+
+<span class="original">
+    Notice that the 2-argument version of &lt;function&gt;to_tsvector&lt;/function&gt; is
+    used.  Only text search functions that specify a configuration name can
+    be used in expression indexes (&lt;xref linkend="indexes-expressional"/&gt;).
+    This is because the index contents must be unaffected by &lt;xref
+    linkend="guc-default-text-search-config"/&gt;.  If they were affected, the
+    index contents might be inconsistent because different entries could
+    contain &lt;type&gt;tsvector&lt;/type&gt;s that were created with different text search
+    configurations, and there would be no way to guess which was which.  It
+    would be impossible to dump and restore such an index correctly.
+</span>
+2引数バージョンの<code class="function">to_tsvector</code>を使っていることに注意してください。
+設定名を指定するテキスト検索関数だけが、式インデックス(<a class="xref" href="indexes-expressional.html" title="11.7. 式に対するインデックス">11.7</a>)で使えます。
+これは、インデックス内容が、<a class="xref" href="runtime-config-client.html#GUC-DEFAULT-TEXT-SEARCH-CONFIG">default_text_search_config</a>の影響を受けないためです。
+もし影響を受けるとすると、異なるテキスト検索設定で作られた<code class="type">tsvector</code>を持つエントリの間でインデックス内容が首尾一貫しなくなるからです。そして、どのエントリがどのようにして作られたのか、推測する方法はないでしょう。
+そのようなインデックスを正しくダンプ、リストアするのは不可能でしょう。
+   </p><p>
+<span class="original">
+    Because the two-argument version of &lt;function&gt;to_tsvector&lt;/function&gt; was
+    used in the index above, only a query reference that uses the 2-argument
+    version of &lt;function&gt;to_tsvector&lt;/function&gt; with the same configuration
+    name will use that index.  That is, &lt;literal&gt;WHERE
+    to_tsvector('english', body) @@ 'a &amp;amp; b'&lt;/literal&gt; can use the index,
+    but &lt;literal&gt;WHERE to_tsvector(body) @@ 'a &amp;amp; b'&lt;/literal&gt; cannot.
+    This ensures that an index will be used only with the same configuration
+    used to create the index entries.
+</span>
+上記のインデックスでは、2引数バージョンの<code class="function">to_tsvector</code>が使われているので、同じ設定名の2引数バージョンの<code class="function">to_tsvector</code>を使う問い合わせ参照だけがそのインデックスを使います。
+すなわち、<code class="literal">WHERE to_tsvector('english', body) @@ 'a &amp; b'</code>はインデックスが使えますが、<code class="literal">WHERE to_tsvector(body) @@ 'a &amp; b'</code>は使えません。
+これにより、インデックスエントリを作ったときの設定と、同じ設定のときだけインデックスが使われることが保証されます。
+   </p><p>
+<span class="original">
+    It is possible to set up more complex expression indexes wherein the
+    configuration name is specified by another column, e.g.:
+</span>
+他の列によって設定名が指定されたより複雑な式インデックスを作ることができます。例えば、
+
+</p><pre class="programlisting">
+CREATE INDEX pgweb_idx ON pgweb USING GIN (to_tsvector(config_name, body));
+</pre><p>
+
+<span class="original">
+    where &lt;literal&gt;config_name&lt;/literal&gt; is a column in the &lt;literal&gt;pgweb&lt;/literal&gt;
+    table.  This allows mixed configurations in the same index while
+    recording which configuration was used for each index entry.  This
+    would be useful, for example, if the document collection contained
+    documents in different languages.  Again,
+    queries that are meant to use the index must be phrased to match, e.g.,
+    &lt;literal&gt;WHERE to_tsvector(config_name, body) @@ 'a &amp;amp; b'&lt;/literal&gt;.
+</span>
+ここで、<code class="literal">config_name</code>は<code class="literal">pgweb</code>テーブルの列です。
+これによって、各々のインデックスエントリで使用された設定を記録しつつ、同じインデックスの中で異なる設定を混在させることができます。
+これは、例えば文書の集まりが異なる言語の文書を含む場合に有用です。
+繰り返しになりますが、インデックスを使うよう考慮されている問い合わせは、合致するように書かれなければなりません。例えば、<code class="literal">WHERE to_tsvector(config_name, body) @@ 'a &amp; b'</code>。
+   </p><p>
+<span class="original">
+    Indexes can even concatenate columns:
+</span>
+インデックスには、列を連結することさえできます。
+
+</p><pre class="programlisting">
+CREATE INDEX pgweb_idx ON pgweb USING GIN (to_tsvector('english', title || ' ' || body));
+</pre><p>
+   </p><p>
+<span class="original">
+    Another approach is to create a separate &lt;type&gt;tsvector&lt;/type&gt; column
+    to hold the output of &lt;function&gt;to_tsvector&lt;/function&gt;.  To keep this
+    column automatically up to date with its source data, use a stored
+    generated column.  This example is a
+    concatenation of &lt;literal&gt;title&lt;/literal&gt; and &lt;literal&gt;body&lt;/literal&gt;,
+    using &lt;function&gt;coalesce&lt;/function&gt; to ensure that one field will still be
+    indexed when the other is &lt;literal&gt;NULL&lt;/literal&gt;:
+</span>
+別の方法として、<code class="function">to_tsvector</code>の出力を保持する別の<code class="type">tsvector</code>列を作る方法があります。
+この列を元のデータに合わせて自動的に更新し続けるには、格納された生成列を使います。
+この例では、<code class="literal">title</code>と<code class="literal">body</code>を連結、<code class="function">coalesce</code>を使って、一つのフィールドが<code class="literal">NULL</code>であっても他のフィールドがインデックス付けされることを保証しています。
+
+</p><pre class="programlisting">
+ALTER TABLE pgweb
+    ADD COLUMN textsearchable_index_col tsvector
+               GENERATED ALWAYS AS (to_tsvector('english', coalesce(title, '') || ' ' || coalesce(body, ''))) STORED;
+</pre><p>
+
+<span class="original">
+    Then we create a &lt;acronym&gt;GIN&lt;/acronym&gt; index to speed up the search:
+</span>
+そして、<acronym class="acronym">GIN</acronym>インデックスを作って検索速度を上げます。
+
+</p><pre class="programlisting">
+CREATE INDEX textsearch_idx ON pgweb USING GIN (textsearchable_index_col);
+</pre><p>
+
+<span class="original">
+    Now we are ready to perform a fast full text search:
+</span>
+これで、高速全文検索を実行する準備ができました。
+
+</p><pre class="programlisting">
+SELECT title
+FROM pgweb
+WHERE textsearchable_index_col @@ to_tsquery('create &amp; table')
+ORDER BY last_mod_date DESC
+LIMIT 10;
+</pre><p>
+   </p><p>
+<span class="original">
+    One advantage of the separate-column approach over an expression index
+    is that it is not necessary to explicitly specify the text search
+    configuration in queries in order to make use of the index.  As shown
+    in the example above, the query can depend on
+    &lt;varname&gt;default_text_search_config&lt;/varname&gt;.  Another advantage is that
+    searches will be faster, since it will not be necessary to redo the
+    &lt;function&gt;to_tsvector&lt;/function&gt; calls to verify index matches.  (This is more
+    important when using a GiST index than a GIN index; see &lt;xref
+    linkend="textsearch-indexes"/&gt;.)  The expression-index approach is
+    simpler to set up, however, and it requires less disk space since the
+    &lt;type&gt;tsvector&lt;/type&gt; representation is not stored explicitly.
+</span>
+別列方式が式インデックスに勝る点の一つは、インデックスを使うために問い合わせの中でテキスト検索設定を明示的に指定する必要がないことです。
+上の例で示したように、問い合わせは<code class="varname">default_text_search_config</code>に依存できます。
+もう一つの利点は、インデックスの合致を検証するために<code class="function">to_tsvector</code>を再実行する必要がないのでより高速だという事です。
+(この点はGINインデックスを使うときよりも、GiSTインデックスを使う場合に重要です。<a class="xref" href="textsearch-indexes.html" title="12.9. テキスト検索に好ましいインデックス種類">12.9</a>参照。)
+しかしながら、式インデックス方式はセットアップがより容易で、<code class="type">tsvector</code>表現を明示的に保存する必要がないので、ディスクスペースの消費が少ないです。
+   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="textsearch-intro.html" title="12.1. 導入">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="textsearch.html" title="第12章 全文検索">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="textsearch-controls.html" title="12.3. テキスト検索の制御">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">12.1. 導入 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 12.3. テキスト検索の制御</td></tr></table></div></body></html>

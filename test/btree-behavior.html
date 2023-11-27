@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>67.2. B-Tree演算子クラスの振る舞い</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="btree-intro.html" title="67.1. はじめに" /><link rel="next" href="btree-support-funcs.html" title="67.3. B-Treeサポート関数" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="btree.html" title="第67章 B-Treeインデックス">第67章 B-Treeインデックス</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : btree-behavior.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="btree-intro.html" title="67.1. はじめに">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="btree.html" title="第67章 B-Treeインデックス">上へ</a></td><td width="60%" align="center">67.2. B-Tree演算子クラスの振る舞い</td><td width="20%" align="right"> <a accesskey="n" href="btree-support-funcs.html" title="67.3. B-Treeサポート関数">次へ</a></td></tr></table><hr /></div><div class="sect1" id="BTREE-BEHAVIOR"><div class="titlepage"><div><div><h2 class="title" style="clear: both">67.2. B-Tree演算子クラスの振る舞い</h2></div></div></div><span class="original">
+ &lt;title&gt;Behavior of B-Tree Operator Classes&lt;/title&gt;
+</span><p>
+<span class="original">
+  As shown in &lt;xref linkend="xindex-btree-strat-table"/&gt;, a btree operator
+  class must provide five comparison operators,
+  &lt;literal&gt;&amp;lt;&lt;/literal&gt;,
+  &lt;literal&gt;&amp;lt;=&lt;/literal&gt;,
+  &lt;literal&gt;=&lt;/literal&gt;,
+  &lt;literal&gt;&amp;gt;=&lt;/literal&gt; and
+  &lt;literal&gt;&amp;gt;&lt;/literal&gt;.
+  One might expect that &lt;literal&gt;&amp;lt;&amp;gt;&lt;/literal&gt; should also be part of
+  the operator class, but it is not, because it would almost never be
+  useful to use a &lt;literal&gt;&amp;lt;&amp;gt;&lt;/literal&gt; WHERE clause in an index
+  search.  (For some purposes, the planner treats &lt;literal&gt;&amp;lt;&amp;gt;&lt;/literal&gt;
+  as associated with a btree operator class; but it finds that operator via
+  the &lt;literal&gt;=&lt;/literal&gt; operator's negator link, rather than
+  from &lt;structname&gt;pg_amop&lt;/structname&gt;.)
+</span>
+<a class="xref" href="xindex.html#XINDEX-BTREE-STRAT-TABLE" title="表38.3 B-treeストラテジ">表 38.3</a>で示すように、btree演算子クラスは次の5つの比較演算子を提供しなければなりません。
+<code class="literal">&lt;</code>、<code class="literal">&lt;=</code>、<code class="literal">=</code>、<code class="literal">&gt;=</code>、そして<code class="literal">&gt;</code>です。
+<code class="literal">&lt;&gt;</code>も演算子クラスの一部であると期待する方もいるかもしれませんが、そうではありません。
+インデックス検索のWHERE句で<code class="literal">&lt;&gt;</code>を使うのは、ほとんど常に役に立たないからです。
+（ある種の目的のためにプランナは<code class="literal">&lt;&gt;</code>をbtree演算子クラスに関連しているものとして扱います。
+しかし、プランナは<code class="structname">pg_amop</code>から検索するのではなく<code class="literal">=</code>の否定子リンクから検索します。）
+ </p><p>
+<span class="original">
+  When several data types share near-identical sorting semantics, their
+  operator classes can be grouped into an operator family.  Doing so is
+  advantageous because it allows the planner to make deductions about
+  cross-type comparisons.  Each operator class within the family should
+  contain the single-type operators (and associated support functions)
+  for its input data type, while cross-type comparison operators and
+  support functions are &lt;quote&gt;loose&lt;/quote&gt; in the family.  It is
+  recommendable that a complete set of cross-type operators be included
+  in the family, thus ensuring that the planner can represent any
+  comparison conditions that it deduces from transitivity.
+</span>
+複数のデータ型がほとんど同じソートセマンティクスを共有している場合、それらの演算子クラスは演算子族にまとめることができます。
+そうすることによりプランナが型をまたがる比較を推論できるので、これはメリットがあります。
+ファミリー中の演算子クラスには、入力データ型のための単一型演算子（および関連するサポート関数）が含まれます。
+一方型をまたがる比較演算子とサポート関数は演算子族中で<span class="quote">「<span class="quote">ゆるやか</span>」</span>です。
+プランナが推移関係から推論するすべての比較条件を提示できるように、型をまたがる演算子の完全な集合を演算子族に入れておくことをお勧めします。
+ </p><p>
+<span class="original">
+  There are some basic assumptions that a btree operator family must
+  satisfy:
+</span>
+btree演算子族が満たさなければならない基本的な前提条件があります。
+ </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+    An &lt;literal&gt;=&lt;/literal&gt; operator must be an equivalence relation; that
+    is, for all non-null values &lt;replaceable&gt;A&lt;/replaceable&gt;,
+    &lt;replaceable&gt;B&lt;/replaceable&gt;, &lt;replaceable&gt;C&lt;/replaceable&gt; of the
+    data type:
+</span>
+<code class="literal">=</code>演算子は等号関係でなければなりません。
+つまり、そのデータ型のすべての非NULL値<em class="replaceable"><code>A</code></em>、<em class="replaceable"><code>B</code></em>、<em class="replaceable"><code>C</code></em>について、
+
+    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: circle; "><li class="listitem"><p>
+<span class="original">
+       &lt;replaceable&gt;A&lt;/replaceable&gt; &lt;literal&gt;=&lt;/literal&gt;
+       &lt;replaceable&gt;A&lt;/replaceable&gt; is true
+       (&lt;firstterm&gt;reflexive law&lt;/firstterm&gt;)
+</span>
+<em class="replaceable"><code>A</code></em> <code class="literal">=</code> <em class="replaceable"><code>A</code></em>が真である（<em class="firstterm">反射律</em>)
+      </p></li><li class="listitem"><p>
+<span class="original">
+       if &lt;replaceable&gt;A&lt;/replaceable&gt; &lt;literal&gt;=&lt;/literal&gt;
+       &lt;replaceable&gt;B&lt;/replaceable&gt;,
+       then &lt;replaceable&gt;B&lt;/replaceable&gt; &lt;literal&gt;=&lt;/literal&gt;
+       &lt;replaceable&gt;A&lt;/replaceable&gt;
+       (&lt;firstterm&gt;symmetric law&lt;/firstterm&gt;)
+</span>
+<em class="replaceable"><code>A</code></em> <code class="literal">=</code> <em class="replaceable"><code>B</code></em>なら、<em class="replaceable"><code>B</code></em> <code class="literal">=</code> <em class="replaceable"><code>A</code></em>である（<em class="firstterm">対称律</em>）
+      </p></li><li class="listitem"><p>
+<span class="original">
+       if &lt;replaceable&gt;A&lt;/replaceable&gt; &lt;literal&gt;=&lt;/literal&gt;
+       &lt;replaceable&gt;B&lt;/replaceable&gt; and &lt;replaceable&gt;B&lt;/replaceable&gt;
+       &lt;literal&gt;=&lt;/literal&gt; &lt;replaceable&gt;C&lt;/replaceable&gt;,
+       then &lt;replaceable&gt;A&lt;/replaceable&gt; &lt;literal&gt;=&lt;/literal&gt;
+       &lt;replaceable&gt;C&lt;/replaceable&gt;
+       (&lt;firstterm&gt;transitive law&lt;/firstterm&gt;)
+</span>
+<em class="replaceable"><code>A</code></em> <code class="literal">=</code> <em class="replaceable"><code>B</code></em>かつ<em class="replaceable"><code>B</code></em><code class="literal">=</code> <em class="replaceable"><code>C</code></em>なら、<em class="replaceable"><code>A</code></em> <code class="literal">=</code> <em class="replaceable"><code>C</code></em>である（<em class="firstterm">推移律</em>）
+      </p></li></ul></div><p>
+   </p></li><li class="listitem"><p>
+<span class="original">
+    A &lt;literal&gt;&amp;lt;&lt;/literal&gt; operator must be a strong ordering relation;
+    that is, for all non-null values &lt;replaceable&gt;A&lt;/replaceable&gt;,
+    &lt;replaceable&gt;B&lt;/replaceable&gt;, &lt;replaceable&gt;C&lt;/replaceable&gt;:
+</span>
+<code class="literal">&lt;</code>は強順序関係でなければなりません。つまり、すべての非NULL値<em class="replaceable"><code>A</code></em>、<em class="replaceable"><code>B</code></em>、<em class="replaceable"><code>C</code></em>に対して、
+
+    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: circle; "><li class="listitem"><p>
+<span class="original">
+       &lt;replaceable&gt;A&lt;/replaceable&gt; &lt;literal&gt;&amp;lt;&lt;/literal&gt;
+       &lt;replaceable&gt;A&lt;/replaceable&gt; is false
+       (&lt;firstterm&gt;irreflexive law&lt;/firstterm&gt;)
+</span>
+<em class="replaceable"><code>A</code></em> <code class="literal">&lt;</code> <em class="replaceable"><code>A</code></em>は偽である（<em class="firstterm">非反射律</em>）
+      </p></li><li class="listitem"><p>
+<span class="original">
+       if &lt;replaceable&gt;A&lt;/replaceable&gt; &lt;literal&gt;&amp;lt;&lt;/literal&gt;
+       &lt;replaceable&gt;B&lt;/replaceable&gt;
+       and &lt;replaceable&gt;B&lt;/replaceable&gt; &lt;literal&gt;&amp;lt;&lt;/literal&gt;
+       &lt;replaceable&gt;C&lt;/replaceable&gt;,
+       then &lt;replaceable&gt;A&lt;/replaceable&gt; &lt;literal&gt;&amp;lt;&lt;/literal&gt;
+       &lt;replaceable&gt;C&lt;/replaceable&gt;
+       (&lt;firstterm&gt;transitive law&lt;/firstterm&gt;)
+</span>
+<em class="replaceable"><code>A</code></em> <code class="literal">&lt;</code> <em class="replaceable"><code>B</code></em>かつ<em class="replaceable"><code>B</code></em> <code class="literal">&lt;</code> <em class="replaceable"><code>C</code></em>なら、<em class="replaceable"><code>A</code></em> <code class="literal">&lt;</code> <em class="replaceable"><code>C</code></em>である（<em class="firstterm">推移律</em>）
+      </p></li></ul></div><p>
+   </p></li><li class="listitem"><p>
+<span class="original">
+    Furthermore, the ordering is total; that is, for all non-null
+    values &lt;replaceable&gt;A&lt;/replaceable&gt;, &lt;replaceable&gt;B&lt;/replaceable&gt;:
+</span>
+更に、順序は全である。すなわち、すべての非NULL値<em class="replaceable"><code>A</code></em>、<em class="replaceable"><code>B</code></em>に対して、
+
+    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: circle; "><li class="listitem"><p>
+<span class="original">
+       exactly one of &lt;replaceable&gt;A&lt;/replaceable&gt; &lt;literal&gt;&amp;lt;&lt;/literal&gt;
+       &lt;replaceable&gt;B&lt;/replaceable&gt;, &lt;replaceable&gt;A&lt;/replaceable&gt;
+       &lt;literal&gt;=&lt;/literal&gt; &lt;replaceable&gt;B&lt;/replaceable&gt;, and
+       &lt;replaceable&gt;B&lt;/replaceable&gt; &lt;literal&gt;&amp;lt;&lt;/literal&gt;
+       &lt;replaceable&gt;A&lt;/replaceable&gt; is true
+       (&lt;firstterm&gt;trichotomy law&lt;/firstterm&gt;)
+</span>
+厳密に<em class="replaceable"><code>A</code></em> <code class="literal">&lt;</code> <em class="replaceable"><code>B</code></em>、<em class="replaceable"><code>A</code></em> <code class="literal">=</code> <em class="replaceable"><code>B</code></em>、<em class="replaceable"><code>B</code></em> <code class="literal">&lt;</code> <em class="replaceable"><code>A</code></em>のうちどれか一つが真（<em class="firstterm">三分律</em>）
+      </p></li></ul></div><p>
+
+<span class="original">
+    (The trichotomy law justifies the definition of the comparison support
+    function, of course.)
+</span>
+（もちろん、三分律は比較サポート関数の定義を正当化します。）
+   </p></li></ul></div><p>
+<span class="original">
+  The other three operators are defined in terms of &lt;literal&gt;=&lt;/literal&gt;
+  and &lt;literal&gt;&amp;lt;&lt;/literal&gt; in the obvious way, and must act consistently
+  with them.
+</span>
+他の3つの演算子は<code class="literal">=</code>と<code class="literal">&lt;</code>に沿って自明に定義され、それらと一貫していなければなりません。
+ </p><p>
+<span class="original">
+  For an operator family supporting multiple data types, the above laws must
+  hold when &lt;replaceable&gt;A&lt;/replaceable&gt;, &lt;replaceable&gt;B&lt;/replaceable&gt;,
+  &lt;replaceable&gt;C&lt;/replaceable&gt; are taken from any data types in the family.
+  The transitive laws are the trickiest to ensure, as in cross-type
+  situations they represent statements that the behaviors of two or three
+  different operators are consistent.
+  As an example, it would not work to put &lt;type&gt;float8&lt;/type&gt;
+  and &lt;type&gt;numeric&lt;/type&gt; into the same operator family, at least not with
+  the current semantics that &lt;type&gt;numeric&lt;/type&gt; values are converted
+  to &lt;type&gt;float8&lt;/type&gt; for comparison to a &lt;type&gt;float8&lt;/type&gt;.  Because
+  of the limited accuracy of &lt;type&gt;float8&lt;/type&gt;, this means there are
+  distinct &lt;type&gt;numeric&lt;/type&gt; values that will compare equal to the
+  same &lt;type&gt;float8&lt;/type&gt; value, and thus the transitive law would fail.
+</span>
+複数のデータ型をサポートする演算子族について、演算子族中のデータ型であるどんな<em class="replaceable"><code>A</code></em>、<em class="replaceable"><code>B</code></em>、<em class="replaceable"><code>C</code></em>も上記の法則を満たさなければなりません。
+型をまたがる際に2つあるいは3つの異なる演算子が一貫していることを表明することになるので、推移律を満たすことはもっとも困難です。
+例をあげると、少なくとも<code class="type">float8</code>と比較するために<code class="type">numeric</code>値を<code class="type">float8</code>に変換する現在の意味論のもとでは、<code class="type">float8</code>と<code class="type">numeric</code>を同じ演算子族に加えるのはうまくいかないでしょう。
+<code class="type">float8</code>の精度に限りがあるからです。
+これは同じ<code class="type">float8</code>値に対して等号比較する複数の異なる<code class="type">numeric</code>値が存在することを意味し、したがって推移律は満たされません。
+ </p><p>
+<span class="original">
+  Another requirement for a multiple-data-type family is that any implicit
+  or binary-coercion casts that are defined between data types included in
+  the operator family must not change the associated sort ordering.
+</span>
+複数データ型ファミリーに関する別な要件は、演算子族に含まれるデータ型間に定義される暗黙的あるいは二値型強制(binary-coercion)キャストは、関係するソート順を変更してはならないことです。
+ </p><p>
+<span class="original">
+  It should be fairly clear why a btree index requires these laws to hold
+  within a single data type: without them there is no ordering to arrange
+  the keys with.  Also, index searches using a comparison key of a
+  different data type require comparisons to behave sanely across two
+  data types.  The extensions to three or more data types within a family
+  are not strictly required by the btree index mechanism itself, but the
+  planner relies on them for optimization purposes.
+</span>
+単一のデータ型において、btreeインデックスがこれらの法則を守ることを要求するのはかなり明確です。
+これらの法則なしにはキー並べる順序がなくなってしまうからです。
+また、異なるデータ型の比較キーを使うインデックス検索では、2つのデータ型またがる比較が正常に動作することが必要です。
+演算子族中で3つ以上のデータ型に対する拡張はbtreeインデックスの機構自体では要求されませんが、プランナは最適化の目的でそれらに依存します。
+ </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="btree-intro.html" title="67.1. はじめに">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="btree.html" title="第67章 B-Treeインデックス">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="btree-support-funcs.html" title="67.3. B-Treeサポート関数">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">67.1. はじめに </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 67.3. B-Treeサポート関数</td></tr></table></div></body></html>

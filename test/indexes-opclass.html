@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>11.10. 演算子クラスと演算子族</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="indexes-index-only-scans.html" title="11.9. インデックスオンリースキャンとカバリングインデックス" /><link rel="next" href="indexes-collations.html" title="11.11. インデックスと照合順序" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="indexes.html" title="第11章 インデックス">第11章 インデックス</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : indexes-opclass.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="indexes-index-only-scans.html" title="11.9. インデックスオンリースキャンとカバリングインデックス">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="indexes.html" title="第11章 インデックス">上へ</a></td><td width="60%" align="center">11.10. 演算子クラスと演算子族</td><td width="20%" align="right"> <a accesskey="n" href="indexes-collations.html" title="11.11. インデックスと照合順序">次へ</a></td></tr></table><hr /></div><div class="sect1" id="INDEXES-OPCLASS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">11.10. 演算子クラスと演算子族</h2></div></div></div><span class="original">
+  &lt;title&gt;Operator Classes and Operator Families&lt;/title&gt;
+</span><a id="id-1.5.10.14.2" class="indexterm"></a><a id="id-1.5.10.14.3" class="indexterm"></a><a id="id-1.5.10.14.4" class="indexterm"></a><a id="id-1.5.10.14.5" class="indexterm"></a><p>
+<span class="original">
+   An index definition can specify an &lt;firstterm&gt;operator
+   class&lt;/firstterm&gt; for each column of an index.
+</span>
+インデックス定義では、インデックスの各列に<em class="firstterm">演算子クラス</em>を指定することができます。
+</p><pre class="synopsis">
+CREATE INDEX <em class="replaceable"><code>name</code></em> ON <em class="replaceable"><code>table</code></em> (<em class="replaceable"><code>column</code></em> <em class="replaceable"><code>opclass</code></em> [ ( <em class="replaceable"><code>opclass_options</code></em> ) ] [<span class="optional"><em class="replaceable"><code>sort options</code></em></span>] [<span class="optional">, ...</span>]);
+</pre><p>
+<span class="original">
+   The operator class identifies the operators to be used by the index
+   for that column.  For example, a B-tree index on the type &lt;type&gt;int4&lt;/type&gt;
+   would use the &lt;literal&gt;int4_ops&lt;/literal&gt; class; this operator
+   class includes comparison functions for values of type &lt;type&gt;int4&lt;/type&gt;.
+   In practice the default operator class for the column's data type is
+   usually sufficient.  The main reason for having operator classes is
+   that for some data types, there could be more than one meaningful
+   index behavior.  For example, we might want to sort a complex-number data
+   type either by absolute value or by real part.  We could do this by
+   defining two operator classes for the data type and then selecting
+   the proper class when making an index.  The operator class determines
+   the basic sort ordering (which can then be modified by adding sort options
+   &lt;literal&gt;COLLATE&lt;/literal&gt;,
+   &lt;literal&gt;ASC&lt;/literal&gt;/&lt;literal&gt;DESC&lt;/literal&gt; and/or
+   &lt;literal&gt;NULLS FIRST&lt;/literal&gt;/&lt;literal&gt;NULLS LAST&lt;/literal&gt;).
+</span>
+演算子クラスにより、その列のインデックスで使用される演算子が特定されます。
+例えば、<code class="type">int4</code>型に対するB-treeインデックスには、<code class="literal">int4_ops</code>クラスを使用します。
+この演算子クラスには、<code class="type">int4</code>型の値用の比較関数が含まれています。
+実際には、通常、列のデータ型のデフォルト演算子クラスで十分です。
+演算子クラスを持つ主な理由は、いくつかのデータ型では、複数の有意義なインデックスの振舞いがあり得るということです。
+例えば、複素数データ型を、絶対値でソートしたいかもしれませんし、実数部でソートしたいかもしれません。
+この処理は、そのデータ型の2つの演算子クラスを定義した上で、インデックスを作成する際に適切なクラスを選択することで、実行可能です。
+演算子クラスは基本的なソート順を決定します。
+（これはソートオプション<code class="literal">COLLATE</code>、<code class="literal">ASC</code>/<code class="literal">DESC</code>、<code class="literal">NULLS FIRST</code>/<code class="literal">NULLS LAST</code>を付けることで変更できます。）
+  </p><p>
+<span class="original">
+   There are also some built-in operator classes besides the default ones:
+</span>
+以下のように、デフォルトの演算子クラスとは別に、組み込み演算子クラスがいくつかあります。
+
+   </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+      The operator classes &lt;literal&gt;text_pattern_ops&lt;/literal&gt;,
+      &lt;literal&gt;varchar_pattern_ops&lt;/literal&gt;, and
+      &lt;literal&gt;bpchar_pattern_ops&lt;/literal&gt; support B-tree indexes on
+      the types &lt;type&gt;text&lt;/type&gt;, &lt;type&gt;varchar&lt;/type&gt;, and
+      &lt;type&gt;char&lt;/type&gt; respectively.  The
+      difference from the default operator classes is that the values
+      are compared strictly character by character rather than
+      according to the locale-specific collation rules.  This makes
+      these operator classes suitable for use by queries involving
+      pattern matching expressions (&lt;literal&gt;LIKE&lt;/literal&gt; or POSIX
+      regular expressions) when the database does not use the standard
+      &lt;quote&gt;C&lt;/quote&gt; locale.  As an example, you might index a
+      &lt;type&gt;varchar&lt;/type&gt; column like this:
+</span>
+<code class="literal">text_pattern_ops</code>、<code class="literal">varchar_pattern_ops</code>、<code class="literal">bpchar_pattern_ops</code>演算子クラスは、それぞれ、<code class="type">text</code>、<code class="type">varchar</code>、<code class="type">char</code>型上のB-treeインデックスをサポートします。
+デフォルトの演算子クラスとの違いは、ロケール特有の照合規則に従わずに、文字同士を厳密に比較する点です。
+これらの演算子クラスを、標準<span class="quote">「<span class="quote">C</span>」</span>ロケールを使用しないデータベースにおける、パターンマッチ式（<code class="literal">LIKE</code>やPOSIX正規表現）を含む問い合わせでの使用に適したものにします。
+例えば、以下のように<code class="type">varchar</code>のインデックスを作成できます。
+</p><pre class="programlisting">
+CREATE INDEX test_index ON test_table (col varchar_pattern_ops);
+</pre><p>
+<span class="original">
+      Note that you should also create an index with the default operator
+      class if you want queries involving ordinary &lt;literal&gt;&amp;lt;&lt;/literal&gt;,
+      &lt;literal&gt;&amp;lt;=&lt;/literal&gt;, &lt;literal&gt;&amp;gt;&lt;/literal&gt;, or &lt;literal&gt;&amp;gt;=&lt;/literal&gt; comparisons
+      to use an index.  Such queries cannot use the
+      &lt;literal&gt;&lt;replaceable&gt;xxx&lt;/replaceable&gt;_pattern_ops&lt;/literal&gt;
+      operator classes.  (Ordinary equality comparisons can use these
+      operator classes, however.)  It is possible to create multiple
+      indexes on the same column with different operator classes.
+      If you do use the C locale, you do not need the
+      &lt;literal&gt;&lt;replaceable&gt;xxx&lt;/replaceable&gt;_pattern_ops&lt;/literal&gt;
+      operator classes, because an index with the default operator class
+      is usable for pattern-matching queries in the C locale.
+</span>
+また、通常の<code class="literal">&lt;</code>、<code class="literal">&lt;=</code>、<code class="literal">&gt;</code>、または<code class="literal">&gt;=</code>比較を含む問い合わせでインデックスを使いたい場合も、デフォルトの演算子クラスでインデックスを作成しなければならないことに注意してください。
+こうした問い合わせでは<code class="literal"><em class="replaceable"><code>xxx</code></em>_pattern_ops</code>演算子クラスを使用することができません。（しかし、通常の等価比較はこれらの演算子クラスを使用することができます。）
+同じ列に対して異なる演算子クラスを使用して複数のインデックスを作成することができます。
+Cロケールを使用する場合は、<code class="literal"><em class="replaceable"><code>xxx</code></em>_pattern_ops</code>演算子クラスは必要ありません。
+Cロケールでのパターンマッチ問い合わせでは、デフォルト演算子クラスを使用したインデックスが使用できるためです。
+     </p></li></ul></div><p>
+  </p><p>
+<span class="original">
+    The following query shows all defined operator classes:
+</span>
+以下の問い合わせは、定義済みの演算子クラスを全て返します。
+
+</p><pre class="programlisting">
+SELECT am.amname AS index_method,
+       opc.opcname AS opclass_name,
+       opc.opcintype::regtype AS indexed_type,
+       opc.opcdefault AS is_default
+    FROM pg_am am, pg_opclass opc
+    WHERE opc.opcmethod = am.oid
+    ORDER BY index_method, opclass_name;
+</pre><p>
+  </p><p>
+<span class="original">
+   An operator class is actually just a subset of a larger structure called an
+   &lt;firstterm&gt;operator family&lt;/firstterm&gt;.  In cases where several data types have
+   similar behaviors, it is frequently useful to define cross-data-type
+   operators and allow these to work with indexes.  To do this, the operator
+   classes for each of the types must be grouped into the same operator
+   family.  The cross-type operators are members of the family, but are not
+   associated with any single class within the family.
+</span>
+実際のところ演算子クラスは、<em class="firstterm">演算子族</em>と呼ばれる、より大きな構造の一部でしかありません。
+複数のデータ型が似たような動作を行う場合、データ型を跨る演算子を定義し、インデックスで使用可能とすることが有用な場合がよくあります。
+このためには、各型に対する演算子クラスが同一の演算子族にまとめられている必要があります。
+データ型を跨る演算子は演算子族の要素です。演算子族内の1つの演算子クラスに結びついているわけではありません。
+  </p><p>
+<span class="original">
+    This expanded version of the previous query shows the operator family
+    each operator class belongs to:
+</span>
+以下は前述の問い合わせを拡張したバージョンで、各演算子クラスが属する演算子族を示します。
+</p><pre class="programlisting">
+SELECT am.amname AS index_method,
+       opc.opcname AS opclass_name,
+       opf.opfname AS opfamily_name,
+       opc.opcintype::regtype AS indexed_type,
+       opc.opcdefault AS is_default
+    FROM pg_am am, pg_opclass opc, pg_opfamily opf
+    WHERE opc.opcmethod = am.oid AND
+          opc.opcfamily = opf.oid
+    ORDER BY index_method, opclass_name;
+</pre><p>
+  </p><p>
+<span class="original">
+    This query shows all defined operator families and all
+    the operators included in each family:
+</span>
+以下の問い合わせは、定義済みの演算子族と各演算子族に含まれる演算子をすべて表示します。
+</p><pre class="programlisting">
+SELECT am.amname AS index_method,
+       opf.opfname AS opfamily_name,
+       amop.amopopr::regoperator AS opfamily_operator
+    FROM pg_am am, pg_opfamily opf, pg_amop amop
+    WHERE opf.opfmethod = am.oid AND
+          amop.amopfamily = opf.oid
+    ORDER BY index_method, opfamily_name, opfamily_operator;
+</pre><p>
+  </p><div class="tip"><h3 class="title">ヒント</h3><p>
+<span class="original">
+    &lt;xref linkend="app-psql"/&gt; has
+    commands &lt;command&gt;\dAc&lt;/command&gt;, &lt;command&gt;\dAf&lt;/command&gt;,
+    and &lt;command&gt;\dAo&lt;/command&gt;, which provide slightly more sophisticated
+    versions of these queries.
+</span>
+<a class="xref" href="app-psql.html" title="psql"><span class="refentrytitle"><span class="application">psql</span></span></a>には<code class="command">\dAc</code>、<code class="command">\dAf</code>、<code class="command">\dAo</code>コマンドがあり、これらのクエリのもう少し洗練されたバージョンを提供します。
+   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="indexes-index-only-scans.html" title="11.9. インデックスオンリースキャンとカバリングインデックス">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="indexes.html" title="第11章 インデックス">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="indexes-collations.html" title="11.11. インデックスと照合順序">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">11.9. インデックスオンリースキャンとカバリングインデックス </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 11.11. インデックスと照合順序</td></tr></table></div></body></html>

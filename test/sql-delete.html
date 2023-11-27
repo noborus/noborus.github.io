@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>DELETE</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-declare.html" title="DECLARE" /><link rel="next" href="sql-discard.html" title="DISCARD" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : sql-delete.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-declare.html" title="DECLARE">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">DELETE</td><td width="20%" align="right"> <a accesskey="n" href="sql-discard.html" title="DISCARD">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-DELETE"><div class="titlepage"></div><a id="id-1.9.3.100.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">DELETE</span></h2><p>DELETE<span class="original">
+  &lt;refpurpose&gt;delete rows of a table&lt;/refpurpose&gt;
+</span> — テーブルから行を削除する</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
+[ WITH [ RECURSIVE ] <em class="replaceable"><code>with_query</code></em> [, ...] ]
+DELETE FROM [ ONLY ] <em class="replaceable"><code>table_name</code></em> [ * ] [ [ AS ] <em class="replaceable"><code>alias</code></em> ]
+    [ USING <em class="replaceable"><code>from_item</code></em> [, ...] ]
+    [ WHERE <em class="replaceable"><code>condition</code></em> | WHERE CURRENT OF <em class="replaceable"><code>cursor_name</code></em> ]
+    [ RETURNING * | <em class="replaceable"><code>output_expression</code></em> [ [ AS ] <em class="replaceable"><code>output_name</code></em> ] [, ...] ]
+</pre></div><div class="refsect1" id="id-1.9.3.100.5"><h2>説明</h2><span class="original">
+  &lt;title&gt;Description&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;command&gt;DELETE&lt;/command&gt; deletes rows that satisfy the
+   &lt;literal&gt;WHERE&lt;/literal&gt; clause from the specified table.  If the
+   &lt;literal&gt;WHERE&lt;/literal&gt; clause is absent, the effect is to delete
+   all rows in the table.  The result is a valid, but empty table.
+</span>
+<code class="command">DELETE</code>は、指定したテーブルから<code class="literal">WHERE</code>句を満たす行を削除します。
+<code class="literal">WHERE</code>句がない場合、指定したテーブルの全ての行を削除することになります。
+この結果、そのテーブルは存在するが中身が空のテーブルになります。
+  </p><div class="tip"><h3 class="title">ヒント</h3><p>
+<span class="original">
+     &lt;link linkend="sql-truncate"&gt;&lt;command&gt;TRUNCATE&lt;/command&gt;&lt;/link&gt; provides a
+     faster mechanism to remove all rows from a table.
+</span>
+<a class="link" href="sql-truncate.html" title="TRUNCATE"><code class="command">TRUNCATE</code></a>は、より高速に、テーブルから全ての行を削除する仕組みを提供します。
+    </p></div><p>
+<span class="original">
+   There are two ways to delete rows in a table using information
+   contained in other tables in the database: using sub-selects, or
+   specifying additional tables in the &lt;literal&gt;USING&lt;/literal&gt; clause.
+   Which technique is more appropriate depends on the specific
+   circumstances.
+</span>
+データベース内のほかのテーブルに含まれる情報を用いてテーブル内の行を削除する方法には、副問い合わせと<code class="literal">USING</code>句で追加テーブルを指定する方法の2つがあります。
+どちらの技法が適切かはその状況によります。
+  </p><p>
+<span class="original">
+   The optional &lt;literal&gt;RETURNING&lt;/literal&gt; clause causes &lt;command&gt;DELETE&lt;/command&gt;
+   to compute and return value(s) based on each row actually deleted.
+   Any expression using the table's columns, and/or columns of other
+   tables mentioned in &lt;literal&gt;USING&lt;/literal&gt;, can be computed.
+   The syntax of the &lt;literal&gt;RETURNING&lt;/literal&gt; list is identical to that of the
+   output list of &lt;command&gt;SELECT&lt;/command&gt;.
+</span>
+<code class="literal">RETURNING</code>句を指定すると、<code class="command">DELETE</code>は実際に削除された各行に基づいて計算された値を返すようになります。
+そのテーブルの列、<code class="literal">USING</code>で指定された他のテーブルの列、あるいは、その両方を使用した式を計算することができます。
+<code class="literal">RETURNING</code>リストの構文は<code class="command">SELECT</code>の出力リストと同一です。
+  </p><p>
+<span class="original">
+   You must have the &lt;literal&gt;DELETE&lt;/literal&gt; privilege on the table
+   to delete from it, as well as the &lt;literal&gt;SELECT&lt;/literal&gt;
+   privilege for any table in the &lt;literal&gt;USING&lt;/literal&gt; clause or
+   whose values are read in the &lt;replaceable
+   class="parameter"&gt;condition&lt;/replaceable&gt;.
+</span>
+削除を実行するには、そのテーブルの<code class="literal">DELETE</code>権限が必要です。
+また、<code class="literal">USING</code>句内のテーブルに対する<code class="literal">SELECT</code>権限、および、<em class="replaceable"><code>condition</code></em>で使用する値を読み取るために、その値が含まれるテーブルに対する<code class="literal">SELECT</code>権限も必要です。
+  </p></div><div class="refsect1" id="id-1.9.3.100.6"><h2>パラメータ</h2><span class="original">
+  &lt;title&gt;Parameters&lt;/title&gt;
+</span><div class="variablelist"><dl class="variablelist"><dt><span class="term"><em class="replaceable"><code>with_query</code></em></span></dt><dd><p>
+<span class="original">
+      The &lt;literal&gt;WITH&lt;/literal&gt; clause allows you to specify one or more
+      subqueries that can be referenced by name in the &lt;command&gt;DELETE&lt;/command&gt;
+      query. See &lt;xref linkend="queries-with"/&gt; and &lt;xref linkend="sql-select"/&gt;
+      for details.
+</span>
+<code class="literal">WITH</code>句により<code class="command">DELETE</code>問い合わせ内で名前で参照可能な１つ以上の副問い合わせを指定することができます。
+詳しくは<a class="xref" href="queries-with.html" title="7.8. WITH問い合わせ（共通テーブル式）">7.8</a>と<a class="xref" href="sql-select.html" title="SELECT"><span class="refentrytitle">SELECT</span></a>を参照してください。
+     </p></dd><dt><span class="term"><em class="replaceable"><code>table_name</code></em></span></dt><dd><p>
+<span class="original">
+      The name (optionally schema-qualified) of the table to delete rows
+      from.  If &lt;literal&gt;ONLY&lt;/literal&gt; is specified before the table name,
+      matching rows are deleted from the named table only.  If
+      &lt;literal&gt;ONLY&lt;/literal&gt; is not specified, matching rows are also deleted
+      from any tables inheriting from the named table.  Optionally,
+      &lt;literal&gt;*&lt;/literal&gt; can be specified after the table name to explicitly
+      indicate that descendant tables are included.
+</span>
+行を削除するテーブルの名前です（スキーマ修飾名も可）。
+テーブル名の前に<code class="literal">ONLY</code>が指定された場合、そのテーブルでのみマッチする行が削除されます。
+<code class="literal">ONLY</code>が指定されていない場合、そのテーブルおよび（もしあれば）そのテーブルを継承する全てのテーブルから一致する行が削除されます。
+オプションで、テーブル名の後に<code class="literal">*</code>を指定することで、明示的に継承するテーブルも含まれることを示すことができます。
+     </p></dd><dt><span class="term"><em class="replaceable"><code>alias</code></em></span></dt><dd><p>
+<span class="original">
+      A substitute name for the target table. When an alias is
+      provided, it completely hides the actual name of the table.  For
+      example, given &lt;literal&gt;DELETE FROM foo AS f&lt;/literal&gt;, the remainder
+      of the &lt;command&gt;DELETE&lt;/command&gt; statement must refer to this
+      table as &lt;literal&gt;f&lt;/literal&gt; not &lt;literal&gt;foo&lt;/literal&gt;.
+</span>
+対象テーブルの別名です。
+別名が与えられた場合、実際のテーブル名は完全に隠蔽されます。
+たとえば、<code class="literal">DELETE FROM foo AS f</code>とあるとき、この<code class="command">DELETE</code>文の残りの部分ではこのテーブルを<code class="literal">foo</code>ではなく<code class="literal">f</code>として参照しなければなりません。
+     </p></dd><dt><span class="term"><em class="replaceable"><code>from_item</code></em></span></dt><dd><p>
+<span class="original">
+      A table expression allowing columns from other tables to appear
+      in the &lt;literal&gt;WHERE&lt;/literal&gt; condition.  This uses the same
+      syntax as the &lt;link linkend="sql-from"&gt;&lt;literal&gt;FROM&lt;/literal&gt;&lt;/link&gt;
+      clause of a &lt;command&gt;SELECT&lt;/command&gt; statement; for example, an alias
+      for the table name can be specified.  Do not repeat the target
+      table as a &lt;replaceable class="parameter"&gt;from_item&lt;/replaceable&gt;
+      unless you wish to set up a self-join (in which case it must appear
+      with an alias in the &lt;replaceable&gt;from_item&lt;/replaceable&gt;).
+</span>
+<code class="literal">WHERE</code>条件内に他のテーブルの列を記述できるようにするための、テーブル式です。
+これは、<code class="command">SELECT</code>文の<a class="link" href="sql-select.html#SQL-FROM" title="FROM句"><code class="literal">FROM</code></a>句と同じ文法を使います。例えば、テーブル名の別名が指定できます。
+自己結合を行う場合を除き、<em class="replaceable"><code>from_item</code></em>に対象のテーブルを繰り返してはいけません（自己結合を行う場合は、<em class="replaceable"><code>from_item</code></em>内で対象のテーブルとその別名を指定しておく必要があります）。
+     </p></dd><dt><span class="term"><em class="replaceable"><code>condition</code></em></span></dt><dd><p>
+<span class="original">
+      An expression that returns a value of type &lt;type&gt;boolean&lt;/type&gt;.
+      Only rows for which this expression returns &lt;literal&gt;true&lt;/literal&gt;
+      will be deleted.
+</span>
+<code class="type">boolean</code>型の値を返す式です。
+この式が<code class="literal">true</code>を返す行のみが削除されます。
+     </p></dd><dt><span class="term"><em class="replaceable"><code>cursor_name</code></em></span></dt><dd><p>
+<span class="original">
+      The name of the cursor to use in a &lt;literal&gt;WHERE CURRENT OF&lt;/literal&gt;
+      condition.  The row to be deleted is the one most recently fetched
+      from this cursor.  The cursor must be a non-grouping
+      query on the &lt;command&gt;DELETE&lt;/command&gt;'s target table.
+      Note that &lt;literal&gt;WHERE CURRENT OF&lt;/literal&gt; cannot be
+      specified together with a Boolean condition.  See
+      &lt;xref linkend="sql-declare"/&gt;
+      for more information about using cursors with
+      &lt;literal&gt;WHERE CURRENT OF&lt;/literal&gt;.
+</span>
+<code class="literal">WHERE CURRENT OF</code>条件で使用されるカーソルの名前です。
+削除対象の行は、そのカーソルからもっとも最近に取り出される行です。
+カーソルは、<code class="command">DELETE</code>の対象テーブルに対するグループ化のない問い合わせでなければなりません。
+<code class="literal">WHERE CURRENT OF</code>を論理条件といっしょに指定することはできません。
+<code class="literal">WHERE CURRENT OF</code>付きのカーソルの使用に関する情報については<a class="xref" href="sql-declare.html" title="DECLARE"><span class="refentrytitle">DECLARE</span></a>を参照してください。
+     </p></dd><dt><span class="term"><em class="replaceable"><code>output_expression</code></em></span></dt><dd><p>
+<span class="original">
+      An expression to be computed and returned by the &lt;command&gt;DELETE&lt;/command&gt;
+      command after each row is deleted.  The expression can use any
+      column names of the table named by &lt;replaceable class="parameter"&gt;table_name&lt;/replaceable&gt;
+      or table(s) listed in &lt;literal&gt;USING&lt;/literal&gt;.
+      Write &lt;literal&gt;*&lt;/literal&gt; to return all columns.
+</span>
+各行を削除した後に<code class="command">DELETE</code>によって計算され、返される式です。
+この式には、<em class="replaceable"><code>table_name</code></em>で指名したテーブルまたは<code class="literal">USING</code>で指定したテーブルの任意の列名を使用することができます。
+すべての列を返す場合は<code class="literal">*</code>と記載してください。
+     </p></dd><dt><span class="term"><em class="replaceable"><code>output_name</code></em></span></dt><dd><p>
+<span class="original">
+      A name to use for a returned column.
+</span>
+返される列で使用される名前です。
+     </p></dd></dl></div></div><div class="refsect1" id="id-1.9.3.100.7"><h2>出力</h2><span class="original">
+  &lt;title&gt;Outputs&lt;/title&gt;
+</span><p>
+<span class="original">
+   On successful completion, a &lt;command&gt;DELETE&lt;/command&gt; command returns a command
+   tag of the form
+</span>
+正常に終了した場合、<code class="command">DELETE</code>コマンドは以下の形式のコマンドタグを返します。
+</p><pre class="screen">
+DELETE <em class="replaceable"><code>count</code></em>
+</pre><p>
+<span class="original">
+   The &lt;replaceable class="parameter"&gt;count&lt;/replaceable&gt; is the number
+   of rows deleted.  Note that the number may be less than the number of
+   rows that matched the &lt;replaceable
+   class="parameter"&gt;condition&lt;/replaceable&gt; when deletes were
+   suppressed by a &lt;literal&gt;BEFORE DELETE&lt;/literal&gt; trigger.  If &lt;replaceable
+   class="parameter"&gt;count&lt;/replaceable&gt; is 0, no rows were deleted by
+   the query (this is not considered an error).
+</span>
+<em class="replaceable"><code>count</code></em>は削除した行数です。
+この数は、<code class="literal">BEFORE DELETE</code>トリガによって削除が抑止された場合、<em class="replaceable"><code>condition</code></em>に合致した行より少なくなる可能性があることに注意してください。
+<em class="replaceable"><code>count</code></em>が0の場合、<em class="replaceable"><code>condition</code></em>を満たす行が存在しなかったことを示します
+（これはエラーとはみなされません）。
+  </p><p>
+<span class="original">
+   If the &lt;command&gt;DELETE&lt;/command&gt; command contains a &lt;literal&gt;RETURNING&lt;/literal&gt;
+   clause, the result will be similar to that of a &lt;command&gt;SELECT&lt;/command&gt;
+   statement containing the columns and values defined in the
+   &lt;literal&gt;RETURNING&lt;/literal&gt; list, computed over the row(s) deleted by the
+   command.
+</span>
+<code class="command">DELETE</code>コマンドが<code class="literal">RETURNING</code>句を持つ場合、その結果は、<code class="literal">RETURNING</code>リストで定義した列と値を持ち、そのコマンドで削除された行全体に対して計算を行う<code class="command">SELECT</code>文の結果と似たものになるでしょう。
+  </p></div><div class="refsect1" id="id-1.9.3.100.8"><h2>注釈</h2><span class="original">
+  &lt;title&gt;Notes&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; lets you reference columns of
+   other tables in the &lt;literal&gt;WHERE&lt;/literal&gt; condition by specifying the
+   other tables in the &lt;literal&gt;USING&lt;/literal&gt; clause.  For example,
+   to delete all films produced by a given producer, one can do:
+</span>
+<span class="productname">PostgreSQL</span>では、<code class="literal">USING</code>句で他のテーブルを指定することで、<code class="literal">WHERE</code>条件内で他のテーブルを参照することができます。
+例えば、指定したプロデューサが製作した全ての映画を削除する時は、次のようなコマンドを実行します。
+</p><pre class="programlisting">
+DELETE FROM films USING producers
+  WHERE producer_id = producers.id AND producers.name = 'foo';
+</pre><p>
+<span class="original">
+   What is essentially happening here is a join between &lt;structname&gt;films&lt;/structname&gt;
+   and &lt;structname&gt;producers&lt;/structname&gt;, with all successfully joined
+   &lt;structname&gt;films&lt;/structname&gt; rows being marked for deletion.
+   This syntax is not standard.  A more standard way to do it is:
+</span>
+ここでは、<code class="structname">films</code>と<code class="structname">producers</code>とを結合して、<code class="structname">films</code>行に削除用の印を付けるという作業を行っています。
+この構文は標準に従ったものではありません。
+より標準的な方法は以下の通りです。
+</p><pre class="programlisting">
+DELETE FROM films
+  WHERE producer_id IN (SELECT id FROM producers WHERE name = 'foo');
+</pre><p>
+<span class="original">
+   In some cases the join style is easier to write or faster to
+   execute than the sub-select style.
+</span>
+副問い合わせ形式より結合形式の方が書き易い、あるいは、実行が速くなることがあります。
+  </p></div><div class="refsect1" id="id-1.9.3.100.9"><h2>例</h2><span class="original">
+  &lt;title&gt;Examples&lt;/title&gt;
+</span><p>
+<span class="original">
+   Delete all films but musicals:
+</span>
+ミュージカル以外の全ての映画を削除します。
+</p><pre class="programlisting">
+DELETE FROM films WHERE kind &lt;&gt; 'Musical';
+</pre><p>
+  </p><p>
+<span class="original">
+   Clear the table &lt;literal&gt;films&lt;/literal&gt;:
+</span>
+<code class="literal">films</code>テーブルを空にします。
+</p><pre class="programlisting">
+DELETE FROM films;
+</pre><p>
+  </p><p>
+<span class="original">
+   Delete completed tasks, returning full details of the deleted rows:
+</span>
+完了した作業（statusがDONE）を削除し、削除された行のすべての詳細を返します。
+</p><pre class="programlisting">
+DELETE FROM tasks WHERE status = 'DONE' RETURNING *;
+</pre><p>
+  </p><p>
+<span class="original">
+   Delete the row of &lt;structname&gt;tasks&lt;/structname&gt; on which the cursor
+   &lt;literal&gt;c_tasks&lt;/literal&gt; is currently positioned:
+</span>
+<code class="structname">tasks</code>において<code class="literal">c_tasks</code>カーソルが現在位置している行を削除します。
+</p><pre class="programlisting">
+DELETE FROM tasks WHERE CURRENT OF c_tasks;
+</pre></div><div class="refsect1" id="id-1.9.3.100.10"><h2>互換性</h2><span class="original">
+  &lt;title&gt;Compatibility&lt;/title&gt;
+</span><p>
+<span class="original">
+   This command conforms to the &lt;acronym&gt;SQL&lt;/acronym&gt; standard, except
+   that the &lt;literal&gt;USING&lt;/literal&gt; and &lt;literal&gt;RETURNING&lt;/literal&gt; clauses
+   are &lt;productname&gt;PostgreSQL&lt;/productname&gt; extensions, as is the ability
+   to use &lt;literal&gt;WITH&lt;/literal&gt; with &lt;command&gt;DELETE&lt;/command&gt;.
+</span>
+このコマンドは標準<acronym class="acronym">SQL</acronym>に準拠しています。
+ただし、<code class="literal">USING</code>句と<code class="literal">RETURNING</code>句は<span class="productname">PostgreSQL</span>の拡張です。
+<code class="command">DELETE</code>で<code class="literal">WITH</code>が使用可能であることも同様に拡張です。
+  </p></div><div class="refsect1" id="id-1.9.3.100.11"><h2>関連項目</h2><span class="original">
+  &lt;title&gt;See Also&lt;/title&gt;
+</span><span class="simplelist"><a class="xref" href="sql-truncate.html" title="TRUNCATE"><span class="refentrytitle">TRUNCATE</span></a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-declare.html" title="DECLARE">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-discard.html" title="DISCARD">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">DECLARE </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> DISCARD</td></tr></table></div></body></html>

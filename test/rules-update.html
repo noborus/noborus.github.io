@@ -1,0 +1,1054 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>41.4. INSERT、UPDATE、DELETEについてのルール</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="rules-materializedviews.html" title="41.3. マテリアライズドビュー" /><link rel="next" href="rules-privileges.html" title="41.5. ルールと権限" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="rules.html" title="第41章 ルールシステム">第41章 ルールシステム</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : rules-update.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="rules-materializedviews.html" title="41.3. マテリアライズドビュー">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="rules.html" title="第41章 ルールシステム">上へ</a></td><td width="60%" align="center">41.4. <code class="command">INSERT</code>、<code class="command">UPDATE</code>、<code class="command">DELETE</code>についてのルール</td><td width="20%" align="right"> <a accesskey="n" href="rules-privileges.html" title="41.5. ルールと権限">次へ</a></td></tr></table><hr /></div><div class="sect1" id="RULES-UPDATE"><div class="titlepage"><div><div><h2 class="title" style="clear: both">41.4. <code class="command">INSERT</code>、<code class="command">UPDATE</code>、<code class="command">DELETE</code>についてのルール</h2></div></div></div><span class="original">
+&lt;title&gt;Rules on &lt;command&gt;INSERT&lt;/command&gt;, &lt;command&gt;UPDATE&lt;/command&gt;, and &lt;command&gt;DELETE&lt;/command&gt;&lt;/title&gt;
+</span><a id="id-1.8.6.10.2" class="indexterm"></a><a id="id-1.8.6.10.3" class="indexterm"></a><a id="id-1.8.6.10.4" class="indexterm"></a><a id="id-1.8.6.10.5" class="indexterm"></a><a id="id-1.8.6.10.6" class="indexterm"></a><a id="id-1.8.6.10.7" class="indexterm"></a><p>
+<span class="original">
+    Rules that are defined on &lt;command&gt;INSERT&lt;/command&gt;, &lt;command&gt;UPDATE&lt;/command&gt;,
+    and &lt;command&gt;DELETE&lt;/command&gt; are significantly different from the view rules
+    described in the previous section. First, their &lt;command&gt;CREATE
+    RULE&lt;/command&gt; command allows more:
+</span>
+<code class="command">INSERT</code>、<code class="command">UPDATE</code>、<code class="command">DELETE</code>に定義するルールは前節で解説したビューのルールとはまったく異なります。
+第一点として、これらの<code class="command">CREATE RULE</code>コマンドでは以下を行うことができます。
+
+    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+            They are allowed to have no action.
+</span>
+アクションがないルールも可能です。
+        </p></li><li class="listitem"><p>
+<span class="original">
+            They can have multiple actions.
+</span>
+複数のアクションを持てます。
+        </p></li><li class="listitem"><p>
+<span class="original">
+            They can be &lt;literal&gt;INSTEAD&lt;/literal&gt; or &lt;literal&gt;ALSO&lt;/literal&gt; (the default).
+</span>
+<code class="literal">INSTEAD</code>もしくは<code class="literal">ALSO</code>（デフォルト）を取ることができます。
+        </p></li><li class="listitem"><p>
+<span class="original">
+            The pseudorelations &lt;literal&gt;NEW&lt;/literal&gt; and &lt;literal&gt;OLD&lt;/literal&gt; become useful.
+</span>
+疑似リレーション<code class="literal">NEW</code>と<code class="literal">OLD</code>が役立つようになります。
+        </p></li><li class="listitem"><p>
+<span class="original">
+            They can have rule qualifications.
+</span>
+ルール条件を持たせることができます。
+        </p></li></ul></div><p>
+
+<span class="original">
+    Second, they don't modify the query tree in place. Instead they
+    create zero or more new query trees and can throw away the
+    original one.
+</span>
+第二点として、その場で問い合わせツリーを変更しません。
+その代わりに新規の0個以上の問い合わせツリーを生成して、オリジナルを破棄することができます。
+</p><div class="caution"><h3 class="title">注意</h3><p>
+<span class="original">
+  In many cases, tasks that could be performed by rules
+  on &lt;command&gt;INSERT&lt;/command&gt;/&lt;command&gt;UPDATE&lt;/command&gt;/&lt;command&gt;DELETE&lt;/command&gt; are better done
+  with triggers.  Triggers are notationally a bit more complicated, but their
+  semantics are much simpler to understand.  Rules tend to have surprising
+  results when the original query contains volatile functions: volatile
+  functions may get executed more times than expected in the process of
+  carrying out the rules.
+</span>
+多くの場合、<code class="command">INSERT</code>/<code class="command">UPDATE</code>/<code class="command">DELETE</code>におけるルールによって実行できるタスクは、トリガーで実行した方が良いでしょう。
+トリガーは概念としては少し複雑ですが、意味を理解するにはとても単純です。
+元の問い合わせにvolatile関数を含む場合、ルールは驚かせる結果を返すことがよくあります。（volatile関数はルールを遂行する過程で予期していた回数より多く実行されてしまうかもしれません）
+ </p><p>
+<span class="original">
+  Also, there are some cases that are not supported by these types of rules at
+  all, notably including &lt;literal&gt;WITH&lt;/literal&gt; clauses in the original query and
+  multiple-assignment sub-&lt;literal&gt;SELECT&lt;/literal&gt;s in the &lt;literal&gt;SET&lt;/literal&gt; list
+  of &lt;command&gt;UPDATE&lt;/command&gt; queries.  This is because copying these constructs
+  into a rule query would result in multiple evaluations of the sub-query,
+  contrary to the express intent of the query's author.
+</span>
+また、これらのタイプのルールが全くサポートしない場合もあります。
+特に<code class="literal">WITH</code>句を元の問い合わせに含む場合と<code class="command">UPDATE</code>問い合わせの<code class="literal">SET</code>リストの中で複数列に代入するサブ<code class="literal">SELECT</code>の場合です。
+これはルール問い合わせにこれらの構造を複製すると副問い合わせを複数回評価し、問い合わせの作者が表現したかった意図と異なる結果となるためです。
+ </p></div><div class="sect2" id="id-1.8.6.10.10"><div class="titlepage"><div><div><h3 class="title">41.4.1. 更新ルールの動作</h3></div></div></div><span class="original">
+&lt;title&gt;How Update Rules Work&lt;/title&gt;
+</span><p>
+<span class="original">
+    Keep the syntax:
+</span>
+
+</p><pre class="programlisting">
+CREATE [ OR REPLACE ] RULE <em class="replaceable"><code>name</code></em> AS ON <em class="replaceable"><code>event</code></em>
+    TO <em class="replaceable"><code>table</code></em> [ WHERE <em class="replaceable"><code>condition</code></em> ]
+    DO [ ALSO | INSTEAD ] { NOTHING | <em class="replaceable"><code>command</code></em> | ( <em class="replaceable"><code>command</code></em> ; <em class="replaceable"><code>command</code></em> ... ) }
+</pre><p>
+
+<span class="original">
+    in mind.
+    In the following, &lt;firstterm&gt;update rules&lt;/firstterm&gt; means rules that are defined
+    on &lt;command&gt;INSERT&lt;/command&gt;, &lt;command&gt;UPDATE&lt;/command&gt;, or &lt;command&gt;DELETE&lt;/command&gt;.
+</span>
+上記の構文を覚えておいてください。
+以下では、<em class="firstterm">更新ルール</em>は<code class="command">INSERT</code>、<code class="command">UPDATE</code>、<code class="command">DELETE</code>に定義されたルールを意味します。
+</p><p>
+<span class="original">
+    Update rules get applied by the rule system when the result
+    relation and the command type of a query tree are equal to the
+    object and event given in the &lt;command&gt;CREATE RULE&lt;/command&gt; command.
+    For update rules, the rule system creates a list of query trees.
+    Initially the query-tree list is empty.
+    There can be zero (&lt;literal&gt;NOTHING&lt;/literal&gt; key word), one, or multiple actions.
+    To simplify, we will look at a rule with one action. This rule
+    can have a qualification or not and it can be &lt;literal&gt;INSTEAD&lt;/literal&gt; or
+    &lt;literal&gt;ALSO&lt;/literal&gt; (the default).
+</span>
+更新ルールは、問い合わせツリーの結果リレーションとコマンド種類が<code class="command">CREATE RULE</code>で与えられるオブジェクトとイベントと等しい場合にルールシステムによって適用されます。
+更新ルールに対してルールシステムは問い合わせツリーのリストを生成します。
+最初は問い合わせツリーリストは空です。
+0（<code class="literal">NOTHING</code>キーワード）、1つまたは複数のアクションが有効です。
+簡単にするため、ここでは1つのアクションのルールを取り上げます。
+このルールは条件を持っていても持っていなくても構いませんし、また<code class="literal">INSTEAD</code>か<code class="literal">ALSO</code>（デフォルト）のいずれかを取ることができます。
+</p><p>
+<span class="original">
+    What is a rule qualification? It is a restriction that tells
+    when the actions of the rule should be done and when not. This
+    qualification can only reference the pseudorelations &lt;literal&gt;NEW&lt;/literal&gt; and/or &lt;literal&gt;OLD&lt;/literal&gt;,
+    which basically represent the relation that was given as object (but with a
+    special meaning).
+</span>
+ルール条件とはどんなものでしょうか。
+それはルールのアクションを行わなければならない時と、行ってはならない時を指定する条件です。
+基本的に（特別な意味合いを持った）オブジェクトとして与えられるリレーションである<code class="literal">NEW</code>疑似リレーションか<code class="literal">OLD</code>疑似リレーション、または、その両者のみをこの条件は参照することができます。
+</p><p>
+<span class="original">
+    So we have three cases that produce the following query trees for
+    a one-action rule.
+</span>
+1アクションのルールに対し、以下の問い合わせツリーを生成する3つの場合があります。
+
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">ALSO</code>または<code class="literal">INSTEAD</code>で条件がない場合。</span></dt><dd><p>
+<span class="original">
+        the query tree from the rule action with the original query
+        tree's qualification added
+</span>
+元の問い合わせツリーの条件が追加された、ルールアクションからの問い合わせツリー
+       </p></dd><dt><span class="term">条件付き、かつ<code class="literal">ALSO</code></span></dt><dd><p>
+<span class="original">
+        the query tree from the rule action with the rule
+        qualification and the original query tree's qualification
+        added
+</span>
+ルール条件と元の問い合わせツリーの条件が追加された、ルールアクションからの問い合わせツリー
+       </p></dd><dt><span class="term">条件付き、かつ<code class="literal">INSTEAD</code></span></dt><dd><p>
+<span class="original">
+        the query tree from the rule action with the rule
+        qualification and the original query tree's qualification; and
+        the original query tree with the negated rule qualification
+        added
+</span>
+ルール条件と元の問い合わせツリーの条件が追加された、ルールアクションからの問い合わせツリーとルール条件の否定条件が追加された元の問い合わせツリー
+       </p></dd></dl></div><p>
+
+<span class="original">
+    Finally, if the rule is &lt;literal&gt;ALSO&lt;/literal&gt;, the unchanged original query tree is
+    added to the list. Since only qualified &lt;literal&gt;INSTEAD&lt;/literal&gt; rules already add the
+    original query tree, we end up with either one or two output query trees
+    for a rule with one action.
+</span>
+最後に、もしルールが<code class="literal">ALSO</code>の場合、変更されていない元の問い合わせツリーがリストに付け加えられます。
+条件付きの<code class="literal">INSTEAD</code>ルールのみが既に元の構文解析ツリーに追加をしているので、最後は1つのアクションを持つルールに対して1つもしくは2つの問い合わせツリーにたどり着きます。
+</p><p>
+<span class="original">
+    For &lt;literal&gt;ON INSERT&lt;/literal&gt; rules, the original query (if not suppressed by &lt;literal&gt;INSTEAD&lt;/literal&gt;)
+    is done before any actions added by rules.  This allows the actions to
+    see the inserted row(s).  But for &lt;literal&gt;ON UPDATE&lt;/literal&gt; and &lt;literal&gt;ON
+    DELETE&lt;/literal&gt; rules, the original query is done after the actions added by rules.
+    This ensures that the actions can see the to-be-updated or to-be-deleted
+    rows; otherwise, the actions might do nothing because they find no rows
+    matching their qualifications.
+</span>
+<code class="literal">ON INSERT</code>ルールでは、元の問い合わせは、（<code class="literal">INSTEAD</code>により止められていない限り）ルールによって追加されたアクションの前に実行されます。
+これにより、アクションは挿入された行（複数可）を参照することができます。
+しかし、<code class="literal">ON UPDATE</code>と<code class="literal">ON DELETE</code>ルールでは、元の問い合わせはルールによって追加されたアクションの後に実行されます。
+これは、アクションが更新される予定の、または削除される予定の行を参照できることを保証します。
+さもないと、条件に一致する行を見つけることができないためにアクションが作動しなくなる可能性が起こります。
+</p><p>
+<span class="original">
+    The query trees generated from rule actions are thrown into the
+    rewrite system again, and maybe more rules get applied resulting
+    in additional or fewer query trees.
+    So a rule's actions must have either a different
+    command type or a different result relation than the rule itself is
+    on, otherwise this recursive process will end up in an infinite loop.
+    (Recursive expansion of a rule will be detected and reported as an
+    error.)
+</span>
+ルールアクションで生成された問い合わせツリーは、再度書き換えシステムに渡され、より多くのルールの適用を受けて問い合わせツリーが増やされたり減らされたりするかもしれません。
+ですから、ルールのアクションはルール自身とは異なるコマンド種類か、異なる結果リレーションを持っていなければなりません。
+さもないと、この再帰的処理により無限ループに陥ってしまいます。
+(ルールの再帰展開は検知され、エラーとして報告されます。)
+</p><p>
+<span class="original">
+    The query trees found in the actions of the
+    &lt;structname&gt;pg_rewrite&lt;/structname&gt; system catalog are only
+    templates. Since they can reference the range-table entries for
+    &lt;literal&gt;NEW&lt;/literal&gt; and &lt;literal&gt;OLD&lt;/literal&gt;, some substitutions have to be made before they can be
+    used. For any reference to &lt;literal&gt;NEW&lt;/literal&gt;, the target list of the original
+    query is searched for a corresponding entry. If found, that
+    entry's expression replaces the reference. Otherwise, &lt;literal&gt;NEW&lt;/literal&gt; means the
+    same as &lt;literal&gt;OLD&lt;/literal&gt; (for an &lt;command&gt;UPDATE&lt;/command&gt;) or is replaced by
+    a null value (for an &lt;command&gt;INSERT&lt;/command&gt;). Any reference to &lt;literal&gt;OLD&lt;/literal&gt; is
+    replaced by a reference to the range-table entry that is the
+    result relation.
+</span>
+<code class="structname">pg_rewrite</code>システムカタログのアクションにある問い合わせツリーは単なるテンプレートです。
+これらは<code class="literal">NEW</code>と<code class="literal">OLD</code>に対する範囲テーブルの項目を参照することができるため、使用される前に何らかの置換措置がとられていなければなりません。
+<code class="literal">NEW</code>を参照する全てに対し、元の問い合わせの目的リストは対応する項目があるかどうか検索されます。
+項目が見つかった場合には、その項目式が参照を置き換えます。
+項目がなかった場合、<code class="literal">NEW</code>は<code class="literal">OLD</code>と同じ意味になる（<code class="command">UPDATE</code>の場合）か、NULLによって置き換えられます（<code class="command">INSERT</code>の場合）。
+<code class="literal">OLD</code>に対する参照は全て結果リレーションである範囲テーブルの項目への参照に置き換えられます。
+</p><p>
+<span class="original">
+    After the system is done applying update rules, it applies view rules to the
+    produced query tree(s).  Views cannot insert new update actions so
+    there is no need to apply update rules to the output of view rewriting.
+</span>
+更新ルールの適用が終わると、システムはそこで作られた構文解析ツリーにビュールールを適用します。
+ビューは、新しい更新アクションを挿入できないため、ビュー書き換えの結果に更新ルールを適用する必要はありません。
+</p><div class="sect3" id="id-1.8.6.10.10.10"><div class="titlepage"><div><div><h4 class="title">41.4.1.1. 最初のルール、ステップバイステップ</h4></div></div></div><span class="original">
+&lt;title&gt;A First Rule Step by Step&lt;/title&gt;
+</span><p>
+<span class="original">
+    Say we want to trace changes to the &lt;literal&gt;sl_avail&lt;/literal&gt; column in the
+    &lt;literal&gt;shoelace_data&lt;/literal&gt; relation. So we set up a log table
+    and a rule that conditionally writes a log entry when an
+    &lt;command&gt;UPDATE&lt;/command&gt; is performed on
+    &lt;literal&gt;shoelace_data&lt;/literal&gt;.
+</span>
+<code class="literal">shoelace_data</code>リレーションの<code class="literal">sl_avail</code>列の変化を追跡してみたいと思います。
+そこでログ用テーブルと、<code class="literal">shoelace_data</code>に対して行われる<code class="command">UPDATE</code>をログに記録するルールを用意しました。
+
+</p><pre class="programlisting">
+<span class="original">
+CREATE TABLE shoelace_log (
+    sl_name    text,          &amp;#45;- shoelace changed
+    sl_avail   integer,       &amp;#45;- new available value
+    log_who    text,          &amp;#45;- who did it
+    log_when   timestamp      &amp;#45;- when
+);
+</span>
+CREATE TABLE shoelace_log (
+    sl_name    text,          -- 変更された靴紐
+    sl_avail   integer,       -- 新しい現在値
+    log_who    text,          -- 誰が行ったか
+    log_when   timestamp      -- いつ行ったか
+);
+
+CREATE RULE log_shoelace AS ON UPDATE TO shoelace_data
+    WHERE NEW.sl_avail &lt;&gt; OLD.sl_avail
+    DO INSERT INTO shoelace_log VALUES (
+                                    NEW.sl_name,
+                                    NEW.sl_avail,
+                                    current_user,
+                                    current_timestamp
+                                );
+</pre><p>
+</p><p>
+<span class="original">
+    Now someone does:
+</span>
+ここで誰かが以下を実行します。
+
+</p><pre class="programlisting">
+UPDATE shoelace_data SET sl_avail = 6 WHERE sl_name = 'sl7';
+</pre><p>
+
+<span class="original">
+    and we look at the log table:
+</span>
+ログテーブルを見てみましょう。
+
+</p><pre class="programlisting">
+SELECT * FROM shoelace_log;
+
+ sl_name | sl_avail | log_who | log_when
+---------+----------+---------+----------------------------------
+ sl7     |        6 | Al      | Tue Oct 20 16:14:45 1998 MET DST
+(1 row)
+</pre><p>
+   </p><p>
+<span class="original">
+    That's what we expected. What happened in the background is the following.
+    The parser created the query tree:
+</span>
+思った通りの結果が出ました。
+以下に裏で何が起こったのかを説明します。
+パーサがまず以下の構文解析ツリーを生成しました。
+
+</p><pre class="programlisting">
+UPDATE shoelace_data SET sl_avail = 6
+  FROM shoelace_data shoelace_data
+ WHERE shoelace_data.sl_name = 'sl7';
+</pre><p>
+
+<span class="original">
+    There is a rule &lt;literal&gt;log_shoelace&lt;/literal&gt; that is &lt;literal&gt;ON UPDATE&lt;/literal&gt; with the rule
+    qualification expression:
+</span>
+ルール<code class="literal">log_shoelace</code>には、<code class="literal">ON UPDATE</code>を持つルール条件式
+
+</p><pre class="programlisting">
+NEW.sl_avail &lt;&gt; OLD.sl_avail
+</pre><p>
+
+<span class="original">
+    and the action:
+</span>
+と以下のアクションがあります。
+
+</p><pre class="programlisting">
+INSERT INTO shoelace_log VALUES (
+       new.sl_name, new.sl_avail,
+       current_user, current_timestamp )
+  FROM shoelace_data new, shoelace_data old;
+</pre><p>
+
+<span class="original">
+    (This looks a little strange since you cannot normally write
+    &lt;literal&gt;INSERT ... VALUES ... FROM&lt;/literal&gt;.  The &lt;literal&gt;FROM&lt;/literal&gt;
+    clause here is just to indicate that there are range-table entries
+    in the query tree for &lt;literal&gt;new&lt;/literal&gt; and &lt;literal&gt;old&lt;/literal&gt;.
+    These are needed so that they can be referenced by variables in
+    the &lt;command&gt;INSERT&lt;/command&gt; command's query tree.)
+</span>
+（通常、<code class="literal">INSERT ... VALUES ... FROM</code>を書くことはできないのでちょっと奇妙に見えるかもしれません。
+ここの<code class="literal">FROM</code>句は単に<code class="literal">new</code>と<code class="literal">old</code>の問い合わせツリーの範囲テーブル項目があることを示しているだけです。
+これらは、<code class="command">INSERT</code>コマンドの問い合わせツリー中の変数から参照されるために必要なのです。）
+</p><p>
+<span class="original">
+    The rule is a qualified &lt;literal&gt;ALSO&lt;/literal&gt; rule, so the rule system
+    has to return two query trees: the modified rule action and the original
+    query tree. In step 1, the range table of the original query is
+    incorporated into the rule's action query tree. This results in:
+</span>
+このルールは条件付きの<code class="literal">ALSO</code>ルールですので、ルールシステムは変更されたルールアクションと元の問い合わせツリーという2つの問い合わせツリーを返さなければなりません。
+第1の段階で元の問い合わせの範囲テーブルはルールアクション問い合わせツリーに取り込まれます。
+そして、次の結果を生みます。
+
+</p><pre class="programlisting">
+INSERT INTO shoelace_log VALUES (
+       new.sl_name, new.sl_avail,
+       current_user, current_timestamp )
+  FROM shoelace_data new, shoelace_data old,
+       <span class="emphasis"><strong>shoelace_data shoelace_data</strong></span>;
+</pre><p>
+
+<span class="original">
+    In step 2, the rule qualification is added to it, so the result set
+    is restricted to rows where &lt;literal&gt;sl_avail&lt;/literal&gt; changes:
+</span>
+第2段階で、以下のようにルール条件が付け加えられます。
+これにより、この結果集合は<code class="literal">sl_avail</code>が変更した行に限定されます。
+
+</p><pre class="programlisting">
+INSERT INTO shoelace_log VALUES (
+       new.sl_name, new.sl_avail,
+       current_user, current_timestamp )
+  FROM shoelace_data new, shoelace_data old,
+       shoelace_data shoelace_data
+ <span class="emphasis"><strong>WHERE new.sl_avail &lt;&gt; old.sl_avail</strong></span>;
+</pre><p>
+
+<span class="original">
+    (This looks even stranger, since &lt;literal&gt;INSERT ... VALUES&lt;/literal&gt; doesn't have
+    a &lt;literal&gt;WHERE&lt;/literal&gt; clause either, but the planner and executor will have no
+    difficulty with it.  They need to support this same functionality
+    anyway for &lt;literal&gt;INSERT ... SELECT&lt;/literal&gt;.)
+</span>
+（<code class="literal">INSERT ... VALUES</code>は<code class="literal">WHERE</code>句を持たないため、これはさらに奇妙です。
+しかし、プランナとエグゼキュータには問題はありません。
+これらはどのみち<code class="literal">INSERT ... SELECT</code>のために同じ機能をサポートしなければなりません。）
+   </p><p>
+<span class="original">
+    In step 3, the original query tree's qualification is added,
+    restricting the result set further to only the rows that would have been touched
+    by the original query:
+</span>
+第3段階で、以下のように元の問い合わせツリーの条件が付け加えられ、結果集合は元の問い合わせで変更された行のみにさらに限定されます。
+
+</p><pre class="programlisting">
+INSERT INTO shoelace_log VALUES (
+       new.sl_name, new.sl_avail,
+       current_user, current_timestamp )
+  FROM shoelace_data new, shoelace_data old,
+       shoelace_data shoelace_data
+ WHERE new.sl_avail &lt;&gt; old.sl_avail
+   <span class="emphasis"><strong>AND shoelace_data.sl_name = 'sl7'</strong></span>;
+</pre><p>
+   </p><p>
+<span class="original">
+    Step 4 replaces references to &lt;literal&gt;NEW&lt;/literal&gt; by the target list entries from the
+    original query tree or by the matching variable references
+    from the result relation:
+</span>
+第4段階では、以下のように元の問い合わせツリーの目的リスト項目、または結果リレーションの該当する変数参照で、<code class="literal">NEW</code>の参照を置換します。
+
+</p><pre class="programlisting">
+INSERT INTO shoelace_log VALUES (
+       <span class="emphasis"><strong>shoelace_data.sl_name</strong></span>, <span class="emphasis"><strong>6</strong></span>,
+       current_user, current_timestamp )
+  FROM shoelace_data new, shoelace_data old,
+       shoelace_data shoelace_data
+ WHERE <span class="emphasis"><strong>6</strong></span> &lt;&gt; old.sl_avail
+   AND shoelace_data.sl_name = 'sl7';
+</pre><p>
+
+   </p><p>
+<span class="original">
+    Step 5 changes &lt;literal&gt;OLD&lt;/literal&gt; references into result relation references:
+</span>
+第5段階は、以下のように<code class="literal">OLD</code>参照を結果リレーション参照に置き換えます。
+
+</p><pre class="programlisting">
+INSERT INTO shoelace_log VALUES (
+       shoelace_data.sl_name, 6,
+       current_user, current_timestamp )
+  FROM shoelace_data new, shoelace_data old,
+       shoelace_data shoelace_data
+ WHERE 6 &lt;&gt; <span class="emphasis"><strong>shoelace_data.sl_avail</strong></span>
+   AND shoelace_data.sl_name = 'sl7';
+</pre><p>
+   </p><p>
+<span class="original">
+    That's it.  Since the rule is &lt;literal&gt;ALSO&lt;/literal&gt;, we also output the
+    original query tree.  In short, the output from the rule system
+    is a list of two query trees that correspond to these statements:
+</span>
+これで終わりです。このルールは<code class="literal">ALSO</code>のため、元の問い合わせツリーも出力します。
+まとめると、ルールシステムからの出力は以下の文に対応する2つの問い合わせツリーのリストです。
+
+</p><pre class="programlisting">
+INSERT INTO shoelace_log VALUES (
+       shoelace_data.sl_name, 6,
+       current_user, current_timestamp )
+  FROM shoelace_data
+ WHERE 6 &lt;&gt; shoelace_data.sl_avail
+   AND shoelace_data.sl_name = 'sl7';
+
+UPDATE shoelace_data SET sl_avail = 6
+ WHERE sl_name = 'sl7';
+</pre><p>
+
+<span class="original">
+    These are executed in this order, and that is exactly what
+    the rule was meant to do.
+</span>
+この2つは順番通りに処理され、正確にルールが定義した通りです。
+   </p><p>
+<span class="original">
+    The substitutions and the added qualifications
+    ensure that, if the original query would be, say:
+</span>
+元の問い合わせが例えば下記のような場合に、置換と追加された条件は、ログには何も書かれないことを確実にします。
+
+</p><pre class="programlisting">
+UPDATE shoelace_data SET sl_color = 'green'
+ WHERE sl_name = 'sl7';
+</pre><p>
+
+<span class="original">
+    no log entry would get written.  In that case, the original query
+    tree does not contain a target list entry for
+    &lt;literal&gt;sl_avail&lt;/literal&gt;, so &lt;literal&gt;NEW.sl_avail&lt;/literal&gt; will get
+    replaced by &lt;literal&gt;shoelace_data.sl_avail&lt;/literal&gt;.  Thus, the extra
+    command generated by the rule is:
+</span>
+この場合、元の問い合わせツリーの目的リストには<code class="literal">sl_avail</code>の項目がありませんので、<code class="literal">NEW.sl_avail</code>が<code class="literal">shoelace_data.sl_avail</code>に置き換えられます。
+その結果、このルールによって以下のような特別の問い合わせが生成されます。
+
+</p><pre class="programlisting">
+INSERT INTO shoelace_log VALUES (
+       shoelace_data.sl_name, <span class="emphasis"><strong>shoelace_data.sl_avail</strong></span>,
+       current_user, current_timestamp )
+  FROM shoelace_data
+ WHERE <span class="emphasis"><strong>shoelace_data.sl_avail</strong></span> &lt;&gt; shoelace_data.sl_avail
+   AND shoelace_data.sl_name = 'sl7';
+</pre><p>
+
+<span class="original">
+    and that qualification will never be true.
+</span>
+そしてこの条件は決して真にはなりません。
+   </p><p>
+<span class="original">
+    It will also work if the original query modifies multiple rows. So
+    if someone issued the command:
+</span>
+もし元の問い合わせが複数の行を変更してもうまくいきます。
+ですから、誰かが下記のようなコマンドを実行したとします。
+
+</p><pre class="programlisting">
+UPDATE shoelace_data SET sl_avail = 0
+ WHERE sl_color = 'black';
+</pre><p>
+
+<span class="original">
+    four rows in fact get updated (&lt;literal&gt;sl1&lt;/literal&gt;, &lt;literal&gt;sl2&lt;/literal&gt;, &lt;literal&gt;sl3&lt;/literal&gt;, and &lt;literal&gt;sl4&lt;/literal&gt;).
+    But &lt;literal&gt;sl3&lt;/literal&gt; already has &lt;literal&gt;sl_avail = 0&lt;/literal&gt;.   In this case, the original
+    query trees qualification is different and that results
+    in the extra query tree:
+</span>
+この場合、実際には4行が更新されます（<code class="literal">sl1</code>、<code class="literal">sl2</code>、<code class="literal">sl3</code>および<code class="literal">sl4</code>）。
+しかし<code class="literal">sl3</code>は既に<code class="literal">sl_avail = 0</code>を持っています。
+この場合、元の問い合わせツリーの条件を満たさず、その結果、以下のような特別の問い合わせツリーがルールによって生成されます。
+
+</p><pre class="programlisting">
+INSERT INTO shoelace_log
+SELECT shoelace_data.sl_name, 0,
+       current_user, current_timestamp
+  FROM shoelace_data
+ WHERE 0 &lt;&gt; shoelace_data.sl_avail
+   AND <span class="emphasis"><strong>shoelace_data.sl_color = 'black'</strong></span>;
+</pre><p>
+
+<span class="original">
+    being generated by the rule.  This query tree will surely insert
+    three new log entries. And that's absolutely correct.
+</span>
+この構文解析ツリーは確実に3つの新しいログ項目を挿入します。
+これはまったく正しい動作です
+[訳注：sl3行はWHERE 0 != shoelace_data.sl_avail条件を満たさない（0!=0）ので、実際に更新される4行-1の3行分のログ項目が挿入されます]。
+</p><p>
+<span class="original">
+    Here we can see why it is important that the original query tree
+    is executed last.  If the &lt;command&gt;UPDATE&lt;/command&gt; had been
+    executed first, all the rows would have already been set to zero, so the
+    logging &lt;command&gt;INSERT&lt;/command&gt; would not find any row where
+    &lt;literal&gt;0 &amp;lt;&amp;gt; shoelace_data.sl_avail&lt;/literal&gt;.
+</span>
+ここで元の構文解析ツリーが最後に実行されるということが重要な理由がわかります。
+もし<code class="command">UPDATE</code>が先に実行されたとしたら、全ての行は0にセットされ、<code class="literal">0 &lt;&gt; shoelace_data.sl_avail</code>である行をログ書き込み時の<code class="command">INSERT</code>の段階で見つけられなくなります。
+</p></div></div><div class="sect2" id="RULES-UPDATE-VIEWS"><div class="titlepage"><div><div><h3 class="title">41.4.2. ビューとの協調</h3></div></div></div><span class="original">
+&lt;title&gt;Cooperation with Views&lt;/title&gt;
+</span><a id="id-1.8.6.10.11.2" class="indexterm"></a><a id="id-1.8.6.10.11.3" class="indexterm"></a><p>
+<span class="original">
+    A simple way to protect view relations from the mentioned
+    possibility that someone can try to run &lt;command&gt;INSERT&lt;/command&gt;,
+    &lt;command&gt;UPDATE&lt;/command&gt;, or &lt;command&gt;DELETE&lt;/command&gt; on them is
+    to let those query trees get thrown away.  So we could create the rules:
+</span>
+誰かがビューに対して<code class="command">INSERT</code>、<code class="command">UPDATE</code>、<code class="command">DELETE</code>を発行するといった、前述の可能性からビューリレーションを保護する簡単な方法は、それらの構文解析ツリーを破棄してしまうことです。
+このために以下のルールを作ることができます。
+
+</p><pre class="programlisting">
+CREATE RULE shoe_ins_protect AS ON INSERT TO shoe
+    DO INSTEAD NOTHING;
+CREATE RULE shoe_upd_protect AS ON UPDATE TO shoe
+    DO INSTEAD NOTHING;
+CREATE RULE shoe_del_protect AS ON DELETE TO shoe
+    DO INSTEAD NOTHING;
+</pre><p>
+
+<span class="original">
+    If someone now tries to do any of these operations on the view
+    relation &lt;literal&gt;shoe&lt;/literal&gt;, the rule system will
+    apply these rules. Since the rules have
+    no actions and are &lt;literal&gt;INSTEAD&lt;/literal&gt;, the resulting list of
+    query trees will be empty and the whole query will become
+    nothing because there is nothing left to be optimized or
+    executed after the rule system is done with it.
+</span>
+誰かが<code class="literal">shoe</code>ビューリレーションに上記の操作を行おうとすると、ルールシステムはルールを適用します。
+ルールにはアクションがなく、かつ、<code class="literal">INSTEAD</code>ですから、結果の問い合わせツリーリストは空になります。
+ルールシステムの処理が完了した後に最適化されるものや実行されるべきものが何も残っていませんので、問い合わせ全体が無効になります。
+</p><p>
+<span class="original">
+    A more sophisticated way to use the rule system is to
+    create rules that rewrite the query tree into one that
+    does the right operation on the real tables. To do that
+    on the &lt;literal&gt;shoelace&lt;/literal&gt; view, we create
+    the following rules:
+</span>
+より洗練されたルールシステムの使用方法は、実テーブルに適当な操作を行う問い合わせツリーへの書き換えを行うルールを作ることです。
+<code class="literal">shoelace</code>ビューにこれを適用するために以下のルールを作ります。
+
+</p><pre class="programlisting">
+CREATE RULE shoelace_ins AS ON INSERT TO shoelace
+    DO INSTEAD
+    INSERT INTO shoelace_data VALUES (
+           NEW.sl_name,
+           NEW.sl_avail,
+           NEW.sl_color,
+           NEW.sl_len,
+           NEW.sl_unit
+    );
+
+CREATE RULE shoelace_upd AS ON UPDATE TO shoelace
+    DO INSTEAD
+    UPDATE shoelace_data
+       SET sl_name = NEW.sl_name,
+           sl_avail = NEW.sl_avail,
+           sl_color = NEW.sl_color,
+           sl_len = NEW.sl_len,
+           sl_unit = NEW.sl_unit
+     WHERE sl_name = OLD.sl_name;
+
+CREATE RULE shoelace_del AS ON DELETE TO shoelace
+    DO INSTEAD
+    DELETE FROM shoelace_data
+     WHERE sl_name = OLD.sl_name;
+</pre><p>
+   </p><p>
+<span class="original">
+    If you want to support &lt;literal&gt;RETURNING&lt;/literal&gt; queries on the view,
+    you need to make the rules include &lt;literal&gt;RETURNING&lt;/literal&gt; clauses that
+    compute the view rows.  This is usually pretty trivial for views on a
+    single table, but it's a bit tedious for join views such as
+    &lt;literal&gt;shoelace&lt;/literal&gt;.  An example for the insert case is:
+</span>
+このビュー上で<code class="literal">RETURNING</code>問い合わせをサポートしたい場合、ビューの行を計算する<code class="literal">RETURNING</code>句を含むルールを作成しなければなりません。
+これは通常、単一テーブルに対するビューでは非常に簡単ですが、<code class="literal">shoelace</code>のような結合されたビューの場合は多少やっかいです。
+挿入する場合を例として以下に示します。
+
+</p><pre class="programlisting">
+CREATE RULE shoelace_ins AS ON INSERT TO shoelace
+    DO INSTEAD
+    INSERT INTO shoelace_data VALUES (
+           NEW.sl_name,
+           NEW.sl_avail,
+           NEW.sl_color,
+           NEW.sl_len,
+           NEW.sl_unit
+    )
+    RETURNING
+           shoelace_data.*,
+           (SELECT shoelace_data.sl_len * u.un_fact
+            FROM unit u WHERE shoelace_data.sl_unit = u.un_name);
+</pre><p>
+
+<span class="original">
+    Note that this one rule supports both &lt;command&gt;INSERT&lt;/command&gt; and
+    &lt;command&gt;INSERT RETURNING&lt;/command&gt; queries on the view &amp;mdash; the
+    &lt;literal&gt;RETURNING&lt;/literal&gt; clause is simply ignored for &lt;command&gt;INSERT&lt;/command&gt;.
+</span>
+この1つのルールが、ビューに対する<code class="command">INSERT</code>問い合わせと<code class="command">INSERT RETURNING</code>問い合わせルールをサポートすることに注意してください。
+<code class="command">INSERT</code>では<code class="literal">RETURNING</code>句が無視されるだけです。
+   </p><p>
+<span class="original">
+    Now assume that once in a while, a pack of shoelaces arrives at
+    the shop and a big parts list along with it.  But you don't want
+    to manually update the &lt;literal&gt;shoelace&lt;/literal&gt; view every
+    time.  Instead we set up two little tables: one where you can
+    insert the items from the part list, and one with a special
+    trick. The creation commands for these are:
+</span>
+ここで店には不定期に靴紐のケースが分厚い送り状とともに届けられると仮定します。
+しかし、毎回毎回手作業で<code class="literal">shoelace</code>ビューを更新したくはありません。
+代わりに、送り状から品目を挿入するテーブルと特殊な仕掛けを持つテーブルの2つの小さなテーブルを用意します。
+以下はそれらを作成するコマンドです。
+
+</p><pre class="programlisting">
+CREATE TABLE shoelace_arrive (
+    arr_name    text,
+    arr_quant   integer
+);
+
+CREATE TABLE shoelace_ok (
+    ok_name     text,
+    ok_quant    integer
+);
+
+CREATE RULE shoelace_ok_ins AS ON INSERT TO shoelace_ok
+    DO INSTEAD
+    UPDATE shoelace
+       SET sl_avail = sl_avail + NEW.ok_quant
+     WHERE sl_name = NEW.ok_name;
+</pre><p>
+
+<span class="original">
+    Now you can fill the table &lt;literal&gt;shoelace_arrive&lt;/literal&gt; with
+    the data from the parts list:
+</span>
+これで、送り状のデータを<code class="literal">shoelace_arrive</code>テーブルに投入することができます。
+
+</p><pre class="programlisting">
+SELECT * FROM shoelace_arrive;
+
+ arr_name | arr_quant
+----------+-----------
+ sl3      |        10
+ sl6      |        20
+ sl8      |        20
+(3 rows)
+</pre><p>
+
+<span class="original">
+    Take a quick look at the current data:
+</span>
+そして現在のデータをチェックします。
+
+</p><pre class="programlisting">
+SELECT * FROM shoelace;
+
+ sl_name  | sl_avail | sl_color | sl_len | sl_unit | sl_len_cm
+----------+----------+----------+--------+---------+-----------
+ sl1      |        5 | black    |     80 | cm      |        80
+ sl2      |        6 | black    |    100 | cm      |       100
+ sl7      |        6 | brown    |     60 | cm      |        60
+ sl3      |        0 | black    |     35 | inch    |      88.9
+ sl4      |        8 | black    |     40 | inch    |     101.6
+ sl8      |        1 | brown    |     40 | inch    |     101.6
+ sl5      |        4 | brown    |      1 | m       |       100
+ sl6      |        0 | brown    |    0.9 | m       |        90
+(8 rows)
+</pre><p>
+
+<span class="original">
+    Now move the arrived shoelaces in:
+</span>
+さて、届いた靴紐を移動します。
+
+</p><pre class="programlisting">
+INSERT INTO shoelace_ok SELECT * FROM shoelace_arrive;
+</pre><p>
+
+<span class="original">
+    and check the results:
+</span>
+そして結果を確認します。
+
+</p><pre class="programlisting">
+SELECT * FROM shoelace ORDER BY sl_name;
+
+ sl_name  | sl_avail | sl_color | sl_len | sl_unit | sl_len_cm
+----------+----------+----------+--------+---------+-----------
+ sl1      |        5 | black    |     80 | cm      |        80
+ sl2      |        6 | black    |    100 | cm      |       100
+ sl7      |        6 | brown    |     60 | cm      |        60
+ sl4      |        8 | black    |     40 | inch    |     101.6
+ sl3      |       10 | black    |     35 | inch    |      88.9
+ sl8      |       21 | brown    |     40 | inch    |     101.6
+ sl5      |        4 | brown    |      1 | m       |       100
+ sl6      |       20 | brown    |    0.9 | m       |        90
+(8 rows)
+
+SELECT * FROM shoelace_log;
+
+ sl_name | sl_avail | log_who| log_when
+---------+----------+--------+----------------------------------
+ sl7     |        6 | Al     | Tue Oct 20 19:14:45 1998 MET DST
+ sl3     |       10 | Al     | Tue Oct 20 19:25:16 1998 MET DST
+ sl6     |       20 | Al     | Tue Oct 20 19:25:16 1998 MET DST
+ sl8     |       21 | Al     | Tue Oct 20 19:25:16 1998 MET DST
+(4 rows)
+</pre><p>
+   </p><p>
+<span class="original">
+    It's a long way from the one &lt;literal&gt;INSERT ... SELECT&lt;/literal&gt;
+    to these results. And the description of the query-tree
+    transformation will be the last in this chapter.  First, there is
+    the parser's output:
+</span>
+1つの<code class="literal">INSERT ... SELECT</code>からこの結果になるには、長い道のりがあります。
+本章での問い合わせツリーの変形に関する説明はこれが最後です。
+まず、以下のようなパーサの出力があります。
+
+</p><pre class="programlisting">
+INSERT INTO shoelace_ok
+SELECT shoelace_arrive.arr_name, shoelace_arrive.arr_quant
+  FROM shoelace_arrive shoelace_arrive, shoelace_ok shoelace_ok;
+</pre><p>
+
+<span class="original">
+    Now the first rule &lt;literal&gt;shoelace_ok_ins&lt;/literal&gt; is applied and turns this
+    into:
+</span>
+最初の<code class="literal">shoelace_ok_ins</code>ルールが適用され、結果は以下のようになります。
+
+</p><pre class="programlisting">
+UPDATE shoelace
+   SET sl_avail = shoelace.sl_avail + shoelace_arrive.arr_quant
+  FROM shoelace_arrive shoelace_arrive, shoelace_ok shoelace_ok,
+       shoelace_ok old, shoelace_ok new,
+       shoelace shoelace
+ WHERE shoelace.sl_name = shoelace_arrive.arr_name;
+</pre><p>
+
+<span class="original">
+    and throws away the original &lt;command&gt;INSERT&lt;/command&gt; on
+    &lt;literal&gt;shoelace_ok&lt;/literal&gt;.  This rewritten query is passed to
+    the rule system again, and the second applied rule
+    &lt;literal&gt;shoelace_upd&lt;/literal&gt; produces:
+</span>
+そして、<code class="literal">shoelace_ok</code>に対する元の<code class="command">INSERT</code>を破棄します。
+この書き換えられた問い合わせは再びルールシステムに渡されて、2番目に適用される<code class="literal">shoelace_upd</code>ルールは以下を生成します。
+
+</p><pre class="programlisting">
+UPDATE shoelace_data
+   SET sl_name = shoelace.sl_name,
+       sl_avail = shoelace.sl_avail + shoelace_arrive.arr_quant,
+       sl_color = shoelace.sl_color,
+       sl_len = shoelace.sl_len,
+       sl_unit = shoelace.sl_unit
+  FROM shoelace_arrive shoelace_arrive, shoelace_ok shoelace_ok,
+       shoelace_ok old, shoelace_ok new,
+       shoelace shoelace, shoelace old,
+       shoelace new, shoelace_data shoelace_data
+ WHERE shoelace.sl_name = shoelace_arrive.arr_name
+   AND shoelace_data.sl_name = shoelace.sl_name;
+</pre><p>
+
+<span class="original">
+    Again it's an &lt;literal&gt;INSTEAD&lt;/literal&gt; rule and the previous query tree is trashed.
+    Note that this query still uses the view &lt;literal&gt;shoelace&lt;/literal&gt;.
+    But the rule system isn't finished with this step, so it continues
+    and applies the &lt;literal&gt;_RETURN&lt;/literal&gt; rule on it, and we get:
+</span>
+これは再び<code class="literal">INSTEAD</code>ルールですので、以前の問い合わせツリーは破棄されます。
+この問い合わせは<code class="literal">shoelace</code>ビューを引き続き使用していることに注意してください。
+しかし、この段階ではルールシステムは終了していないため、引き続き<code class="literal">_RETURN</code>ルールが適用され、下記のようになります。
+
+</p><pre class="programlisting">
+UPDATE shoelace_data
+   SET sl_name = s.sl_name,
+       sl_avail = s.sl_avail + shoelace_arrive.arr_quant,
+       sl_color = s.sl_color,
+       sl_len = s.sl_len,
+       sl_unit = s.sl_unit
+  FROM shoelace_arrive shoelace_arrive, shoelace_ok shoelace_ok,
+       shoelace_ok old, shoelace_ok new,
+       shoelace shoelace, shoelace old,
+       shoelace new, shoelace_data shoelace_data,
+       shoelace old, shoelace new,
+       shoelace_data s, unit u
+ WHERE s.sl_name = shoelace_arrive.arr_name
+   AND shoelace_data.sl_name = s.sl_name;
+</pre><p>
+
+<span class="original">
+    Finally, the rule &lt;literal&gt;log_shoelace&lt;/literal&gt; gets applied,
+    producing the extra query tree:
+</span>
+最後に、<code class="literal">log_shoelace</code>ルールが適用され、以下のような特別な問い合わせツリーが生成されます。
+
+</p><pre class="programlisting">
+INSERT INTO shoelace_log
+SELECT s.sl_name,
+       s.sl_avail + shoelace_arrive.arr_quant,
+       current_user,
+       current_timestamp
+  FROM shoelace_arrive shoelace_arrive, shoelace_ok shoelace_ok,
+       shoelace_ok old, shoelace_ok new,
+       shoelace shoelace, shoelace old,
+       shoelace new, shoelace_data shoelace_data,
+       shoelace old, shoelace new,
+       shoelace_data s, unit u,
+       shoelace_data old, shoelace_data new
+       shoelace_log shoelace_log
+ WHERE s.sl_name = shoelace_arrive.arr_name
+   AND shoelace_data.sl_name = s.sl_name
+   AND (s.sl_avail + shoelace_arrive.arr_quant) &lt;&gt; s.sl_avail;
+</pre><p>
+
+<span class="original">
+    After that the rule system runs out of rules and returns the
+    generated query trees.
+</span>
+この後、ルールシステムはルールを使い切り、生成された問い合わせツリーを返します。
+   </p><p>
+<span class="original">
+    So we end up with two final query trees that are equivalent to the
+    &lt;acronym&gt;SQL&lt;/acronym&gt; statements:
+</span>
+そして、以下の<acronym class="acronym">SQL</acronym>文と等価となる2つの最終問い合わせツリーで終結します。
+
+</p><pre class="programlisting">
+INSERT INTO shoelace_log
+SELECT s.sl_name,
+       s.sl_avail + shoelace_arrive.arr_quant,
+       current_user,
+       current_timestamp
+  FROM shoelace_arrive shoelace_arrive, shoelace_data shoelace_data,
+       shoelace_data s
+ WHERE s.sl_name = shoelace_arrive.arr_name
+   AND shoelace_data.sl_name = s.sl_name
+   AND s.sl_avail + shoelace_arrive.arr_quant &lt;&gt; s.sl_avail;
+
+UPDATE shoelace_data
+   SET sl_avail = shoelace_data.sl_avail + shoelace_arrive.arr_quant
+  FROM shoelace_arrive shoelace_arrive,
+       shoelace_data shoelace_data,
+       shoelace_data s
+ WHERE s.sl_name = shoelace_arrive.sl_name
+   AND shoelace_data.sl_name = s.sl_name;
+</pre><p>
+
+<span class="original">
+    The result is that data coming from one relation inserted into another,
+    changed into updates on a third, changed into updating
+    a fourth plus logging that final update in a fifth
+    gets reduced into two queries.
+</span>
+結果は、1つのリレーションから来たデータが別のリレーションに挿入され、3つ目のリレーションの更新に変更され、4つ目の更新と5つ目への最終更新のログ記録に変更され、最終的に2つの問い合わせに縮小されます。
+</p><p>
+<span class="original">
+    There is a little detail that's a bit ugly. Looking at the two
+    queries, it turns out that the &lt;literal&gt;shoelace_data&lt;/literal&gt;
+    relation appears twice in the range table where it could
+    definitely be reduced to one. The planner does not handle it and
+    so the execution plan for the rule systems output of the
+    &lt;command&gt;INSERT&lt;/command&gt; will be
+</span>
+ちょっと見苦しい小さな事項があります。
+でき上がった2つの問い合わせを見ると、1つに縮小されたはずの<code class="literal">shoelace_data</code>リレーションが範囲テーブルに二度出てきます。
+プランナは処理をしないので、<code class="command">INSERT</code>のルールシステムの出力に対する実行計画は次のようになります。
+
+</p><pre class="literallayout">
+Nested Loop
+  -&gt;  Merge Join
+        -&gt;  Seq Scan
+              -&gt;  Sort
+                    -&gt;  Seq Scan on s
+        -&gt;  Seq Scan
+              -&gt;  Sort
+                    -&gt;  Seq Scan on shoelace_arrive
+  -&gt;  Seq Scan on shoelace_data
+</pre><p>
+
+<span class="original">
+    while omitting the extra range table entry would result in a
+</span>
+一方、余計な範囲テーブル項目を省略することで、以下のようにログテーブルにまったく同じ項目が作られます。
+
+</p><pre class="literallayout">
+Merge Join
+  -&gt;  Seq Scan
+        -&gt;  Sort
+              -&gt;  Seq Scan on s
+  -&gt;  Seq Scan
+        -&gt;  Sort
+              -&gt;  Seq Scan on shoelace_arrive
+</pre><p>
+
+<span class="original">
+    which produces exactly the same entries in the log table.  Thus,
+    the rule system caused one extra scan on the table
+    &lt;literal&gt;shoelace_data&lt;/literal&gt; that is absolutely not
+    necessary. And the same redundant scan is done once more in the
+    &lt;command&gt;UPDATE&lt;/command&gt;. But it was a really hard job to make
+    that all possible at all.
+</span>
+ですから、ルールシステムは、まったく必要のない<code class="literal">shoelace_data</code>リレーションに対する余計なスキャンを一度行うことになります。
+そして<code class="command">UPDATE</code>でも同様な不要なスキャンが再度実行されます。
+しかしながら、これらを全て可能にするのは大変な仕事です。
+</p><p>
+<span class="original">
+    Now we make a final demonstration of the
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; rule system and its power.
+    Say you add some shoelaces with extraordinary colors to your
+    database:
+</span>
+最後に<span class="productname">PostgreSQL</span>のルールシステムとその効力を示しましょう。
+例えば、まったく売れそうもない靴紐をデータベースに追加してみます。
+
+</p><pre class="programlisting">
+INSERT INTO shoelace VALUES ('sl9', 0, 'pink', 35.0, 'inch', 0.0);
+INSERT INTO shoelace VALUES ('sl10', 1000, 'magenta', 40.0, 'inch', 0.0);
+</pre><p>
+
+<span class="original">
+    We would like to make a view to check which
+    &lt;literal&gt;shoelace&lt;/literal&gt; entries do not fit any shoe in color.
+    The view for this is:
+</span>
+全ての靴に合わない色が<code class="literal">shoelace</code>項目にあるかどうかを検査するビューを作成したいと考えます。
+ビューは以下のようになります。
+
+</p><pre class="programlisting">
+CREATE VIEW shoelace_mismatch AS
+    SELECT * FROM shoelace WHERE NOT EXISTS
+        (SELECT shoename FROM shoe WHERE slcolor = sl_color);
+</pre><p>
+
+<span class="original">
+    Its output is:
+</span>
+この出力は以下のようになります。
+
+</p><pre class="programlisting">
+SELECT * FROM shoelace_mismatch;
+
+ sl_name | sl_avail | sl_color | sl_len | sl_unit | sl_len_cm
+---------+----------+----------+--------+---------+-----------
+ sl9     |        0 | pink     |     35 | inch    |      88.9
+ sl10    |     1000 | magenta  |     40 | inch    |     101.6
+</pre><p>
+   </p><p>
+<span class="original">
+    Now we want to set it up so that mismatching shoelaces that are
+    not in stock are deleted from the database.
+    To make it a little harder for &lt;productname&gt;PostgreSQL&lt;/productname&gt;,
+    we don't delete it directly. Instead we create one more view:
+</span>
+ここで、合う靴がない靴紐のうち、在庫がないものをデータベースから削除するように設定してみます。
+これは<span class="productname">PostgreSQL</span>では困難な作業ですので、直接削除しません。
+代わりに、以下のようにもう1つビューを作成します。
+
+</p><pre class="programlisting">
+CREATE VIEW shoelace_can_delete AS
+    SELECT * FROM shoelace_mismatch WHERE sl_avail = 0;
+</pre><p>
+
+<span class="original">
+    and do it this way:
+</span>
+そして、以下を行います。
+
+</p><pre class="programlisting">
+DELETE FROM shoelace WHERE EXISTS
+    (SELECT * FROM shoelace_can_delete
+             WHERE sl_name = shoelace.sl_name);
+</pre><p>
+
+<span class="original">
+    The results are:
+</span>
+結果は次のとおりです。
+
+</p><pre class="programlisting">
+SELECT * FROM shoelace;
+
+ sl_name | sl_avail | sl_color | sl_len | sl_unit | sl_len_cm
+---------+----------+----------+--------+---------+-----------
+ sl1     |        5 | black    |     80 | cm      |        80
+ sl2     |        6 | black    |    100 | cm      |       100
+ sl7     |        6 | brown    |     60 | cm      |        60
+ sl4     |        8 | black    |     40 | inch    |     101.6
+ sl3     |       10 | black    |     35 | inch    |      88.9
+ sl8     |       21 | brown    |     40 | inch    |     101.6
+ sl10    |     1000 | magenta  |     40 | inch    |     101.6
+ sl5     |        4 | brown    |      1 | m       |       100
+ sl6     |       20 | brown    |    0.9 | m       |        90
+(9 rows)
+</pre><p>
+   </p><p>
+<span class="original">
+    A &lt;command&gt;DELETE&lt;/command&gt; on a view, with a subquery qualification that
+    in total uses 4 nesting/joined views, where one of them
+    itself has a subquery qualification containing a view
+    and where calculated view columns are used,
+    gets rewritten into
+    one single query tree that deletes the requested data
+    from a real table.
+</span>
+合計4つのネスト/結合されたビューを副問い合わせの条件として持ち、その中の1つはビューを含む副問い合わせ条件を持ち、かつ演算を施されたビューの列が使われる場合の、ビューに対する<code class="command">DELETE</code>が、実テーブルから要求されたデータを削除する単一の問い合わせツリーに書き換えられます。
+</p><p>
+<span class="original">
+    There are probably only a few situations out in the real world
+    where such a construct is necessary. But it makes you feel
+    comfortable that it works.
+</span>
+このような構造が必要な状況は実社会ではほとんどないと思われます。
+しかし、実際に動くことを確認できれば安心できます。
+</p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="rules-materializedviews.html" title="41.3. マテリアライズドビュー">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="rules.html" title="第41章 ルールシステム">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="rules-privileges.html" title="41.5. ルールと権限">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">41.3. マテリアライズドビュー </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 41.5. ルールと権限</td></tr></table></div></body></html>

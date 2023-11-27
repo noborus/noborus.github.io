@@ -1,0 +1,514 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>14.2. プランナで使用される統計情報</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="using-explain.html" title="14.1. EXPLAINの利用" /><link rel="next" href="explicit-joins.html" title="14.3. 明示的なJOIN句でプランナを制御する" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="performance-tips.html" title="第14章 性能に関するヒント">第14章 性能に関するヒント</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : planner-stats.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="using-explain.html" title="14.1. EXPLAINの利用">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="performance-tips.html" title="第14章 性能に関するヒント">上へ</a></td><td width="60%" align="center">14.2. プランナで使用される統計情報</td><td width="20%" align="right"> <a accesskey="n" href="explicit-joins.html" title="14.3. 明示的なJOIN句でプランナを制御する">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PLANNER-STATS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">14.2. プランナで使用される統計情報</h2></div></div></div><span class="original">
+  &lt;title&gt;Statistics Used by the Planner&lt;/title&gt;
+</span><a id="id-1.5.13.6.2" class="indexterm"></a><a id="id-1.5.13.6.3" class="indexterm"></a><div class="sect2" id="id-1.5.13.6.4"><div class="titlepage"><div><div><h3 class="title">14.2.1. 単一列統計情報</h3></div></div></div><span class="original">
+   &lt;title&gt;Single-Column Statistics&lt;/title&gt;
+</span><p>
+<span class="original">
+   As we saw in the previous section, the query planner needs to estimate
+   the number of rows retrieved by a query in order to make good choices
+   of query plans.  This section provides a quick look at the statistics
+   that the system uses for these estimates.
+</span>
+前節で説明した通り、問い合わせプランナは、より良い問い合わせ計画を選択するために問い合わせによって取り出される行数の推定値を必要としています。
+本節では、システムがこの推定に使用する統計情報について簡単に説明します。
+  </p><p>
+<span class="original">
+   One component of the statistics is the total number of entries in
+   each table and index, as well as the number of disk blocks occupied
+   by each table and index.  This information is kept in the table
+   &lt;link linkend="catalog-pg-class"&gt;&lt;structname&gt;pg_class&lt;/structname&gt;&lt;/link&gt;,
+   in the columns &lt;structfield&gt;reltuples&lt;/structfield&gt; and
+   &lt;structfield&gt;relpages&lt;/structfield&gt;.  We can look at it with
+   queries similar to this one:
+</span>
+統計情報の1つの構成要素は、各テーブルとインデックスの項目の総数と、各テーブルとインデックスが占めるディスクブロック数です。
+この情報は<a class="link" href="catalog-pg-class.html" title="53.11. pg_class"><code class="structname">pg_class</code></a>の<code class="structfield">reltuples</code>と<code class="structfield">relpages</code>列に保持されます。
+以下のような問い合わせによりこれを参照することができます。
+
+</p><pre class="screen">
+SELECT relname, relkind, reltuples, relpages
+FROM pg_class
+WHERE relname LIKE 'tenk1%';
+
+       relname        | relkind | reltuples | relpages
+----------------------+---------+-----------+----------
+ tenk1                | r       |     10000 |      358
+ tenk1_hundred        | i       |     10000 |       30
+ tenk1_thous_tenthous | i       |     10000 |       30
+ tenk1_unique1        | i       |     10000 |       30
+ tenk1_unique2        | i       |     10000 |       30
+(5 rows)
+</pre><p>
+
+<span class="original">
+   Here we can see that &lt;structname&gt;tenk1&lt;/structname&gt; contains 10000
+   rows, as do its indexes, but the indexes are (unsurprisingly) much
+   smaller than the table.
+</span>
+ここで、<code class="structname">tenk1</code>とそのインデックスには10000行が存在し、そして、（驚くには値しませんが）インデックスはテーブルよりもかなり小さなものであることがわかります。
+  </p><p>
+<span class="original">
+   For efficiency reasons, &lt;structfield&gt;reltuples&lt;/structfield&gt;
+   and &lt;structfield&gt;relpages&lt;/structfield&gt; are not updated on-the-fly,
+   and so they usually contain somewhat out-of-date values.
+   They are updated by &lt;command&gt;VACUUM&lt;/command&gt;, &lt;command&gt;ANALYZE&lt;/command&gt;, and a
+   few DDL commands such as &lt;command&gt;CREATE INDEX&lt;/command&gt;.  A &lt;command&gt;VACUUM&lt;/command&gt;
+   or &lt;command&gt;ANALYZE&lt;/command&gt; operation that does not scan the entire table
+   (which is commonly the case) will incrementally update the
+   &lt;structfield&gt;reltuples&lt;/structfield&gt; count on the basis of the part
+   of the table it did scan, resulting in an approximate value.
+   In any case, the planner
+   will scale the values it finds in &lt;structname&gt;pg_class&lt;/structname&gt;
+   to match the current physical table size, thus obtaining a closer
+   approximation.
+</span>
+効率を上げるため、<code class="structfield">reltuples</code>と<code class="structfield">relpages</code>は処理の度には更新されず、したがって通常は多少古い値のみ所有しています。
+これらは<code class="command">VACUUM</code>、<code class="command">ANALYZE</code>、<code class="command">CREATE INDEX</code>などの一部のDDLコマンドによって更新されます。
+テーブル全体をスキャンしない<code class="command">VACUUM</code>、<code class="command">ANALYZE</code>操作（一般的な状況です）は、スキャンされたテーブルの部分に基づいて<code class="structfield">reltuples</code>値を漸次更新し、概算値を生成します。
+いずれの場合でもプランナは、現在の物理的なテーブルサイズに合わせるために<code class="structname">pg_class</code>から検索した値を調整して、より高精度な近似値を得ます。
+  </p><a id="id-1.5.13.6.4.5" class="indexterm"></a><p>
+<span class="original">
+   Most queries retrieve only a fraction of the rows in a table, due
+   to &lt;literal&gt;WHERE&lt;/literal&gt; clauses that restrict the rows to be
+   examined.  The planner thus needs to make an estimate of the
+   &lt;firstterm&gt;selectivity&lt;/firstterm&gt; of &lt;literal&gt;WHERE&lt;/literal&gt; clauses, that is,
+   the fraction of rows that match each condition in the
+   &lt;literal&gt;WHERE&lt;/literal&gt; clause.  The information used for this task is
+   stored in the
+   &lt;link linkend="catalog-pg-statistic"&gt;&lt;structname&gt;pg_statistic&lt;/structname&gt;&lt;/link&gt;
+   system catalog.  Entries in &lt;structname&gt;pg_statistic&lt;/structname&gt;
+   are updated by the &lt;command&gt;ANALYZE&lt;/command&gt; and &lt;command&gt;VACUUM
+   ANALYZE&lt;/command&gt; commands, and are always approximate even when freshly
+   updated.
+</span>
+ほとんどの問い合わせは、検証される行を制限する<code class="literal">WHERE</code>句によって、テーブル内の行の一部のみを取り出します。
+したがって、プランナは<code class="literal">WHERE</code>句の<em class="firstterm">選択性</em>、つまり<code class="literal">WHERE</code>句の各条件にどれだけの行が一致するかを推定する必要があります。
+この処理に使用される情報は<a class="link" href="catalog-pg-statistic.html" title="53.51. pg_statistic"><code class="structname">pg_statistic</code></a>システムカタログ内に格納されます。
+<code class="structname">pg_statistic</code>内の項目は、<code class="command">ANALYZE</code>と<code class="command">VACUUM ANALYZE</code>コマンドによって更新され、また１から更新がかかったとしても常に概算値になります。
+  </p><a id="id-1.5.13.6.4.7" class="indexterm"></a><p>
+<span class="original">
+   Rather than look at &lt;structname&gt;pg_statistic&lt;/structname&gt; directly,
+   it's better to look at its view
+   &lt;link linkend="view-pg-stats"&gt;&lt;structname&gt;pg_stats&lt;/structname&gt;&lt;/link&gt;
+   when examining the statistics manually.  &lt;structname&gt;pg_stats&lt;/structname&gt;
+   is designed to be more easily readable.  Furthermore,
+   &lt;structname&gt;pg_stats&lt;/structname&gt; is readable by all, whereas
+   &lt;structname&gt;pg_statistic&lt;/structname&gt; is only readable by a superuser.
+   (This prevents unprivileged users from learning something about
+   the contents of other people's tables from the statistics.  The
+   &lt;structname&gt;pg_stats&lt;/structname&gt; view is restricted to show only
+   rows about tables that the current user can read.)
+   For example, we might do:
+</span>
+統計情報を手作業で確認する場合、<code class="structname">pg_statistic</code>を直接参照するのではなく、<a class="link" href="view-pg-stats.html" title="54.27. pg_stats"><code class="structname">pg_stats</code></a>ビューを参照する方が良いでしょう。
+<code class="structname">pg_stats</code>はより読みやすくなるように設計されています。
+さらに、<code class="structname">pg_stats</code>は誰でも読み取ることができますが、<code class="structname">pg_statistic</code>はスーパーユーザのみ読み取ることができます。
+（これは、非特権ユーザが統計情報から他人のテーブルの内容に関わる事項を読み取ることを防止します。
+<code class="structname">pg_stats</code>ビューは現在のユーザが読み取ることができるテーブルに関する行のみを表示するよう制限されています。）
+例えば、以下を行うことができます。
+
+</p><pre class="screen">
+SELECT attname, inherited, n_distinct,
+       array_to_string(most_common_vals, E'\n') as most_common_vals
+FROM pg_stats
+WHERE tablename = 'road';
+
+ attname | inherited | n_distinct |          most_common_vals
+---------+-----------+------------+------------------------------------
+ name    | f         |  -0.363388 | I- 580                        Ramp+
+         |           |            | I- 880                        Ramp+
+         |           |            | Sp Railroad                       +
+         |           |            | I- 580                            +
+         |           |            | I- 680                        Ramp
+ name    | t         |  -0.284859 | I- 880                        Ramp+
+         |           |            | I- 580                        Ramp+
+         |           |            | I- 680                        Ramp+
+         |           |            | I- 580                            +
+         |           |            | State Hwy 13                  Ramp
+(2 rows)
+</pre><p>
+
+<span class="original">
+   Note that two rows are displayed for the same column, one corresponding
+   to the complete inheritance hierarchy starting at the
+   &lt;literal&gt;road&lt;/literal&gt; table (&lt;literal&gt;inherited&lt;/literal&gt;=&lt;literal&gt;t&lt;/literal&gt;),
+   and another one including only the &lt;literal&gt;road&lt;/literal&gt; table itself
+   (&lt;literal&gt;inherited&lt;/literal&gt;=&lt;literal&gt;f&lt;/literal&gt;).
+</span>
+同じ列に対して2行が表示されていることに注意してください。
+1つは<code class="literal">road</code>テーブルが始まる継承階層(<code class="literal">inherited</code>=<code class="literal">t</code>)全体に相当し、もう1つは<code class="literal">road</code>テーブル自身(<code class="literal">inherited</code>=<code class="literal">f</code>)のみを含むものです。
+  </p><p>
+<span class="original">
+   The amount of information stored in &lt;structname&gt;pg_statistic&lt;/structname&gt;
+   by &lt;command&gt;ANALYZE&lt;/command&gt;, in particular the maximum number of entries in the
+   &lt;structfield&gt;most_common_vals&lt;/structfield&gt; and &lt;structfield&gt;histogram_bounds&lt;/structfield&gt;
+   arrays for each column, can be set on a
+   column-by-column basis using the &lt;command&gt;ALTER TABLE SET STATISTICS&lt;/command&gt;
+   command, or globally by setting the
+   &lt;xref linkend="guc-default-statistics-target"/&gt; configuration variable.
+   The default limit is presently 100 entries.  Raising the limit
+   might allow more accurate planner estimates to be made, particularly for
+   columns with irregular data distributions, at the price of consuming
+   more space in &lt;structname&gt;pg_statistic&lt;/structname&gt; and slightly more
+   time to compute the estimates.  Conversely, a lower limit might be
+   sufficient for columns with simple data distributions.
+</span>
+<code class="command">ANALYZE</code>により<code class="structname">pg_statistic</code>に格納される情報量、具体的には、それぞれの列に対する<code class="structfield">most_common_vals</code>内と<code class="structfield">histogram_bounds</code>配列のエントリの最大数は、<code class="command">ALTER TABLE SET STATISTICS</code>コマンドによって列ごとに、<a class="xref" href="runtime-config-query.html#GUC-DEFAULT-STATISTICS-TARGET">default_statistics_target</a>設定パラメータを設定することによってグローバルに設定することができます。
+現在のデフォルトの上限は100エントリです。
+この上限を上げることで、特に、少し変わったデータ分布を持つ列でより正確なプランナの推定が行われますが、<code class="structname">pg_statistic</code>により多くの容量が必要になり、多少推定計算にかかる時間が多くなります。
+反対に上限を下げることは、単純なデータ分布の列に対して順当です。
+  </p><p>
+<span class="original">
+   Further details about the planner's use of statistics can be found in
+   &lt;xref linkend="planner-stats-details"/&gt;.
+</span>
+プランナによる統計情報の使用に関する詳細については<a class="xref" href="planner-stats-details.html" title="第75章 プランナは統計情報をどのように使用するか">第75章</a>を参照してください。
+  </p></div><div class="sect2" id="PLANNER-STATS-EXTENDED"><div class="titlepage"><div><div><h3 class="title">14.2.2. 拡張統計情報</h3></div></div></div><span class="original">
+   &lt;title&gt;Extended Statistics&lt;/title&gt;
+</span><a id="id-1.5.13.6.5.2" class="indexterm"></a><a id="id-1.5.13.6.5.3" class="indexterm"></a><a id="id-1.5.13.6.5.4" class="indexterm"></a><a id="id-1.5.13.6.5.5" class="indexterm"></a><a id="id-1.5.13.6.5.6" class="indexterm"></a><a id="id-1.5.13.6.5.7" class="indexterm"></a><p>
+<span class="original">
+    It is common to see slow queries running bad execution plans because
+    multiple columns used in the query clauses are correlated.
+    The planner normally assumes that multiple conditions
+    are independent of each other,
+    an assumption that does not hold when column values are correlated.
+    Regular statistics, because of their per-individual-column nature,
+    cannot capture any knowledge about cross-column correlation.
+    However, &lt;productname&gt;PostgreSQL&lt;/productname&gt; has the ability to compute
+    &lt;firstterm&gt;multivariate statistics&lt;/firstterm&gt;, which can capture
+    such information.
+</span>
+問い合わせ句で使われている複数列に相関性があることにより、悪い実行計画を実行する遅いクエリがしばしば観察されます。
+プランナは通常複数の条件がお互いに独立であるとみなしますが、列の値に相関性がある場合はそれは成り立ちません。
+通常の列ごとの統計情報は、それが個々の列ごとであるという性質上、列をまたがる相関性に関する知識を把握することはできません。
+しかしながら、<span class="productname">PostgreSQL</span>は、<em class="firstterm">多変量統計情報</em>を計算することができ、それによってそうした情報を把握することができます。
+   </p><p>
+<span class="original">
+    Because the number of possible column combinations is very large,
+    it's impractical to compute multivariate statistics automatically.
+    Instead, &lt;firstterm&gt;extended statistics objects&lt;/firstterm&gt;, more often
+    called just &lt;firstterm&gt;statistics objects&lt;/firstterm&gt;, can be created to instruct
+    the server to obtain statistics across interesting sets of columns.
+</span>
+列の組み合わせの数は非常に大きいため、自動的に多変量統計情報を計算するのは現実的ではありません。
+代わりに、サーバが興味のある列の集合にまたがる統計情報を得るように指示する目的で、<em class="firstterm">拡張統計情報オブジェクト</em>（しばしば単に<em class="firstterm">統計情報オブジェクト</em>と呼ばれます）を作成することができます。
+   </p><p>
+<span class="original">
+    Statistics objects are created using the
+    &lt;link linkend="sql-createstatistics"&gt;&lt;command&gt;CREATE STATISTICS&lt;/command&gt;&lt;/link&gt; command.
+    Creation of such an object merely creates a catalog entry expressing
+    interest in the statistics.  Actual data collection is performed
+    by &lt;command&gt;ANALYZE&lt;/command&gt; (either a manual command, or background
+    auto-analyze).  The collected values can be examined in the
+    &lt;link linkend="catalog-pg-statistic-ext-data"&gt;&lt;structname&gt;pg_statistic_ext_data&lt;/structname&gt;&lt;/link&gt;
+    catalog.
+</span>
+統計情報オブジェクトは<a class="link" href="sql-createstatistics.html" title="CREATE STATISTICS"><code class="command">CREATE STATISTICS</code></a>で作成します。
+そうしたオブジェクトを作っても、単に統計情報として興味があることを示すカタログエントリが作られるだけです。
+実際のデータ収集は、<code class="command">ANALYZE</code> （手動のコマンドを起動あるいはバックグラウンドでの自動ANALYZE）が行います。
+収集したデータは、<a class="link" href="catalog-pg-statistic-ext-data.html" title="53.53. pg_statistic_ext_data"><code class="structname">pg_statistic_ext_data</code></a>カタログで参照することができます。
+   </p><p>
+<span class="original">
+    &lt;command&gt;ANALYZE&lt;/command&gt; computes extended statistics based on the same
+    sample of table rows that it takes for computing regular single-column
+    statistics.  Since the sample size is increased by increasing the
+    statistics target for the table or any of its columns (as described in
+    the previous section), a larger statistics target will normally result in
+    more accurate extended statistics, as well as more time spent calculating
+    them.
+</span>
+通常の単一列統計情報の計算に使うのと同じテーブル行のサンプルに基づき、<code class="command">ANALYZE</code>は、拡張統計情報を計算します。
+（前節で述べたように）テーブルあるいはそのテーブルの対象となる列統計情報の増やすと、サンプルのサイズも増えるので、より大きな統計情報の対象を使うと、通常、より精度の高い拡張統計情報を得られますが、計算に費やす時間も増えます。
+   </p><p>
+<span class="original">
+    The following subsections describe the kinds of extended statistics
+    that are currently supported.
+</span>
+次の節では、現在サポートしている拡張統計情報の種類を説明します。
+   </p><div class="sect3" id="id-1.5.13.6.5.13"><div class="titlepage"><div><div><h4 class="title">14.2.2.1. 関数従属性</h4></div></div></div><span class="original">
+    &lt;title&gt;Functional Dependencies&lt;/title&gt;
+</span><p>
+<span class="original">
+     The simplest kind of extended statistics tracks &lt;firstterm&gt;functional
+     dependencies&lt;/firstterm&gt;, a concept used in definitions of database normal forms.
+     We say that column &lt;structfield&gt;b&lt;/structfield&gt; is functionally dependent on
+     column &lt;structfield&gt;a&lt;/structfield&gt; if knowledge of the value of
+     &lt;structfield&gt;a&lt;/structfield&gt; is sufficient to determine the value
+     of &lt;structfield&gt;b&lt;/structfield&gt;, that is there are no two rows having the same value
+     of &lt;structfield&gt;a&lt;/structfield&gt; but different values of &lt;structfield&gt;b&lt;/structfield&gt;.
+     In a fully normalized database, functional dependencies should exist
+     only on primary keys and superkeys. However, in practice many data sets
+     are not fully normalized for various reasons; intentional
+     denormalization for performance reasons is a common example.
+     Even in a fully normalized database, there may be partial correlation
+     between some columns, which can be expressed as partial functional
+     dependency.
+</span>
+もっとも単純な拡張統計情報は、データベースの正規形の定義で使われる考え方である、<em class="firstterm">関数従属性</em>を追跡します。
+<code class="structfield">a</code>の値に関する知識が<code class="structfield">b</code>の値を決定するのに十分であるとき、列<code class="structfield">b</code>は列<code class="structfield">a</code>に関数的に従属していると言います。
+これはすなわち、同じ<code class="structfield">a</code>の値を持ちながら、異なる<code class="structfield">b</code>の値を持つ二つの行は存在しないということです。
+完全に正規化されたデータベースでは、関数従属性は主キーと超キーにのみ存在します。
+実際には様々な理由でデータの集合は完全には正規化されません。
+性能上の理由により非正規化するというのが典型的な例です。
+完全に正規化されたデータベースにおいても、ある列の間に部分的な相関関係が存在することがあり、これは部分的関数従属性として表現されます。
+    </p><p>
+<span class="original">
+     The existence of functional dependencies directly affects the accuracy
+     of estimates in certain queries.  If a query contains conditions on
+     both the independent and the dependent column(s), the
+     conditions on the dependent columns do not further reduce the result
+     size; but without knowledge of the functional dependency, the query
+     planner will assume that the conditions are independent, resulting
+     in underestimating the result size.
+</span>
+ある問い合わせでは、関数従属性が存在することが見積もりの精度に直接影響を与えます。
+問い合わせに独立した列と依存する列の両方に関する条件が含まれていると、依存する列に関する条件はそれ以上結果サイズを小さくしません。
+しかし関数従属性に関する知識がなければ、クエリプランナはそれらの条件が独立であると見なし、結果サイズの過少見積もりすることになります。
+    </p><p>
+<span class="original">
+     To inform the planner about functional dependencies, &lt;command&gt;ANALYZE&lt;/command&gt;
+     can collect measurements of cross-column dependency. Assessing the
+     degree of dependency between all sets of columns would be prohibitively
+     expensive, so data collection is limited to those groups of columns
+     appearing together in a statistics object defined with
+     the &lt;literal&gt;dependencies&lt;/literal&gt; option.  It is advisable to create
+     &lt;literal&gt;dependencies&lt;/literal&gt; statistics only for column groups that are
+     strongly correlated, to avoid unnecessary overhead in both
+     &lt;command&gt;ANALYZE&lt;/command&gt; and later query planning.
+</span>
+プランナに関数従属性について知らせるために、<code class="command">ANALYZE</code>は列をまたがる依存性の強さを収集することができます。
+すべての列の集合間の依存性度合いを調査するのは、受け入れられないほど高価になります。
+そこでデータ収集は、<code class="literal">dependencies</code>オプションで定義された統計情報オブジェクトの中に一緒に現れた列のグループに制限されます。
+<code class="command">ANALYZE</code>および後々のクエリプランニングにおける不必要なオーバーヘッドを避けるために、強い相関関係のある列のグループのみを対象に、<code class="literal">dependencies</code>統計情報を作成することをお勧めします。
+    </p><p>
+<span class="original">
+     Here is an example of collecting functional-dependency statistics:
+</span>
+関数従属性統計情報の収集例です。
+</p><pre class="programlisting">
+CREATE STATISTICS stts (dependencies) ON city, zip FROM zipcodes;
+
+ANALYZE zipcodes;
+
+SELECT stxname, stxkeys, stxddependencies
+  FROM pg_statistic_ext join pg_statistic_ext_data on (oid = stxoid)
+  WHERE stxname = 'stts';
+ stxname | stxkeys |             stxddependencies
+---------+---------+------------------------------------------
+ stts    | 1 5     | {"1 =&gt; 5": 1.000000, "5 =&gt; 1": 0.423130}
+(1 row)
+</pre><p>
+<span class="original">
+     Here it can be seen that column 1 (zip code) fully determines column
+     5 (city) so the coefficient is 1.0, while city only determines zip code
+     about 42% of the time, meaning that there are many cities (58%) that are
+     represented by more than a single ZIP code.
+</span>
+ここでは、列1（zip code）が完全に列5（city）を決定しているので、係数は1.0です。
+一方、cityはzip codeを42%しか決定していないので、一つ以上のzip codeで表現されている多くのcity(58%)が存在するということになります。
+    </p><p>
+<span class="original">
+     When computing the selectivity for a query involving functionally
+     dependent columns, the planner adjusts the per-condition selectivity
+     estimates using the dependency coefficients so as not to produce
+     an underestimate.
+</span>
+関数従属する列を伴うクエリの選択率を計算する際、過小評価を行わないように、プランナは依存性係数を使って条件ごとの選択率を調整します。
+    </p><div class="sect4" id="id-1.5.13.6.5.13.7"><div class="titlepage"><div><div><h5 class="title">14.2.2.1.1. 関数従属性の制限事項</h5></div></div></div><span class="original">
+     &lt;title&gt;Limitations of Functional Dependencies&lt;/title&gt;
+</span><p>
+<span class="original">
+      Functional dependencies are currently only applied when considering
+      simple equality conditions that compare columns to constant values,
+      and &lt;literal&gt;IN&lt;/literal&gt; clauses with constant values.
+      They are not used to improve estimates for equality conditions
+      comparing two columns or comparing a column to an expression, nor for
+      range clauses, &lt;literal&gt;LIKE&lt;/literal&gt; or any other type of condition.
+</span>
+今のところ、列と定数を比較する単純な等価条件と、定数の<code class="literal">IN</code>句を考慮する際にしか関数従属性は適用されません。
+二つの列を比較する、あるいは列を式と比較する等価条件、範囲句、<code class="literal">LIKE</code>その他の条件の見積もりを改善するのには使われません。
+     </p><p>
+<span class="original">
+      When estimating with functional dependencies, the planner assumes that
+      conditions on the involved columns are compatible and hence redundant.
+      If they are incompatible, the correct estimate would be zero rows, but
+      that possibility is not considered.  For example, given a query like
+</span>
+関数従属性を含めた見積もりでは、プランナは関係する列に対する複数の条件が同時に成り立つ、つまり冗長であるとみなします。
+それらの条件が同時に成り立たなければ、正しい見積もりは0行となりますが、その可能性は考慮されません。
+たとえば次のクエリを見てください。
+</p><pre class="programlisting">
+SELECT * FROM zipcodes WHERE city = 'San Francisco' AND zip = '94105';
+</pre><p>
+<span class="original">
+      the planner will disregard the &lt;structfield&gt;city&lt;/structfield&gt; clause as not
+      changing the selectivity, which is correct.  However, it will make
+      the same assumption about
+</span>
+プランナは、選択率が変わらないという正しい推定に基づき<code class="structfield">city</code>句を無視します。
+しかし、これを満たす行が0行であるにもかかわらず、次の問い合わせでも同じ推測をします。
+</p><pre class="programlisting">
+SELECT * FROM zipcodes WHERE city = 'San Francisco' AND zip = '90210';
+</pre><p>
+<span class="original">
+      even though there will really be zero rows satisfying this query.
+      Functional dependency statistics do not provide enough information
+      to conclude that, however.
+</span>
+関数従属性統計情報は、これを結論付けるだけの十分な情報を提供しません。
+     </p><p>
+<span class="original">
+      In many practical situations, this assumption is usually satisfied;
+      for example, there might be a GUI in the application that only allows
+      selecting compatible city and ZIP code values to use in a query.
+      But if that's not the case, functional dependencies may not be a viable
+      option.
+</span>
+多くの実用的な場合には、この前提は通常満たされます。
+たとえば、あるアプリケーションには、クエリの中で両立するcityとZIP codeだけを許すGUIが備わっているかもしれません。
+もしそうでなければ、関数従属性は実行可能なオプションではないかもしれません。
+     </p></div></div><div class="sect3" id="id-1.5.13.6.5.14"><div class="titlepage"><div><div><h4 class="title">14.2.2.2. 多変量N個別値計数</h4></div></div></div><span class="original">
+    &lt;title&gt;Multivariate N-Distinct Counts&lt;/title&gt;
+</span><p>
+<span class="original">
+     Single-column statistics store the number of distinct values in each
+     column.  Estimates of the number of distinct values when combining more
+     than one column (for example, for &lt;literal&gt;GROUP BY a, b&lt;/literal&gt;) are
+     frequently wrong when the planner only has single-column statistical
+     data, causing it to select bad plans.
+</span>
+単一列統計情報は、それぞれの列で異なる値の数を保持します。
+たとえば、<code class="literal">GROUP BY a, b</code>のように、二つ以上の列を組み合わせての異なる値の数の見積もりは、プランナに単一列の統計情報だけしか与えられない場合は、しばしば間違ったものになり、プランナは悪いプランの選択をしてしまいます。
+    </p><p>
+<span class="original">
+     To improve such estimates, &lt;command&gt;ANALYZE&lt;/command&gt; can collect n-distinct
+     statistics for groups of columns.  As before, it's impractical to do
+     this for every possible column grouping, so data is collected only for
+     those groups of columns appearing together in a statistics object
+     defined with the &lt;literal&gt;ndistinct&lt;/literal&gt; option.  Data will be collected
+     for each possible combination of two or more columns from the set of
+     listed columns.
+</span>
+見積もり改善のために、列のグループに対して<code class="command">ANALYZE</code>はN個別統計情報を収集することができます。
+以前述べたのと同様に、可能なすべての列のグループに対してこれを行なうのは現実的ではありません。
+<code class="literal">ndistinct</code>オプションで定義された統計オブジェクト中に一緒に現れる列のグループに対してのみデータを
+収集します。
+列リストの中から、可能な二つ以上の列の組み合わせそれぞれに対してデータが収集されます。
+    </p><p>
+<span class="original">
+     Continuing the previous example, the n-distinct counts in a
+     table of ZIP codes might look like the following:
+</span>
+先ほどの例の続きで、ZIP codeのテーブルのN個別値計数は次のようになります。
+</p><pre class="programlisting">
+CREATE STATISTICS stts2 (ndistinct) ON city, state, zip FROM zipcodes;
+
+ANALYZE zipcodes;
+
+SELECT stxkeys AS k, stxdndistinct AS nd
+  FROM pg_statistic_ext join pg_statistic_ext_data on (oid = stxoid)
+  WHERE stxname = 'stts2';
+-[ RECORD 1 ]------------------------------------------------------​--
+k  | 1 2 5
+nd | {"1, 2": 33178, "1, 5": 33178, "2, 5": 27435, "1, 2, 5": 33178}
+(1 row)
+</pre><p>
+<span class="original">
+     This indicates that there are three combinations of columns that
+     have 33178 distinct values: ZIP code and state; ZIP code and city;
+     and ZIP code, city and state (the fact that they are all equal is
+     expected given that ZIP code alone is unique in this table).  On the
+     other hand, the combination of city and state has only 27435 distinct
+     values.
+</span>
+この例では、33178の異なる値を持つ列の組み合わせが三つあることを示しています。
+ZIP codeとstate、ZIP codeとcity、cityとstateです。（これらが等しいという事実は、ZIP codeだけがテーブル中でユニークであることから期待されます。）
+一方、cityとstateの組み合わせには、27435だけの異なる値があります。
+    </p><p>
+<span class="original">
+     It's advisable to create &lt;literal&gt;ndistinct&lt;/literal&gt; statistics objects only
+     on combinations of columns that are actually used for grouping, and
+     for which misestimation of the number of groups is resulting in bad
+     plans.  Otherwise, the &lt;command&gt;ANALYZE&lt;/command&gt; cycles are just wasted.
+</span>
+グループ化で実際に使用する列の組み合わせで、かつグループ数の見積もり間違いによって悪いプランをもたらすものに対してだけ、<code class="literal">ndistinct</code>統計情報オブジェクトを作ることをお勧めします。
+さもないと、<code class="command">ANALYZE</code>サイクルは単に無駄になります。
+    </p></div><div class="sect3" id="id-1.5.13.6.5.15"><div class="titlepage"><div><div><h4 class="title">14.2.2.3. 多変量MCVリスト</h4></div></div></div><span class="original">
+    &lt;title&gt;Multivariate MCV Lists&lt;/title&gt;
+</span><p>
+<span class="original">
+     Another type of statistic stored for each column are most-common value
+     lists.  This allows very accurate estimates for individual columns, but
+     may result in significant misestimates for queries with conditions on
+     multiple columns.
+</span>
+列ごとに格納される別なタイプの統計値は最頻値リスト(most-common value list)です。
+個々の列ごとには非常に正確な推測を可能にしますが、複数列に渡る条件を持つ問い合わせについては重大な誤った推定をもたらすことがあります。
+    </p><p>
+<span class="original">
+     To improve such estimates, &lt;command&gt;ANALYZE&lt;/command&gt; can collect MCV
+     lists on combinations of columns.  Similarly to functional dependencies
+     and n-distinct coefficients, it's impractical to do this for every
+     possible column grouping.  Even more so in this case, as the MCV list
+     (unlike functional dependencies and n-distinct coefficients) does store
+     the common column values.  So data is collected only for those groups
+     of columns appearing together in a statistics object defined with the
+     &lt;literal&gt;mcv&lt;/literal&gt; option.
+</span>
+こうした推定を改善するために、列の組み合わせのMCVリストを<code class="command">ANALYZE</code>で収集することができます。
+関数従属性とN個別値係数同様、考えられるすべての列のグループに対してこれを行うのは実用的ではありません。
+MCVリストでは（関数従属性とN個別値係数と違って）列の頻値を格納するのでなおさらです。
+ですから<code class="literal">mcv</code>オプションで定義された統計情報オブジェクト中に共通して現れる列のグループのデータだけが収集されます。
+    </p><p>
+<span class="original">
+     Continuing the previous example, the MCV list for a table of ZIP codes
+     might look like the following (unlike for simpler types of statistics,
+     a function is required for inspection of MCV contents):
+</span>
+前述の例を続けましょう。ZIPコードのテーブルのMCVリストは次のようになるでしょう。（単純な形式の統計情報とは違って、MCVの内容を解析する関数が必要になります）
+
+</p><pre class="programlisting">
+CREATE STATISTICS stts3 (mcv) ON city, state FROM zipcodes;
+
+ANALYZE zipcodes;
+
+SELECT m.* FROM pg_statistic_ext join pg_statistic_ext_data on (oid = stxoid),
+                pg_mcv_list_items(stxdmcv) m WHERE stxname = 'stts3';
+
+ index |         values         | nulls | frequency | base_frequency
+-------+------------------------+-------+-----------+----------------
+     0 | {Washington, DC}       | {f,f} |  0.003467 |        2.7e-05
+     1 | {Apo, AE}              | {f,f} |  0.003067 |        1.9e-05
+     2 | {Houston, TX}          | {f,f} |  0.002167 |       0.000133
+     3 | {El Paso, TX}          | {f,f} |     0.002 |       0.000113
+     4 | {New York, NY}         | {f,f} |  0.001967 |       0.000114
+     5 | {Atlanta, GA}          | {f,f} |  0.001633 |        3.3e-05
+     6 | {Sacramento, CA}       | {f,f} |  0.001433 |        7.8e-05
+     7 | {Miami, FL}            | {f,f} |    0.0014 |          6e-05
+     8 | {Dallas, TX}           | {f,f} |  0.001367 |        8.8e-05
+     9 | {Chicago, IL}          | {f,f} |  0.001333 |        5.1e-05
+   ...
+(99 rows)
+</pre><p>
+<span class="original">
+     This indicates that the most common combination of city and state is
+     Washington in DC, with actual frequency (in the sample) about 0.35%.
+     The base frequency of the combination (as computed from the simple
+     per-column frequencies) is only 0.0027%, resulting in two orders of
+     magnitude under-estimates.
+</span>
+これによると市と州のもっとも頻度の高い組み合わせはDCのWashingtonで、（サンプルにおける）実際の頻度は約0.35%でした。
+比較の基準となる組み合わせの頻度（単純な列ごとの頻度から計算されたもの）はたった0.0027%で、2桁の過少見積になっています。
+    </p><p>
+<span class="original">
+     It's advisable to create &lt;acronym&gt;MCV&lt;/acronym&gt; statistics objects only
+     on combinations of columns that are actually used in conditions together,
+     and for which misestimation of the number of groups is resulting in bad
+     plans.  Otherwise, the &lt;command&gt;ANALYZE&lt;/command&gt; and planning cycles
+     are just wasted.
+</span>
+そのグループの誤推定値が間違った計画をもたらしてしまうような、条件の中で実際に一緒に使われる列の組み合わせについてのみ<acronym class="acronym">MCV</acronym>統計情報オブジェクトを作成することが望ましいです。
+さもないと、<code class="command">ANALYZE</code>とプラン処理は単に無駄になってしまいます。
+    </p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="using-explain.html" title="14.1. EXPLAINの利用">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="performance-tips.html" title="第14章 性能に関するヒント">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="explicit-joins.html" title="14.3. 明示的なJOIN句でプランナを制御する">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">14.1. <code class="command">EXPLAIN</code>の利用 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 14.3. 明示的な<code class="literal">JOIN</code>句でプランナを制御する</td></tr></table></div></body></html>

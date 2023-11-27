@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>75.3. プランナの統計情報とセキュリティ</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="multivariate-statistics-examples.html" title="75.2. 多変量統計の例" /><link rel="next" href="backup-manifest-format.html" title="第76章 バックアップマニフェスト書式" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="planner-stats-details.html" title="第75章 プランナは統計情報をどのように使用するか">第75章 プランナは統計情報をどのように使用するか</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : planner-stats-security.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="multivariate-statistics-examples.html" title="75.2. 多変量統計の例">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="planner-stats-details.html" title="第75章 プランナは統計情報をどのように使用するか">上へ</a></td><td width="60%" align="center">75.3. プランナの統計情報とセキュリティ</td><td width="20%" align="right"> <a accesskey="n" href="backup-manifest-format.html" title="第76章 バックアップマニフェスト書式">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PLANNER-STATS-SECURITY"><div class="titlepage"><div><div><h2 class="title" style="clear: both">75.3. プランナの統計情報とセキュリティ</h2></div></div></div><span class="original">
+  &lt;title&gt;Planner Statistics and Security&lt;/title&gt;
+</span><p>
+<span class="original">
+   Access to the table &lt;structname&gt;pg_statistic&lt;/structname&gt; is restricted to
+   superusers, so that ordinary users cannot learn about the contents of the
+   tables of other users from it.  Some selectivity estimation functions will
+   use a user-provided operator (either the operator appearing in the query or
+   a related operator) to analyze the stored statistics.  For example, in order
+   to determine whether a stored most common value is applicable, the
+   selectivity estimator will have to run the appropriate &lt;literal&gt;=&lt;/literal&gt;
+   operator to compare the constant in the query to the stored value.
+   Thus the data in &lt;structname&gt;pg_statistic&lt;/structname&gt; is potentially
+   passed to user-defined operators.  An appropriately crafted operator can
+   intentionally leak the passed operands (for example, by logging them
+   or writing them to a different table), or accidentally leak them by showing
+   their values in error messages, in either case possibly exposing data from
+   &lt;structname&gt;pg_statistic&lt;/structname&gt; to a user who should not be able to
+   see it.
+</span>
+テーブル<code class="structname">pg_statistic</code>へのアクセスはスーパーユーザのみに制限されているため、一般ユーザはこのテーブルを使って他のユーザのテーブル内容について調べることはできません。
+選択性推定関数には保存されている統計情報を解析するためにユーザ定義の演算子（問い合わせに現れる演算子あるいは関連する演算子）を使うものがあります。
+例えば、保存されている最頻値を適用できるかどうかを調べるためには、選択性推定関数は適切な<code class="literal">=</code>演算子を実行して問い合わせ内の定数を保存されている値と比較する必要があるでしょう。
+従って、<code class="structname">pg_statistic</code>内のデータは、潜在的に、ユーザ定義演算子に渡される可能性があります。
+巧妙に作られた演算子を使うと、渡された引数を意図的に漏らす（例えば、それをログに出力する、他のテーブルに書き出すなど）、あるいはその値をエラーメッセージに出力することで偶然に漏らすことが可能で、いずれにせよ<code class="structname">pg_statistic</code>のデータを、それを見ることができないはずのユーザに対して露出する可能性があります。
+  </p><p>
+<span class="original">
+   In order to prevent this, the following applies to all built-in selectivity
+   estimation functions.  When planning a query, in order to be able to use
+   stored statistics, the current user must either
+   have &lt;literal&gt;SELECT&lt;/literal&gt; privilege on the table or the involved
+   columns, or the operator used must be &lt;literal&gt;LEAKPROOF&lt;/literal&gt; (more
+   accurately, the function that the operator is based on).  If not, then the
+   selectivity estimator will behave as if no statistics are available, and
+   the planner will proceed with default or fall-back assumptions.
+</span>
+このことを防ぐため、すべての組み込みの選択性推定関数には以下のことが適用されます。
+問い合わせの計画を作成するとき、保存されている統計情報を使用できるためには、現在のユーザはテーブルあるいは対象の列に<code class="literal">SELECT</code>権限を持っている必要がある、あるいは使用する演算子（正確には、演算子の元となる関数）が<code class="literal">LEAKPROOF</code>である必要があります。
+そうでないときは、選択性推定はあたかも利用可能な統計情報がないかのような動作をし、プランナはデフォルトあるいは代替の推定に従って処理をします。
+  </p><p>
+<span class="original">
+   If a user does not have the required privilege on the table or columns,
+   then in many cases the query will ultimately receive a permission-denied
+   error, in which case this mechanism is invisible in practice.  But if the
+   user is reading from a security-barrier view, then the planner might wish
+   to check the statistics of an underlying table that is otherwise
+   inaccessible to the user.  In that case, the operator should be leak-proof
+   or the statistics will not be used.  There is no direct feedback about
+   that, except that the plan might be suboptimal.  If one suspects that this
+   is the case, one could try running the query as a more privileged user,
+   to see if a different plan results.
+</span>
+ユーザがテーブルや列について必要な権限を持っていない場合、最終的には権限不足のエラーを受け取ることが多いでしょう。
+この場合、上記の仕組みは実際にはユーザからはわかりません。
+しかし、ユーザがセキュリティバリアビューから読み取ろうとしている場合、プランナはそのビューの元となっているテーブルの統計情報を検査したいと思うかもしれず、またユーザはそのテーブルにはアクセス権がないかもしれません。
+その場合は、演算子がリークプルーフ(leak-proof)でなければ、統計情報は使用されません。
+そのことについての直接的なフィードバックは何もなく、プランが理想的ではないかもしれないというだけです。
+このことが起きているかもしれないと思った場合は、より権限のあるユーザで問い合わせを実行して、異なる計画が得られるかどうか調べることができます。
+  </p><p>
+<span class="original">
+   This restriction applies only to cases where the planner would need to
+   execute a user-defined operator on one or more values
+   from &lt;structname&gt;pg_statistic&lt;/structname&gt;.  Thus the planner is permitted
+   to use generic statistical information, such as the fraction of null values
+   or the number of distinct values in a column, regardless of access
+   privileges.
+</span>
+この制限は、プランナが<code class="structname">pg_statistic</code>の1つ以上の値についてユーザ定義演算子を実行する必要がある場合にのみ適用されます。
+従って、列内でのNULL値の割合や異なる値の個数といった一般的な統計情報については、プランナはアクセス権限に関わらず使用することが許されています。
+  </p><p>
+<span class="original">
+   Selectivity estimation functions contained in third-party extensions that
+   potentially operate on statistics with user-defined operators should follow
+   the same security rules.  Consult the PostgreSQL source code for guidance.
+</span>
+サードパーティの拡張に含まれる選択性推定関数で、ユーザ定義演算子で統計情報の演算をする可能性のあるものは、同じセキュリティ規則に従うべきです。
+そのための手引については、PostgreSQLのソースコードを参照してください。
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="multivariate-statistics-examples.html" title="75.2. 多変量統計の例">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="planner-stats-details.html" title="第75章 プランナは統計情報をどのように使用するか">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="backup-manifest-format.html" title="第76章 バックアップマニフェスト書式">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">75.2. 多変量統計の例 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 第76章 バックアップマニフェスト書式</td></tr></table></div></body></html>

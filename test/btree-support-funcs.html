@@ -1,0 +1,457 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>67.3. B-Treeサポート関数</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="btree-behavior.html" title="67.2. B-Tree演算子クラスの振る舞い" /><link rel="next" href="btree-implementation.html" title="67.4. 実装" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="btree.html" title="第67章 B-Treeインデックス">第67章 B-Treeインデックス</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : btree-support-funcs.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="btree-behavior.html" title="67.2. B-Tree演算子クラスの振る舞い">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="btree.html" title="第67章 B-Treeインデックス">上へ</a></td><td width="60%" align="center">67.3. B-Treeサポート関数</td><td width="20%" align="right"> <a accesskey="n" href="btree-implementation.html" title="67.4. 実装">次へ</a></td></tr></table><hr /></div><div class="sect1" id="BTREE-SUPPORT-FUNCS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">67.3. B-Treeサポート関数</h2></div></div></div><span class="original">
+ &lt;title&gt;B-Tree Support Functions&lt;/title&gt;
+</span><p>
+<span class="original">
+  As shown in &lt;xref linkend="xindex-btree-support-table"/&gt;, btree defines
+  one required and four optional support functions.  The five
+  user-defined methods are:
+</span>
+<a class="xref" href="xindex.html#XINDEX-BTREE-SUPPORT-TABLE" title="表38.9 B-treeサポート関数">表 38.9</a>で示すように、btreeでは一つの必須サポート関数と、4つの省略可能なサポート関数を定義します。
+5つのユーザ定義メソッドは以下の通りです。
+ </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="function">order</code></span></dt><dd><p>
+<span class="original">
+     For each combination of data types that a btree operator family
+     provides comparison operators for, it must provide a comparison
+     support function, registered in
+     &lt;structname&gt;pg_amproc&lt;/structname&gt; with support function number 1
+     and
+     &lt;structfield&gt;amproclefttype&lt;/structfield&gt;/&lt;structfield&gt;amprocrighttype&lt;/structfield&gt;
+     equal to the left and right data types for the comparison (i.e.,
+     the same data types that the matching operators are registered
+     with in &lt;structname&gt;pg_amop&lt;/structname&gt;).  The comparison
+     function must take two non-null values
+     &lt;replaceable&gt;A&lt;/replaceable&gt; and &lt;replaceable&gt;B&lt;/replaceable&gt; and
+     return an &lt;type&gt;int32&lt;/type&gt; value that is
+     &lt;literal&gt;&amp;lt;&lt;/literal&gt; &lt;literal&gt;0&lt;/literal&gt;,
+     &lt;literal&gt;0&lt;/literal&gt;, or &lt;literal&gt;&amp;gt;&lt;/literal&gt;
+     &lt;literal&gt;0&lt;/literal&gt; when &lt;replaceable&gt;A&lt;/replaceable&gt;
+     &lt;literal&gt;&amp;lt;&lt;/literal&gt; &lt;replaceable&gt;B&lt;/replaceable&gt;,
+     &lt;replaceable&gt;A&lt;/replaceable&gt; &lt;literal&gt;=&lt;/literal&gt;
+     &lt;replaceable&gt;B&lt;/replaceable&gt;, or &lt;replaceable&gt;A&lt;/replaceable&gt;
+     &lt;literal&gt;&amp;gt;&lt;/literal&gt; &lt;replaceable&gt;B&lt;/replaceable&gt;,
+     respectively.  A null result is disallowed: all values of the
+     data type must be comparable.  See
+     &lt;filename&gt;src/backend/access/nbtree/nbtcompare.c&lt;/filename&gt; for
+     examples.
+</span>
+btreeの演算子族が比較演算子を提供する各データ型の組み合わせに対して、比較サポート関数を提供しなければなりません。それらはサポート関数1番で<code class="structname">pg_amproc</code>に、また、比較での左右のデータ型と等しい<code class="structfield">amproclefttype</code>/<code class="structfield">amprocrighttype</code>に、登録されます（すなわち、<code class="structname">pg_amop</code>に登録されている演算子が対応するものと同じデータ型です）。
+比較関数は2つの非NULL値<em class="replaceable"><code>A</code></em>と<em class="replaceable"><code>B</code></em>を取り、
+<em class="replaceable"><code>A</code></em> <code class="literal">&lt;</code> <em class="replaceable"><code>B</code></em>、<em class="replaceable"><code>A</code></em> <code class="literal">=</code> <em class="replaceable"><code>B</code></em>、または、<em class="replaceable"><code>A</code></em> <code class="literal">&gt;</code> <em class="replaceable"><code>B</code></em>であるときにそれぞれ、<code class="literal">&lt;</code> <code class="literal">0</code>、<code class="literal">0</code>、または、<code class="literal">&gt;</code> <code class="literal">0</code>である<code class="type">int32</code>の値を返さなければなりません。
+NULLの結果は許されず、データ型の全ての値は比較可能でなければなりません。
+例として<code class="filename">src/backend/access/nbtree/nbtcompare.c</code>を参照してください。
+    </p><p>
+<span class="original">
+     If the compared values are of a collatable data type, the
+     appropriate collation OID will be passed to the comparison
+     support function, using the standard
+     &lt;function&gt;PG_GET_COLLATION()&lt;/function&gt; mechanism.
+</span>
+比較される値が照合順序が適用可能なデータ型のものである場合、比較サポート関数に適切な照合順序のOIDが渡され、標準の<code class="function">PG_GET_COLLATION()</code>機構が使用されます。
+    </p></dd><dt><span class="term"><code class="function">sortsupport</code></span></dt><dd><p>
+<span class="original">
+     Optionally, a btree operator family may provide &lt;firstterm&gt;sort
+      support&lt;/firstterm&gt; function(s), registered under support
+     function number 2.  These functions allow implementing
+     comparisons for sorting purposes in a more efficient way than
+     naively calling the comparison support function.  The APIs
+     involved in this are defined in
+     &lt;filename&gt;src/include/utils/sortsupport.h&lt;/filename&gt;.
+</span>
+任意で、btree演算子族は<em class="firstterm">ソートサポート</em>関数を提供してもよいです。これはサポート関数2番で登録されます。
+この関数は、素朴に比較サポート関数を呼び出すよりも、ソート目的により効果的な方法での比較の実装を可能にします。
+これに関するAPIは<code class="filename">src/include/utils/sortsupport.h</code>で定義されています。
+    </p></dd><dt><span class="term"><code class="function">in_range</code></span></dt><dd><a id="id-1.10.18.6.3.3.2.1" class="indexterm"></a><a id="id-1.10.18.6.3.3.2.2" class="indexterm"></a><a id="id-1.10.18.6.3.3.2.3" class="indexterm"></a><a id="id-1.10.18.6.3.3.2.4" class="indexterm"></a><p>
+<span class="original">
+     Optionally, a btree operator family may provide
+     &lt;firstterm&gt;in_range&lt;/firstterm&gt; support function(s), registered
+     under support function number 3.  These are not used during btree
+     index operations; rather, they extend the semantics of the
+     operator family so that it can support window clauses containing
+     the &lt;literal&gt;RANGE&lt;/literal&gt; &lt;replaceable&gt;offset&lt;/replaceable&gt;
+     &lt;literal&gt;PRECEDING&lt;/literal&gt; and &lt;literal&gt;RANGE&lt;/literal&gt;
+     &lt;replaceable&gt;offset&lt;/replaceable&gt; &lt;literal&gt;FOLLOWING&lt;/literal&gt;
+     frame bound types (see &lt;xref
+      linkend="syntax-window-functions"/&gt;).  Fundamentally, the extra
+     information provided is how to add or subtract an
+     &lt;replaceable&gt;offset&lt;/replaceable&gt; value in a way that is
+     compatible with the family's data ordering.
+</span>
+任意で、btree演算子族は<em class="firstterm">in_range</em>サポート関数を提供してもよいです。これはサポート関数3番に登録されます。
+これはbtreeインデックス操作中には使われません。そうではなく、演算子族のセマンティクスを<code class="literal">RANGE</code> <em class="replaceable"><code>offset</code></em> <code class="literal">PRECEDING</code>と<code class="literal">RANGE</code> <em class="replaceable"><code>offset</code></em> <code class="literal">FOLLOWING</code>フレーム境界タイプ（<a class="xref" href="sql-expressions.html#SYNTAX-WINDOW-FUNCTIONS" title="4.2.8. ウィンドウ関数呼び出し">4.2.8</a>を参照）を含むWINDOW句に対応できるように拡張します。
+基本的には、提供される拡張情報はどのように演算子族のデータ並び順と互換性のある方法で<em class="replaceable"><code>offset</code></em>値を足すか引くかです。
+    </p><p>
+<span class="original">
+     An &lt;function&gt;in_range&lt;/function&gt; function must have the signature
+&lt;synopsis&gt;
+in_range(&lt;replaceable&gt;val&lt;/replaceable&gt; type1, &lt;replaceable&gt;base&lt;/replaceable&gt; type1, &lt;replaceable&gt;offset&lt;/replaceable&gt; type2, &lt;replaceable&gt;sub&lt;/replaceable&gt; bool, &lt;replaceable&gt;less&lt;/replaceable&gt; bool)
+returns bool
+&lt;/synopsis&gt;
+     &lt;replaceable&gt;val&lt;/replaceable&gt; and
+     &lt;replaceable&gt;base&lt;/replaceable&gt; must be of the same type, which
+     is one of the types supported by the operator family (i.e., a
+     type for which it provides an ordering).  However,
+     &lt;replaceable&gt;offset&lt;/replaceable&gt; could be of a different type,
+     which might be one otherwise unsupported by the family.  An
+     example is that the built-in &lt;literal&gt;time_ops&lt;/literal&gt; family
+     provides an &lt;function&gt;in_range&lt;/function&gt; function that has
+     &lt;replaceable&gt;offset&lt;/replaceable&gt; of type &lt;type&gt;interval&lt;/type&gt;.
+     A family can provide &lt;function&gt;in_range&lt;/function&gt; functions for
+     any of its supported types and one or more
+     &lt;replaceable&gt;offset&lt;/replaceable&gt; types.  Each
+     &lt;function&gt;in_range&lt;/function&gt; function should be entered in
+     &lt;structname&gt;pg_amproc&lt;/structname&gt; with
+     &lt;structfield&gt;amproclefttype&lt;/structfield&gt; equal to
+     &lt;type&gt;type1&lt;/type&gt; and &lt;structfield&gt;amprocrighttype&lt;/structfield&gt;
+     equal to &lt;type&gt;type2&lt;/type&gt;.
+</span>
+<code class="function">in_range</code>関数は以下のシグネチャを持たなければなりません。
+</p><pre class="synopsis">
+in_range(<em class="replaceable"><code>val</code></em> type1, <em class="replaceable"><code>base</code></em> type1, <em class="replaceable"><code>offset</code></em> type2, <em class="replaceable"><code>sub</code></em> bool, <em class="replaceable"><code>less</code></em> bool)
+returns bool
+</pre><p>
+<em class="replaceable"><code>val</code></em>と<em class="replaceable"><code>base</code></em>は同じ型でなければならず、これは演算子族でサポートされる型の一つ（すなわち、並び順を提供する対象の型）です。
+しかしながら、<em class="replaceable"><code>offset</code></em>は異なる型のものでも可能です。それは演算子族でサポートされないものでもよいです。
+例としては、組み込みの<code class="literal">time_ops</code>族が<code class="type">interval</code>型の<em class="replaceable"><code>offset</code></em>を持つ<code class="function">in_range</code>関数を提供しています。
+演算子族は、任意のサポートされる型と一つまたは複数の<em class="replaceable"><code>offset</code></em>型に対する<code class="function">in_range</code>関数を提供できます。
+各<code class="function">in_range</code>関数は、<code class="structname">pg_amproc</code>に<code class="type">type1</code>と等しい<code class="structfield">amproclefttype</code>と<code class="type">type2</code>に等しい<code class="structfield">amproclefttype</code>で登録されるべきです。
+    </p><p>
+<span class="original">
+     The essential semantics of an &lt;function&gt;in_range&lt;/function&gt;
+     function depend on the two Boolean flag parameters.  It should
+     add or subtract &lt;replaceable&gt;base&lt;/replaceable&gt; and
+     &lt;replaceable&gt;offset&lt;/replaceable&gt;, then compare
+     &lt;replaceable&gt;val&lt;/replaceable&gt; to the result, as follows:
+</span>
+<code class="function">in_range</code>関数の本質的なセマンティクスは2つのBooleanフラグパラメータに依存します。
+これは以下のように、<em class="replaceable"><code>base</code></em>に<em class="replaceable"><code>offset</code></em>を加算または減算して、それから<em class="replaceable"><code>val</code></em>を結果と比較すべきです。
+     </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+        if &lt;literal&gt;!&lt;/literal&gt;&lt;replaceable&gt;sub&lt;/replaceable&gt; and
+        &lt;literal&gt;!&lt;/literal&gt;&lt;replaceable&gt;less&lt;/replaceable&gt;, return
+        &lt;replaceable&gt;val&lt;/replaceable&gt; &lt;literal&gt;&amp;gt;=&lt;/literal&gt;
+        (&lt;replaceable&gt;base&lt;/replaceable&gt; &lt;literal&gt;+&lt;/literal&gt;
+        &lt;replaceable&gt;offset&lt;/replaceable&gt;)
+</span>
+        <code class="literal">!</code><em class="replaceable"><code>sub</code></em>かつ
+        <code class="literal">!</code><em class="replaceable"><code>less</code></em>であるなら、
+        <em class="replaceable"><code>val</code></em> <code class="literal">&gt;=</code>
+        (<em class="replaceable"><code>base</code></em> <code class="literal">+</code>
+        <em class="replaceable"><code>offset</code></em>)を返します
+       </p></li><li class="listitem"><p>
+<span class="original">
+        if &lt;literal&gt;!&lt;/literal&gt;&lt;replaceable&gt;sub&lt;/replaceable&gt; and
+        &lt;replaceable&gt;less&lt;/replaceable&gt;, return
+        &lt;replaceable&gt;val&lt;/replaceable&gt; &lt;literal&gt;&amp;lt;=&lt;/literal&gt;
+        (&lt;replaceable&gt;base&lt;/replaceable&gt; &lt;literal&gt;+&lt;/literal&gt;
+        &lt;replaceable&gt;offset&lt;/replaceable&gt;)
+</span>
+        <code class="literal">!</code><em class="replaceable"><code>sub</code></em>かつ
+        <em class="replaceable"><code>less</code></em>であるなら、
+        <em class="replaceable"><code>val</code></em> <code class="literal">&lt;=</code>
+        (<em class="replaceable"><code>base</code></em> <code class="literal">+</code>
+        <em class="replaceable"><code>offset</code></em>)を返します
+       </p></li><li class="listitem"><p>
+<span class="original">
+        if &lt;replaceable&gt;sub&lt;/replaceable&gt; and
+        &lt;literal&gt;!&lt;/literal&gt;&lt;replaceable&gt;less&lt;/replaceable&gt;, return
+        &lt;replaceable&gt;val&lt;/replaceable&gt; &lt;literal&gt;&amp;gt;=&lt;/literal&gt;
+        (&lt;replaceable&gt;base&lt;/replaceable&gt; &lt;literal&gt;-&lt;/literal&gt;
+        &lt;replaceable&gt;offset&lt;/replaceable&gt;)
+</span>
+        <em class="replaceable"><code>sub</code></em>かつ
+        <code class="literal">!</code><em class="replaceable"><code>less</code></em>であるなら、
+        <em class="replaceable"><code>val</code></em> <code class="literal">&gt;=</code>
+        (<em class="replaceable"><code>base</code></em> <code class="literal">-</code>
+        <em class="replaceable"><code>offset</code></em>)を返します
+       </p></li><li class="listitem"><p>
+<span class="original">
+        if &lt;replaceable&gt;sub&lt;/replaceable&gt; and
+        &lt;replaceable&gt;less&lt;/replaceable&gt;, return
+        &lt;replaceable&gt;val&lt;/replaceable&gt; &lt;literal&gt;&amp;lt;=&lt;/literal&gt;
+        (&lt;replaceable&gt;base&lt;/replaceable&gt; &lt;literal&gt;-&lt;/literal&gt;
+        &lt;replaceable&gt;offset&lt;/replaceable&gt;)
+</span>
+        <em class="replaceable"><code>sub</code></em>かつ
+        <em class="replaceable"><code>less</code></em>であるなら、
+        <em class="replaceable"><code>val</code></em> <code class="literal">&lt;=</code>
+        (<em class="replaceable"><code>base</code></em> <code class="literal">-</code>
+        <em class="replaceable"><code>offset</code></em>)を返します
+       </p></li></ul></div><p>
+<span class="original">
+     Before doing so, the function should check the sign of
+     &lt;replaceable&gt;offset&lt;/replaceable&gt;: if it is less than zero, raise
+     error
+     &lt;literal&gt;ERRCODE_INVALID_PRECEDING_OR_FOLLOWING_SIZE&lt;/literal&gt;
+     (22013) with error text like &lt;quote&gt;invalid preceding or
+      following size in window function&lt;/quote&gt;.  (This is required by
+     the SQL standard, although nonstandard operator families might
+     perhaps choose to ignore this restriction, since there seems to
+     be little semantic necessity for it.) This requirement is
+     delegated to the &lt;function&gt;in_range&lt;/function&gt; function so that
+     the core code needn't understand what &lt;quote&gt;less than
+      zero&lt;/quote&gt; means for a particular data type.
+</span>
+このように実行する前に、本関数は、<em class="replaceable"><code>offset</code></em>の符号を検査すべきです。
+すなわち、負であったなら、エラー<code class="literal">ERRCODE_INVALID_PRECEDING_OR_FOLLOWING_SIZE</code>(22013)、エラー文面としては<span class="quote">「<span class="quote">invalid preceding or following size in window function(ウィンドウ関数で先行または後続のサイズが不正です)</span>」</span>などを出すことです。
+（意味上の必要性が乏しいと見られることから非標準の演算子族はこの制限を無視することを選ぶかもしれませんが、これはSQL標準で必要とされています。）
+中核コードが特定のデータ型における<span class="quote">「<span class="quote">ゼロより小さい</span>」</span>ことの意味を理解しなくても良いように、この要件は<code class="function">in_range</code>関数に委託されます。
+    </p><p>
+<span class="original">
+     An additional expectation is that &lt;function&gt;in_range&lt;/function&gt;
+     functions should, if practical, avoid throwing an error if
+     &lt;replaceable&gt;base&lt;/replaceable&gt; &lt;literal&gt;+&lt;/literal&gt;
+     &lt;replaceable&gt;offset&lt;/replaceable&gt; or
+     &lt;replaceable&gt;base&lt;/replaceable&gt; &lt;literal&gt;-&lt;/literal&gt;
+     &lt;replaceable&gt;offset&lt;/replaceable&gt; would overflow.  The correct
+     comparison result can be determined even if that value would be
+     out of the data type's range.  Note that if the data type
+     includes concepts such as &lt;quote&gt;infinity&lt;/quote&gt; or
+     &lt;quote&gt;NaN&lt;/quote&gt;, extra care may be needed to ensure that
+     &lt;function&gt;in_range&lt;/function&gt;'s results agree with the normal
+     sort order of the operator family.
+</span>
+さらに期待されることは、<code class="function">in_range</code>関数は、実用的には、<em class="replaceable"><code>base</code></em> <code class="literal">+</code> <em class="replaceable"><code>offset</code></em>や<em class="replaceable"><code>base</code></em> <code class="literal">-</code> <em class="replaceable"><code>offset</code></em>がオーバーフローする場合にエラーを投げるのを避けるべきです。
+たとえ値がデータ型の範囲を超えたとしても正しい比較結果は決定できます。
+データ型が<span class="quote">「<span class="quote">infinity</span>」</span>や<span class="quote">「<span class="quote">NaN</span>」</span>などの概念を含む場合には、<code class="function">in_range</code>の結果が演算子族の通常のソート順序と一致するように特別な対応が必要となることに注意してください。
+    </p><p>
+<span class="original">
+     The results of the &lt;function&gt;in_range&lt;/function&gt; function must be
+     consistent with the sort ordering imposed by the operator family.
+     To be precise, given any fixed values of
+     &lt;replaceable&gt;offset&lt;/replaceable&gt; and
+     &lt;replaceable&gt;sub&lt;/replaceable&gt;, then:
+</span>
+<code class="function">in_range</code>関数の結果は、演算子族で規定されるソート順序と整合していなければなりません。
+正確には、与えらえれた任意の<em class="replaceable"><code>offset</code></em>と<em class="replaceable"><code>sub</code></em>の修正値は以下のようになります。
+     </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+        If &lt;function&gt;in_range&lt;/function&gt; with
+        &lt;replaceable&gt;less&lt;/replaceable&gt; = true is true for some
+        &lt;replaceable&gt;val1&lt;/replaceable&gt; and
+        &lt;replaceable&gt;base&lt;/replaceable&gt;, it must be true for every
+        &lt;replaceable&gt;val2&lt;/replaceable&gt; &lt;literal&gt;&amp;lt;=&lt;/literal&gt;
+        &lt;replaceable&gt;val1&lt;/replaceable&gt; with the same
+        &lt;replaceable&gt;base&lt;/replaceable&gt;.
+</span>
+<em class="replaceable"><code>less</code></em> = trueの<code class="function">in_range</code>がいくつかの<em class="replaceable"><code>val1</code></em>と<em class="replaceable"><code>base</code></em>に対して真であるなら、同じ<em class="replaceable"><code>base</code></em>の全ての<em class="replaceable"><code>val2</code></em> <code class="literal">&lt;=</code> <em class="replaceable"><code>val1</code></em>に対して真でなければなりません。
+       </p></li><li class="listitem"><p>
+<span class="original">
+        If &lt;function&gt;in_range&lt;/function&gt; with
+        &lt;replaceable&gt;less&lt;/replaceable&gt; = true is false for some
+        &lt;replaceable&gt;val1&lt;/replaceable&gt; and
+        &lt;replaceable&gt;base&lt;/replaceable&gt;, it must be false for every
+        &lt;replaceable&gt;val2&lt;/replaceable&gt; &lt;literal&gt;&amp;gt;=&lt;/literal&gt;
+        &lt;replaceable&gt;val1&lt;/replaceable&gt; with the same
+        &lt;replaceable&gt;base&lt;/replaceable&gt;.
+</span>
+<em class="replaceable"><code>less</code></em> = trueの<code class="function">in_range</code>が、いくつかの<em class="replaceable"><code>val1</code></em>と<em class="replaceable"><code>base</code></em>に対して偽であるなら、同じ<em class="replaceable"><code>base</code></em>の全ての<em class="replaceable"><code>val2</code></em> <code class="literal">&gt;=</code> <em class="replaceable"><code>val1</code></em>に対して偽でなければなりません。
+       </p></li><li class="listitem"><p>
+<span class="original">
+        If &lt;function&gt;in_range&lt;/function&gt; with
+        &lt;replaceable&gt;less&lt;/replaceable&gt; = true is true for some
+        &lt;replaceable&gt;val&lt;/replaceable&gt; and
+        &lt;replaceable&gt;base1&lt;/replaceable&gt;, it must be true for every
+        &lt;replaceable&gt;base2&lt;/replaceable&gt; &lt;literal&gt;&amp;gt;=&lt;/literal&gt;
+        &lt;replaceable&gt;base1&lt;/replaceable&gt; with the same
+        &lt;replaceable&gt;val&lt;/replaceable&gt;.
+</span>
+<em class="replaceable"><code>less</code></em> = trueの<code class="function">in_range</code>がいくつかの<em class="replaceable"><code>val</code></em>と<em class="replaceable"><code>base1</code></em>に対して真であるなら、同じ<em class="replaceable"><code>val</code></em>の全ての<em class="replaceable"><code>base2</code></em> <code class="literal">&gt;=</code> <em class="replaceable"><code>base1</code></em>に対して真でなければなりません。
+       </p></li><li class="listitem"><p>
+<span class="original">
+        If &lt;function&gt;in_range&lt;/function&gt; with
+        &lt;replaceable&gt;less&lt;/replaceable&gt; = true is false for some
+        &lt;replaceable&gt;val&lt;/replaceable&gt; and
+        &lt;replaceable&gt;base1&lt;/replaceable&gt;, it must be false for every
+        &lt;replaceable&gt;base2&lt;/replaceable&gt; &lt;literal&gt;&amp;lt;=&lt;/literal&gt;
+        &lt;replaceable&gt;base1&lt;/replaceable&gt; with the same
+        &lt;replaceable&gt;val&lt;/replaceable&gt;.
+</span>
+<em class="replaceable"><code>less</code></em> = trueの<code class="function">in_range</code>が一部の<em class="replaceable"><code>val</code></em>と<em class="replaceable"><code>base1</code></em>に対して偽であるなら、同じ<em class="replaceable"><code>val</code></em>の全ての<em class="replaceable"><code>base2</code></em> <code class="literal">&lt;=</code> <em class="replaceable"><code>base1</code></em>に対して偽でなければなりません。
+       </p></li></ul></div><p>
+<span class="original">
+     Analogous statements with inverted conditions hold when
+     &lt;replaceable&gt;less&lt;/replaceable&gt; = false.
+</span>
+<em class="replaceable"><code>less</code></em> = falseのときには、逆条件の類似した命題が適用できます。
+    </p><p>
+<span class="original">
+     If the type being ordered (&lt;type&gt;type1&lt;/type&gt;) is collatable, the
+     appropriate collation OID will be passed to the
+     &lt;function&gt;in_range&lt;/function&gt; function, using the standard
+     PG_GET_COLLATION() mechanism.
+</span>
+整列しようとしている型(<code class="type">type1</code>)が照合可能であるなら、標準のPG_GET_COLLATION()機構を使って、<code class="function">in_range</code>関数に適切な照合順序のOIDが渡されます。
+    </p><p>
+<span class="original">
+     &lt;function&gt;in_range&lt;/function&gt; functions need not handle NULL
+     inputs, and typically will be marked strict.
+</span>
+<code class="function">in_range</code>関数は、通例STRICTと印付けされ、NULL入力を処理する必要がありません。
+    </p></dd><dt><span class="term"><code class="function">equalimage</code></span></dt><dd><p>
+<span class="original">
+     Optionally, a btree operator family may provide
+     &lt;function&gt;equalimage&lt;/function&gt; (&lt;quote&gt;equality implies image
+      equality&lt;/quote&gt;) support functions, registered under support
+     function number 4.  These functions allow the core code to
+     determine when it is safe to apply the btree deduplication
+     optimization.  Currently, &lt;function&gt;equalimage&lt;/function&gt;
+     functions are only called when building or rebuilding an index.
+</span>
+省略可能ですが、btree演算子族は<code class="function">equalimage</code> (<span class="quote">「<span class="quote">イメージ等価を意味する等価</span>」</span>)サポート関数を提供してもよいです。これはサポート関数4番で登録されます。
+この関数は、中核コードがbtree重複排除の最適化を適用するのが安全かを決定できるようにします。
+今のところ、<code class="function">equalimage</code>関数はインデックスの構築または再構築時にのみ呼び出されます。
+    </p><p>
+<span class="original">
+     An &lt;function&gt;equalimage&lt;/function&gt; function must have the
+     signature
+&lt;synopsis&gt;
+equalimage(&lt;replaceable&gt;opcintype&lt;/replaceable&gt; &lt;type&gt;oid&lt;/type&gt;) returns bool
+&lt;/synopsis&gt;
+     The return value is static information about an operator class
+     and collation.  Returning &lt;literal&gt;true&lt;/literal&gt; indicates that
+     the &lt;function&gt;order&lt;/function&gt; function for the operator class is
+     guaranteed to only return &lt;literal&gt;0&lt;/literal&gt; (&lt;quote&gt;arguments
+      are equal&lt;/quote&gt;) when its &lt;replaceable&gt;A&lt;/replaceable&gt; and
+     &lt;replaceable&gt;B&lt;/replaceable&gt; arguments are also interchangeable
+     without any loss of semantic information.  Not registering an
+     &lt;function&gt;equalimage&lt;/function&gt; function or returning
+     &lt;literal&gt;false&lt;/literal&gt; indicates that this condition cannot be
+     assumed to hold.
+</span>
+<code class="function">equalimage</code>関数は以下のシグネチャを持たなければなりません。
+</p><pre class="synopsis">
+equalimage(<em class="replaceable"><code>opcintype</code></em> <code class="type">oid</code>) returns bool
+</pre><p>
+戻り値は演算子クラスと照合順序についての静的な情報です。
+<code class="literal">true</code>を返すことは、<em class="replaceable"><code>A</code></em>および<em class="replaceable"><code>B</code></em>引数が何らセマンティック情報を損失すること無しに交換可能でもあるとき、演算子クラスに対する<code class="function">order</code>関数が<code class="literal">0</code>（<span class="quote">「<span class="quote">引数が等しい</span>」</span>）だけを返すことが保証されていることを示します。
+<code class="function">equalimage</code>関数が登録されていなかったり、<code class="literal">false</code>を返すことは、この条件は守られないであろうことを示します。
+    </p><p>
+<span class="original">
+     The &lt;replaceable&gt;opcintype&lt;/replaceable&gt; argument is the
+     &lt;literal&gt;&lt;structname&gt;pg_type&lt;/structname&gt;.oid&lt;/literal&gt; of the
+     data type that the operator class indexes.  This is a convenience
+     that allows reuse of the same underlying
+     &lt;function&gt;equalimage&lt;/function&gt; function across operator classes.
+     If &lt;replaceable&gt;opcintype&lt;/replaceable&gt; is a collatable data
+     type, the appropriate collation OID will be passed to the
+     &lt;function&gt;equalimage&lt;/function&gt; function, using the standard
+     &lt;function&gt;PG_GET_COLLATION()&lt;/function&gt; mechanism.
+</span>
+<em class="replaceable"><code>opcintype</code></em>引数は演算子クラスタがインデックスを作るデータ型の<code class="literal"><code class="structname">pg_type</code>.oid</code>です。
+これは同じ基となる<code class="function">equalimage</code>関数を演算子クラスを横断して再利用できるようになる利便性があります。
+<em class="replaceable"><code>opcintype</code></em>が照合可能なデータ型である場合には、適切な照合順序のOIDが、標準の<code class="function">PG_GET_COLLATION()</code>機構を使って、<code class="function">equalimage</code>関数に渡されます。
+    </p><p>
+<span class="original">
+     As far as the operator class is concerned, returning
+     &lt;literal&gt;true&lt;/literal&gt; indicates that deduplication is safe (or
+     safe for the collation whose OID was passed to its
+     &lt;function&gt;equalimage&lt;/function&gt; function).  However, the core
+     code will only deem deduplication safe for an index when
+     &lt;emphasis&gt;every&lt;/emphasis&gt; indexed column uses an operator class
+     that registers an &lt;function&gt;equalimage&lt;/function&gt; function, and
+     each function actually returns &lt;literal&gt;true&lt;/literal&gt; when
+     called.
+</span>
+演算子クラスに関する限り、<code class="literal">true</code>を返すことは、重複排除が安全（あるいは<code class="function">equalimage</code>関数に渡されたOIDの照合順序について安全）であることを示します。
+しかしながら、コアコードは、<span class="emphasis"><em>全ての</em></span>インデックス列が<code class="function">equalimage</code>関数を登録する演算子クラスを使っていて、各関数が呼ばれたとき実際に<code class="literal">true</code>を返すときに、そのインデックスに対して重複排除を安全と見做すだけです。
+    </p><p>
+<span class="original">
+     Image equality is &lt;emphasis&gt;almost&lt;/emphasis&gt; the same condition
+     as simple bitwise equality.  There is one subtle difference: When
+     indexing a varlena data type, the on-disk representation of two
+     image equal datums may not be bitwise equal due to inconsistent
+     application of &lt;acronym&gt;TOAST&lt;/acronym&gt; compression on input.
+     Formally, when an operator class's
+     &lt;function&gt;equalimage&lt;/function&gt; function returns
+     &lt;literal&gt;true&lt;/literal&gt;, it is safe to assume that the
+     &lt;literal&gt;datum_image_eq()&lt;/literal&gt; C function will always agree
+     with the operator class's &lt;function&gt;order&lt;/function&gt; function
+     (provided that the same collation OID is passed to both the
+     &lt;function&gt;equalimage&lt;/function&gt; and &lt;function&gt;order&lt;/function&gt;
+     functions).
+</span>
+イメージ等価は単純にビット毎に等しいことと<span class="emphasis"><em>ほとんど</em></span>同じ条件です。
+一点微妙な違いがあります。varlenaデータ型にインデックス作成するとき、入力時の一貫性のない<acronym class="acronym">TOAST</acronym>圧縮の適用のために、同じdatumの二つのイメージのディスク上の表現はビット毎には等しくないかもしれません。
+これまでは、演算子クラスの<code class="function">equalimage</code>関数が<code class="literal">true</code>を返すときには、<code class="literal">datum_image_eq()</code> C関数が常に演算子クラスの<code class="function">order</code>関数と一致すると想定して安全でした（同じ照合順序のOIDが<code class="function">equalimage</code>と<code class="function">order</code>の両関数に渡されるとして）。
+    </p><p>
+<span class="original">
+     The core code is fundamentally unable to deduce anything about
+     the &lt;quote&gt;equality implies image equality&lt;/quote&gt; status of an
+     operator class within a multiple-data-type family based on
+     details from other operator classes in the same family.  Also, it
+     is not sensible for an operator family to register a cross-type
+     &lt;function&gt;equalimage&lt;/function&gt; function, and attempting to do so
+     will result in an error.  This is because &lt;quote&gt;equality implies
+      image equality&lt;/quote&gt; status does not just depend on
+     sorting/equality semantics, which are more or less defined at the
+     operator family level.  In general, the semantics that one
+     particular data type implements must be considered separately.
+</span>
+コアコードは基本的に、複数データ型の族の中の演算子クラスの<span class="quote">「<span class="quote">等価性がイメージ等価性を含む</span>」</span>状態について、同族の他の演算子クラスの詳細に基づいた、いかなる推測もできません。
+また、ある演算子族が型にまたがって<code class="function">equalimage</code>関数を登録していることを認識できず、そのような試みはエラーになります。
+これは<span class="quote">「<span class="quote">等価性がイメージ等価性を含む</span>」</span>状態は、演算子族の階層でおおむね定義されている、ソートと等価性のセマンティクスに依存しているだけでは無いためです。
+一般に、ある特定データ型の実装によるセマンティクスは別個に考慮されなければなりません。
+    </p><p>
+<span class="original">
+     The convention followed by the operator classes included with the
+     core &lt;productname&gt;PostgreSQL&lt;/productname&gt; distribution is to
+     register a stock, generic &lt;function&gt;equalimage&lt;/function&gt;
+     function.  Most operator classes register
+     &lt;function&gt;btequalimage()&lt;/function&gt;, which indicates that
+     deduplication is safe unconditionally.  Operator classes for
+     collatable data types such as &lt;type&gt;text&lt;/type&gt; register
+     &lt;function&gt;btvarstrequalimage()&lt;/function&gt;, which indicates that
+     deduplication is safe with deterministic collations.  Best
+     practice for third-party extensions is to register their own
+     custom function to retain control.
+</span>
+コア<span class="productname">PostgreSQL</span>配布物に含まれる演算子クラスが従う慣習は、標準品、すなわち、一般的な<code class="function">equalimage</code>関数を登録することです。
+大部分の演算子クラスタは<code class="function">btequalimage()</code>を登録しています。これは重複排除が無条件に安全であることを示しています。
+<code class="type">text</code>などの照合可能なデータ型に対する演算子クラスは<code class="function">btvarstrequalimage()</code>を登録します。これは決定的な照合順序では重複排除が安全であることを示します。
+サードパーティ拡張におけるベストプラクティスは制御を保つためにそれら自身のカスタム関数を登録することです。
+    </p></dd><dt><span class="term"><code class="function">options</code></span></dt><dd><p>
+<span class="original">
+     Optionally, a B-tree operator family may provide
+     &lt;function&gt;options&lt;/function&gt; (&lt;quote&gt;operator class specific
+     options&lt;/quote&gt;) support functions, registered under support
+     function number 5.  These functions define a set of user-visible
+     parameters that control operator class behavior.
+</span>
+省略可能ですが、B-treeの演算子族は<code class="function">options</code>（<span class="quote">「<span class="quote">演算子クラス固有オプション</span>」</span>）サポート関数を提供してもよいです。これはサポート関数5番に登録されます。
+この関数はユーザに見える演算子クラスの振る舞いを制御するパラメータの集合を定義します。
+    </p><p>
+<span class="original">
+     An &lt;function&gt;options&lt;/function&gt; support function must have the
+     signature
+&lt;synopsis&gt;
+options(&lt;replaceable&gt;relopts&lt;/replaceable&gt; &lt;type&gt;local_relopts *&lt;/type&gt;) returns void
+&lt;/synopsis&gt;
+     The function is passed a pointer to a &lt;structname&gt;local_relopts&lt;/structname&gt;
+     struct, which needs to be filled with a set of operator class
+     specific options.  The options can be accessed from other support
+     functions using the &lt;literal&gt;PG_HAS_OPCLASS_OPTIONS()&lt;/literal&gt; and
+     &lt;literal&gt;PG_GET_OPCLASS_OPTIONS()&lt;/literal&gt; macros.
+</span>
+<code class="function">options</code>サポート関数は以下のシグネチャを持たなければなりません。
+</p><pre class="synopsis">
+options(<em class="replaceable"><code>relopts</code></em> <code class="type">local_relopts *</code>) returns void
+</pre><p>
+関数には<code class="structname">local_relopts</code>構造体へのポインタが渡されます。ここには演算子クラス固有のオプションの集合が書かれている必要があります。
+このオプションには<code class="literal">PG_HAS_OPCLASS_OPTIONS()</code>および<code class="literal">PG_GET_OPCLASS_OPTIONS()</code>マクロを使って他のサポート関数からアクセスが可能です。
+    </p><p>
+<span class="original">
+     Currently, no B-Tree operator class has an &lt;function&gt;options&lt;/function&gt;
+     support function.  B-tree doesn't allow flexible representation of keys
+     like GiST, SP-GiST, GIN and BRIN do.  So, &lt;function&gt;options&lt;/function&gt;
+     probably doesn't have much application in the current B-tree index
+     access method.  Nevertheless, this support function was added to B-tree
+     for uniformity, and will probably find uses during further
+     evolution of B-tree in &lt;productname&gt;PostgreSQL&lt;/productname&gt;.
+</span>
+今のところ、<code class="function">options</code>サポート関数を持ったB-Treeの演算子クラスはありません。
+B-treeはGiST、SP-GiST、GINおよびBRINで行われてるような柔軟なキーの表現を許していません。
+そのため、おそらくは<code class="function">options</code>が現在のB-treeインデックスアクセスメソッドで多数適用されることはありません。
+それでも、統一性のためにサポート関数がB-treeに追加されました。おそらく<span class="productname">PostgreSQL</span>でのB-treeの更なる進化の過程で使用法を見つけ出すでしょう。
+    </p></dd></dl></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="btree-behavior.html" title="67.2. B-Tree演算子クラスの振る舞い">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="btree.html" title="第67章 B-Treeインデックス">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="btree-implementation.html" title="67.4. 実装">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">67.2. B-Tree演算子クラスの振る舞い </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 67.4. 実装</td></tr></table></div></body></html>

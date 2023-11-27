@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>75.2. 多変量統計の例</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="row-estimation-examples.html" title="75.1. 行数推定の例" /><link rel="next" href="planner-stats-security.html" title="75.3. プランナの統計情報とセキュリティ" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="planner-stats-details.html" title="第75章 プランナは統計情報をどのように使用するか">第75章 プランナは統計情報をどのように使用するか</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : multivariate-statistics-examples.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="row-estimation-examples.html" title="75.1. 行数推定の例">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="planner-stats-details.html" title="第75章 プランナは統計情報をどのように使用するか">上へ</a></td><td width="60%" align="center">75.2. 多変量統計の例</td><td width="20%" align="right"> <a accesskey="n" href="planner-stats-security.html" title="75.3. プランナの統計情報とセキュリティ">次へ</a></td></tr></table><hr /></div><div class="sect1" id="MULTIVARIATE-STATISTICS-EXAMPLES"><div class="titlepage"><div><div><h2 class="title" style="clear: both">75.2. 多変量統計の例</h2></div></div></div><span class="original">
+  &lt;title&gt;Multivariate Statistics Examples&lt;/title&gt;
+</span><a id="id-1.10.26.5.2" class="indexterm"></a><a id="id-1.10.26.5.3" class="indexterm"></a><div class="sect2" id="FUNCTIONAL-DEPENDENCIES"><div class="titlepage"><div><div><h3 class="title">75.2.1. 関数従属性</h3></div></div></div><span class="original">
+   &lt;title&gt;Functional Dependencies&lt;/title&gt;
+</span><p>
+<span class="original">
+    Multivariate correlation can be demonstrated with a very simple data set
+    &amp;mdash; a table with two columns, both containing the same values:
+</span>
+非常に単純なデータ集合で、多変量相関係数の例を示すことができます。
+2つの列を持ち、両方の列が同じ値を持つテーブルです。
+
+</p><pre class="programlisting">
+CREATE TABLE t (a INT, b INT);
+INSERT INTO t SELECT i % 100, i % 100 FROM generate_series(1, 10000) s(i);
+ANALYZE t;
+</pre><p>
+
+<span class="original">
+    As explained in &lt;xref linkend="planner-stats"/&gt;, the planner can determine
+    cardinality of &lt;structname&gt;t&lt;/structname&gt; using the number of pages and
+    rows obtained from &lt;structname&gt;pg_class&lt;/structname&gt;:
+</span>
+<a class="xref" href="planner-stats.html" title="14.2. プランナで使用される統計情報">14.2</a>で説明されているように、<code class="structname">pg_class</code>から得られるページ数と行数を使って、<code class="structname">t</code>の濃度を決定できます。
+
+</p><pre class="programlisting">
+SELECT relpages, reltuples FROM pg_class WHERE relname = 't';
+
+ relpages | reltuples
+----------+-----------
+       45 |     10000
+</pre><p>
+
+<span class="original">
+    The data distribution is very simple; there are only 100 distinct values
+    in each column, uniformly distributed.
+</span>
+データの分布はとても単純です。各々の列にはわずか100の異なる値があるだけであり、かつ均一に分布しています。
+   </p><p>
+<span class="original">
+    The following example shows the result of estimating a &lt;literal&gt;WHERE&lt;/literal&gt;
+    condition on the &lt;structfield&gt;a&lt;/structfield&gt; column:
+</span>
+次の例では、<code class="structfield">a</code>列に関する<code class="literal">WHERE</code>条件の見積もり結果を示しています。
+
+</p><pre class="programlisting">
+EXPLAIN (ANALYZE, TIMING OFF) SELECT * FROM t WHERE a = 1;
+                                 QUERY PLAN
+-------------------------------------------------------------------​------------
+ Seq Scan on t  (cost=0.00..170.00 rows=100 width=8) (actual rows=100 loops=1)
+   Filter: (a = 1)
+   Rows Removed by Filter: 9900
+</pre><p>
+
+<span class="original">
+    The planner examines the condition and determines the selectivity
+    of this clause to be 1%.  By comparing this estimate and the actual
+    number of rows, we see that the estimate is very accurate
+    (in fact exact, as the table is very small).  Changing the
+    &lt;literal&gt;WHERE&lt;/literal&gt; condition to use the &lt;structfield&gt;b&lt;/structfield&gt; column, an
+    identical plan is generated.  But observe what happens if we apply the same
+    condition on both columns, combining them with &lt;literal&gt;AND&lt;/literal&gt;:
+</span>
+プランナは、この条件を調べ、この句の選択度を1%と決定しました。
+この見積もりと、実際の行数を比較すると、見積もりは非常に正確であることがわかります。
+（テーブルがとても小さいので、実際には見積もり通りです。）
+<code class="literal">WHERE</code>条件を変更して<code class="structfield">b</code>列を使うようにすると、同じプランが生成されます。
+では、<code class="literal">AND</code>条件でつないで、この二つの列に同じ条件を適用するとどうなるか見てみましょう。
+
+</p><pre class="programlisting">
+EXPLAIN (ANALYZE, TIMING OFF) SELECT * FROM t WHERE a = 1 AND b = 1;
+                                 QUERY PLAN
+-------------------------------------------------------------------​----------
+ Seq Scan on t  (cost=0.00..195.00 rows=1 width=8) (actual rows=100 loops=1)
+   Filter: ((a = 1) AND (b = 1))
+   Rows Removed by Filter: 9900
+</pre><p>
+
+<span class="original">
+    The planner estimates the selectivity for each condition individually,
+    arriving at the same 1% estimates as above.  Then it assumes that the
+    conditions are independent, and so it multiplies their selectivities,
+    producing a final selectivity estimate of just 0.01%.
+    This is a significant underestimate, as the actual number of rows
+    matching the conditions (100) is two orders of magnitude higher.
+</span>
+個別に選択度を見積もった結果、上記と同じ1%の見積もりとなります
+次に、その条件が独立であると見なし、それらの選択度を掛けあわせ、最終的な選択度の見積もりをわずか0.01%であるとします
+その条件に一致する実際の行数は2桁多いので(100)、これはかなり過小見積もりです。
+   </p><p>
+<span class="original">
+    This problem can be fixed by creating a statistics object that
+    directs &lt;command&gt;ANALYZE&lt;/command&gt; to calculate functional-dependency
+    multivariate statistics on the two columns:
+</span>
+この問題は、<code class="command">ANALYZE</code>に二つの列について関数従属性多変量統計を計算させる、統計オブジェクトを作成することによって解決できます。
+
+</p><pre class="programlisting">
+CREATE STATISTICS stts (dependencies) ON a, b FROM t;
+ANALYZE t;
+EXPLAIN (ANALYZE, TIMING OFF) SELECT * FROM t WHERE a = 1 AND b = 1;
+                                  QUERY PLAN
+-------------------------------------------------------------------​------------
+ Seq Scan on t  (cost=0.00..195.00 rows=100 width=8) (actual rows=100 loops=1)
+   Filter: ((a = 1) AND (b = 1))
+   Rows Removed by Filter: 9900
+</pre><p>
+   </p></div><div class="sect2" id="MULTIVARIATE-NDISTINCT-COUNTS"><div class="titlepage"><div><div><h3 class="title">75.2.2. 多変量N個別値計数</h3></div></div></div><span class="original">
+   &lt;title&gt;Multivariate N-Distinct Counts&lt;/title&gt;
+</span><p>
+<span class="original">
+    A similar problem occurs with estimation of the cardinality of sets of
+    multiple columns, such as the number of groups that would be generated by
+    a &lt;command&gt;GROUP BY&lt;/command&gt; clause.  When &lt;command&gt;GROUP BY&lt;/command&gt;
+    lists a single column, the n-distinct estimate (which is visible as the
+    estimated number of rows returned by the HashAggregate node) is very
+    accurate:
+</span>
+<code class="command">GROUP BY</code>句が生成するグループ数のような、複数列の集合の濃度の見積もりについても、同様の問題が起きます。
+<code class="command">GROUP BY</code>の対象が単一の列なら、N個別値の推定（HashAggregateノードが返す推定行数で示されます）はとても正確です。
+</p><pre class="programlisting">
+EXPLAIN (ANALYZE, TIMING OFF) SELECT COUNT(*) FROM t GROUP BY a;
+                                       QUERY PLAN
+-------------------------------------------------------------------​----------------------
+ HashAggregate  (cost=195.00..196.00 rows=100 width=12) (actual rows=100 loops=1)
+   Group Key: a
+   -&gt;  Seq Scan on t  (cost=0.00..145.00 rows=10000 width=4) (actual rows=10000 loops=1)
+</pre><p>
+<span class="original">
+    But without multivariate statistics, the estimate for the number of
+    groups in a query with two columns in &lt;command&gt;GROUP BY&lt;/command&gt;, as
+    in the following example, is off by an order of magnitude:
+</span>
+しかし、多変量統計がないと、二つの列についての<code class="command">GROUP BY</code>問い合わせにおけるグループ数の見積もりは、次の例のようにひと桁ずれてしまいます
+</p><pre class="programlisting">
+EXPLAIN (ANALYZE, TIMING OFF) SELECT COUNT(*) FROM t GROUP BY a, b;
+                                       QUERY PLAN
+-------------------------------------------------------------------​-------------------------
+ HashAggregate  (cost=220.00..230.00 rows=1000 width=16) (actual rows=100 loops=1)
+   Group Key: a, b
+   -&gt;  Seq Scan on t  (cost=0.00..145.00 rows=10000 width=8) (actual rows=10000 loops=1)
+</pre><p>
+<span class="original">
+    By redefining the statistics object to include n-distinct counts for the
+    two columns, the estimate is much improved:
+</span>
+二つの列についてのN個別値計数を含むように統計オブジェクトを再定義することにより、見積もりは大きく改善されます。
+</p><pre class="programlisting">
+DROP STATISTICS stts;
+CREATE STATISTICS stts (dependencies, ndistinct) ON a, b FROM t;
+ANALYZE t;
+EXPLAIN (ANALYZE, TIMING OFF) SELECT COUNT(*) FROM t GROUP BY a, b;
+                                       QUERY PLAN
+-------------------------------------------------------------------​-------------------------
+ HashAggregate  (cost=220.00..221.00 rows=100 width=16) (actual rows=100 loops=1)
+   Group Key: a, b
+   -&gt;  Seq Scan on t  (cost=0.00..145.00 rows=10000 width=8) (actual rows=10000 loops=1)
+</pre><p>
+   </p></div><div class="sect2" id="MCV-LISTS"><div class="titlepage"><div><div><h3 class="title">75.2.3. MCVリスト</h3></div></div></div><span class="original">
+   &lt;title&gt;MCV Lists&lt;/title&gt;
+</span><p>
+<span class="original">
+    As explained in &lt;xref linkend="functional-dependencies"/&gt;, functional
+    dependencies are very cheap and efficient type of statistics, but their
+    main limitation is their global nature (only tracking dependencies at
+    the column level, not between individual column values).
+</span>
+<a class="xref" href="multivariate-statistics-examples.html#FUNCTIONAL-DEPENDENCIES" title="75.2.1. 関数従属性">75.2.1</a>で説明したように、関数従属性は非常に安価で効率的な統計情報ですが、主要な制限はその大域的な性質です(列レベルだけでの従属性の追跡であり、個々の列の値の間のものではありません)。
+   </p><p>
+<span class="original">
+    This section introduces multivariate variant of &lt;acronym&gt;MCV&lt;/acronym&gt;
+    (most-common values) lists, a straightforward extension of the per-column
+    statistics described in &lt;xref linkend="row-estimation-examples"/&gt;.  These
+    statistics address the limitation by storing individual values, but it is
+    naturally more expensive, both in terms of building the statistics in
+    &lt;command&gt;ANALYZE&lt;/command&gt;, storage and planning time.
+</span>
+この節では<acronym class="acronym">MCV</acronym>(最頻値)リストの多変量のもの、<a class="xref" href="row-estimation-examples.html" title="75.1. 行数推定の例">75.1</a>で述べた行毎の統計情報の素直な拡張を導入します。
+この統計情報は格納された個々の値による制限を解決しますが、<code class="command">ANALYZE</code>での統計情報の構築や容量や計画作成時間に関して当然より高価です。
+   </p><p>
+<span class="original">
+    Let's look at the query from &lt;xref linkend="functional-dependencies"/&gt;
+    again, but this time with a &lt;acronym&gt;MCV&lt;/acronym&gt; list created on the
+    same set of columns (be sure to drop the functional dependencies, to
+    make sure the planner uses the newly created statistics).
+</span>
+再び<a class="xref" href="multivariate-statistics-examples.html#FUNCTIONAL-DEPENDENCIES" title="75.2.1. 関数従属性">75.2.1</a>の問い合わせを見てみましょう。ですが、今回は列の同じ集合に対して<acronym class="acronym">MCV</acronym>リストを作ります(プランナが新しく作られた統計情報を確実に利用するよう、関数従属性を確実に削除してください)。
+
+</p><pre class="programlisting">
+DROP STATISTICS stts;
+CREATE STATISTICS stts2 (mcv) ON a, b FROM t;
+ANALYZE t;
+EXPLAIN (ANALYZE, TIMING OFF) SELECT * FROM t WHERE a = 1 AND b = 1;
+                                   QUERY PLAN
+-------------------------------------------------------------------​------------
+ Seq Scan on t  (cost=0.00..195.00 rows=100 width=8) (actual rows=100 loops=1)
+   Filter: ((a = 1) AND (b = 1))
+   Rows Removed by Filter: 9900
+</pre><p>
+
+<span class="original">
+    The estimate is as accurate as with the functional dependencies, mostly
+    thanks to the table being fairly small and having a simple distribution
+    with a low number of distinct values. Before looking at the second query,
+    which was not handled by functional dependencies particularly well,
+    let's inspect the &lt;acronym&gt;MCV&lt;/acronym&gt; list a bit.
+</span>
+主に、テーブルがかなり小さく、異なる値の少ない単純な分布のおかげで、推定は関数従属性と同じくらい正確です。
+関数従属性では特に上手く扱えない2番目の問い合わせを見る前に、<acronym class="acronym">MCV</acronym>リストを少し調べてみましょう。
+   </p><p>
+<span class="original">
+    Inspecting the &lt;acronym&gt;MCV&lt;/acronym&gt; list is possible using
+    &lt;function&gt;pg_mcv_list_items&lt;/function&gt; set-returning function.
+</span>
+<acronym class="acronym">MCV</acronym>を調べるのは、集合を返す<code class="function">pg_mcv_list_items</code>関数でできます。
+
+</p><pre class="programlisting">
+SELECT m.* FROM pg_statistic_ext join pg_statistic_ext_data on (oid = stxoid),
+                pg_mcv_list_items(stxdmcv) m WHERE stxname = 'stts2';
+ index |  values  | nulls | frequency | base_frequency
+-------+----------+-------+-----------+----------------
+     0 | {0, 0}   | {f,f} |      0.01 |         0.0001
+     1 | {1, 1}   | {f,f} |      0.01 |         0.0001
+   ...
+    49 | {49, 49} | {f,f} |      0.01 |         0.0001
+    50 | {50, 50} | {f,f} |      0.01 |         0.0001
+   ...
+    97 | {97, 97} | {f,f} |      0.01 |         0.0001
+    98 | {98, 98} | {f,f} |      0.01 |         0.0001
+    99 | {99, 99} | {f,f} |      0.01 |         0.0001
+(100 rows)
+</pre><p>
+
+<span class="original">
+    This confirms there are 100 distinct combinations in the two columns, and
+    all of them are about equally likely (1% frequency for each one).  The
+    base frequency is the frequency computed from per-column statistics, as if
+    there were no multi-column statistics. Had there been any null values in
+    either of the columns, this would be identified in the
+    &lt;structfield&gt;nulls&lt;/structfield&gt; column.
+</span>
+これで、2つの列の100個の個別の組み合わせがあり、すべてほぼ同様に確からしい(それぞれ1%の頻度)ことが確かめられます。
+基準となる頻度(base frequency)は、複数列の統計情報がないとして、列毎の統計情報から計算された頻度です。
+列のどちらか一方にでもNULL値があれば、<code class="structfield">nulls</code>列で見分けられます。
+   </p><p>
+<span class="original">
+    When estimating the selectivity, the planner applies all the conditions
+    on items in the &lt;acronym&gt;MCV&lt;/acronym&gt; list, and then sums the frequencies
+    of the matching ones. See &lt;function&gt;mcv_clauselist_selectivity&lt;/function&gt;
+    in &lt;filename&gt;src/backend/statistics/mcv.c&lt;/filename&gt; for details.
+</span>
+選択性を推定する場合、プランナは<acronym class="acronym">MCV</acronym>リストの項目にすべての条件を適用してから、一致するものの頻度を合計します。
+詳細は<code class="filename">src/backend/statistics/mcv.c</code>の<code class="function">mcv_clauselist_selectivity</code>を参照してください。
+   </p><p>
+<span class="original">
+    Compared to functional dependencies, &lt;acronym&gt;MCV&lt;/acronym&gt; lists have two
+    major advantages. Firstly, the list stores actual values, making it possible
+    to decide which combinations are compatible.
+</span>
+関数従属性に比べて、<acronym class="acronym">MCV</acronym>は主要な利点が2つあります。1つ目は、リストが実際の値を格納していることで、これによりどの組み合わせが適合するのか決定できます。
+
+</p><pre class="programlisting">
+EXPLAIN (ANALYZE, TIMING OFF) SELECT * FROM t WHERE a = 1 AND b = 10;
+                                 QUERY PLAN
+-------------------------------------------------------------------​--------
+ Seq Scan on t  (cost=0.00..195.00 rows=1 width=8) (actual rows=0 loops=1)
+   Filter: ((a = 1) AND (b = 10))
+   Rows Removed by Filter: 10000
+</pre><p>
+
+<span class="original">
+    Secondly, &lt;acronym&gt;MCV&lt;/acronym&gt; lists handle a wider range of clause types,
+    not just equality clauses like functional dependencies. For example,
+    consider the following range query for the same table:
+</span>
+2つ目は、<acronym class="acronym">MCV</acronym>リストが、関数従属性のような等式句だけでなく、より広い範囲の形の句を扱うことです。
+例えば、以下のような同じテーブルに対する範囲の問い合わせを考えてみましょう。
+
+</p><pre class="programlisting">
+EXPLAIN (ANALYZE, TIMING OFF) SELECT * FROM t WHERE a &lt;= 49 AND b &gt; 49;
+                                QUERY PLAN
+-------------------------------------------------------------------​--------
+ Seq Scan on t  (cost=0.00..195.00 rows=1 width=8) (actual rows=0 loops=1)
+   Filter: ((a &lt;= 49) AND (b &gt; 49))
+   Rows Removed by Filter: 10000
+</pre><p>
+
+   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="row-estimation-examples.html" title="75.1. 行数推定の例">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="planner-stats-details.html" title="第75章 プランナは統計情報をどのように使用するか">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="planner-stats-security.html" title="75.3. プランナの統計情報とセキュリティ">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">75.1. 行数推定の例 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 75.3. プランナの統計情報とセキュリティ</td></tr></table></div></body></html>

@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>39.3. Cによるトリガ関数の作成</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="trigger-datachanges.html" title="39.2. データ変更の可視性" /><link rel="next" href="trigger-example.html" title="39.4. 完全なトリガの例" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="triggers.html" title="第39章 トリガ">第39章 トリガ</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : trigger-interface.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="trigger-datachanges.html" title="39.2. データ変更の可視性">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="triggers.html" title="第39章 トリガ">上へ</a></td><td width="60%" align="center">39.3. Cによるトリガ関数の作成</td><td width="20%" align="right"> <a accesskey="n" href="trigger-example.html" title="39.4. 完全なトリガの例">次へ</a></td></tr></table><hr /></div><div class="sect1" id="TRIGGER-INTERFACE"><div class="titlepage"><div><div><h2 class="title" style="clear: both">39.3. Cによるトリガ関数の作成</h2></div></div></div><span class="original">
+   &lt;title&gt;Writing Trigger Functions in C&lt;/title&gt;
+</span><a id="id-1.8.4.8.2" class="indexterm"></a><a id="id-1.8.4.8.3" class="indexterm"></a><a id="id-1.8.4.8.4" class="indexterm"></a><a id="id-1.8.4.8.5" class="indexterm"></a><p>
+<span class="original">
+    This section describes the low-level details of the interface to a
+    trigger function.  This information is only needed when writing
+    trigger functions in C.  If you are using a higher-level language then
+    these details are handled for you.  In most cases you should consider
+    using a procedural language before writing your triggers in C.  The
+    documentation of each procedural language explains how to write a
+    trigger in that language.
+</span>
+本節ではトリガ関数とのインタフェースについて低レベルな詳細を説明します。
+この情報はC言語でトリガ関数を作成する時にのみ必要です。
+高レベルな言語で作成すれば、こうした詳細は代わりに扱ってもらえます。
+たいていの場合、Cでトリガを作成する前に手続き言語を使用することを検討すべきです。
+各手続き言語の文書で、その言語を使用したトリガの作成方法を説明します。
+   </p><p>
+<span class="original">
+    Trigger functions must use the &lt;quote&gt;version 1&lt;/quote&gt; function manager
+    interface.
+</span>
+トリガ関数は<span class="quote">「<span class="quote">version 1</span>」</span>関数マネージャインタフェースを使わなくてはいけません。
+   </p><p>
+<span class="original">
+    When a function is called by the trigger manager, it is not passed
+    any normal arguments, but it is passed a &lt;quote&gt;context&lt;/quote&gt;
+    pointer pointing to a &lt;structname&gt;TriggerData&lt;/structname&gt; structure.  C
+    functions can check whether they were called from the trigger
+    manager or not by executing the macro:
+</span>
+関数がトリガマネージャから呼び出される時は、通常の引数が渡されるのではなく、<code class="structname">TriggerData</code>構造体を指す<span class="quote">「<span class="quote">context</span>」</span>ポインタが渡されます。
+C関数は、トリガマネージャから呼び出されたのかどうかを以下のマクロを実行することで検査することができます。
+</p><pre class="programlisting">
+CALLED_AS_TRIGGER(fcinfo)
+</pre><p>
+<span class="original">
+    which expands to:
+</span>
+これは以下に展開されます。
+</p><pre class="programlisting">
+((fcinfo)-&gt;context != NULL &amp;&amp; IsA((fcinfo)-&gt;context, TriggerData))
+</pre><p>
+<span class="original">
+    If this returns true, then it is safe to cast
+    &lt;literal&gt;fcinfo-&amp;gt;context&lt;/literal&gt; to type &lt;literal&gt;TriggerData
+    *&lt;/literal&gt; and make use of the pointed-to
+    &lt;structname&gt;TriggerData&lt;/structname&gt; structure.  The function must
+    &lt;emphasis&gt;not&lt;/emphasis&gt; alter the &lt;structname&gt;TriggerData&lt;/structname&gt;
+    structure or any of the data it points to.
+</span>
+もしこれが真を返す場合、<code class="literal">fcinfo-&gt;context</code>を<code class="literal">TriggerData *</code>型にキャストし、指された<code class="structname">TriggerData</code>構造体を使用することは安全です。
+その関数は、<code class="structname">TriggerData</code>構造体やそれが指すどのようなデータも変更しては<span class="emphasis"><em>いけません</em></span>。
+   </p><p>
+<span class="original">
+    &lt;structname&gt;struct TriggerData&lt;/structname&gt; is defined in
+    &lt;filename&gt;commands/trigger.h&lt;/filename&gt;:
+</span>
+<code class="structname">struct TriggerData</code>は<code class="filename">commands/trigger.h</code>の中で定義されています。
+
+</p><pre class="programlisting">
+typedef struct TriggerData
+{
+    NodeTag          type;
+    TriggerEvent     tg_event;
+    Relation         tg_relation;
+    HeapTuple        tg_trigtuple;
+    HeapTuple        tg_newtuple;
+    Trigger         *tg_trigger;
+    TupleTableSlot  *tg_trigslot;
+    TupleTableSlot  *tg_newslot;
+    Tuplestorestate *tg_oldtable;
+    Tuplestorestate *tg_newtable;
+    const Bitmapset *tg_updatedcols;
+} TriggerData;
+</pre><p>
+
+<span class="original">
+    where the members are defined as follows:
+</span>
+メンバは下記のように定義されています。
+
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="structfield">type</code></span></dt><dd><p>
+<span class="original">
+        Always &lt;literal&gt;T_TriggerData&lt;/literal&gt;.
+</span>
+常に<code class="literal">T_TriggerData</code>です。
+       </p></dd><dt><span class="term"><code class="structfield">tg_event</code></span></dt><dd><p>
+<span class="original">
+        Describes the event for which the function is called. You can use the
+        following macros to examine &lt;literal&gt;tg_event&lt;/literal&gt;:
+</span>
+その関数が呼び出されたイベントを記述します。
+<code class="literal">tg_event</code>を調べるためには下記のマクロを使うことができます。
+
+        </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">TRIGGER_FIRED_BEFORE(tg_event)</code></span></dt><dd><p>
+<span class="original">
+            Returns true if the trigger fired before the operation.
+</span>
+トリガが操作の前に(before)発行された場合真を返します。
+           </p></dd><dt><span class="term"><code class="literal">TRIGGER_FIRED_AFTER(tg_event)</code></span></dt><dd><p>
+<span class="original">
+            Returns true if the trigger fired after the operation.
+</span>
+トリガが操作の後に(after)発行された場合真を返します。
+           </p></dd><dt><span class="term"><code class="literal">TRIGGER_FIRED_INSTEAD(tg_event)</code></span></dt><dd><p>
+<span class="original">
+            Returns true if the trigger fired instead of the operation.
+</span>
+トリガがINSTEAD OFで発行された場合真を返します。
+           </p></dd><dt><span class="term"><code class="literal">TRIGGER_FIRED_FOR_ROW(tg_event)</code></span></dt><dd><p>
+<span class="original">
+            Returns true if the trigger fired for a row-level event.
+</span>
+トリガが行レベルのイベントで発行された場合真を返します。
+           </p></dd><dt><span class="term"><code class="literal">TRIGGER_FIRED_FOR_STATEMENT(tg_event)</code></span></dt><dd><p>
+<span class="original">
+            Returns true if the trigger fired for a statement-level event.
+</span>
+トリガが文レベルのイベントで発行された場合真を返します。
+           </p></dd><dt><span class="term"><code class="literal">TRIGGER_FIRED_BY_INSERT(tg_event)</code></span></dt><dd><p>
+<span class="original">
+            Returns true if the trigger was fired by an &lt;command&gt;INSERT&lt;/command&gt; command.
+</span>
+トリガが<code class="command">INSERT</code>コマンドで発行された場合真を返します。
+           </p></dd><dt><span class="term"><code class="literal">TRIGGER_FIRED_BY_UPDATE(tg_event)</code></span></dt><dd><p>
+<span class="original">
+            Returns true if the trigger was fired by an &lt;command&gt;UPDATE&lt;/command&gt; command.
+</span>
+トリガが<code class="command">UPDATE</code>コマンドで発行された場合真を返します。
+           </p></dd><dt><span class="term"><code class="literal">TRIGGER_FIRED_BY_DELETE(tg_event)</code></span></dt><dd><p>
+<span class="original">
+            Returns true if the trigger was fired by a &lt;command&gt;DELETE&lt;/command&gt; command.
+</span>
+トリガが<code class="command">DELETE</code>コマンドで発行された場合真を返します。
+           </p></dd><dt><span class="term"><code class="literal">TRIGGER_FIRED_BY_TRUNCATE(tg_event)</code></span></dt><dd><p>
+<span class="original">
+            Returns true if the trigger was fired by a &lt;command&gt;TRUNCATE&lt;/command&gt; command.
+</span>
+トリガが<code class="command">TRUNCATE</code>コマンドで発行された場合真を返します。
+           </p></dd></dl></div><p>
+       </p></dd><dt><span class="term"><code class="structfield">tg_relation</code></span></dt><dd><p>
+<span class="original">
+        A pointer to a structure describing the relation that the trigger fired for.
+        Look at &lt;filename&gt;utils/rel.h&lt;/filename&gt; for details about
+        this structure.  The most interesting things are
+        &lt;literal&gt;tg_relation-&amp;gt;rd_att&lt;/literal&gt; (descriptor of the relation
+        tuples) and &lt;literal&gt;tg_relation-&amp;gt;rd_rel-&amp;gt;relname&lt;/literal&gt;
+        (relation name; the type is not &lt;type&gt;char*&lt;/type&gt; but
+        &lt;type&gt;NameData&lt;/type&gt;; use
+        &lt;literal&gt;SPI_getrelname(tg_relation)&lt;/literal&gt; to get a &lt;type&gt;char*&lt;/type&gt; if you
+        need a copy of the name).
+</span>
+トリガの発行元のリレーションを記述する構造体へのポインタです。
+この構造体についての詳細は、<code class="filename">utils/rel.h</code>を参照してください。
+最も興味深いのは、<code class="literal">tg_relation-&gt;rd_att</code>（リレーションタプルの記述子）と<code class="literal">tg_relation-&gt;rd_rel-&gt;relname</code>です（リレーション名、これは<code class="type">char*</code>ではなく<code class="type">NameData</code>です。
+名前のコピーが必要な場合は、<code class="type">char*</code>を得るために<code class="literal">SPI_getrelname(tg_relation)</code>を使用してください）。
+       </p></dd><dt><span class="term"><code class="structfield">tg_trigtuple</code></span></dt><dd><p>
+<span class="original">
+        A pointer to the row for which the trigger was fired. This is
+        the row being inserted, updated, or deleted.  If this trigger
+        was fired for an &lt;command&gt;INSERT&lt;/command&gt; or
+        &lt;command&gt;DELETE&lt;/command&gt; then this is what you should return
+        from the function if you don't want to replace the row with
+        a different one (in the case of &lt;command&gt;INSERT&lt;/command&gt;) or
+        skip the operation.  For triggers on foreign tables, values of system
+        columns herein are unspecified.
+</span>
+トリガが発行された行へのポインタです。
+これは挿入される、削除される、あるいは更新される行です。
+もし<code class="command">INSERT</code>/<code class="command">DELETE</code>でこのトリガが発行された時、この行を別のもので置き換えたくない（<code class="command">INSERT</code>の場合）場合や、その操作を飛ばしたくない場合は、これをこの関数から返してください。
+外部テーブルのトリガに対しては、システム列の値はここでは指定されません。
+       </p></dd><dt><span class="term"><code class="structfield">tg_newtuple</code></span></dt><dd><p>
+<span class="original">
+        A pointer to the new version of the row, if the trigger was
+        fired for an &lt;command&gt;UPDATE&lt;/command&gt;, and &lt;symbol&gt;NULL&lt;/symbol&gt; if
+        it is for an &lt;command&gt;INSERT&lt;/command&gt; or a
+        &lt;command&gt;DELETE&lt;/command&gt;. This is what you have to return
+        from the function if the event is an &lt;command&gt;UPDATE&lt;/command&gt;
+        and you don't want to replace this row by a different one or
+        skip the operation.  For triggers on foreign tables, values of system
+        columns herein are unspecified.
+</span>
+トリガが<code class="command">UPDATE</code>で発行された場合は、行の新しいバージョンへのポインタです。
+<code class="command">INSERT</code>もしくは<code class="command">DELETE</code>の場合は、<code class="symbol">NULL</code>です。
+<code class="command">UPDATE</code>イベントの時、この行を別のもので置き換えたくない場合や操作を飛ばしたくない場合は、これをこの関数から返してください。
+外部テーブルのトリガに対しては、システム列の値はここでは指定されません。
+       </p></dd><dt><span class="term"><code class="structfield">tg_trigger</code></span></dt><dd><p>
+<span class="original">
+        A pointer to a structure of type &lt;structname&gt;Trigger&lt;/structname&gt;,
+        defined in &lt;filename&gt;utils/reltrigger.h&lt;/filename&gt;:
+</span>
+以下のように<code class="filename">utils/reltrigger.h</code>で定義された、<code class="structname">Trigger</code>構造体へのポインタです。
+
+</p><pre class="programlisting">
+typedef struct Trigger
+{
+    Oid         tgoid;
+    char       *tgname;
+    Oid         tgfoid;
+    int16       tgtype;
+    char        tgenabled;
+    bool        tgisinternal;
+    bool        tgisclone;
+    Oid         tgconstrrelid;
+    Oid         tgconstrindid;
+    Oid         tgconstraint;
+    bool        tgdeferrable;
+    bool        tginitdeferred;
+    int16       tgnargs;
+    int16       tgnattr;
+    int16      *tgattr;
+    char      **tgargs;
+    char       *tgqual;
+    char       *tgoldtable;
+    char       *tgnewtable;
+} Trigger;
+</pre><p>
+
+<span class="original">
+       where &lt;structfield&gt;tgname&lt;/structfield&gt; is the trigger's name,
+       &lt;structfield&gt;tgnargs&lt;/structfield&gt; is the number of arguments in
+       &lt;structfield&gt;tgargs&lt;/structfield&gt;, and &lt;structfield&gt;tgargs&lt;/structfield&gt; is an array of
+       pointers to the arguments specified in the &lt;command&gt;CREATE
+       TRIGGER&lt;/command&gt; statement. The other members are for internal use
+       only.
+</span>
+ここで、<code class="structfield">tgname</code>がトリガの名前、<code class="structfield">tgnargs</code>が<code class="structfield">tgargs</code>内の引数の数、<code class="structfield">tgargs</code>は<code class="command">CREATE TRIGGER</code>文で指定された引数へのポインタの配列です。
+他のメンバは内部でのみ使用されます。
+       </p></dd><dt><span class="term"><code class="structfield">tg_trigslot</code></span></dt><dd><p>
+<span class="original">
+        The slot containing &lt;structfield&gt;tg_trigtuple&lt;/structfield&gt;,
+        or a &lt;symbol&gt;NULL&lt;/symbol&gt; pointer if there is no such tuple.
+</span>
+<code class="structfield">tg_trigtuple</code>を含むスロット、またはタプルが存在しない場合は<code class="symbol">NULL</code>ポインタです。
+       </p></dd><dt><span class="term"><code class="structfield">tg_newslot</code></span></dt><dd><p>
+<span class="original">
+        The slot containing &lt;structfield&gt;tg_newtuple&lt;/structfield&gt;,
+        or a &lt;symbol&gt;NULL&lt;/symbol&gt; pointer if there is no such tuple.
+</span>
+<code class="structfield">tg_newtuple</code>を含むスロット、またはタプルが存在しない場合は<code class="symbol">NULL</code>ポインタです。
+       </p></dd><dt><span class="term"><code class="structfield">tg_oldtable</code></span></dt><dd><p>
+<span class="original">
+        A pointer to a structure of type &lt;structname&gt;Tuplestorestate&lt;/structname&gt;
+        containing zero or more rows in the format specified by
+        &lt;structfield&gt;tg_relation&lt;/structfield&gt;, or a &lt;symbol&gt;NULL&lt;/symbol&gt; pointer
+        if there is no &lt;literal&gt;OLD TABLE&lt;/literal&gt; transition relation.
+</span>
+<code class="structfield">tg_relation</code>で指定するフォーマットの0以上の行を含む<code class="structname">Tuplestorestate</code>型の構造体へのポインタです。
+<code class="literal">OLD TABLE</code>遷移リレーションが存在しない場合は<code class="symbol">NULL</code>ポインタです。
+       </p></dd><dt><span class="term"><code class="structfield">tg_newtable</code></span></dt><dd><p>
+<span class="original">
+        A pointer to a structure of type &lt;structname&gt;Tuplestorestate&lt;/structname&gt;
+        containing zero or more rows in the format specified by
+        &lt;structfield&gt;tg_relation&lt;/structfield&gt;, or a &lt;symbol&gt;NULL&lt;/symbol&gt; pointer
+        if there is no &lt;literal&gt;NEW TABLE&lt;/literal&gt; transition relation.
+</span>
+<code class="structfield">tg_relation</code>で指定するフォーマットの0以上の行を含む<code class="structname">Tuplestorestate</code>型の構造体へのポインタです。
+<code class="literal">NEW TABLE</code>遷移リレーションが存在しない場合は<code class="symbol">NULL</code>ポインタです。
+       </p></dd><dt><span class="term"><code class="structfield">tg_updatedcols</code></span></dt><dd><p>
+<span class="original">
+        For &lt;literal&gt;UPDATE&lt;/literal&gt; triggers, a bitmap set indicating the
+        columns that were updated by the triggering command.  Generic trigger
+        functions can use this to optimize actions by not having to deal with
+        columns that were not changed.
+</span>
+<code class="literal">UPDATE</code>トリガに対しては、トリガコマンドにより更新された列を示すビットマップ集合です。
+汎用のトリガ関数はこれを使って、変更されていない列を扱わないことで動作を最適化できます。
+       </p><p>
+<span class="original">
+        As an example, to determine whether a column with attribute number
+        &lt;varname&gt;attnum&lt;/varname&gt; (1-based) is a member of this bitmap set,
+        call &lt;literal&gt;bms_is_member(attnum -
+        FirstLowInvalidHeapAttributeNumber,
+        trigdata-&gt;tg_updatedcols))&lt;/literal&gt;.
+</span>
+例として、属性番号<code class="varname">attnum</code>(1始まり)の列がこのビットマップ集合のメンバであるかどうか判定するために、<code class="literal">bms_is_member(attnum - FirstLowInvalidHeapAttributeNumber, trigdata-&gt;tg_updatedcols))</code>を呼び出します。
+       </p><p>
+<span class="original">
+        For triggers other than &lt;literal&gt;UPDATE&lt;/literal&gt; triggers, this will
+        be &lt;symbol&gt;NULL&lt;/symbol&gt;.
+</span>
+<code class="literal">UPDATE</code>トリガ以外のトリガに対しては、これは<code class="symbol">NULL</code>になります。
+       </p></dd></dl></div><p>
+   </p><p>
+<span class="original">
+    To allow queries issued through SPI to reference transition tables, see
+    &lt;xref linkend="spi-spi-register-trigger-data"/&gt;.
+</span>
+SPIを使って遷移テーブルを参照するクエリを発行する方法については、<a class="xref" href="spi-spi-register-trigger-data.html" title="SPI_register_trigger_data"><span class="refentrytitle">SPI_register_trigger_data</span></a>を参照してください。
+   </p><p>
+<span class="original">
+    A trigger function must return either a
+    &lt;structname&gt;HeapTuple&lt;/structname&gt; pointer or a &lt;symbol&gt;NULL&lt;/symbol&gt; pointer
+    (&lt;emphasis&gt;not&lt;/emphasis&gt; an SQL null value, that is, do not set &lt;parameter&gt;isNull&lt;/parameter&gt; true).
+    Be careful to return either
+    &lt;structfield&gt;tg_trigtuple&lt;/structfield&gt; or &lt;structfield&gt;tg_newtuple&lt;/structfield&gt;,
+    as appropriate, if you don't want to modify the row being operated on.
+</span>
+トリガ関数は<code class="structname">HeapTuple</code>ポインタもしくは<code class="symbol">NULL</code>ポインタ（SQLのNULLでは<span class="emphasis"><em>ありません</em></span>。
+したがって、<em class="parameter"><code>isNull</code></em>は真にはなりません）のどちらかを返さなければなりません。
+操作対象の行を変更したくない場合は、注意して、<code class="structfield">tg_trigtuple</code>か<code class="structfield">tg_newtuple</code>の適切な方を返してください。
+   </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="trigger-datachanges.html" title="39.2. データ変更の可視性">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="triggers.html" title="第39章 トリガ">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="trigger-example.html" title="39.4. 完全なトリガの例">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">39.2. データ変更の可視性 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 39.4. 完全なトリガの例</td></tr></table></div></body></html>

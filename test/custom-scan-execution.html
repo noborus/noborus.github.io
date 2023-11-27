@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>61.3. カスタムスキャンの実行</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="custom-scan-plan.html" title="61.2. カスタムスキャン計画の作成" /><link rel="next" href="geqo.html" title="第62章 遺伝的問い合わせ最適化" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="custom-scan.html" title="第61章 カスタムスキャンプロバイダの作成">第61章 カスタムスキャンプロバイダの作成</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : custom-scan-execution.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="custom-scan-plan.html" title="61.2. カスタムスキャン計画の作成">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="custom-scan.html" title="第61章 カスタムスキャンプロバイダの作成">上へ</a></td><td width="60%" align="center">61.3. カスタムスキャンの実行</td><td width="20%" align="right"> <a accesskey="n" href="geqo.html" title="第62章 遺伝的問い合わせ最適化">次へ</a></td></tr></table><hr /></div><div class="sect1" id="CUSTOM-SCAN-EXECUTION"><div class="titlepage"><div><div><h2 class="title" style="clear: both">61.3. カスタムスキャンの実行</h2></div></div></div><span class="original">
+  &lt;title&gt;Executing Custom Scans&lt;/title&gt;
+</span><p>
+<span class="original">
+   When a &lt;structfield&gt;CustomScan&lt;/structfield&gt; is executed, its execution state is
+   represented by a &lt;structfield&gt;CustomScanState&lt;/structfield&gt;, which is declared as
+   follows:
+</span>
+<code class="structfield">CustomScan</code>が実行されるとき、その実行状態は<code class="structfield">CustomScanState</code>で表現されます。
+これは次のように宣言されています。
+</p><pre class="programlisting">
+typedef struct CustomScanState
+{
+    ScanState ss;
+    uint32    flags;
+    const CustomExecMethods *methods;
+} CustomScanState;
+</pre><p>
+  </p><p>
+<span class="original">
+   &lt;structfield&gt;ss&lt;/structfield&gt; is initialized as for any other scan state,
+   except that if the scan is for a join rather than a base relation,
+   &lt;literal&gt;ss.ss_currentRelation&lt;/literal&gt; is left NULL.
+   &lt;structfield&gt;flags&lt;/structfield&gt; is a bit mask with the same meaning as in
+   &lt;structname&gt;CustomPath&lt;/structname&gt; and &lt;structname&gt;CustomScan&lt;/structname&gt;.
+   &lt;structfield&gt;methods&lt;/structfield&gt; must point to a (usually statically allocated)
+   object implementing the required custom scan state methods, which are
+   further detailed below.  Typically, a &lt;structname&gt;CustomScanState&lt;/structname&gt;, which
+   need not support &lt;function&gt;copyObject&lt;/function&gt;, will actually be a larger
+   structure embedding the above as its first member.
+</span>
+<code class="structfield">ss</code>は他のすべてのスキャン状態と同じく初期化されますが、スキャンがベースリレーションではなく結合を対象にしているときは例外で、<code class="literal">ss.ss_currentRelation</code>はNULLのままになります。
+<code class="structfield">flags</code>は<code class="structname">CustomPath</code>および<code class="structname">CustomScan</code>と同じ意味のビットマスクです。
+<code class="structfield">methods</code>は必要なカスタムスキャン状態のメソッドを実装するオブジェクト（通常は静的に割り当てられる）を指していなければなりません。
+これについては以下で詳しく説明します。
+<code class="structname">CustomScanState</code>は<code class="function">copyObject</code>をサポートしなくてもよく、典型的には上記を先頭のメンバーとして組み込んだより大きな構造体になっています。
+  </p><div class="sect2" id="CUSTOM-SCAN-EXECUTION-CALLBACKS"><div class="titlepage"><div><div><h3 class="title">61.3.1. カスタムスキャン実行のコールバック</h3></div></div></div><span class="original">
+   &lt;title&gt;Custom Scan Execution Callbacks&lt;/title&gt;
+</span><p>
+</p><pre class="programlisting">
+void (*BeginCustomScan) (CustomScanState *node,
+                         EState *estate,
+                         int eflags);
+</pre><p>
+<span class="original">
+    Complete initialization of the supplied &lt;structname&gt;CustomScanState&lt;/structname&gt;.
+    Standard fields have been initialized by &lt;function&gt;ExecInitCustomScan&lt;/function&gt;,
+    but any private fields should be initialized here.
+</span>
+提供された<code class="structname">CustomScanState</code>の初期化を完了します。
+標準的なフィールドは<code class="function">ExecInitCustomScan</code>で初期化が済んでいますが、プライベートフィールドはここで初期化されます。
+   </p><p>
+</p><pre class="programlisting">
+TupleTableSlot *(*ExecCustomScan) (CustomScanState *node);
+</pre><p>
+<span class="original">
+    Fetch the next scan tuple.  If any tuples remain, it should fill
+    &lt;literal&gt;ps_ResultTupleSlot&lt;/literal&gt; with the next tuple in the current scan
+    direction, and then return the tuple slot.  If not,
+    &lt;literal&gt;NULL&lt;/literal&gt; or an empty slot should be returned.
+</span>
+次のスキャンタプルをフェッチします。
+タプルが残っている場合は、現在のスキャン方向で次にあるタプルを<code class="literal">ps_ResultTupleSlot</code>に入れます。
+タプルが残っていないときは、<code class="literal">NULL</code>または空のスロットが戻されます。
+   </p><p>
+</p><pre class="programlisting">
+void (*EndCustomScan) (CustomScanState *node);
+</pre><p>
+<span class="original">
+    Clean up any private data associated with the &lt;literal&gt;CustomScanState&lt;/literal&gt;.
+    This method is required, but it does not need to do anything if there is
+    no associated data or it will be cleaned up automatically.
+</span>
+<code class="literal">CustomScanState</code>に関連付けられたプライベートデータを整理します。
+このメソッドは必須ですが、関連付けられたデータがない場合、あるいはそれが自動的に整理される場合は、このメソッドは何もする必要はありません。
+   </p><p>
+</p><pre class="programlisting">
+void (*ReScanCustomScan) (CustomScanState *node);
+</pre><p>
+<span class="original">
+    Rewind the current scan to the beginning and prepare to rescan the
+    relation.
+</span>
+現在のスキャンを先頭まで巻き戻し、リレーションの再スキャンの準備をします。
+   </p><p>
+</p><pre class="programlisting">
+void (*MarkPosCustomScan) (CustomScanState *node);
+</pre><p>
+<span class="original">
+    Save the current scan position so that it can subsequently be restored
+    by the &lt;function&gt;RestrPosCustomScan&lt;/function&gt; callback.  This callback is
+    optional, and need only be supplied if the
+    &lt;literal&gt;CUSTOMPATH_SUPPORT_MARK_RESTORE&lt;/literal&gt; flag is set.
+</span>
+現在のスキャン位置を保存し、後で<code class="function">RestrPosCustomScan</code>コールバックでリストアできるようにします。
+このコールバックは必須ではなく、<code class="literal">CUSTOMPATH_SUPPORT_MARK_RESTORE</code>フラグがセットされている場合にのみ、提供する必要があります。
+   </p><p>
+</p><pre class="programlisting">
+void (*RestrPosCustomScan) (CustomScanState *node);
+</pre><p>
+<span class="original">
+    Restore the previous scan position as saved by the
+    &lt;function&gt;MarkPosCustomScan&lt;/function&gt; callback.  This callback is optional,
+    and need only be supplied if the
+    &lt;literal&gt;CUSTOMPATH_SUPPORT_MARK_RESTORE&lt;/literal&gt; flag is set.
+</span>
+<code class="function">MarkPosCustomScan</code>コールバックで保存された以前のスキャン位置をリストアします。
+このコールバックは必須ではなく、<code class="literal">CUSTOMPATH_SUPPORT_MARK_RESTORE</code>フラグがセットされている場合にのみ、提供する必要があります。
+   </p><p>
+</p><pre class="programlisting">
+Size (*EstimateDSMCustomScan) (CustomScanState *node,
+                               ParallelContext *pcxt);
+</pre><p>
+<span class="original">
+    Estimate the amount of dynamic shared memory that will be required
+    for parallel operation.  This may be higher than the amount that will
+    actually be used, but it must not be lower.  The return value is in bytes.
+    This callback is optional, and need only be supplied if this custom
+    scan provider supports parallel execution.
+</span>
+並列操作に要求される動的共有メモリの使用量を予測します。
+使用を予測される量よりも多い量の結果が返しても良いですが、少なく返してはいけません。
+返り値の単位はバイトとなります。
+このコールバックは必須ではなく、カスタムスキャンプロバイダが並列実行をサポートする場合にのみ提供される必要があります。
+   </p><p>
+</p><pre class="programlisting">
+void (*InitializeDSMCustomScan) (CustomScanState *node,
+                                 ParallelContext *pcxt,
+                                 void *coordinate);
+</pre><p>
+<span class="original">
+    Initialize the dynamic shared memory that will be required for parallel
+    operation.  &lt;literal&gt;coordinate&lt;/literal&gt; points to a shared memory area of
+    size equal to the return value of &lt;function&gt;EstimateDSMCustomScan&lt;/function&gt;.
+    This callback is optional, and need only be supplied if this custom
+    scan provider supports parallel execution.
+</span>
+並列操作に要求される動的共有メモリを初期化します。
+<code class="literal">coordinate</code>は、<code class="function">EstimateDSMCustomScan</code>の返り値と大きさが一致する動的共有メモリ領域を指します。
+このコールバックは必須ではなく、カスタムスキャンプロバイダが並列実行をサポートする場合にのみ提供される必要があります。
+   </p><p>
+</p><pre class="programlisting">
+void (*ReInitializeDSMCustomScan) (CustomScanState *node,
+                                   ParallelContext *pcxt,
+                                   void *coordinate);
+</pre><p>
+<span class="original">
+    Re-initialize the dynamic shared memory required for parallel operation
+    when the custom-scan plan node is about to be re-scanned.
+    This callback is optional, and need only be supplied if this custom
+    scan provider supports parallel execution.
+    Recommended practice is that this callback reset only shared state,
+    while the &lt;function&gt;ReScanCustomScan&lt;/function&gt; callback resets only local
+    state.  Currently, this callback will be called
+    before &lt;function&gt;ReScanCustomScan&lt;/function&gt;, but it's best not to rely on
+    that ordering.
+</span>
+カスタムスキャンプランノードが再スキャンしようとするときに、並列操作に必要な動的共有メモリを再初期化します。
+このコールバックは必須ではなく、カスタムスキャンプロバイダが並列実行をサポートする場合にのみ提供される必要があります。
+推奨する使い方としては、<code class="function">ReScanCustomScan</code>コールバックはローカル状態だけをリセットし、このコールバックは共有状態だけをリセットするようにします。
+今のところ、このコールバックは<code class="function">ReScanCustomScan</code>の前に呼ばれますが、この順序関係には依存しない方が良いです。
+   </p><p>
+</p><pre class="programlisting">
+void (*InitializeWorkerCustomScan) (CustomScanState *node,
+                                    shm_toc *toc,
+                                    void *coordinate);
+</pre><p>
+<span class="original">
+    Initialize a parallel worker's local state based on the shared state
+    set up by the leader during &lt;function&gt;InitializeDSMCustomScan&lt;/function&gt;.
+    This callback is optional, and need only be supplied if this custom
+    scan provider supports parallel execution.
+</span>
+<code class="function">InitializeDSMCustomScan</code>によりリーダーにて設定された共有状態を元に、並列ワーカーのローカル状態を初期化します。
+このコールバックは必須ではなく、カスタムスキャンプロバイダが並列実行をサポートする場合にのみ提供される必要があります。
+   </p><p>
+</p><pre class="programlisting">
+void (*ShutdownCustomScan) (CustomScanState *node);
+</pre><p>
+<span class="original">
+    Release resources when it is anticipated the node will not be executed
+    to completion.  This is not called in all cases; sometimes,
+    &lt;literal&gt;EndCustomScan&lt;/literal&gt; may be called without this function having
+    been called first.  Since the DSM segment used by parallel query is
+    destroyed just after this callback is invoked, custom scan providers that
+    wish to take some action before the DSM segment goes away should implement
+    this method.
+</span>
+ノードが実行を完了しないと思われるときに、リソースを解放します。
+これはすべての場合に呼ばれるわけではありません。
+ときには、この関数がまず呼ばれることなしに、<code class="literal">EndCustomScan</code>が呼ばれるかもしれません。
+パラレルクエリで使用されるDSMセグメントは、このコールバックが呼ばれた直後に削除されるので、DSMセグメントが削除される前に何らかのアクションを起こしたいカスタムスキャンプロバイダは、このメソッドを実装すべきです。
+   </p><p>
+</p><pre class="programlisting">
+void (*ExplainCustomScan) (CustomScanState *node,
+                           List *ancestors,
+                           ExplainState *es);
+</pre><p>
+<span class="original">
+    Output additional information for &lt;command&gt;EXPLAIN&lt;/command&gt; of a custom-scan
+    plan node.  This callback is optional.  Common data stored in the
+    &lt;structname&gt;ScanState&lt;/structname&gt;, such as the target list and scan relation, will
+    be shown even without this callback, but the callback allows the display
+    of additional, private state.
+</span>
+カスタムスキャンの計画ノードの<code class="command">EXPLAIN</code>について追加情報を出力します。
+このコールバックは必須ではありません。
+対象のリストやスキャンのリレーションなど<code class="structname">ScanState</code>に格納される共通データは、このコールバックがなくても表示されますが、このコールバックにより、追加のプライベートな状態が表示できるようになります。
+   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="custom-scan-plan.html" title="61.2. カスタムスキャン計画の作成">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="custom-scan.html" title="第61章 カスタムスキャンプロバイダの作成">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="geqo.html" title="第62章 遺伝的問い合わせ最適化">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">61.2. カスタムスキャン計画の作成 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 第62章 遺伝的問い合わせ最適化</td></tr></table></div></body></html>

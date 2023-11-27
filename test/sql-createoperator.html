@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>CREATE OPERATOR</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-creatematerializedview.html" title="CREATE MATERIALIZED VIEW" /><link rel="next" href="sql-createopclass.html" title="CREATE OPERATOR CLASS" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : sql-createoperator.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-creatematerializedview.html" title="CREATE MATERIALIZED VIEW">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">CREATE OPERATOR</td><td width="20%" align="right"> <a accesskey="n" href="sql-createopclass.html" title="CREATE OPERATOR CLASS">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-CREATEOPERATOR"><div class="titlepage"></div><a id="id-1.9.3.72.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">CREATE OPERATOR</span></h2><p>CREATE OPERATOR<span class="original">
+  &lt;refpurpose&gt;define a new operator&lt;/refpurpose&gt;
+</span> — 
+新しい演算子を定義する
+  </p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
+CREATE OPERATOR <em class="replaceable"><code>name</code></em> (
+    {FUNCTION|PROCEDURE} = <em class="replaceable"><code>function_name</code></em>
+    [, LEFTARG = <em class="replaceable"><code>left_type</code></em> ] [, RIGHTARG = <em class="replaceable"><code>right_type</code></em> ]
+    [, COMMUTATOR = <em class="replaceable"><code>com_op</code></em> ] [, NEGATOR = <em class="replaceable"><code>neg_op</code></em> ]
+    [, RESTRICT = <em class="replaceable"><code>res_proc</code></em> ] [, JOIN = <em class="replaceable"><code>join_proc</code></em> ]
+    [, HASHES ] [, MERGES ]
+)
+</pre></div><div class="refsect1" id="id-1.9.3.72.5"><h2>説明</h2><span class="original">
+  &lt;title&gt;Description&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;command&gt;CREATE OPERATOR&lt;/command&gt; defines a new operator,
+   &lt;replaceable class="parameter"&gt;name&lt;/replaceable&gt;.  The user who
+   defines an operator becomes its owner.  If a schema name is given
+   then the operator is created in the specified schema.  Otherwise it
+   is created in the current schema.
+</span>
+<code class="command">CREATE OPERATOR</code>は、新しい演算子<em class="replaceable"><code>name</code></em>を定義します。
+演算子を定義したユーザがその所有者となります。
+スキーマ名が指定されていた場合、その演算子は指定したスキーマに作成されます。
+スキーマ名が指定されなかった場合、現在のスキーマに作成されます。
+  </p><p>
+<span class="original">
+   The operator name is a sequence of up to &lt;symbol&gt;NAMEDATALEN&lt;/symbol&gt;-1
+   (63 by default) characters from the following list:
+</span>
+演算子名として使用できるのは、以下に示す文字を使った、<code class="symbol">NAMEDATALEN</code>-1（デフォルトでは63）文字までの文字列です。
+</p><div class="literallayout"><p><br />
++ - * / &lt; &gt; = ~ ! @ # % ^ &amp; | ` ?<br />
+</p></div><p>
+
+<span class="original">
+   There are a few restrictions on your choice of name:
+</span>
+名前の選択には以下に示すいくつかの制約があります。
+   </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><span class="original">
+     &lt;para&gt;&lt;literal&gt;&amp;#45;-&lt;/literal&gt; and &lt;literal&gt;/*&lt;/literal&gt; cannot appear anywhere in an operator name,
+     since they will be taken as the start of a comment.
+</span><p><code class="literal">--</code>と<code class="literal">/*</code>はコメントの開始とみなされてしまうため、演算子名の一部として使うことができません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+     A multicharacter operator name cannot end in &lt;literal&gt;+&lt;/literal&gt; or
+     &lt;literal&gt;-&lt;/literal&gt;,
+     unless the name also contains at least one of these characters:
+</span>
+複数の文字からなる演算子名は、下記の文字のうちの1つ以上を含まない限り、<code class="literal">+</code>または<code class="literal">-</code>で終わることができません。
+</p><div class="literallayout"><p><br />
+~ ! @ # % ^ &amp; | ` ?<br />
+</p></div><p>
+<span class="original">
+     For example, &lt;literal&gt;@-&lt;/literal&gt; is an allowed operator name,
+     but &lt;literal&gt;*-&lt;/literal&gt; is not.
+     This restriction allows &lt;productname&gt;PostgreSQL&lt;/productname&gt; to
+     parse SQL-compliant commands without requiring spaces between tokens.
+</span>
+例えば、<code class="literal">@-</code>は演算子名として許されますが、<code class="literal">*-</code>は許されません。
+この制約により、<span class="productname">PostgreSQL</span>がSQLに準拠する問い合わせをトークン同士の間に空白を要求することなしに解析することが可能になります。
+     </p></li><li class="listitem"><p>
+<span class="original">
+     The use of &lt;literal&gt;=&amp;gt;&lt;/literal&gt; as an operator name is deprecated.  It may
+     be disallowed altogether in a future release.
+</span>
+演算子名として<code class="literal">=&gt;</code>を使用することは廃止される予定です。
+将来のリリースで完全に許されなくなるかもしれません。
+     </p></li></ul></div><p>
+  </p><p>
+<span class="original">
+   The operator &lt;literal&gt;!=&lt;/literal&gt; is mapped to
+   &lt;literal&gt;&amp;lt;&amp;gt;&lt;/literal&gt; on input, so these two names are always
+   equivalent.
+</span>
+演算子<code class="literal">!=</code>は入力時に<code class="literal">&lt;&gt;</code>に変換されるので、これらの2つの名前は常に等価です。
+  </p><p>
+<span class="original">
+   For binary operators, both &lt;literal&gt;LEFTARG&lt;/literal&gt; and
+   &lt;literal&gt;RIGHTARG&lt;/literal&gt; must be defined.  For prefix operators only
+   &lt;literal&gt;RIGHTARG&lt;/literal&gt; should be defined.
+</span>
+二項演算子では、<code class="literal">LEFTARG</code>と<code class="literal">RIGHTARG</code>の両方を定義しなければなりません。
+前置演算子では<code class="literal">RIGHTARG</code>のみを定義しなければなりません。
+  </p><p>
+<span class="original">
+   The &lt;replaceable class="parameter"&gt;function_name&lt;/replaceable&gt;
+   function must have been previously defined using &lt;command&gt;CREATE
+   FUNCTION&lt;/command&gt; and must be defined to accept the correct number
+   of arguments (either one or two) of the indicated types.
+</span>
+<em class="replaceable"><code>function_name</code></em>関数は、<code class="command">CREATE FUNCTION</code>を使って事前に定義されていなければなりません。また、指定された型の正しい数の引数（1つか2つ）を受け付けるよう定義する必要があります。
+  </p><p>
+<span class="original">
+   In the syntax of &lt;literal&gt;CREATE OPERATOR&lt;/literal&gt;, the keywords
+   &lt;literal&gt;FUNCTION&lt;/literal&gt; and &lt;literal&gt;PROCEDURE&lt;/literal&gt; are
+   equivalent, but the referenced function must in any case be a function, not
+   a procedure.  The use of the keyword &lt;literal&gt;PROCEDURE&lt;/literal&gt; here is
+   historical and deprecated.
+</span>
+<code class="literal">CREATE OPERATOR</code>の構文では、キーワード<code class="literal">FUNCTION</code>と<code class="literal">PROCEDURE</code>は等価ですが、参照されている関数はどの場合も関数であって、プロシージャであってはなりません。
+ここで、キーワード<code class="literal">PROCEDURE</code>を使用することは歴史的なものであり、廃止予定です。
+  </p><p>
+<span class="original">
+   The other clauses specify optional operator optimization clauses.
+   Their meaning is detailed in &lt;xref linkend="xoper-optimization"/&gt;.
+</span>
+他の句は演算子最適化用の句(省略可能)です。
+これらの意味は<a class="xref" href="xoper-optimization.html" title="38.15. 演算子最適化に関する情報">38.15</a>で説明されています。
+  </p><p>
+<span class="original">
+   To be able to create an operator, you must have &lt;literal&gt;USAGE&lt;/literal&gt;
+   privilege on the argument types and the return type, as well
+   as &lt;literal&gt;EXECUTE&lt;/literal&gt; privilege on the underlying function.  If a
+   commutator or negator operator is specified, you must own these operators.
+</span>
+演算子を作成するためには、
+引数の型と戻り値の型に対する<code class="literal">USAGE</code>権限と背後にある関数に対する<code class="literal">EXECUTE</code>権限を持たなければなりません。
+交代演算子または否定子演算子を指定する場合は、これらの演算子を所有していなければなりません。
+  </p></div><div class="refsect1" id="id-1.9.3.72.6"><h2>パラメータ</h2><span class="original">
+  &lt;title&gt;Parameters&lt;/title&gt;
+</span><div class="variablelist"><dl class="variablelist"><dt><span class="term"><em class="replaceable"><code>name</code></em></span></dt><dd><p>
+<span class="original">
+        The name of the operator to be defined. See above for allowable
+        characters.  The name can be schema-qualified, for example
+        &lt;literal&gt;CREATE OPERATOR myschema.+ (...)&lt;/literal&gt;.  If not, then
+        the operator is created in the current schema.  Two operators
+        in the same schema can have the same name if they operate on
+        different data types.  This is called
+        &lt;firstterm&gt;overloading&lt;/firstterm&gt;.
+</span>
+定義される演算子の名前です。
+使用できる文字は上を参照してください。
+この名前は、例えば<code class="literal">CREATE OPERATOR myschema.+ (...)</code>のように、スキーマ修飾可能です。
+修飾されていなければ、演算子は現在のスキーマに作成されます。
+異なるデータ型について処理するものであれば、同じスキーマ内の2つの演算子は同じ名前を持つことができます。
+これを<em class="firstterm">オーバーロード</em>と言います。
+       </p></dd><dt><span class="term"><em class="replaceable"><code>function_name</code></em></span></dt><dd><p>
+<span class="original">
+        The function used to implement this operator.
+</span>
+演算子を実装するために使用する関数です。
+       </p></dd><dt><span class="term"><em class="replaceable"><code>left_type</code></em></span></dt><dd><p>
+<span class="original">
+        The data type of the operator's left operand, if any.
+        This option would be omitted for a prefix operator.
+</span>
+演算子の左オペランドのデータ型です（左オペランドが存在する場合のみ）。
+このオプションは前置演算子では省略されます。
+       </p></dd><dt><span class="term"><em class="replaceable"><code>right_type</code></em></span></dt><dd><p>
+<span class="original">
+        The data type of the operator's right operand.
+</span>
+演算子の右オペランドのデータ型です。
+       </p></dd><dt><span class="term"><em class="replaceable"><code>com_op</code></em></span></dt><dd><p>
+<span class="original">
+        The commutator of this operator.
+</span>
+この演算子の交代演算子です。
+       </p></dd><dt><span class="term"><em class="replaceable"><code>neg_op</code></em></span></dt><dd><p>
+<span class="original">
+        The negator of this operator.
+</span>
+この演算子の否定子です。
+       </p></dd><dt><span class="term"><em class="replaceable"><code>res_proc</code></em></span></dt><dd><p>
+<span class="original">
+        The restriction selectivity estimator function for this operator.
+</span>
+この演算子の制約選択評価関数です。
+       </p></dd><dt><span class="term"><em class="replaceable"><code>join_proc</code></em></span></dt><dd><p>
+<span class="original">
+        The join selectivity estimator function for this operator.
+</span>
+この演算子の結合選択評価関数です。
+       </p></dd><dt><span class="term"><code class="literal">HASHES</code></span></dt><dd><p>
+<span class="original">
+       Indicates this operator can support a hash join.
+</span>
+この演算子がハッシュ結合をサポートできることを示します。
+       </p></dd><dt><span class="term"><code class="literal">MERGES</code></span></dt><dd><p>
+<span class="original">
+       Indicates this operator can support a merge join.
+</span>
+この演算子がマージ結合をサポートできることを示します。
+       </p></dd></dl></div><p>
+<span class="original">
+   To give a schema-qualified operator name in &lt;replaceable
+   class="parameter"&gt;com_op&lt;/replaceable&gt; or the other optional
+   arguments, use the &lt;literal&gt;OPERATOR()&lt;/literal&gt; syntax, for example:
+</span>
+スキーマ修飾された演算子名を<em class="replaceable"><code>com_op</code></em>または他のオプション引数に与えるには、以下の例のように<code class="literal">OPERATOR()</code>構文を使用してください。
+</p><pre class="programlisting">
+COMMUTATOR = OPERATOR(myschema.===) ,
+</pre></div><div class="refsect1" id="id-1.9.3.72.7"><h2>注釈</h2><span class="original">
+  &lt;title&gt;Notes&lt;/title&gt;
+</span><p>
+<span class="original">
+   Refer to &lt;xref linkend="xoper"/&gt; for further information.
+</span>
+詳細については<a class="xref" href="xoper.html" title="38.14. ユーザ定義の演算子">38.14</a>を参照してください。
+  </p><p>
+<span class="original">
+   It is not possible to specify an operator's lexical precedence in
+   &lt;command&gt;CREATE OPERATOR&lt;/command&gt;, because the parser's precedence behavior
+   is hard-wired.  See &lt;xref linkend="sql-precedence"/&gt; for precedence details.
+</span>
+<code class="command">CREATE OPERATOR</code>で演算子の語彙優先順位を指定することはできません。
+パーサの優先順位に関する動作は固定であるためです。
+詳細な優先順位については<a class="xref" href="sql-syntax-lexical.html#SQL-PRECEDENCE" title="4.1.6. 演算子の優先順位">4.1.6</a>を参照してください。
+  </p><p>
+<span class="original">
+   The obsolete options &lt;literal&gt;SORT1&lt;/literal&gt;, &lt;literal&gt;SORT2&lt;/literal&gt;,
+   &lt;literal&gt;LTCMP&lt;/literal&gt;, and &lt;literal&gt;GTCMP&lt;/literal&gt; were formerly used to
+   specify the names of sort operators associated with a merge-joinable
+   operator.  This is no longer necessary, since information about
+   associated operators is found by looking at B-tree operator families
+   instead.  If one of these options is given, it is ignored except
+   for implicitly setting &lt;literal&gt;MERGES&lt;/literal&gt; true.
+</span>
+廃止されたオプション<code class="literal">SORT1</code>、<code class="literal">SORT2</code>、<code class="literal">LTCMP</code>、および<code class="literal">GTCMP</code>は、マージ結合可能演算子に関連したソート演算子の名前を指定するために使用されていました。
+代わりにB-tree演算子族を検索することで関連する演算子の情報を見つけることができるようになりましたので、これは必要がなくなりました。
+これらの内のいずれかのオプションが指定された場合、暗黙的に<code class="literal">MERGES</code>を真に設定するだけで、それ以外は無視します。
+  </p><p>
+<span class="original">
+   Use &lt;link linkend="sql-dropoperator"&gt;&lt;command&gt;DROP OPERATOR&lt;/command&gt;&lt;/link&gt; to delete user-defined operators
+   from a database.  Use &lt;link linkend="sql-alteroperator"&gt;&lt;command&gt;ALTER OPERATOR&lt;/command&gt;&lt;/link&gt; to modify operators in a
+   database.
+</span>
+データベースからユーザ定義の演算子を削除するには<a class="link" href="sql-dropoperator.html" title="DROP OPERATOR"><code class="command">DROP OPERATOR</code></a>を使用してください。
+データベース内の演算子を変更するには<a class="link" href="sql-alteroperator.html" title="ALTER OPERATOR"><code class="command">ALTER OPERATOR</code></a>を使用してください。
+  </p></div><div class="refsect1" id="id-1.9.3.72.8"><h2>例</h2><span class="original">
+  &lt;title&gt;Examples&lt;/title&gt;
+</span><p>
+<span class="original">
+   The following command defines a new operator, area-equality, for
+   the data type &lt;type&gt;box&lt;/type&gt;:
+</span>
+以下のコマンドは、データ型<code class="type">box</code>に対する領域等価性を判定する新しい演算子を定義します。
+</p><pre class="programlisting">
+CREATE OPERATOR === (
+    LEFTARG = box,
+    RIGHTARG = box,
+    FUNCTION = area_equal_function,
+    COMMUTATOR = ===,
+    NEGATOR = !==,
+    RESTRICT = area_restriction_function,
+    JOIN = area_join_function,
+    HASHES, MERGES
+);
+</pre></div><div class="refsect1" id="id-1.9.3.72.9"><h2>互換性</h2><span class="original">
+  &lt;title&gt;Compatibility&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;command&gt;CREATE OPERATOR&lt;/command&gt; is a
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; extension.  There are no
+   provisions for user-defined operators in the SQL standard.
+</span>
+<code class="command">CREATE OPERATOR</code>は<span class="productname">PostgreSQL</span>の拡張です。
+標準SQLには、ユーザ定義の演算子についての規定はありません。
+  </p></div><div class="refsect1" id="id-1.9.3.72.10"><h2>関連項目</h2><span class="original">
+  &lt;title&gt;See Also&lt;/title&gt;
+</span><span class="simplelist"><a class="xref" href="sql-alteroperator.html" title="ALTER OPERATOR"><span class="refentrytitle">ALTER OPERATOR</span></a>, <a class="xref" href="sql-createopclass.html" title="CREATE OPERATOR CLASS"><span class="refentrytitle">CREATE OPERATOR CLASS</span></a>, <a class="xref" href="sql-dropoperator.html" title="DROP OPERATOR"><span class="refentrytitle">DROP OPERATOR</span></a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-creatematerializedview.html" title="CREATE MATERIALIZED VIEW">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-createopclass.html" title="CREATE OPERATOR CLASS">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">CREATE MATERIALIZED VIEW </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> CREATE OPERATOR CLASS</td></tr></table></div></body></html>

@@ -1,0 +1,367 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>FETCH</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-explain.html" title="EXPLAIN" /><link rel="next" href="sql-grant.html" title="GRANT" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-explain.html" title="EXPLAIN">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">FETCH</td><td width="20%" align="right"> <a accesskey="n" href="sql-grant.html" title="GRANT">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-FETCH"><div class="titlepage"></div><a id="id-1.9.3.149.1" class="indexterm"></a><a id="id-1.9.3.149.2" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">FETCH</span></h2><p>FETCH<!--
+  <refpurpose>retrieve rows from a query using a cursor</refpurpose>
+--> — カーソルを使用して問い合わせから行を取り出す</p></div><div class="refsynopsisdiv"><h2>概要</h2><!-- Note the "direction" bit is also in ref/move.sgml --><pre class="synopsis">
+FETCH [ <em class="replaceable"><code>direction</code></em> [ FROM | IN ] ] <em class="replaceable"><code>cursor_name</code></em>
+
+<!--
+<phrase>where <replaceable class="parameter">direction</replaceable> can be empty or one of:</phrase>
+-->
+<span class="phrase">ここで<em class="replaceable"><code>direction</code></em>は空にするか、次のいずれかを指定します。</span>
+
+    NEXT
+    PRIOR
+    FIRST
+    LAST
+    ABSOLUTE <em class="replaceable"><code>count</code></em>
+    RELATIVE <em class="replaceable"><code>count</code></em>
+    <em class="replaceable"><code>count</code></em>
+    ALL
+    FORWARD
+    FORWARD <em class="replaceable"><code>count</code></em>
+    FORWARD ALL
+    BACKWARD
+    BACKWARD <em class="replaceable"><code>count</code></em>
+    BACKWARD ALL
+</pre></div><div class="refsect1" id="id-1.9.3.149.6"><h2>説明</h2><!--
+  <title>Description</title>
+--><p>
+<!--
+   <command>FETCH</command> retrieves rows using a previously-created cursor.
+-->
+<code class="command">FETCH</code>は事前に作成されたカーソルを使用して行を取り出します。
+  </p><p>
+<!--
+   A cursor has an associated position, which is used by
+   <command>FETCH</command>.  The cursor position can be before the first row of the
+   query result, on any particular row of the result, or after the last row
+   of the result.  When created, a cursor is positioned before the first row.
+   After fetching some rows, the cursor is positioned on the row most recently
+   retrieved.  If <command>FETCH</command> runs off the end of the available rows
+   then the cursor is left positioned after the last row, or before the first
+   row if fetching backward.  <command>FETCH ALL</command> or <command>FETCH BACKWARD
+   ALL</command> will always leave the cursor positioned after the last row or before
+   the first row.
+-->
+カーソルはそれぞれ位置情報を持っており、<code class="command">FETCH</code>はこれを使用します。
+カーソルの位置は、問い合わせの結果の先頭行の前、結果内の任意の特定の行、結果の最終行の後のいずれにもなります。
+カーソルの生成時は、カーソル位置は先頭行の前にあります。
+行を取り出した後は、カーソル位置は最後に取り出した行にあります。
+<code class="command">FETCH</code>が利用可能な行の終わりを過ぎると、カーソル位置は最終行の後にあります（後方抽出の場合は先頭行の前になります）。
+<code class="command">FETCH ALL</code>もしくは<code class="command">FETCH BACKWARD ALL</code>では、カーソルの位置は常に最終行の後か、先頭行の前になります。
+  </p><p>
+<!--
+   The forms <literal>NEXT</literal>, <literal>PRIOR</literal>, <literal>FIRST</literal>,
+   <literal>LAST</literal>, <literal>ABSOLUTE</literal>, <literal>RELATIVE</literal> fetch
+   a single row after moving the cursor appropriately.  If there is no
+   such row, an empty result is returned, and the cursor is left
+   positioned before the first row or after the last row as
+   appropriate.
+-->
+<code class="literal">NEXT</code>、<code class="literal">PRIOR</code>、<code class="literal">FIRST</code>、<code class="literal">LAST</code>、<code class="literal">ABSOLUTE</code>、<code class="literal">RELATIVE</code>構文では、カーソルを適切に移動した後、行を1つ取り出します。
+行が存在しない場合、空の結果が返され、カーソルは先頭行の前か最終行の後に適切に位置づけられます。
+  </p><p>
+<!--
+   The forms using <literal>FORWARD</literal> and <literal>BACKWARD</literal>
+   retrieve the indicated number of rows moving in the forward or
+   backward direction, leaving the cursor positioned on the
+   last-returned row (or after/before all rows, if the <replaceable
+   class="parameter">count</replaceable> exceeds the number of rows
+   available).
+-->
+<code class="literal">FORWARD</code>および<code class="literal">BACKWARD</code>を使用した構文では、指定数の行を前方もしくは後方方向に取り出します。この時、最後に取り出した行がカーソル位置となります
+（<em class="replaceable"><code>count</code></em>が利用可能な行数を超えた場合は、全行の後/前になります）。
+  </p><p>
+<!--
+   <literal>RELATIVE 0</literal>, <literal>FORWARD 0</literal>, and
+   <literal>BACKWARD 0</literal> all request fetching the current row without
+   moving the cursor, that is, re-fetching the most recently fetched
+   row.  This will succeed unless the cursor is positioned before the
+   first row or after the last row; in which case, no row is returned.
+-->
+<code class="literal">RELATIVE 0</code>、<code class="literal">FORWARD 0</code>、および<code class="literal">BACKWARD 0</code>は全て、カーソルを移動することなく現在の行を取り出します。
+つまり、一番最後に取り出した行を再度取り出すことになります。
+カーソルが先頭行の前や最終行の後になければ、これらのコマンドは成功します。
+先頭行の前や最終行の後にあれば、行は返されません。
+  </p><div class="note"><h3 class="title">注記</h3><p>
+<!--
+    This page describes usage of cursors at the SQL command level.
+    If you are trying to use cursors inside a <application>PL/pgSQL</application>
+    function, the rules are different &mdash;
+    see <xref linkend="plpgsql-cursor-using"/>.
+-->
+このマニュアルページではSQLコマンドレベルでのカーソルの使用方法について説明しています。
+<span class="application">PL/pgSQL</span>内でカーソルを使用する場合は、規則が異なりますので、<a class="xref" href="plpgsql-cursors.html#PLPGSQL-CURSOR-USING" title="43.7.3. カーソルの使用">43.7.3</a>を参照してください。
+   </p></div></div><div class="refsect1" id="id-1.9.3.149.7"><h2>パラメータ</h2><!--
+  <title>Parameters</title>
+--><div class="variablelist"><dl class="variablelist"><dt><span class="term"><em class="replaceable"><code>direction</code></em></span></dt><dd><!--
+     <para><replaceable class="parameter">direction</replaceable> defines
+      the fetch direction and number of rows to fetch.  It can be one
+      of the following:
+--><p><em class="replaceable"><code>direction</code></em>は、取り出す方向と取り出す行数を定義します。
+以下のいずれかを指定できます。
+
+      </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">NEXT</code></span></dt><dd><p>
+<!--
+          Fetch the next row. This is the default if <replaceable
+          class="parameter">direction</replaceable> is omitted.
+-->
+次の行を取り出します。
+これは、<em class="replaceable"><code>direction</code></em>が省略された時のデフォルトです。
+         </p></dd><dt><span class="term"><code class="literal">PRIOR</code></span></dt><dd><p>
+<!--
+          Fetch the prior row.
+-->
+1つ前の行を取り出します。
+         </p></dd><dt><span class="term"><code class="literal">FIRST</code></span></dt><dd><p>
+<!--
+          Fetch the first row of the query (same as <literal>ABSOLUTE 1</literal>).
+-->
+問い合わせの先頭行を取り出します
+（<code class="literal">ABSOLUTE 1</code>と同じです）。
+         </p></dd><dt><span class="term"><code class="literal">LAST</code></span></dt><dd><p>
+<!--
+          Fetch the last row of the query (same as <literal>ABSOLUTE -1</literal>).
+-->
+問い合わせの最終行を取り出します
+（<code class="literal">ABSOLUTE -1</code>と同じです）。
+         </p></dd><dt><span class="term"><code class="literal">ABSOLUTE <em class="replaceable"><code>count</code></em></code></span></dt><dd><p>
+<!--
+          Fetch the <replaceable
+          class="parameter">count</replaceable>'th row of the query,
+          or the <literal>abs(<replaceable
+          class="parameter">count</replaceable>)</literal>'th row from
+          the end if <replaceable
+          class="parameter">count</replaceable> is negative.  Position
+          before first row or after last row if <replaceable
+          class="parameter">count</replaceable> is out of range; in
+          particular, <literal>ABSOLUTE 0</literal> positions before
+          the first row.
+-->
+問い合わせの<em class="replaceable"><code>count</code></em>番目の行を取り出します。
+<em class="replaceable"><code>count</code></em>が負ならば、終わりから<code class="literal">abs(<em class="replaceable"><code>count</code></em>)</code>番目の行を取り出します。
+<em class="replaceable"><code>count</code></em>が範囲外の場合、カーソル位置は先頭行の前か最終行の後になります。
+特に、<code class="literal">ABSOLUTE 0</code>と指定すると、先頭行の前になります。
+         </p></dd><dt><span class="term"><code class="literal">RELATIVE <em class="replaceable"><code>count</code></em></code></span></dt><dd><p>
+<!--
+          Fetch the <replaceable
+          class="parameter">count</replaceable>'th succeeding row, or
+          the <literal>abs(<replaceable
+          class="parameter">count</replaceable>)</literal>'th prior
+          row if <replaceable class="parameter">count</replaceable> is
+          negative.  <literal>RELATIVE 0</literal> re-fetches the
+          current row, if any.
+-->
+カーソルの現在位置から<em class="replaceable"><code>count</code></em>番目の行を取り出します。
+<em class="replaceable"><code>count</code></em>が負の場合、現在位置より<code class="literal">abs(<em class="replaceable"><code>count</code></em>)</code>行分前の行を取り出します。
+<code class="literal">RELATIVE 0</code>と指定すると、現在の行があれば、その行を再度取り出します。
+         </p></dd><dt><span class="term"><em class="replaceable"><code>count</code></em></span></dt><dd><p>
+<!--
+          Fetch the next <replaceable
+          class="parameter">count</replaceable> rows (same as
+          <literal>FORWARD <replaceable
+          class="parameter">count</replaceable></literal>).
+-->
+次の<em class="replaceable"><code>count</code></em>行を取り出します
+（<code class="literal">FORWARD <em class="replaceable"><code>count</code></em></code>と同じです）。
+         </p></dd><dt><span class="term"><code class="literal">ALL</code></span></dt><dd><p>
+<!--
+          Fetch all remaining rows (same as <literal>FORWARD ALL</literal>).
+-->
+残っている行を全て取り出します
+（<code class="literal">FORWARD ALL</code>と同じです）。
+         </p></dd><dt><span class="term"><code class="literal">FORWARD</code></span></dt><dd><p>
+<!--
+          Fetch the next row (same as <literal>NEXT</literal>).
+-->
+1つ次の行を取り出します
+（<code class="literal">NEXT</code>と同じです）。
+         </p></dd><dt><span class="term"><code class="literal">FORWARD <em class="replaceable"><code>count</code></em></code></span></dt><dd><p>
+<!--
+          Fetch the next <replaceable
+          class="parameter">count</replaceable> rows.
+          <literal>FORWARD 0</literal> re-fetches the current row.
+-->
+次の<em class="replaceable"><code>count</code></em>行分の行を取り出します。
+<code class="literal">FORWARD 0</code>と指定すると、現在の行を再度取り出します。
+         </p></dd><dt><span class="term"><code class="literal">FORWARD ALL</code></span></dt><dd><p>
+<!--
+          Fetch all remaining rows.
+-->
+残っている行を全て取り出します。
+         </p></dd><dt><span class="term"><code class="literal">BACKWARD</code></span></dt><dd><p>
+<!--
+          Fetch the prior row (same as <literal>PRIOR</literal>).
+-->
+1つ前の行を取り出します
+（<code class="literal">PRIOR</code>と同じです）。
+         </p></dd><dt><span class="term"><code class="literal">BACKWARD <em class="replaceable"><code>count</code></em></code></span></dt><dd><p>
+<!--
+          Fetch the prior <replaceable
+          class="parameter">count</replaceable> rows (scanning
+          backwards).  <literal>BACKWARD 0</literal> re-fetches the
+          current row.
+-->
+前の<em class="replaceable"><code>count</code></em>行分の行を（逆方向に走査して）取り出します。
+<code class="literal">BACKWARD 0</code>と指定すると、現在の行を再度取り出します。
+         </p></dd><dt><span class="term"><code class="literal">BACKWARD ALL</code></span></dt><dd><p>
+<!--
+          Fetch all prior rows (scanning backwards).
+-->
+現在位置より前の行を（逆方向に走査して）全て取り出します。
+         </p></dd></dl></div></dd><dt><span class="term"><em class="replaceable"><code>count</code></em></span></dt><dd><!--
+     <para><replaceable class="parameter">count</replaceable> is a
+      possibly-signed integer constant, determining the location or
+      number of rows to fetch.  For <literal>FORWARD</literal> and
+      <literal>BACKWARD</literal> cases, specifying a negative <replaceable
+      class="parameter">count</replaceable> is equivalent to changing
+      the sense of <literal>FORWARD</literal> and <literal>BACKWARD</literal>.
+--><p><em class="replaceable"><code>count</code></em>は、整数定数で、符号を付けることができ、取り出す位置や行数を決定します。
+<code class="literal">FORWARD</code>と<code class="literal">BACKWARD</code>において、<em class="replaceable"><code>count</code></em>に負の値を指定するのは、<code class="literal">FORWARD</code>と<code class="literal">BACKWARD</code>の意味を入れ替えるのと同等です。
+     </p></dd><dt><span class="term"><em class="replaceable"><code>cursor_name</code></em></span></dt><dd><p>
+<!--
+      An open cursor's name.
+-->
+開いているカーソルの名前を指定します。
+     </p></dd></dl></div></div><div class="refsect1" id="id-1.9.3.149.8"><h2>出力</h2><!--
+  <title>Outputs</title>
+--><p>
+<!--
+   On successful completion, a <command>FETCH</command> command returns a command
+   tag of the form
+-->
+正常に終了すると、<code class="command">FETCH</code>コマンドは以下の形式のコマンドタグを返します。
+</p><pre class="screen">
+FETCH <em class="replaceable"><code>count</code></em>
+</pre><p>
+<!--
+   The <replaceable class="parameter">count</replaceable> is the number
+   of rows fetched (possibly zero).  Note that in
+   <application>psql</application>, the command tag will not actually be
+   displayed, since <application>psql</application> displays the fetched
+   rows instead.
+-->
+<em class="replaceable"><code>count</code></em>は取り出した行数です（0の可能性もあります）。
+<span class="application">psql</span>では取り出した行数を別途表示するため、このコマンドタグは実際には表示されないことに注意してください。
+  </p></div><div class="refsect1" id="id-1.9.3.149.9"><h2>注釈</h2><!--
+  <title>Notes</title>
+--><p>
+<!--
+   The cursor should be declared with the <literal>SCROLL</literal>
+   option if one intends to use any variants of <command>FETCH</command>
+   other than <command>FETCH NEXT</command> or <command>FETCH FORWARD</command> with
+   a positive count.  For simple queries
+   <productname>PostgreSQL</productname> will allow backwards fetch
+   from cursors not declared with <literal>SCROLL</literal>, but this
+   behavior is best not relied on. If the cursor is declared with
+   <literal>NO SCROLL</literal>, no backward fetches are allowed.
+-->
+<code class="command">FETCH</code>コマンドとして、<code class="command">FETCH NEXT</code>もしくは正のcountの<code class="command">FETCH FORWARD</code>以外を使用する場合、カーソルを<code class="literal">SCROLL</code>オプション付きで宣言しなければなりません。
+単純な問い合わせでは、<span class="productname">PostgreSQL</span>では、カーソルが<code class="literal">SCROLL</code>付きで宣言されていなくても後方向の取り出しを行うことができることがありますが、この動作に依存すべきではありません。
+カーソルが<code class="literal">NO SCROLL</code>付きで宣言された場合は、後方向の取り出しを行うことができません。
+  </p><p>
+<!--
+   <literal>ABSOLUTE</literal> fetches are not any faster than
+   navigating to the desired row with a relative move: the underlying
+   implementation must traverse all the intermediate rows anyway.
+   Negative absolute fetches are even worse: the query must be read to
+   the end to find the last row, and then traversed backward from
+   there.  However, rewinding to the start of the query (as with
+   <literal>FETCH ABSOLUTE 0</literal>) is fast.
+-->
+<code class="literal">ABSOLUTE</code>による取り出しは、相対的な指定による指定行への移動に比べて高速ではありません。
+内部的な実装では、必ず中間の行を全て経由しているからです。
+絶対指定で負の値を指定した場合、速度はさらに悪化します。
+まず、最終行を見つけるために最後まで問い合わせを読み取って、その後に最終行から後方に移動するためです。
+ただし、（<code class="literal">FETCH ABSOLUTE 0</code>を使用して）問い合わせの先頭へ戻るのは高速です。
+  </p><p>
+<!--
+   <xref linkend="sql-declare"/>
+   is used to define a cursor.  Use
+   <xref linkend="sql-move"/>
+   to change cursor position without retrieving data.
+-->
+<a class="xref" href="sql-declare.html" title="DECLARE"><span class="refentrytitle">DECLARE</span></a>を使用してカーソルを定義します。
+データを取り出さずにカーソル位置を変更する場合は<a class="xref" href="sql-move.html" title="MOVE"><span class="refentrytitle">MOVE</span></a>を使用してください。
+  </p></div><div class="refsect1" id="id-1.9.3.149.10"><h2>例</h2><!--
+  <title>Examples</title>
+--><p>
+<!--
+   The following example traverses a table using a cursor:
+-->
+次の例では、カーソルを使用してテーブル内を走査しています。
+
+</p><pre class="programlisting">
+BEGIN WORK;
+
+<!--
+&#045;&#045; Set up a cursor:
+-->
+-- カーソルを設定します。
+DECLARE liahona SCROLL CURSOR FOR SELECT * FROM films;
+
+<!--
+&#045;&#045; Fetch the first 5 rows in the cursor liahona:
+-->
+-- カーソルliahonaから最初の5行を取り出します。
+FETCH FORWARD 5 FROM liahona;
+
+ code  |          title          | did | date_prod  |   kind   |  len
+-------+-------------------------+-----+------------+----------+-------
+ BL101 | The Third Man           | 101 | 1949-12-23 | Drama    | 01:44
+ BL102 | The African Queen       | 101 | 1951-08-11 | Romantic | 01:43
+ JL201 | Une Femme est une Femme | 102 | 1961-03-12 | Romantic | 01:25
+ P_301 | Vertigo                 | 103 | 1958-11-14 | Action   | 02:08
+ P_302 | Becket                  | 103 | 1964-02-03 | Drama    | 02:28
+
+<!--
+&#045;&#045; Fetch the previous row:
+-->
+-- 1つ前の行を取り出します。
+FETCH PRIOR FROM liahona;
+
+ code  |  title  | did | date_prod  |  kind  |  len
+-------+---------+-----+------------+--------+-------
+ P_301 | Vertigo | 103 | 1958-11-14 | Action | 02:08
+
+<!--
+&#045;&#045; Close the cursor and end the transaction:
+-->
+-- カーソルを閉じ、トランザクションを終了します。
+CLOSE liahona;
+COMMIT WORK;
+</pre></div><div class="refsect1" id="id-1.9.3.149.11"><h2>互換性</h2><!--
+  <title>Compatibility</title>
+--><p>
+<!--
+   The SQL standard defines <command>FETCH</command> for use in
+   embedded SQL only.  The variant of <command>FETCH</command>
+   described here returns the data as if it were a
+   <command>SELECT</command> result rather than placing it in host
+   variables.  Other than this point, <command>FETCH</command> is
+   fully upward-compatible with the SQL standard.
+-->
+標準SQLでは、埋め込みSQLにおける<code class="command">FETCH</code>のみが定義されています。
+上記で説明した各種の<code class="command">FETCH</code>は、ホスト変数への代入ではなく、<code class="command">SELECT</code>の結果であるかのようにデータを返します。
+この点を除き、<code class="command">FETCH</code>は完全に標準SQLと上位互換性を持ちます。
+  </p><p>
+<!--
+   The <command>FETCH</command> forms involving
+   <literal>FORWARD</literal> and <literal>BACKWARD</literal>, as well
+   as the forms <literal>FETCH <replaceable
+   class="parameter">count</replaceable></literal> and <literal>FETCH
+   ALL</literal>, in which <literal>FORWARD</literal> is implicit, are
+   <productname>PostgreSQL</productname> extensions.
+-->
+<code class="literal">FORWARD</code>と<code class="literal">BACKWARD</code>を持つ<code class="command">FETCH</code>の形式や、暗黙的な<code class="literal">FORWARD</code>を持つ<code class="literal">FETCH <em class="replaceable"><code>count</code></em></code>と<code class="literal">FETCH ALL</code>は<span class="productname">PostgreSQL</span>の拡張です。
+  </p><p>
+<!--
+   The SQL standard allows only <literal>FROM</literal> preceding the cursor
+   name; the option to use <literal>IN</literal>, or to leave them out altogether, is
+   an extension.
+-->
+標準SQLでは、カーソル名の前に付けられるのは<code class="literal">FROM</code>のみです。
+<code class="literal">IN</code>を使用するオプション、または、どちらも省略することは<span class="productname">PostgreSQL</span>の拡張です。
+  </p></div><div class="refsect1" id="id-1.9.3.149.12"><h2>関連項目</h2><!--
+  <title>See Also</title>
+--><span class="simplelist"><a class="xref" href="sql-close.html" title="CLOSE"><span class="refentrytitle">CLOSE</span></a>, <a class="xref" href="sql-declare.html" title="DECLARE"><span class="refentrytitle">DECLARE</span></a>, <a class="xref" href="sql-move.html" title="MOVE"><span class="refentrytitle">MOVE</span></a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-explain.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-grant.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">EXPLAIN </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> GRANT</td></tr></table></div></body></html>

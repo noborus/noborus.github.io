@@ -1,0 +1,534 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>7.8. WITH問い合わせ（共通テーブル式）</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="queries-values.html" title="7.7. VALUESリスト" /><link rel="next" href="datatype.html" title="第8章 データ型" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="queries.html" title="第7章 問い合わせ">第7章 問い合わせ</a></td><td width="20%" align="right"></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="queries-values.html" title="7.7. VALUESリスト">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="queries.html" title="第7章 問い合わせ">上へ</a></td><td width="60%" align="center">7.8. <code class="literal">WITH</code>問い合わせ（共通テーブル式）</td><td width="20%" align="right"> <a accesskey="n" href="datatype.html" title="第8章 データ型">次へ</a></td></tr></table><hr /></div><div class="sect1" id="QUERIES-WITH"><div class="titlepage"><div><div><h2 class="title" style="clear: both">7.8. <code class="literal">WITH</code>問い合わせ（共通テーブル式）</h2></div></div></div><!--
+  <title><literal>WITH</literal> Queries (Common Table Expressions)</title>
+--><a id="id-1.5.6.12.2" class="indexterm"></a><a id="id-1.5.6.12.3" class="indexterm"></a><p>
+<!--
+   <literal>WITH</literal> provides a way to write auxiliary statements for use in a
+   larger query.  These statements, which are often referred to as Common
+   Table Expressions or <acronym>CTE</acronym>s, can be thought of as defining
+   temporary tables that exist just for one query.  Each auxiliary statement
+   in a <literal>WITH</literal> clause can be a <command>SELECT</command>,
+   <command>INSERT</command>, <command>UPDATE</command>, or <command>DELETE</command>; and the
+   <literal>WITH</literal> clause itself is attached to a primary statement that can
+   also be a <command>SELECT</command>, <command>INSERT</command>, <command>UPDATE</command>, or
+   <command>DELETE</command>.
+-->
+<code class="literal">WITH</code>は、より大規模な問い合わせで使用される補助文を記述する方法を提供します。
+これらの文は共通テーブル式(Common Table Expressions)または<acronym class="acronym">CTE</acronym>とよく呼ばれるものであり、１つの問い合わせのために存在する一時テーブルを定義すると考えることができます。
+<code class="literal">WITH</code>句内の補助文はそれぞれ<code class="command">SELECT</code>、<code class="command">INSERT</code>、<code class="command">UPDATE</code>または<code class="command">DELETE</code>を取ることができます。
+そして<code class="literal">WITH</code>句自身は、これも<code class="command">SELECT</code>、<code class="command">INSERT</code>、<code class="command">UPDATE</code>または<code class="command">DELETE</code>を取ることができる主文に付与されます。
+  </p><div class="sect2" id="QUERIES-WITH-SELECT"><div class="titlepage"><div><div><h3 class="title">7.8.1. <code class="literal">WITH</code>内の<code class="command">SELECT</code></h3></div></div></div><!--
+   <title><command>SELECT</command> in <literal>WITH</literal></title>
+--><p>
+<!--
+   The basic value of <command>SELECT</command> in <literal>WITH</literal> is to
+   break down complicated queries into simpler parts.  An example is:
+-->
+<code class="literal">WITH</code>内の<code class="command">SELECT</code>の基本的な価値は、複雑な問い合わせをより単純な部品に分解することです。
+以下に例を示します。
+
+</p><pre class="programlisting">
+WITH regional_sales AS (
+    SELECT region, SUM(amount) AS total_sales
+    FROM orders
+    GROUP BY region
+), top_regions AS (
+    SELECT region
+    FROM regional_sales
+    WHERE total_sales &gt; (SELECT SUM(total_sales)/10 FROM regional_sales)
+)
+SELECT region,
+       product,
+       SUM(quantity) AS product_units,
+       SUM(amount) AS product_sales
+FROM orders
+WHERE region IN (SELECT region FROM top_regions)
+GROUP BY region, product;
+</pre><p>
+
+<!--
+   which displays per-product sales totals in only the top sales regions.
+   The <literal>WITH</literal> clause defines two auxiliary statements named
+   <structname>regional_sales</structname> and <structname>top_regions</structname>,
+   where the output of <structname>regional_sales</structname> is used in
+   <structname>top_regions</structname> and the output of <structname>top_regions</structname>
+   is used in the primary <command>SELECT</command> query.
+   This example could have been written without <literal>WITH</literal>,
+   but we'd have needed two levels of nested sub-<command>SELECT</command>s.  It's a bit
+   easier to follow this way.
+-->
+これは販売トップの地域（region）のみから製品ごとの売上高を表示します。
+<code class="literal">WITH</code>句は、<code class="structname">regional_sales</code>、<code class="structname">top_regions</code>という名前の２つの補助文を定義します。
+ここで、<code class="structname">regional_sales</code>の出力は<code class="structname">top_regions</code>内で使用され、<code class="structname">top_regions</code>は<code class="command">SELECT</code>主問い合わせで使用されます。
+この例は <code class="literal">WITH</code>なしでも記述できますが、二階層の入れ子の副<code class="command">SELECT</code>を必要とします。この方法に従うほうが多少扱いやすいです。
+  </p><p>
+   <a id="id-1.5.6.12.5.3.1" class="indexterm"></a>
+<!--
+   The optional <literal>RECURSIVE</literal> modifier changes <literal>WITH</literal>
+   from a mere syntactic convenience into a feature that accomplishes
+   things not otherwise possible in standard SQL.  Using
+   <literal>RECURSIVE</literal>, a <literal>WITH</literal> query can refer to its own
+   output.  A very simple example is this query to sum the integers from 1
+   through 100:
+-->
+オプションの<code class="literal">RECURSIVE</code>修飾子は、<code class="literal">WITH</code>を、単に構文上の利便性の高めるだけでなく標準的なSQLでは不可能な機能を実現させます。
+<code class="literal">RECURSIVE</code>を使用すれば、<code class="literal">WITH</code>問い合わせが行った自己の結果を参照できるようになります。1から100までの数を合計する非常に単純な問い合わせは以下のようなものです。
+
+</p><pre class="programlisting">
+WITH RECURSIVE t(n) AS (
+    VALUES (1)
+  UNION ALL
+    SELECT n+1 FROM t WHERE n &lt; 100
+)
+SELECT sum(n) FROM t;
+</pre><p>
+
+<!--
+   The general form of a recursive <literal>WITH</literal> query is always a
+   <firstterm>non-recursive term</firstterm>, then <literal>UNION</literal> (or
+   <literal>UNION ALL</literal>), then a
+   <firstterm>recursive term</firstterm>, where only the recursive term can contain
+   a reference to the query's own output.  Such a query is executed as
+   follows:
+-->
+再帰的<code class="literal">WITH</code>問い合わせの汎用形式は常に、<em class="firstterm">非再帰的表現（non-recursiveterm）</em>、そして<code class="literal">UNION</code>（または<code class="literal">UNION ALL</code>）、そして<em class="firstterm">再帰的表現（recursive term）</em>です。
+再帰的表現だけが、その問い合わせ自身の出力への参照を含むことができます。
+このような問い合わせは以下のように実行されます。
+  </p><div class="procedure" id="id-1.5.6.12.5.4"><p class="title"><strong>再帰的問い合わせの評価</strong></p><!--
+   <title>Recursive Query Evaluation</title>
+--><ol class="procedure" type="1"><li class="step"><p>
+<!--
+     Evaluate the non-recursive term.  For <literal>UNION</literal> (but not
+     <literal>UNION ALL</literal>), discard duplicate rows.  Include all remaining
+     rows in the result of the recursive query, and also place them in a
+     temporary <firstterm>working table</firstterm>.
+-->
+非再帰的表現を評価します。
+<code class="literal">UNION</code>（ただし<code class="literal">UNION ALL</code>は除きます）では、重複行を廃棄します。
+その再帰的問い合わせの結果の残っているすべての行を盛り込み、同時にそれらを一時<em class="firstterm">作業テーブル</em>に置きます。
+    </p></li><li class="step"><p>
+<!--
+     So long as the working table is not empty, repeat these steps:
+-->
+作業テーブルが空でないのであれば以下の手順を繰り返します。
+    </p><ol type="a" class="substeps"><li class="step"><p>
+<!--
+       Evaluate the recursive term, substituting the current contents of
+       the working table for the recursive self-reference.
+       For <literal>UNION</literal> (but not <literal>UNION ALL</literal>), discard
+       duplicate rows and rows that duplicate any previous result row.
+       Include all remaining rows in the result of the recursive query, and
+       also place them in a temporary <firstterm>intermediate table</firstterm>.
+-->
+再帰自己参照を作業テーブルの実行中の内容で置換し、再帰的表現を評価します。
+<code class="literal">UNION</code>（ただし<code class="literal">UNION ALL</code>は除きます）に対し、重複行と前の結果行と重複する行を破棄します。
+その再帰的問い合わせの結果の残っているすべての行を盛り込み、同時にそれらを一時<em class="firstterm">中間テーブル</em>に置きます。
+      </p></li><li class="step"><p>
+<!--
+       Replace the contents of the working table with the contents of the
+       intermediate table, then empty the intermediate table.
+-->
+中間テーブルの内容で作業テーブルの内容を差し替え、中間テーブルを空にします。
+      </p></li></ol></li></ol></div><div class="note"><h3 class="title">注記</h3><p>
+<!--
+    Strictly speaking, this process is iteration not recursion, but
+    <literal>RECURSIVE</literal> is the terminology chosen by the SQL standards
+    committee.
+-->
+厳密には、この手順は反復(iteration)であって再帰(recursion)ではありませんが、<code class="literal">RECURSIVE</code>はSQL標準化委員会で選ばれた用語です。
+   </p></div><p>
+<!--
+   In the example above, the working table has just a single row in each step,
+   and it takes on the values from 1 through 100 in successive steps.  In
+   the 100th step, there is no output because of the <literal>WHERE</literal>
+   clause, and so the query terminates.
+-->
+上記の例で、作業テーブルはそれぞれの手順での単なる単一行で、引き続く作業で1から100までの値を獲得します。
+100番目の作業で、<code class="literal">WHERE</code>句による出力が無くなり、問い合わせが終了します。
+  </p><p>
+<!--
+   Recursive queries are typically used to deal with hierarchical or
+   tree-structured data.  A useful example is this query to find all the
+   direct and indirect sub-parts of a product, given only a table that
+   shows immediate inclusions:
+-->
+再帰的問い合わせは階層的、またはツリー構造データに対処するため一般的に使用されます。
+実用的な例は、直接使用する部品を表すテーブル１つのみが与えられ、そこから製品すべての直接・間接部品を見つける次の問い合わせです。
+
+</p><pre class="programlisting">
+WITH RECURSIVE included_parts(sub_part, part, quantity) AS (
+    SELECT sub_part, part, quantity FROM parts WHERE part = 'our_product'
+  UNION ALL
+    SELECT p.sub_part, p.part, p.quantity
+    FROM included_parts pr, parts p
+    WHERE p.part = pr.sub_part
+)
+SELECT sub_part, SUM(quantity) as total_quantity
+FROM included_parts
+GROUP BY sub_part
+</pre><p>
+  </p><p>
+<!--
+   When working with recursive queries it is important to be sure that
+   the recursive part of the query will eventually return no tuples,
+   or else the query will loop indefinitely.  Sometimes, using
+   <literal>UNION</literal> instead of <literal>UNION ALL</literal> can accomplish this
+   by discarding rows that duplicate previous output rows.  However, often a
+   cycle does not involve output rows that are completely duplicate: it may be
+   necessary to check just one or a few fields to see if the same point has
+   been reached before.  The standard method for handling such situations is
+   to compute an array of the already-visited values.  For example, consider
+   the following query that searches a table <structname>graph</structname> using a
+   <structfield>link</structfield> field:
+-->
+再帰的問い合わせを扱う場合、問い合わせの再帰部分が最終的にはタプルを返さないようにすることが重要です。
+そうしなければ、問い合わせが永久にループしてしまうからです。
+<code class="literal">UNION ALL</code>の替わりに<code class="literal">UNION</code>を使用することで、重複する前回の出力行が廃棄され、これを実現できることもあるでしょう。
+しかし、各周期が完全に重複している行を含まないこともよくあり、そのような場合は、1つまたは少数のフィールドを検査して、同じ場所に既に到達したかどうかを調べる必要があるかもしれません。
+このような状態を取り扱う標準手法は、既に巡回された値の配列を計算することです。
+例えば、<code class="structfield">link</code>フィールドを使ってテーブル<code class="structname">graph</code>を検索する以下の問い合わせを考えて見ます。
+
+</p><pre class="programlisting">
+WITH RECURSIVE search_graph(id, link, data, depth) AS (
+    SELECT g.id, g.link, g.data, 1
+    FROM graph g
+  UNION ALL
+    SELECT g.id, g.link, g.data, sg.depth + 1
+    FROM graph g, search_graph sg
+    WHERE g.id = sg.link
+)
+SELECT * FROM search_graph;
+</pre><p>
+
+<!--
+   This query will loop if the <structfield>link</structfield> relationships contain
+   cycles.  Because we require a <quote>depth</quote> output, just changing
+   <literal>UNION ALL</literal> to <literal>UNION</literal> would not eliminate the looping.
+   Instead we need to recognize whether we have reached the same row again
+   while following a particular path of links.  We add two columns
+   <structfield>path</structfield> and <structfield>cycle</structfield> to the loop-prone query:
+-->
+この問い合わせは<code class="structfield">link</code>関係が循環を含んでいればループします。
+<span class="quote">「<span class="quote">depth</span>」</span>出力を要求しているので、<code class="literal">UNION ALL</code>を<code class="literal">UNION</code>に変えるだけでは、ループを取り除くことができません。
+その代わり、linkの特定の経路をたどっている間に、同じ行に到達したかどうかを認識する必要があります。
+このループしやすい問い合わせに、<code class="structfield">path</code>と<code class="structfield">cycle</code>の２列を加えます。
+
+</p><pre class="programlisting">
+WITH RECURSIVE search_graph(id, link, data, depth, path, cycle) AS (
+    SELECT g.id, g.link, g.data, 1,
+      ARRAY[g.id],
+      false
+    FROM graph g
+  UNION ALL
+    SELECT g.id, g.link, g.data, sg.depth + 1,
+      path || g.id,
+      g.id = ANY(path)
+    FROM graph g, search_graph sg
+    WHERE g.id = sg.link AND NOT cycle
+)
+SELECT * FROM search_graph;
+</pre><p>
+
+<!--
+   Aside from preventing cycles, the array value is often useful in its own
+   right as representing the <quote>path</quote> taken to reach any particular row.
+-->
+巡回防止の他に、特定行に到達する際に選ばれた<span class="quote">「<span class="quote">path</span>」</span> それ自体を表示するため、配列値はしばしば利用価値があります。
+  </p><p>
+<!--
+   In the general case where more than one field needs to be checked to
+   recognize a cycle, use an array of rows.  For example, if we needed to
+   compare fields <structfield>f1</structfield> and <structfield>f2</structfield>:
+-->
+循環を認識するために検査するために必要なフィールドが複数存在する一般的な状況では、行の配列を使用します。
+例えば、フィールド<code class="structfield">f1</code>と<code class="structfield">f2</code>を比較する必要があるときは次のようにします。
+
+</p><pre class="programlisting">
+WITH RECURSIVE search_graph(id, link, data, depth, path, cycle) AS (
+    SELECT g.id, g.link, g.data, 1,
+      ARRAY[ROW(g.f1, g.f2)],
+      false
+    FROM graph g
+  UNION ALL
+    SELECT g.id, g.link, g.data, sg.depth + 1,
+      path || ROW(g.f1, g.f2),
+      ROW(g.f1, g.f2) = ANY(path)
+    FROM graph g, search_graph sg
+    WHERE g.id = sg.link AND NOT cycle
+)
+SELECT * FROM search_graph;
+</pre><p>
+  </p><div class="tip"><h3 class="title">ヒント</h3><p>
+<!--
+    Omit the <literal>ROW()</literal> syntax in the common case where only one field
+    needs to be checked to recognize a cycle.  This allows a simple array
+    rather than a composite-type array to be used, gaining efficiency.
+-->
+循環を認識するために検査するために必要なフィールドが１つだけである一般的な場合では、<code class="literal">ROW()</code>構文を削除します。
+これで、複合型配列ではなく単純配列で済むので、効率も上がります。
+   </p></div><div class="tip"><h3 class="title">ヒント</h3><p>
+<!--
+    The recursive query evaluation algorithm produces its output in
+    breadth-first search order.  You can display the results in depth-first
+    search order by making the outer query <literal>ORDER BY</literal> a
+    <quote>path</quote> column constructed in this way.
+-->
+再帰的問い合わせ評価アルゴリズムは、幅優先探索順でその出力を作成します。
+このようにして作られた<span class="quote">「<span class="quote">path</span>」</span>列を外側問い合わせで<code class="literal">ORDER BY</code>すれば、深さ優先探索順の結果の表示が可能です。
+   </p></div><p>
+<!--
+   A helpful trick for testing queries
+   when you are not certain if they might loop is to place a <literal>LIMIT</literal>
+   in the parent query.  For example, this query would loop forever without
+   the <literal>LIMIT</literal>:
+-->
+ループするかどうか確信が持てない問い合わせをテストする有益な秘訣として、親問い合わせに<code class="literal">LIMIT</code>を配置します。
+例えば、以下の問い合わせは<code class="literal">LIMIT</code>がないと永久にループします。
+
+</p><pre class="programlisting">
+WITH RECURSIVE t(n) AS (
+    SELECT 1
+  UNION ALL
+    SELECT n+1 FROM t
+)
+SELECT n FROM t LIMIT 100;
+</pre><p>
+
+<!--
+   This works because <productname>PostgreSQL</productname>'s implementation
+   evaluates only as many rows of a <literal>WITH</literal> query as are actually
+   fetched by the parent query.  Using this trick in production is not
+   recommended, because other systems might work differently.  Also, it
+   usually won't work if you make the outer query sort the recursive query's
+   results or join them to some other table, because in such cases the
+   outer query will usually try to fetch all of the <literal>WITH</literal> query's
+   output anyway.
+-->
+これが動作するのは、<span class="productname">PostgreSQL</span>の実装が、実際に親問い合わせで取り出されるのと同じ数の<code class="literal">WITH</code>問い合わせの行のみを評価するからです。
+この秘訣を実稼動環境で使用することは勧められません。
+他のシステムでは異なった動作をする可能性があるからです。
+同時に、もし外部問い合わせを再帰的問い合わせの結果を並べ替えたり、またはそれらを他のテーブルと結合するような書き方をした場合、動作しません。
+このような場合、外部問い合わせは通常、<code class="literal">WITH</code>問い合わせの出力をとにかくすべて取り込もうとするからです。
+  </p><p>
+<!--
+   A useful property of <literal>WITH</literal> queries is that they are evaluated
+   only once per execution of the parent query, even if they are referred to
+   more than once by the parent query or sibling <literal>WITH</literal> queries.
+   Thus, expensive calculations that are needed in multiple places can be
+   placed within a <literal>WITH</literal> query to avoid redundant work.  Another
+   possible application is to prevent unwanted multiple evaluations of
+   functions with side-effects.
+   However, the other side of this coin is that the optimizer is less able to
+   push restrictions from the parent query down into a <literal>WITH</literal> query
+   than an ordinary subquery.  The <literal>WITH</literal> query will generally be
+   evaluated as written, without suppression of rows that the parent query
+   might discard afterwards.  (But, as mentioned above, evaluation might stop
+   early if the reference(s) to the query demand only a limited number of
+   rows.)
+-->
+有用な<code class="literal">WITH</code>問い合わせの特性は、親問い合わせ、もしくは兄弟<code class="literal">WITH</code>問い合わせによりたとえ１回以上参照されるとしても、親問い合わせ実行でたった１回だけ評価されることです。
+したがって、複数の場所で必要な高価な計算は、冗長作業を防止するため<code class="literal">WITH</code>問い合わせの中に配置することができます。
+他にありうる適用としては、望まれない副作用のある関数の多重評価を避けることです。
+しかし、反対の見方をすれば、親問い合わせからの制約を<code class="literal">WITH</code>問い合わせに押し下げることについて、オプティマイザの能力は通常の副問い合わせに対するものより劣ります。
+<code class="literal">WITH</code>問い合わせは一般的に、親問い合わせが後で破棄するであろう行を抑制せずに、書かれた通りに評価されます。
+（しかし、上で述べたように、問い合わせの参照が限定された数の行のみを要求する場合、評価は早期に停止します。）
+  </p><p>
+<!--
+   The examples above only show <literal>WITH</literal> being used with
+   <command>SELECT</command>, but it can be attached in the same way to
+   <command>INSERT</command>, <command>UPDATE</command>, or <command>DELETE</command>.
+   In each case it effectively provides temporary table(s) that can
+   be referred to in the main command.
+-->
+上の例では<code class="command">SELECT</code>を使用する<code class="literal">WITH</code>のみを示しています。
+しかし、同じ方法で<code class="command">INSERT</code>、<code class="command">UPDATE</code>、または<code class="command">DELETE</code>に対して付与することができます。
+それぞれの場合において、これは主コマンド内で参照可能な一時テーブルを実質的に提供します。
+  </p></div><div class="sect2" id="QUERIES-WITH-MODIFYING"><div class="titlepage"><div><div><h3 class="title">7.8.2. <code class="literal">WITH</code>内のデータ変更文</h3></div></div></div><!--
+   <title>Data-Modifying Statements in <literal>WITH</literal></title>
+--><p>
+<!--
+    You can use data-modifying statements (<command>INSERT</command>,
+    <command>UPDATE</command>, or <command>DELETE</command>) in <literal>WITH</literal>.  This
+    allows you to perform several different operations in the same query.
+    An example is:
+-->
+<code class="literal">WITH</code>内でデータ変更文（<code class="command">INSERT</code>、<code class="command">UPDATE</code>、<code class="command">DELETE</code>）を使用することができます。
+これにより同じ問い合わせ内で複数の異なる操作を行うことができます。
+
+</p><pre class="programlisting">
+WITH moved_rows AS (
+    DELETE FROM products
+    WHERE
+        "date" &gt;= '2010-10-01' AND
+        "date" &lt; '2010-11-01'
+    RETURNING *
+)
+INSERT INTO products_log
+SELECT * FROM moved_rows;
+</pre><p>
+
+<!--
+    This query effectively moves rows from <structname>products</structname> to
+    <structname>products_log</structname>.  The <command>DELETE</command> in <literal>WITH</literal>
+    deletes the specified rows from <structname>products</structname>, returning their
+    contents by means of its <literal>RETURNING</literal> clause; and then the
+    primary query reads that output and inserts it into
+    <structname>products_log</structname>.
+-->
+この問い合わせは実質、<code class="structname">products</code>から<code class="structname">products_log</code>に行を移動します。
+<code class="literal">WITH</code>内の<code class="command">DELETE</code>は<code class="structname">products</code>から指定した行を削除し、その<code class="literal">RETURNING</code>句により削除した内容を返します。
+その後、主問い合わせはその出力を読み取り、それを<code class="structname">products_log</code>に挿入します。
+   </p><p>
+<!--
+    A fine point of the above example is that the <literal>WITH</literal> clause is
+    attached to the <command>INSERT</command>, not the sub-<command>SELECT</command> within
+    the <command>INSERT</command>.  This is necessary because data-modifying
+    statements are only allowed in <literal>WITH</literal> clauses that are attached
+    to the top-level statement.  However, normal <literal>WITH</literal> visibility
+    rules apply, so it is possible to refer to the <literal>WITH</literal>
+    statement's output from the sub-<command>SELECT</command>.
+-->
+上の例の見事なところは、<code class="literal">WITH</code>句が<code class="command">INSERT</code>内の副<code class="command">SELECT</code>ではなく、<code class="command">INSERT</code>に付与されていることです。
+これは、データ更新文は最上位レベルの文に付与される<code class="literal">WITH</code>句内でのみ許されているため必要です。
+しかし、通常の<code class="literal">WITH</code>の可視性規則が適用されますので、副<code class="command">SELECT</code>から<code class="literal">WITH</code>文の出力を参照することができます。
+   </p><p>
+<!--
+    Data-modifying statements in <literal>WITH</literal> usually have
+    <literal>RETURNING</literal> clauses (see <xref linkend="dml-returning"/>),
+    as shown in the example above.
+    It is the output of the <literal>RETURNING</literal> clause, <emphasis>not</emphasis> the
+    target table of the data-modifying statement, that forms the temporary
+    table that can be referred to by the rest of the query.  If a
+    data-modifying statement in <literal>WITH</literal> lacks a <literal>RETURNING</literal>
+    clause, then it forms no temporary table and cannot be referred to in
+    the rest of the query.  Such a statement will be executed nonetheless.
+    A not-particularly-useful example is:
+-->
+上の例で示したように、<code class="literal">WITH</code>内のデータ変更文は通常<code class="literal">RETURNING</code>句（<a class="xref" href="dml-returning.html" title="6.4. 更新された行のデータを返す">6.4</a>を参照）を持ちます。
+問い合わせの残りの部分で参照することができる一時テーブルを形成するのは、<code class="literal">RETURNING</code>句の出力の出力であって、データ変更文の対象テーブルでは<span class="emphasis"><em>ありません</em></span>。
+<code class="literal">WITH</code>内のデータ変更文が<code class="literal">RETURNING</code>句を持たない場合、一時テーブルを形成しませんので、問い合わせの残りの部分で参照することができません。
+これにもかかわらずこうした文は実行されます。
+特別有用でもない例を以下に示します。
+
+</p><pre class="programlisting">
+WITH t AS (
+    DELETE FROM foo
+)
+DELETE FROM bar;
+</pre><p>
+
+<!--
+    This example would remove all rows from tables <structname>foo</structname> and
+    <structname>bar</structname>.  The number of affected rows reported to the client
+    would only include rows removed from <structname>bar</structname>.
+-->
+この例は<code class="structname">foo</code>テーブルと<code class="structname">bar</code>テーブルからすべての行を削除します。
+クライアントに報告される影響を受けた行数には<code class="structname">bar</code>から削除された行のみが含まれます。
+   </p><p>
+<!--
+    Recursive self-references in data-modifying statements are not
+    allowed.  In some cases it is possible to work around this limitation by
+    referring to the output of a recursive <literal>WITH</literal>, for example:
+-->
+データ変更文内の再帰的な自己参照は許されません。
+一部の場合において、再帰的な<code class="literal">WITH</code>の出力を参照することで、この制限を回避することができます。
+以下に例を示します。
+
+</p><pre class="programlisting">
+WITH RECURSIVE included_parts(sub_part, part) AS (
+    SELECT sub_part, part FROM parts WHERE part = 'our_product'
+  UNION ALL
+    SELECT p.sub_part, p.part
+    FROM included_parts pr, parts p
+    WHERE p.part = pr.sub_part
+)
+DELETE FROM parts
+  WHERE part IN (SELECT part FROM included_parts);
+</pre><p>
+
+<!--
+    This query would remove all direct and indirect subparts of a product.
+-->
+この問い合わせはある製品の直接的な部品と間接的な部品をすべて削除します。
+   </p><p>
+<!--
+    Data-modifying statements in <literal>WITH</literal> are executed exactly once,
+    and always to completion, independently of whether the primary query
+    reads all (or indeed any) of their output.  Notice that this is different
+    from the rule for <command>SELECT</command> in <literal>WITH</literal>: as stated in the
+    previous section, execution of a <command>SELECT</command> is carried only as far
+    as the primary query demands its output.
+-->
+<code class="literal">WITH</code>内のデータ変更文は正確に１回のみ実行され、主問い合わせがその出力をすべて（実際にはいずれか）を呼び出したかどうかに関係なく、常に完了します。
+これが、前節で説明した主問い合わせがその出力を要求した時のみに<code class="command">SELECT</code>の実行が行われるという<code class="literal">WITH</code>内の<code class="command">SELECT</code>についての規則と異なることに注意してください。
+   </p><p>
+<!--
+    The sub-statements in <literal>WITH</literal> are executed concurrently with
+    each other and with the main query.  Therefore, when using data-modifying
+    statements in <literal>WITH</literal>, the order in which the specified updates
+    actually happen is unpredictable.  All the statements are executed with
+    the same <firstterm>snapshot</firstterm> (see <xref linkend="mvcc"/>), so they
+    cannot <quote>see</quote> one another's effects on the target tables.  This
+    alleviates the effects of the unpredictability of the actual order of row
+    updates, and means that <literal>RETURNING</literal> data is the only way to
+    communicate changes between different <literal>WITH</literal> sub-statements and
+    the main query.  An example of this is that in
+-->
+<code class="literal">WITH</code>内の副文はそれぞれと主問い合わせで同時に実行されます。
+したがって<code class="literal">WITH</code>内のデータ変更文を使用する時、指定したデータ変更文が実際に実行される順序は予測できません。
+すべての文は同じ<em class="firstterm">スナップショット</em>（<a class="xref" href="mvcc.html" title="第13章 同時実行制御">第13章</a>参照）を用いて実行されます。
+このため互いが対象テーブルに行った影響を<span class="quote">「<span class="quote">見る</span>」</span>ことはできません。これは、行の更新に関する実際の順序が予測できないという影響を軽減し、<code class="literal">RETURNING</code>データが別の<code class="literal">WITH</code>副文と主問い合わせとの間で変更を伝える唯一の手段であることを意味します。
+この例を以下に示します。
+
+</p><pre class="programlisting">
+WITH t AS (
+    UPDATE products SET price = price * 1.05
+    RETURNING *
+)
+SELECT * FROM products;
+</pre><p>
+
+<!--
+    the outer <command>SELECT</command> would return the original prices before the
+    action of the <command>UPDATE</command>, while in
+-->
+外側の<code class="command">SELECT</code>は<code class="command">UPDATE</code>の動作前の元々の価格を返します。
+
+</p><pre class="programlisting">
+WITH t AS (
+    UPDATE products SET price = price * 1.05
+    RETURNING *
+)
+SELECT * FROM t;
+</pre><p>
+
+<!--
+    the outer <command>SELECT</command> would return the updated data.
+-->
+一方こちらでは外側の<code class="command">SELECT</code>は更新されたデータを返します。
+   </p><p>
+<!--
+    Trying to update the same row twice in a single statement is not
+    supported.  Only one of the modifications takes place, but it is not easy
+    (and sometimes not possible) to reliably predict which one.  This also
+    applies to deleting a row that was already updated in the same statement:
+    only the update is performed.  Therefore you should generally avoid trying
+    to modify a single row twice in a single statement.  In particular avoid
+    writing <literal>WITH</literal> sub-statements that could affect the same rows
+    changed by the main statement or a sibling sub-statement.  The effects
+    of such a statement will not be predictable.
+-->
+単一の文で同じ行を２回更新しようとすることはサポートされていません。
+変更のうちの１つだけが行われますが、どれが実行されるかを確実に予測することは簡単ではありません（場合によっては不可能です）。
+これはまた、同じ文内ですでに更新された行を削除する場合でも当てはまり、更新のみが実行されます。
+したがって一般的には単一の文で１つの行を２回変更しようと試みることを避けなければなりません。
+具体的には主文または同レベルの副文で変更される行と同じ行に影響を与える<code class="literal">WITH</code>副文を記述することは避けてください。
+こうした文の影響は予測することはできません。
+   </p><p>
+<!--
+    At present, any table used as the target of a data-modifying statement in
+    <literal>WITH</literal> must not have a conditional rule, nor an <literal>ALSO</literal>
+    rule, nor an <literal>INSTEAD</literal> rule that expands to multiple statements.
+-->
+現状、<code class="literal">WITH</code>内のデータ変更文の対象として使用されるテーブルはすべて、複数の文に展開される条件付きルール、<code class="literal">ALSO</code>ルール、<code class="literal">INSTEAD</code>ルールを持ってはなりません。
+   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="queries-values.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="queries.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="datatype.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">7.7. <code class="literal">VALUES</code>リスト </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 第8章 データ型</td></tr></table></div></body></html>

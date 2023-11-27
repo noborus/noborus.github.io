@@ -1,0 +1,1155 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>F.38. postgres_fdw</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="pgwalinspect.html" title="F.37. pg_walinspect" /><link rel="next" href="seg.html" title="F.39. seg" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="contrib.html" title="付録F 追加で提供されるモジュール">付録F 追加で提供されるモジュール</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : postgres-fdw.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="pgwalinspect.html" title="F.37. pg_walinspect">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュール">上へ</a></td><td width="60%" align="center">F.38. postgres_fdw</td><td width="20%" align="right"> <a accesskey="n" href="seg.html" title="F.39. seg">次へ</a></td></tr></table><hr /></div><div class="sect1" id="POSTGRES-FDW"><div class="titlepage"><div><div><h2 class="title" style="clear: both">F.38. postgres_fdw</h2></div></div></div><a id="id-1.11.7.47.2" class="indexterm"></a><p>
+<span class="original">
+  The &lt;filename&gt;postgres_fdw&lt;/filename&gt; module provides the foreign-data wrapper
+  &lt;literal&gt;postgres_fdw&lt;/literal&gt;, which can be used to access data
+  stored in external &lt;productname&gt;PostgreSQL&lt;/productname&gt; servers.
+</span>
+<code class="filename">postgres_fdw</code>モジュールは、外部の<span class="productname">PostgreSQL</span>サーバに格納されたデータをアクセスするために使用する、<code class="literal">postgres_fdw</code>外部データラッパを提供します。
+ </p><p>
+<span class="original">
+  The functionality provided by this module overlaps substantially
+  with the functionality of the older &lt;xref linkend="dblink"/&gt; module.
+  But &lt;filename&gt;postgres_fdw&lt;/filename&gt; provides more transparent and
+  standards-compliant syntax for accessing remote tables, and can give
+  better performance in many cases.
+</span>
+実質上、本モジュールの提供する機能は以前の<a class="xref" href="dblink.html" title="F.12. dblink">dblink</a>モジュールが提供する機能と重複していますが、<code class="filename">postgres_fdw</code>はリモートのテーブルにアクセスするためにより透過的で標準に準拠した構文を利用できるほか、多くの場合においてより良い性能を得る事ができます。
+ </p><p>
+<span class="original">
+  To prepare for remote access using &lt;filename&gt;postgres_fdw&lt;/filename&gt;:
+</span>
+<code class="filename">postgres_fdw</code>を使用したリモートアクセスを準備するには:
+  </p><div class="orderedlist"><ol class="orderedlist compact" type="1"><li class="listitem"><p>
+<span class="original">
+     Install the  &lt;filename&gt;postgres_fdw&lt;/filename&gt; extension using &lt;xref
+     linkend="sql-createextension"/&gt;.
+</span>
+<a class="xref" href="sql-createextension.html" title="CREATE EXTENSION"><span class="refentrytitle">CREATE EXTENSION</span></a>を使用して<code class="filename">postgres_fdw</code>拡張をインストールします。
+    </p></li><li class="listitem"><p>
+<span class="original">
+     Create a foreign server object, using &lt;xref linkend="sql-createserver"/&gt;,
+     to represent each remote database you want to connect to.
+     Specify connection information, except &lt;literal&gt;user&lt;/literal&gt; and
+     &lt;literal&gt;password&lt;/literal&gt;, as options of the server object.
+</span>
+<a class="xref" href="sql-createserver.html" title="CREATE SERVER"><span class="refentrytitle">CREATE SERVER</span></a>を使用して、接続しようとする各リモートデータベースを定義する外部サーバオブジェクトを作成します。
+<code class="literal">user</code>および<code class="literal">password</code>を除く接続パラメータを、外部サーバオブジェクトのオプションとして指定します。
+    </p></li><li class="listitem"><p>
+<span class="original">
+     Create a user mapping, using &lt;xref linkend="sql-createusermapping"/&gt;, for
+     each database user you want to allow to access each foreign server.
+     Specify the remote user name and password to use as
+     &lt;literal&gt;user&lt;/literal&gt; and &lt;literal&gt;password&lt;/literal&gt; options of the
+     user mapping.
+</span>
+<a class="xref" href="sql-createusermapping.html" title="CREATE USER MAPPING"><span class="refentrytitle">CREATE USER MAPPING</span></a>を使用して、外部サーバへのアクセスを許可するデータベースユーザごとにユーザマッピングを作成します。
+ユーザマッピングの<code class="literal">user</code>および<code class="literal">password</code>オプションを使用してリモートユーザのためのユーザ名とパスワードを指定します。
+    </p></li><li class="listitem"><p>
+<span class="original">
+     Create a foreign table, using &lt;xref linkend="sql-createforeigntable"/&gt;
+     or &lt;xref linkend="sql-importforeignschema"/&gt;,
+     for each remote table you want to access.  The columns of the foreign
+     table must match the referenced remote table.  You can, however, use
+     table and/or column names different from the remote table's, if you
+     specify the correct remote names as options of the foreign table object.
+</span>
+<a class="xref" href="sql-createforeigntable.html" title="CREATE FOREIGN TABLE"><span class="refentrytitle">CREATE FOREIGN TABLE</span></a>もしくは<a class="xref" href="sql-importforeignschema.html" title="IMPORT FOREIGN SCHEMA"><span class="refentrytitle">IMPORT FOREIGN SCHEMA</span></a>を使用して、アクセスしたいリモートテーブルごとに外部テーブルを作成します。
+外部テーブルのカラム定義は被参照側のリモートテーブルに一致していなければなりません。
+しかしながら、外部テーブルのオプションとして正しいリモートの名前を外部テーブルのオプションに指定すれば、テーブルおよびカラム名はリモートのものと異なった名前を付ける事ができます。
+    </p></li></ol></div><p>
+ </p><p>
+<span class="original">
+  Now you need only &lt;command&gt;SELECT&lt;/command&gt; from a foreign table to access
+  the data stored in its underlying remote table.  You can also modify
+  the remote table using &lt;command&gt;INSERT&lt;/command&gt;, &lt;command&gt;UPDATE&lt;/command&gt;,
+  &lt;command&gt;DELETE&lt;/command&gt;, &lt;command&gt;COPY&lt;/command&gt;, or
+  &lt;command&gt;TRUNCATE&lt;/command&gt;.
+  (Of course, the remote user you have specified in your user mapping must
+  have privileges to do these things.)
+</span>
+今のところ、リモートテーブルに格納されているデータにアクセスするには少なくとも外部テーブルに対する<code class="command">SELECT</code>権限が必要です。
+また、<code class="command">INSERT</code>や<code class="command">UPDATE</code>、<code class="command">DELETE</code>、<code class="command">COPY</code>、<code class="command">TRUNCATE</code>を使用してリモートテーブルを操作する事もできます。
+（もちろん、ユーザマッピングで指定されたリモートユーザは、これらの操作を実行する権限を有している必要があります）
+ </p><p>
+<span class="original">
+  Note that the &lt;literal&gt;ONLY&lt;/literal&gt; option specified in
+  &lt;command&gt;SELECT&lt;/command&gt;, &lt;command&gt;UPDATE&lt;/command&gt;,
+  &lt;command&gt;DELETE&lt;/command&gt; or &lt;command&gt;TRUNCATE&lt;/command&gt;
+  has no effect when accessing or modifying the remote table.
+</span>
+リモートテーブルをアクセスあるいは変更する際、<code class="command">SELECT</code>、<code class="command">UPDATE</code>、<code class="command">DELETE</code>、<code class="command">TRUNCATE</code>に対して<code class="literal">ONLY</code>オプションを指定しても効果はありません。
+ </p><p>
+<span class="original">
+  Note that &lt;filename&gt;postgres_fdw&lt;/filename&gt; currently lacks support for
+  &lt;command&gt;INSERT&lt;/command&gt; statements with an &lt;literal&gt;ON CONFLICT DO
+  UPDATE&lt;/literal&gt; clause.  However, the &lt;literal&gt;ON CONFLICT DO NOTHING&lt;/literal&gt;
+  clause is supported, provided a unique index inference specification
+  is omitted.
+  Note also that &lt;filename&gt;postgres_fdw&lt;/filename&gt; supports row movement
+  invoked by &lt;command&gt;UPDATE&lt;/command&gt; statements executed on partitioned
+  tables, but it currently does not handle the case where a remote partition
+  chosen to insert a moved row into is also an &lt;command&gt;UPDATE&lt;/command&gt;
+  target partition that will be updated elsewhere in the same command.
+</span>
+<code class="filename">postgres_fdw</code>は今のところ、<code class="literal">ON CONFLICT DO UPDATE</code>句のある<code class="command">INSERT</code>文をサポートしていないことに注意して下さい。
+しかし、一意インデックスの推定の指定を省略しているならば、<code class="literal">ON CONFLICT DO NOTHING</code>句はサポートされます。
+<code class="filename">postgres_fdw</code>は、パーティションテーブルで実行された<code class="command">UPDATE</code>文により引き起こされる行の移動をサポートしますが、移動した行を挿入するよう選択されたリモートパーティションが同じコマンド内で別の場所で更新される<code class="command">UPDATE</code>対象のパーティションでもある場合は、今のところ扱わないことにも注意してください。
+ </p><p>
+<span class="original">
+  It is generally recommended that the columns of a foreign table be declared
+  with exactly the same data types, and collations if applicable, as the
+  referenced columns of the remote table.  Although &lt;filename&gt;postgres_fdw&lt;/filename&gt;
+  is currently rather forgiving about performing data type conversions at
+  need, surprising semantic anomalies may arise when types or collations do
+  not match, due to the remote server interpreting query conditions
+  differently from the local server.
+</span>
+一般的な推奨事項として、可能であれば外部テーブルのカラムを、被参照側のリモートテーブル側のカラムと全く同一のデータ型および照合順序によって定義してください。
+<code class="filename">postgres_fdw</code>は必要に応じてデータ型の変換を行いますが、リモートサーバがローカルサーバとは異なる問い合わせ条件の解釈を行うため、データ型や照合順序が一致していないと、時には予期しない意味論的に異常な結果を得る事があるかもしれません。
+ </p><p>
+<span class="original">
+  Note that a foreign table can be declared with fewer columns, or with a
+  different column order, than its underlying remote table has.  Matching
+  of columns to the remote table is by name, not position.
+</span>
+リモートテーブルより少ないカラム数で、あるいは異なった順序であっても外部テーブルを定義できる事に留意してください。
+リモートテーブル側のカラムとの対応付けは、その位置ではなく、名前によって行われます。
+ </p><div class="sect2" id="id-1.11.7.47.11"><div class="titlepage"><div><div><h3 class="title">F.38.1. postgres_fdwの外部データラッパオプション</h3></div></div></div><span class="original">
+  &lt;title&gt;FDW Options of postgres_fdw&lt;/title&gt;
+</span><div class="sect3" id="id-1.11.7.47.11.2"><div class="titlepage"><div><div><h4 class="title">F.38.1.1. 接続オプション</h4></div></div></div><span class="original">
+   &lt;title&gt;Connection Options&lt;/title&gt;
+</span><p>
+<span class="original">
+    A foreign server using the &lt;filename&gt;postgres_fdw&lt;/filename&gt; foreign data wrapper
+    can have the same options that &lt;application&gt;libpq&lt;/application&gt; accepts in
+    connection strings, as described in &lt;xref linkend="libpq-paramkeywords"/&gt;,
+    except that these options are not allowed or have special handling:
+</span>
+<code class="filename">postgres_fdw</code>外部データラッパを使用する外部サーバは、以下に記す許されていないものや特別な取り扱いのものを除き、<a class="xref" href="libpq-connect.html#LIBPQ-PARAMKEYWORDS" title="34.1.2. パラメータキーワード">34.1.2</a>に記載されている<span class="application">libpq</span>が接続文字列としてサポートするものと同一のオプションを使用する事ができます。
+
+    </p><div class="itemizedlist"><ul class="itemizedlist compact" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+       &lt;literal&gt;user&lt;/literal&gt;, &lt;literal&gt;password&lt;/literal&gt; and &lt;literal&gt;sslpassword&lt;/literal&gt; (specify these
+       in a user mapping, instead, or use a service file)
+</span>
+<code class="literal">user</code>、<code class="literal">password</code>および<code class="literal">sslpassword</code>（これらは代わりにユーザマッピングのオプションの中で指定するか、サービスファイルを使用します）
+      </p></li><li class="listitem"><p>
+<span class="original">
+       &lt;literal&gt;client_encoding&lt;/literal&gt; (this is automatically set from the local
+       server encoding)
+</span>
+<code class="literal">client_encoding</code>（これはローカルサーバのエンコーディングが自動的にセットされます）
+      </p></li><li class="listitem"><p>
+<span class="original">
+       &lt;literal&gt;application_name&lt;/literal&gt; - this may appear in
+       &lt;emphasis&gt;either or both&lt;/emphasis&gt; a connection and
+       &lt;xref linkend="guc-pgfdw-application-name"/&gt;.
+       If both are present, &lt;varname&gt;postgres_fdw.application_name&lt;/varname&gt;
+       overrides the connection setting.
+       Unlike &lt;application&gt;libpq&lt;/application&gt;,
+       &lt;filename&gt;postgres_fdw&lt;/filename&gt; allows
+       &lt;varname&gt;application_name&lt;/varname&gt; to include
+       &lt;quote&gt;escape sequences&lt;/quote&gt;.
+       See &lt;xref linkend="guc-pgfdw-application-name"/&gt; for details.
+</span>
+《機械翻訳》<code class="literal">application_name</code>-これは接続と<a class="xref" href="postgres-fdw.html#GUC-PGFDW-APPLICATION-NAME">postgres_fdw.application_name</a><span class="emphasis"><em>のいずれかまたは両方</em></span>に現れる可能性があります。
+両方が存在する場合、<code class="varname">postgres_fdw.application_name</code>は接続設定を上書きします。
+<span class="application">libpq</span>とは異なり、<code class="filename">postgres_fdw</code>は<code class="varname">application_name</code>に<span class="quote">「<span class="quote">エスケープシーケンス</span>」</span>を含めることを許可します。
+詳細は<a class="xref" href="postgres-fdw.html#GUC-PGFDW-APPLICATION-NAME">postgres_fdw.application_name</a>を参照してください。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       &lt;literal&gt;fallback_application_name&lt;/literal&gt; (always set to
+       &lt;literal&gt;postgres_fdw&lt;/literal&gt;)
+</span>
+<code class="literal">fallback_application_name</code>（自動的に<code class="literal">postgres_fdw</code>とセットされます）
+      </p></li><li class="listitem"><p>
+<span class="original">
+       &lt;literal&gt;sslkey&lt;/literal&gt; and &lt;literal&gt;sslcert&lt;/literal&gt; - these may
+       appear in &lt;emphasis&gt;either or both&lt;/emphasis&gt; a connection and a user
+       mapping. If both are present, the user mapping setting overrides the
+       connection setting.
+</span>
+<code class="literal">sslkey</code>と<code class="literal">sslcert</code> - これは、接続とユーザマッピングの<span class="emphasis"><em>どちらか一方、または両方</em></span>に現れます。
+両方に存在する場合、ユーザマッピングの設定が接続設定に優先します。
+      </p></li></ul></div><p>
+   </p><p>
+<span class="original">
+    Only superusers may create or modify user mappings with the
+    &lt;literal&gt;sslcert&lt;/literal&gt; or &lt;literal&gt;sslkey&lt;/literal&gt; settings.
+</span>
+スーパーユーザのみが<code class="literal">sslcert</code>や<code class="literal">sslkey</code>の設定のあるユーザマッピングを作成したり修正したりできます。
+   </p><p>
+<span class="original">
+    Only superusers may connect to foreign servers without password
+    authentication, so always specify the &lt;literal&gt;password&lt;/literal&gt; option
+    for user mappings belonging to non-superusers.
+</span>
+スーパーユーザのみが外部サーバに対してパスワードなしの認証で接続できます。
+したがって、非特権ユーザのユーザマッピングには<code class="literal">password</code>を必ず指定するようにして下さい。
+   </p><p>
+<span class="original">
+    A superuser may override this check on a per-user-mapping basis by setting
+    the user mapping option &lt;literal&gt;password_required 'false'&lt;/literal&gt;, e.g.,
+</span>
+ユーザマッピングオプション<code class="literal">password_required 'false'</code>を設定することで、スーパーユーザはこのユーザマッピング単位の検査を無効にできます。例えば以下の通りです。
+</p><pre class="programlisting">
+ALTER USER MAPPING FOR some_non_superuser SERVER loopback_nopw
+OPTIONS (ADD password_required 'false');
+</pre><p>
+<span class="original">
+    To prevent unprivileged users from exploiting the authentication rights
+    of the unix user the postgres server is running as to escalate to superuser
+    rights, only the superuser may set this option on a user mapping.
+</span>
+非特権ユーザが、postgresサーバが動作しているunixユーザの認証権限を悪用して、スーパーユーザ権限へ昇格するのを防ぐため、スーパーユーザのみがユーザーマッピングでこのオプションを設定できます。
+    </p><p>
+<span class="original">
+    Care is required to ensure that this does not allow the mapped
+    user the ability to connect as superuser to the mapped database per
+    CVE-2007-3278 and CVE-2007-6601. Don't set
+    &lt;literal&gt;password_required=false&lt;/literal&gt;
+    on the &lt;literal&gt;public&lt;/literal&gt; role. Keep in mind that the mapped
+    user can potentially use any client certificates,
+    &lt;filename&gt;.pgpass&lt;/filename&gt;,
+    &lt;filename&gt;.pg_service.conf&lt;/filename&gt; etc. in the unix home directory of the
+    system user the postgres server runs as. They can also use any trust
+    relationship granted by authentication modes like &lt;literal&gt;peer&lt;/literal&gt;
+    or &lt;literal&gt;ident&lt;/literal&gt; authentication.
+</span>
+《マッチ度[92.834395]》これが、CVE-2007-3278やCVE-2007-6601のように、マップされたユーザがマップされたデータベースにスーパーユーザとして接続するのを許可しないことを確実にするよう注意が必要です。
+<code class="literal">public</code>ロールでは<code class="literal">password_required=false</code>を設定しないでください。
+postgresサーバが動作しているシステムユーザのunixのホームディレクトリにある、任意のクライアント証明書や<code class="filename">.pgpass</code>、<code class="filename">.pg_service.conf</code>などをマップされたユーザは潜在的には利用可能なことを心に留めておいてください。
+<code class="literal">peer</code>や<code class="literal">ident</code>認証のような認証モードで付与された信頼関係を使うこともできます。
+   </p></div><div class="sect3" id="id-1.11.7.47.11.3"><div class="titlepage"><div><div><h4 class="title">F.38.1.2. オブジェクト名オプション</h4></div></div></div><span class="original">
+   &lt;title&gt;Object Name Options&lt;/title&gt;
+</span><p>
+<span class="original">
+    These options can be used to control the names used in SQL statements
+    sent to the remote &lt;productname&gt;PostgreSQL&lt;/productname&gt; server.  These
+    options are needed when a foreign table is created with names different
+    from the underlying remote table's names.
+</span>
+これらのオプションによりリモートの<span class="productname">PostgreSQL</span>サーバに送出されるSQL文で使用される名前を制御する事ができます。
+外部テーブルがリモートテーブルとは異なった名前で定義されている場合、これらのオプションは必須です。
+   </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">schema_name</code> (<code class="type">string</code>)</span></dt><dd><p>
+<span class="original">
+       This option, which can be specified for a foreign table, gives the
+       schema name to use for the foreign table on the remote server.  If this
+       option is omitted, the name of the foreign table's schema is used.
+</span>
+外部テーブルに対して指定できるこのオプションは、リモートサーバ上のリモートテーブルのスキーマ名を与えます。
+省略された場合、外部テーブルのスキーマ名が使用されます。
+      <span class="original"> (訳注: to use for the foreign table on... は remote table の間違い。) </span>
+      </p></dd><dt><span class="term"><code class="literal">table_name</code> (<code class="type">string</code>)</span></dt><dd><p>
+<span class="original">
+       This option, which can be specified for a foreign table, gives the
+       table name to use for the foreign table on the remote server.  If this
+       option is omitted, the foreign table's name is used.
+</span>
+外部テーブルに対して指定できるこのオプションは、リモートサーバ上のリモートテーブル名を与えます。
+省略された場合、外部テーブルのテーブル名が使用されます。
+      </p></dd><dt><span class="term"><code class="literal">column_name</code> (<code class="type">string</code>)</span></dt><dd><p>
+<span class="original">
+       This option, which can be specified for a column of a foreign table,
+       gives the column name to use for the column on the remote server.
+       If this option is omitted, the column's name is used.
+</span>
+外部テーブルのカラムに対して指定できるこのオプションは、リモートサーバ上のカラム名を与えます。
+省略された場合、外部テーブルのカラム名が使用されます。
+      </p></dd></dl></div></div><div class="sect3" id="id-1.11.7.47.11.4"><div class="titlepage"><div><div><h4 class="title">F.38.1.3. コスト推定オプション</h4></div></div></div><span class="original">
+   &lt;title&gt;Cost Estimation Options&lt;/title&gt;
+</span><p>
+<span class="original">
+    &lt;filename&gt;postgres_fdw&lt;/filename&gt; retrieves remote data by executing queries
+    against remote servers, so ideally the estimated cost of scanning a
+    foreign table should be whatever it costs to be done on the remote
+    server, plus some overhead for communication.  The most reliable way to
+    get such an estimate is to ask the remote server and then add something
+    for overhead &amp;mdash; but for simple queries, it may not be worth the cost
+    of an additional remote query to get a cost estimate.
+    So &lt;filename&gt;postgres_fdw&lt;/filename&gt; provides the following options to control
+    how cost estimation is done:
+</span>
+<code class="filename">postgres_fdw</code>はリモートサーバに対するクエリを実行しリモートのデータを受信します。したがって、理想的には外部テーブルをスキャンする推定コストは、それをリモートサーバで実行するコストと通信オーバーヘッドの和となります。
+この推定を行うための最も信頼できる方法は、リモートサーバに問い合わせを行い、その結果にオーバーヘッド分を加算する事ですが、小さいクエリではコスト推定を得るための追加的な問い合わせに要するコストに見合わないかもしれません。
+そこで、どのようにコスト推定を行うかを制御するため、<code class="filename">postgres_fdw</code>は以下のようなオプションを提供します。
+   </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">use_remote_estimate</code> (<code class="type">boolean</code>)</span></dt><dd><p>
+<span class="original">
+       This option, which can be specified for a foreign table or a foreign
+       server, controls whether &lt;filename&gt;postgres_fdw&lt;/filename&gt; issues remote
+       &lt;command&gt;EXPLAIN&lt;/command&gt; commands to obtain cost estimates.
+       A setting for a foreign table overrides any setting for its server,
+       but only for that table.
+       The default is &lt;literal&gt;false&lt;/literal&gt;.
+</span>
+外部テーブルまたは外部サーバに指定できるこのオプションは、コスト推定を得るために<code class="filename">postgres_fdw</code>がリモートの<code class="command">EXPLAIN</code>コマンドを発行するかどうかを制御します。
+外部テーブルに対する設定は、関連付けられた外部サーバに対する設定を上書きしますが、その効果は当該外部テーブルに限定されます。
+デフォルト値は<code class="literal">false</code>です。
+      </p></dd><dt><span class="term"><code class="literal">fdw_startup_cost</code> (<code class="type">floating point</code>)</span></dt><dd><p>
+<span class="original">
+       This option, which can be specified for a foreign server, is a floating
+       point value that is added to the estimated startup cost of any
+       foreign-table scan on that server.  This represents the additional
+       overhead of establishing a connection, parsing and planning the query on
+       the remote side, etc.
+       The default value is &lt;literal&gt;100&lt;/literal&gt;.
+</span>
+外部テーブルまたは外部サーバに指定できるこのオプションは、当該外部サーバに関連付けられた全ての外部テーブルスキャンの推定開始コストに加算される浮動小数点値です。
+これは、接続の確立、リモート側でのクエリのパース・最適化など、追加的なオーバーヘッドを表現します。
+デフォルト値は<code class="literal">100</code>です。
+      </p></dd><dt><span class="term"><code class="literal">fdw_tuple_cost</code> (<code class="type">floating point</code>)</span></dt><dd><p>
+<span class="original">
+       This option, which can be specified for a foreign server, is a floating
+       point value that is used as extra cost per-tuple for foreign-table
+       scans on that server.  This represents the additional overhead of
+       data transfer between servers.  You might increase or decrease this
+       number to reflect higher or lower network delay to the remote server.
+       The default value is &lt;literal&gt;0.01&lt;/literal&gt;.
+</span>
+外部サーバに指定できるこのオプションは、このサーバでの外部テーブルのスキャンにおいて、各タプル毎に発生する追加的なコストとして使用される浮動小数点値です。
+これは、サーバ間のデータ転送における追加的なオーバーヘッドを表現し、リモートサーバへのネットワーク遅延の高低を反映するためにこの数値を増減することができます。
+デフォルト値は<code class="literal">0.01</code>です。
+      </p></dd></dl></div><p>
+<span class="original">
+    When &lt;literal&gt;use_remote_estimate&lt;/literal&gt; is true,
+    &lt;filename&gt;postgres_fdw&lt;/filename&gt; obtains row count and cost estimates from the
+    remote server and then adds &lt;literal&gt;fdw_startup_cost&lt;/literal&gt; and
+    &lt;literal&gt;fdw_tuple_cost&lt;/literal&gt; to the cost estimates.  When
+    &lt;literal&gt;use_remote_estimate&lt;/literal&gt; is false,
+    &lt;filename&gt;postgres_fdw&lt;/filename&gt; performs local row count and cost estimation
+    and then adds &lt;literal&gt;fdw_startup_cost&lt;/literal&gt; and
+    &lt;literal&gt;fdw_tuple_cost&lt;/literal&gt; to the cost estimates.  This local
+    estimation is unlikely to be very accurate unless local copies of the
+    remote table's statistics are available.  Running
+    &lt;xref linkend="sql-analyze"/&gt; on the foreign table is the way to update
+    the local statistics; this will perform a scan of the remote table and
+    then calculate and store statistics just as though the table were local.
+    Keeping local statistics can be a useful way to reduce per-query planning
+    overhead for a remote table &amp;mdash; but if the remote table is
+    frequently updated, the local statistics will soon be obsolete.
+</span>
+<code class="literal">use_remote_estimate</code>が<code class="literal">true</code>の時、<code class="filename">postgres_fdw</code>はリモートサーバから行数とコスト推定値を取得し、それを<code class="literal">fdw_startup_cost</code>と<code class="literal">fdw_tuple_cost</code>に加算します。
+一方、<code class="literal">use_remote_estimate</code>が<code class="literal">false</code>の時、<code class="filename">postgres_fdw</code>はローカルの行数とコスト推定値を取得し<code class="literal">fdw_startup_cost</code>と<code class="literal">fdw_tuple_cost</code>をコスト推定値に加算します。
+このローカルな推定は、リモートテーブルの統計情報のローカルコピーが利用可能でないと、正確である見込みはほとんどありません。
+ローカルな統計情報を更新するには外部テーブルに対する<a class="xref" href="sql-analyze.html" title="ANALYZE"><span class="refentrytitle">ANALYZE</span></a>を実行します。これはリモートテーブルに対するスキャンを実行し、あたかもローカルなテーブルであるかのように統計情報の計算と保存を行います。
+ローカルな統計情報を保存する事で、クエリの度にリモートテーブルの実行計画を作成するオーバヘッドを削減する事ができます。
+しかしながら、リモートテーブルの更新頻度が高ければローカルの統計情報はすぐに実態を反映しなくなるでしょう。
+   </p></div><div class="sect3" id="id-1.11.7.47.11.5"><div class="titlepage"><div><div><h4 class="title">F.38.1.4. リモート実行オプション</h4></div></div></div><span class="original">
+   &lt;title&gt;Remote Execution Options&lt;/title&gt;
+</span><p>
+<span class="original">
+    By default, only &lt;literal&gt;WHERE&lt;/literal&gt; clauses using built-in operators and
+    functions will be considered for execution on the remote server.  Clauses
+    involving non-built-in functions are checked locally after rows are
+    fetched.  If such functions are available on the remote server and can be
+    relied on to produce the same results as they do locally, performance can
+    be improved by sending such &lt;literal&gt;WHERE&lt;/literal&gt; clauses for remote
+    execution.  This behavior can be controlled using the following option:
+</span>
+デフォルトでは、組み込みの演算子および関数を使った<code class="literal">WHERE</code>句のみがリモートサーバでの実行を考慮されます。
+組み込みでない関数を含む句は、行が取得された後、ローカルで検査されます。
+そのような関数がリモートサーバで利用でき、かつローカルで実行するのと同じ結果を生成すると信頼できるときは、そのような<code class="literal">WHERE</code>句をリモートでの実行のために送出することでパフォーマンスを向上することができます。
+この動作は以下のオプションを使うことで制御できます。
+   </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">extensions</code> (<code class="type">string</code>)</span></dt><dd><p>
+<span class="original">
+       This option is a comma-separated list of names
+       of &lt;productname&gt;PostgreSQL&lt;/productname&gt; extensions that are installed, in
+       compatible versions, on both the local and remote servers.  Functions
+       and operators that are immutable and belong to a listed extension will
+       be considered shippable to the remote server.
+       This option can only be specified for foreign servers, not per-table.
+</span>
+このオプションは、<span class="productname">PostgreSQL</span>の拡張で、ローカルとリモートの両方に、互換のバージョンがインストールされているものの名前のリストです。
+IMMUTABLEで、列挙された拡張に属する関数と演算子は、リモートサーバに送出可能とみなされます。
+このオプションは外部サーバについてのみ指定可能で、テーブル毎の指定ではありません。
+      </p><p>
+<span class="original">
+       When using the &lt;literal&gt;extensions&lt;/literal&gt; option, &lt;emphasis&gt;it is the
+       user's responsibility&lt;/emphasis&gt; that the listed extensions exist and behave
+       identically on both the local and remote servers.  Otherwise, remote
+       queries may fail or behave unexpectedly.
+</span>
+<code class="literal">extensions</code>オプションを使用する場合、列挙する拡張が存在し、かつローカルとリモートのサーバで同一の動作をするようにすることは<span class="emphasis"><em>ユーザの責任です</em></span>。
+そうでない場合、リモートの問い合わせは失敗したり、期待と異なる動作をするかもしれません。
+      </p></dd><dt><span class="term"><code class="literal">fetch_size</code> (<code class="type">integer</code>)</span></dt><dd><p>
+<span class="original">
+       This option specifies the number of rows &lt;filename&gt;postgres_fdw&lt;/filename&gt;
+       should get in each fetch operation. It can be specified for a foreign
+       table or a foreign server. The option specified on a table overrides
+       an option specified for the server.
+       The default is &lt;literal&gt;100&lt;/literal&gt;.
+</span>
+このオプションは、<code class="filename">postgres_fdw</code>が1回のフェッチの動作で何行のデータを取得するかを指定します。
+これは外部テーブルあるいは外部サーバに対して指定できます。
+テーブルに対して指定されたオプションは、サーバに対して指定されたオプションよりも優先します。
+デフォルトは<code class="literal">100</code>です。
+      </p></dd><dt><span class="term"><code class="literal">batch_size</code> (<code class="type">integer</code>)</span></dt><dd><p>
+<span class="original">
+       This option specifies the number of rows &lt;filename&gt;postgres_fdw&lt;/filename&gt;
+       should insert in each insert operation. It can be specified for a
+       foreign table or a foreign server. The option specified on a table
+       overrides an option specified for the server.
+       The default is &lt;literal&gt;1&lt;/literal&gt;.
+</span>
+このオプションは、<code class="filename">postgres_fdw</code>が個々のINSERT操作で挿入する行数を指定します。
+外部テーブルあるいは外部サーバに対して指定することができます。
+テーブルに対してこのオプションを指定すると、サーバに対して指定されたオプションを上書きします。
+デフォルトは<code class="literal">1</code>です。
+      </p><p>
+<span class="original">
+       Note the actual number of rows &lt;filename&gt;postgres_fdw&lt;/filename&gt; inserts at
+       once depends on the number of columns and the provided
+       &lt;literal&gt;batch_size&lt;/literal&gt; value. The batch is executed as a single
+       query, and the libpq protocol (which &lt;filename&gt;postgres_fdw&lt;/filename&gt;
+       uses to connect to a remote server) limits the number of parameters in a
+       single query to 65535. When the number of columns * &lt;literal&gt;batch_size&lt;/literal&gt;
+       exceeds the limit, the &lt;literal&gt;batch_size&lt;/literal&gt; will be adjusted to
+       avoid an error.
+</span>
+<code class="filename">postgres_fdw</code>が実際に一度に挿入する行数は、列の数と指定された<code class="literal">batch_size</code>値に依存することに注意してください。
+一つのバッチは単一の問い合わせとして実行され、libpqプロトコル（<code class="filename">postgres_fdw</code>がリモートサーバに接続するために使用します）は単一の問い合わせにおけるパラメータ数を65535に制限していることに注意してください。
+列数 * <code class="literal">batch_size</code>がその上限を超えると、エラーを回避するために<code class="literal">batch_size</code>が調整されます。
+      </p></dd></dl></div></div><div class="sect3" id="id-1.11.7.47.11.6"><div class="titlepage"><div><div><h4 class="title">F.38.1.5. 非同期実行オプション</h4></div></div></div><span class="original">
+   &lt;title&gt;Asynchronous Execution Options&lt;/title&gt;
+</span><p>
+<span class="original">
+    &lt;filename&gt;postgres_fdw&lt;/filename&gt; supports asynchronous execution, which
+    runs multiple parts of an &lt;structname&gt;Append&lt;/structname&gt; node
+    concurrently rather than serially to improve performance.
+    This execution can be controlled using the following option:
+</span>
+<code class="filename">postgres_fdw</code>は非同期実行をサポートします。
+これは性能を向上するために、複数の<code class="structname">Append</code>ノードの部分を順番にではなく、並行して実行します。
+この実行は以下のオプションで制御できます。
+   </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">async_capable</code> (<code class="type">boolean</code>)</span></dt><dd><p>
+<span class="original">
+       This option controls whether &lt;filename&gt;postgres_fdw&lt;/filename&gt; allows
+       foreign tables to be scanned concurrently for asynchronous execution.
+       It can be specified for a foreign table or a foreign server.
+       A table-level option overrides a server-level option.
+       The default is &lt;literal&gt;false&lt;/literal&gt;.
+</span>
+このオプションは、<code class="filename">postgres_fdw</code>が非同期実行の際に外部テーブルの並列走査を許すかどうかを制御します。
+外部テーブルあるいは外部サーバに対して指定できます。
+テーブルレベルのオプションはサーバレベルのオプションを上書きします。
+デフォルトは<code class="literal">false</code>です。
+      </p><p>
+<span class="original">
+       In order to ensure that the data being returned from a foreign server
+       is consistent, &lt;filename&gt;postgres_fdw&lt;/filename&gt; will only open one
+       connection for a given foreign server and will run all queries against
+       that server sequentially even if there are multiple foreign tables
+       involved, unless those tables are subject to different user mappings.
+       In such a case, it may be more performant to disable this option to
+       eliminate the overhead associated with running queries asynchronously.
+</span>
+外部サーバから返却されるデータの一貫性を保証するために、<code class="filename">postgres_fdw</code>は一つの外部サーバに対して一つの接続だけを開きます。
+そして、テーブルが異なるユーザマッピングの対象でない限り、複数の外部テーブルが存在してもすべての問い合わせをサーバに対して順番に実行します。
+この場合、問い合わせを非同期に実行することによるオーバヘッドをなくすためにこのオプションを使用しないほうが性能が良くなるかもしれません。
+      </p><p>
+<span class="original">
+       Asynchronous execution is applied even when an
+       &lt;structname&gt;Append&lt;/structname&gt; node contains subplan(s) executed
+       synchronously as well as subplan(s) executed asynchronously.
+       In such a case, if the asynchronous subplans are ones processed using
+       &lt;filename&gt;postgres_fdw&lt;/filename&gt;, tuples from the asynchronous
+       subplans are not returned until after at least one synchronous subplan
+       returns all tuples, as that subplan is executed while the asynchronous
+       subplans are waiting for the results of asynchronous queries sent to
+       foreign servers.
+       This behavior might change in a future release.
+</span>
+<code class="structname">Append</code>ノードに順次実行されるサブプランが含まれていても、あるいは非同期実行されるサブプランが含まれていても、非同期実行は適用されます。
+このような場合では、非同期実行のサブプランが<code class="filename">postgres_fdw</code>を用いて処理されると、外部サーバに送信される非同期問い合わせの結果を非同期サブプランが待っている間に順次実行サブプランが実行されるため、少なくとも１つの順次実行サブプランがすべてのタプルを返すまでは、非同期実行サブプランによるタプルは返りません。
+このふるまいは将来のリリースでは変更されるかもしれません。
+      </p></dd></dl></div></div><div class="sect3" id="id-1.11.7.47.11.7"><div class="titlepage"><div><div><h4 class="title">F.38.1.6. Transaction Management Options</h4></div></div></div><p>
+<span class="original">
+    As described in the Transaction Management section, in
+    &lt;filename&gt;postgres_fdw&lt;/filename&gt; transactions are managed by creating
+    corresponding remote transactions, and subtransactions are managed by
+    creating corresponding remote subtransactions. When multiple remote
+    transactions are involved in the current local transaction, by default
+    &lt;filename&gt;postgres_fdw&lt;/filename&gt; commits those remote transactions
+    serially when the local transaction is committed. When multiple remote
+    subtransactions are involved in the current local subtransaction, by
+    default &lt;filename&gt;postgres_fdw&lt;/filename&gt; commits those remote
+    subtransactions serially when the local subtransaction is committed.
+    Performance can be improved with the following option:
+</span>
+《機械翻訳》「トランザクション管理」セクションで説明されているように、<code class="filename">postgres_fdw</code>では、トランザクションは対応するリモートトランザクションを作成することで管理され、サブトランザクションは対応するリモートサブトランザクションを作成することで管理されます。
+現在のローカルトランザクションに複数のリモートトランザクションが含まれている場合、デフォルトでは<code class="filename">postgres_fdw</code>はローカルトランザクションがコミットされたときに、これらのリモートサブトランザクションをシリアルにコミットします。
+現在のローカルサブトランザクションに複数のリモートサブトランザクションが含まれている場合、デフォルトでは<code class="filename">postgres_fdw</code>はローカルサブトランザクションがコミットされたときに、これらのリモートサブトランザクションをシリアルにコミットします。
+次のオプションでパフォーマンスを向上させることができます。
+   </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">parallel_commit</code> (<code class="type">boolean</code>)</span></dt><dd><p>
+<span class="original">
+       This option controls whether &lt;filename&gt;postgres_fdw&lt;/filename&gt; commits
+       in parallel remote transactions opened on a foreign server in a local
+       transaction when the local transaction is committed. This setting also
+       applies to remote and local subtransactions. This option can only be
+       specified for foreign servers, not per-table. The default is
+       &lt;literal&gt;false&lt;/literal&gt;.
+</span>
+《機械翻訳》このオプションは、ローカルトランザクションがコミットされたときに、ローカルトランザクション内の外部サーバで開かれたリモートトランザクションを<code class="filename">postgres_fdw</code>が並行してコミットするかどうかを制御します。
+この設定は、リモートサブトランザクションとローカルサブトランザクションにも適用されます。
+このオプションは外部サーバに対してのみ指定でき、テーブル単位では指定できません。
+デフォルトは<code class="literal">false</code>です。
+      </p><p>
+<span class="original">
+       If multiple foreign servers with this option enabled are involved in a
+       local transaction, multiple remote transactions on those foreign
+       servers are committed in parallel across those foreign servers when
+       the local transaction is committed.
+</span>
+《機械翻訳》このオプションが有効になっている複数の外部サーバがローカルトランザクションに関与している場合、これらの外部サーバ上の複数のリモートトランザクションは、ローカルトランザクションがコミットされるときに、これらの外部サーバ間で並列にコミットされます。
+      </p><p>
+<span class="original">
+       When this option is enabled, a foreign server with many remote
+       transactions may see a negative performance impact when the local
+       transaction is committed.
+</span>
+《機械翻訳》このオプションを有効にすると、多数のリモート・トランザクションを持つ外部サーバは、ローカル・トランザクションがコミットされたときにパフォーマンスに悪影響を与える可能性があります。
+      </p></dd></dl></div></div><div class="sect3" id="id-1.11.7.47.11.8"><div class="titlepage"><div><div><h4 class="title">F.38.1.7. 更新機能オプション</h4></div></div></div><span class="original">
+   &lt;title&gt;Updatability Options&lt;/title&gt;
+</span><p>
+<span class="original">
+    By default all foreign tables using &lt;filename&gt;postgres_fdw&lt;/filename&gt; are assumed
+    to be updatable.  This may be overridden using the following option:
+</span>
+デフォルトでは<code class="filename">postgres_fdw</code>を使用する全ての外部テーブルは更新可能であると想定されます。以下のオプションにより、この挙動を上書きする事ができます。
+   </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">updatable</code> (<code class="type">boolean</code>)</span></dt><dd><p>
+<span class="original">
+       This option controls whether &lt;filename&gt;postgres_fdw&lt;/filename&gt; allows foreign
+       tables to be modified using &lt;command&gt;INSERT&lt;/command&gt;, &lt;command&gt;UPDATE&lt;/command&gt; and
+       &lt;command&gt;DELETE&lt;/command&gt; commands.  It can be specified for a foreign table
+       or a foreign server.  A table-level option overrides a server-level
+       option.
+       The default is &lt;literal&gt;true&lt;/literal&gt;.
+</span>
+このオプションは、<code class="filename">postgres_fdw</code>が<code class="command">INSERT</code>、<code class="command">UPDATE</code>あるいは<code class="command">DELETE</code>コマンドを使用して外部テーブルを操作する事を許可するかどうかを規定します。
+外部テーブルで指定されたオプションは、外部サーバにおいて指定されたオプションを上書きします。
+デフォルト値は<code class="literal">true</code>です。
+      </p><p>
+<span class="original">
+       Of course, if the remote table is not in fact updatable, an error
+       would occur anyway.  Use of this option primarily allows the error to
+       be thrown locally without querying the remote server.  Note however
+       that the &lt;literal&gt;information_schema&lt;/literal&gt; views will report a
+       &lt;filename&gt;postgres_fdw&lt;/filename&gt; foreign table to be updatable (or not)
+       according to the setting of this option, without any check of the
+       remote server.
+</span>
+もちろん、リモートテーブルが実際には更新可能ではなかった場合、いずれにしてもエラーが発生するでしょう。このオプションを使用することで、リモートサーバへの問い合わせを行う事なくローカルでエラーを発生させることができます。
+また、<code class="literal">information_schema</code>ビューは、このオプションの値に従って<code class="filename">postgres_fdw</code>管理下の外部テーブルを更新可能（あるいは不可能）であるとレポートする事に留意してください。
+リモートサーバ側のチェックは一切行われません。
+      </p></dd></dl></div></div><div class="sect3" id="id-1.11.7.47.11.9"><div class="titlepage"><div><div><h4 class="title">F.38.1.8. 切り詰めオプション</h4></div></div></div><span class="original">
+   &lt;title&gt;Truncatability Options&lt;/title&gt;
+</span><p>
+<span class="original">
+    By default all foreign tables using &lt;filename&gt;postgres_fdw&lt;/filename&gt; are assumed
+    to be truncatable.  This may be overridden using the following option:
+</span>
+デフォルトでは<code class="filename">postgres_fdw</code>を使用する外部テーブルは切り詰め可能であると見なされます。
+これは以下のオプションで変更が可能です。
+   </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">truncatable</code> (<code class="type">boolean</code>)</span></dt><dd><p>
+<span class="original">
+       This option controls whether &lt;filename&gt;postgres_fdw&lt;/filename&gt; allows
+       foreign tables to be truncated using the &lt;command&gt;TRUNCATE&lt;/command&gt;
+       command. It can be specified for a foreign table or a foreign server.
+       A table-level option overrides a server-level option.
+       The default is &lt;literal&gt;true&lt;/literal&gt;.
+</span>
+このオプションは<code class="filename">postgres_fdw</code>が外部テーブルを<code class="command">TRUNCATE</code>を使って切り詰めることができるかどうかを制御します。
+外部テーブルあるいは外部サーバに対して指定できます。
+外部テーブルで指定されたオプションは、外部サーバにおいて指定されたオプションを上書きします。
+デフォルトは<code class="literal">true</code>です。
+      </p><p>
+<span class="original">
+       Of course, if the remote table is not in fact truncatable, an error
+       would occur anyway.  Use of this option primarily allows the error to
+       be thrown locally without querying the remote server.
+</span>
+もちろん外部テーブルが切り詰め不可能なら、結局エラーが生じます。
+このオプションを使用することにより、リモートサーバに問い合わせることなくエラーをローカルで起こすことができるのが主な用途です。
+      </p></dd></dl></div></div><div class="sect3" id="id-1.11.7.47.11.10"><div class="titlepage"><div><div><h4 class="title">F.38.1.9. インポートのオプション</h4></div></div></div><span class="original">
+   &lt;title&gt;Importing Options&lt;/title&gt;
+</span><p>
+<span class="original">
+    &lt;filename&gt;postgres_fdw&lt;/filename&gt; is able to import foreign table definitions
+    using &lt;xref linkend="sql-importforeignschema"/&gt;.  This command creates
+    foreign table definitions on the local server that match tables or
+    views present on the remote server.  If the remote tables to be imported
+    have columns of user-defined data types, the local server must have
+    compatible types of the same names.
+</span>
+<code class="filename">postgres_fdw</code>は<a class="xref" href="sql-importforeignschema.html" title="IMPORT FOREIGN SCHEMA"><span class="refentrytitle">IMPORT FOREIGN SCHEMA</span></a>を使って、外部テーブルの定義をインポートすることができます。
+このコマンドは、リモートのサーバ上に存在するテーブルあるいはビューとマッチする外部テーブルの定義をローカルサーバ上に作成します。
+インポートするリモートのテーブルにユーザ定義のデータ型の列がある場合、ローカルサーバにも同じ名前の互換性のある型がなければなりません。
+   </p><p>
+<span class="original">
+    Importing behavior can be customized with the following options
+    (given in the &lt;command&gt;IMPORT FOREIGN SCHEMA&lt;/command&gt; command):
+</span>
+インポートの動作は以下のオプションでカスタマイズできます（<code class="command">IMPORT FOREIGN SCHEMA</code>コマンドで指定します）。
+   </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">import_collate</code> (<code class="type">boolean</code>)</span></dt><dd><p>
+<span class="original">
+       This option controls whether column &lt;literal&gt;COLLATE&lt;/literal&gt; options
+       are included in the definitions of foreign tables imported
+       from a foreign server. The default is &lt;literal&gt;true&lt;/literal&gt;.  You might
+       need to turn this off if the remote server has a different set of
+       collation names than the local server does, which is likely to be the
+       case if it's running on a different operating system.
+       If you do so, however, there is a very severe risk that the imported
+       table columns' collations will not match the underlying data, resulting
+       in anomalous query behavior.
+</span>
+このオプションは、列の<code class="literal">COLLATE</code>オプションが、外部サーバからインポートする外部テーブルの定義に含まれているかどうかを制御します。
+デフォルトは<code class="literal">true</code>です。
+リモートサーバとローカルサーバで照合順序の名前の集合が異なる場合は、この設定を無効にする必要があるでしょう。
+リモートサーバが異なるOSで動作しているなら、そういうことがありそうです。
+しかし、そうした時には、インポートしたテーブルの列の照合順序が実際のデータと一致せず、問い合わせの振る舞いが結果として異常になる大きなリスクがあります。
+      </p><p>
+<span class="original">
+       Even when this parameter is set to &lt;literal&gt;true&lt;/literal&gt;, importing
+       columns whose collation is the remote server's default can be risky.
+       They will be imported with &lt;literal&gt;COLLATE "default"&lt;/literal&gt;, which
+       will select the local server's default collation, which could be
+       different.
+</span>
+このパラメータが<code class="literal">true</code>のときでさえ、照合順序がリモートサーバのデフォルトである列をインポートするのは危険性があります。
+これらの列は<code class="literal">COLLATE "default"</code>としてインポートされますが、ローカルサーバのデフォルトの照合順序は異なるかもしれません。
+      </p></dd><dt><span class="term"><code class="literal">import_default</code> (<code class="type">boolean</code>)</span></dt><dd><p>
+<span class="original">
+       This option controls whether column &lt;literal&gt;DEFAULT&lt;/literal&gt; expressions
+       are included in the definitions of foreign tables imported
+       from a foreign server. The default is &lt;literal&gt;false&lt;/literal&gt;.  If you
+       enable this option, be wary of defaults that might get computed
+       differently on the local server than they would be on the remote
+       server; &lt;function&gt;nextval()&lt;/function&gt; is a common source of problems.
+       The &lt;command&gt;IMPORT&lt;/command&gt; will fail altogether if an imported default
+       expression uses a function or operator that does not exist locally.
+</span>
+このオプションは、列の<code class="literal">DEFAULT</code>式が外部サーバからインポートされる外部テーブルの定義に含まれているかどうかを制御します。
+デフォルトは<code class="literal">false</code>です。
+このオプションを有効にする場合は、ローカルサーバとリモートサーバで異なる計算をされるデフォルトに注意して下さい。
+<code class="function">nextval()</code>はよくある問題の一つです。
+インポートされるデフォルト式がローカルには存在しない関数または演算子を使っていた場合、<code class="command">IMPORT</code>は失敗します。
+      </p></dd><dt><span class="term"><code class="literal">import_generated</code> (<code class="type">boolean</code>)</span></dt><dd><p>
+<span class="original">
+       This option controls whether column &lt;literal&gt;GENERATED&lt;/literal&gt; expressions
+       are included in the definitions of foreign tables imported
+       from a foreign server. The default is &lt;literal&gt;true&lt;/literal&gt;.
+       The &lt;command&gt;IMPORT&lt;/command&gt; will fail altogether if an imported generated
+       expression uses a function or operator that does not exist locally.
+</span>
+このオプションは、外部サーバからインポートされた外部テーブルの定義に<code class="literal">GENERATED</code>列式が含まれるかどうかを制御します。
+デフォルトは<code class="literal">true</code>です。
+インポートされる生成式がローカルには存在しない関数あるいは演算子を使っていた場合、<code class="command">IMPORT</code>は失敗します。
+      </p></dd><dt><span class="term"><code class="literal">import_not_null</code> (<code class="type">boolean</code>)</span></dt><dd><p>
+<span class="original">
+       This option controls whether column &lt;literal&gt;NOT NULL&lt;/literal&gt;
+       constraints are included in the definitions of foreign tables imported
+       from a foreign server. The default is &lt;literal&gt;true&lt;/literal&gt;.
+</span>
+このオプションは、列の<code class="literal">NOT NULL</code>制約が、外部サーバからインポートされる外部テーブルの定義に含まれているかどうかを制御します。
+デフォルトは<code class="literal">true</code>です。
+      </p></dd></dl></div><p>
+<span class="original">
+    Note that constraints other than &lt;literal&gt;NOT NULL&lt;/literal&gt; will never be
+    imported from the remote tables.  Although &lt;productname&gt;PostgreSQL&lt;/productname&gt;
+    does support check constraints on foreign tables, there is no
+    provision for importing them automatically, because of the risk that a
+    constraint expression could evaluate differently on the local and remote
+    servers.  Any such inconsistency in the behavior of a check
+    constraint could lead to hard-to-detect errors in query optimization.
+    So if you wish to import check constraints, you must do so
+    manually, and you should verify the semantics of each one carefully.
+    For more detail about the treatment of check constraints on
+    foreign tables, see &lt;xref linkend="sql-createforeigntable"/&gt;.
+</span>
+<code class="literal">NOT NULL</code>以外の制約は決してリモートのテーブルからインポートされないことに注意して下さい。
+<span class="productname">PostgreSQL</span>は外部テーブルのcheck制約をサポートしていますが、それを自動的にインポートする予定はありません。
+なぜなら、制約の式はローカルとリモートのサーバで異なる評価をされる危険があるからです。
+check制約でそのような一貫しない動作があると、問い合わせの最適化で検知するのが難しい誤りが発生するかもしれません。
+そのため、check制約をインポートしたい場合は、それを手作業で実行する必要があり、またその一つ一つの意味を注意深く確認するべきです。
+外部テーブルのcheck制約の取扱いについて、詳しくは<a class="xref" href="sql-createforeigntable.html" title="CREATE FOREIGN TABLE"><span class="refentrytitle">CREATE FOREIGN TABLE</span></a>を参照して下さい。
+   </p><p>
+<span class="original">
+    Tables or foreign tables which are partitions of some other table are
+    imported only when they are explicitly specified in
+    &lt;literal&gt;LIMIT TO&lt;/literal&gt; clause.  Otherwise they are automatically
+    excluded from &lt;xref linkend="sql-importforeignschema"/&gt;.
+    Since all data can be accessed through the partitioned table
+    which is the root of the partitioning hierarchy, importing only
+    partitioned tables should allow access to all the data without
+    creating extra objects.
+</span>
+他のテーブルのパーティションであるテーブルや外部テーブルは、明示的な<code class="literal">LIMIT TO</code>句が指定されている場合にのみインポートされます。
+そうでなければそれらは、<a class="xref" href="sql-importforeignschema.html" title="IMPORT FOREIGN SCHEMA"><span class="refentrytitle">IMPORT FOREIGN SCHEMA</span></a>から自動的に除外されます。
+パーティショニング化階層のルートであるパーティションテーブルを介してすべてのデータにアクセスできるため、パーティション化テーブルのみをインポートすることで余分なオブジェクトを作成せずにすべてのデータにアクセスできます。
+   </p></div><div class="sect3" id="id-1.11.7.47.11.11"><div class="titlepage"><div><div><h4 class="title">F.38.1.10. 接続管理オプション</h4></div></div></div><span class="original">
+    &lt;title&gt;Connection Management Options&lt;/title&gt;
+</span><p>
+<span class="original">
+     By default, all connections that &lt;filename&gt;postgres_fdw&lt;/filename&gt;
+     establishes to foreign servers are kept open in the local session
+     for re-use.
+</span>
+デフォルトでは<code class="filename">postgres_fdw</code>が外部サーバに確立した接続は、再利用のためにローカルセッションにおいて開いたまま維持されます。
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">keep_connections</code> (<code class="type">boolean</code>)</span></dt><dd><p>
+<span class="original">
+        This option controls whether &lt;filename&gt;postgres_fdw&lt;/filename&gt; keeps
+        the connections to the foreign server open so that subsequent
+        queries can re-use them. It can only be specified for a foreign server.
+        The default is &lt;literal&gt;on&lt;/literal&gt;. If set to &lt;literal&gt;off&lt;/literal&gt;,
+        all connections to this foreign server will be discarded at the end of
+        each transaction.
+</span>
+このオプションは、後の再利用のために<code class="filename">postgres_fdw</code>が外部サーバに対する接続を保持したままにしておくかどうかを制御します。
+外部サーバに対してのみ指定ができます。
+デフォルトは<code class="literal">on</code>です。
+<code class="literal">off</code>に設定すると、この外部サーバに対するすべての接続は個々のトランザクションの終了時に破棄されます。
+      </p></dd></dl></div></div></div><div class="sect2" id="id-1.11.7.47.12"><div class="titlepage"><div><div><h3 class="title">F.38.2. 関数</h3></div></div></div><span class="original">
+  &lt;title&gt;Functions&lt;/title&gt;
+</span><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="function">postgres_fdw_get_connections(OUT server_name text, OUT valid boolean) returns setof record</code></span></dt><dd><p>
+<span class="original">
+      This function returns the foreign server names of all the open
+      connections that &lt;filename&gt;postgres_fdw&lt;/filename&gt; established from
+      the local session to the foreign servers. It also returns whether
+      each connection is valid or not. &lt;literal&gt;false&lt;/literal&gt; is returned
+      if the foreign server connection is used in the current local
+      transaction but its foreign server or user mapping is changed or
+      dropped (Note that server name of an invalid connection will be
+      &lt;literal&gt;NULL&lt;/literal&gt; if the server is dropped),
+      and then such invalid connection will be closed at
+      the end of that transaction. &lt;literal&gt;true&lt;/literal&gt; is returned
+      otherwise. If there are no open connections, no record is returned.
+      Example usage of the function:
+</span>
+この関数は、<code class="filename">postgres_fdw</code>によってローカルセッションから外部サーバに確立されたすべての開いている接続の外部サーバ名を返します。
+個々の接続が有効かどうかも返します。
+外部サーバの接続が現在のローカルトランザクションで使用されていても、外部サーバあるいはユーザマッピングが変更あるいは削除されると<code class="literal">false</code>が返り（無効な接続のサーバ名は、サーバが削除されると<code class="literal">NULL</code>になることに注意してください）、そうした無効な接続はトランザクションの終了時に閉じられます。
+そうでなければ<code class="literal">true</code>が返ります。
+開いた接続がなければレコードは返りません。
+関数の使用例を示します。
+</p><pre class="screen">
+postgres=# SELECT * FROM postgres_fdw_get_connections() ORDER BY 1;
+ server_name | valid
+-------------+-------
+ loopback1   | t
+ loopback2   | f
+</pre><p>
+     </p></dd><dt><span class="term"><code class="function">postgres_fdw_disconnect(server_name text) returns boolean</code></span></dt><dd><p>
+<span class="original">
+      This function discards the open connections that are established by
+      &lt;filename&gt;postgres_fdw&lt;/filename&gt; from the local session to
+      the foreign server with the given name.  Note that there can be
+      multiple connections to the given server using different user mappings.
+      If the connections are used in the current local transaction,
+      they are not disconnected and warning messages are reported.
+      This function returns &lt;literal&gt;true&lt;/literal&gt; if it disconnects
+      at least one connection, otherwise &lt;literal&gt;false&lt;/literal&gt;.
+      If no foreign server with the given name is found, an error is reported.
+      Example usage of the function:
+</span>
+この関数は、<code class="filename">postgres_fdw</code>によってローカルセッションから指定された名前の外部サーバに確立された開いている接続を破棄します。
+異なるユーザマッピングを使用することにより、指定されたサーバに複数の接続が存在する可能性があることに注意してください。
+現在のローカルトランザクションで接続が使われている場合は、接続は切断されず、警告メッセージが報告されます。
+少なくとも１つの接続が切断されると、この関数は<code class="literal">true</code>を返し、そうでない場合は<code class="literal">false</code>を返します。
+指定した名前の外部サーバが存在しなければ、エラーが報告されます。
+この関数の使用例を示します。
+</p><pre class="screen">
+postgres=# SELECT postgres_fdw_disconnect('loopback1');
+ postgres_fdw_disconnect
+-------------------------
+ t
+</pre><p>
+     </p></dd><dt><span class="term"><code class="function">postgres_fdw_disconnect_all() returns boolean</code></span></dt><dd><p>
+<span class="original">
+      This function discards all the open connections that are established by
+      &lt;filename&gt;postgres_fdw&lt;/filename&gt; from the local session to
+      foreign servers.  If the connections are used in the current local
+      transaction, they are not disconnected and warning messages are reported.
+      This function returns &lt;literal&gt;true&lt;/literal&gt; if it disconnects
+      at least one connection, otherwise &lt;literal&gt;false&lt;/literal&gt;.
+      Example usage of the function:
+</span>
+この関数は、<code class="filename">postgres_fdw</code>によってローカルセッションから外部サーバに確立されたすべての開いている接続を破棄します。
+現在のローカルトランザクションで接続が使われている場合は、接続は切断されず、警告メッセージが報告されます。
+少なくとも１つの接続が切断されると、この関数は<code class="literal">true</code>を返します。
+さもなければ<code class="literal">false</code>が返ります。
+この関数の使用例を示します。
+</p><pre class="screen">
+postgres=# SELECT postgres_fdw_disconnect_all();
+ postgres_fdw_disconnect_all
+-----------------------------
+ t
+</pre><p>
+     </p></dd></dl></div></div><div class="sect2" id="id-1.11.7.47.13"><div class="titlepage"><div><div><h3 class="title">F.38.3. 接続管理</h3></div></div></div><span class="original">
+  &lt;title&gt;Connection Management&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;filename&gt;postgres_fdw&lt;/filename&gt; establishes a connection to a
+   foreign server during the first query that uses a foreign table
+   associated with the foreign server.  By default this connection
+   is kept and re-used for subsequent queries in the same session.
+   This behavior can be controlled using
+   &lt;literal&gt;keep_connections&lt;/literal&gt; option for a foreign server. If
+   multiple user identities (user mappings) are used to access the foreign
+   server, a connection is established for each user mapping.
+</span>
+<code class="filename">postgres_fdw</code>は、外部サーバに関連付けられた外部テーブルを参照するクエリを最初に実行する際に、外部サーバへの接続を確立します。
+デフォルトではこの接続は保持され、同じセッションで以降の問い合わせのために再利用されます。
+この振る舞いは外部サーバの<code class="literal">keep_connections</code>オプションを使って制御できます。
+しかし、外部サーバへのアクセスに対して複数のユーザ識別子（ユーザマッピング）が使用される場合には、接続はユーザマッピング毎に確立される事になります。
+  </p><p>
+<span class="original">
+   When changing the definition of or removing a foreign server or
+   a user mapping, the associated connections are closed.
+   But note that if any connections are in use in the current local transaction,
+   they are kept until the end of the transaction.
+   Closed connections will be re-established when they are necessary
+   by future queries using a foreign table.
+</span>
+外部サーバあるいはユーザマッピングの定義を変更ないし削除している場合は、関連する接続は閉じられます。
+しかし、現在のローカルトランザクションが接続を使っていると、接続はトランザクションが終了するまでは維持されることに注意してください。
+このあと外部テーブルを使用する問い合わせで必要になれば、閉じた接続は再び確立されます。
+  </p><p>
+<span class="original">
+   Once a connection to a foreign server has been established,
+   it's by default kept until the local or corresponding remote
+   session exits.  To disconnect a connection explicitly,
+   &lt;literal&gt;keep_connections&lt;/literal&gt; option for a foreign server
+   may be disabled, or
+   &lt;function&gt;postgres_fdw_disconnect&lt;/function&gt; and
+   &lt;function&gt;postgres_fdw_disconnect_all&lt;/function&gt; functions
+   may be used.  For example, these are useful to close
+   connections that are no longer necessary, thereby releasing
+   connections on the foreign server.
+</span>
+ひとたび外部サーバに接続が確立されると、デフォルトではローカルあるいは関連するリモートセッションが終了するまで接続は維持されます。
+明示的に接続を切断するには外部サーバの<code class="literal">keep_connections</code>オプションを無効にするか、<code class="function">postgres_fdw_disconnect</code>関数あるいは<code class="function">postgres_fdw_disconnect_all</code>関数を使用します。
+たとえば、必要がなくなった接続を切断し、それによって外部サーバの接続を開放するのにこれらの関数が役に立ちます。
+  </p></div><div class="sect2" id="id-1.11.7.47.14"><div class="titlepage"><div><div><h3 class="title">F.38.4. トランザクション管理</h3></div></div></div><span class="original">
+  &lt;title&gt;Transaction Management&lt;/title&gt;
+</span><p>
+<span class="original">
+   During a query that references any remote tables on a foreign server,
+   &lt;filename&gt;postgres_fdw&lt;/filename&gt; opens a transaction on the
+   remote server if one is not already open corresponding to the current
+   local transaction.  The remote transaction is committed or aborted when
+   the local transaction commits or aborts.  Savepoints are similarly
+   managed by creating corresponding remote savepoints.
+</span>
+外部サーバ上のリモートテーブルを参照する際に、まだトランザクションが開始されていなければ<code class="filename">postgres_fdw</code>はリモートサーバ上でトランザクションを開始します。
+ローカルのトランザクションがコミット、あるいはアボートした時、リモートのトランザクションも同様にコミット、あるいはアボートします。
+セーブポイントも同様に管理され、リモート側に関連付けられたセーブポイントが作成されます。
+  </p><p>
+<span class="original">
+   The remote transaction uses &lt;literal&gt;SERIALIZABLE&lt;/literal&gt;
+   isolation level when the local transaction has &lt;literal&gt;SERIALIZABLE&lt;/literal&gt;
+   isolation level; otherwise it uses &lt;literal&gt;REPEATABLE READ&lt;/literal&gt;
+   isolation level.  This choice ensures that if a query performs multiple
+   table scans on the remote server, it will get snapshot-consistent results
+   for all the scans.  A consequence is that successive queries within a
+   single transaction will see the same data from the remote server, even if
+   concurrent updates are occurring on the remote server due to other
+   activities.  That behavior would be expected anyway if the local
+   transaction uses &lt;literal&gt;SERIALIZABLE&lt;/literal&gt; or &lt;literal&gt;REPEATABLE READ&lt;/literal&gt;
+   isolation level, but it might be surprising for a &lt;literal&gt;READ
+   COMMITTED&lt;/literal&gt; local transaction.  A future
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; release might modify these rules.
+</span>
+ローカルトランザクションが<code class="literal">SERIALIZABLE</code>分離レベルを用いている時、リモートトランザクションも<code class="literal">SERIALIZABLE</code>分離レベルを使用します。
+それ以外の場合には<code class="literal">REPEATABLE READ</code>分離レベルを使用します。
+これは、あるクエリが複数のテーブルスキャンをリモート側で行う際に、確実に全てのスキャンにおいて一貫したスナップショットで結果を取り出すためです。
+その結果、別の要求によってリモートサーバ側で競合する更新が発生したとしても、あるトランザクション内の問い合わせはリモートサーバからの一貫したデータを参照する事となります。
+ローカルのトランザクションが<code class="literal">SERIALIZABLE</code>あるいは<code class="literal">REPEATABLE READ</code>分離レベルを用いている場合、この動作は期待通りのものでしょう。
+一方、ローカルのトランザクションが<code class="literal">READ COMMITTED</code>分離レベルを使用している場合には、予想外の動作かもしれません。
+将来の<span class="productname">PostgreSQL</span>リリースではこれらのルールに変更が加えられるかもしれません。
+  </p><p>
+<span class="original">
+   Note that it is currently not supported by
+   &lt;filename&gt;postgres_fdw&lt;/filename&gt; to prepare the remote transaction for
+   two-phase commit.
+</span>
+<code class="filename">postgres_fdw</code>は今のところ、二相コミットのためのリモートトランザクションの準備をサポートしていないことに注意して下さい。
+  </p></div><div class="sect2" id="id-1.11.7.47.15"><div class="titlepage"><div><div><h3 class="title">F.38.5. リモート問い合わせの最適化</h3></div></div></div><span class="original">
+  &lt;title&gt;Remote Query Optimization&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;filename&gt;postgres_fdw&lt;/filename&gt; attempts to optimize remote queries to reduce
+   the amount of data transferred from foreign servers.  This is done by
+   sending query &lt;literal&gt;WHERE&lt;/literal&gt; clauses to the remote server for
+   execution, and by not retrieving table columns that are not needed for
+   the current query.  To reduce the risk of misexecution of queries,
+   &lt;literal&gt;WHERE&lt;/literal&gt; clauses are not sent to the remote server unless they use
+   only data types, operators, and functions that are built-in or belong to an
+   extension that's listed in the foreign server's &lt;literal&gt;extensions&lt;/literal&gt;
+   option.  Operators and functions in such clauses must
+   be &lt;literal&gt;IMMUTABLE&lt;/literal&gt; as well.
+   For an &lt;command&gt;UPDATE&lt;/command&gt; or &lt;command&gt;DELETE&lt;/command&gt; query,
+   &lt;filename&gt;postgres_fdw&lt;/filename&gt; attempts to optimize the query execution by
+   sending the whole query to the remote server if there are no query
+   &lt;literal&gt;WHERE&lt;/literal&gt; clauses that cannot be sent to the remote server,
+   no local joins for the query, no row-level local &lt;literal&gt;BEFORE&lt;/literal&gt; or
+   &lt;literal&gt;AFTER&lt;/literal&gt; triggers or stored generated columns on the target
+   table, and no &lt;literal&gt;CHECK OPTION&lt;/literal&gt; constraints from parent
+   views.  In &lt;command&gt;UPDATE&lt;/command&gt;,
+   expressions to assign to target columns must use only built-in data types,
+   &lt;literal&gt;IMMUTABLE&lt;/literal&gt; operators, or &lt;literal&gt;IMMUTABLE&lt;/literal&gt; functions,
+   to reduce the risk of misexecution of the query.
+</span>
+外部サーバからのデータ転送量を削減するため、<code class="filename">postgres_fdw</code>はリモート問い合わせを最適化しようと試みます。
+これは問い合わせの<code class="literal">WHERE</code>句をリモートサーバに送出する事、およびクエリで必要とされていないカラムを取得しない事により行われます。
+問い合わせの誤作動のリスクを下げるため、組み込みあるいは外部サーバの<code class="literal">extensions</code>オプションに列挙されている拡張に属するデータ型、演算子、関数だけを用いたものでない限り、リモートサーバに<code class="literal">WHERE</code>句は送出されません。
+また、そのような<code class="literal">WHERE</code>句で使われる演算子と関数は<code class="literal">IMMUTABLE</code>でなければなりません。
+<code class="command">UPDATE</code>あるいは<code class="command">DELETE</code>の問い合わせについては、リモートサーバに送出できない<code class="literal">WHERE</code>句がなく、問い合わせにローカルな結合がなく、対象のテーブルにローカルな行レベルの<code class="literal">BEFORE</code>あるいは<code class="literal">AFTER</code>トリガーや格納された生成列がなく、親ビューからの<code class="literal">CHECK OPTION</code>制約がないのであれば、<code class="filename">postgres_fdw</code>は問い合わせ全体をリモートサーバに送出することで、問い合わせの実行の最適化を図ります。
+<code class="command">UPDATE</code>では、問い合わせの誤った実行のリスクを低減するため、対象列への代入式では組み込みのデータ型、<code class="literal">IMMUTABLE</code>演算子、<code class="literal">IMMUTABLE</code>関数のみを使わなければなりません。
+  </p><p>
+<span class="original">
+   When &lt;filename&gt;postgres_fdw&lt;/filename&gt; encounters a join between foreign tables on
+   the same foreign server, it sends the entire join to the foreign server,
+   unless for some reason it believes that it will be more efficient to fetch
+   rows from each table individually, or unless the table references involved
+   are subject to different user mappings.  While sending the &lt;literal&gt;JOIN&lt;/literal&gt;
+   clauses, it takes the same precautions as mentioned above for the
+   &lt;literal&gt;WHERE&lt;/literal&gt; clauses.
+</span>
+同一の外部サーバ上の外部テーブルの間の結合がある場合、<code class="filename">postgres_fdw</code>はその結合全体を外部サーバに送出します。
+ただし、何らかの理由で各テーブルから個別に行を取得する方が効率的だと思われる場合、あるいは結合に含まれるテーブルの参照が異なるユーザマッピングに従う場合を除きます。
+<code class="literal">JOIN</code>句を送出するにあたり、<code class="literal">WHERE</code>句に関して上で説明したことと同じ注意が払われます。
+  </p><p>
+<span class="original">
+   The query that is actually sent to the remote server for execution can
+   be examined using &lt;command&gt;EXPLAIN VERBOSE&lt;/command&gt;.
+</span>
+リモートサーバでの実行のために実際に送出される問い合わせは<code class="command">EXPLAIN VERBOSE</code>を用いて調べる事ができます。
+  </p></div><div class="sect2" id="id-1.11.7.47.16"><div class="titlepage"><div><div><h3 class="title">F.38.6. リモート問い合わせ実行環境</h3></div></div></div><span class="original">
+  &lt;title&gt;Remote Query Execution Environment&lt;/title&gt;
+</span><p>
+<span class="original">
+   In the remote sessions opened by &lt;filename&gt;postgres_fdw&lt;/filename&gt;,
+   the &lt;xref linkend="guc-search-path"/&gt; parameter is set to
+   just &lt;literal&gt;pg_catalog&lt;/literal&gt;, so that only built-in objects are visible
+   without schema qualification.  This is not an issue for queries
+   generated by &lt;filename&gt;postgres_fdw&lt;/filename&gt; itself, because it always
+   supplies such qualification.  However, this can pose a hazard for
+   functions that are executed on the remote server via triggers or rules
+   on remote tables.  For example, if a remote table is actually a view,
+   any functions used in that view will be executed with the restricted
+   search path.  It is recommended to schema-qualify all names in such
+   functions, or else attach &lt;literal&gt;SET search_path&lt;/literal&gt; options
+   (see &lt;xref linkend="sql-createfunction"/&gt;) to such functions
+   to establish their expected search path environment.
+</span>
+<code class="filename">postgres_fdw</code>が開いたリモートセッションでは、<a class="xref" href="runtime-config-client.html#GUC-SEARCH-PATH">search_path</a>パラメータは<code class="literal">pg_catalog</code>にだけ設定されますので、スキーマで修飾しなければ組み込みオブジェクトだけが可視です。
+<code class="filename">postgres_fdw</code>自身が生成した問い合わせでは、常にそのような修飾を行ないますので、これは問題になりません。
+しかし、リモートテーブルのトリガやルールによってリモートサーバ上で実行された関数にとっては問題の原因となり得ます。
+例えば、リモートテーブルが実際にはビューであれば、そのビューで使われている関数はすべて制限された検索パスで実行されるでしょう。
+期待される検索パス環境を確立できるよう、そのような関数では名前はすべてスキーマ修飾するか、そのような関数に<code class="literal">SET search_path</code>オプション(<a class="xref" href="sql-createfunction.html" title="CREATE FUNCTION"><span class="refentrytitle">CREATE FUNCTION</span></a>参照)を付けることをお薦めします。
+  </p><p>
+<span class="original">
+   &lt;filename&gt;postgres_fdw&lt;/filename&gt; likewise establishes remote session settings
+   for various parameters:
+</span>
+<code class="filename">postgres_fdw</code>は、同様に様々なパラメータでリモートセッション設定を確立します。
+   </p><div class="itemizedlist"><ul class="itemizedlist compact" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+      &lt;xref linkend="guc-timezone"/&gt; is set to &lt;literal&gt;UTC&lt;/literal&gt;
+</span>
+<a class="xref" href="runtime-config-client.html#GUC-TIMEZONE">TimeZone</a>は<code class="literal">UTC</code>に設定されます。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      &lt;xref linkend="guc-datestyle"/&gt; is set to &lt;literal&gt;ISO&lt;/literal&gt;
+</span>
+<a class="xref" href="runtime-config-client.html#GUC-DATESTYLE">DateStyle</a>は<code class="literal">ISO</code>に設定されます。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      &lt;xref linkend="guc-intervalstyle"/&gt; is set to &lt;literal&gt;postgres&lt;/literal&gt;
+</span>
+<a class="xref" href="runtime-config-client.html#GUC-INTERVALSTYLE">IntervalStyle</a>は<code class="literal">postgres</code>に設定されます。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      &lt;xref linkend="guc-extra-float-digits"/&gt; is set to &lt;literal&gt;3&lt;/literal&gt; for remote
+      servers 9.0 and newer and is set to &lt;literal&gt;2&lt;/literal&gt; for older versions
+</span>
+<a class="xref" href="runtime-config-client.html#GUC-EXTRA-FLOAT-DIGITS">extra_float_digits</a>はリモートサーバが9.0以上では<code class="literal">3</code>に設定され、それより古いバージョンでは<code class="literal">2</code>に設定されます。
+     </p></li></ul></div><p>
+<span class="original">
+   These are less likely to be problematic than &lt;varname&gt;search_path&lt;/varname&gt;, but
+   can be handled with function &lt;literal&gt;SET&lt;/literal&gt; options if the need arises.
+</span>
+これは<code class="varname">search_path</code>ほど問題にはならないでしょうが、もし必要になったら関数の<code class="literal">SET</code>オプションで処理してください。
+  </p><p>
+<span class="original">
+   It is &lt;emphasis&gt;not&lt;/emphasis&gt; recommended that you override this behavior by
+   changing the session-level settings of these parameters; that is likely
+   to cause &lt;filename&gt;postgres_fdw&lt;/filename&gt; to malfunction.
+</span>
+上のパラメータのセッションレベルの設定を変更することで、この振舞いを覆すことはお薦め<span class="emphasis"><em>しません</em></span>。
+<code class="filename">postgres_fdw</code>が正常に動作しない原因となるでしょう。
+  </p></div><div class="sect2" id="id-1.11.7.47.17"><div class="titlepage"><div><div><h3 class="title">F.38.7. バージョン間互換性</h3></div></div></div><span class="original">
+  &lt;title&gt;Cross-Version Compatibility&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;filename&gt;postgres_fdw&lt;/filename&gt; can be used with remote servers dating back
+   to &lt;productname&gt;PostgreSQL&lt;/productname&gt; 8.3.  Read-only capability is available
+   back to 8.1.  A limitation however is that &lt;filename&gt;postgres_fdw&lt;/filename&gt;
+   generally assumes that immutable built-in functions and operators are
+   safe to send to the remote server for execution, if they appear in a
+   &lt;literal&gt;WHERE&lt;/literal&gt; clause for a foreign table.  Thus, a built-in
+   function that was added since the remote server's release might be sent
+   to it for execution, resulting in &lt;quote&gt;function does not exist&lt;/quote&gt; or
+   a similar error.  This type of failure can be worked around by
+   rewriting the query, for example by embedding the foreign table
+   reference in a sub-&lt;literal&gt;SELECT&lt;/literal&gt; with &lt;literal&gt;OFFSET 0&lt;/literal&gt; as an
+   optimization fence, and placing the problematic function or operator
+   outside the sub-&lt;literal&gt;SELECT&lt;/literal&gt;.
+</span>
+<code class="filename">postgres_fdw</code>のリモートサーバには<span class="productname">PostgreSQL</span> 8.3以降のバージョンを使用する事ができます。
+読み取り専用であれば、8.1以降のバージョンまで可能です。
+一方、<code class="filename">postgres_fdw</code>は<code class="literal">IMMUTABLE</code>属性を持った組み込みの演算子と関数が外部テーブルの<code class="literal">WHERE</code>句に含まれる場合、リモート側で実行しても安全であると仮定します。そのため、リモートサーバのリリース後に追加された関数が実行のために送出されるかもしれず、結果として<span class="quote">「<span class="quote">関数が見つかりません</span>」</span>あるいは類するエラーを発生させる事になります。
+この種の問題は問い合わせの書き換えによって対処する事ができます。
+例えば、最適化を妨げるため、外部テーブルへの参照を<code class="literal">OFFSET 0</code>を付けてsub-<code class="literal">SELECT</code>に埋め込み、問題のある関数や演算子をsub-<code class="literal">SELECT</code>の外に配置するなどの方法があります。
+  </p></div><div class="sect2" id="id-1.11.7.47.18"><div class="titlepage"><div><div><h3 class="title">F.38.8. Configuration Parameters</h3></div></div></div><div class="variablelist"><dl class="variablelist"><dt id="GUC-PGFDW-APPLICATION-NAME"><span class="term">
+     <code class="varname">postgres_fdw.application_name</code> (<code class="type">string</code>)
+     <a id="id-1.11.7.47.18.2.1.1.3" class="indexterm"></a>
+    </span></dt><dd><p>
+<span class="original">
+      Specifies a value for &lt;xref linkend="guc-application-name"/&gt;
+      configuration parameter used when &lt;filename&gt;postgres_fdw&lt;/filename&gt;
+      establishes a connection to a foreign server.  This overrides
+      &lt;varname&gt;application_name&lt;/varname&gt; option of the server object.
+      Note that change of this parameter doesn't affect any existing
+      connections until they are re-established.
+</span>
+《機械翻訳》<code class="filename">postgres_fdw</code>が外部サーバへの接続を確立する際に使用される<a class="xref" href="runtime-config-logging.html#GUC-APPLICATION-NAME">application_name</a>設定パラメータの値を指定します。
+これにより、サーバオブジェクトの<code class="varname">application_name</code>オプションが上書きされます。
+このパラメータを変更しても、再確立されるまで既存の接続には影響しません。
+     </p><p>
+<span class="original">
+      &lt;varname&gt;postgres_fdw.application_name&lt;/varname&gt; can be any string
+      of any length and contain even non-ASCII characters.  However when
+      it's passed to and used as &lt;varname&gt;application_name&lt;/varname&gt;
+      in a foreign server, note that it will be truncated to less than
+      &lt;symbol&gt;NAMEDATALEN&lt;/symbol&gt; characters and anything other than
+      printable ASCII characters will be replaced with question
+      marks (&lt;literal&gt;?&lt;/literal&gt;).
+      See &lt;xref linkend="guc-application-name"/&gt; for details.
+</span>
+《機械翻訳》<code class="varname">postgres_fdw.application_name</code>は任意の長さの文字列で、非ASCII文字も含むことができます。
+しかし、外部サーバで<code class="varname">application_name</code>として渡されて使用される場合、<code class="symbol">NAMEDATALEN</code>文字未満に切り捨てられ、印字可能なASCII文字以外の文字は疑問符(<code class="literal">?</code>)に置き換えられることに注意してください。
+詳細は<a class="xref" href="runtime-config-logging.html#GUC-APPLICATION-NAME">application_name</a>を参照してください。
+     </p><p>
+<span class="original">
+      &lt;literal&gt;%&lt;/literal&gt; characters begin &lt;quote&gt;escape sequences&lt;/quote&gt;
+      that are replaced with status information as outlined below.
+      Unrecognized escapes are ignored. Other characters are copied straight
+      to the application name. Note that it's not allowed to specify a
+      plus/minus sign or a numeric literal after the &lt;literal&gt;%&lt;/literal&gt;
+      and before the option, for alignment and padding.
+</span>
+《機械翻訳》<code class="literal">%</code>文字は開始<span class="quote">「<span class="quote">エスケープシーケンス</span>」</span>され、以下で説明するようにステータス情報に置き換えられます。
+認識されないエスケープは無視されます。
+他の文字はアプリケーション名に直接コピーされます。
+位置合わせとパディングのために、<code class="literal">%</code>の後とオプションの前にプラス/マイナス記号または数値リテラルを指定することはできないことに注意してください。
+     </p><div class="informaltable"><table class="informaltable" border="1"><colgroup><col /><col /></colgroup><thead><tr><th>Escape</th><th>Effect</th></tr></thead><tbody><tr><td><code class="literal">%a</code></td><td>Application name on local server</td></tr><tr><td><code class="literal">%c</code></td><td>
+          Session ID on local server
+          (see <a class="xref" href="runtime-config-logging.html#GUC-LOG-LINE-PREFIX">log_line_prefix</a> for details)
+         </td></tr><tr><td><code class="literal">%C</code></td><td>
+          Cluster name on local server
+          (see <a class="xref" href="runtime-config-logging.html#GUC-CLUSTER-NAME">cluster_name</a> for details)
+         </td></tr><tr><td><code class="literal">%u</code></td><td>User name on local server</td></tr><tr><td><code class="literal">%d</code></td><td>Database name on local server</td></tr><tr><td><code class="literal">%p</code></td><td>Process ID of backend on local server</td></tr><tr><td><code class="literal">%%</code></td><td>Literal %</td></tr></tbody></table></div><p>
+<span class="original">
+      For example, suppose user &lt;literal&gt;local_user&lt;/literal&gt; establishes
+      a connection from database &lt;literal&gt;local_db&lt;/literal&gt; to
+      &lt;literal&gt;foreign_db&lt;/literal&gt; as user &lt;literal&gt;foreign_user&lt;/literal&gt;,
+      the setting &lt;literal&gt;'db=%d, user=%u'&lt;/literal&gt; is replaced with
+      &lt;literal&gt;'db=local_db, user=local_user'&lt;/literal&gt;.
+</span>
+《機械翻訳》たとえば、ユーザー<code class="literal">local_user</code>がデータベース<code class="literal">local_db</code>から<code class="literal">foreign_db</code>への接続をユーザー<code class="literal">foreign_user</code>として確立するとします。
+設定<code class="literal">'db=%d,user=%u'</code>は<code class="literal">'db=local_db,user=local_user'</code>に置き換えられます。
+     </p></dd></dl></div></div><div class="sect2" id="id-1.11.7.47.19"><div class="titlepage"><div><div><h3 class="title">F.38.9. 例</h3></div></div></div><span class="original">
+  &lt;title&gt;Examples&lt;/title&gt;
+</span><p>
+<span class="original">
+   Here is an example of creating a foreign table with
+   &lt;literal&gt;postgres_fdw&lt;/literal&gt;. First install the extension:
+</span>
+これは<code class="literal">postgres_fdw</code>で外部テーブルを作成する例です。
+まず、拡張をインストールします。
+  </p><pre class="programlisting">
+CREATE EXTENSION postgres_fdw;
+</pre><p>
+<span class="original">
+   Then create a foreign server using &lt;xref linkend="sql-createserver"/&gt;.
+   In this example we wish to connect to a &lt;productname&gt;PostgreSQL&lt;/productname&gt; server
+   on host &lt;literal&gt;192.83.123.89&lt;/literal&gt; listening on
+   port &lt;literal&gt;5432&lt;/literal&gt;.  The database to which the connection is made
+   is named &lt;literal&gt;foreign_db&lt;/literal&gt; on the remote server:
+</span>
+次に、<a class="xref" href="sql-createserver.html" title="CREATE SERVER"><span class="refentrytitle">CREATE SERVER</span></a>を使って外部サーバを作成します。
+この例では、ホスト<code class="literal">192.83.123.89</code>でポート<code class="literal">5432</code>を監視している<span class="productname">PostgreSQL</span>サーバに接続します。
+接続されるデータベースはリモートサーバ上で<code class="literal">foreign_db</code>という名前です。
+
+</p><pre class="programlisting">
+CREATE SERVER foreign_server
+        FOREIGN DATA WRAPPER postgres_fdw
+        OPTIONS (host '192.83.123.89', port '5432', dbname 'foreign_db');
+</pre><p>
+  </p><p>
+<span class="original">
+   A user mapping, defined with &lt;xref linkend="sql-createusermapping"/&gt;, is
+   needed as well to identify the role that will be used on the remote
+   server:
+</span>
+リモートサーバで使われるロールを特定するためにユーザマッピングも必要です。ユーザマッピングは<a class="xref" href="sql-createusermapping.html" title="CREATE USER MAPPING"><span class="refentrytitle">CREATE USER MAPPING</span></a>で定義されます。
+
+</p><pre class="programlisting">
+CREATE USER MAPPING FOR local_user
+        SERVER foreign_server
+        OPTIONS (user 'foreign_user', password 'password');
+</pre><p>
+  </p><p>
+<span class="original">
+   Now it is possible to create a foreign table with
+   &lt;xref linkend="sql-createforeigntable"/&gt;.  In this example we
+   wish to access the table named &lt;structname&gt;some_schema.some_table&lt;/structname&gt;
+   on the remote server.  The local name for it will
+   be &lt;structname&gt;foreign_table&lt;/structname&gt;:
+</span>
+これで<a class="xref" href="sql-createforeigntable.html" title="CREATE FOREIGN TABLE"><span class="refentrytitle">CREATE FOREIGN TABLE</span></a>により外部テーブルが作成できるようになりました。
+この例では、リモートサーバの<code class="structname">some_schema.some_table</code>という名前のテーブルにアクセスします。
+対応するローカルの名前は<code class="structname">foreign_table</code>です。
+
+</p><pre class="programlisting">
+CREATE FOREIGN TABLE foreign_table (
+        id integer NOT NULL,
+        data text
+)
+        SERVER foreign_server
+        OPTIONS (schema_name 'some_schema', table_name 'some_table');
+</pre><p>
+
+<span class="original">
+   It's essential that the data types and other properties of the columns
+   declared in &lt;command&gt;CREATE FOREIGN TABLE&lt;/command&gt; match the actual remote table.
+   Column names must match as well, unless you attach &lt;literal&gt;column_name&lt;/literal&gt;
+   options to the individual columns to show how they are named in the remote
+   table.
+   In many cases, use of &lt;link linkend="sql-importforeignschema"&gt;&lt;command&gt;IMPORT FOREIGN SCHEMA&lt;/command&gt;&lt;/link&gt; is
+   preferable to constructing foreign table definitions manually.
+</span>
+<code class="command">CREATE FOREIGN TABLE</code>で宣言した列のデータ型やその他の属性は、実際のリモートテーブルと一致していることが必須です。
+リモートテーブルでどのような名前なのかを個々の列に対して<code class="literal">column_name</code>オプションで指定しない限り、列名も一致していなければなりません。
+多くの場合、外部テーブルの定義を手作業で作成するよりも、<a class="link" href="sql-importforeignschema.html" title="IMPORT FOREIGN SCHEMA"><code class="command">IMPORT FOREIGN SCHEMA</code></a>を使用する方が望ましいです。
+  </p></div><div class="sect2" id="id-1.11.7.47.20"><div class="titlepage"><div><div><h3 class="title">F.38.10. 作者</h3></div></div></div><span class="original">
+  &lt;title&gt;Author&lt;/title&gt;
+</span><p>
+<span class="original">
+   Shigeru Hanada &lt;email&gt;shigeru.hanada@gmail.com&lt;/email&gt;
+</span>
+花田 茂 <code class="email">&lt;<a class="email" href="mailto:shigeru.hanada@gmail.com">shigeru.hanada@gmail.com</a>&gt;</code>
+  </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="pgwalinspect.html" title="F.37. pg_walinspect">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュール">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="seg.html" title="F.39. seg">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">F.37. pg_walinspect </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> F.39. seg</td></tr></table></div></body></html>

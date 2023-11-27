@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>71.3. 拡張性</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="brin-builtin-opclasses.html" title="71.2. 組み込み演算子クラス" /><link rel="next" href="hash-index.html" title="第72章 ハッシュインデックス" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="brin.html" title="第71章 BRINインデックス">第71章 BRINインデックス</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : brin-extensibility.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="brin-builtin-opclasses.html" title="71.2. 組み込み演算子クラス">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="brin.html" title="第71章 BRINインデックス">上へ</a></td><td width="60%" align="center">71.3. 拡張性</td><td width="20%" align="right"> <a accesskey="n" href="hash-index.html" title="第72章 ハッシュインデックス">次へ</a></td></tr></table><hr /></div><div class="sect1" id="BRIN-EXTENSIBILITY"><div class="titlepage"><div><div><h2 class="title" style="clear: both">71.3. 拡張性</h2></div></div></div><span class="original">
+ &lt;title&gt;Extensibility&lt;/title&gt;
+</span><p>
+<span class="original">
+  The &lt;acronym&gt;BRIN&lt;/acronym&gt; interface has a high level of abstraction,
+  requiring the access method implementer only to implement the semantics
+  of the data type being accessed.  The &lt;acronym&gt;BRIN&lt;/acronym&gt; layer
+  itself takes care of concurrency, logging and searching the index structure.
+</span>
+<acronym class="acronym">BRIN</acronym>のインタフェースは高度に抽象化されており、アクセスメソッドを実装する人は、アクセスされるデータ型のセマンティクスを実装するだけで良いようになっています。
+<acronym class="acronym">BRIN</acronym>層は、同時実行性、ログ、インデックス構造の検索を担当します。
+ </p><p>
+<span class="original">
+  All it takes to get a &lt;acronym&gt;BRIN&lt;/acronym&gt; access method working is to
+  implement a few user-defined methods, which define the behavior of
+  summary values stored in the index and the way they interact with
+  scan keys.
+  In short, &lt;acronym&gt;BRIN&lt;/acronym&gt; combines
+  extensibility with generality, code reuse, and a clean interface.
+</span>
+<acronym class="acronym">BRIN</acronym>アクセスメソッドを動作させるために必要なのは、インデックスに格納された要約値の振る舞いと、それらがインデックススキャンする際にどう関係するのかを定義する少数のメソッドを実装することだけです。
+つまり、<acronym class="acronym">BRIN</acronym>は一般性、コードの再利用性、整理されたインタフェースと拡張性を同時に実現しています。
+ </p><p>
+<span class="original">
+  There are four methods that an operator class for &lt;acronym&gt;BRIN&lt;/acronym&gt;
+  must provide:
+</span>
+<acronym class="acronym">BRIN</acronym>用の演算子クラスは、4つのメソッドを提供する必要があります。
+
+  </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="function">BrinOpcInfo *opcInfo(Oid type_oid)</code></span></dt><dd><p>
+<span class="original">
+      Returns internal information about the indexed columns' summary data.
+      The return value must point to a palloc'd &lt;structname&gt;BrinOpcInfo&lt;/structname&gt;,
+      which has this definition:
+</span>
+インデックスが貼られた列の要約データに関する内部情報を返します。
+返却値はpallocされた<code class="structname">BrinOpcInfo</code>へのポインタでなければなりません。
+BrinOpcInfoは以下の定義を持ちます。
+</p><pre class="programlisting">
+typedef struct BrinOpcInfo
+{
+    /* Number of columns stored in an index column of this opclass */
+    uint16      oi_nstored;
+
+    /* Opaque pointer for the opclass' private use */
+    void       *oi_opaque;
+
+    /* Type cache entries of the stored columns */
+    TypeCacheEntry *oi_typcache[FLEXIBLE_ARRAY_MEMBER];
+} BrinOpcInfo;
+</pre><p>
+<span class="original">
+      &lt;structname&gt;BrinOpcInfo&lt;/structname&gt;.&lt;structfield&gt;oi_opaque&lt;/structfield&gt; can be used by the
+      operator class routines to pass information between support functions
+      during an index scan.
+</span>
+<code class="structname">BrinOpcInfo</code>.<code class="structfield">oi_opaque</code>は、演算子クラスのルーチンが、インデックススキャン中にサポート関数同士で情報のやり取りをするために使うことができます。
+     </p></dd><dt><span class="term"><code class="function">bool consistent(BrinDesc *bdesc, BrinValues *column,
+       ScanKey *keys, int nkeys)</code></span></dt><dd><p>
+<span class="original">
+      Returns whether all the ScanKey entries are consistent with the given
+      indexed values for a range.
+      The attribute number to use is passed as part of the scan key.
+      Multiple scan keys for the same attribute may be passed at once; the
+      number of entries is determined by the &lt;literal&gt;nkeys&lt;/literal&gt; parameter.
+</span>
+ある範囲について、すべてのScanKeyエントリが指定されたインデックス値と一致するかどうかを返します。
+使用する属性の数はスキャンキーの一部として渡されます。
+同じ属性の複数のスキャンキーを一度に渡すこともできます。
+エントリの数は<code class="literal">nkeys</code>パラメータによって決定されます。
+     </p></dd><dt><span class="term"><code class="function">bool consistent(BrinDesc *bdesc, BrinValues *column,
+       ScanKey key)</code></span></dt><dd><p>
+<span class="original">
+      Returns whether the ScanKey is consistent with the given indexed
+      values for a range.
+      The attribute number to use is passed as part of the scan key.
+      This is an older backward-compatible variant of the consistent function.
+</span>
+ScanKeyがある範囲のインデックス値と一致しているかどうかを返します。
+属性の数はスキャンキーの一部として渡されます。
+これはconsistent関数の古い後方互換のための派生型です。
+     </p></dd><dt><span class="term"><code class="function">bool addValue(BrinDesc *bdesc, BrinValues *column,
+       Datum newval, bool isnull)</code></span></dt><dd><p>
+<span class="original">
+      Given an index tuple and an indexed value, modifies the indicated
+      attribute of the tuple so that it additionally represents the new value.
+      If any modification was done to the tuple, &lt;literal&gt;true&lt;/literal&gt; is
+      returned.
+</span>
+追加された新しい値をインデックスが表現できるように、与えられたインデックスタプルとインデックス値にしたがい、タプルの指定アトリビュートを変更します。
+タプルの更新が行われれば、<code class="literal">true</code>が返却されます。
+     </p></dd><dt><span class="term"><code class="function">bool unionTuples(BrinDesc *bdesc, BrinValues *a,
+       BrinValues *b)</code></span></dt><dd><p>
+<span class="original">
+      Consolidates two index tuples. Given two index tuples, modifies the
+      indicated attribute of the first of them so that it represents both tuples.
+      The second tuple is not modified.
+</span>
+2つのインデックスタプルを統合します。
+与えられた2つのインデックスタプルのうち、最初のインデックスタプルを変更して、両方のタプルを表現できるようにします。
+2番目のタプルは変更されません。
+     </p></dd></dl></div><p>
+
+<span class="original">
+  An operator class for &lt;acronym&gt;BRIN&lt;/acronym&gt; can optionally specify the
+  following method:
+</span>
+省略可能ですが、<acronym class="acronym">BRIN</acronym>に対する演算子クラスは以下のメソッドを指定できます。
+
+  </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="function">void options(local_relopts *relopts)</code></span></dt><dd><p>
+<span class="original">
+       Defines a set of user-visible parameters that control operator class
+       behavior.
+</span>
+演算子クラスの振舞いを制御するユーザに可視のパラメータの集合を定義します。
+      </p><p>
+<span class="original">
+       The &lt;function&gt;options&lt;/function&gt; function is passed a pointer to a
+       &lt;structname&gt;local_relopts&lt;/structname&gt; struct, which needs to be
+       filled with a set of operator class specific options.  The options
+       can be accessed from other support functions using the
+       &lt;literal&gt;PG_HAS_OPCLASS_OPTIONS()&lt;/literal&gt; and
+       &lt;literal&gt;PG_GET_OPCLASS_OPTIONS()&lt;/literal&gt; macros.
+</span>
+<code class="function">options</code>関数には<code class="structname">local_relopts</code>構造体へのポインタが渡されますが、構造体を演算子クラスに固有のオプションの集合で満たすことが必要です。
+オプションはマクロ<code class="literal">PG_HAS_OPCLASS_OPTIONS()</code>と<code class="literal">PG_GET_OPCLASS_OPTIONS()</code>を使って他のサポート関数からアクセスできます。
+      </p><p>
+<span class="original">
+       Since both key extraction of indexed values and representation of the
+       key in &lt;acronym&gt;BRIN&lt;/acronym&gt; are flexible, they may depend on
+       user-specified parameters.
+</span>
+インデックス付けされた値からのキーの抽出にも<acronym class="acronym">BRIN</acronym>でのキーの表現にも柔軟性がありますので、ユーザに固有のパラメータに依存するかもしれません。
+      </p></dd></dl></div><p>
+
+<span class="original">
+  The core distribution includes support for four types of operator classes:
+  minmax, minmax-multi, inclusion and bloom.  Operator class definitions
+  using them are shipped for in-core data types as appropriate.  Additional
+  operator classes can be defined by the user for other data types using
+  equivalent definitions, without having to write any source code;
+  appropriate catalog entries being declared is enough.  Note that
+  assumptions about the semantics of operator strategies are embedded in the
+  support functions' source code.
+</span>
+コア配布物には、4種類の演算子クラスが含まれます。すなわち、minmax、inclusion、minmax-multiとbloomです。
+それらを使った演算子クラスの定義がコア配布物に必要に応じて含まれます。
+同じ定義を使って、ユーザは他のデータ型のために演算子クラスを定義することができます。
+そのためにソースコードを書く必要はありません。適切なシステムカタログの定義があれば十分です。
+演算子ストラテジのセマンティクスは、サポート関数のソースコード中に埋め込まれていることに注意してください。
+ </p><p>
+<span class="original">
+  Operator classes that implement completely different semantics are also
+  possible, provided implementations of the four main support functions
+  described above are written.  Note that backwards compatibility across major
+  releases is not guaranteed: for example, additional support functions might
+  be required in later releases.
+</span>
+前述の4つの主要なサポート関数を実装することにより、まったく異なるセマンティクスを実装する演算子クラスも可能です。
+なお、メジャーリリース間では下位互換性は保証されていません。
+たとえば、新しいリリースでは、サポート関数が追加で必要になるかもしれません。
+ </p><p>
+<span class="original">
+  To write an operator class for a data type that implements a totally
+  ordered set, it is possible to use the minmax support functions
+  alongside the corresponding operators, as shown in
+  &lt;xref linkend="brin-extensibility-minmax-table"/&gt;.
+  All operator class members (functions and operators) are mandatory.
+</span>
+<a class="xref" href="brin-extensibility.html#BRIN-EXTENSIBILITY-MINMAX-TABLE" title="表71.2 Minmax演算子クラスの関数とサポート番号">表 71.2</a>で示すように、全順序集合を実装するデータ型のための演算子クラスを書くために、関連する演算子とともにminmaxサポート関数を使うことができます。
+演算子クラスのメンバー(関数と演算子)はすべて必須です。
+ </p><div class="table" id="BRIN-EXTENSIBILITY-MINMAX-TABLE"><p class="title"><strong>表71.2 Minmax演算子クラスの関数とサポート番号</strong></p><div class="table-contents"><span class="original">
+  &lt;title&gt;Function and Support Numbers for Minmax Operator Classes&lt;/title&gt;
+</span><table class="table" summary="Minmax演算子クラスの関数とサポート番号" border="1"><colgroup><col class="col1" /><col class="col2" /></colgroup><thead><tr><th>演算子クラスメンバー</th><th>オブジェクト</th></tr></thead><tbody><tr><td>サポート関数 1</td><td>内部関数<code class="function">brin_minmax_opcinfo()</code></td></tr><tr><td>サポート関数 2</td><td>内部関数<code class="function">brin_minmax_add_value()</code></td></tr><tr><td>サポート関数 3</td><td>内部関数<code class="function">brin_minmax_consistent()</code></td></tr><tr><td>サポート関数 4</td><td>内部関数<code class="function">brin_minmax_union()</code></td></tr><tr><td>Operator Strategy 1</td><td>operator less-than</td></tr><tr><td>Operator Strategy 2</td><td>operator less-than-or-equal-to</td></tr><tr><td>Operator Strategy 3</td><td>operator equal-to</td></tr><tr><td>Operator Strategy 4</td><td>operator greater-than-or-equal-to</td></tr><tr><td>Operator Strategy 5</td><td>operator greater-than</td></tr></tbody></table></div></div><br class="table-break" /><p>
+<span class="original">
+  To write an operator class for a complex data type which has values
+  included within another type, it's possible to use the inclusion support
+  functions alongside the corresponding operators, as shown
+  in &lt;xref linkend="brin-extensibility-inclusion-table"/&gt;.  It requires
+  only a single additional function, which can be written in any language.
+  More functions can be defined for additional functionality.  All operators
+  are optional.  Some operators require other operators, as shown as
+  dependencies on the table.
+</span>
+<a class="xref" href="brin-extensibility.html#BRIN-EXTENSIBILITY-INCLUSION-TABLE" title="表71.3 Inclusion演算子クラスの関数とサポート番号">表 71.3</a>で示すように、他のデータ型の値を含む複合データ型の演算子クラスを書くには、関連する演算子とともに、inclusionサポート関数を使うことができます。
+任意の言語で書かれたたったひとつの関数を追加するだけです。
+機能を追加するために関数を追加できます。
+すべての演算子はオプションです。
+表の中依存性の項目で示されているように、ある種の演算子は他の演算子を必要とすることもあります。
+ </p><div class="table" id="BRIN-EXTENSIBILITY-INCLUSION-TABLE"><p class="title"><strong>表71.3 Inclusion演算子クラスの関数とサポート番号</strong></p><div class="table-contents"><span class="original">
+  &lt;title&gt;Function and Support Numbers for Inclusion Operator Classes&lt;/title&gt;
+</span><table class="table" summary="Inclusion演算子クラスの関数とサポート番号" border="1"><colgroup><col class="col1" /><col class="col2" /><col class="col3" /></colgroup><thead><tr><th>演算子クラスメンバー</th><th>オブジェクト</th><th>依存性</th></tr></thead><tbody><tr><td>サポート関数 1</td><td>内部関数<code class="function">brin_inclusion_opcinfo()</code></td><td> </td></tr><tr><td>サポート関数 2</td><td>内部関数<code class="function">brin_inclusion_add_value()</code></td><td> </td></tr><tr><td>サポート関数 3</td><td>内部関数<code class="function">brin_inclusion_consistent()</code></td><td> </td></tr><tr><td>サポート関数 4</td><td>内部関数<code class="function">brin_inclusion_union()</code></td><td> </td></tr><tr><td>サポート関数 11</td><td>2つの要素をマージする関数</td><td> </td></tr><tr><td>サポート関数 12</td><td>2つの要素がマージ可能かどうか確認するオプションの関数</td><td> </td></tr><tr><td>サポート関数 13</td><td>要素が他の要素に含まれるかどうかを確認するオプションの関数</td><td> </td></tr><tr><td>サポート関数 14</td><td>要素が空かどうかを確認するオプションの関数</td><td> </td></tr><tr><td>Operator Strategy 1</td><td>operator left-of</td><td>Operator Strategy 4</td></tr><tr><td>Operator Strategy 2</td><td>operator does-not-extend-to-the-right-of</td><td>Operator Strategy 5</td></tr><tr><td>Operator Strategy 3</td><td>operator overlaps</td><td> </td></tr><tr><td>Operator Strategy 4</td><td>operator does-not-extend-to-the-left-of</td><td>Operator Strategy 1</td></tr><tr><td>Operator Strategy 5</td><td>operator right-of</td><td>Operator Strategy 2</td></tr><tr><td>Operator Strategy 6, 18</td><td>operator same-as-or-equal-to</td><td>Operator Strategy 7</td></tr><tr><td>Operator Strategy 7, 16, 24, 25</td><td>operator contains-or-equal-to</td><td> </td></tr><tr><td>Operator Strategy 8, 26, 27</td><td>operator is-contained-by-or-equal-to</td><td>Operator Strategy 3</td></tr><tr><td>Operator Strategy 9</td><td>operator does-not-extend-above</td><td>Operator Strategy 11</td></tr><tr><td>Operator Strategy 10</td><td>operator is-below</td><td>Operator Strategy 12</td></tr><tr><td>Operator Strategy 11</td><td>operator is-above</td><td>Operator Strategy 9</td></tr><tr><td>Operator Strategy 12</td><td>operator does-not-extend-below</td><td>Operator Strategy 10</td></tr><tr><td>Operator Strategy 20</td><td>operator less-than</td><td>Operator Strategy 5</td></tr><tr><td>Operator Strategy 21</td><td>operator less-than-or-equal-to</td><td>Operator Strategy 5</td></tr><tr><td>Operator Strategy 22</td><td>operator greater-than</td><td>Operator Strategy 1</td></tr><tr><td>Operator Strategy 23</td><td>operator greater-than-or-equal-to</td><td>Operator Strategy 1</td></tr></tbody></table></div></div><br class="table-break" /><p>
+<span class="original">
+    Support function numbers 1 through 10 are reserved for the BRIN internal
+    functions, so the SQL level functions start with number 11.  Support
+    function number 11 is the main function required to build the index.
+    It should accept two arguments with the same data type as the operator class,
+    and return the union of them.  The inclusion operator class can store union
+    values with different data types if it is defined with the
+    &lt;literal&gt;STORAGE&lt;/literal&gt; parameter.  The return value of the union
+    function should match the &lt;literal&gt;STORAGE&lt;/literal&gt; data type.
+</span>
+サポート関数番号1から10は、BRINの内部関数用に予約されており、SQLレベルの関数は番号11から始まります。
+サポート関数11は、インデックスを構築するのに必要なメイン関数です。
+その関数は演算子クラスと同じデータ型を持つ2つの引数を受け取り、それらの和を返します。
+もし<code class="literal">STORAGE</code>パラメータで定義されていれば、inclusion 演算子クラスは異なるデータ型の和を格納できます。
+和関数の返り値は、<code class="literal">STORAGE</code>データ型と一致していなければなりません。
+ </p><p>
+<span class="original">
+    Support function numbers 12 and 14 are provided to support
+    irregularities of built-in data types.  Function number 12
+    is used to support network addresses from different families which
+    are not mergeable.  Function number 14 is used to support
+    empty ranges.  Function number 13 is an optional but
+    recommended one, which allows the new value to be checked before
+    it is passed to the union function.  As the BRIN framework can shortcut
+    some operations when the union is not changed, using this
+    function can improve index performance.
+</span>
+サポート関数番号12と14は、組み込みデータ型の例外事象をサポートするために提供されます。
+サポート関数番号12は、マージできない異なるファミリーのネットワークアドレスをサポートするために使用されます。
+サポート関数番号14は、空のレンジをサポートするために使用されます。
+サポート関数番号13はオプションですが、和関数に渡される前に新しい値のチェックを行うためのものとして推奨されます。
+BRINフレームワークは和が変化しない時に操作を省略することができるため、この関数を使うことによってインデックスの性能が向上する可能性があります。
+ </p><p>
+<span class="original">
+  To write an operator class for a data type that implements only an equality
+  operator and supports hashing, it is possible to use the bloom support procedures
+  alongside the corresponding operators, as shown in
+  &lt;xref linkend="brin-extensibility-bloom-table"/&gt;.
+  All operator class members (procedures and operators) are mandatory.
+</span>
+<a class="xref" href="brin-extensibility.html#BRIN-EXTENSIBILITY-BLOOM-TABLE" title="表71.4 Bloom演算子クラスのプロシージャとサポート番号">表 71.4</a>で示すように、等号演算子のみを実装しハッシュをサポートするデータ型の演算子クラスを書くために、関連する演算子とともにbloomがサポートするプロシージャを使うことができます。
+演算子クラスのメンバー(プロシージャと演算子)はすべて必須です。
+ </p><div class="table" id="BRIN-EXTENSIBILITY-BLOOM-TABLE"><p class="title"><strong>表71.4 Bloom演算子クラスのプロシージャとサポート番号</strong></p><div class="table-contents"><span class="original">
+  &lt;title&gt;Procedure and Support Numbers for Bloom Operator Classes&lt;/title&gt;
+</span><table class="table" summary="Bloom演算子クラスのプロシージャとサポート番号" border="1"><colgroup><col /><col /></colgroup><thead><tr><th>演算子クラスメンバー</th><th>オブジェクト</th></tr></thead><tbody><tr><td>サポートプロシージャ 1</td><td>内部関数<code class="function">brin_bloom_opcinfo()</code></td></tr><tr><td>サポートプロシージャ 2</td><td>内部関数<code class="function">brin_bloom_add_value()</code></td></tr><tr><td>サポートプロシージャ 3</td><td>内部関数<code class="function">brin_bloom_consistent()</code></td></tr><tr><td>サポートプロシージャ 4</td><td>内部関数<code class="function">brin_bloom_union()</code></td></tr><tr><td>サポートプロシージャ 11</td><td>要素のハッシュを計算する関数</td></tr><tr><td>Operator Strategy 1</td><td>operator equal-to</td></tr></tbody></table></div></div><br class="table-break" /><p>
+<span class="original">
+    Support procedure numbers 1-10 are reserved for the BRIN internal
+    functions, so the SQL level functions start with number 11.  Support
+    function number 11 is the main function required to build the index.
+    It should accept one argument with the same data type as the operator class,
+    and return a hash of the value.
+</span>
+サポートプロシージャ番号1から10は、BRINの内部関数として予約されており、SQLレベルの関数は11番から始まります。
+サポート関数11は、インデックスを構築するのに必要なメイン関数です。
+演算子クラスと同じデータ型の引数を1つ受け取り、その値のハッシュを返す必要があります。
+ </p><p>
+<span class="original">
+  The minmax-multi operator class is also intended for data types implementing
+  a totally ordered set, and may be seen as a simple extension of the minmax
+  operator class. While minmax operator class summarizes values from each block
+  range into a single contiguous interval, minmax-multi allows summarization
+  into multiple smaller intervals to improve handling of outlier values.
+  It is possible to use the minmax-multi support procedures alongside the
+  corresponding operators, as shown in
+  &lt;xref linkend="brin-extensibility-minmax-multi-table"/&gt;.
+  All operator class members (procedures and operators) are mandatory.
+</span>
+minmax-multi演算子クラスもまた、全順序集合を実装するデータ型を対象としており、minmax演算子クラスの単純な拡張と見なすことができます。
+minmax演算子クラスは各ブロックの範囲を一つの連続した区間にまとめますが、minmax-multiはより小さな複数の区間にまとめることで、外れ値の扱いを改善します。
+<a class="xref" href="brin-extensibility.html#BRIN-EXTENSIBILITY-MINMAX-MULTI-TABLE" title="表71.5 minmax-multi演算子クラスのプロシージャとサポート番号">表 71.5</a>で示すように、関連する演算子とともにminmax-multiがサポートするプロシージャを使うことができます。
+演算子クラスのメンバー(プロシージャと演算子)はすべて必須です。
+ </p><div class="table" id="BRIN-EXTENSIBILITY-MINMAX-MULTI-TABLE"><p class="title"><strong>表71.5 minmax-multi演算子クラスのプロシージャとサポート番号</strong></p><div class="table-contents"><span class="original">
+  &lt;title&gt;Procedure and Support Numbers for minmax-multi Operator Classes&lt;/title&gt;
+</span><table class="table" summary="minmax-multi演算子クラスのプロシージャとサポート番号" border="1"><colgroup><col /><col /></colgroup><thead><tr><th>演算子クラスメンバー</th><th>オブジェクト</th></tr></thead><tbody><tr><td>サポートプロシージャ 1</td><td>内部関数<code class="function">brin_minmax_multi_opcinfo()</code></td></tr><tr><td>サポートプロシージャ 2</td><td>内部関数<code class="function">brin_minmax_multi_add_value()</code></td></tr><tr><td>サポートプロシージャ 3</td><td>内部関数<code class="function">brin_minmax_multi_consistent()</code></td></tr><tr><td>サポートプロシージャ 4</td><td>内部関数<code class="function">brin_minmax_multi_union()</code></td></tr><tr><td>サポートプロシージャ 11</td><td>2つの値の間の距離(範囲の長さ)を計算する関数</td></tr><tr><td>Operator Strategy 1</td><td>operator less-than</td></tr><tr><td>Operator Strategy 2</td><td>operator less-than-or-equal-to</td></tr><tr><td>Operator Strategy 3</td><td>operator equal-to</td></tr><tr><td>Operator Strategy 4</td><td>operator greater-than-or-equal-to</td></tr><tr><td>Operator Strategy 5</td><td>operator greater-than</td></tr></tbody></table></div></div><br class="table-break" /><p>
+<span class="original">
+    Both minmax and inclusion operator classes support cross-data-type
+    operators, though with these the dependencies become more complicated.
+    The minmax operator class requires a full set of operators to be
+    defined with both arguments having the same data type.  It allows
+    additional data types to be supported by defining extra sets
+    of operators.  Inclusion operator class operator strategies are dependent
+    on another operator strategy as shown in
+    &lt;xref linkend="brin-extensibility-inclusion-table"/&gt;, or the same
+    operator strategy as themselves.  They require the dependency
+    operator to be defined with the &lt;literal&gt;STORAGE&lt;/literal&gt; data type as the
+    left-hand-side argument and the other supported data type to be the
+    right-hand-side argument of the supported operator.  See
+    &lt;literal&gt;float4_minmax_ops&lt;/literal&gt; as an example of minmax, and
+    &lt;literal&gt;box_inclusion_ops&lt;/literal&gt; as an example of inclusion.
+</span>
+minmaxとinclusion演算子クラスは、データ型をまたがる演算子をサポートします。
+しかし、これらを使用すると依存関係はより複雑になります。
+minmax演算子クラスは、両方の引数がデータ型が同じ型である完全な演算子のセットが必要になります。
+追加の演算子の組を定義することにより、追加のデータ型をサポートすることができます。
+<a class="xref" href="brin-extensibility.html#BRIN-EXTENSIBILITY-INCLUSION-TABLE" title="表71.3 Inclusion演算子クラスの関数とサポート番号">表 71.3</a>で示すように、inclusion演算子クラスのストラテジは、他の演算子クラスのストラテジに依存するか、自分自身の演算子クラスのストラテジに依存します。
+演算子クラスは、依存演算子が<code class="literal">STORAGE</code>データ型とともにサポートするデータ型の左辺引数、他のサポートするデータ型をサポートする演算子の右辺引数として定義される必要があります。
+minmaxの例として<code class="literal">float4_minmax_ops</code>、inclusionの例として<code class="literal">box_inclusion_ops</code>を参照してください。
+ </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="brin-builtin-opclasses.html" title="71.2. 組み込み演算子クラス">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="brin.html" title="第71章 BRINインデックス">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="hash-index.html" title="第72章 ハッシュインデックス">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">71.2. 組み込み演算子クラス </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 第72章 ハッシュインデックス</td></tr></table></div></body></html>

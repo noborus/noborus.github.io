@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>22.4. ロールの削除</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="role-membership.html" title="22.3. ロールのメンバ資格" /><link rel="next" href="predefined-roles.html" title="22.5. 定義済みロール" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="user-manag.html" title="第22章 データベースロール">第22章 データベースロール</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : role-removal.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="role-membership.html" title="22.3. ロールのメンバ資格">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="user-manag.html" title="第22章 データベースロール">上へ</a></td><td width="60%" align="center">22.4. ロールの削除</td><td width="20%" align="right"> <a accesskey="n" href="predefined-roles.html" title="22.5. 定義済みロール">次へ</a></td></tr></table><hr /></div><div class="sect1" id="ROLE-REMOVAL"><div class="titlepage"><div><div><h2 class="title" style="clear: both">22.4. ロールの削除</h2></div></div></div><span class="original">
+  &lt;title&gt;Dropping Roles&lt;/title&gt;
+</span><p>
+<span class="original">
+   Because roles can own database objects and can hold privileges
+   to access other objects, dropping a role is often not just a matter of a
+   quick &lt;link linkend="sql-droprole"&gt;&lt;command&gt;DROP ROLE&lt;/command&gt;&lt;/link&gt;.  Any objects owned by the role must
+   first be dropped or reassigned to other owners; and any permissions
+   granted to the role must be revoked.
+</span>
+ロールはデータベースオブジェクトを所有したり、他のオブジェクトにアクセスする権限を保持したりできるので、ロールを削除するのは、単に<a class="link" href="sql-droprole.html" title="DROP ROLE"><code class="command">DROP ROLE</code></a>を実行すれば良いというだけのものでないことがよくあります。
+そのロールが所有するすべてのオブジェクトについて、まずそれを削除するか、あるいは他の所有者に移すかしなければなりません。
+また、そのロールに付与されたすべての権限を取り上げる必要があります。
+  </p><p>
+<span class="original">
+   Ownership of objects can be transferred one at a time
+   using &lt;command&gt;ALTER&lt;/command&gt; commands, for example:
+</span>
+オブジェクトの所有権は<code class="command">ALTER</code>コマンドを使って、1度に1つずつ移管することができます。
+以下に例を示します。
+</p><pre class="programlisting">
+ALTER TABLE bobs_table OWNER TO alice;
+</pre><p>
+<span class="original">
+   Alternatively, the &lt;link linkend="sql-reassign-owned"&gt;&lt;command&gt;REASSIGN OWNED&lt;/command&gt;&lt;/link&gt; command can be
+   used to reassign ownership of all objects owned by the role-to-be-dropped
+   to a single other role.  Because &lt;command&gt;REASSIGN OWNED&lt;/command&gt; cannot access
+   objects in other databases, it is necessary to run it in each database
+   that contains objects owned by the role.  (Note that the first
+   such &lt;command&gt;REASSIGN OWNED&lt;/command&gt; will change the ownership of any
+   shared-across-databases objects, that is databases or tablespaces, that
+   are owned by the role-to-be-dropped.)
+</span>
+その代わりに<a class="link" href="sql-reassign-owned.html" title="REASSIGN OWNED"><code class="command">REASSIGN OWNED</code></a>コマンドを使って、削除予定のロールが所有するすべてのオブジェクトの所有権を、単一の他のロールに移管することもできます。
+<code class="command">REASSIGN OWNED</code>は他のデータベースのオブジェクトにはアクセスできないので、そのロールが所有するオブジェクトを含むそれぞれのデータベース内で実行する必要があります。
+（最初にそのような<code class="command">REASSIGN OWNED</code>を実行した時に、データベース間で共有されるオブジェクト、つまりデータベースとテーブル空間については、すべて削除予定のロールから所有権が変更されることに注意してください。）
+  </p><p>
+<span class="original">
+   Once any valuable objects have been transferred to new owners, any
+   remaining objects owned by the role-to-be-dropped can be dropped with
+   the &lt;link linkend="sql-drop-owned"&gt;&lt;command&gt;DROP OWNED&lt;/command&gt;&lt;/link&gt; command.  Again, this command cannot
+   access objects in other databases, so it is necessary to run it in each
+   database that contains objects owned by the role.  Also, &lt;command&gt;DROP
+   OWNED&lt;/command&gt; will not drop entire databases or tablespaces, so it is
+   necessary to do that manually if the role owns any databases or
+   tablespaces that have not been transferred to new owners.
+</span>
+重要なオブジェクトがすべて新しい所有者に移管された後は、削除予定のロールが所有する残りのオブジェクトはすべて<a class="link" href="sql-drop-owned.html" title="DROP OWNED"><code class="command">DROP OWNED</code></a> commandコマンドで削除することができます。
+ここでも、このコマンドは他のデータベースのオブジェクトにはアクセスできないので、そのロールが所有するオブジェクトを含むそれぞれのデータベース内で実行する必要があります。
+また、<code class="command">DROP OWNED</code>はデータベース全体、あるいはテーブル空間全体を削除することはありませんので、ロールが所有するデータベースあるいはテーブル空間で新しい所有者に移管されていないものがあれば、手作業でそれを削除する必要があります。
+  </p><p>
+<span class="original">
+   &lt;command&gt;DROP OWNED&lt;/command&gt; also takes care of removing any privileges granted
+   to the target role for objects that do not belong to it.
+   Because &lt;command&gt;REASSIGN OWNED&lt;/command&gt; does not touch such objects, it's
+   typically necessary to run both &lt;command&gt;REASSIGN OWNED&lt;/command&gt;
+   and &lt;command&gt;DROP OWNED&lt;/command&gt; (in that order!) to fully remove the
+   dependencies of a role to be dropped.
+</span>
+<code class="command">DROP OWNED</code>は対象のロールが所有しないオブジェクトについて、そのロールに付与されたすべての権限を削除することも行います。
+<code class="command">REASSIGN OWNED</code>はそのようなオブジェクトに関与しないので、削除されるロールによる依存関係を完全に取り除くには、多くの場合、<code class="command">REASSIGN OWNED</code>と<code class="command">DROP OWNED</code>の両方を（この順序で！）実行する必要があります。
+  </p><p>
+<span class="original">
+   In short then, the most general recipe for removing a role that has been
+   used to own objects is:
+</span>
+まとめると、オブジェクトを所有するために使用されたロールを削除する最も一般的な手順は以下のようになります。
+  </p><pre class="programlisting">
+REASSIGN OWNED BY doomed_role TO successor_role;
+DROP OWNED BY doomed_role;
+<span class="original">
+&amp;#45;- repeat the above commands in each database of the cluster
+</span>
+-- 上記のコマンドをクラスタ内の各データベースについて繰り返す
+DROP ROLE doomed_role;
+</pre><p>
+<span class="original">
+   When not all owned objects are to be transferred to the same successor
+   owner, it's best to handle the exceptions manually and then perform
+   the above steps to mop up.
+</span>
+すべての所有オブジェクトを同一の後継所有者に移管するのでない場合は、例外部分を手作業で処理した後で、上記の手順を実行して残りを処理するのが最善でしょう。
+  </p><p>
+<span class="original">
+   If &lt;command&gt;DROP ROLE&lt;/command&gt; is attempted while dependent objects still
+   remain, it will issue messages identifying which objects need to be
+   reassigned or dropped.
+</span>
+依存するオブジェクトがまだ残っている状態で<code class="command">DROP ROLE</code>を実行すると、どのオブジェクトが所有者変更または削除の必要があるかを特定するメッセージが発行されます。
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="role-membership.html" title="22.3. ロールのメンバ資格">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="user-manag.html" title="第22章 データベースロール">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="predefined-roles.html" title="22.5. 定義済みロール">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">22.3. ロールのメンバ資格 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 22.5. 定義済みロール</td></tr></table></div></body></html>

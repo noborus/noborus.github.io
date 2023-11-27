@@ -1,0 +1,282 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>ALTER DOMAIN</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-alterdefaultprivileges.html" title="ALTER DEFAULT PRIVILEGES" /><link rel="next" href="sql-altereventtrigger.html" title="ALTER EVENT TRIGGER" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : sql-alterdomain.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-alterdefaultprivileges.html" title="ALTER DEFAULT PRIVILEGES">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">ALTER DOMAIN</td><td width="20%" align="right"> <a accesskey="n" href="sql-altereventtrigger.html" title="ALTER EVENT TRIGGER">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-ALTERDOMAIN"><div class="titlepage"></div><a id="id-1.9.3.9.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">ALTER DOMAIN</span></h2><p>ALTER DOMAIN — 
+<span class="original">
+   change the definition of a domain
+</span>
+ドメイン定義を変更する
+  </p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
+ALTER DOMAIN <em class="replaceable"><code>name</code></em>
+    { SET DEFAULT <em class="replaceable"><code>expression</code></em> | DROP DEFAULT }
+ALTER DOMAIN <em class="replaceable"><code>name</code></em>
+    { SET | DROP } NOT NULL
+ALTER DOMAIN <em class="replaceable"><code>name</code></em>
+    ADD <em class="replaceable"><code>domain_constraint</code></em> [ NOT VALID ]
+ALTER DOMAIN <em class="replaceable"><code>name</code></em>
+    DROP CONSTRAINT [ IF EXISTS ] <em class="replaceable"><code>constraint_name</code></em> [ RESTRICT | CASCADE ]
+ALTER DOMAIN <em class="replaceable"><code>name</code></em>
+     RENAME CONSTRAINT <em class="replaceable"><code>constraint_name</code></em> TO <em class="replaceable"><code>new_constraint_name</code></em>
+ALTER DOMAIN <em class="replaceable"><code>name</code></em>
+    VALIDATE CONSTRAINT <em class="replaceable"><code>constraint_name</code></em>
+ALTER DOMAIN <em class="replaceable"><code>name</code></em>
+    OWNER TO { <em class="replaceable"><code>new_owner</code></em> | CURRENT_ROLE | CURRENT_USER | SESSION_USER }
+ALTER DOMAIN <em class="replaceable"><code>name</code></em>
+    RENAME TO <em class="replaceable"><code>new_name</code></em>
+ALTER DOMAIN <em class="replaceable"><code>name</code></em>
+    SET SCHEMA <em class="replaceable"><code>new_schema</code></em>
+</pre></div><div class="refsect1" id="id-1.9.3.9.5"><h2>説明</h2><span class="original">
+  &lt;title&gt;Description&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;command&gt;ALTER DOMAIN&lt;/command&gt; changes the definition of an existing domain.
+   There are several sub-forms:
+</span>
+<code class="command">ALTER DOMAIN</code>は既存ドメインの定義を変更します。
+以下に示す副構文があります。
+  </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">SET</code>/<code class="literal">DROP DEFAULT</code></span></dt><dd><p>
+<span class="original">
+      These forms set or remove the default value for a domain. Note
+      that defaults only apply to subsequent &lt;command&gt;INSERT&lt;/command&gt;
+      commands; they do not affect rows already in a table using the domain.
+</span>
+この構文はドメインのデフォルト値の設定または削除を行います。
+指定したデフォルト値は、その後の<code class="command">INSERT</code>コマンドのみに適用されることに注意してください。
+そのドメインを使用したテーブルの既存の行には影響を与えません。
+     </p></dd><dt><span class="term"><code class="literal">SET</code>/<code class="literal">DROP NOT NULL</code></span></dt><dd><p>
+<span class="original">
+      These forms change whether a domain is marked to allow NULL
+      values or to reject NULL values.  You can only &lt;literal&gt;SET NOT NULL&lt;/literal&gt;
+      when the columns using the domain contain no null values.
+</span>
+この構文はドメインがNULL値を持つことができるかどうかを変更します。
+<code class="literal">SET NOT NULL</code>を実行できるのは、ドメインを使用する列にNULL値が含まれていない場合のみです。
+     </p></dd><dt><span class="term"><code class="literal">ADD <em class="replaceable"><code>domain_constraint</code></em> [ NOT VALID ]</code></span></dt><dd><p>
+<span class="original">
+      This form adds a new constraint to a domain using the same syntax as
+      &lt;link linkend="sql-createdomain"&gt;&lt;command&gt;CREATE DOMAIN&lt;/command&gt;&lt;/link&gt;.
+      When a new constraint is added to a domain, all columns using that
+      domain will be checked against the newly added constraint.  These
+      checks can be suppressed by adding the new constraint using the
+      &lt;literal&gt;NOT VALID&lt;/literal&gt; option; the constraint can later be made
+      valid using &lt;command&gt;ALTER DOMAIN ... VALIDATE CONSTRAINT&lt;/command&gt;.
+      Newly inserted or updated rows are always checked against all
+      constraints, even those marked &lt;literal&gt;NOT VALID&lt;/literal&gt;.
+      &lt;literal&gt;NOT VALID&lt;/literal&gt; is only accepted for &lt;literal&gt;CHECK&lt;/literal&gt; constraints.
+</span>
+この構文は<a class="link" href="sql-createdomain.html" title="CREATE DOMAIN"><code class="command">CREATE DOMAIN</code></a>と同一の構文を使って、ドメインに新しい制約を付与します。
+新しい制約がドメインに追加された時、そのドメインを使用するすべての列が新しく追加された制約に対して検査されます。
+<code class="literal">NOT VALID</code>オプションを使用して新しい制約を追加することでこれらの検査を抑制することができます。
+<code class="command">ALTER DOMAIN ... VALIDATE CONSTRAINT</code>を使用することで、後で制約を有効にすることができます。
+新しく挿入または更新される行については、<code class="literal">NOT VALID</code>と印が付いていたとしても、常にすべての制約が検査されます。
+<code class="literal">NOT VALID</code>は<code class="literal">CHECK</code>制約でのみ受け付けられます。
+     </p></dd><dt><span class="term"><code class="literal">DROP CONSTRAINT [ IF EXISTS ]</code></span></dt><dd><p>
+<span class="original">
+      This form drops constraints on a domain.
+      If &lt;literal&gt;IF EXISTS&lt;/literal&gt; is specified and the constraint
+      does not exist, no error is thrown. In this case a notice is issued instead.
+</span>
+この構文はドメイン上の制約を削除します。
+<code class="literal">IF EXISTS</code>が指定された場合、制約が存在しなくてもエラーになりません。
+この場合は代わりに注意メッセージが発生します。
+     </p></dd><dt><span class="term"><code class="literal">RENAME CONSTRAINT</code></span></dt><dd><p>
+<span class="original">
+      This form changes the name of a constraint on a domain.
+</span>
+この構文はドメイン上の制約名を変更します。
+     </p></dd><dt><span class="term"><code class="literal">VALIDATE CONSTRAINT</code></span></dt><dd><p>
+<span class="original">
+      This form validates a constraint previously added as
+      &lt;literal&gt;NOT VALID&lt;/literal&gt;, that is, it verifies that all values in
+      table columns of the domain type satisfy the specified constraint.
+</span>
+この構文は、以前に<code class="literal">NOT VALID</code>として追加された制約を検証します。
+つまり、そのドメイン型のテーブル列の値すべてが指定された制約を満たすかどうかを検証します。
+     </p></dd><dt><span class="term"><code class="literal">OWNER</code></span></dt><dd><p>
+<span class="original">
+      This form changes the owner of the domain to the specified user.
+</span>
+この構文はドメインの所有者を指定したユーザに変更します。
+     </p></dd><dt><span class="term"><code class="literal">RENAME</code></span></dt><dd><p>
+<span class="original">
+      This form changes the name of the domain.
+</span>
+この構文はドメインの名前を変更します。
+     </p></dd><dt><span class="term"><code class="literal">SET SCHEMA</code></span></dt><dd><p>
+<span class="original">
+      This form changes the schema of the domain.  Any constraints
+      associated with the domain are moved into the new schema as well.
+</span>
+この構文はドメインのスキーマを変更します。
+ドメインに関連する制約もすべて新しいスキーマに移動します。
+     </p></dd></dl></div><p>
+<span class="original">
+   You must own the domain to use &lt;command&gt;ALTER DOMAIN&lt;/command&gt;.
+   To change the schema of a domain, you must also have
+   &lt;literal&gt;CREATE&lt;/literal&gt; privilege on the new schema.
+   To alter the owner, you must also be a direct or indirect member of the new
+   owning role, and that role must have &lt;literal&gt;CREATE&lt;/literal&gt; privilege on
+   the domain's schema.  (These restrictions enforce that altering the owner
+   doesn't do anything you couldn't do by dropping and recreating the domain.
+   However, a superuser can alter ownership of any domain anyway.)
+</span>
+<code class="command">ALTER DOMAIN</code>を使用するにはドメインを所有していなければなりません。
+ドメインのスキーマを変更するには、新しいスキーマにおける<code class="literal">CREATE</code>権限を持たなければなりません。
+所有者を変更するには、直接または間接的に新しいロールのメンバでなければなりません。
+また、そのロールはドメインのスキーマにおいて<code class="literal">CREATE</code>を持たなければなりません。
+（この制限により、所有者の変更により、ドメインの削除と再作成でできないことは何もできないようにしています。
+しかし、スーパーユーザはすべてのドメインの所有者を変更することができます。）
+  </p></div><div class="refsect1" id="id-1.9.3.9.6"><h2>パラメータ</h2><span class="original">
+  &lt;title&gt;Parameters&lt;/title&gt;
+</span><p>
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><em class="replaceable"><code>name</code></em></span></dt><dd><p>
+<span class="original">
+        The name (possibly schema-qualified) of an existing domain to
+        alter.
+</span>
+変更対象となる既存のドメインの名前です（スキーマ修飾名も可）。
+       </p></dd><dt><span class="term"><em class="replaceable"><code>domain_constraint</code></em></span></dt><dd><p>
+<span class="original">
+        New domain constraint for the domain.
+</span>
+ドメイン用の新しいドメイン制約です。
+       </p></dd><dt><span class="term"><em class="replaceable"><code>constraint_name</code></em></span></dt><dd><p>
+<span class="original">
+        Name of an existing constraint to drop or rename.
+</span>
+削除または名前を変更する既存の制約名です。
+       </p></dd><dt><span class="term"><code class="literal">NOT VALID</code></span></dt><dd><p>
+<span class="original">
+        Do not verify existing stored data for constraint validity.
+</span>
+既存の格納されたデータについて制約の妥当性を検証しません。
+       </p></dd><dt><span class="term"><code class="literal">CASCADE</code></span></dt><dd><p>
+<span class="original">
+        Automatically drop objects that depend on the constraint,
+        and in turn all objects that depend on those objects
+        (see &lt;xref linkend="ddl-depend"/&gt;).
+</span>
+その制約に依存するオブジェクトを自動的に削除し、さらにそれらのオブジェクトに依存するすべてのオブジェクトも削除します（<a class="xref" href="ddl-depend.html" title="5.14. 依存関係の追跡">5.14</a>参照）。
+       </p></dd><dt><span class="term"><code class="literal">RESTRICT</code></span></dt><dd><p>
+<span class="original">
+        Refuse to drop the constraint if there are any dependent
+        objects. This is the default behavior.
+</span>
+依存するオブジェクトがある場合、制約の削除要求を拒否します。
+これがデフォルトの動作です。
+       </p></dd><dt><span class="term"><em class="replaceable"><code>new_name</code></em></span></dt><dd><p>
+<span class="original">
+        The new name for the domain.
+</span>
+ドメインの新しい名前です。
+       </p></dd><dt><span class="term"><em class="replaceable"><code>new_constraint_name</code></em></span></dt><dd><p>
+<span class="original">
+        The new name for the constraint.
+</span>
+制約の新しい名前です。
+       </p></dd><dt><span class="term"><em class="replaceable"><code>new_owner</code></em></span></dt><dd><p>
+<span class="original">
+        The user name of the new owner of the domain.
+</span>
+ドメインの新しい所有者となるユーザの名前です。
+       </p></dd><dt><span class="term"><em class="replaceable"><code>new_schema</code></em></span></dt><dd><p>
+<span class="original">
+        The new schema for the domain.
+</span>
+ドメインの新しいスキーマです。
+       </p></dd></dl></div><p>
+   </p></div><div class="refsect1" id="id-1.9.3.9.7"><h2>注釈</h2><span class="original">
+  &lt;title&gt;Notes&lt;/title&gt;
+</span><p>
+<span class="original">
+   Although &lt;command&gt;ALTER DOMAIN ADD CONSTRAINT&lt;/command&gt; attempts to verify
+   that existing stored data satisfies the new constraint, this check is not
+   bulletproof, because the command cannot &lt;quote&gt;see&lt;/quote&gt; table rows that
+   are newly inserted or updated and not yet committed.  If there is a hazard
+   that concurrent operations might insert bad data, the way to proceed is to
+   add the constraint using the &lt;literal&gt;NOT VALID&lt;/literal&gt; option, commit
+   that command, wait until all transactions started before that commit have
+   finished, and then issue &lt;command&gt;ALTER DOMAIN VALIDATE
+   CONSTRAINT&lt;/command&gt; to search for data violating the constraint.  This
+   method is reliable because once the constraint is committed, all new
+   transactions are guaranteed to enforce it against new values of the domain
+   type.
+</span>
+<code class="command">ALTER DOMAIN ADD CONSTRAINT</code>は、既存の格納されたデータが新しい制約を満たすか検証しようとしますが、この確認は万全なものではありません。このコマンドが新しく挿入または更新されてまだコミットされていないテーブル行を<span class="quote">「<span class="quote">見る</span>」</span>ことはできないからです。
+同時に実行される操作が不正なデータを挿入する危険があり、処理方法が<code class="literal">NOT VALID</code>オプションを使った制約を追加することであるなら、そのコマンドをコミットして、そのコミットよりも前に開始したトランザクションがすべて完了するのを待ってから、制約に違反するデータを探すために<code class="command">ALTER DOMAIN VALIDATE CONSTRAINT</code>を発行してください。
+制約が一度コミットされれば、新しいトランザクションはすべてドメイン型の新しい値に対してその制約を強制していることが保証されますので、この方法は信頼できます。
+  </p><p>
+<span class="original">
+   Currently, &lt;command&gt;ALTER DOMAIN ADD CONSTRAINT&lt;/command&gt;, &lt;command&gt;ALTER
+   DOMAIN VALIDATE CONSTRAINT&lt;/command&gt;, and &lt;command&gt;ALTER DOMAIN SET NOT
+   NULL&lt;/command&gt; will fail if the named domain or any derived domain is used
+   within a container-type column (a composite, array, or range column) in
+   any table in the database.  They should eventually be improved to be able
+   to verify the new constraint for such nested values.
+</span>
+今のところ、<code class="command">ALTER DOMAIN ADD CONSTRAINT</code>、<code class="command">ALTER DOMAIN VALIDATE CONSTRAINT</code>および<code class="command">ALTER DOMAIN SET NOT NULL</code>は、指定ドメインまたは任意の派生ドメインがデータベース内のいずれかのテーブルのコンテナ型の列（複合型、配列型もしくは範囲型の列）で使用されていた場合、失敗します。
+これは将来的には、こうした入れ子になった値に対する新しい制約を検証できるように改良されるべきです。
+  </p></div><div class="refsect1" id="id-1.9.3.9.8"><h2>例</h2><span class="original">
+  &lt;title&gt;Examples&lt;/title&gt;
+</span><p>
+<span class="original">
+   To add a &lt;literal&gt;NOT NULL&lt;/literal&gt; constraint to a domain:
+</span>
+ドメインに<code class="literal">NOT NULL</code>制約を付与します。
+</p><pre class="programlisting">
+ALTER DOMAIN zipcode SET NOT NULL;
+</pre><p>
+<span class="original">
+   To remove a &lt;literal&gt;NOT NULL&lt;/literal&gt; constraint from a domain:
+</span>
+ドメインから<code class="literal">NOT NULL</code>制約を削除します。
+</p><pre class="programlisting">
+ALTER DOMAIN zipcode DROP NOT NULL;
+</pre><p>
+  </p><p>
+<span class="original">
+   To add a check constraint to a domain:
+</span>
+ドメインにCHECK制約を付与します。
+</p><pre class="programlisting">
+ALTER DOMAIN zipcode ADD CONSTRAINT zipchk CHECK (char_length(VALUE) = 5);
+</pre><p>
+  </p><p>
+<span class="original">
+   To remove a check constraint from a domain:
+</span>
+ドメインからCHECK制約を削除します。
+</p><pre class="programlisting">
+ALTER DOMAIN zipcode DROP CONSTRAINT zipchk;
+</pre><p>
+  </p><p>
+<span class="original">
+   To rename a check constraint on a domain:
+</span>
+ドメイン上の検査制約の名前を変更します。
+</p><pre class="programlisting">
+ALTER DOMAIN zipcode RENAME CONSTRAINT zipchk TO zip_check;
+</pre><p>
+  </p><p>
+<span class="original">
+   To move the domain into a different schema:
+</span>
+ドメインを新しいスキーマに移動します。
+</p><pre class="programlisting">
+ALTER DOMAIN zipcode SET SCHEMA customers;
+</pre></div><div class="refsect1" id="SQL-ALTERDOMAIN-COMPATIBILITY"><h2>互換性</h2><span class="original">
+  &lt;title&gt;Compatibility&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;command&gt;ALTER DOMAIN&lt;/command&gt; conforms to the &lt;acronym&gt;SQL&lt;/acronym&gt;
+   standard, except for the &lt;literal&gt;OWNER&lt;/literal&gt;, &lt;literal&gt;RENAME&lt;/literal&gt;, &lt;literal&gt;SET SCHEMA&lt;/literal&gt;, and
+   &lt;literal&gt;VALIDATE CONSTRAINT&lt;/literal&gt; variants, which are
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; extensions.  The &lt;literal&gt;NOT VALID&lt;/literal&gt;
+   clause of the &lt;literal&gt;ADD CONSTRAINT&lt;/literal&gt; variant is also a
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; extension.
+</span>
+<code class="command">ALTER DOMAIN</code>文は標準<acronym class="acronym">SQL</acronym>に準拠しています。
+ただし、<code class="literal">OWNER</code>、<code class="literal">RENAME</code>、<code class="literal">SET SCHEMA</code>、<code class="literal">VALIDATE CONSTRAINT</code>構文は例外で、<span class="productname">PostgreSQL</span>の拡張です。
+<code class="literal">ADD CONSTRAINT</code>構文の<code class="literal">NOT VALID</code>句も<span class="productname">PostgreSQL</span>の拡張です。
+  </p></div><div class="refsect1" id="SQL-ALTERDOMAIN-SEE-ALSO"><h2>関連項目</h2><span class="original">
+  &lt;title&gt;See Also&lt;/title&gt;
+</span><span class="simplelist"><a class="xref" href="sql-createdomain.html" title="CREATE DOMAIN"><span class="refentrytitle">CREATE DOMAIN</span></a>, <a class="xref" href="sql-dropdomain.html" title="DROP DOMAIN"><span class="refentrytitle">DROP DOMAIN</span></a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-alterdefaultprivileges.html" title="ALTER DEFAULT PRIVILEGES">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-altereventtrigger.html" title="ALTER EVENT TRIGGER">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">ALTER DEFAULT PRIVILEGES </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> ALTER EVENT TRIGGER</td></tr></table></div></body></html>

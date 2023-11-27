@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>14.3. 明示的なJOIN句でプランナを制御する</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="planner-stats.html" title="14.2. プランナで使用される統計情報" /><link rel="next" href="populate.html" title="14.4. データベースへのデータ投入" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="performance-tips.html" title="第14章 性能に関するヒント">第14章 性能に関するヒント</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : explicit-joins.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="planner-stats.html" title="14.2. プランナで使用される統計情報">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="performance-tips.html" title="第14章 性能に関するヒント">上へ</a></td><td width="60%" align="center">14.3. 明示的な<code class="literal">JOIN</code>句でプランナを制御する</td><td width="20%" align="right"> <a accesskey="n" href="populate.html" title="14.4. データベースへのデータ投入">次へ</a></td></tr></table><hr /></div><div class="sect1" id="EXPLICIT-JOINS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">14.3. 明示的な<code class="literal">JOIN</code>句でプランナを制御する</h2></div></div></div><span class="original">
+  &lt;title&gt;Controlling the Planner with Explicit &lt;literal&gt;JOIN&lt;/literal&gt; Clauses&lt;/title&gt;
+</span><a id="id-1.5.13.7.2" class="indexterm"></a><a id="id-1.5.13.7.3" class="indexterm"></a><p>
+<span class="original">
+   It is possible
+   to control the query planner to some extent by using the explicit &lt;literal&gt;JOIN&lt;/literal&gt;
+   syntax.  To see why this matters, we first need some background.
+</span>
+明示的な<code class="literal">JOIN</code>構文を使って問い合わせプランナをある程度制御できます。
+どうしてこういうことが問題になるのか、まずその背景を見る必要があります。
+  </p><p>
+<span class="original">
+   In a simple join query, such as:
+</span>
+単純な問い合わせ、例えば
+</p><pre class="programlisting">
+SELECT * FROM a, b, c WHERE a.id = b.id AND b.ref = c.id;
+</pre><p>
+<span class="original">
+   the planner is free to join the given tables in any order.  For
+   example, it could generate a query plan that joins A to B, using
+   the &lt;literal&gt;WHERE&lt;/literal&gt; condition &lt;literal&gt;a.id = b.id&lt;/literal&gt;, and then
+   joins C to this joined table, using the other &lt;literal&gt;WHERE&lt;/literal&gt;
+   condition.  Or it could join B to C and then join A to that result.
+   Or it could join A to C and then join them with B &amp;mdash; but that
+   would be inefficient, since the full Cartesian product of A and C
+   would have to be formed, there being no applicable condition in the
+   &lt;literal&gt;WHERE&lt;/literal&gt; clause to allow optimization of the join.  (All
+   joins in the &lt;productname&gt;PostgreSQL&lt;/productname&gt; executor happen
+   between two input tables, so it's necessary to build up the result
+   in one or another of these fashions.)  The important point is that
+   these different join possibilities give semantically equivalent
+   results but might have hugely different execution costs.  Therefore,
+   the planner will explore all of them to try to find the most
+   efficient query plan.
+</span>
+では、プランナは自由に与えられたテーブルを任意の順で結合することができます。
+例えば、<code class="literal">WHERE</code>条件の<code class="literal">a.id = b.id</code>を使ってまずAとBを結合し、他の<code class="literal">WHERE</code>条件を使ってその結合テーブルにCを結合するといった計画を立てることができます。
+あるいは、BとCを結合し、その結果にAを結合することもできます。
+あるいは、AとCを結合し、その結果にBを結合することもできるでしょう。
+しかし、それでは効率が良くありません。
+なぜなら、結合の最適化を行うために適用できる条件が<code class="literal">WHERE</code>句にないので、AとCの全直積が作られるからです。
+（<span class="productname">PostgreSQL</span>のエグゼキュータでは、結合はすべて2つのテーブルの間で行われるため、このようにして1つひとつ結果を作っていかなければなりません。）
+重要なのは、これらの違った結合の方法は意味的には同じ結果なのですが、実行コストは大きく異なる可能性があるということです。
+ですから、プランナは最も効率の良い計画を探すために可能な計画をすべて検査します。
+  </p><p>
+<span class="original">
+   When a query only involves two or three tables, there aren't many join
+   orders to worry about.  But the number of possible join orders grows
+   exponentially as the number of tables expands.  Beyond ten or so input
+   tables it's no longer practical to do an exhaustive search of all the
+   possibilities, and even for six or seven tables planning might take an
+   annoyingly long time.  When there are too many input tables, the
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; planner will switch from exhaustive
+   search to a &lt;firstterm&gt;genetic&lt;/firstterm&gt; probabilistic search
+   through a limited number of possibilities.  (The switch-over threshold is
+   set by the &lt;xref linkend="guc-geqo-threshold"/&gt; run-time
+   parameter.)
+   The genetic search takes less time, but it won't
+   necessarily find the best possible plan.
+</span>
+結合の対象がせいぜい2、3個のテーブルなら心配するほど結合の種類は多くありません。
+しかし、テーブル数が増えると可能な結合の数は指数関数的に増えていきます。
+10程度以上にテーブルが増えると、すべての可能性をしらみつぶしに探索することはもはや実用的ではなくなります。
+6や7個のテーブルでさえも、計画を作成する時間が無視できなくなります。
+テーブルの数が多過ぎる時は、<span class="productname">PostgreSQL</span>のプランナはしらみつぶしの探索から、限られた可能性だけを探索する<em class="firstterm">遺伝的</em>確率的な探索へと切り替わります。
+（切り替えの閾値は<a class="xref" href="runtime-config-query.html#GUC-GEQO-THRESHOLD">geqo_threshold</a>実行時パラメータで設定されます。）
+遺伝的探索は短い時間で探索を行いますが、必ずしも最適な計画を見つけるとは限りません。
+  </p><p>
+<span class="original">
+   When the query involves outer joins, the planner has less freedom
+   than it does for plain (inner) joins. For example, consider:
+</span>
+外部結合が含まれるような問い合わせでは、通常の（内部）結合よりプランナの選択の余地が小さくなります。
+例えば、次のような問い合わせを考えます。
+</p><pre class="programlisting">
+SELECT * FROM a LEFT JOIN (b JOIN c ON (b.ref = c.id)) ON (a.id = b.id);
+</pre><p>
+<span class="original">
+   Although this query's restrictions are superficially similar to the
+   previous example, the semantics are different because a row must be
+   emitted for each row of A that has no matching row in the join of B and C.
+   Therefore the planner has no choice of join order here: it must join
+   B to C and then join A to that result.  Accordingly, this query takes
+   less time to plan than the previous query.  In other cases, the planner
+   might be able to determine that more than one join order is safe.
+   For example, given:
+</span>
+この問い合わせの検索条件は前述の例と表面的には似ているように思えますが、BとCの結合結果の行に適合しないAの各行が出力されなければならないため、意味的には異なります。
+したがって、ここではプランナには結合順に関して選択の余地がありません。
+まずBとCを結合し、その結果にAを結合しなければならないのです。
+そういうわけで、この問い合わせでは計画を立てるのに要する時間は前の例よりも短くなります。
+その他の場合、プランナが安全な結合順を複数決定できる可能性があります。
+例えば、以下を考えてみます。
+</p><pre class="programlisting">
+SELECT * FROM a LEFT JOIN b ON (a.bid = b.id) LEFT JOIN c ON (a.cid = c.id);
+</pre><p>
+<span class="original">
+   it is valid to join A to either B or C first.  Currently, only
+   &lt;literal&gt;FULL JOIN&lt;/literal&gt; completely constrains the join order.  Most
+   practical cases involving &lt;literal&gt;LEFT JOIN&lt;/literal&gt; or &lt;literal&gt;RIGHT JOIN&lt;/literal&gt;
+   can be rearranged to some extent.
+</span>
+この場合、Aを先にBと結合してもCと結合しても有効です。
+現時点では、<code class="literal">FULL JOIN</code>のみが完全に結合順を制限します。
+<code class="literal">LEFT JOIN</code>や<code class="literal">RIGHT JOIN</code>を含む、ほとんどの実環境では、何らかの拡張に再調整することができます。
+  </p><p>
+<span class="original">
+   Explicit inner join syntax (&lt;literal&gt;INNER JOIN&lt;/literal&gt;, &lt;literal&gt;CROSS
+   JOIN&lt;/literal&gt;, or unadorned &lt;literal&gt;JOIN&lt;/literal&gt;) is semantically the same as
+   listing the input relations in &lt;literal&gt;FROM&lt;/literal&gt;, so it does not
+   constrain the join order.
+</span>
+明示的な内部結合構文（<code class="literal">INNER JOIN</code>、<code class="literal">CROSS JOIN</code>、装飾のない<code class="literal">JOIN</code>）は、意味的には<code class="literal">FROM</code>内の入力リレーションの列挙と同じです。
+したがって、結合順を制約しません。
+  </p><p>
+<span class="original">
+   Even though most kinds of &lt;literal&gt;JOIN&lt;/literal&gt; don't completely constrain
+   the join order, it is possible to instruct the
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; query planner to treat all
+   &lt;literal&gt;JOIN&lt;/literal&gt; clauses as constraining the join order anyway.
+   For example, these three queries are logically equivalent:
+</span>
+ほとんどの種類の<code class="literal">JOIN</code>は完全に結合順を制約しませんが、<span class="productname">PostgreSQL</span>問い合わせプランナに、すべての<code class="literal">JOIN</code>句に対してとりあえず結合順を制限させることができます。
+例えば、以下の3つの問い合わせは論理的には同一です。
+</p><pre class="programlisting">
+SELECT * FROM a, b, c WHERE a.id = b.id AND b.ref = c.id;
+SELECT * FROM a CROSS JOIN b CROSS JOIN c WHERE a.id = b.id AND b.ref = c.id;
+SELECT * FROM a JOIN (b JOIN c ON (b.ref = c.id)) ON (a.id = b.id);
+</pre><p>
+<span class="original">
+   But if we tell the planner to honor the &lt;literal&gt;JOIN&lt;/literal&gt; order,
+   the second and third take less time to plan than the first.  This effect
+   is not worth worrying about for only three tables, but it can be a
+   lifesaver with many tables.
+</span>
+しかし、プランナに<code class="literal">JOIN</code>の順番を守るように伝えた場合、2番目と3番目の問い合わせは最初のものよりも短い時間で計画を立てることができます。
+この効果はたった3つのテーブルでは気にするほどのものではありませんが、多くのテーブルを結合する際には最後の頼みの綱になるかもしれません。
+  </p><p>
+<span class="original">
+   To force the planner to follow the join order laid out by explicit
+   &lt;literal&gt;JOIN&lt;/literal&gt;s,
+   set the &lt;xref linkend="guc-join-collapse-limit"/&gt; run-time parameter to 1.
+   (Other possible values are discussed below.)
+</span>
+プランナを強制的に明示的な<code class="literal">JOIN</code>に潜在する結合順に従わせるには、<a class="xref" href="runtime-config-query.html#GUC-JOIN-COLLAPSE-LIMIT">join_collapse_limit</a>実行時パラメータを1に設定してください。
+（以下で他の取り得る値について説明します。）
+  </p><p>
+<span class="original">
+   You do not need to constrain the join order completely in order to
+   cut search time, because it's OK to use &lt;literal&gt;JOIN&lt;/literal&gt; operators
+   within items of a plain &lt;literal&gt;FROM&lt;/literal&gt; list.  For example, consider:
+</span>
+検索時間を節約するために、結合順を完全に束縛する必要はありません。
+なぜなら、単純な<code class="literal">FROM</code>リストの項目内に<code class="literal">JOIN</code>演算子を使っても構わないからです。
+例えば、次の例です。
+</p><pre class="programlisting">
+SELECT * FROM a CROSS JOIN b, c, d, e WHERE ...;
+</pre><p>
+<span class="original">
+   With &lt;varname&gt;join_collapse_limit&lt;/varname&gt; = 1, this
+   forces the planner to join A to B before joining them to other tables,
+   but doesn't constrain its choices otherwise.  In this example, the
+   number of possible join orders is reduced by a factor of 5.
+</span>
+<code class="varname">join_collapse_limit</code> = 1とした場合、プランナは強制的に他のテーブルと結合する前にAとBを結合しますが、それ以外については特に拘束はありません。
+この例では、結合順の候補は5の階乗分の1に減ります。
+  </p><p>
+<span class="original">
+   Constraining the planner's search in this way is a useful technique
+   both for reducing planning time and for directing the planner to a
+   good query plan.  If the planner chooses a bad join order by default,
+   you can force it to choose a better order via &lt;literal&gt;JOIN&lt;/literal&gt; syntax
+   &amp;mdash; assuming that you know of a better order, that is.  Experimentation
+   is recommended.
+</span>
+こうした方法でプランナの検索に制約を加えることは、計画作成時間の短縮とプランナに対する優れた問い合わせ計画への方向付けの両方のために有用な技法です。
+プランナが劣った結合順をデフォルトで選択するのであれば、<code class="literal">JOIN</code>構文経由でより良い順番を選択するように強制することができます。
+ただし、より良い順番を理解しているという前提があります。
+これには実験することを勧めます。
+  </p><p>
+<span class="original">
+   A closely related issue that affects planning time is collapsing of
+   subqueries into their parent query.  For example, consider:
+</span>
+計画作成時間に影響する密接に関連した問題として、副問い合わせをその親問い合わせに折り畳むことがあります。
+例えば、以下を考えてみます。
+</p><pre class="programlisting">
+SELECT *
+FROM x, y,
+    (SELECT * FROM a, b, c WHERE something) AS ss
+WHERE somethingelse;
+</pre><p>
+<span class="original">
+   This situation might arise from use of a view that contains a join;
+   the view's &lt;literal&gt;SELECT&lt;/literal&gt; rule will be inserted in place of the view
+   reference, yielding a query much like the above.  Normally, the planner
+   will try to collapse the subquery into the parent, yielding:
+</span>
+こうした状況は、結合を含むビューを使用する際に現れます。
+そのビューの<code class="literal">SELECT</code>ルールはビューを参照するところに挿入され、上のような問い合わせを生成します。
+通常、プランナは副問い合わせを親問い合わせに折り畳み、以下を生成します。
+</p><pre class="programlisting">
+SELECT * FROM x, y, a, b, c WHERE something AND somethingelse;
+</pre><p>
+<span class="original">
+   This usually results in a better plan than planning the subquery
+   separately.  (For example, the outer &lt;literal&gt;WHERE&lt;/literal&gt; conditions might be such that
+   joining X to A first eliminates many rows of A, thus avoiding the need to
+   form the full logical output of the subquery.)  But at the same time,
+   we have increased the planning time; here, we have a five-way join
+   problem replacing two separate three-way join problems.  Because of the
+   exponential growth of the number of possibilities, this makes a big
+   difference.  The planner tries to avoid getting stuck in huge join search
+   problems by not collapsing a subquery if more than &lt;varname&gt;from_collapse_limit&lt;/varname&gt;
+   &lt;literal&gt;FROM&lt;/literal&gt; items would result in the parent
+   query.  You can trade off planning time against quality of plan by
+   adjusting this run-time parameter up or down.
+</span>
+これは通常、副問い合わせの計画を別途作成するより優れた計画を作成します。
+（例えば、外部の<code class="literal">WHERE</code>条件はXをAに結合するようになり、まずAの多くの行が取り除かれます。
+これにより、副問い合わせの完全な論理的出力が不要になります。）
+しかし、同時に計画作成時間が増加します。
+この場合、2つの3通りの結合問題から5通りの結合問題になります。
+候補数は指数関数的に増加するため、これは大きな違いになります。
+プランナは大規模な結合検索問題で行き詰まらないように、もし<code class="varname">from_collapse_limit</code>個の<code class="literal">FROM</code>項目が親問い合わせで発生してしまう場合は副問い合わせの折り畳みを抑制します。
+この実行時パラメータの値を上下に調整することで計画作成時間と計画の質をトレードオフすることができます。
+  </p><p>
+<span class="original">
+   &lt;xref linkend="guc-from-collapse-limit"/&gt; and &lt;xref
+   linkend="guc-join-collapse-limit"/&gt;
+   are similarly named because they do almost the same thing: one controls
+   when the planner will &lt;quote&gt;flatten out&lt;/quote&gt; subqueries, and the
+   other controls when it will flatten out explicit joins.  Typically
+   you would either set &lt;varname&gt;join_collapse_limit&lt;/varname&gt; equal to
+   &lt;varname&gt;from_collapse_limit&lt;/varname&gt; (so that explicit joins and subqueries
+   act similarly) or set &lt;varname&gt;join_collapse_limit&lt;/varname&gt; to 1 (if you want
+   to control join order with explicit joins).  But you might set them
+   differently if you are trying to fine-tune the trade-off between planning
+   time and run time.
+</span>
+両者はほとんど同じことを行うため、<a class="xref" href="runtime-config-query.html#GUC-FROM-COLLAPSE-LIMIT">from_collapse_limit</a>と<a class="xref" href="runtime-config-query.html#GUC-JOIN-COLLAPSE-LIMIT">join_collapse_limit</a>は似たような名前になっています。
+片方は副問い合わせの<span class="quote">「<span class="quote">平坦化</span>」</span>をプランナがいつ行うかを制御し、もう片方は明示的な結合の平坦化をいつ行うかを制御します。
+通常、<code class="varname">join_collapse_limit</code>を<code class="varname">from_collapse_limit</code>と同じ値に設定する（明示的な結合と副問い合わせの動作を同じにする）か、<code class="varname">join_collapse_limit</code>を1に設定する（明示的な結合で結合順を制御したい場合）かのどちらかを行います。
+しかし、計画作成時間と実行時間の間のトレードオフを細かく調整するつもりであれば、これらを別の値に設定しても構いません。
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="planner-stats.html" title="14.2. プランナで使用される統計情報">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="performance-tips.html" title="第14章 性能に関するヒント">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="populate.html" title="14.4. データベースへのデータ投入">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">14.2. プランナで使用される統計情報 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 14.4. データベースへのデータ投入</td></tr></table></div></body></html>

@@ -1,0 +1,1933 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>34.1. データベース接続制御関数</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="libpq.html" title="第34章 libpq — C ライブラリ" /><link rel="next" href="libpq-status.html" title="34.2. 接続状態関数" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="libpq.html" title="第34章 libpq — C ライブラリ">第34章 <span class="application">libpq</span> — C ライブラリ</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : libpq-connect.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="libpq.html" title="第34章 libpq — C ライブラリ">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="libpq.html" title="第34章 libpq — C ライブラリ">上へ</a></td><td width="60%" align="center">34.1. データベース接続制御関数</td><td width="20%" align="right"> <a accesskey="n" href="libpq-status.html" title="34.2. 接続状態関数">次へ</a></td></tr></table><hr /></div><div class="sect1" id="LIBPQ-CONNECT"><div class="titlepage"><div><div><h2 class="title" style="clear: both">34.1. データベース接続制御関数</h2></div></div></div><span class="original">
+  &lt;title&gt;Database Connection Control Functions&lt;/title&gt;
+</span><p>
+<span class="original">
+   The following functions deal with making a connection to a
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; backend server.  An
+   application program can have several backend connections open at
+   one time.  (One reason to do that is to access more than one
+   database.)  Each connection is represented by a
+   &lt;structname&gt;PGconn&lt;/structname&gt;&lt;indexterm&gt;&lt;primary&gt;PGconn&lt;/primary&gt;&lt;/indexterm&gt; object, which
+   is obtained from the function &lt;xref linkend="libpq-PQconnectdb"/&gt;,
+   &lt;xref linkend="libpq-PQconnectdbParams"/&gt;, or
+   &lt;xref linkend="libpq-PQsetdbLogin"/&gt;.  Note that these functions will always
+   return a non-null object pointer, unless perhaps there is too
+   little memory even to allocate the &lt;structname&gt;PGconn&lt;/structname&gt; object.
+   The &lt;xref linkend="libpq-PQstatus"/&gt; function should be called to check
+   the return value for a successful connection before queries are sent
+   via the connection object.
+</span>
+<span class="productname">PostgreSQL</span>のバックエンドサーバとの接続を作成するには、以下の関数を使用します。
+アプリケーションプログラムはバックエンドとの接続を一度に複数個開くことができます。
+（そのようにする1つの理由として、複数のデータベースへのアクセスが挙げられます。）
+個々の接続は、<a class="xref" href="libpq-connect.html#LIBPQ-PQCONNECTDB"><code class="function">PQconnectdb</code></a>、<a class="xref" href="libpq-connect.html#LIBPQ-PQCONNECTDBPARAMS"><code class="function">PQconnectdbParams</code></a>または<a class="xref" href="libpq-connect.html#LIBPQ-PQSETDBLOGIN"><code class="function">PQsetdbLogin</code></a>関数を呼び出すことで得られる<code class="structname">PGconn</code><a id="id-1.7.3.8.2.6" class="indexterm"></a>オブジェクトによって表されます。
+なお、これらの関数は、<code class="structname">PGconn</code>オブジェクトに割り当てるほんのわずかなメモリの余裕さえもない場合を除き、NULLではなく常にオブジェクトのポインタを返します。
+また、この接続オブジェクトを通じて問い合わせを送る前に、<a class="xref" href="libpq-status.html#LIBPQ-PQSTATUS"><code class="function">PQstatus</code></a>関数を呼び出して、データベースとの接続に成功したか戻り値を検査しなければなりません。
+
+   </p><div class="warning"><h3 class="title">警告</h3><p>
+<span class="original">
+     If untrusted users have access to a database that has not adopted a
+     &lt;link linkend="ddl-schemas-patterns"&gt;secure schema usage pattern&lt;/link&gt;,
+     begin each session by removing publicly-writable schemas from
+     &lt;varname&gt;search_path&lt;/varname&gt;.  One can set parameter key
+     word &lt;literal&gt;options&lt;/literal&gt; to
+     value &lt;literal&gt;-csearch_path=&lt;/literal&gt;.  Alternately, one can
+     issue &lt;literal&gt;PQexec(&lt;replaceable&gt;conn&lt;/replaceable&gt;, "SELECT
+     pg_catalog.set_config('search_path', '', false)")&lt;/literal&gt; after
+     connecting.  This consideration is not specific
+     to &lt;application&gt;libpq&lt;/application&gt;; it applies to every interface for
+     executing arbitrary SQL commands.
+</span>
+信頼できないユーザが、<a class="link" href="ddl-schemas.html#DDL-SCHEMAS-PATTERNS" title="5.9.6. 使用パターン">安全なスキーマ使用パターン</a>を適用していないデータベースへアクセスする際には、セッション開始時に<code class="varname">search_path</code>から、第三者が書き込みができるスキーマを削除してください。
+これは<code class="literal">options</code>パラメータキーワードに値<code class="literal">-csearch_path=</code>を設定することで可能となります。
+別の方法としては、接続後に<code class="literal">PQexec(<em class="replaceable"><code>conn</code></em>, "SELECT pg_catalog.set_config('search_path', '', false)")</code>を発行しても構いません。
+このような配慮は、<span class="application">libpq</span>に限ったことではありません。
+任意のSQLコマンドを実行するすべてのインタフェースに当てはまります。
+    </p></div><p>
+
+   </p><div class="warning"><h3 class="title">警告</h3><p>
+<span class="original">
+     On Unix, forking a process with open libpq connections can lead to
+     unpredictable results because the parent and child processes share
+     the same sockets and operating system resources.  For this reason,
+     such usage is not recommended, though doing an &lt;function&gt;exec&lt;/function&gt; from
+     the child process to load a new executable is safe.
+</span>
+Unix上で、libpq接続を開いたプロセスのフォークは、親と子のプロセスが同じソケットとオペレーティングシステムの資源を共有するため、予期せぬ結果を招くことがあります。
+この理由により、新規実行形式を子プロセスが読み込むため<code class="function">exec</code>を行うことが安全と言っても、このような使用方法は推奨されません。
+    </p></div><p>
+
+   </p><div class="variablelist"><dl class="variablelist"><dt id="LIBPQ-PQCONNECTDBPARAMS"><span class="term"><code class="function">PQconnectdbParams</code><a id="id-1.7.3.8.2.11.1.1.2" class="indexterm"></a></span></dt><dd><p>
+<span class="original">
+       Makes a new connection to the database server.
+</span>
+新たにデータベースサーバへの接続を作成します。
+
+</p><pre class="synopsis">
+PGconn *PQconnectdbParams(const char * const *keywords,
+                          const char * const *values,
+                          int expand_dbname);
+</pre><p>
+      </p><p>
+<span class="original">
+       This function opens a new database connection using the parameters taken
+       from two &lt;symbol&gt;NULL&lt;/symbol&gt;-terminated arrays. The first,
+       &lt;literal&gt;keywords&lt;/literal&gt;, is defined as an array of strings, each one
+       being a key word. The second, &lt;literal&gt;values&lt;/literal&gt;, gives the value
+       for each key word. Unlike &lt;xref linkend="libpq-PQsetdbLogin"/&gt; below, the parameter
+       set can be extended without changing the function signature, so use of
+       this function (or its nonblocking analogs &lt;xref linkend="libpq-PQconnectStartParams"/&gt;
+       and &lt;function&gt;PQconnectPoll&lt;/function&gt;) is preferred for new application
+       programming.
+</span>
+この関数は、2つの<code class="symbol">NULL</code>終端の配列から取得したパラメータを使用して、データベースとの接続を新たに1つ確立します。
+1つ目は文字列配列として定義される<code class="literal">keywords</code>で、それぞれがキーワードとなります。
+2つ目は<code class="literal">values</code>で、各キーワードの値を提供します。
+後述の<a class="xref" href="libpq-connect.html#LIBPQ-PQSETDBLOGIN"><code class="function">PQsetdbLogin</code></a>とは異なり、関数のシグネチャを変更せずにパラメータ集合を拡張できますので、アプリケーションプログラムを新たに作成する際には、この関数(もしくは非ブロックモードでよく似た処理をする<a class="xref" href="libpq-connect.html#LIBPQ-PQCONNECTSTARTPARAMS"><code class="function">PQconnectStartParams</code></a>と<code class="function">PQconnectPoll</code>)を使用することをお勧めします。
+      </p><p>
+<span class="original">
+       The currently recognized parameter key words are listed in
+       &lt;xref linkend="libpq-paramkeywords"/&gt;.
+</span>
+現在有効なパラメータキーワードを<a class="xref" href="libpq-connect.html#LIBPQ-PARAMKEYWORDS" title="34.1.2. パラメータキーワード">34.1.2</a>に示します。
+      </p><p>
+<span class="original">
+       The passed arrays can be empty to use all default parameters, or can
+       contain one or more parameter settings. They must be matched in length.
+       Processing will stop at the first &lt;symbol&gt;NULL&lt;/symbol&gt; entry
+       in the &lt;literal&gt;keywords&lt;/literal&gt; array.
+       Also, if the &lt;literal&gt;values&lt;/literal&gt; entry associated with a
+       non-&lt;symbol&gt;NULL&lt;/symbol&gt; &lt;literal&gt;keywords&lt;/literal&gt; entry is
+       &lt;symbol&gt;NULL&lt;/symbol&gt; or an empty string, that entry is ignored and
+       processing continues with the next pair of array entries.
+</span>
+渡される配列は、すべてのデフォルトパラメータを使用するために空にするか、または1つ以上のパラメータ設定を含むことができます。
+それらは長さが一致する必要があります。
+処理は<code class="literal">keywords</code>配列内の最初の<code class="symbol">NULL</code>エントリで停止します。
+また、非<code class="symbol">NULL</code> <code class="literal">keywords</code>エントリに関連付けられた<code class="literal">values</code>エントリが<code class="symbol">NULL</code>または空文字列である場合、そのエントリは無視され、処理は配列エントリの次のペアで続行されます。
+      </p><p>
+<span class="original">
+       When &lt;literal&gt;expand_dbname&lt;/literal&gt; is non-zero, the value for
+       the first &lt;parameter&gt;dbname&lt;/parameter&gt; key word is checked to see
+       if it is a &lt;firstterm&gt;connection string&lt;/firstterm&gt;.  If so, it
+       is &lt;quote&gt;expanded&lt;/quote&gt; into the individual connection
+       parameters extracted from the string.  The value is considered to
+       be a connection string, rather than just a database name, if it
+       contains an equal sign (&lt;literal&gt;=&lt;/literal&gt;) or it begins with a
+       URI scheme designator.  (More details on connection string formats
+       appear in &lt;xref linkend="libpq-connstring"/&gt;.)  Only the first
+       occurrence of &lt;parameter&gt;dbname&lt;/parameter&gt; is treated in this way;
+       any subsequent &lt;parameter&gt;dbname&lt;/parameter&gt; parameter is processed
+       as a plain database name.
+</span>
+<code class="literal">expand_dbname</code>が0以外の場合、最初の<em class="parameter"><code>dbname</code></em>キーワードの値が<em class="firstterm">接続文字列</em>かどうかチェックされます。
+そうであれば、文字列から抽出された個々の接続パラメータに<span class="quote">「<span class="quote">拡張</span>」</span>されます。
+等号(<code class="literal">=</code>)が含まれている場合や、URIスキーム指定子で始まっている場合、値は単なるデータベース名ではなく接続文字列とみなされます。
+(接続文字列フォーマットの詳細は<a class="xref" href="libpq-connect.html#LIBPQ-CONNSTRING" title="34.1.1. 接続文字列">34.1.1</a>を参照してください。)
+<em class="parameter"><code>dbname</code></em>の最初の出現のみがこの方法で処理されます。
+後続の<em class="parameter"><code>dbname</code></em>パラメータはプレーンなデータベース名として処理されます。
+      </p><p>
+<span class="original">
+       In general the parameter arrays are processed from start to end.
+       If any key word is repeated, the last value (that is
+       not &lt;symbol&gt;NULL&lt;/symbol&gt; or empty) is used.  This rule applies in
+       particular when a key word found in a connection string conflicts
+       with one appearing in the &lt;literal&gt;keywords&lt;/literal&gt; array.  Thus,
+       the programmer may determine whether array entries can override or
+       be overridden by values taken from a connection string.  Array
+       entries appearing before an expanded &lt;parameter&gt;dbname&lt;/parameter&gt;
+       entry can be overridden by fields of the connection string, and in
+       turn those fields are overridden by array entries appearing
+       after &lt;parameter&gt;dbname&lt;/parameter&gt; (but, again, only if those
+       entries supply non-empty values).
+</span>
+一般的に、パラメータ配列は開始から終了まで処理されます。
+キーワードが繰り返された場合、最後の値(<code class="symbol">NULL</code>または空ではない)が使用されます。
+この規則は特に、接続文字列内で見つかったキーワードが<code class="literal">keywords</code>配列内で出現するキーワードと競合する場合に適用されます。
+したがって、プログラマは、配列エントリが上書きするか、あるいは接続文字列から取得した値によって上書きされるかを判断できます。
+拡張された<em class="parameter"><code>dbname</code></em>エントリの前に現れる配列エントリは、接続文字列のフィールドによって上書きされ、次に<em class="parameter"><code>dbname</code></em>の後に現れる配列エントリによって上書きされます(ただし、これらのエントリが空でない値を提供する場合に限ります)。
+      </p><p>
+<span class="original">
+       After processing all the array entries and any expanded connection
+       string, any connection parameters that remain unset are filled with
+       default values.  If an unset parameter's corresponding environment
+       variable (see &lt;xref linkend="libpq-envars"/&gt;) is set, its value is
+       used.  If the environment variable is not set either, then the
+       parameter's built-in default value is used.
+</span>
+すべての配列エントリと拡張された接続文字列を処理した後、未設定のままの接続パラメータはデフォルト値で埋められます。
+未設定パラメータに対応する環境変数(<a class="xref" href="libpq-envars.html" title="34.15. 環境変数">34.15</a>参照)が設定されている場合は、その値が使用されます。
+環境変数も設定されていない場合は、パラメータに組み込まれているデフォルト値が使用されます。
+      </p></dd><dt id="LIBPQ-PQCONNECTDB"><span class="term"><code class="function">PQconnectdb</code><a id="id-1.7.3.8.2.11.2.1.2" class="indexterm"></a></span></dt><dd><p>
+<span class="original">
+       Makes a new connection to the database server.
+</span>
+新たにデータベースサーバへの接続を作成します。
+
+</p><pre class="synopsis">
+PGconn *PQconnectdb(const char *conninfo);
+</pre><p>
+      </p><p>
+<span class="original">
+       This function opens a new database connection using the parameters taken
+       from the string &lt;literal&gt;conninfo&lt;/literal&gt;.
+</span>
+この関数は<code class="literal">conninfo</code>文字列から取得されるパラメータを使用して、新しいデータベース接続を開きます。
+      </p><p>
+<span class="original">
+       The passed string can be empty to use all default parameters, or it can
+       contain one or more parameter settings separated by whitespace,
+       or it can contain a &lt;acronym&gt;URI&lt;/acronym&gt;.
+       See &lt;xref linkend="libpq-connstring"/&gt; for details.
+</span>
+空の文字列を渡してすべてデフォルトパラメータを使用することができます。
+また空白文字で区切ることで1つ以上のパラメータ設定を持たせることもできます。
+さらに<acronym class="acronym">URI</acronym>を含めることができます。
+詳細については<a class="xref" href="libpq-connect.html#LIBPQ-CONNSTRING" title="34.1.1. 接続文字列">34.1.1</a>を参照してください。
+     </p></dd><dt id="LIBPQ-PQSETDBLOGIN"><span class="term"><code class="function">PQsetdbLogin</code><a id="id-1.7.3.8.2.11.3.1.2" class="indexterm"></a></span></dt><dd><p>
+<span class="original">
+       Makes a new connection to the database server.
+</span>
+新たにデータベースサーバへの接続を作成します。
+</p><pre class="synopsis">
+PGconn *PQsetdbLogin(const char *pghost,
+                     const char *pgport,
+                     const char *pgoptions,
+                     const char *pgtty,
+                     const char *dbName,
+                     const char *login,
+                     const char *pwd);
+</pre><p>
+       </p><p>
+<span class="original">
+        This is the predecessor of &lt;xref linkend="libpq-PQconnectdb"/&gt; with a fixed
+        set of parameters.  It has the same functionality except that the
+        missing parameters will always take on default values.  Write &lt;symbol&gt;NULL&lt;/symbol&gt; or an
+        empty string for any one of the fixed parameters that is to be defaulted.
+</span>
+これはパラメータ群を固定した<a class="xref" href="libpq-connect.html#LIBPQ-PQCONNECTDB"><code class="function">PQconnectdb</code></a>の前身です。
+設定できないパラメータが常にデフォルト値になる点を除き、同一の機能を持ちます。
+固定のパラメータに対して<code class="symbol">NULL</code>もしくは空文字列とすると、それはデフォルトを使用することになります。
+      </p><p>
+<span class="original">
+        If the &lt;parameter&gt;dbName&lt;/parameter&gt; contains
+        an &lt;symbol&gt;=&lt;/symbol&gt; sign or has a valid connection &lt;acronym&gt;URI&lt;/acronym&gt; prefix, it
+        is taken as a &lt;parameter&gt;conninfo&lt;/parameter&gt; string in exactly the same way as
+        if it had been passed to &lt;xref linkend="libpq-PQconnectdb"/&gt;, and the remaining
+        parameters are then applied as specified for &lt;xref linkend="libpq-PQconnectdbParams"/&gt;.
+</span>
+<em class="parameter"><code>dbName</code></em>内に<code class="symbol">=</code>記号が含まれる場合、または有効な接続<acronym class="acronym">URI</acronym>接頭辞を持つ場合、<a class="xref" href="libpq-connect.html#LIBPQ-PQCONNECTDB"><code class="function">PQconnectdb</code></a>に渡された場合とまったく同じ扱いで<em class="parameter"><code>conninfo</code></em>文字列として扱われます。
+その後残りのパラメータが<a class="xref" href="libpq-connect.html#LIBPQ-PQCONNECTDBPARAMS"><code class="function">PQconnectdbParams</code></a>の指定のように適用されます。
+      </p><p>
+<span class="original">
+        &lt;literal&gt;pgtty&lt;/literal&gt; is no longer used and any value passed will
+        be ignored.
+</span>
+<code class="literal">pgtty</code>は使用されなくなり、渡された値は無視されます。
+      </p></dd><dt id="LIBPQ-PQSETDB"><span class="term"><code class="function">PQsetdb</code><a id="id-1.7.3.8.2.11.4.1.2" class="indexterm"></a></span></dt><dd><p>
+<span class="original">
+   Makes a new connection to the database server.
+</span>
+新たにデータベースサーバへの接続を作成します。
+</p><pre class="synopsis">
+PGconn *PQsetdb(char *pghost,
+                char *pgport,
+                char *pgoptions,
+                char *pgtty,
+                char *dbName);
+</pre><p>
+     </p><p>
+<span class="original">
+      This is a macro that calls &lt;xref linkend="libpq-PQsetdbLogin"/&gt; with null pointers
+      for the &lt;parameter&gt;login&lt;/parameter&gt; and &lt;parameter&gt;pwd&lt;/parameter&gt; parameters.  It is provided
+      for backward compatibility with very old programs.
+</span>
+これは、<em class="parameter"><code>login</code></em>と<em class="parameter"><code>pwd</code></em>にNULLポインタを設定する<a class="xref" href="libpq-connect.html#LIBPQ-PQSETDBLOGIN"><code class="function">PQsetdbLogin</code></a>を呼び出すマクロです。
+非常に古いプログラムへの後方互換性のために提供されています。
+     </p></dd><dt id="LIBPQ-PQCONNECTSTARTPARAMS"><span class="term"><code class="function">PQconnectStartParams</code><a id="id-1.7.3.8.2.11.5.1.2" class="indexterm"></a><br /></span><span class="term"><code class="function">PQconnectStart</code><a id="id-1.7.3.8.2.11.5.2.2" class="indexterm"></a><br /></span><span class="term"><code class="function">PQconnectPoll</code><a id="id-1.7.3.8.2.11.5.3.2" class="indexterm"></a></span></dt><dd><p>
+       <a id="id-1.7.3.8.2.11.5.4.1.1" class="indexterm"></a>
+       <a id="id-1.7.3.8.2.11.5.4.1.2" class="indexterm"></a>
+<span class="original">
+       Make a connection to the database server in a nonblocking manner.
+</span>
+ブロックしない方法で、データベースサーバへの接続を作成します。
+
+</p><pre class="synopsis">
+PGconn *PQconnectStartParams(const char * const *keywords,
+                             const char * const *values,
+                             int expand_dbname);
+
+PGconn *PQconnectStart(const char *conninfo);
+
+PostgresPollingStatusType PQconnectPoll(PGconn *conn);
+</pre><p>
+      </p><p>
+<span class="original">
+       These three functions are used to open a connection to a database server such
+       that your application's thread of execution is not blocked on remote I/O
+       whilst doing so. The point of this approach is that the waits for I/O to
+       complete can occur in the application's main loop, rather than down inside
+       &lt;xref linkend="libpq-PQconnectdbParams"/&gt; or &lt;xref linkend="libpq-PQconnectdb"/&gt;, and so the
+       application can manage this operation in parallel with other activities.
+</span>
+これら3つの関数は、リモートI/Oの実行時にアプリケーションスレッドの実行がブロックされないようなデータベースサーバへの接続を作成するために使われます。
+この手法の利点は、I/Oの終了待ちが<a class="xref" href="libpq-connect.html#LIBPQ-PQCONNECTDBPARAMS"><code class="function">PQconnectdbParams</code></a>または<a class="xref" href="libpq-connect.html#LIBPQ-PQCONNECTDB"><code class="function">PQconnectdb</code></a>内部ではなく、アプリケーションプログラムのメインループでできることにあります。
+これによって、アプリケーションは他の処理と並行してこの処理を管理することができます。
+      </p><p>
+<span class="original">
+       With &lt;xref linkend="libpq-PQconnectStartParams"/&gt;, the database connection is made
+       using the parameters taken from the &lt;literal&gt;keywords&lt;/literal&gt; and
+       &lt;literal&gt;values&lt;/literal&gt; arrays, and controlled by &lt;literal&gt;expand_dbname&lt;/literal&gt;,
+       as described above for &lt;xref linkend="libpq-PQconnectdbParams"/&gt;.
+</span>
+<a class="xref" href="libpq-connect.html#LIBPQ-PQCONNECTSTARTPARAMS"><code class="function">PQconnectStartParams</code></a>では、上で<a class="xref" href="libpq-connect.html#LIBPQ-PQCONNECTDBPARAMS"><code class="function">PQconnectdbParams</code></a>で説明したように、データベース接続は<code class="literal">keywords</code>および<code class="literal">values</code>配列から取得され、<code class="literal">expand_dbname</code>によって制御されたパラメータを使用して確立します。
+      </p><p>
+<span class="original">
+       With &lt;function&gt;PQconnectStart&lt;/function&gt;, the database connection is made
+       using the parameters taken from the string &lt;literal&gt;conninfo&lt;/literal&gt; as
+       described above for &lt;xref linkend="libpq-PQconnectdb"/&gt;.
+</span>
+<code class="function">PQconnectStart</code>では、上で<a class="xref" href="libpq-connect.html#LIBPQ-PQCONNECTDB"><code class="function">PQconnectdb</code></a>で説明したように、<code class="literal">conninfo</code>文字列から取得されたパラメータを使用してデータベース接続を確立します。
+      </p><p>
+<span class="original">
+       Neither &lt;xref linkend="libpq-PQconnectStartParams"/&gt; nor &lt;function&gt;PQconnectStart&lt;/function&gt;
+       nor &lt;function&gt;PQconnectPoll&lt;/function&gt; will block, so long as a number of
+       restrictions are met:
+</span>
+<a class="xref" href="libpq-connect.html#LIBPQ-PQCONNECTSTARTPARAMS"><code class="function">PQconnectStartParams</code></a>、<code class="function">PQconnectStart</code>と<code class="function">PQconnectPoll</code>のどちらも以下の制限に適合する場合ブロックしません。
+       </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+          The &lt;literal&gt;hostaddr&lt;/literal&gt; parameter must be used appropriately
+          to prevent DNS queries from being made.  See the documentation of
+          this parameter in &lt;xref linkend="libpq-paramkeywords"/&gt; for details.
+</span>
+<code class="literal">hostaddr</code>パラメータは、DNS問い合わせが発生するのを防ぐように適切に使用されなければいけません。
+詳細については<a class="xref" href="libpq-connect.html#LIBPQ-PARAMKEYWORDS" title="34.1.2. パラメータキーワード">34.1.2</a>内のパラメータ説明を参照してください。
+         </p></li><li class="listitem"><p>
+<span class="original">
+          If you call &lt;xref linkend="libpq-PQtrace"/&gt;, ensure that the stream object
+          into which you trace will not block.
+</span>
+<a class="xref" href="libpq-control.html#LIBPQ-PQTRACE"><code class="function">PQtrace</code></a>を呼び出す場合は、トレースに使用するストリームオブジェクトがブロックされないことが保証されていなくてはなりません。
+         </p></li><li class="listitem"><p>
+<span class="original">
+          You must ensure that the socket is in the appropriate state
+          before calling &lt;function&gt;PQconnectPoll&lt;/function&gt;, as described below.
+</span>
+プログラマ自身が、後に示すように、<code class="function">PQconnectPoll</code>を呼び出す前にソケットが適切な状態にあることを保証しなくてはいけません。
+         </p></li></ul></div><p>
+      </p><p>
+<span class="original">
+       To begin a nonblocking connection request,
+       call &lt;function&gt;PQconnectStart&lt;/function&gt;
+       or &lt;xref linkend="libpq-PQconnectStartParams"/&gt;.  If the result is null,
+       then &lt;application&gt;libpq&lt;/application&gt; has been unable to allocate a
+       new &lt;structname&gt;PGconn&lt;/structname&gt; structure.  Otherwise, a
+       valid &lt;structname&gt;PGconn&lt;/structname&gt; pointer is returned (though not
+       yet representing a valid connection to the database).  Next
+       call &lt;literal&gt;PQstatus(conn)&lt;/literal&gt;.  If the result
+       is &lt;symbol&gt;CONNECTION_BAD&lt;/symbol&gt;, the connection attempt has already
+       failed, typically because of invalid connection parameters.
+</span>
+非ブロック接続要求を始めるにはまず、<code class="function">PQconnectStart</code>か<a class="xref" href="libpq-connect.html#LIBPQ-PQCONNECTSTARTPARAMS"><code class="function">PQconnectStartParams</code></a>を呼び出します。
+その結果がNULLの場合、<span class="application">libpq</span>は新たな<code class="structname">PGconn</code>構造体を割り当てられませんでした。
+そうでない場合は、適切な<code class="structname">PGconn</code>へのポインタが返されます
+（ただし、未だデータベースへの有効な接続を示しているわけではありません）。
+次に<code class="literal">PQstatus(conn)</code>を呼び出します。
+もし、結果が<code class="symbol">CONNECTION_BAD</code>であった場合、接続の試みは失敗しています。典型的には無効な接続パラメータに因ります。
+      </p><p>
+<span class="original">
+       If &lt;function&gt;PQconnectStart&lt;/function&gt;
+       or &lt;xref linkend="libpq-PQconnectStartParams"/&gt; succeeds, the next stage
+       is to poll &lt;application&gt;libpq&lt;/application&gt; so that it can proceed with
+       the connection sequence.
+       Use &lt;function&gt;PQsocket(conn)&lt;/function&gt; to obtain the descriptor of the
+       socket underlying the database connection.
+       (Caution: do not assume that the socket remains the same
+       across &lt;function&gt;PQconnectPoll&lt;/function&gt; calls.)
+       Loop thus: If &lt;function&gt;PQconnectPoll(conn)&lt;/function&gt; last returned
+       &lt;symbol&gt;PGRES_POLLING_READING&lt;/symbol&gt;, wait until the socket is ready to
+       read (as indicated by &lt;function&gt;select()&lt;/function&gt;, &lt;function&gt;poll()&lt;/function&gt;, or
+       similar system function).
+       Then call &lt;function&gt;PQconnectPoll(conn)&lt;/function&gt; again.
+       Conversely, if &lt;function&gt;PQconnectPoll(conn)&lt;/function&gt; last returned
+       &lt;symbol&gt;PGRES_POLLING_WRITING&lt;/symbol&gt;, wait until the socket is ready
+       to write, then call &lt;function&gt;PQconnectPoll(conn)&lt;/function&gt; again.
+       On the first iteration, i.e., if you have yet to call
+       &lt;function&gt;PQconnectPoll&lt;/function&gt;, behave as if it last returned
+       &lt;symbol&gt;PGRES_POLLING_WRITING&lt;/symbol&gt;.  Continue this loop until
+       &lt;function&gt;PQconnectPoll(conn)&lt;/function&gt; returns
+       &lt;symbol&gt;PGRES_POLLING_FAILED&lt;/symbol&gt;, indicating the connection procedure
+       has failed, or &lt;symbol&gt;PGRES_POLLING_OK&lt;/symbol&gt;, indicating the connection
+       has been successfully made.
+</span>
+<code class="function">PQconnectStart</code>あるいは<a class="xref" href="libpq-connect.html#LIBPQ-PQCONNECTSTARTPARAMS"><code class="function">PQconnectStartParams</code></a>が成功したら、次は接続シーケンスを進めるために、<span class="application">libpq</span>をポーリングします。
+データベース接続の背後にあるソケットの記述子を取り出すには、<code class="function">PQsocket(conn)</code>を使用します。
+（注意：複数の<code class="function">PQconnectPoll</code>呼び出しでソケットが同じままであると思わないでください。）
+以下の繰り返しです。
+直前の<code class="function">PQconnectPoll(conn)</code>が<code class="symbol">PGRES_POLLING_READING</code>の場合、（<code class="function">select()</code>や<code class="function">poll()</code>などのシステム関数で示されて）ソケットの読み込み準備が整うまで待機します。
+そして、再度<code class="function">PQconnectPoll(conn)</code>を呼び出します。
+反対に直前の<code class="function">PQconnectPoll(conn)</code>が<code class="symbol">PGRES_POLLING_WRITING</code>の場合、ソケットの書き込み準備が整うまで待機し、その後、<code class="function">PQconnectPoll(conn)</code>を再度呼び出します。
+繰り返しの最初、すなわち、未だ<code class="function">PQconnectPoll</code>を呼び出していない場合、最後に<code class="symbol">PGRES_POLLING_WRITING</code>を返したかのように振舞います。
+この繰り返しを<code class="function">PQconnectPoll(conn)</code>が、接続手続きの失敗を示す<code class="symbol">PGRES_POLLING_FAILED</code>、もしくは、接続確立に成功したことを示す<code class="symbol">PGRES_POLLING_OK</code>を返すまで継続します。
+      </p><p>
+<span class="original">
+       At any time during connection, the status of the connection can be
+       checked by calling &lt;xref linkend="libpq-PQstatus"/&gt;. If this call returns &lt;symbol&gt;CONNECTION_BAD&lt;/symbol&gt;, then the
+       connection procedure has failed; if the call returns &lt;function&gt;CONNECTION_OK&lt;/function&gt;, then the
+       connection is ready.  Both of these states are equally detectable
+       from the return value of &lt;function&gt;PQconnectPoll&lt;/function&gt;, described above. Other states might also occur
+       during (and only during) an asynchronous connection procedure. These
+       indicate the current stage of the connection procedure and might be useful
+       to provide feedback to the user for example. These statuses are:
+</span>
+接続している間は、いつでも<a class="xref" href="libpq-status.html#LIBPQ-PQSTATUS"><code class="function">PQstatus</code></a>を呼び出すことで、接続の状態を検査することができます。
+この関数呼び出しが<code class="symbol">CONNECTION_BAD</code>を返す場合、接続手続きは失敗しており、<code class="symbol">CONNECTION_OK</code>を返す場合、接続が確立しています。
+上述のように、このいずれの状態も、<code class="function">PQconnectPoll</code>の戻り値から同様に検出できます。
+これ以外の状態は、非同期の接続手続きの間（のみに）現れることがあります。
+これらは、接続手続きの現在の段階を示すものであり、例えばユーザへのフィードバックを提供することに使用できます。
+以下の状態があります。
+
+       </p><div class="variablelist"><dl class="variablelist"><dt id="LIBPQ-CONNECTION-STARTED"><span class="term"><code class="symbol">CONNECTION_STARTED</code></span></dt><dd><p>
+<span class="original">
+           Waiting for connection to be made.
+</span>
+接続の確立待ち状態です。
+          </p></dd><dt id="LIBPQ-CONNECTION-MADE"><span class="term"><code class="symbol">CONNECTION_MADE</code></span></dt><dd><p>
+<span class="original">
+           Connection OK; waiting to send.
+</span>
+接続はOKです。送信待ち状態です。
+          </p></dd><dt id="LIBPQ-CONNECTION-AWAITING-RESPONSE"><span class="term"><code class="symbol">CONNECTION_AWAITING_RESPONSE</code></span></dt><dd><p>
+<span class="original">
+           Waiting for a response from the server.
+</span>
+サーバからの応答待ち状態です。
+          </p></dd><dt id="LIBPQ-CONNECTION-AUTH-OK"><span class="term"><code class="symbol">CONNECTION_AUTH_OK</code></span></dt><dd><p>
+<span class="original">
+           Received authentication; waiting for backend start-up to finish.
+</span>
+        認証済みです。バックエンドの起動待ち状態です。
+          </p></dd><dt id="LIBPQ-CONNECTION-SSL-STARTUP"><span class="term"><code class="symbol">CONNECTION_SSL_STARTUP</code></span></dt><dd><p>
+<span class="original">
+           Negotiating SSL encryption.
+</span>
+SSL暗号化の調停状態です。
+          </p></dd><dt id="LIBPQ-CONNECTION-SETENV"><span class="term"><code class="symbol">CONNECTION_SETENV</code></span></dt><dd><p>
+<span class="original">
+           Negotiating environment-driven parameter settings.
+</span>
+環境が提供するパラメータ設定の調停状態です。
+          </p></dd><dt id="LIBPQ-CONNECTION-CHECK-WRITABLE"><span class="term"><code class="symbol">CONNECTION_CHECK_WRITABLE</code></span></dt><dd><p>
+<span class="original">
+           Checking if connection is able to handle write transactions.
+</span>
+接続が書き込みトランザクションを扱えるかどうかを調べています。
+          </p></dd><dt id="LIBPQ-CONNECTION-CONSUME"><span class="term"><code class="symbol">CONNECTION_CONSUME</code></span></dt><dd><p>
+<span class="original">
+           Consuming any remaining response messages on connection.
+</span>
+接続の残りの応答メッセージを消費しています。
+          </p></dd></dl></div><p>
+
+<span class="original">
+       Note that, although these constants will remain (in order to maintain
+       compatibility), an application should never rely upon these occurring in a
+       particular order, or at all, or on the status always being one of these
+       documented values. An application might do something like this:
+</span>
+これらの定数は（互換性を保つため）なくなることはありませんが、アプリケーションは、これらが特定の順で出現したり、本書に書いてある値のどれかに必ずステータス値が該当するということを決して当てにしてはいけません。
+アプリケーションは、以下に示すようにするべきです。
+</p><pre class="programlisting">
+switch(PQstatus(conn))
+{
+        case CONNECTION_STARTED:
+            feedback = "Connecting...";
+            break;
+
+        case CONNECTION_MADE:
+            feedback = "Connected to server...";
+            break;
+.
+.
+.
+        default:
+            feedback = "Connecting...";
+}
+</pre><p>
+      </p><p>
+<span class="original">
+       The &lt;literal&gt;connect_timeout&lt;/literal&gt; connection parameter is ignored
+       when using &lt;function&gt;PQconnectPoll&lt;/function&gt;; it is the application's
+       responsibility to decide whether an excessive amount of time has elapsed.
+       Otherwise, &lt;function&gt;PQconnectStart&lt;/function&gt; followed by a
+       &lt;function&gt;PQconnectPoll&lt;/function&gt; loop is equivalent to
+       &lt;xref linkend="libpq-PQconnectdb"/&gt;.
+</span>
+<code class="function">PQconnectPoll</code>を使用する場合、<code class="literal">connect_timeout</code>接続パラメータは無視されます。
+経過時間が長過ぎるかどうかの判定はアプリケーションの責任で行ないます。
+さもないと、<code class="function">PQconnectStart</code>の後の<code class="function">PQconnectPoll</code>の繰り返しが<a class="xref" href="libpq-connect.html#LIBPQ-PQCONNECTDB"><code class="function">PQconnectdb</code></a>と同じになります。
+      </p><p>
+<span class="original">
+       Note that when &lt;function&gt;PQconnectStart&lt;/function&gt;
+       or &lt;xref linkend="libpq-PQconnectStartParams"/&gt; returns a non-null
+       pointer, you must call &lt;xref linkend="libpq-PQfinish"/&gt; when you are
+       finished with it, in order to dispose of the structure and any
+       associated memory blocks.  This must be done even if the connection
+       attempt fails or is abandoned.
+</span>
+<code class="function">PQconnectStart</code>や<a class="xref" href="libpq-connect.html#LIBPQ-PQCONNECTSTARTPARAMS"><code class="function">PQconnectStartParams</code></a>が非NULLポインタを返した場合、処理を終了する際には、構造体や関連するメモリブロックを始末するために、<a class="xref" href="libpq-connect.html#LIBPQ-PQFINISH"><code class="function">PQfinish</code></a>を呼び出さなくてはならないことに注意してください。
+この処理は、接続試行が失敗した場合やその試行を中断する場合にも、必ず実行されなければいけません。
+      </p></dd><dt id="LIBPQ-PQCONNDEFAULTS"><span class="term"><code class="function">PQconndefaults</code><a id="id-1.7.3.8.2.11.6.1.2" class="indexterm"></a></span></dt><dd><p>
+<span class="original">
+       Returns the default connection options.
+</span>
+デフォルトの接続オプションを返します。
+</p><pre class="synopsis">
+PQconninfoOption *PQconndefaults(void);
+
+typedef struct
+{
+<span class="original">
+    char   *keyword;   /* The keyword of the option */
+    char   *envvar;    /* Fallback environment variable name */
+    char   *compiled;  /* Fallback compiled in default value */
+    char   *val;       /* Option's current value, or NULL */
+    char   *label;     /* Label for field in connect dialog */
+    char   *dispchar;  /* Indicates how to display this field
+                          in a connect dialog. Values are:
+                          ""        Display entered value as is
+                          "*"       Password field - hide value
+                          "D"       Debug option - don't show by default */
+    int     dispsize;  /* Field size in characters for dialog */
+</span>
+    char   *keyword;   /* このオプションのキーワード */
+    char   *envvar;    /* 代替となる環境変数の名前 */
+    char   *compiled;  /* 代替となるコンパイル時に組み込まれたデフォルト値 */
+    char   *val;       /* オプションの現在値、もしくは、NULL */
+    char   *label;     /* 接続ダイアログ内の当該フィールドのラベル */
+    char   *dispchar;  /* 接続ダイアログ内の当該フィールドをどのように表示するかの指示
+                          値:
+                          ""        入力された値をそのまま表示
+                          "*"       値を隠すパスワードフィールド用
+                          "D"       デバッグオプション。デフォルトで何も表示しません */
+    int     dispsize;  /* ダイアログ用のフィールドの大きさ(文字数単位) */
+} PQconninfoOption;
+</pre><p>
+      </p><p>
+<span class="original">
+       Returns a connection options array.  This can be used to determine
+       all possible &lt;xref linkend="libpq-PQconnectdb"/&gt; options and their
+       current default values.  The return value points to an array of
+       &lt;structname&gt;PQconninfoOption&lt;/structname&gt; structures, which ends
+       with an entry having a null &lt;structfield&gt;keyword&lt;/structfield&gt; pointer.  The
+       null pointer is returned if memory could not be allocated. Note that
+       the current default values (&lt;structfield&gt;val&lt;/structfield&gt; fields)
+       will depend on environment variables and other context.  A
+       missing or invalid service file will be silently ignored.  Callers
+       must treat the connection options data as read-only.
+</span>
+接続オプションの配列を返します。
+これは、使用可能な<a class="xref" href="libpq-connect.html#LIBPQ-PQCONNECTDB"><code class="function">PQconnectdb</code></a>用オプションのすべてや、その時点でのデフォルト値を決定するために使用することができます。
+戻り値は、<code class="structname">PQconninfoOption</code>構造体の配列へのポインタで、<code class="structfield">keyword</code>ポインタがヌルとなる項目が配列の末尾にきます。
+メモリが確保できなかった場合にはヌルポインタを返します。
+現在のデフォルト値(<code class="structfield">val</code> フィールド)は、環境変数や他のコンテキストに依存します。
+呼び出し側では、接続オプションの情報は、読み込み専用として取り扱わなければいけません。
+      </p><p>
+<span class="original">
+       After processing the options array, free it by passing it to
+       &lt;xref linkend="libpq-PQconninfoFree"/&gt;.  If this is not done, a small amount of memory
+       is leaked for each call to &lt;xref linkend="libpq-PQconndefaults"/&gt;.
+</span>
+オプションの配列を処理した後は、それを<a class="xref" href="libpq-misc.html#LIBPQ-PQCONNINFOFREE"><code class="function">PQconninfoFree</code></a>に渡して解放します。
+この処理をしないと、<a class="xref" href="libpq-connect.html#LIBPQ-PQCONNDEFAULTS"><code class="function">PQconndefaults</code></a>が呼び出されるたびに少しずつメモリリークが発生します。
+      </p></dd><dt id="LIBPQ-PQCONNINFO"><span class="term"><code class="function">PQconninfo</code><a id="id-1.7.3.8.2.11.7.1.2" class="indexterm"></a></span></dt><dd><p>
+<span class="original">
+       Returns the connection options used by a live connection.
+</span>
+所在する接続で使用される接続オプションを返します。
+</p><pre class="synopsis">
+PQconninfoOption *PQconninfo(PGconn *conn);
+</pre><p>
+      </p><p>
+<span class="original">
+       Returns a connection options array.  This can be used to determine
+       all possible &lt;xref linkend="libpq-PQconnectdb"/&gt; options and the
+       values that were used to connect to the server. The return
+       value points to an array of &lt;structname&gt;PQconninfoOption&lt;/structname&gt;
+       structures, which ends with an entry having a null &lt;structfield&gt;keyword&lt;/structfield&gt;
+       pointer. All notes above for &lt;xref linkend="libpq-PQconndefaults"/&gt; also
+       apply to the result of &lt;xref linkend="libpq-PQconninfo"/&gt;.
+</span>
+接続オプション配列を返します。これは全ての可能性のある<a class="xref" href="libpq-connect.html#LIBPQ-PQCONNECTDB"><code class="function">PQconnectdb</code></a>オプションとサーバに接続するのに使用される値を確定するために使用することができます。
+返り値は<code class="structname">PQconninfoOption</code>構造体の配列を指し示します。それはnull <code class="structfield">keyword</code> ポインタを持つ項目で終結します。<a class="xref" href="libpq-connect.html#LIBPQ-PQCONNDEFAULTS"><code class="function">PQconndefaults</code></a>に対する上記の全ての注釈はまた<a class="xref" href="libpq-connect.html#LIBPQ-PQCONNINFO"><code class="function">PQconninfo</code></a>の結果に適用されます。
+      </p></dd><dt id="LIBPQ-PQCONNINFOPARSE"><span class="term"><code class="function">PQconninfoParse</code><a id="id-1.7.3.8.2.11.8.1.2" class="indexterm"></a></span></dt><dd><p>
+<span class="original">
+       Returns parsed connection options from the provided connection string.
+</span>
+提供された接続文字列から構文解析された接続オプションを返します。
+
+</p><pre class="synopsis">
+PQconninfoOption *PQconninfoParse(const char *conninfo, char **errmsg);
+</pre><p>
+      </p><p>
+<span class="original">
+       Parses a connection string and returns the resulting options as an
+       array; or returns &lt;symbol&gt;NULL&lt;/symbol&gt; if there is a problem with the connection
+       string.  This function can be used to extract
+       the &lt;xref linkend="libpq-PQconnectdb"/&gt; options in the provided
+       connection string.  The return value points to an array of
+       &lt;structname&gt;PQconninfoOption&lt;/structname&gt; structures, which ends
+       with an entry having a null &lt;structfield&gt;keyword&lt;/structfield&gt; pointer.
+</span>
+接続文字列の構文解析を行い、配列として結果オプションを返すか、または接続文字列に問題があった場合に<code class="symbol">NULL</code>を返します。
+この関数を提供された接続文字列の中の<a class="xref" href="libpq-connect.html#LIBPQ-PQCONNECTDB"><code class="function">PQconnectdb</code></a>オプションを取り出すために使用することができます。
+戻り値は<code class="structname">PQconninfoOption</code>構造体の配列を指し示し、それはヌルの<code class="structfield">keyword</code>ポインタを持つ項目で終結します。
+      </p><p>
+<span class="original">
+       All legal options will be present in the result array, but the
+       &lt;literal&gt;PQconninfoOption&lt;/literal&gt; for any option not present
+       in the connection string will have &lt;literal&gt;val&lt;/literal&gt; set to
+       &lt;literal&gt;NULL&lt;/literal&gt;; default values are not inserted.
+</span>
+正規なオプションはすべて、結果配列内に現れます。
+しかし接続文字列内に現れない、何らかのオプション用の<code class="literal">PQconninfoOption</code>は<code class="literal">NULL</code>に設定された<code class="literal">val</code>を持ちます。
+デフォルトは挿入されません。
+      </p><p>
+<span class="original">
+       If &lt;literal&gt;errmsg&lt;/literal&gt; is not &lt;symbol&gt;NULL&lt;/symbol&gt;, then &lt;literal&gt;*errmsg&lt;/literal&gt; is set
+       to &lt;symbol&gt;NULL&lt;/symbol&gt; on success, else to a &lt;function&gt;malloc&lt;/function&gt;'d error string explaining
+       the problem.  (It is also possible for &lt;literal&gt;*errmsg&lt;/literal&gt; to be
+       set to &lt;symbol&gt;NULL&lt;/symbol&gt; and the function to return &lt;symbol&gt;NULL&lt;/symbol&gt;;
+       this indicates an out-of-memory condition.)
+</span>
+<code class="literal">errmsg</code>が非<code class="symbol">NULL</code>であれば、成功した場合<code class="literal">*errmsg</code>は<code class="symbol">NULL</code>に設定され、そうでなければ、問題を説明した<code class="function">malloc</code>されたエラー文字列になります。
+（<code class="literal">*errmsg</code>が<code class="symbol">NULL</code>に設定され、かつ、この関数が<code class="symbol">NULL</code>を返すこともあり得ます。
+これはメモリ不足状態を意味します。）
+      </p><p>
+<span class="original">
+       After processing the options array, free it by passing it to
+       &lt;xref linkend="libpq-PQconninfoFree"/&gt;.  If this is not done, some memory
+       is leaked for each call to &lt;xref linkend="libpq-PQconninfoParse"/&gt;.
+       Conversely, if an error occurs and &lt;literal&gt;errmsg&lt;/literal&gt; is not &lt;symbol&gt;NULL&lt;/symbol&gt;,
+       be sure to free the error string using &lt;xref linkend="libpq-PQfreemem"/&gt;.
+</span>
+オプション配列を処理した後、それを<a class="xref" href="libpq-misc.html#LIBPQ-PQCONNINFOFREE"><code class="function">PQconninfoFree</code></a>に渡して解放してください。
+これが行われない場合、<a class="xref" href="libpq-connect.html#LIBPQ-PQCONNINFOPARSE"><code class="function">PQconninfoParse</code></a>へのそれぞれの呼び出しに対してメモリーリークが起こります。
+反対に、エラーが起こり、そして<code class="literal">errmsg</code>が非<code class="symbol">NULL</code>であれば、<a class="xref" href="libpq-misc.html#LIBPQ-PQFREEMEM"><code class="function">PQfreemem</code></a>を使用してエラー文字列を必ず解放してください。
+      </p></dd><dt id="LIBPQ-PQFINISH"><span class="term"><code class="function">PQfinish</code><a id="id-1.7.3.8.2.11.9.1.2" class="indexterm"></a></span></dt><dd><p>
+<span class="original">
+       Closes  the  connection to the server.  Also frees
+       memory used by the &lt;structname&gt;PGconn&lt;/structname&gt; object.
+</span>
+サーバとの接続を閉ざします。
+また、<code class="structname">PGconn</code>オブジェクトが占めるメモリも解放します。
+</p><pre class="synopsis">
+void PQfinish(PGconn *conn);
+</pre><p>
+      </p><p>
+<span class="original">
+       Note that even if the server connection attempt fails (as
+       indicated by &lt;xref linkend="libpq-PQstatus"/&gt;), the application should call &lt;xref linkend="libpq-PQfinish"/&gt;
+       to free the memory used by the &lt;structname&gt;PGconn&lt;/structname&gt; object.
+       The &lt;structname&gt;PGconn&lt;/structname&gt; pointer must not be used again after
+       &lt;xref linkend="libpq-PQfinish"/&gt; has been called.
+</span>
+たとえサーバへの接続試行が失敗しても（<a class="xref" href="libpq-status.html#LIBPQ-PQSTATUS"><code class="function">PQstatus</code></a>で調べます）、アプリケーションは<a class="xref" href="libpq-connect.html#LIBPQ-PQFINISH"><code class="function">PQfinish</code></a>を呼び出し<code class="structname">PGconn</code>オブジェクトが占めるメモリを解放するべきです。
+そして<a class="xref" href="libpq-connect.html#LIBPQ-PQFINISH"><code class="function">PQfinish</code></a>を呼び出したら、もう<code class="structname">PGconn</code>へのポインタを使ってはいけません。
+      </p></dd><dt id="LIBPQ-PQRESET"><span class="term"><code class="function">PQreset</code><a id="id-1.7.3.8.2.11.10.1.2" class="indexterm"></a></span></dt><dd><p>
+<span class="original">
+       Resets the communication channel to the server.
+</span>
+サーバへの通信チャンネルをリセットします。
+</p><pre class="synopsis">
+void PQreset(PGconn *conn);
+</pre><p>
+      </p><p>
+<span class="original">
+       This function will close the connection
+       to the server and attempt to establish a new
+       connection, using all the same
+       parameters previously used.  This might be useful for
+       error recovery if a working connection is lost.
+</span>
+この関数はサーバへの接続を閉じ、以前使用したパラメータをすべて使用して、同一のサーバへ新しく接続を確立します。
+これは、作業中の接続が失われた場合のエラーの修復に役立つでしょう。
+      </p></dd><dt id="LIBPQ-PQRESETSTART"><span class="term"><code class="function">PQresetStart</code><a id="id-1.7.3.8.2.11.11.1.2" class="indexterm"></a><br /></span><span class="term"><code class="function">PQresetPoll</code><a id="id-1.7.3.8.2.11.11.2.2" class="indexterm"></a></span></dt><dd><p>
+<span class="original">
+       Reset the communication channel to the server, in a nonblocking manner.
+</span>
+非ブロッキング方式で、サーバへの接続チャンネルをリセットします。
+
+</p><pre class="synopsis">
+int PQresetStart(PGconn *conn);
+
+PostgresPollingStatusType PQresetPoll(PGconn *conn);
+</pre><p>
+      </p><p>
+<span class="original">
+       These functions will close the connection to the server and attempt to
+       establish a new connection, using all the same
+       parameters previously used. This can be useful for error recovery if a
+       working connection is lost. They differ from &lt;xref linkend="libpq-PQreset"/&gt; (above) in that they
+       act in a nonblocking manner. These functions suffer from the same
+       restrictions as &lt;xref linkend="libpq-PQconnectStartParams"/&gt;, &lt;function&gt;PQconnectStart&lt;/function&gt;
+       and &lt;function&gt;PQconnectPoll&lt;/function&gt;.
+</span>
+これらの関数はサーバへの接続を閉じ、それから再度、以前使用したパラメータをすべて使用して、同じサーバと新たな接続を確立しようとします。
+これらは作業中の接続が失われた場合のエラー修復に役立つでしょう。
+<a class="xref" href="libpq-connect.html#LIBPQ-PQRESET"><code class="function">PQreset</code></a>（前述）との違いは、この2つの関数が非ブロック方式で動作することです。
+また、これらの関数は<a class="xref" href="libpq-connect.html#LIBPQ-PQCONNECTSTARTPARAMS"><code class="function">PQconnectStartParams</code></a>、<code class="function">PQconnectStart</code>および<code class="function">PQconnectPoll</code>と同じ制限を受けます。
+      </p><p>
+<span class="original">
+       To initiate a connection reset, call
+       &lt;xref linkend="libpq-PQresetStart"/&gt;. If it returns 0, the reset has
+       failed. If it returns 1, poll the reset using
+       &lt;function&gt;PQresetPoll&lt;/function&gt; in exactly the same way as you
+       would create the connection using &lt;function&gt;PQconnectPoll&lt;/function&gt;.
+</span>
+接続のリセットを始めるためには<a class="xref" href="libpq-connect.html#LIBPQ-PQRESETSTART"><code class="function">PQresetStart</code></a>を呼び出します。
+この関数がゼロを返す場合、リセットに失敗しています。
+戻り値が1ならば、<code class="function">PQconnectPoll</code>を使って接続を確立した時とまったく同じに、<code class="function">PQresetPoll</code>を使用してリセットのポーリングを行います。
+      </p></dd><dt id="LIBPQ-PQPINGPARAMS"><span class="term"><code class="function">PQpingParams</code><a id="id-1.7.3.8.2.11.12.1.2" class="indexterm"></a></span></dt><dd><p>
+<span class="original">
+       &lt;xref linkend="libpq-PQpingParams"/&gt; reports the status of the
+       server.  It accepts connection parameters identical to those of
+       &lt;xref linkend="libpq-PQconnectdbParams"/&gt;, described above.  It is not
+       necessary to supply correct user name, password, or database name
+       values to obtain the server status; however, if incorrect values
+       are provided, the server will log a failed connection attempt.
+</span>
+<a class="xref" href="libpq-connect.html#LIBPQ-PQPINGPARAMS"><code class="function">PQpingParams</code></a>はサーバの状態を報告します。
+この関数は上述の<a class="xref" href="libpq-connect.html#LIBPQ-PQCONNECTDBPARAMS"><code class="function">PQconnectdbParams</code></a>と同じ接続パラメータを受け付けます。
+サーバの状態を得るために正しいユーザ名、パスワード、データベース名を提供する必要はありません。
+しかし、不適切な値が供給されると、サーバは不成功に終わった接続の試みをログに残します。
+
+</p><pre class="synopsis">
+PGPing PQpingParams(const char * const *keywords,
+                    const char * const *values,
+                    int expand_dbname);
+</pre><p>
+
+<span class="original">
+       The function returns one of the following values:
+</span>
+この関数は以下の値のいずれかを返します。
+
+       </p><div class="variablelist"><dl class="variablelist"><dt id="LIBPQ-PQPINGPARAMS-PQPING_OK"><span class="term"><code class="literal">PQPING_OK</code></span></dt><dd><p>
+<span class="original">
+           The server is running and appears to be accepting connections.
+</span>
+サーバは稼動中で、接続を受け付けているようです。
+          </p></dd><dt id="LIBPQ-PQPINGPARAMS-PQPING_REJECT"><span class="term"><code class="literal">PQPING_REJECT</code></span></dt><dd><p>
+<span class="original">
+           The server is running but is in a state that disallows connections
+           (startup, shutdown, or crash recovery).
+</span>
+サーバは稼動中ですが、接続を許可しない状態（起動処理中、停止処理中、クラッシュリカバリ中）です。
+          </p></dd><dt id="LIBPQ-PQPINGPARAMS-PQPING_NO_RESPONSE"><span class="term"><code class="literal">PQPING_NO_RESPONSE</code></span></dt><dd><p>
+<span class="original">
+           The server could not be contacted.  This might indicate that the
+           server is not running, or that there is something wrong with the
+           given connection parameters (for example, wrong port number), or
+           that there is a network connectivity problem (for example, a
+           firewall blocking the connection request).
+</span>
+サーバと通信できません。
+これは、サーバが稼動中ではない、指定した接続パラメータの何か（例えばポート番号の間違い）が間違っている、ネットワーク接続性の問題（例えば接続要求をブロックするファイアウォール）があることを示しているかもしれません。
+          </p></dd><dt id="LIBPQ-PQPINGPARAMS-PQPING_NO_ATTEMPT"><span class="term"><code class="literal">PQPING_NO_ATTEMPT</code></span></dt><dd><p>
+<span class="original">
+           No attempt was made to contact the server, because the supplied
+           parameters were obviously incorrect or there was some client-side
+           problem (for example, out of memory).
+</span>
+指定されたパラメータが明らかに間違っている、または、（メモリ不足など）クライアント側の問題があったため、サーバとの通信を試行しませんでした。
+          </p></dd></dl></div><p>
+
+      </p></dd><dt id="LIBPQ-PQPING"><span class="term"><code class="function">PQping</code><a id="id-1.7.3.8.2.11.13.1.2" class="indexterm"></a></span></dt><dd><p>
+<span class="original">
+       &lt;xref linkend="libpq-PQping"/&gt; reports the status of the
+       server.  It accepts connection parameters identical to those of
+       &lt;xref linkend="libpq-PQconnectdb"/&gt;, described above.  It is not
+       necessary to supply correct user name, password, or database name
+       values to obtain the server status; however, if incorrect values
+       are provided, the server will log a failed connection attempt.
+</span>
+<a class="xref" href="libpq-connect.html#LIBPQ-PQPING"><code class="function">PQping</code></a>はサーバの状態を報告します。
+この関数は上述の<a class="xref" href="libpq-connect.html#LIBPQ-PQCONNECTDB"><code class="function">PQconnectdb</code></a>と同じ接続パラメータを受け付けます。
+サーバの状態を得るために正しいユーザ名、パスワード、データベース名を提供する必要はありません。
+しかし、不適切な値が供給されると、サーバは不成功に終わった接続の試みをログに残します。
+
+</p><pre class="synopsis">
+PGPing PQping(const char *conninfo);
+</pre><p>
+      </p><p>
+<span class="original">
+       The return values are the same as for &lt;xref linkend="libpq-PQpingParams"/&gt;.
+</span>
+戻り値は<a class="xref" href="libpq-connect.html#LIBPQ-PQPINGPARAMS"><code class="function">PQpingParams</code></a>と同じです。
+      </p></dd><dt id="LIBPQ-PQSETSSLKEYPASSHOOK-OPENSSL"><span class="term"><code class="function">PQsetSSLKeyPassHook_OpenSSL</code><a id="id-1.7.3.8.2.11.14.1.2" class="indexterm"></a></span></dt><dd><p>
+<span class="original">
+       &lt;function&gt;PQsetSSLKeyPassHook_OpenSSL&lt;/function&gt; lets an application override
+       &lt;application&gt;libpq&lt;/application&gt;'s &lt;link linkend="libpq-ssl-clientcert"&gt;default
+       handling of encrypted client certificate key files&lt;/link&gt; using
+       &lt;xref linkend="libpq-connect-sslpassword"/&gt; or interactive prompting.
+</span>
+<code class="function">PQsetSSLKeyPassHook_OpenSSL</code>はアプリケーションに<a class="xref" href="libpq-connect.html#LIBPQ-CONNECT-SSLPASSWORD">sslpassword</a>や対話的なプロンプトを使って<span class="application">libpq</span>の<a class="link" href="libpq-ssl.html#LIBPQ-SSL-CLIENTCERT" title="34.19.2. クライアント証明書">暗号化されたクライアント証明書キーファイルのデフォルト処理</a>を置き換えさせます。
+
+</p><pre class="synopsis">
+void PQsetSSLKeyPassHook_OpenSSL(PQsslKeyPassHook_OpenSSL_type hook);
+</pre><p>
+
+<span class="original">
+       The application passes a pointer to a callback function with signature:
+</span>
+アプリケーションは以下のシグネチャを持つコールバック関数のポインタを渡します。
+</p><pre class="programlisting">
+int callback_fn(char *buf, int size, PGconn *conn);
+</pre><p>
+<span class="original">
+       which &lt;application&gt;libpq&lt;/application&gt; will then call
+       &lt;emphasis&gt;instead of&lt;/emphasis&gt; its default
+       &lt;function&gt;PQdefaultSSLKeyPassHook_OpenSSL&lt;/function&gt; handler. The
+       callback should determine the password for the key and copy it to
+       result-buffer &lt;parameter&gt;buf&lt;/parameter&gt; of size
+       &lt;parameter&gt;size&lt;/parameter&gt;. The string in &lt;parameter&gt;buf&lt;/parameter&gt;
+       must be null-terminated. The callback must return the length of the
+       password stored in &lt;parameter&gt;buf&lt;/parameter&gt; excluding the null
+       terminator. On failure, the callback should set
+       &lt;literal&gt;buf[0] = '\0'&lt;/literal&gt; and return 0. See
+       &lt;function&gt;PQdefaultSSLKeyPassHook_OpenSSL&lt;/function&gt; in
+       &lt;application&gt;libpq&lt;/application&gt;'s source code for an example.
+</span>
+<span class="application">libpq</span>はデフォルトの<code class="function">PQdefaultSSLKeyPassHook_OpenSSL</code>ハンドラ<span class="emphasis"><em>の代わりに</em></span>、これを呼び出します。
+コールバックはキーに対するパスワードを決定して、それを<em class="parameter"><code>size</code></em>の大きさを持つ結果バッファ<em class="parameter"><code>buf</code></em>にコピーすべきです。
+<em class="parameter"><code>buf</code></em>内の文字列はNULL終端でなければなりません。
+コールバックは<em class="parameter"><code>buf</code></em>に格納されたパスワードのヌル終端子を除いた長さを返さなければなりません。
+失敗した場合、コールバックは<code class="literal">buf[0] = '\0'</code>をセットし、0を返すべきです。
+例として、<span class="application">libpq</span>のソースコードの<code class="function">PQdefaultSSLKeyPassHook_OpenSSL</code>を参照してください。
+      </p><p>
+<span class="original">
+       If the user specified an explicit key location,
+       its path will be in &lt;literal&gt;conn-&gt;sslkey&lt;/literal&gt; when the callback
+       is invoked. This will be empty if the default key path is being used.
+       For keys that are engine specifiers, it is up to engine implementations
+       whether they use the &lt;productname&gt;OpenSSL&lt;/productname&gt; password
+       callback or define their own handling.
+</span>
+ユーザが明示的なキー位置を指定した場合、コールバックが実行されたときにそのパスが<code class="literal">conn-&gt;sslkey</code>に含まれます。
+デフォルトのキーパスが使われている場合、これは空になります。
+エンジン指定子であるキーに対して、<span class="productname">OpenSSL</span>パスワードコールバックを使うか固有の処理を定義するかは、エンジン実装によります。
+      </p><p>
+<span class="original">
+       The app callback may choose to delegate unhandled cases to
+       &lt;function&gt;PQdefaultSSLKeyPassHook_OpenSSL&lt;/function&gt;,
+       or call it first and try something else if it returns 0, or completely override it.
+</span>
+アプリケーションのコールバックが対応していない場合について<code class="function">PQdefaultSSLKeyPassHook_OpenSSL</code>に委託したり、最初に呼び出して0が返った場合に何らか他のことを試みたり、あるいは完全に上書きしたりすることにしても良いです。
+      </p><p>
+<span class="original">
+       The callback &lt;emphasis&gt;must not&lt;/emphasis&gt; escape normal flow control with exceptions,
+       &lt;function&gt;longjmp(...)&lt;/function&gt;, etc. It must return normally.
+</span>
+コールバックは例外、<code class="function">longjmp(...)</code>などで通常のフロー制御から脱出しては<span class="emphasis"><em>いけません</em></span>。
+正常にリターンしなければなりません。
+      </p></dd><dt id="LIBPQ-PQGETSSLKEYPASSHOOK-OPENSSL"><span class="term"><code class="function">PQgetSSLKeyPassHook_OpenSSL</code><a id="id-1.7.3.8.2.11.15.1.2" class="indexterm"></a></span></dt><dd><p>
+<span class="original">
+       &lt;function&gt;PQgetSSLKeyPassHook_OpenSSL&lt;/function&gt; returns the current
+       client certificate key password hook, or &lt;literal&gt;NULL&lt;/literal&gt;
+       if none has been set.
+</span>
+<code class="function">PQgetSSLKeyPassHook_OpenSSL</code>は現在のクライアント証明書のキーパスワードのフックを、あるいは、設定されていない場合に<code class="literal">NULL</code>を返します。
+
+</p><pre class="synopsis">
+PQsslKeyPassHook_OpenSSL_type PQgetSSLKeyPassHook_OpenSSL(void);
+</pre><p>
+      </p></dd></dl></div><p>
+  </p><div class="sect2" id="LIBPQ-CONNSTRING"><div class="titlepage"><div><div><h3 class="title">34.1.1. 接続文字列</h3></div></div></div><span class="original">
+   &lt;title&gt;Connection Strings&lt;/title&gt;
+</span><a id="id-1.7.3.8.3.2" class="indexterm"></a><a id="id-1.7.3.8.3.3" class="indexterm"></a><p>
+<span class="original">
+    Several &lt;application&gt;libpq&lt;/application&gt; functions parse a user-specified string to obtain
+    connection parameters.  There are two accepted formats for these strings:
+    plain keyword/value strings
+    and URIs.  URIs generally follow
+    &lt;ulink url="https://tools.ietf.org/html/rfc3986"&gt;RFC
+    3986&lt;/ulink&gt;, except that multi-host connection strings are allowed
+    as further described below.
+</span>
+複数の<span class="application">libpq</span>関数は、接続パラメータを得るためにユーザが指定した文字列の解析を行います。
+この文字列として、単純なキーワード/値文字列とURIという２種類の書式が受け付けられます。
+URIは通常<a class="ulink" href="https://tools.ietf.org/html/rfc3986" target="_top">RFC3986</a>に従いますが、以下で詳細を説明する複数ホスト接続文字列が使用できるところが例外です。
+   </p><div class="sect3" id="id-1.7.3.8.3.5"><div class="titlepage"><div><div><h4 class="title">34.1.1.1. キーワード／値形式の接続文字列</h4></div></div></div><span class="original">
+    &lt;title&gt;Keyword/Value Connection Strings&lt;/title&gt;
+</span><p>
+<span class="original">
+    In the keyword/value format, each parameter setting is in the form
+    &lt;replaceable&gt;keyword&lt;/replaceable&gt; &lt;literal&gt;=&lt;/literal&gt;
+    &lt;replaceable&gt;value&lt;/replaceable&gt;, with space(s) between settings.
+    Spaces around a setting's equal sign are
+    optional. To write an empty value, or a value containing spaces, surround it
+    with single quotes, for example &lt;literal&gt;keyword = 'a value'&lt;/literal&gt;.
+    Single quotes and backslashes within
+    a value must be escaped with a backslash, i.e., &lt;literal&gt;\'&lt;/literal&gt; and
+    &lt;literal&gt;\\&lt;/literal&gt;.
+</span>
+キーワード／値書式では、各パラメータ設定は、各設定の間に空白文字があり、<em class="replaceable"><code>keyword</code></em> <code class="literal">=</code> <em class="replaceable"><code>value</code></em>という形式です。
+等号記号の前後の空白文字は省略可能です。
+空の値を書く、または空白文字を含む値を書くためには、<code class="literal">keyword = 'a value'</code>のように単一引用符で値を括ります。
+値内部の単一引用符とバックスラッシュはバックスラッシュでエスケープしなければなりません。
+つまり<code class="literal">\'</code>と<code class="literal">\\</code>です。
+   </p><p>
+<span class="original">
+    Example:
+</span>
+以下に例を示します。
+</p><pre class="programlisting">
+host=localhost port=5432 dbname=mydb connect_timeout=10
+</pre><p>
+   </p><p>
+<span class="original">
+    The recognized parameter key words are listed in &lt;xref
+    linkend="libpq-paramkeywords"/&gt;.
+</span>
+有効なパラメータキーワードを<a class="xref" href="libpq-connect.html#LIBPQ-PARAMKEYWORDS" title="34.1.2. パラメータキーワード">34.1.2</a>に示します。
+   </p></div><div class="sect3" id="id-1.7.3.8.3.6"><div class="titlepage"><div><div><h4 class="title">34.1.1.2. 接続URI</h4></div></div></div><span class="original">
+    &lt;title&gt;Connection URIs&lt;/title&gt;
+</span><p>
+<span class="original">
+   The general form for a connection &lt;acronym&gt;URI&lt;/acronym&gt; is:
+</span>
+接続<acronym class="acronym">URI</acronym>の一般的な形式を以下に示します。
+</p><pre class="synopsis">
+postgresql://[<span class="optional"><em class="replaceable"><code>userspec</code></em>@</span>][<span class="optional"><em class="replaceable"><code>hostspec</code></em></span>][<span class="optional">/<em class="replaceable"><code>dbname</code></em></span>][<span class="optional">?<em class="replaceable"><code>paramspec</code></em></span>]
+
+<span class="phrase">where <em class="replaceable"><code>userspec</code></em> is:</span>
+
+<em class="replaceable"><code>user</code></em>[<span class="optional">:<em class="replaceable"><code>password</code></em></span>]
+
+<span class="phrase">and <em class="replaceable"><code>hostspec</code></em> is:</span>
+
+[<span class="optional"><em class="replaceable"><code>host</code></em></span>][<span class="optional">:<em class="replaceable"><code>port</code></em></span>][<span class="optional">,...</span>]
+
+<span class="phrase">and <em class="replaceable"><code>paramspec</code></em> is:</span>
+
+<em class="replaceable"><code>name</code></em>=<em class="replaceable"><code>value</code></em>[<span class="optional">&amp;...</span>]
+</pre><p>
+   </p><p>
+<span class="original">
+    The &lt;acronym&gt;URI&lt;/acronym&gt; scheme designator can be either
+    &lt;literal&gt;postgresql://&lt;/literal&gt; or &lt;literal&gt;postgres://&lt;/literal&gt;.  Each
+    of the remaining &lt;acronym&gt;URI&lt;/acronym&gt; parts is optional.  The
+    following examples illustrate valid &lt;acronym&gt;URI&lt;/acronym&gt; syntax:
+</span>
+<acronym class="acronym">URI</acronym>スキーム指示子は<code class="literal">postgresql://</code>または<code class="literal">postgres://</code>のいずれかを取ることができます。
+個々の<acronym class="acronym">URI</acronym>の残りの部品は省略可能です。
+以下の例で有効な<acronym class="acronym">URI</acronym>構文の使用例を示します。
+</p><pre class="programlisting">
+postgresql://
+postgresql://localhost
+postgresql://localhost:5433
+postgresql://localhost/mydb
+postgresql://user@localhost
+postgresql://user:secret@localhost
+postgresql://other@localhost/otherdb?connect_timeout=10&amp;application_name=myapp
+postgresql://host1:123,host2:456/somedb?target_session_attrs=any&amp;application_name=myapp
+</pre><p>
+<span class="original">
+    Values that would normally appear in the hierarchical part of
+    the &lt;acronym&gt;URI&lt;/acronym&gt; can alternatively be given as named
+    parameters.  For example:
+</span>
+<acronym class="acronym">URI</acronym>の階層部分に通常現れる値は、代わりに名前付きパラメータとして与えられます。例:
+</p><pre class="programlisting">
+postgresql:///mydb?host=localhost&amp;port=5433
+</pre><p>
+<span class="original">
+    All named parameters must match key words listed in
+    &lt;xref linkend="libpq-paramkeywords"/&gt;, except that for compatibility
+    with JDBC connection &lt;acronym&gt;URI&lt;/acronym&gt;s, instances
+    of &lt;literal&gt;ssl=true&lt;/literal&gt; are translated into
+    &lt;literal&gt;sslmode=require&lt;/literal&gt;.
+</span>
+JDBC接続<acronym class="acronym">URI</acronym>との互換性のために、<code class="literal">ssl=true</code>のインスタンスが<code class="literal">sslmode=require</code>に変換される点を除き、すべての名前付きパラメータは<a class="xref" href="libpq-connect.html#LIBPQ-PARAMKEYWORDS" title="34.1.2. パラメータキーワード">34.1.2</a>に列挙されたキーワードと一致しなければなりません。
+   </p><p>
+<span class="original">
+    The connection &lt;acronym&gt;URI&lt;/acronym&gt; needs to be encoded with &lt;ulink
+    url="https://tools.ietf.org/html/rfc3986#section-2.1"&gt;percent-encoding&lt;/ulink&gt;
+    if it includes symbols with special meaning in any of its parts.  Here is
+    an example where the equal sign (&lt;literal&gt;=&lt;/literal&gt;) is replaced with
+    &lt;literal&gt;%3D&lt;/literal&gt; and the space character with
+    &lt;literal&gt;%20&lt;/literal&gt;:
+</span>
+接続<acronym class="acronym">URI</acronym>は、その中のどこかの部分に特別な意味を持つシンボルを含む場合、<a class="ulink" href="https://tools.ietf.org/html/rfc3986#section-2.1" target="_top">パーセントエンコーディング</a>でエンコードされている必要があります。
+以下は等号(<code class="literal">=</code>)が<code class="literal">%3D</code>、空白が<code class="literal">%20</code>で置き換えられた例です。
+</p><pre class="programlisting">
+postgresql://user@localhost:5433/mydb?options=-c%20synchronous_commit%3Doff
+</pre><p>
+   </p><p>
+<span class="original">
+    The host part may be either a host name or an IP address.  To specify an
+    IPv6 address, enclose it in square brackets:
+</span>
+ホスト部分は、ホスト名またはIPアドレスのいずれかです。
+IPv6アドレスを指定するには、角括弧で囲みます:
+</p><pre class="synopsis">
+postgresql://[2001:db8::1234]/database
+</pre><p>
+   </p><p>
+<span class="original">
+    The host part is interpreted as described for the parameter &lt;xref
+    linkend="libpq-connect-host"/&gt;.  In particular, a Unix-domain socket
+    connection is chosen if the host part is either empty or looks like an
+    absolute path name,
+    otherwise a TCP/IP connection is initiated.  Note, however, that the
+    slash is a reserved character in the hierarchical part of the URI.  So, to
+    specify a non-standard Unix-domain socket directory, either omit the host
+    part of the URI and specify the host as a named parameter, or
+    percent-encode the path in the host part of the URI:
+</span>
+ホスト部分はパラメータ<a class="xref" href="libpq-connect.html#LIBPQ-CONNECT-HOST">host</a>で説明したように解釈されます。
+具体的には、ホスト部が空または絶対パス名のように見える場合、Unixドメインソケット接続が選択され、さもなければTCP/IP接続で初期化されます。
+しかしURIの階層部ではスラッシュが予約された文字であることに注意してください。
+このため、標準以外のUnixドメインソケットディレクトリを指定するためには、URIからホスト指定を省き、名前付きパラメータとしてホストを指定するか、URIのホスト要素内のパスをパーセントエンコードするかどちらかを行ってください。
+</p><pre class="programlisting">
+postgresql:///dbname?host=/var/lib/postgresql
+postgresql://%2Fvar%2Flib%2Fpostgresql/dbname
+</pre><p>
+   </p><p>
+<span class="original">
+    It is possible to specify multiple host components, each with an optional
+    port component, in a single URI.  A URI of the form
+    &lt;literal&gt;postgresql://host1:port1,host2:port2,host3:port3/&lt;/literal&gt;
+    is equivalent to a connection string of the form
+    &lt;literal&gt;host=host1,host2,host3 port=port1,port2,port3&lt;/literal&gt;.
+    As further described below, each
+    host will be tried in turn until a connection is successfully established.
+</span>
+単一のURIの中に、オプションのポート要素を伴う複数のホスト要素を指定することができます。
+<code class="literal">postgresql://host1:port1,host2:port2,host3:port3/</code>という形式のURIは、<code class="literal">host=host1,host2,host3 port=port1,port2,port3</code>という形式の接続文字列と同じです。
+更に以下に示すように、接続の確立に成功するまで、各々のホストが順番に試されます。
+   </p></div><div class="sect3" id="LIBPQ-MULTIPLE-HOSTS"><div class="titlepage"><div><div><h4 class="title">34.1.1.3. 複数ホストの指定</h4></div></div></div><span class="original">
+     &lt;title&gt;Specifying Multiple Hosts&lt;/title&gt;
+</span><p>
+<span class="original">
+       It is possible to specify multiple hosts to connect to, so that they are
+       tried in the given order. In the Keyword/Value format, the &lt;literal&gt;host&lt;/literal&gt;,
+       &lt;literal&gt;hostaddr&lt;/literal&gt;, and &lt;literal&gt;port&lt;/literal&gt; options accept comma-separated
+       lists of values. The same number of elements must be given in each
+       option that is specified, such
+       that e.g., the first &lt;literal&gt;hostaddr&lt;/literal&gt; corresponds to the first host name,
+       the second &lt;literal&gt;hostaddr&lt;/literal&gt; corresponds to the second host name, and so
+       forth. As an exception, if only one &lt;literal&gt;port&lt;/literal&gt; is specified, it
+       applies to all the hosts.
+</span>
+接続先に複数のホストを指定することができ、指定された順に試されます。
+キーワード/値形式では、<code class="literal">host</code>、<code class="literal">hostaddr</code>、<code class="literal">port</code>オプションは、カンマで区切った値のリストを受け付けます。
+指定された各々のオプションでは、同じ数の要素を与えなければなりません。
+たとえば、最初の<code class="literal">hostaddr</code>は最初のホスト名に関連付けられ、二番目の<code class="literal">hostaddr</code>は二番目のホスト名に関連付けられる、という具合です。
+例外として、一つの<code class="literal">port</code>だけが指定された場合には、すべてのホストにそれが適用されます。
+     </p><p>
+<span class="original">
+       In the connection URI format, you can list multiple &lt;literal&gt;host:port&lt;/literal&gt; pairs
+       separated by commas in the &lt;literal&gt;host&lt;/literal&gt; component of the URI.
+</span>
+接続URI形式では、<code class="literal">host</code>要素中にカンマで区切って複数の<code class="literal">host:port</code>ペアを指定できます。
+     </p><p>
+<span class="original">
+       In either format, a single host name can translate to multiple network
+       addresses. A common example of this is a host that has both an IPv4 and
+       an IPv6 address.
+</span>
+いずれの形式でも、単一ホスト名は複数のネットワークアドレスに変換されることがあります。
+これの一般的な例はIPv4とIPv6のアドレスを両方持つホストです。
+     </p><p>
+<span class="original">
+       When multiple hosts are specified, or when a single host name is
+       translated to multiple addresses,  all the hosts and addresses will be
+       tried in order, until one succeeds. If none of the hosts can be reached,
+       the connection fails. If a connection is established successfully, but
+       authentication fails, the remaining hosts in the list are not tried.
+</span>
+複数のホスト名が指定された場合、あるいは単一のホスト名が複数のアドレスに変換された場合、そのうちの一つが成功するまで、すべてのホストとアドレスがその順に試されます。
+どのホストも到達可能でなければ、接続は失敗します。
+接続の確立に成功しても、認証に失敗すると、リスト中の残りのホストは試されません。
+     </p><p>
+<span class="original">
+       If a password file is used, you can have different passwords for
+       different hosts. All the other connection options are the same for every
+       host in the list; it is not possible to e.g., specify different
+       usernames for different hosts.
+</span>
+パスワードファイルが使用される場合は、異なるホストに対して異なるパスワードを使用できます。
+他の接続オプションは、リスト中のすべてのホストで同じです。
+たとえば、異なるユーザ名を異なるホストに指定することはできません。
+     </p></div></div><div class="sect2" id="LIBPQ-PARAMKEYWORDS"><div class="titlepage"><div><div><h3 class="title">34.1.2. パラメータキーワード</h3></div></div></div><span class="original">
+   &lt;title&gt;Parameter Key Words&lt;/title&gt;
+</span><p>
+<span class="original">
+    The currently recognized parameter key words are:
+</span>
+現時点で有効なパラメータのキーワードは以下に示す通りです。
+
+    </p><div class="variablelist"><dl class="variablelist"><dt id="LIBPQ-CONNECT-HOST"><span class="term"><code class="literal">host</code></span></dt><dd><p>
+<span class="original">
+        Name of host to connect to.&lt;indexterm&gt;&lt;primary&gt;host
+        name&lt;/primary&gt;&lt;/indexterm&gt; If a host name looks like an absolute path
+        name, it specifies Unix-domain communication rather than TCP/IP
+        communication; the value is the name of the directory in which the
+        socket file is stored.  (On Unix, an absolute path name begins with a
+        slash.  On Windows, paths starting with drive letters are also
+        recognized.)  If the host name starts with &lt;literal&gt;@&lt;/literal&gt;, it is
+        taken as a Unix-domain socket in the abstract namespace (currently
+        supported on Linux and Windows).
+        The default behavior when &lt;literal&gt;host&lt;/literal&gt; is not
+        specified, or is empty, is to connect to a Unix-domain
+        socket&lt;indexterm&gt;&lt;primary&gt;Unix domain socket&lt;/primary&gt;&lt;/indexterm&gt; in
+        &lt;filename&gt;/tmp&lt;/filename&gt; (or whatever socket directory was specified
+        when &lt;productname&gt;PostgreSQL&lt;/productname&gt; was built).  On Windows and
+        on machines without Unix-domain sockets, the default is to connect to
+        &lt;literal&gt;localhost&lt;/literal&gt;.
+</span>
+接続するホスト名を指定します。
+<a id="id-1.7.3.8.4.2.1.1.2.1.1" class="indexterm"></a> ホスト名が絶対パス名のように見えるなら、それはTCP/IPによる通信ではなく、Unixドメインの通信を示します。
+その場合、この値はソケットファイルを格納するディレクトリの名前になります。
+（Unixでは絶対パス名はスラッシュから始まります。Windowsではドライブ文字から始まるパスも認められます。）
+ホスト名が<code class="literal">@</code>から始まっていると、抽象名前空間（今のところLinuxとWindowsでサポートされています）内のUnixドメインソケットとして扱われます。
+<code class="literal">host</code>が指定されなかったり、空の場合のデフォルトの振る舞いは、<code class="filename">/tmp</code>（または、<span class="productname">PostgreSQL</span>の構築時に指定したソケットディレクトリ）にあるUnixドメインのソケットに接続することです。
+<a id="id-1.7.3.8.4.2.1.1.2.1.6" class="indexterm"></a>
+Unixドメインソケットを持たないマシンにおけるデフォルトは、<code class="literal">localhost</code>に接続することです。
+       </p><p>
+<span class="original">
+        A comma-separated list of host names is also accepted, in which case
+        each host name in the list is tried in order; an empty item in the
+        list selects the default behavior as explained above. See
+        &lt;xref linkend="libpq-multiple-hosts"/&gt; for details.
+</span>
+カンマで区切ったホスト名も受け付けます。
+この場合、リスト中のホスト名が順に試されます。
+リスト中の空の項目には、上で説明したデフォルトの挙動が適用されます。
+詳細は<a class="xref" href="libpq-connect.html#LIBPQ-MULTIPLE-HOSTS" title="34.1.1.3. 複数ホストの指定">34.1.1.3</a>をご覧ください。
+       </p></dd><dt id="LIBPQ-CONNECT-HOSTADDR"><span class="term"><code class="literal">hostaddr</code></span></dt><dd><p>
+<span class="original">
+        Numeric IP address of host to connect to.  This should be in the
+        standard IPv4 address format, e.g., &lt;literal&gt;172.28.40.9&lt;/literal&gt;.  If
+        your machine supports IPv6, you can also use those addresses.
+        TCP/IP communication is
+        always used when a nonempty string is specified for this parameter.
+        If this parameter is not specified, the value of &lt;literal&gt;host&lt;/literal&gt;
+        will be looked up to find the corresponding IP address &amp;mdash; or, if
+        &lt;literal&gt;host&lt;/literal&gt; specifies an IP address, that value will be
+        used directly.
+</span>
+接続するホストのIPアドレスを指定します。
+これは、<code class="literal">172.28.40.9</code>といった標準的なIPv4アドレス書式でなければなりません。
+使用するマシンでIPv6をサポートする場合は、そのアドレスを使用することもできます。
+このパラメータに空以外の文字列が指定されると、TCP/IP通信が常に使用されます。
+パラメータが指定されない場合、対応するIPアドレスを探すために<code class="literal">host</code>の値が調べられます。あるいは、<code class="literal">host</code>でIPアドレスを指定している場合、その値が直接使われます。
+       </p><p>
+<span class="original">
+        Using &lt;literal&gt;hostaddr&lt;/literal&gt; allows the
+        application to avoid a host name look-up, which might be important
+        in applications with time constraints. However, a host name is
+        required for GSSAPI or SSPI authentication
+        methods, as well as for &lt;literal&gt;verify-full&lt;/literal&gt; SSL
+        certificate verification.  The following rules are used:
+</span>
+<code class="literal">hostaddr</code>を使用することで、アプリケーションがホスト名の検索を行なわずに済みます。
+特に時間的制約があるアプリケーションでは重要になるでしょう。
+しかし、GSSAPI、SSPI認証方式では、ホスト名が必要になります。
+<code class="literal">verify-full</code>SSL証明書検証を行う場合も同様です。
+以下の規則が使用されます。
+        </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+           If &lt;literal&gt;host&lt;/literal&gt; is specified
+           without &lt;literal&gt;hostaddr&lt;/literal&gt;, a host name lookup occurs.
+           (When using &lt;function&gt;PQconnectPoll&lt;/function&gt;, the lookup occurs
+           when &lt;function&gt;PQconnectPoll&lt;/function&gt; first considers this host
+           name, and it may cause &lt;function&gt;PQconnectPoll&lt;/function&gt; to block
+           for a significant amount of time.)
+</span>
+<code class="literal">hostaddr</code>を使わずに<code class="literal">host</code>を指定した場合は、ホスト名の検索が発生します。
+（<code class="function">PQconnectPoll</code>を使う場合、<code class="function">PQconnectPoll</code>が最初にホスト名を考慮するときに、<code class="function">PQconnectPoll</code>をかなり長い時間、ブロックさせてしまうかもしれません。）
+          </p></li><li class="listitem"><p>
+<span class="original">
+           If &lt;literal&gt;hostaddr&lt;/literal&gt; is specified without &lt;literal&gt;host&lt;/literal&gt;,
+           the value for &lt;literal&gt;hostaddr&lt;/literal&gt; gives the server network address.
+           The connection attempt will fail if the authentication
+           method requires a host name.
+</span>
+<code class="literal">host</code>を使わずに<code class="literal">hostaddr</code>を指定した場合、<code class="literal">hostaddr</code>の値はサーバのネットワークアドレスとなります。
+認証方式がホスト名を必要する場合は接続試行が失敗します。
+          </p></li><li class="listitem"><p>
+<span class="original">
+           If both &lt;literal&gt;host&lt;/literal&gt; and &lt;literal&gt;hostaddr&lt;/literal&gt; are specified,
+           the value for &lt;literal&gt;hostaddr&lt;/literal&gt; gives the server network address.
+           The value for &lt;literal&gt;host&lt;/literal&gt; is ignored unless the
+           authentication method requires it, in which case it will be
+           used as the host name.
+</span>
+<code class="literal">host</code>と<code class="literal">hostaddr</code>の両方を指定した場合、<code class="literal">hostaddr</code>がサーバのネットワークアドレスとなります。
+<code class="literal">host</code>の値は認証方式で必要とされない限り無視され、必要とされる場合にはホスト名として使用されます。
+          </p></li></ul></div><p>
+<span class="original">
+        Note that authentication is likely to fail if &lt;literal&gt;host&lt;/literal&gt;
+        is not the name of the server at network address &lt;literal&gt;hostaddr&lt;/literal&gt;.
+        Also, when both &lt;literal&gt;host&lt;/literal&gt; and &lt;literal&gt;hostaddr&lt;/literal&gt;
+        are specified, &lt;literal&gt;host&lt;/literal&gt;
+        is used to identify the connection in a password file (see
+        &lt;xref linkend="libpq-pgpass"/&gt;).
+</span>
+<code class="literal">host</code>が<code class="literal">hostaddr</code>ネットワークアドレスに対応するマシンの名前と一致しない場合は、認証に失敗する可能性があるので注意してください。
+また、<code class="literal">host</code>と<code class="literal">hostaddr</code>の両方が指定されると、<code class="literal">host</code>がパスワードファイル(<a class="xref" href="libpq-pgpass.html" title="34.16. パスワードファイル">34.16</a>を参照)での接続の識別に使用されます。
+       </p><p>
+<span class="original">
+        A comma-separated list of &lt;literal&gt;hostaddr&lt;/literal&gt; values is also
+        accepted, in which case each host in the list is tried in order.
+        An empty item in the list causes the corresponding host name to be
+        used, or the default host name if that is empty as well. See
+        &lt;xref linkend="libpq-multiple-hosts"/&gt; for details.
+</span>
+カンマ区切りの<code class="literal">hostaddr</code>値のリストも受け付けます。
+この場合、リスト中のホストが順に試されます。
+リスト中の空の項目には、対応するホスト名が使用されます。
+そのホスト名も空の場合は、デフォルトのホスト名が使用されます。
+詳細は<a class="xref" href="libpq-connect.html#LIBPQ-MULTIPLE-HOSTS" title="34.1.1.3. 複数ホストの指定">34.1.1.3</a>をご覧ください。
+       </p><p>
+<span class="original">
+        Without either a host name or host address,
+        &lt;application&gt;libpq&lt;/application&gt; will connect using a local
+        Unix-domain socket; or on Windows and on machines without Unix-domain
+        sockets, it will attempt to connect to &lt;literal&gt;localhost&lt;/literal&gt;.
+</span>
+ホスト名もホストのアドレスも用いない場合、<span class="application">libpq</span>はローカルのUnixドメインソケットを使用して接続します。
+ただし、WindowsとUnixドメインソケットを持たないマシンでは、<code class="literal">localhost</code>への接続を試みます。
+       </p></dd><dt id="LIBPQ-CONNECT-PORT"><span class="term"><code class="literal">port</code></span></dt><dd><p>
+<span class="original">
+        Port number to connect to at the server host, or socket file
+        name extension for Unix-domain
+        connections.&lt;indexterm&gt;&lt;primary&gt;port&lt;/primary&gt;&lt;/indexterm&gt;
+        If multiple hosts were given in the &lt;literal&gt;host&lt;/literal&gt; or
+        &lt;literal&gt;hostaddr&lt;/literal&gt; parameters, this parameter may specify a
+        comma-separated list of ports of the same length as the host list, or
+        it may specify a single port number to be used for all hosts.
+        An empty string, or an empty item in a comma-separated list,
+        specifies the default port number established
+        when &lt;productname&gt;PostgreSQL&lt;/productname&gt; was built.
+</span>
+サーバホストでの接続用のポート番号、または、Unixドメイン接続の場合は、ソケットファイルの拡張子を指定します。
+<a id="id-1.7.3.8.4.2.1.3.2.1.1" class="indexterm"></a>
+もし複数のホストが<code class="literal">host</code>あるいは<code class="literal">hostaddr</code>パラメータで与えられると、このパラメータで同じ長さのポートのリストを与えることができます。
+あるいは、一つのポート番号をすべてのホストに指定することもできます。
+空文字、あるいはカンマ区切りリスト中の空の項目は、<span class="productname">PostgreSQL</span>が構築されたときに設定されたデフォルトポート番号を指定します。
+       </p></dd><dt id="LIBPQ-CONNECT-DBNAME"><span class="term"><code class="literal">dbname</code></span></dt><dd><p>
+<span class="original">
+       The database name.  Defaults to be the same as the user name.
+       In certain contexts, the value is checked for extended
+       formats; see &lt;xref linkend="libpq-connstring"/&gt; for more details on
+       those.
+</span>
+データベース名を指定します。
+デフォルトはユーザ名と同じです。
+特定の文脈では、この値は拡張書式で検査されます。
+詳細については<a class="xref" href="libpq-connect.html#LIBPQ-CONNSTRING" title="34.1.1. 接続文字列">34.1.1</a>を参照してください。
+      </p></dd><dt id="LIBPQ-CONNECT-USER"><span class="term"><code class="literal">user</code></span></dt><dd><p>
+<span class="original">
+       &lt;productname&gt;PostgreSQL&lt;/productname&gt; user name to connect as.
+       Defaults to be the same as the operating system name of the user
+       running the application.
+</span>
+データベースへ接続する<span class="productname">PostgreSQL</span>ユーザ名を指定します。
+デフォルトは、そのアプリケーションを実行しているユーザのオペレーティングシステム上の名前と同じです。
+      </p></dd><dt id="LIBPQ-CONNECT-PASSWORD"><span class="term"><code class="literal">password</code></span></dt><dd><p>
+<span class="original">
+       Password to be used if the server demands password authentication.
+</span>
+サーバがパスワードによる認証を必要とした場合に使用されるパスワードを指定します。
+      </p></dd><dt id="LIBPQ-CONNECT-PASSFILE"><span class="term"><code class="literal">passfile</code></span></dt><dd><p>
+<span class="original">
+       Specifies the name of the file used to store passwords
+       (see &lt;xref linkend="libpq-pgpass"/&gt;).
+       Defaults to &lt;filename&gt;~/.pgpass&lt;/filename&gt;, or
+       &lt;filename&gt;%APPDATA%\postgresql\pgpass.conf&lt;/filename&gt; on Microsoft Windows.
+       (No error is reported if this file does not exist.)
+</span>
+パスワードを格納するファイル名を指定します（<a class="xref" href="libpq-pgpass.html" title="34.16. パスワードファイル">34.16</a>参照）。
+デフォルトは<code class="filename">~/.pgpass</code>または、Microsoft Windowsでは<code class="filename">%APPDATA%\postgresql\pgpass.conf</code>です。
+（このファイルが存在しなくてもエラーは報告されません。）
+      </p></dd><dt id="LIBPQ-CONNECT-CHANNEL-BINDING"><span class="term"><code class="literal">channel_binding</code></span></dt><dd><p>
+<span class="original">
+        This option controls the client's use of channel binding. A setting
+        of &lt;literal&gt;require&lt;/literal&gt; means that the connection must employ
+        channel binding, &lt;literal&gt;prefer&lt;/literal&gt; means that the client will
+        choose channel binding if available, and &lt;literal&gt;disable&lt;/literal&gt;
+        prevents the use of channel binding. The default
+        is &lt;literal&gt;prefer&lt;/literal&gt; if
+        &lt;productname&gt;PostgreSQL&lt;/productname&gt; is compiled with SSL support;
+        otherwise the default is &lt;literal&gt;disable&lt;/literal&gt;.
+</span>
+このオプションはクライアントのチャンネルバインディングの使用を制御します。
+<code class="literal">require</code>設定では接続はチャンネルバイデンディングを使わなければならず、<code class="literal">prefer</code>ではクラアイントが可能であればチャンネルバインディングを使い、<code class="literal">disable</code>ではチャンネルバイディングを使用させません。
+<span class="productname">PostgreSQL</span>がSSLサポートを伴ってコンパイルされている場合のデフォルトは<code class="literal">prefer</code>で、そうでなければデフォルトは<code class="literal">disable</code>です。
+      </p><p>
+<span class="original">
+        Channel binding is a method for the server to authenticate itself to
+        the client. It is only supported over SSL connections
+        with &lt;productname&gt;PostgreSQL&lt;/productname&gt; 11 or later servers using
+        the &lt;literal&gt;SCRAM&lt;/literal&gt; authentication method.
+</span>
+チャンネルバインディングはサーバが自身が信頼できることをクライアントに証明する方法です。
+これは、<code class="literal">SCRAM</code>認証方式を使った<span class="productname">PostgreSQL</span> 11以降のサーバとのSSL接続上でのみサポートされます。
+      </p></dd><dt id="LIBPQ-CONNECT-CONNECT-TIMEOUT"><span class="term"><code class="literal">connect_timeout</code></span></dt><dd><p>
+<span class="original">
+       Maximum time to wait while connecting, in seconds (write as a decimal integer,
+       e.g., &lt;literal&gt;10&lt;/literal&gt;).  Zero, negative, or not specified means
+       wait indefinitely.  The minimum allowed timeout is 2 seconds, therefore
+       a value of &lt;literal&gt;1&lt;/literal&gt; is interpreted as &lt;literal&gt;2&lt;/literal&gt;.
+       This timeout applies separately to each host name or IP address.
+       For example, if you specify two hosts and &lt;literal&gt;connect_timeout&lt;/literal&gt;
+       is 5, each host will time out if no connection is made within 5
+       seconds, so the total time spent waiting for a connection might be
+       up to 10 seconds.
+</span>
+接続中の最大待機時間を秒単位（10進整数で記述してください、<code class="literal">10</code>など）で指定します。
+ゼロ、負値、もしくは未設定は、無期限の待機を意味します。
+許容される最小のタイムアウトは2秒です。
+したがって、<code class="literal">1</code>は<code class="literal">2</code>と解釈されます。
+このタイムアウトは各ホスト名やIPアドレスに別々に適用されます。
+例えば、二つのホストを指定して、<code class="literal">connect_timeout</code>が5であるなら、各ホストが5秒以内に接続できないときにタイムアウトして、接続を待つ合計所要時間は10秒近くになるかもしれません。
+      </p></dd><dt id="LIBPQ-CONNECT-CLIENT-ENCODING"><span class="term"><code class="literal">client_encoding</code></span></dt><dd><p>
+<span class="original">
+       This sets the &lt;varname&gt;client_encoding&lt;/varname&gt;
+       configuration parameter for this connection.  In addition to
+       the values accepted by the corresponding server option, you
+       can use &lt;literal&gt;auto&lt;/literal&gt; to determine the right
+       encoding from the current locale in the client
+       (&lt;envar&gt;LC_CTYPE&lt;/envar&gt; environment variable on Unix
+       systems).
+</span>
+接続用の<code class="varname">client_encoding</code>設定パラメータを設定します。
+対応するサーバオプションで受け付けられる値の他に、クライアントにおける現在のロケール（Unixシステムの場合は<code class="envar">LC_CTYPE</code>環境変数）から正しい符号化方式を決定する<code class="literal">auto</code>を使用することができます。
+      </p></dd><dt id="LIBPQ-CONNECT-OPTIONS"><span class="term"><code class="literal">options</code></span></dt><dd><p>
+<span class="original">
+        Specifies command-line options to send to the server at connection
+        start.  For example, setting this to &lt;literal&gt;-c geqo=off&lt;/literal&gt; sets the
+        session's value of the &lt;varname&gt;geqo&lt;/varname&gt; parameter to
+        &lt;literal&gt;off&lt;/literal&gt;.  Spaces within this string are considered to
+        separate command-line arguments, unless escaped with a backslash
+        (&lt;literal&gt;\&lt;/literal&gt;); write &lt;literal&gt;\\&lt;/literal&gt; to represent a literal
+        backslash.  For a detailed discussion of the available
+        options, consult &lt;xref linkend="runtime-config"/&gt;.
+</span>
+接続開始時にサーバに送信するコマンドラインオプションを指定します。
+例えば、これを<code class="literal">-c geqo=off</code>に設定すると、<code class="varname">geqo</code>パラメータのセッション値は<code class="literal">off</code>になります。
+この文字列中の空白はバックスラッシュ(<code class="literal">\</code>)でエスケープされていなければコマンド行引数の区切りであるとみなされます。
+リテラルのバックスラッシュを表すには<code class="literal">\\</code>と書いて下さい。
+利用可能なオプションに関する詳細については<a class="xref" href="runtime-config.html" title="第20章 サーバの設定">第20章</a>を参照してください。
+       </p></dd><dt id="LIBPQ-CONNECT-APPLICATION-NAME"><span class="term"><code class="literal">application_name</code></span></dt><dd><p>
+<span class="original">
+        Specifies a value for the &lt;xref linkend="guc-application-name"/&gt;
+        configuration parameter.
+</span>
+<a class="xref" href="runtime-config-logging.html#GUC-APPLICATION-NAME">application_name</a>設定パラメータの値を指定します。
+       </p></dd><dt id="LIBPQ-CONNECT-FALLBACK-APPLICATION-NAME"><span class="term"><code class="literal">fallback_application_name</code></span></dt><dd><p>
+<span class="original">
+        Specifies a fallback value for the &lt;xref
+        linkend="guc-application-name"/&gt; configuration parameter.
+        This value will be used if no value has been given for
+        &lt;literal&gt;application_name&lt;/literal&gt; via a connection parameter or the
+        &lt;envar&gt;PGAPPNAME&lt;/envar&gt; environment variable.  Specifying
+        a fallback name is useful in generic utility programs that
+        wish to set a default application name but allow it to be
+        overridden by the user.
+</span>
+<a class="xref" href="runtime-config-logging.html#GUC-APPLICATION-NAME">application_name</a>設定パラメータの予備値を指定します。
+接続パラメータまたは<code class="envar">PGAPPNAME</code>環境変数により<code class="literal">application_name</code>の値が指定されない場合に、この値が使用されます。
+予備の名前を指定することは、デフォルトのアプリケーション名を設定したいが、ユーザにもそれを上書きできるようにしておきたい、一般的なユーティリティプログラムで有用です。
+       </p></dd><dt id="LIBPQ-KEEPALIVES"><span class="term"><code class="literal">keepalives</code></span></dt><dd><p>
+<span class="original">
+        Controls whether client-side TCP keepalives are used. The default
+        value is 1, meaning on, but you can change this to 0, meaning off,
+        if keepalives are not wanted.  This parameter is ignored for
+        connections made via a Unix-domain socket.
+</span>
+クライアント側におけるTCPキープアライブの使用を制御します。
+デフォルト値は1であり、有効であることを意味します。
+しかしキープアライブを望まない場合は、無効であることを意味するゼロに設定することができます。
+このパラメータはUnixドメインソケット経由の接続では無視されます。
+       </p></dd><dt id="LIBPQ-KEEPALIVES-IDLE"><span class="term"><code class="literal">keepalives_idle</code></span></dt><dd><p>
+<span class="original">
+        Controls the number of seconds of inactivity after which TCP should
+        send a keepalive message to the server.  A value of zero uses the
+        system default. This parameter is ignored for connections made via a
+        Unix-domain socket, or if keepalives are disabled.
+        It is only supported on systems where &lt;symbol&gt;TCP_KEEPIDLE&lt;/symbol&gt; or
+        an equivalent socket option is available, and on Windows; on other
+        systems, it has no effect.
+</span>
+TCPがサーバにキープアライブメッセージを送信した後に活動を行わない期間を秒単位で制御します。
+ゼロという値ではシステムのデフォルトを使用します。
+Unixドメインソケット経由でなされた接続の場合もしくはキープアライブが無効な場合、このパラメータは無視されます。
+これは<code class="symbol">TCP_KEEPIDLE</code>または同等のソケットオプションが利用できるシステムおよびWindowsでのみサポートされます。
+他のシステムでは効果がありません。
+       </p></dd><dt id="LIBPQ-KEEPALIVES-INTERVAL"><span class="term"><code class="literal">keepalives_interval</code></span></dt><dd><p>
+<span class="original">
+        Controls the number of seconds after which a TCP keepalive message
+        that is not acknowledged by the server should be retransmitted.  A
+        value of zero uses the system default. This parameter is ignored for
+        connections made via a Unix-domain socket, or if keepalives are disabled.
+        It is only supported on systems where &lt;symbol&gt;TCP_KEEPINTVL&lt;/symbol&gt; or
+        an equivalent socket option is available, and on Windows; on other
+        systems, it has no effect.
+</span>
+TCPキープアライブメッセージに対する応答がサーバからない場合に、何秒後に再送を行うかを制御します。
+ゼロという値ではシステムのデフォルトを使用します。
+Unixドメインソケット経由でなされた接続の場合、またはキープアライブを無効にしている場合、このパラメータは無視されます。
+これは<code class="symbol">TCP_KEEPINTVL</code>または同等のソケットオプションが利用できるシステムおよびWindowsでのみサポートされます。
+他のシステムでは効果がありません。
+       </p></dd><dt id="LIBPQ-KEEPALIVES-COUNT"><span class="term"><code class="literal">keepalives_count</code></span></dt><dd><p>
+<span class="original">
+        Controls the number of TCP keepalives that can be lost before the
+        client's connection to the server is considered dead.  A value of
+        zero uses the system default. This parameter is ignored for
+        connections made via a Unix-domain socket, or if keepalives are disabled.
+        It is only supported on systems where &lt;symbol&gt;TCP_KEEPCNT&lt;/symbol&gt; or
+        an equivalent socket option is available; on other systems, it has no
+        effect.
+</span>
+サーバへのクライアント接続が不要になったとみなすまで、何回キープアライブの欠落を認めるかを制御します。
+ゼロという値ではシステムのデフォルトを使用します。
+Unixドメインソケット経由でなされた接続の場合、またはキープアライブを無効にしている場合、このパラメータは無視されます。
+これは<code class="symbol">TCP_KEEPCNT</code>または同等のソケットオプションが利用できるシステムでのみサポートされます。
+他のシステムでは効果がありません。
+       </p></dd><dt id="LIBPQ-TCP-USER-TIMEOUT"><span class="term"><code class="literal">tcp_user_timeout</code></span></dt><dd><p>
+<span class="original">
+        Controls the number of milliseconds that transmitted data may
+        remain unacknowledged before a connection is forcibly closed.
+        A value of zero uses the system default. This parameter is
+        ignored for connections made via a Unix-domain socket.
+        It is only supported on systems where &lt;symbol&gt;TCP_USER_TIMEOUT&lt;/symbol&gt;
+        is available; on other systems, it has no effect.
+</span>
+接続が強制的に閉じられるまで、送信されたデータに対して応答がない状況をどれだけ認めるかをミリ秒単位で制御します。
+値0はシステムのデフォルトを使用します。
+Unixドメインソケット経由でなされた接続の場合、このパラメータは無視されます。
+<code class="symbol">TCP_USER_TIMEOUT</code>が利用可能なシステムでのみサポートされます。
+他のシステムでは効果がありません。
+       </p></dd><dt id="LIBPQ-CONNECT-REPLICATION"><span class="term"><code class="literal">replication</code></span></dt><dd><p>
+<span class="original">
+       This option determines whether the connection should use the
+       replication protocol instead of the normal protocol.  This is what
+       PostgreSQL replication connections as well as tools such as
+       &lt;application&gt;pg_basebackup&lt;/application&gt; use internally, but it can
+       also be used by third-party applications.  For a description of the
+       replication protocol, consult &lt;xref linkend="protocol-replication"/&gt;.
+</span>
+このオプションは接続が通常プロトコルの代わりにレプリケーションプロトコルを使うかどうかを決めます。
+これはPostgreSQLのレプリケーション接続や<span class="application">pg_basebackup</span>などのツールが内部的に使うものですが、サードパーティアプリケーションからも使われることがあります。
+レプリケーションプロトコルについての説明は<a class="xref" href="protocol-replication.html" title="55.4. ストリーミングレプリケーションプロトコル">55.4</a>を参照してください。
+      </p><p>
+<span class="original">
+       The following values, which are case-insensitive, are supported:
+</span>
+以下の値がサポートされます。これらは大文字小文字を区別しません。
+       </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+          <code class="literal">true</code>, <code class="literal">on</code>,
+          <code class="literal">yes</code>, <code class="literal">1</code>
+         </span></dt><dd><p>
+<span class="original">
+           The connection goes into physical replication mode.
+</span>
+接続は物理レプリケーションモードになります。
+          </p></dd><dt><span class="term"><code class="literal">database</code></span></dt><dd><p>
+<span class="original">
+           The connection goes into logical replication mode, connecting to
+           the database specified in the &lt;literal&gt;dbname&lt;/literal&gt; parameter.
+</span>
+接続は論理レプリケーションモードになり、<code class="literal">dbname</code>パラメータで指定されたデータベースに接続します。
+          </p></dd><dt><span class="term">
+          <code class="literal">false</code>, <code class="literal">off</code>,
+          <code class="literal">no</code>, <code class="literal">0</code>
+         </span></dt><dd><p>
+<span class="original">
+           The connection is a regular one, which is the default behavior.
+</span>
+接続は通常のものになります。これがデフォルトの振る舞いです。
+          </p></dd></dl></div><p>
+      </p><p>
+<span class="original">
+       In physical or logical replication mode, only the simple query protocol
+       can be used.
+</span>
+物理あるいは論理レプリケーションモードでは、簡易問い合わせプロトコルのみが使用できます。
+      </p></dd><dt id="LIBPQ-CONNECT-GSSENCMODE"><span class="term"><code class="literal">gssencmode</code></span></dt><dd><p>
+<span class="original">
+        This option determines whether or with what priority a secure
+        &lt;acronym&gt;GSS&lt;/acronym&gt; TCP/IP connection will be negotiated with the
+        server. There are three modes:
+</span>
+このオプションは、<acronym class="acronym">GSS</acronym>による安全なTCP/IP接続をサーバと調停するか、するのならどの優先度で調停するかを決定します。
+3つのモードがあります。
+
+        </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">disable</code></span></dt><dd><p>
+<span class="original">
+            only try a non-&lt;acronym&gt;GSSAPI&lt;/acronym&gt;-encrypted connection
+</span>
+非<acronym class="acronym">GSSAPI</acronym>暗号化接続のみ試行
+           </p></dd><dt><span class="term"><code class="literal">prefer</code> (デフォルト)</span></dt><dd><p>
+<span class="original">
+            if there are &lt;acronym&gt;GSSAPI&lt;/acronym&gt; credentials present (i.e.,
+            in a credentials cache), first try
+            a &lt;acronym&gt;GSSAPI&lt;/acronym&gt;-encrypted connection; if that fails or
+            there are no credentials, try a
+            non-&lt;acronym&gt;GSSAPI&lt;/acronym&gt;-encrypted connection.  This is the
+            default when &lt;productname&gt;PostgreSQL&lt;/productname&gt; has been
+            compiled with &lt;acronym&gt;GSSAPI&lt;/acronym&gt; support.
+</span>
+<acronym class="acronym">GSSAPI</acronym>認証情報が(すなわち認証情報キャッシュに)存在すれば、まず<acronym class="acronym">GSSAPI</acronym>暗号化接続を試行します。
+その試行に失敗した場合、もしくは認証情報がない場合には非<acronym class="acronym">GSSAPI</acronym>暗号化接続を試行します。
+これが<span class="productname">PostgreSQL</span>を<acronym class="acronym">GSSAPI</acronym>サポートを有効にしてコンパイルした場合のデフォルトです。
+           </p></dd><dt><span class="term"><code class="literal">require</code></span></dt><dd><p>
+<span class="original">
+            only try a &lt;acronym&gt;GSSAPI&lt;/acronym&gt;-encrypted connection
+</span>
+<acronym class="acronym">GSSAPI</acronym>暗号化接続のみ試行
+           </p></dd></dl></div><p>
+       </p><p>
+<span class="original">
+        &lt;literal&gt;gssencmode&lt;/literal&gt; is ignored for Unix domain socket
+        communication.  If &lt;productname&gt;PostgreSQL&lt;/productname&gt; is compiled
+        without GSSAPI support, using the &lt;literal&gt;require&lt;/literal&gt; option
+        will cause an error, while &lt;literal&gt;prefer&lt;/literal&gt; will be accepted
+        but &lt;application&gt;libpq&lt;/application&gt; will not actually attempt
+        a &lt;acronym&gt;GSSAPI&lt;/acronym&gt;-encrypted
+        connection.&lt;indexterm&gt;&lt;primary&gt;GSSAPI&lt;/primary&gt;&lt;secondary sortas="libpq"&gt;with
+        libpq&lt;/secondary&gt;&lt;/indexterm&gt;
+</span>
+<code class="literal">gssencmode</code>はUnixドメインソケット通信では無視されます。
+<span class="productname">PostgreSQL</span>がGSSAPIなしでコンパイルされた場合、<code class="literal">require</code>オプションを使うとエラーになります。一方、<code class="literal">prefer</code>は受け付けられますが、<span class="application">libpq</span>は実際には<acronym class="acronym">GSSAPI</acronym>暗号化接続を試行しません。<a id="id-1.7.3.8.4.2.1.20.2.2.7" class="indexterm"></a>
+       </p></dd><dt id="LIBPQ-CONNECT-SSLMODE"><span class="term"><code class="literal">sslmode</code></span></dt><dd><p>
+<span class="original">
+        This option determines whether or with what priority a secure
+        &lt;acronym&gt;SSL&lt;/acronym&gt; TCP/IP connection will be negotiated with the
+        server. There are six modes:
+</span>
+このオプションは、どの<acronym class="acronym">SSL</acronym>による安全なTCP/IP接続の優先度でサーバと調停するかを決定します。
+6つのモードがあります。
+
+        </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">disable</code></span></dt><dd><p>
+<span class="original">
+            only try a non-&lt;acronym&gt;SSL&lt;/acronym&gt; connection
+</span>
+非<acronym class="acronym">SSL</acronym>接続のみ試行
+           </p></dd><dt><span class="term"><code class="literal">allow</code></span></dt><dd><p>
+<span class="original">
+            first try a non-&lt;acronym&gt;SSL&lt;/acronym&gt; connection; if that
+            fails, try an &lt;acronym&gt;SSL&lt;/acronym&gt; connection
+</span>
+最初に非<acronym class="acronym">SSL</acronym>接続を試行し、失敗したら、<acronym class="acronym">SSL</acronym>接続を試行
+           </p></dd><dt><span class="term"><code class="literal">prefer</code> （デフォルト）</span></dt><dd><p>
+<span class="original">
+            first try an &lt;acronym&gt;SSL&lt;/acronym&gt; connection; if that fails,
+            try a non-&lt;acronym&gt;SSL&lt;/acronym&gt; connection
+</span>
+最初に<acronym class="acronym">SSL</acronym>接続を試行し、失敗したら、非<acronym class="acronym">SSL</acronym>接続を試行
+           </p></dd><dt><span class="term"><code class="literal">require</code></span></dt><dd><p>
+<span class="original">
+            only try an &lt;acronym&gt;SSL&lt;/acronym&gt; connection. If a root CA
+            file is present, verify the certificate in the same way as
+            if &lt;literal&gt;verify-ca&lt;/literal&gt; was specified
+</span>
+<acronym class="acronym">SSL</acronym>接続のみ試行。
+ルートCAファイルが存在する場合、<code class="literal">verify-ca</code>が指定された場合と同じ方法で証明書が検証されます。
+           </p></dd><dt><span class="term"><code class="literal">verify-ca</code></span></dt><dd><p>
+<span class="original">
+            only try an &lt;acronym&gt;SSL&lt;/acronym&gt; connection, and verify that
+            the server certificate is issued by a trusted
+            certificate authority (&lt;acronym&gt;CA&lt;/acronym&gt;)
+</span>
+<acronym class="acronym">SSL</acronym>接続のみ試行し、サーバ証明書が信用された認証局（<acronym class="acronym">CA</acronym>）から発行されたかを検証
+           </p></dd><dt><span class="term"><code class="literal">verify-full</code></span></dt><dd><p>
+<span class="original">
+            only try an &lt;acronym&gt;SSL&lt;/acronym&gt; connection, verify that the
+            server certificate is issued by a
+            trusted &lt;acronym&gt;CA&lt;/acronym&gt; and that the requested server host name
+            matches that in the certificate
+</span>
+<acronym class="acronym">SSL</acronym>接続のみ試行し、サーバ証明書が信用された<acronym class="acronym">CA</acronym>から発行されたか、およびそのサーバホスト名が証明書内のものと一致するかを検証
+           </p></dd></dl></div><p>
+
+<span class="original">
+        See &lt;xref linkend="libpq-ssl"/&gt; for a detailed description of how
+        these options work.
+</span>
+これらのオプションがどのように動くのかについては<a class="xref" href="libpq-ssl.html" title="34.19. SSLサポート">34.19</a>を参照してください。
+       </p><p>
+<span class="original">
+        &lt;literal&gt;sslmode&lt;/literal&gt; is ignored for Unix domain socket
+        communication.
+        If &lt;productname&gt;PostgreSQL&lt;/productname&gt; is compiled without SSL support,
+        using options &lt;literal&gt;require&lt;/literal&gt;, &lt;literal&gt;verify-ca&lt;/literal&gt;, or
+        &lt;literal&gt;verify-full&lt;/literal&gt; will cause an error, while
+        options &lt;literal&gt;allow&lt;/literal&gt; and &lt;literal&gt;prefer&lt;/literal&gt; will be
+        accepted but &lt;application&gt;libpq&lt;/application&gt; will not actually attempt
+        an &lt;acronym&gt;SSL&lt;/acronym&gt;
+        connection.&lt;indexterm&gt;&lt;primary&gt;SSL&lt;/primary&gt;&lt;secondary
+        sortas="libpq"&gt;with libpq&lt;/secondary&gt;&lt;/indexterm&gt;
+</span>
+<code class="literal">sslmode</code>はUnixドメインソケット通信では無視されます。
+SSLサポートなしで<span class="productname">PostgreSQL</span>がコンパイルされた場合に、<code class="literal">require</code>、<code class="literal">verify-ca</code>、<code class="literal">verify-full</code>を使用するとエラーになります。
+一方、<code class="literal">allow</code>と<code class="literal">prefer</code>は使用できますが、実際に<span class="application">libpq</span>は<acronym class="acronym">SSL</acronym>接続を受け付けません。
+<a id="id-1.7.3.8.4.2.1.21.2.2.10" class="indexterm"></a>
+       </p><p>
+<span class="original">
+        Note that if &lt;acronym&gt;GSSAPI&lt;/acronym&gt; encryption is possible,
+        that will be used in preference to &lt;acronym&gt;SSL&lt;/acronym&gt;
+        encryption, regardless of the value of &lt;literal&gt;sslmode&lt;/literal&gt;.
+        To force use of &lt;acronym&gt;SSL&lt;/acronym&gt; encryption in an
+        environment that has working &lt;acronym&gt;GSSAPI&lt;/acronym&gt;
+        infrastructure (such as a Kerberos server), also
+        set &lt;literal&gt;gssencmode&lt;/literal&gt; to &lt;literal&gt;disable&lt;/literal&gt;.
+</span>
+<acronym class="acronym">GSSAPI</acronym>暗号化が可能な場合、<code class="literal">sslmode</code>の値に関係なく、<acronym class="acronym">SSL</acronym>暗号化よりも優先して使用されることに注意してください。
+<acronym class="acronym">GSSAPI</acronym>インフラストラクチャが動作している環境(Kerberosサーバなど)で<acronym class="acronym">SSL</acronym>暗号化を強制的に使用するには、<code class="literal">gssencmode</code>を<code class="literal">disable</code>に設定します。
+       </p></dd><dt id="LIBPQ-CONNECT-REQUIRESSL"><span class="term"><code class="literal">requiressl</code></span></dt><dd><p>
+<span class="original">
+        This option is deprecated in favor of the &lt;literal&gt;sslmode&lt;/literal&gt;
+        setting.
+</span>
+このオプションは<code class="literal">sslmode</code>設定を支持する観点から廃止予定になっています。
+       </p><p>
+<span class="original">
+        If set to 1, an &lt;acronym&gt;SSL&lt;/acronym&gt; connection to the server
+        is required (this is equivalent to &lt;literal&gt;sslmode&lt;/literal&gt;
+        &lt;literal&gt;require&lt;/literal&gt;).  &lt;application&gt;libpq&lt;/application&gt; will then refuse
+        to connect if the server does not accept an
+        &lt;acronym&gt;SSL&lt;/acronym&gt; connection.  If set to 0 (default),
+        &lt;application&gt;libpq&lt;/application&gt; will negotiate the connection type with
+        the server (equivalent to &lt;literal&gt;sslmode&lt;/literal&gt;
+        &lt;literal&gt;prefer&lt;/literal&gt;).  This option is only available if
+        &lt;productname&gt;PostgreSQL&lt;/productname&gt; is compiled with SSL support.
+</span>
+1に設定することで、サーバへの<acronym class="acronym">SSL</acronym>接続が必要になります
+(これは<code class="literal">sslmode</code>の<code class="literal">require</code>と同じです)。
+サーバが<acronym class="acronym">SSL</acronym>接続を受け付けない場合、<span class="application">libpq</span>は接続を拒絶します。
+0(デフォルト)に設定することで、<span class="application">libpq</span>はサーバと接続形式の調停を行います。
+(<code class="literal">sslmode</code>の<code class="literal">prefer</code>と同じです。)
+SSLサポート付きで<span class="productname">PostgreSQL</span>をコンパイルした場合にのみ、このオプションが利用できます。
+       </p></dd><dt id="LIBPQ-CONNECT-SSLCOMPRESSION"><span class="term"><code class="literal">sslcompression</code></span></dt><dd><p>
+<span class="original">
+        If set to 1, data sent over SSL connections will be compressed.  If
+        set to 0, compression will be disabled.  The default is 0.  This
+        parameter is ignored if a connection without SSL is made.
+</span>
+1に設定することで、SSL接続越えで送信されるデータは圧縮されます。
+0に設定すると、圧縮が無効になります。
+デフォルトは0です。
+このパラメータはSSLを使わない接続では無視されます。
+       </p><p>
+<span class="original">
+        SSL compression is nowadays considered insecure and its use is no
+        longer recommended.  &lt;productname&gt;OpenSSL&lt;/productname&gt; 1.1.0 disables
+        compression by default, and many operating system distributions
+        disable it in prior versions as well, so setting this parameter to on
+        will not have any effect if the server does not accept compression.
+        &lt;productname&gt;PostgreSQL&lt;/productname&gt; 14 disables compression
+        completely in the backend.
+</span>
+SSL圧縮は今日では安全ではないと考えられていて、もはや使用は推奨されません。
+<span class="productname">OpenSSL</span> 1.1.0はデフォルトでは圧縮を無効にしており、多くのOSディストリビューションでもこれまでのバージョンで無効化しています。そのため、サーバが圧縮を受け付けない場合、本パラメータをonに設定しても効果がありません。
+<span class="productname">PostgreSQL</span> 14はバックエンドでの圧縮を完全に無効にしています。
+       </p><p>
+<span class="original">
+        If security is not a primary concern, compression can improve
+        throughput if the network is the bottleneck.  Disabling compression
+        can improve response time and throughput if CPU performance is the
+        limiting factor.
+</span>
+セキュリティが主要な関心でないなら、ネットワークがボトルネックであるとき圧縮でスループットを改善できます。
+CPU性能が律速要素であるなら、圧縮を無効化することで応答時間とスループットを改善できます。
+       </p></dd><dt id="LIBPQ-CONNECT-SSLCERT"><span class="term"><code class="literal">sslcert</code></span></dt><dd><p>
+<span class="original">
+        This parameter specifies the file name of the client SSL
+        certificate, replacing the default
+        &lt;filename&gt;~/.postgresql/postgresql.crt&lt;/filename&gt;.
+        This parameter is ignored if an SSL connection is not made.
+</span>
+このパラメータは、<code class="filename">~/.postgresql/postgresql.crt</code>というデフォルトを置き換えるクライアントSSL証明書のファイル名を指定します。
+このパラメータはSSL接続が確立していない場合は無視されます。
+       </p></dd><dt id="LIBPQ-CONNECT-SSLKEY"><span class="term"><code class="literal">sslkey</code></span></dt><dd><p>
+<span class="original">
+        This parameter specifies the location for the secret key used for
+        the client certificate. It can either specify a file name that will
+        be used instead of the default
+        &lt;filename&gt;~/.postgresql/postgresql.key&lt;/filename&gt;, or it can specify a key
+        obtained from an external &lt;quote&gt;engine&lt;/quote&gt; (engines are
+        &lt;productname&gt;OpenSSL&lt;/productname&gt; loadable modules).  An external engine
+        specification should consist of a colon-separated engine name and
+        an engine-specific key identifier.  This parameter is ignored if an
+        SSL connection is not made.
+</span>
+このパラメータはクライアント証明書に対して使用される秘密鍵の場所を指定します。
+デフォルトの<code class="filename">~/.postgresql/postgresql.key</code>の代わりに使用されるファイル名、または外部<span class="quote">「<span class="quote">エンジン</span>」</span>（エンジンとは<span class="productname">OpenSSL</span>ロード可能なモジュール）から得られるキーを指定することも可能です。
+外部エンジンの指定にはコロンで区切ったエンジン名とエンジン特有の鍵識別子を含んでいなければなりません。
+SSL接続が確立していない場合このパラメータは無視されます。
+       </p></dd><dt id="LIBPQ-CONNECT-SSLPASSWORD"><span class="term"><code class="literal">sslpassword</code></span></dt><dd><p>
+<span class="original">
+        This parameter specifies the password for the secret key specified in
+        &lt;literal&gt;sslkey&lt;/literal&gt;, allowing client certificate private keys
+        to be stored in encrypted form on disk even when interactive passphrase
+        input is not practical.
+</span>
+このパラメータは<code class="literal">sslkey</code>で指定される秘密鍵に対するパスワードを指定して、対話的なパスフレーズ入力が現実的でないときにも、クライアント証明書のプライベートキーを暗号化された形式でディスクに格納できるようにします。
+       </p><p>
+<span class="original">
+        Specifying this parameter with any non-empty value suppresses the
+        &lt;literal&gt;Enter PEM pass phrase:&lt;/literal&gt;
+        prompt that &lt;productname&gt;OpenSSL&lt;/productname&gt; will emit by default
+        when an encrypted client certificate key is provided to
+        &lt;literal&gt;libpq&lt;/literal&gt;.
+</span>
+空でない値でこのパラメータを指定することで、暗号化されたクライアント証明書キーが<code class="literal">libpq</code>に供給されるときに<span class="productname">OpenSSL</span>がデフォルトで出す<code class="literal">Enter PEM pass phrase:</code>プロンプトを抑止します。
+       </p><p>
+<span class="original">
+        If the key is not encrypted this parameter is ignored. The parameter
+        has no effect on keys specified by &lt;productname&gt;OpenSSL&lt;/productname&gt;
+        engines unless the engine uses the &lt;productname&gt;OpenSSL&lt;/productname&gt;
+        password callback mechanism for prompts.
+</span>
+キーが暗号化されていない場合、このパラメータは無視されます。
+<span class="productname">OpenSSL</span>エンジンがプロンプトに<span class="productname">OpenSSL</span>パスワードコールバックの仕組みを使わない限り、このパラメータはエンジンで指定されたキーに影響しません。
+       </p><p>
+<span class="original">
+        There is no environment variable equivalent to this option, and no
+        facility for looking it up in &lt;filename&gt;.pgpass&lt;/filename&gt;. It can be
+        used in a service file connection definition. Users with
+        more sophisticated uses should consider using &lt;productname&gt;OpenSSL&lt;/productname&gt; engines and
+        tools like PKCS#11 or USB crypto offload devices.
+</span>
+このオプションと同等の環境変数、および、パスワードを<code class="filename">.pgpass</code>から探す機能はありません。
+このオプションはサービスファイルの接続定義で使用できます。
+より高度な使用法を用いるユーザは、<span class="productname">OpenSSL</span>エンジンとPKCS#11やUSB暗号オフロードデバイスといったツールの利用を検討すべきです。
+       </p></dd><dt id="LIBPQ-CONNECT-SSLROOTCERT"><span class="term"><code class="literal">sslrootcert</code></span></dt><dd><p>
+<span class="original">
+        This parameter specifies the name of a file containing SSL
+        certificate authority (&lt;acronym&gt;CA&lt;/acronym&gt;) certificate(s).
+        If the file exists, the server's certificate will be verified
+        to be signed by one of these authorities.  The default is
+        &lt;filename&gt;~/.postgresql/root.crt&lt;/filename&gt;.
+</span>
+このパラメータはSSL認証局(<acronym class="acronym">CA</acronym>)の証明書のファイル名を指定します。
+このファイルが存在する場合、サーバ証明書はこれらの認証局の1つで署名されているかどうか検証されます。
+デフォルトは<code class="filename">~/.postgresql/root.crt</code>です。
+       </p></dd><dt id="LIBPQ-CONNECT-SSLCRL"><span class="term"><code class="literal">sslcrl</code></span></dt><dd><p>
+<span class="original">
+        This parameter specifies the file name of the SSL server certificate
+        revocation list (CRL).  Certificates listed in this file, if it
+        exists, will be rejected while attempting to authenticate the
+        server's certificate.  If neither
+        &lt;xref linkend='libpq-connect-sslcrl'/&gt; nor
+        &lt;xref linkend='libpq-connect-sslcrldir'/&gt; is set, this setting is
+        taken as
+        &lt;filename&gt;~/.postgresql/root.crl&lt;/filename&gt;.
+</span>
+このパラメータはSSLサーバ証明書失効リスト（CRL）のファイル名を指定します。
+このファイルに列挙された証明書が存在した場合、それはサーバ証明書を承認しようとする時に拒絶されます。
+<a class="xref" href="libpq-connect.html#LIBPQ-CONNECT-SSLCRL">sslcrl</a>も<a class="xref" href="libpq-connect.html#LIBPQ-CONNECT-SSLCRLDIR">sslcrldir</a>も設定されていなければ、設定は<code class="filename">~/.postgresql/root.crl</code>から取得されます。
+       </p></dd><dt id="LIBPQ-CONNECT-SSLCRLDIR"><span class="term"><code class="literal">sslcrldir</code></span></dt><dd><p>
+<span class="original">
+        This parameter specifies the directory name of the SSL server certificate
+        revocation list (CRL).  Certificates listed in the files in this
+        directory, if it exists, will be rejected while attempting to
+        authenticate the server's certificate.
+</span>
+このパラメータは、SSLサーバ証明書失効リスト(CRL)のディレクトリ名を指定します。
+このディレクトリのファイルにリストされている証明書が存在する場合は、サーバーの証明書の認証中に拒否されます。
+       </p><p>
+<span class="original">
+        The directory needs to be prepared with the
+        &lt;productname&gt;OpenSSL&lt;/productname&gt; command
+        &lt;literal&gt;openssl rehash&lt;/literal&gt; or &lt;literal&gt;c_rehash&lt;/literal&gt;.  See
+        its documentation for details.
+</span>
+ディレクトリは、<span class="productname">OpenSSL</span>コマンド<code class="literal">openssl rehash</code>または<code class="literal">c_rehash</code>を使用して準備する必要があります。
+詳細はそのドキュメントを参照してください。
+       </p><p>
+<span class="original">
+        Both &lt;literal&gt;sslcrl&lt;/literal&gt; and &lt;literal&gt;sslcrldir&lt;/literal&gt; can be
+        specified together.
+</span>
+<code class="literal">sslcrl</code>と<code class="literal">sslcrldir</code>の両方を同時に指定できます。
+       </p></dd><dt id="LIBPQ-CONNECT-SSLSNI"><span class="term"><code class="literal">sslsni</code><a id="id-1.7.3.8.4.2.1.30.1.2" class="indexterm"></a></span></dt><dd><p>
+<span class="original">
+        If set to 1 (default), libpq sets the TLS extension &lt;quote&gt;Server Name
+        Indication&lt;/quote&gt; (&lt;acronym&gt;SNI&lt;/acronym&gt;) on SSL-enabled connections.
+        By setting this parameter to 0, this is turned off.
+</span>
+1(デフォルト)に設定されている場合、libpqはTLS拡張<span class="quote">「<span class="quote">Server Name Indication</span>」</span>(<acronym class="acronym">SNI</acronym>)をSSL使用可能な接続に設定します。
+このパラメータを0に設定することにより、これはオフになります。
+       </p><p>
+<span class="original">
+        The Server Name Indication can be used by SSL-aware proxies to route
+        connections without having to decrypt the SSL stream.  (Note that this
+        requires a proxy that is aware of the PostgreSQL protocol handshake,
+        not just any SSL proxy.)  However, &lt;acronym&gt;SNI&lt;/acronym&gt; makes the
+        destination host name appear in cleartext in the network traffic, so
+        it might be undesirable in some cases.
+</span>
+Server Name Indicationは、SSLストリームを復号化することなく接続をルーティングするために、SSL対応プロキシによって使用できます(これには、SSLプロキシだけでなく、PostgreSQLプロトコルハンドシェイクを認識するプロキシが必要であることに注意してください)。
+しかし、<acronym class="acronym">SNI</acronym>は宛先ホスト名をネットワークトラフィック中に平文で表示しますので、場合によっては望ましくないかもしれません。
+       </p></dd><dt id="LIBPQ-CONNECT-REQUIREPEER"><span class="term"><code class="literal">requirepeer</code></span></dt><dd><p>
+<span class="original">
+        This parameter specifies the operating-system user name of the
+        server, for example &lt;literal&gt;requirepeer=postgres&lt;/literal&gt;.
+        When making a Unix-domain socket connection, if this
+        parameter is set, the client checks at the beginning of the
+        connection that the server process is running under the specified
+        user name; if it is not, the connection is aborted with an error.
+        This parameter can be used to provide server authentication similar
+        to that available with SSL certificates on TCP/IP connections.
+        (Note that if the Unix-domain socket is in
+        &lt;filename&gt;/tmp&lt;/filename&gt; or another publicly writable location,
+        any user could start a server listening there.  Use this parameter
+        to ensure that you are connected to a server run by a trusted user.)
+        This option is only supported on platforms for which the
+        &lt;literal&gt;peer&lt;/literal&gt; authentication method is implemented; see
+        &lt;xref linkend="auth-peer"/&gt;.
+</span>
+このパラメータは、例えば<code class="literal">requirepeer=postgres</code>のようにサーバのオペレーティングシステムのユーザ名を指定します。
+Unixドメインソケット接続を確立する時に、このパラメータが設定された場合、クライアントは接続開始時にサーバプロセスが指定されたユーザ名で稼動しているか検査し、稼動していない場合は接続をエラーとして中断します。
+このパラメータは、TCP/IP接続においてSSL証明書で実現するようなサーバ認証を実現するために使用することができます。
+（Unixドメインソケットが<code class="filename">/tmp</code>などの誰にでも書き込むことができる場所にある場合、誰でもそこで接続を監視するサーバを起動できることに注意してください。
+信頼できるユーザが起動したサーバに接続することを確実に行うために、このパラメータを使用してください。）
+このオプションは<code class="literal">peer</code>認証方式が実装されたプラットフォームでのみでサポートされます。
+<a class="xref" href="auth-peer.html" title="21.9. Peer認証">21.9</a>を参照してください。
+       </p></dd><dt id="LIBPQ-CONNECT-SSL-MIN-PROTOCOL-VERSION"><span class="term"><code class="literal">ssl_min_protocol_version</code></span></dt><dd><p>
+<span class="original">
+        This parameter specifies the minimum SSL/TLS protocol version to allow
+        for the connection. Valid values are &lt;literal&gt;TLSv1&lt;/literal&gt;,
+        &lt;literal&gt;TLSv1.1&lt;/literal&gt;, &lt;literal&gt;TLSv1.2&lt;/literal&gt; and
+        &lt;literal&gt;TLSv1.3&lt;/literal&gt;. The supported protocols depend on the
+        version of &lt;productname&gt;OpenSSL&lt;/productname&gt; used, older versions
+        not supporting the most modern protocol versions. If not specified,
+        the default is &lt;literal&gt;TLSv1.2&lt;/literal&gt;, which satisfies industry
+        best practices as of this writing.
+</span>
+このパラメータは接続で許容されるSSL/TLSプロトコルの最小バージョンを指定します。
+有効な値は<code class="literal">TLSv1</code>、<code class="literal">TLSv1.1</code>、<code class="literal">TLSv1.2</code>、および、<code class="literal">TLSv1.3</code>です。
+対応しているプロトコルは使われている<span class="productname">OpenSSL</span>バージョンに依存し、より古いバージョンでは最新プトロコルバージョンに対応していません。
+指定しない場合、デフォルトは<code class="literal">TLSv1.2</code>で、これは執筆時点では業界標準を満たします。
+       </p></dd><dt id="LIBPQ-CONNECT-SSL-MAX-PROTOCOL-VERSION"><span class="term"><code class="literal">ssl_max_protocol_version</code></span></dt><dd><p>
+<span class="original">
+        This parameter specifies the maximum SSL/TLS protocol version to allow
+        for the connection. Valid values are &lt;literal&gt;TLSv1&lt;/literal&gt;,
+        &lt;literal&gt;TLSv1.1&lt;/literal&gt;, &lt;literal&gt;TLSv1.2&lt;/literal&gt; and
+        &lt;literal&gt;TLSv1.3&lt;/literal&gt;. The supported protocols depend on the
+        version of &lt;productname&gt;OpenSSL&lt;/productname&gt; used, older versions
+        not supporting the most modern protocol versions. If not set, this
+        parameter is ignored and the connection will use the maximum bound
+        defined by the backend, if set. Setting the maximum protocol version
+        is mainly useful for testing or if some component has issues working
+        with a newer protocol.
+</span>
+このパラメータは接続で許容されるSSL/TLSプロトコルの最大バージョンを指定します。
+有効な値は<code class="literal">TLSv1</code>、<code class="literal">TLSv1.1</code>、<code class="literal">TLSv1.2</code>、および、<code class="literal">TLSv1.3</code>です。
+対応しているプロトコルは使われている<span class="productname">OpenSSL</span>バージョンに依存し、より古いバージョンでは最新のプロトコルバージョンに対応していません。
+設定しない場合、このパラメータは無視されて、接続ではバックエンドで定義されている最大範囲が、もし定義されているなら、使われます。
+テストや、一部コンポーネントがより新しいプロトコルでの動作に問題がある場合に対して、大概はプロトコルの最大バージョンを設定することが有用です。
+       </p></dd><dt id="LIBPQ-CONNECT-KRBSRVNAME"><span class="term"><code class="literal">krbsrvname</code></span></dt><dd><p>
+<span class="original">
+        Kerberos service name to use when authenticating with GSSAPI.
+        This must match the service name specified in the server
+        configuration for Kerberos authentication to succeed. (See also
+        &lt;xref linkend="gssapi-auth"/&gt;.)
+        The default value is normally &lt;literal&gt;postgres&lt;/literal&gt;,
+        but that can be changed when
+        building &lt;productname&gt;PostgreSQL&lt;/productname&gt; via
+        the &lt;option&gt;&amp;#45;-with-krb-srvnam&lt;/option&gt; option
+        of &lt;application&gt;configure&lt;/application&gt;.
+        In most environments, this parameter never needs to be changed.
+        Some Kerberos implementations might require a different service name,
+        such as Microsoft Active Directory which requires the service name
+        to be in upper case (&lt;literal&gt;POSTGRES&lt;/literal&gt;).
+</span>
+GSSAPIの認証時に使われるKerberosサービス名です。
+成功するためには、これはサーバのKerberos認証設定のサービス名と一致していなければなりません。
+(<a class="xref" href="gssapi-auth.html" title="21.6. GSSAPI認証">21.6</a>も参照してください。)
+デフォルト値は通常<code class="literal">postgres</code>ですが、<span class="productname">PostgreSQL</span>を<span class="application">configure</span>の<code class="option">--with-krb-srvnam</code>オプションを使ってビルドすることにより変更できます。
+大抵の環境ではこのパラメータは滅多に変更の必要がありません。
+サービス名が大文字(<code class="literal">POSTGRES</code>)であることを要求するMicrosoft Active Directoryのように、ある種のKerberos実装では異なるサービス名が必要になるかもしれません。
+       </p></dd><dt id="LIBPQ-CONNECT-GSSLIB"><span class="term"><code class="literal">gsslib</code></span></dt><dd><p>
+<span class="original">
+        GSS library to use for GSSAPI authentication.
+        Currently this is disregarded except on Windows builds that include
+        both GSSAPI and SSPI support.  In that case, set
+        this to &lt;literal&gt;gssapi&lt;/literal&gt; to cause libpq to use the GSSAPI
+        library for authentication instead of the default SSPI.
+</span>
+GSSAPI認証で使用されるGSSライブラリです。
+これは今のところ、GSSAPIとSSPIの両方のサポートを含むWindowsビルド版を除いて無視されます。
+その場合、認証にデフォルトのSSPIではなく、GSSAPIライブラリを使うようlibpqに強制するには、これを<code class="literal">gssapi</code>に設定してください。
+       </p></dd><dt id="LIBPQ-CONNECT-SERVICE"><span class="term"><code class="literal">service</code></span></dt><dd><p>
+<span class="original">
+        Service name to use for additional parameters.  It specifies a service
+        name in &lt;filename&gt;pg_service.conf&lt;/filename&gt; that holds additional connection parameters.
+        This allows applications to specify only a service name so connection parameters
+        can be centrally maintained. See &lt;xref linkend="libpq-pgservice"/&gt;.
+</span>
+追加のパラメータ用に使用されるサービス名です。
+<code class="filename">pg_service.conf</code>内の追加的な接続パラメータを保持するサービス名を指定します。
+これによりアプリケーションはサービス名だけを指定でき、接続パラメータを集中的に保守できるようになります。
+<a class="xref" href="libpq-pgservice.html" title="34.17. 接続サービスファイル">34.17</a>を参照してください。
+       </p></dd><dt id="LIBPQ-CONNECT-TARGET-SESSION-ATTRS"><span class="term"><code class="literal">target_session_attrs</code></span></dt><dd><p>
+<span class="original">
+        This option determines whether the session must have certain
+        properties to be acceptable.  It's typically used in combination
+        with multiple host names to select the first acceptable alternative
+        among several hosts.  There are six modes:
+</span>
+このオプションは、セッションが受け入れられるために特定のプロパティを持つ必要があるかどうかを決定します。
+これは通常、複数のホスト名と組み合わせて使用され、いくつかのホストの中から最初に受け入れられる代替を選択します。
+6つのモードがあります:
+
+        </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">any</code> (default)</span></dt><dd><p>
+<span class="original">
+            any successful connection is acceptable
+</span>
+成功した接続は受け入れられます
+           </p></dd><dt><span class="term"><code class="literal">read-write</code></span></dt><dd><p>
+<span class="original">
+            session must accept read-write transactions by default (that
+            is, the server must not be in hot standby mode and
+            the &lt;varname&gt;default_transaction_read_only&lt;/varname&gt; parameter
+            must be &lt;literal&gt;off&lt;/literal&gt;)
+</span>
+セッションはデフォルトで読み書きトランザクションを受け入れなければなりません(つまり、サーバはホットスタンバイモードであってはならず、<code class="varname">default_transaction_read_only</code>パラメータは<code class="literal">off</code>でなければなりません)。
+           </p></dd><dt><span class="term"><code class="literal">read-only</code></span></dt><dd><p>
+<span class="original">
+            session must not accept read-write transactions by default (the
+            converse)
+</span>
+セッションはデフォルトで読み書きトランザクションを受け入れてはなりません(逆)
+           </p></dd><dt><span class="term"><code class="literal">primary</code></span></dt><dd><p>
+<span class="original">
+            server must not be in hot standby mode
+</span>
+サーバーはホット・スタンバイ・モードであってはなりません
+           </p></dd><dt><span class="term"><code class="literal">standby</code></span></dt><dd><p>
+<span class="original">
+            server must be in hot standby mode
+</span>
+サーバーはホット・スタンバイ・モードでなければなりません
+           </p></dd><dt><span class="term"><code class="literal">prefer-standby</code></span></dt><dd><p>
+<span class="original">
+            first try to find a standby server, but if none of the listed
+            hosts is a standby server, try again in &lt;literal&gt;any&lt;/literal&gt;
+            mode
+</span>
+最初にスタンバイサーバを見つけようとしますが、リストされているホストがいずれもスタンバイサーバでない場合は、<code class="literal">any</code>モードで再試行します。
+           </p></dd></dl></div><p>
+       </p></dd></dl></div><p>
+   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="libpq.html" title="第34章 libpq — C ライブラリ">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="libpq.html" title="第34章 libpq — C ライブラリ">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="libpq-status.html" title="34.2. 接続状態関数">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第34章 <span class="application">libpq</span> — C ライブラリ </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 34.2. 接続状態関数</td></tr></table></div></body></html>

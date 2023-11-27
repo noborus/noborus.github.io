@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>41.1. 問い合わせツリーとは</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="rules.html" title="第41章 ルールシステム" /><link rel="next" href="rules-views.html" title="41.2. ビューとルールシステム" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="rules.html" title="第41章 ルールシステム">第41章 ルールシステム</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : querytree.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="rules.html" title="第41章 ルールシステム">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="rules.html" title="第41章 ルールシステム">上へ</a></td><td width="60%" align="center">41.1. 問い合わせツリーとは</td><td width="20%" align="right"> <a accesskey="n" href="rules-views.html" title="41.2. ビューとルールシステム">次へ</a></td></tr></table><hr /></div><div class="sect1" id="QUERYTREE"><div class="titlepage"><div><div><h2 class="title" style="clear: both">41.1. 問い合わせツリーとは</h2></div></div></div><span class="original">
+&lt;title&gt;The Query Tree&lt;/title&gt;
+</span><a id="id-1.8.6.7.2" class="indexterm"></a><a id="id-1.8.6.7.3" class="indexterm"></a><p>
+<span class="original">
+    To understand how the rule system works it is necessary to know
+    when it is invoked and what its input and results are.
+</span>
+どのようにルールシステムが機能するかを理解するためには、ルールがどのように起動され、その入力と結果は何かを理解しなければなりません。
+</p><p>
+<span class="original">
+    The rule system is located between the parser and the planner.
+    It takes the output of the parser, one query tree, and the user-defined
+    rewrite rules, which are also
+    query trees with some extra information, and creates zero or more
+    query trees as result. So its input and output are always things
+    the parser itself could have produced and thus, anything it sees
+    is basically representable as an &lt;acronym&gt;SQL&lt;/acronym&gt; statement.
+</span>
+ルールシステムは問い合わせパーサとプランナの中間に位置します。
+ルールシステムは、入力としてパーサの出力、単一の問い合わせツリー、および何らかの特別な情報を持つ問い合わせツリーでもあるユーザ定義の書き換えルールを取り、結果として0個以上の問い合わせツリーを生成します。
+ルールシステムの入力と出力は常にパーサ自体でも生成することができるもので、参照する対象は基本的に<acronym class="acronym">SQL</acronym>文として表現できるものです。
+</p><p>
+<span class="original">
+    Now what is a query tree? It is an internal representation of an
+    &lt;acronym&gt;SQL&lt;/acronym&gt; statement where the single parts that it is
+    built from are stored separately. These query trees can be shown
+    in the server log if you set the configuration parameters
+    &lt;varname&gt;debug_print_parse&lt;/varname&gt;,
+    &lt;varname&gt;debug_print_rewritten&lt;/varname&gt;, or
+    &lt;varname&gt;debug_print_plan&lt;/varname&gt;.  The rule actions are also
+    stored as query trees, in the system catalog
+    &lt;structname&gt;pg_rewrite&lt;/structname&gt;.  They are not formatted like
+    the log output, but they contain exactly the same information.
+</span>
+では問い合わせツリーとは何でしょうか。
+それは、<acronym class="acronym">SQL</acronym>文を構成する個々の部品を別々に記憶した、<acronym class="acronym">SQL</acronym>文の内部表現です。
+<code class="varname">debug_print_parse</code>、<code class="varname">debug_print_rewritten</code>、もしくは<code class="varname">debug_print_plan</code>設定パラメータを設定していれば、サーバログ内で問い合わせツリーを見ることができます。
+ルールアクションも<code class="structname">pg_rewrite</code>システムカタログ内に問い合わせツリーとして格納されています。
+これはログ出力のように整形されていませんが、まったく同じ情報を持っています。
+</p><p>
+<span class="original">
+    Reading a raw query tree requires some experience.  But since
+    &lt;acronym&gt;SQL&lt;/acronym&gt; representations of query trees are
+    sufficient to understand the rule system, this chapter will not
+    teach how to read them.
+</span>
+問い合わせツリーそのものを読むためにはある程度の経験が必要です。
+ルールシステムを理解するためには問い合わせツリーの<acronym class="acronym">SQL</acronym>表現で十分ですので、本章ではその読み方については説明しません。
+</p><p>
+<span class="original">
+    When reading the &lt;acronym&gt;SQL&lt;/acronym&gt; representations of the
+    query trees in this chapter it is necessary to be able to identify
+    the parts the statement is broken into when it is in the query tree
+    structure. The parts of a query tree are
+</span>
+本章の問い合わせツリーの<acronym class="acronym">SQL</acronym>表現形式を読む時に必要なのは、問い合わせツリー構造の中に分解された、ある文の部品を識別できることです。
+問い合わせツリーには以下の部品があります。
+
+</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<span class="original">
+        the command type
+</span>
+コマンド種類
+    </span></dt><dd><p>
+<span class="original">
+        This is a simple value telling which command
+        (&lt;command&gt;SELECT&lt;/command&gt;, &lt;command&gt;INSERT&lt;/command&gt;,
+        &lt;command&gt;UPDATE&lt;/command&gt;, &lt;command&gt;DELETE&lt;/command&gt;) produced
+        the query tree.
+</span>
+これはどのコマンド（<code class="command">SELECT</code>、<code class="command">INSERT</code>、<code class="command">UPDATE</code>、<code class="command">DELETE</code>）が構文解析ツリーを作ったかを示す単純な値です。
+    </p></dd><dt><span class="term">
+<span class="original">
+        the range table
+      &lt;indexterm&gt;&lt;primary&gt;range table&lt;/primary&gt;&lt;/indexterm&gt;
+</span>
+範囲テーブル
+      <a id="id-1.8.6.7.8.2.2.1.1" class="indexterm"></a>
+    </span></dt><dd><p>
+<span class="original">
+        The range table is a list of relations that are used in the query.
+        In a &lt;command&gt;SELECT&lt;/command&gt; statement these are the relations given after
+        the &lt;literal&gt;FROM&lt;/literal&gt; key word.
+</span>
+範囲テーブルは問い合わせで使われるリレーションのリストです。
+<code class="command">SELECT</code>文ではこれは<code class="literal">FROM</code>キーワードの後で与えられるリレーションになります。
+    </p><p>
+<span class="original">
+        Every range table entry identifies a table or view and tells
+        by which name it is called in the other parts of the query.
+        In the query tree, the range table entries are referenced by
+        number rather than by name, so here it doesn't matter if there
+        are duplicate names as it would in an &lt;acronym&gt;SQL&lt;/acronym&gt;
+        statement. This can happen after the range tables of rules
+        have been merged in. The examples in this chapter will not have
+        this situation.
+</span>
+範囲テーブルのそれぞれの項目はテーブルもしくはビューを識別し、問い合わせの別の部品ではどんな名前で呼び出されるかを示します。
+問い合わせツリーでは範囲テーブルの項目は名前よりも番号で参照されることが多いため、ここでは<acronym class="acronym">SQL</acronym>文とは違い、重複する名前があるかということは問題になりません。
+これはルールの範囲テーブルがマージされた後に起こる可能性があります。
+本章の例ではその状況を含んでいません。
+    </p></dd><dt><span class="term">
+<span class="original">
+        the result relation
+</span>
+結果リレーション
+    </span></dt><dd><p>
+<span class="original">
+        This is an index into the range table that identifies the
+        relation where the results of the query go.
+</span>
+問い合わせの結果が格納されるリレーションを識別する範囲テーブルへのインデックスです。
+    </p><p>
+<span class="original">
+        &lt;command&gt;SELECT&lt;/command&gt; queries don't have a result
+        relation. (The special case of &lt;command&gt;SELECT INTO&lt;/command&gt; is
+        mostly identical to &lt;command&gt;CREATE TABLE&lt;/command&gt; followed by
+        &lt;literal&gt;INSERT ... SELECT&lt;/literal&gt;, and is not discussed
+        separately here.)
+</span>
+<code class="command">SELECT</code>問い合わせは結果リレーションを持ちません。
+（<code class="command">SELECT INTO</code>の場合は特別ですが、<code class="literal">INSERT ... SELECT</code>が付いた<code class="command">CREATE TABLE</code>とほぼ同じですので、ここでは個別には説明しません。）
+    </p><p>
+<span class="original">
+        For &lt;command&gt;INSERT&lt;/command&gt;, &lt;command&gt;UPDATE&lt;/command&gt;, and
+        &lt;command&gt;DELETE&lt;/command&gt; commands, the result relation is the table
+        (or view!) where the changes are to take effect.
+</span>
+<code class="command">INSERT</code>、<code class="command">UPDATE</code>、<code class="command">DELETE</code>コマンドでは、結果リレーションは変更が有効になるテーブル（もしくはビュー）です。
+    </p></dd><dt><span class="term">
+<span class="original">
+        the target list
+    &lt;indexterm&gt;&lt;primary&gt;target list&lt;/primary&gt;&lt;/indexterm&gt;
+</span>
+目的リスト
+    <a id="id-1.8.6.7.8.2.4.1.1" class="indexterm"></a>
+    </span></dt><dd><p>
+<span class="original">
+        The target list is a list of expressions that define the
+        result of the query.  In the case of a
+        &lt;command&gt;SELECT&lt;/command&gt;, these expressions are the ones that
+        build the final output of the query.  They correspond to the
+        expressions between the key words &lt;command&gt;SELECT&lt;/command&gt;
+        and &lt;command&gt;FROM&lt;/command&gt;.  (&lt;literal&gt;*&lt;/literal&gt; is just an
+        abbreviation for all the column names of a relation.  It is
+        expanded by the parser into the individual columns, so the
+        rule system never sees it.)
+</span>
+目的リストは問い合わせの結果を定義する式のリストです。
+<code class="command">SELECT</code>の場合、この式は問い合わせの最終結果を構築するものです。
+これらは<code class="command">SELECT</code>と<code class="command">FROM</code>キーワードの間にある式に対応します
+（<code class="literal">*</code>は単にリレーションの全ての列名の省略です。
+これはパーサによって個別の列に展開されますので、ルールシステムが見ることはありません）。
+    </p><p>
+<span class="original">
+        &lt;command&gt;DELETE&lt;/command&gt; commands don't need a normal target list
+        because they don't produce any result.  Instead, the planner
+        adds a special &lt;acronym&gt;CTID&lt;/acronym&gt; entry to the empty target list,
+        to allow the executor to find the row to be deleted.
+        (&lt;acronym&gt;CTID&lt;/acronym&gt; is added when the result relation is an ordinary
+        table.  If it is a view, a whole-row variable is added instead, by
+        the rule system, as described in &lt;xref linkend="rules-views-update"/&gt;.)
+</span>
+<code class="command">DELETE</code>コマンドは結果を返しませんので、通常の目的リストは必要ありません。
+その代わり、プランナは空の目的リストに特別な<acronym class="acronym">CTID</acronym>項目を追加し、エグゼキュータが削除すべき行を見つけられるようにします。
+（<acronym class="acronym">CTID</acronym>は結果リレーションが通常のテーブルの場合に追加されます。
+もしビューであれば<a class="xref" href="rules-views.html#RULES-VIEWS-UPDATE" title="41.2.4. ビューの更新について">41.2.4</a>で述べるように、代わりに行全体の変数がルールシステムによって追加されます。）
+    </p><p>
+<span class="original">
+        For &lt;command&gt;INSERT&lt;/command&gt; commands, the target list describes
+        the new rows that should go into the result relation. It consists of the
+        expressions in the &lt;literal&gt;VALUES&lt;/literal&gt; clause or the ones from the
+        &lt;command&gt;SELECT&lt;/command&gt; clause in &lt;literal&gt;INSERT
+        ... SELECT&lt;/literal&gt;.  The first step of the rewrite process adds
+        target list entries for any columns that were not assigned to by
+        the original command but have defaults.  Any remaining columns (with
+        neither a given value nor a default) will be filled in by the
+        planner with a constant null expression.
+</span>
+<code class="command">INSERT</code>問い合わせでは、目的リストは結果リレーションへ入る新規の行を示します。
+これは<code class="literal">VALUES</code>句か<code class="literal">INSERT ... SELECT</code>の中の<code class="command">SELECT</code>句の式です。
+書き換え処理の最初のステップでは、元の問い合わせでは割り当てられず、デフォルト値となっている列の目的リストの項目を追加します。
+残った列（値が与えられていない列、かつデフォルト値を持たない列）は全て、プランナによって定数NULL式で埋められます。
+    </p><p>
+<span class="original">
+        For &lt;command&gt;UPDATE&lt;/command&gt; commands, the target list
+        describes the new rows that should replace the old ones. In the
+        rule system, it contains just the expressions from the &lt;literal&gt;SET
+        column = expression&lt;/literal&gt; part of the command.  The planner will
+        handle missing columns by inserting expressions that copy the values
+        from the old row into the new one.  Just as for &lt;command&gt;DELETE&lt;/command&gt;,
+        a &lt;acronym&gt;CTID&lt;/acronym&gt; or whole-row variable is added so that
+        the executor can identify the old row to be updated.
+</span>
+<code class="command">UPDATE</code>コマンドでは、目的リストは古いものを置き換えるべき新しい行を示します。
+ルールシステムではコマンド内の<code class="literal">SET column = expression</code>部分にある式だけを持っています。
+プランナは、古い行から新しい行へ値をコピーする式を挿入することにより、抜けている列を処理します。
+<code class="command">DELETE</code>の場合と同様、エグゼキュータが更新すべき行を見つけられるように、<acronym class="acronym">CTID</acronym>もしくは行全体の変数が追加されます。
+    </p><p>
+<span class="original">
+        Every entry in the target list contains an expression that can
+        be a constant value, a variable pointing to a column of one
+        of the relations in the range table, a parameter, or an expression
+        tree made of function calls, constants, variables, operators, etc.
+</span>
+目的リストの各項目は、定数値、範囲テーブル内のリレーション中の1つの列を指し示す変数、パラメータ等の式を保持するか、または、関数呼び出し、定数、変数、演算子などにより作られた式のツリーを保持します。
+    </p></dd><dt><span class="term">
+<span class="original">
+        the qualification
+</span>
+条件
+    </span></dt><dd><p>
+<span class="original">
+        The query's qualification is an expression much like one of
+        those contained in the target list entries. The result value of
+        this expression is a Boolean that tells whether the operation
+        (&lt;command&gt;INSERT&lt;/command&gt;, &lt;command&gt;UPDATE&lt;/command&gt;,
+        &lt;command&gt;DELETE&lt;/command&gt;, or &lt;command&gt;SELECT&lt;/command&gt;) for the
+        final result row should be executed or not. It corresponds to the &lt;literal&gt;WHERE&lt;/literal&gt; clause
+        of an &lt;acronym&gt;SQL&lt;/acronym&gt; statement.
+</span>
+問い合わせの条件は目的リストの項目に含まれている式によく似た式です。
+この式の結果は、最終的な結果の行を得るための（<code class="command">INSERT</code>、<code class="command">UPDATE</code>、<code class="command">DELETE</code>または<code class="command">SELECT</code>）演算を実行すべきかどうかを示すブール値です。
+それは<acronym class="acronym">SQL</acronym>文の中の<code class="literal">WHERE</code>句に対応します。
+    </p></dd><dt><span class="term">
+<span class="original">
+        the join tree
+</span>
+結合ツリー
+    </span></dt><dd><p>
+<span class="original">
+        The query's join tree shows the structure of the &lt;literal&gt;FROM&lt;/literal&gt; clause.
+        For a simple query like &lt;literal&gt;SELECT ... FROM a, b, c&lt;/literal&gt;, the join tree is just
+        a list of the &lt;literal&gt;FROM&lt;/literal&gt; items, because we are allowed to join them in
+        any order.  But when &lt;literal&gt;JOIN&lt;/literal&gt; expressions, particularly outer joins,
+        are used, we have to join in the order shown by the joins.
+        In that case, the join tree shows the structure of the &lt;literal&gt;JOIN&lt;/literal&gt; expressions.  The
+        restrictions associated with particular &lt;literal&gt;JOIN&lt;/literal&gt; clauses (from &lt;literal&gt;ON&lt;/literal&gt; or
+        &lt;literal&gt;USING&lt;/literal&gt; expressions) are stored as qualification expressions attached
+        to those join-tree nodes.  It turns out to be convenient to store
+        the top-level &lt;literal&gt;WHERE&lt;/literal&gt; expression as a qualification attached to the
+        top-level join-tree item, too.  So really the join tree represents
+        both the &lt;literal&gt;FROM&lt;/literal&gt; and &lt;literal&gt;WHERE&lt;/literal&gt; clauses of a &lt;command&gt;SELECT&lt;/command&gt;.
+</span>
+問い合わせの結合ツリーは<code class="literal">FROM</code>句の構造を表します。
+<code class="literal">SELECT ... FROM a, b, c</code>のような単純な問い合わせでは、結合ツリーは単なる<code class="literal">FROM</code>項目のリストです。
+なぜならこれらはどんな順番で結合しても構わないためです。
+しかし<code class="literal">JOIN</code>式、特に外部結合が使われた場合は、その結合が示す順番通りに結合しなければいけません。
+この場合結合ツリーは<code class="literal">JOIN</code>式の構造を表します。
+特定の<code class="literal">JOIN</code>句と関連付けられた制約（<code class="literal">ON</code>もしくは<code class="literal">USING</code>式からのもの）はこれらの結合ツリーノードに付加された条件として格納されます。
+頂点レベルの<code class="literal">WHERE</code>式を頂点レベルの結合ツリー項目に付加された条件として格納することも便利です。
+ですから、結合ツリーは<code class="command">SELECT</code>の<code class="literal">FROM</code>句と<code class="literal">WHERE</code>句の両方を表しているわけです。
+    </p></dd><dt><span class="term">
+<span class="original">
+        the others
+</span>
+その他
+    </span></dt><dd><p>
+<span class="original">
+        The other parts of the query tree like the &lt;literal&gt;ORDER BY&lt;/literal&gt;
+        clause aren't of interest here. The rule system
+        substitutes some entries there while applying rules, but that
+        doesn't have much to do with the fundamentals of the rule
+        system.
+</span>
+<code class="literal">ORDER BY</code>句のような、問い合わせツリーのその他の部品は、ここでは取り上げません。
+ルールシステムはルールを適用している時にそこで項目を入れ替えることもありますが、これはルールシステムの基本とはあまり関係しません。
+    </p></dd></dl></div><p>
+</p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="rules.html" title="第41章 ルールシステム">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="rules.html" title="第41章 ルールシステム">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="rules-views.html" title="41.2. ビューとルールシステム">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第41章 ルールシステム </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 41.2. ビューとルールシステム</td></tr></table></div></body></html>

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>46.7. 明示的サブトランザクション</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="plpython-database.html" title="46.6. データベースアクセス" /><link rel="next" href="plpython-transactions.html" title="46.8. トランザクション制御" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="plpython.html" title="第46章 PL/Python — Python手続き言語">第46章 PL/Python — Python手続き言語</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : plpython-subtransaction.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="plpython-database.html" title="46.6. データベースアクセス">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="plpython.html" title="第46章 PL/Python — Python手続き言語">上へ</a></td><td width="60%" align="center">46.7. 明示的サブトランザクション</td><td width="20%" align="right"> <a accesskey="n" href="plpython-transactions.html" title="46.8. トランザクション制御">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PLPYTHON-SUBTRANSACTION"><div class="titlepage"><div><div><h2 class="title" style="clear: both">46.7. 明示的サブトランザクション</h2></div></div></div><span class="original">
+  &lt;title&gt;Explicit Subtransactions&lt;/title&gt;
+</span><p>
+<span class="original">
+   Recovering from errors caused by database access as described in
+   &lt;xref linkend="plpython-trapping"/&gt; can lead to an undesirable
+   situation where some operations succeed before one of them fails,
+   and after recovering from that error the data is left in an
+   inconsistent state.  PL/Python offers a solution to this problem in
+   the form of explicit subtransactions.
+</span>
+<a class="xref" href="plpython-database.html#PLPYTHON-TRAPPING" title="46.6.2. エラーの捕捉">46.6.2</a>で説明したデータベースアクセスによって引き起こるエラーからの復旧は、操作の中の１つが失敗する前に、一部の操作が成功し、エラーからの復旧の後一貫性のないデータが残ってしまうという望ましくない状態を導く可能性があります。
+PL/Pythonは明示的サブトランザクションにより、この問題の解法を提供します。
+  </p><div class="sect2" id="id-1.8.11.15.3"><div class="titlepage"><div><div><h3 class="title">46.7.1. サブトランザクションのコンテキスト管理</h3></div></div></div><span class="original">
+   &lt;title&gt;Subtransaction Context Managers&lt;/title&gt;
+</span><p>
+<span class="original">
+    Consider a function that implements a transfer between two
+    accounts:
+</span>
+2つの口座の間の振替えを実装する関数を考えてみます。
+</p><pre class="programlisting">
+CREATE FUNCTION transfer_funds() RETURNS void AS $$
+try:
+    plpy.execute("UPDATE accounts SET balance = balance - 100 WHERE account_name = 'joe'")
+    plpy.execute("UPDATE accounts SET balance = balance + 100 WHERE account_name = 'mary'")
+except plpy.SPIError as e:
+    result = "error transferring funds: %s" % e.args
+else:
+    result = "funds transferred correctly"
+plan = plpy.prepare("INSERT INTO operations (result) VALUES ($1)", ["text"])
+plpy.execute(plan, [result])
+$$ LANGUAGE plpython3u;
+</pre><p>
+<span class="original">
+    If the second &lt;literal&gt;UPDATE&lt;/literal&gt; statement results in an
+    exception being raised, this function will report the error, but
+    the result of the first &lt;literal&gt;UPDATE&lt;/literal&gt; will
+    nevertheless be committed.  In other words, the funds will be
+    withdrawn from Joe's account, but will not be transferred to
+    Mary's account.
+</span>
+2番目の<code class="literal">UPDATE</code>文が例外を発生させる結果となった場合、この関数はエラーを記録しますが、それにもかかわらず最初の<code class="literal">UPDATE</code>はコミットされます。
+言い換えると、資金はジョーの口座から引き落とされますが、メアリーの口座には移転しません。
+   </p><p>
+<span class="original">
+    To avoid such issues, you can wrap your
+    &lt;literal&gt;plpy.execute&lt;/literal&gt; calls in an explicit
+    subtransaction.  The &lt;literal&gt;plpy&lt;/literal&gt; module provides a
+    helper object to manage explicit subtransactions that gets created
+    with the &lt;literal&gt;plpy.subtransaction()&lt;/literal&gt; function.
+    Objects created by this function implement the
+    &lt;ulink url="https://docs.python.org/library/stdtypes.html#context-manager-types"&gt;
+    context manager interface&lt;/ulink&gt;.  Using explicit subtransactions
+    we can rewrite our function as:
+</span>
+こうした問題を防ぐために、<code class="literal">plpy.execute</code>呼び出しを明示的なサブトランザクションで囲むことができます。
+<code class="literal">plpy</code>モジュールは、<code class="literal">plpy.subtransaction()</code>関数で作成される明示的なサブトランザクションを管理するための補助オブジェクトを提供します。
+この関数によって作成されるオブジェクトは<a class="ulink" href="https://docs.python.org/library/stdtypes.html#context-manager-types" target="_top">コンテキストマネージャインタフェース</a>を実装します
+明示的なサブトランザクションを使用して、上の関数を以下のように書き換えることができます。
+</p><pre class="programlisting">
+CREATE FUNCTION transfer_funds2() RETURNS void AS $$
+try:
+    with plpy.subtransaction():
+        plpy.execute("UPDATE accounts SET balance = balance - 100 WHERE account_name = 'joe'")
+        plpy.execute("UPDATE accounts SET balance = balance + 100 WHERE account_name = 'mary'")
+except plpy.SPIError as e:
+    result = "error transferring funds: %s" % e.args
+else:
+    result = "funds transferred correctly"
+plan = plpy.prepare("INSERT INTO operations (result) VALUES ($1)", ["text"])
+plpy.execute(plan, [result])
+$$ LANGUAGE plpython3u;
+</pre><p>
+<span class="original">
+    Note that the use of &lt;literal&gt;try/catch&lt;/literal&gt; is still
+    required.  Otherwise the exception would propagate to the top of
+    the Python stack and would cause the whole function to abort with
+    a &lt;productname&gt;PostgreSQL&lt;/productname&gt; error, so that the
+    &lt;literal&gt;operations&lt;/literal&gt; table would not have any row
+    inserted into it.  The subtransaction context manager does not
+    trap errors, it only assures that all database operations executed
+    inside its scope will be atomically committed or rolled back.  A
+    rollback of the subtransaction block occurs on any kind of
+    exception exit, not only ones caused by errors originating from
+    database access.  A regular Python exception raised inside an
+    explicit subtransaction block would also cause the subtransaction
+    to be rolled back.
+</span>
+<code class="literal">try/catch</code>の使用がまだ必要なことに注意してください。
+さもないと例外がPythonスタックの最上位まで伝播され、関数全体が<span class="productname">PostgreSQL</span>エラーにより中断され、この結果、<code class="literal">operations</code>テーブルには挿入されるはずの行が存在しないことになります。
+サブトランザクションのコンテキストマネージャはエラーを捕捉しません。
+これはそのスコープの内側で実行されるデータベース操作すべてが、原子的にコミットされるかロールバックされるかだけを保証します。
+サブトランザクションブロックのロールバックは、データベースアクセスを元にしたエラーによって引き起こる例外だけではなく、何らかの種類の例外終了でも起こります。
+明示的なサブトランザクションブロックの内側で発生した通常のPython例外も同様にサブトランザクションをロールバックさせます。
+   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="plpython-database.html" title="46.6. データベースアクセス">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="plpython.html" title="第46章 PL/Python — Python手続き言語">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="plpython-transactions.html" title="46.8. トランザクション制御">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">46.6. データベースアクセス </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 46.8. トランザクション制御</td></tr></table></div></body></html>

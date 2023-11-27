@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>5.2. デフォルト値</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="ddl-basics.html" title="5.1. テーブルの基本" /><link rel="next" href="ddl-generated-columns.html" title="5.3. 生成列" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="ddl.html" title="第5章 データ定義">第5章 データ定義</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : ddl-default.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="ddl-basics.html" title="5.1. テーブルの基本">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="ddl.html" title="第5章 データ定義">上へ</a></td><td width="60%" align="center">5.2. デフォルト値</td><td width="20%" align="right"> <a accesskey="n" href="ddl-generated-columns.html" title="5.3. 生成列">次へ</a></td></tr></table><hr /></div><div class="sect1" id="DDL-DEFAULT"><div class="titlepage"><div><div><h2 class="title" style="clear: both">5.2. デフォルト値</h2></div></div></div><span class="original">
+  &lt;title&gt;Default Values&lt;/title&gt;
+</span><a id="id-1.5.4.4.2" class="indexterm"></a><a id="id-1.5.4.4.3" class="indexterm"></a><p>
+<span class="original">
+   A column can be assigned a default value.  When a new row is
+   created and no values are specified for some of the columns, those
+   columns will be filled with their respective default values.  A
+   data manipulation command can also request explicitly that a column
+   be set to its default value, without having to know what that value is.
+   (Details about data manipulation commands are in &lt;xref linkend="dml"/&gt;.)
+</span>
+列にはデフォルトの値を割り当てることができます。
+新しく作成された行のいくつかの列に値が指定されていない場合、そうした空欄にはそれぞれの列のデフォルト値が入ります。
+データ操作コマンドを使用して、列を（どのような値かを把握する必要なく）デフォルト値に設定するように明示的に要求することもできます。
+（データ操作コマンドの詳細については<a class="xref" href="dml.html" title="第6章 データ操作">第6章</a>を参照してください。）
+  </p><p>
+<span class="original">
+   &lt;indexterm&gt;&lt;primary&gt;null value&lt;/primary&gt;&lt;secondary&gt;default value&lt;/secondary&gt;&lt;/indexterm&gt;
+   If no default value is declared explicitly, the default value is the
+   null value.  This usually makes sense because a null value can
+   be considered to represent unknown data.
+</span>
+   <a id="id-1.5.4.4.5.1" class="indexterm"></a>
+明示的に宣言されたデフォルト値がない場合は、デフォルト値はNULL値になります。
+NULL値は不明のデータを表すものとみなすことができるので、通常はこの方法で問題ありません。
+  </p><p>
+<span class="original">
+   In a table definition, default values are listed after the column
+   data type.  For example:
+</span>
+テーブル定義では、デフォルト値は列データ型の後に列挙されています。
+例を示します。
+</p><pre class="programlisting">
+CREATE TABLE products (
+    product_no integer,
+    name text,
+    price numeric <span class="emphasis"><strong>DEFAULT 9.99</strong></span>
+);
+</pre><p>
+  </p><p>
+<span class="original">
+   The default value can be an expression, which will be
+   evaluated whenever the default value is inserted
+   (&lt;emphasis&gt;not&lt;/emphasis&gt; when the table is created).  A common example
+   is for a &lt;type&gt;timestamp&lt;/type&gt; column to have a default of &lt;literal&gt;CURRENT_TIMESTAMP&lt;/literal&gt;,
+   so that it gets set to the time of row insertion.  Another common
+   example is generating a &lt;quote&gt;serial number&lt;/quote&gt; for each row.
+   In &lt;productname&gt;PostgreSQL&lt;/productname&gt; this is typically done by
+   something like:
+</span>
+デフォルト値を式にすることが可能で、それはデフォルト値が挿入される時はいつでも（テーブルが作成されたときでは<span class="emphasis"><em>ありません</em></span>）評価されます。よくある例として、<code class="type">timestamp</code>列が挿入時の時刻に設定されるように、その列はデフォルトの<code class="literal">CURRENT_TIMESTAMP</code>を持つことができます。もう1つの例としては、各行に<span class="quote">「<span class="quote">通番</span>」</span>を割り振る場合です。
+<span class="productname">PostgreSQL</span>では、典型的に以下のように記述することにより生成されます。
+</p><pre class="programlisting">
+CREATE TABLE products (
+    product_no integer <span class="emphasis"><strong>DEFAULT nextval('products_product_no_seq')</strong></span>,
+    ...
+);
+</pre><p>
+<span class="original">
+   where the &lt;literal&gt;nextval()&lt;/literal&gt; function supplies successive values
+   from a &lt;firstterm&gt;sequence object&lt;/firstterm&gt; (see &lt;xref
+   linkend="functions-sequence"/&gt;). This arrangement is sufficiently common
+   that there's a special shorthand for it:
+</span>
+ここで、<code class="literal">nextval()</code>関数が、<em class="firstterm">シーケンスオブジェクト</em>から連続した値を生成します（<a class="xref" href="functions-sequence.html" title="9.17. シーケンス操作関数">9.17</a>を参照してください）。
+これは非常によく使われるやり方なので、以下のような特別な短縮記法が用意されています。
+</p><pre class="programlisting">
+CREATE TABLE products (
+    product_no <span class="emphasis"><strong>SERIAL</strong></span>,
+    ...
+);
+</pre><p>
+<span class="original">
+   The &lt;literal&gt;SERIAL&lt;/literal&gt; shorthand is discussed further in &lt;xref
+   linkend="datatype-serial"/&gt;.
+</span>
+省略形である<code class="literal">SERIAL</code>は<a class="xref" href="datatype-numeric.html#DATATYPE-SERIAL" title="8.1.4. 連番型">8.1.4</a>で詳しく述べられています。
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ddl-basics.html" title="5.1. テーブルの基本">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="ddl.html" title="第5章 データ定義">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="ddl-generated-columns.html" title="5.3. 生成列">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">5.1. テーブルの基本 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 5.3. 生成列</td></tr></table></div></body></html>

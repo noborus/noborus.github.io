@@ -1,0 +1,369 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>CREATE PROCEDURE</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-createpolicy.html" title="CREATE POLICY" /><link rel="next" href="sql-createpublication.html" title="CREATE PUBLICATION" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : sql-createprocedure.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-createpolicy.html" title="CREATE POLICY">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">CREATE PROCEDURE</td><td width="20%" align="right"> <a accesskey="n" href="sql-createpublication.html" title="CREATE PUBLICATION">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-CREATEPROCEDURE"><div class="titlepage"></div><a id="id-1.9.3.76.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">CREATE PROCEDURE</span></h2><p>CREATE PROCEDURE<span class="original">
+  &lt;refpurpose&gt;define a new procedure&lt;/refpurpose&gt;
+</span> — 新しいプロシージャを定義する</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
+CREATE [ OR REPLACE ] PROCEDURE
+    <em class="replaceable"><code>name</code></em> ( [ [ <em class="replaceable"><code>argmode</code></em> ] [ <em class="replaceable"><code>argname</code></em> ] <em class="replaceable"><code>argtype</code></em> [ { DEFAULT | = } <em class="replaceable"><code>default_expr</code></em> ] [, ...] ] )
+  { LANGUAGE <em class="replaceable"><code>lang_name</code></em>
+    | TRANSFORM { FOR TYPE <em class="replaceable"><code>type_name</code></em> } [, ... ]
+    | [ EXTERNAL ] SECURITY INVOKER | [ EXTERNAL ] SECURITY DEFINER
+    | SET <em class="replaceable"><code>configuration_parameter</code></em> { TO <em class="replaceable"><code>value</code></em> | = <em class="replaceable"><code>value</code></em> | FROM CURRENT }
+    | AS '<em class="replaceable"><code>definition</code></em>'
+    | AS '<em class="replaceable"><code>obj_file</code></em>', '<em class="replaceable"><code>link_symbol</code></em>'
+    | <em class="replaceable"><code>sql_body</code></em>
+  } ...
+</pre></div><div class="refsect1" id="SQL-CREATEPROCEDURE-DESCRIPTION"><h2>説明</h2><span class="original">
+  &lt;title&gt;Description&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;command&gt;CREATE PROCEDURE&lt;/command&gt; defines a new procedure.
+   &lt;command&gt;CREATE OR REPLACE PROCEDURE&lt;/command&gt; will either create a
+   new procedure, or replace an existing definition.
+   To be able to define a procedure, the user must have the
+   &lt;literal&gt;USAGE&lt;/literal&gt; privilege on the language.
+</span>
+<code class="command">CREATE PROCEDURE</code>は新たなプロシージャを定義します。
+<code class="command">CREATE OR REPLACE PROCEDURE</code>は新たなプロシージャを作るか、既存の定義を置きかえます。
+プロシージャを定義するにはユーザは言語に<code class="literal">USAGE</code>権限が必要です。
+  </p><p>
+<span class="original">
+   If a schema name is included, then the procedure is created in the
+   specified schema.  Otherwise it is created in the current schema.
+   The name of the new procedure must not match any existing procedure or function
+   with the same input argument types in the same schema.  However,
+   procedures and functions of different argument types can share a name (this is
+   called &lt;firstterm&gt;overloading&lt;/firstterm&gt;).
+</span>
+スキーマ名が含まれている場合、プロシージャは指定されたスキーマに作られます。
+そうでなければ現在のスキーマに作られます。
+同スキーマ内で新たなプロシージャ名と入力引数型が既存のプロシージャや関数と一致してはなりません。
+しかしながら、プロシージャや関数が異なる引数型であれば同じ名前を共有できます（これは<em class="firstterm">オーバーロード</em>と呼ばれます）。
+  </p><p>
+<span class="original">
+   To replace the current definition of an existing procedure, use
+   &lt;command&gt;CREATE OR REPLACE PROCEDURE&lt;/command&gt;.  It is not possible
+   to change the name or argument types of a procedure this way (if you
+   tried, you would actually be creating a new, distinct procedure).
+</span>
+既存プロシージャの現在の定義を置き換えるには、<code class="command">CREATE OR REPLACE PROCEDURE</code>を使用してください。
+この方法でプロシージャの名前や引数型を変更することはできません（試みれば、実際は新たな別プロシージャを作ることになるでしょう）。
+  </p><p>
+<span class="original">
+   When &lt;command&gt;CREATE OR REPLACE PROCEDURE&lt;/command&gt; is used to replace an
+   existing procedure, the ownership and permissions of the procedure
+   do not change.  All other procedure properties are assigned the
+   values specified or implied in the command.  You must own the procedure
+   to replace it (this includes being a member of the owning role).
+</span>
+既存プロシージャの置き換えに<code class="command">CREATE OR REPLACE PROCEDURE</code>が使われたとき、プロシージャの所有者と権限設定は変更されません。
+その他全てのプロシージャ属性は、コマンドで指定された値または暗黙の値に設定されます。
+プロシージャを置き換えるには所有者（所有するロールのメンバであることも含みます）でなければなりません。
+  </p><p>
+<span class="original">
+   The user that creates the procedure becomes the owner of the procedure.
+</span>
+プロシージャを作ったユーザはプロシージャの所有者になります。
+  </p><p>
+<span class="original">
+   To be able to create a procedure, you must have &lt;literal&gt;USAGE&lt;/literal&gt;
+   privilege on the argument types.
+</span>
+プロシージャを作るには、引数型に対して<code class="literal">USAGE</code>権限を持っていなければなりません。
+  </p><p>
+<span class="original">
+   Refer to &lt;xref linkend="xproc"/&gt; for further information on writing
+   procedures.
+</span>
+プロシージャを書くことに関する更なる情報は<a class="xref" href="xproc.html" title="38.4. ユーザ定義プロシージャ">38.4</a>を参照してください。
+  </p></div><div class="refsect1" id="id-1.9.3.76.6"><h2>パラメータ</h2><span class="original">
+  &lt;title&gt;Parameters&lt;/title&gt;
+</span><div class="variablelist"><dl class="variablelist"><dt><span class="term"><em class="replaceable"><code>name</code></em></span></dt><dd><p>
+<span class="original">
+       The name (optionally schema-qualified) of the procedure to create.
+</span>
+作成するプロシージャ名（スキーマ修飾も可）。
+      </p></dd><dt><span class="term"><em class="replaceable"><code>argmode</code></em></span></dt><dd><p>
+<span class="original">
+       The mode of an argument: &lt;literal&gt;IN&lt;/literal&gt;, &lt;literal&gt;OUT&lt;/literal&gt;,
+       &lt;literal&gt;INOUT&lt;/literal&gt;, or &lt;literal&gt;VARIADIC&lt;/literal&gt;.  If omitted,
+       the default is &lt;literal&gt;IN&lt;/literal&gt;.
+</span>
+引数モードで、<code class="literal">IN</code>、<code class="literal">OUT</code>、<code class="literal">INOUT</code>、あるいは、<code class="literal">VARIADIC</code>のいずれかです。
+省略した場合のデフォルトは<code class="literal">IN</code>です。
+      </p></dd><dt><span class="term"><em class="replaceable"><code>argname</code></em></span></dt><dd><p>
+<span class="original">
+       The name of an argument.
+</span>
+引数名。
+      </p></dd><dt><span class="term"><em class="replaceable"><code>argtype</code></em></span></dt><dd><p>
+<span class="original">
+       The data type(s) of the procedure's arguments (optionally
+       schema-qualified), if any. The argument types can be base, composite,
+       or domain types, or can reference the type of a table column.
+</span>
+プロシージャ引数があるなら、そのデータ型（スキーマ修飾も可）です。
+引数型には基本型、複合型、ドメイン型、あるいは、テーブル列の型の参照が使えます。
+      </p><p>
+<span class="original">
+       Depending on the implementation language it might also be allowed
+       to specify &lt;quote&gt;pseudo-types&lt;/quote&gt; such as &lt;type&gt;cstring&lt;/type&gt;.
+       Pseudo-types indicate that the actual argument type is either
+       incompletely specified, or outside the set of ordinary SQL data types.
+</span>
+実装言語によっては、<code class="type">cstring</code>などの<span class="quote">「<span class="quote">擬似データ型</span>」</span>を指定することができます。
+擬似データ型は実際の引数型が完全には特定されていないか、通常のSQLデータ型の枠外にあることを示しています。
+      </p><p>
+<span class="original">
+       The type of a column is referenced by writing
+</span>
+列の型は以下のように参照されます。
+       <code class="literal"><em class="replaceable"><code>table_name</code></em>.<em class="replaceable"><code>column_name</code></em>%TYPE</code>.
+<span class="original">
+       Using this feature can sometimes help make a procedure independent of
+       changes to the definition of a table.
+</span>
+この機能を使うことは時にプロシージャをテーブル定義の変更から独立させる助けとなります。
+      </p></dd><dt><span class="term"><em class="replaceable"><code>default_expr</code></em></span></dt><dd><p>
+<span class="original">
+       An expression to be used as default value if the parameter is
+       not specified.  The expression has to be coercible to the
+       argument type of the parameter.
+       All input parameters following a
+       parameter with a default value must have default values as well.
+</span>
+パラメータが指定されなかった場合のデフォルト値として使用される式です。
+この式はパラメータの引数型と変換可能でなければなりません。
+デフォルト値を持つパラメータの後ろにあるパラメータはすべて、同様にデフォルト値を持たなければなりません。
+      </p></dd><dt><span class="term"><em class="replaceable"><code>lang_name</code></em></span></dt><dd><p>
+<span class="original">
+       The name of the language that the procedure is implemented in.
+       It can be &lt;literal&gt;sql&lt;/literal&gt;, &lt;literal&gt;c&lt;/literal&gt;,
+       &lt;literal&gt;internal&lt;/literal&gt;, or the name of a user-defined
+       procedural language, e.g., &lt;literal&gt;plpgsql&lt;/literal&gt;.  The default is
+       &lt;literal&gt;sql&lt;/literal&gt; if &lt;replaceable
+       class="parameter"&gt;sql_body&lt;/replaceable&gt; is specified.  Enclosing the
+       name in single quotes is deprecated and requires matching case.
+</span>
+プロシージャを実装している言語の名前です。
+このパラメータには、<code class="literal">sql</code>、<code class="literal">c</code>、<code class="literal">internal</code>、もしくはユーザ定義手続き言語（例：<code class="literal">plpgsql</code>）の名前を指定可能です。
+<em class="replaceable"><code>sql_body</code></em>が指定されていれば、デフォルトは<code class="literal">sql</code>です。
+名前を単一引用符で囲むのは廃止予定で、大文字小文字の一致が必要になります。
+      </p></dd><dt><span class="term"><code class="literal">TRANSFORM { FOR TYPE <em class="replaceable"><code>type_name</code></em> } [, ... ] }</code></span></dt><dd><p>
+<span class="original">
+       Lists which transforms a call to the procedure should apply.  Transforms
+       convert between SQL types and language-specific data types;
+       see &lt;xref linkend="sql-createtransform"/&gt;.  Procedural language
+       implementations usually have hardcoded knowledge of the built-in types,
+       so those don't need to be listed here.  If a procedural language
+       implementation does not know how to handle a type and no transform is
+       supplied, it will fall back to a default behavior for converting data
+       types, but this depends on the implementation.
+</span>
+プロシージャ呼び出しにどの変換を適用すべきかのリストです。
+変換はSQLの型と言語独自のデータ型の間の変換を行います（<a class="xref" href="sql-createtransform.html" title="CREATE TRANSFORM"><span class="refentrytitle">CREATE TRANSFORM</span></a>を参照）。
+手続言語の実装では、通常、ビルトインの型についてハードコードされた知識があるので、それらをこのリストに含める必要はありません。
+手続言語の実装が型の処理について定めておらず、変換が提供されない場合は、データ型変換のデフォルトの動作によることになりますが、これは実装に依存します。
+      </p></dd><dt><span class="term"><code class="literal">[<span class="optional">EXTERNAL</span>] SECURITY INVOKER</code><br /></span><span class="term"><code class="literal">[<span class="optional">EXTERNAL</span>] SECURITY DEFINER</code></span></dt><dd><span class="original">
+     &lt;para&gt;&lt;literal&gt;SECURITY INVOKER&lt;/literal&gt; indicates that the procedure
+      is to be executed with the privileges of the user that calls it.
+      That is the default.  &lt;literal&gt;SECURITY DEFINER&lt;/literal&gt;
+      specifies that the procedure is to be executed with the
+      privileges of the user that owns it.
+</span><p><code class="literal">SECURITY INVOKER</code>を指定すると、プロシージャを呼び出したユーザの権限で、そのプロシージャが実行されます。
+これがデフォルトです。
+<code class="literal">SECURITY DEFINER</code>を指定すると、プロシージャを所有するユーザの権限で、そのプロシージャが実行されます。
+     </p><p>
+<span class="original">
+      The key word &lt;literal&gt;EXTERNAL&lt;/literal&gt; is allowed for SQL
+      conformance, but it is optional since, unlike in SQL, this feature
+      applies to all procedures not only external ones.
+</span>
+<code class="literal">EXTERNAL</code>キーワードは、SQLとの互換性を保つために許されています。
+しかし、SQLとは異なり、この機能は外部プロシージャだけではなくすべてのプロシージャに適用されるため、このキーワードは省略可能です。
+     </p><p>
+<span class="original">
+      A &lt;literal&gt;SECURITY DEFINER&lt;/literal&gt; procedure cannot execute
+      transaction control statements (for example, &lt;command&gt;COMMIT&lt;/command&gt;
+      and &lt;command&gt;ROLLBACK&lt;/command&gt;, depending on the language).
+</span>
+<code class="literal">SECURITY DEFINER</code>プロシージャではトランザクション制御文（言語によりますが例えば<code class="command">COMMIT</code>や<code class="command">ROLLBACK</code>）は実行できません。
+     </p></dd><dt><span class="term"><em class="replaceable"><code>configuration_parameter</code></em><br /></span><span class="term"><em class="replaceable"><code>value</code></em></span></dt><dd><p>
+<span class="original">
+       The &lt;literal&gt;SET&lt;/literal&gt; clause causes the specified configuration
+       parameter to be set to the specified value when the procedure is
+       entered, and then restored to its prior value when the procedure exits.
+       &lt;literal&gt;SET FROM CURRENT&lt;/literal&gt; saves the value of the parameter that
+       is current when &lt;command&gt;CREATE PROCEDURE&lt;/command&gt; is executed as the value
+       to be applied when the procedure is entered.
+</span>
+<code class="literal">SET</code>句により、プロシージャが始まった時に指定した設定パラメータを指定した値に設定し、プロシージャの終了時にそれを以前の値に戻すことができます。
+<code class="literal">SET FROM CURRENT</code>は、<code class="command">CREATE PROCEDURE</code>の実行時点でのパラメータ値を、プロシージャに入る時に適用する値として保管します。
+      </p><p>
+<span class="original">
+       If a &lt;literal&gt;SET&lt;/literal&gt; clause is attached to a procedure, then
+       the effects of a &lt;command&gt;SET LOCAL&lt;/command&gt; command executed inside the
+       procedure for the same variable are restricted to the procedure: the
+       configuration parameter's prior value is still restored at procedure exit.
+       However, an ordinary
+       &lt;command&gt;SET&lt;/command&gt; command (without &lt;literal&gt;LOCAL&lt;/literal&gt;) overrides the
+       &lt;literal&gt;SET&lt;/literal&gt; clause, much as it would do for a previous &lt;command&gt;SET
+       LOCAL&lt;/command&gt; command: the effects of such a command will persist after
+       procedure exit, unless the current transaction is rolled back.
+</span>
+プロシージャに<code class="literal">SET</code>句が付いている場合、プロシージャ内部で実行される<code class="command">SET LOCAL</code>コマンドの同一変数に対する効果はそのプロシージャに制限されます。
+つまり、設定パラメータの前の値はプロシージャが終了する時に元に戻ります。
+しかし、通常の（<code class="literal">LOCAL</code>がない）<code class="command">SET</code>コマンドは<code class="literal">SET</code>句を上書きします。
+これは過去に行われた<code class="command">SET LOCAL</code>コマンドに対してもほぼ同じです。
+つまり、このコマンドの効果は、現在のトランザクションがロールバックされない限り、プロシージャが終了した後も永続化されます。
+      </p><p>
+<span class="original">
+       If a &lt;literal&gt;SET&lt;/literal&gt; clause is attached to a procedure, then
+       that procedure cannot execute transaction control statements (for
+       example, &lt;command&gt;COMMIT&lt;/command&gt; and &lt;command&gt;ROLLBACK&lt;/command&gt;,
+       depending on the language).
+</span>
+プロシージャに<code class="literal">SET</code>句が付いている場合、そのプロシージャではトランザクション制御文（言語によりますが例えば<code class="command">COMMIT</code>と<code class="command">ROLLBACK</code>）を実行できません。
+      </p><p>
+<span class="original">
+       See &lt;xref linkend="sql-set"/&gt; and
+       &lt;xref linkend="runtime-config"/&gt;
+       for more information about allowed parameter names and values.
+</span>
+使用できるパラメータ名と値についての詳細は<a class="xref" href="sql-set.html" title="SET"><span class="refentrytitle">SET</span></a>と<a class="xref" href="runtime-config.html" title="第20章 サーバの設定">第20章</a>を参照してください。
+      </p></dd><dt><span class="term"><em class="replaceable"><code>definition</code></em></span></dt><dd><p>
+<span class="original">
+       A string constant defining the procedure; the meaning depends on the
+       language.  It can be an internal procedure name, the path to an
+       object file, an SQL command, or text in a procedural language.
+</span>
+プロシージャを定義する文字列定数です。
+このパラメータの意味は言語に依存します。
+内部的なプロシージャ名、オブジェクトファイルへのパス、SQLコマンド、あるいは、手続き言語で記述されたテキストを指定できます。
+      </p><p>
+<span class="original">
+       It is often helpful to use dollar quoting (see &lt;xref
+       linkend="sql-syntax-dollar-quoting"/&gt;) to write the procedure definition
+       string, rather than the normal single quote syntax.  Without dollar
+       quoting, any single quotes or backslashes in the procedure definition must
+       be escaped by doubling them.
+</span>
+プロシージャを定義する文字列を記述する際に、通常の単一引用符ではなく、ドル引用符（<a class="xref" href="sql-syntax-lexical.html#SQL-SYNTAX-DOLLAR-QUOTING" title="4.1.2.4. ドル記号で引用符付けされた文字列定数">4.1.2.4</a>参照）を使用すると便利なことが多くあります。
+ドル引用符を使用しなければ、プロシージャ定義内の単一引用符やバックスラッシュは必ず二重にしてエスケープしなければなりません。
+      </p></dd><dt><span class="term"><code class="literal"><em class="replaceable"><code>obj_file</code></em>, <em class="replaceable"><code>link_symbol</code></em></code></span></dt><dd><p>
+<span class="original">
+       This form of the &lt;literal&gt;AS&lt;/literal&gt; clause is used for
+       dynamically loadable C language procedures when the procedure name
+       in the C language source code is not the same as the name of
+       the SQL procedure. The string &lt;replaceable
+       class="parameter"&gt;obj_file&lt;/replaceable&gt; is the name of the shared
+       library file containing the compiled C procedure, and is interpreted
+       as for the &lt;link linkend="sql-load"&gt;&lt;command&gt;LOAD&lt;/command&gt;&lt;/link&gt; command.  The string
+       &lt;replaceable class="parameter"&gt;link_symbol&lt;/replaceable&gt; is the
+       procedure's link symbol, that is, the name of the procedure in the C
+       language source code.  If the link symbol is omitted, it is assumed
+       to be the same as the name of the SQL procedure being defined.
+</span>
+この構文の<code class="literal">AS</code>句は、動的にロードされるC言語プロシージャにおいて、C言語のソースコード中のプロシージャ名がSQLプロシージャの名前と同じでない場合に使われます。
+<em class="replaceable"><code>obj_file</code></em>という文字列はコンパイルされたCプロシージャを含む共有ライブラリファイルの名前で、<a class="link" href="sql-load.html" title="LOAD"><code class="command">LOAD</code></a>コマンドの場合と同じように解釈されます。
+文字列<em class="replaceable"><code>link_symbol</code></em>はそのプロシージャのリンクシンボル、つまり、C言語ソースコード中のプロシージャの名前です。
+リンクシンボルが省略された場合、定義されるSQLプロシージャの名前と同じものであるとみなされます。
+      </p><p>
+<span class="original">
+       When repeated &lt;command&gt;CREATE PROCEDURE&lt;/command&gt; calls refer to
+       the same object file, the file is only loaded once per session.
+       To unload and
+       reload the file (perhaps during development), start a new session.
+</span>
+同じオブジェクトファイルを参照する<code class="command">CREATE PROCEDURE</code>呼び出しが繰り返される場合、ファイルがセッションにつき一度だけロードされます。
+（おそらく開発中に）ファイルのアンロードと再ロードを行うには、新たなセッションを開始してください。
+      </p></dd><dt><span class="term"><em class="replaceable"><code>sql_body</code></em></span></dt><dd><p>
+<span class="original">
+       The body of a &lt;literal&gt;LANGUAGE SQL&lt;/literal&gt; procedure.  This should
+       be a block
+</span>
+<code class="literal">LANGUAGE SQL</code>プロシージャの本体です。
+これは以下のようなブロックでなければなりません。
+</p><pre class="programlisting">
+BEGIN ATOMIC
+  <em class="replaceable"><code>statement</code></em>;
+  <em class="replaceable"><code>statement</code></em>;
+  ...
+  <em class="replaceable"><code>statement</code></em>;
+END
+</pre><p>
+      </p><p>
+<span class="original">
+       This is similar to writing the text of the procedure body as a string
+       constant (see &lt;replaceable&gt;definition&lt;/replaceable&gt; above), but there
+       are some differences: This form only works for &lt;literal&gt;LANGUAGE
+       SQL&lt;/literal&gt;, the string constant form works for all languages.  This
+       form is parsed at procedure definition time, the string constant form is
+       parsed at execution time; therefore this form cannot support
+       polymorphic argument types and other constructs that are not resolvable
+       at procedure definition time.  This form tracks dependencies between the
+       procedure and objects used in the procedure body, so &lt;literal&gt;DROP
+       ... CASCADE&lt;/literal&gt; will work correctly, whereas the form using
+       string literals may leave dangling procedures.  Finally, this form is
+       more compatible with the SQL standard and other SQL implementations.
+</span>
+これは文字列定数としてプロシージャ本体を書くのと似ていますが(上記の<em class="replaceable"><code>definition</code></em>を参照してください)、いくつか違いがあります。
+この形式は<code class="literal">LANGUAGE SQL</code>に対してのみ機能し、文字列定数の形式はすべての言語に対して機能します。
+この形式はプロシージャ定義時に解析され、文字列定数の形式は実行時に解析されます。
+そのため、この形式は多様引数型やプロシージャ定義時に解決できないその他の構文をサポートできません。
+この形式はプロシージャとプロシージャ本体の中で使われているオブジェクトの間の依存関係を追跡しますので、<code class="literal">DROP ... CASCADE</code>は正しく動作しますが、一方、文字列定数を使う形式は宙に浮いたプロシージャを放置するかもしれません。
+最後に、この形式は標準SQLや他のSQL実装とより互換性があります。
+      </p></dd></dl></div></div><div class="refsect1" id="SQL-CREATEPROCEDURE-NOTES"><h2>注釈</h2><span class="original">
+  &lt;title&gt;Notes&lt;/title&gt;
+</span><p>
+<span class="original">
+   See &lt;xref linkend="sql-createfunction"/&gt; for more details on function
+   creation that also apply to procedures.
+</span>
+プロシージャにも該当する関数の作成についての詳細は<a class="xref" href="sql-createfunction.html" title="CREATE FUNCTION"><span class="refentrytitle">CREATE FUNCTION</span></a>を参照してください。
+  </p><p>
+<span class="original">
+   Use &lt;xref linkend="sql-call"/&gt; to execute a procedure.
+</span>
+プロシージャを実行するには<a class="xref" href="sql-call.html" title="CALL"><span class="refentrytitle">CALL</span></a>を使います。
+  </p></div><div class="refsect1" id="SQL-CREATEPROCEDURE-EXAMPLES"><h2>例</h2><span class="original">
+  &lt;title&gt;Examples&lt;/title&gt;
+</span><p>
+</p><pre class="programlisting">
+CREATE PROCEDURE insert_data(a integer, b integer)
+LANGUAGE SQL
+AS $$
+INSERT INTO tbl VALUES (a);
+INSERT INTO tbl VALUES (b);
+$$;
+</pre><p>
+<span class="original">
+   or
+</span>
+または
+</p><pre class="programlisting">
+CREATE PROCEDURE insert_data(a integer, b integer)
+LANGUAGE SQL
+BEGIN ATOMIC
+  INSERT INTO tbl VALUES (a);
+  INSERT INTO tbl VALUES (b);
+END;
+</pre><p>
+   and call like this:
+</p><pre class="programlisting">
+CALL insert_data(1, 2);
+</pre></div><div class="refsect1" id="SQL-CREATEPROCEDURE-COMPAT"><h2>互換性</h2><span class="original">
+  &lt;title&gt;Compatibility&lt;/title&gt;
+</span><p>
+<span class="original">
+   A &lt;command&gt;CREATE PROCEDURE&lt;/command&gt; command is defined in the SQL
+   standard.  The &lt;productname&gt;PostgreSQL&lt;/productname&gt; implementation can be
+   used in a compatible way but has many extensions.  For details see also
+   &lt;xref linkend="sql-createfunction"/&gt;.
+</span>
+<code class="command">CREATE PROCEDURE</code>コマンドは標準SQLで定義されています。
+<span class="productname">PostgreSQL</span>の実装は互換性のある方法で使うことはできますが、多くの拡張があります。
+詳しくは<a class="xref" href="sql-createfunction.html" title="CREATE FUNCTION"><span class="refentrytitle">CREATE FUNCTION</span></a>も参照してください。
+  </p></div><div class="refsect1" id="id-1.9.3.76.10"><h2>関連項目</h2><span class="original">
+  &lt;title&gt;See Also&lt;/title&gt;
+</span><span class="simplelist"><a class="xref" href="sql-alterprocedure.html" title="ALTER PROCEDURE"><span class="refentrytitle">ALTER PROCEDURE</span></a>, <a class="xref" href="sql-dropprocedure.html" title="DROP PROCEDURE"><span class="refentrytitle">DROP PROCEDURE</span></a>, <a class="xref" href="sql-call.html" title="CALL"><span class="refentrytitle">CALL</span></a>, <a class="xref" href="sql-createfunction.html" title="CREATE FUNCTION"><span class="refentrytitle">CREATE FUNCTION</span></a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-createpolicy.html" title="CREATE POLICY">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-createpublication.html" title="CREATE PUBLICATION">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">CREATE POLICY </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> CREATE PUBLICATION</td></tr></table></div></body></html>

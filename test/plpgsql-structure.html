@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>43.2. PL/pgSQLの構造</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="plpgsql-overview.html" title="43.1. 概要" /><link rel="next" href="plpgsql-declarations.html" title="43.3. 宣言" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="plpgsql.html" title="第43章 PL/pgSQL — SQL手続き言語">第43章 <span class="application">PL/pgSQL</span> — <acronym class="acronym">SQL</acronym>手続き言語</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : plpgsql-structure.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="plpgsql-overview.html" title="43.1. 概要">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="plpgsql.html" title="第43章 PL/pgSQL — SQL手続き言語">上へ</a></td><td width="60%" align="center">43.2. <span class="application">PL/pgSQL</span>の構造</td><td width="20%" align="right"> <a accesskey="n" href="plpgsql-declarations.html" title="43.3. 宣言">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PLPGSQL-STRUCTURE"><div class="titlepage"><div><div><h2 class="title" style="clear: both">43.2. <span class="application">PL/pgSQL</span>の構造</h2></div></div></div><span class="original">
+  &lt;title&gt;Structure of &lt;application&gt;PL/pgSQL&lt;/application&gt;&lt;/title&gt;
+</span><p>
+<span class="original">
+   Functions written in &lt;application&gt;PL/pgSQL&lt;/application&gt; are defined
+   to the server by executing &lt;xref linkend="sql-createfunction"/&gt; commands.
+   Such a command would normally look like, say,
+</span>
+<span class="application">PL/pgSQL</span>で書かれた関数は<a class="xref" href="sql-createfunction.html" title="CREATE FUNCTION"><span class="refentrytitle">CREATE FUNCTION</span></a>コマンドを実行することでサーバに定義されます。
+そのようなコマンドは通常、例えば次のようになります。
+</p><pre class="programlisting">
+CREATE FUNCTION somefunc(integer, text) RETURNS integer
+AS '<em class="replaceable"><code>function body text</code></em>'
+LANGUAGE plpgsql;
+</pre><p>
+<span class="original">
+   The function body is simply a string literal so far as &lt;command&gt;CREATE
+   FUNCTION&lt;/command&gt; is concerned.  It is often helpful to use dollar quoting
+   (see &lt;xref linkend="sql-syntax-dollar-quoting"/&gt;) to write the function
+   body, rather than the normal single quote syntax.  Without dollar quoting,
+   any single quotes or backslashes in the function body must be escaped by
+   doubling them.  Almost all the examples in this chapter use dollar-quoted
+   literals for their function bodies.
+</span>
+関数本体は<code class="command">CREATE FUNCTION</code>にとっては単なる文字列リテラルです。
+関数本体を書くのには、普通の単一引用符構文よりは、ドル引用符(<a class="xref" href="sql-syntax-lexical.html#SQL-SYNTAX-DOLLAR-QUOTING" title="4.1.2.4. ドル記号で引用符付けされた文字列定数">4.1.2.4</a>を参照)を使うのが、多くの場合役に立ちます。
+ドル引用符でなければ、関数本体内の単一引用符やバックスラッシュをすべて二重化してエスケープしなければなりません。
+この章のほぼすべての例では、関数本体にドル記号で括られたリテラルを使っています。
+  </p><p>
+<span class="original">
+   &lt;application&gt;PL/pgSQL&lt;/application&gt; is a block-structured language.
+   The complete text of a function body must be a
+   &lt;firstterm&gt;block&lt;/firstterm&gt;. A block is defined as:
+</span>
+<span class="application">PL/pgSQL</span>はブロック構造の言語です。
+関数本体のテキスト全体は<em class="firstterm">ブロック</em>でなければなりません。
+ブロックは以下のように定義されます。
+
+</p><pre class="synopsis">
+[<span class="optional"> &lt;&lt;<em class="replaceable"><code>label</code></em>&gt;&gt; </span>]
+[<span class="optional"> DECLARE
+    <em class="replaceable"><code>declarations</code></em> </span>]
+BEGIN
+    <em class="replaceable"><code>statements</code></em>
+END [<span class="optional"> <em class="replaceable"><code>label</code></em> </span>];
+</pre><p>
+    </p><p>
+<span class="original">
+     Each declaration and each statement within a block is terminated
+     by a semicolon.  A block that appears within another block must
+     have a semicolon after &lt;literal&gt;END&lt;/literal&gt;, as shown above;
+     however the final &lt;literal&gt;END&lt;/literal&gt; that
+     concludes a function body does not require a semicolon.
+</span>
+ブロック内の宣言や文はそれぞれ、セミコロンで終わります。
+上に示したように、他のブロック内に出現するブロックの<code class="literal">END</code>の後にはセミコロンが必要ですが、関数本体を完結する最後の<code class="literal">END</code>には不要です。
+    </p><div class="tip"><h3 class="title">ヒント</h3><p>
+<span class="original">
+      A common mistake is to write a semicolon immediately after
+      &lt;literal&gt;BEGIN&lt;/literal&gt;.  This is incorrect and will result in a syntax error.
+</span>
+<code class="literal">BEGIN</code>の直後にセミコロンを書くことも、同じように間違いです。
+これは不正であり、構文エラーとなります。
+     </p></div><p>
+<span class="original">
+     A &lt;replaceable&gt;label&lt;/replaceable&gt; is only needed if you want to
+     identify the block for use
+     in an &lt;literal&gt;EXIT&lt;/literal&gt; statement, or to qualify the names of the
+     variables declared in the block.  If a label is given after
+     &lt;literal&gt;END&lt;/literal&gt;, it must match the label at the block's beginning.
+</span>
+<em class="replaceable"><code>label</code></em>が必要となるのは、<code class="literal">EXIT</code>文が使用されるブロックを特定したい場合、またはブロック内で宣言された変数名を修飾したい場合だけです。
+<code class="literal">END</code>の後にラベルを配置する時は、そのブロックの先頭ラベルと一致させなければなりません。
+    </p><p>
+<span class="original">
+     All key words are case-insensitive.
+     Identifiers are implicitly converted to lower case
+     unless double-quoted, just as they are in ordinary SQL commands.
+</span>
+全てのキーワードは大文字と小文字を区別しません。
+識別子は二重引用符でくくられていない限り、通常のSQLコマンドと同様に、暗黙的に小文字に変換されます。
+    </p><p>
+<span class="original">
+     Comments work the same way in &lt;application&gt;PL/pgSQL&lt;/application&gt; code as in
+     ordinary SQL.  A double dash (&lt;literal&gt;&amp;#45;-&lt;/literal&gt;) starts a comment
+     that extends to the end of the line. A &lt;literal&gt;/*&lt;/literal&gt; starts a
+     block comment that extends to the matching occurrence of
+     &lt;literal&gt;*/&lt;/literal&gt;.  Block comments nest.
+</span>
+<span class="application">PL/pgSQL</span>コード内では、通常のSQLと同じ方法のコメントが動作します。
+二重のダッシュ(<code class="literal">--</code>)はその行末までをコメントとするコメントを開始します。
+<code class="literal">/*</code>はコメントブロックの始まりを意味し、次に<code class="literal">*/</code>が現れるまでをコメントとします。
+ブロックコメントは入れ子になります。
+    </p><p>
+<span class="original">
+     Any statement in the statement section of a block
+     can be a &lt;firstterm&gt;subblock&lt;/firstterm&gt;.  Subblocks can be used for
+     logical grouping or to localize variables to a small group
+     of statements.  Variables declared in a subblock mask any
+     similarly-named variables of outer blocks for the duration
+     of the subblock; but you can access the outer variables anyway
+     if you qualify their names with their block's label. For example:
+</span>
+ブロックの文節内の全ての文は<em class="firstterm">副ブロック</em>になることができます。
+副ブロックは論理的なグループ分けや変数を文の小さな集まりに局所化するのに使用できます。
+副ブロックにおいて宣言された変数は、副ブロック内部では外側のブロックにおける同名の変数を遮蔽しますが、外側のラベルを変数名に付加して指定すればアクセスできます。
+以下に例を示します。
+</p><pre class="programlisting">
+CREATE FUNCTION somefunc() RETURNS integer AS $$
+&lt;&lt; outerblock &gt;&gt;
+DECLARE
+    quantity integer := 30;
+BEGIN
+<span class="original">
+    RAISE NOTICE 'Quantity here is %', quantity;  &amp;#45;- Prints 30
+</span>
+    RAISE NOTICE 'Quantity here is %', quantity;  -- Quantity here is 30と表示
+    quantity := 50;
+    --
+<span class="original">
+    &amp;#45;- Create a subblock
+</span>
+    -- 副ブロックの作成
+    --
+    DECLARE
+        quantity integer := 80;
+    BEGIN
+<span class="original">
+        RAISE NOTICE 'Quantity here is %', quantity;  &amp;#45;- Prints 80
+        RAISE NOTICE 'Outer quantity here is %', outerblock.quantity;  &amp;#45;- Prints 50
+</span>
+        RAISE NOTICE 'Quantity here is %', quantity;  -- Quantity here is 80と表示
+        RAISE NOTICE 'Outer quantity here is %', outerblock.quantity;  -- Quantity here is 50と表示
+    END;
+
+<span class="original">
+    RAISE NOTICE 'Quantity here is %', quantity;  &amp;#45;- Prints 50
+</span>
+    RAISE NOTICE 'Quantity here is %', quantity;  -- Quantity here is 50と表示
+
+    RETURN quantity;
+END;
+$$ LANGUAGE plpgsql;
+</pre><p>
+    </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+      There is actually a hidden &lt;quote&gt;outer block&lt;/quote&gt; surrounding the body
+      of any &lt;application&gt;PL/pgSQL&lt;/application&gt; function.  This block provides the
+      declarations of the function's parameters (if any), as well as some
+      special variables such as &lt;literal&gt;FOUND&lt;/literal&gt; (see
+      &lt;xref linkend="plpgsql-statements-diagnostics"/&gt;).  The outer block is
+      labeled with the function's name, meaning that parameters and special
+      variables can be qualified with the function's name.
+</span>
+<span class="application">PL/pgSQL</span>関数の本体を囲む、隠れた<span class="quote">「<span class="quote">外側のブロック</span>」</span>が存在します。
+この隠れたブロックにおいて、関数のパラメータがあれば宣言をして、同様に<code class="literal">FOUND</code>のような特殊な変数（<a class="xref" href="plpgsql-statements.html#PLPGSQL-STATEMENTS-DIAGNOSTICS" title="43.5.5. 結果ステータスの取得">43.5.5</a>を参照）を提供します。
+この外側のブロックのラベルは関数名となります。
+つまりパラメータと特殊な変数は関数名によって修飾することを意味します。
+     </p></div><p>
+<span class="original">
+     It is important not to confuse the use of
+     &lt;command&gt;BEGIN&lt;/command&gt;/&lt;command&gt;END&lt;/command&gt; for grouping statements in
+     &lt;application&gt;PL/pgSQL&lt;/application&gt; with the similarly-named SQL commands
+     for transaction
+     control.  &lt;application&gt;PL/pgSQL&lt;/application&gt;'s &lt;command&gt;BEGIN&lt;/command&gt;/&lt;command&gt;END&lt;/command&gt;
+     are only for grouping; they do not start or end a transaction.
+     See &lt;xref linkend="plpgsql-transactions"/&gt; for information on managing
+     transactions in &lt;application&gt;PL/pgSQL&lt;/application&gt;.
+     Also, a block containing an &lt;literal&gt;EXCEPTION&lt;/literal&gt; clause effectively
+     forms a subtransaction that can be rolled back without affecting the
+     outer transaction.  For more about that see &lt;xref
+     linkend="plpgsql-error-trapping"/&gt;.
+</span>
+<span class="application">PL/pgSQL</span>における文をまとめるための<code class="command">BEGIN</code>/<code class="command">END</code>とトランザクション制御用の同名のSQLコマンドとを取り違えないようにすることが重要です。
+<span class="application">PL/pgSQL</span>の<code class="command">BEGIN</code>/<code class="command">END</code>は単にまとめるためのもので、トランザクションを始めたり終わらせたりしません。
+トランザクションを<span class="application">PL/pgSQL</span>内で制御するための情報に関しては、<a class="xref" href="plpgsql-transactions.html" title="43.8. トランザクション制御">43.8</a>を参照してください。
+また、<code class="literal">EXCEPTION</code>句を含むブロックは外側のトランザクションに影響しないでロールバックできるサブトランザクションを、実質的に作成できます。
+これについては<a class="xref" href="plpgsql-control-structures.html#PLPGSQL-ERROR-TRAPPING" title="43.6.8. エラーの捕捉">43.6.8</a>を参照してください。
+    </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="plpgsql-overview.html" title="43.1. 概要">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="plpgsql.html" title="第43章 PL/pgSQL — SQL手続き言語">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="plpgsql-declarations.html" title="43.3. 宣言">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">43.1. 概要 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 43.3. 宣言</td></tr></table></div></body></html>

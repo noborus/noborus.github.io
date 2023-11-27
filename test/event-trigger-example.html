@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>40.4. 完全なイベントトリガの例</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="event-trigger-interface.html" title="40.3. C言語によるイベントトリガ関数の書き方" /><link rel="next" href="event-trigger-table-rewrite-example.html" title="40.5. テーブル書き換えイベントトリガの例" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="event-triggers.html" title="第40章 イベントトリガ">第40章 イベントトリガ</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : event-trigger-example.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="event-trigger-interface.html" title="40.3. C言語によるイベントトリガ関数の書き方">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="event-triggers.html" title="第40章 イベントトリガ">上へ</a></td><td width="60%" align="center">40.4. 完全なイベントトリガの例</td><td width="20%" align="right"> <a accesskey="n" href="event-trigger-table-rewrite-example.html" title="40.5. テーブル書き換えイベントトリガの例">次へ</a></td></tr></table><hr /></div><div class="sect1" id="EVENT-TRIGGER-EXAMPLE"><div class="titlepage"><div><div><h2 class="title" style="clear: both">40.4. 完全なイベントトリガの例</h2></div></div></div><span class="original">
+   &lt;title&gt;A Complete Event Trigger Example&lt;/title&gt;
+</span><p>
+<span class="original">
+    Here is a very simple example of an event trigger function written in C.
+    (Examples of triggers written in procedural languages can be found in
+    the documentation of the procedural languages.)
+</span>
+C言語で作成したイベントトリガ関数に関するとても簡単な例をここに示します（手続き言語で作成したトリガの例は、その手続き言語の文書に記載されています）。
+   </p><p>
+<span class="original">
+    The function &lt;function&gt;noddl&lt;/function&gt; raises an exception each time it is called.
+    The event trigger definition associated the function with
+    the &lt;literal&gt;ddl_command_start&lt;/literal&gt; event.  The effect is that all DDL
+    commands (with the exceptions mentioned
+    in &lt;xref linkend="event-trigger-definition"/&gt;) are prevented from running.
+</span>
+<code class="function">noddl</code>関数は、呼ばれるたびに例外を発生させます。
+このイベントトリガは、この関数と<code class="literal">ddl_command_start</code>イベントを関連づけます。
+そのため、(<a class="xref" href="event-trigger-definition.html" title="40.1. イベントトリガ動作の概要">40.1</a>で言及した例外はありますが例外を含む)すべてのDDLコマンドは、実行できません。
+   </p><p>
+<span class="original">
+    This is the source code of the trigger function:
+</span>
+以下がトリガ関数のソースコードです。
+</p><pre class="programlisting">
+#include "postgres.h"
+#include "commands/event_trigger.h"
+
+
+PG_MODULE_MAGIC;
+
+PG_FUNCTION_INFO_V1(noddl);
+
+Datum
+noddl(PG_FUNCTION_ARGS)
+{
+    EventTriggerData *trigdata;
+
+<span class="original">
+    if (!CALLED_AS_EVENT_TRIGGER(fcinfo))  /* internal error */
+</span>
+    if (!CALLED_AS_EVENT_TRIGGER(fcinfo))  /* 内部エラー */
+        elog(ERROR, "not fired by event trigger manager");
+
+    trigdata = (EventTriggerData *) fcinfo-&gt;context;
+
+    ereport(ERROR,
+        (errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
+                 errmsg("command \"%s\" denied", trigdata-&gt;tag)));
+
+    PG_RETURN_NULL();
+}
+</pre><p>
+   </p><p>
+<span class="original">
+    After you have compiled the source code (see &lt;xref linkend="dfunc"/&gt;),
+    declare the function and the triggers:
+</span>
+ソースコードをコンパイル（<a class="xref" href="xfunc-c.html#DFUNC" title="38.10.5. 動的にロードされる関数のコンパイルとリンク">38.10.5</a>を参照してください）した後に、以下の様に関数とトリガを宣言します。
+</p><pre class="programlisting">
+CREATE FUNCTION noddl() RETURNS event_trigger
+    AS 'noddl' LANGUAGE C;
+
+CREATE EVENT TRIGGER noddl ON ddl_command_start
+    EXECUTE FUNCTION noddl();
+</pre><p>
+   </p><p>
+<span class="original">
+    Now you can test the operation of the trigger:
+</span>
+これで、トリガの操作を確認することができます。
+</p><pre class="screen">
+=# \dy
+                     List of event triggers
+ Name  |       Event       | Owner | Enabled | Function | Tags
+-------+-------------------+-------+---------+----------+------
+ noddl | ddl_command_start | dim   | enabled | noddl    |
+(1 row)
+
+=# CREATE TABLE foo(id serial);
+ERROR:  command "CREATE TABLE" denied
+</pre><p>
+   </p><p>
+<span class="original">
+    In this situation, in order to be able to run some DDL commands when you
+    need to do so, you have to either drop the event trigger or disable it.  It
+    can be convenient to disable the trigger for only the duration of a
+    transaction:
+</span>
+この状況では、DDLコマンドを必要なときに実行できるようにするには、このイベントトリガを削除するか、無効化しなければなりません。
+以下のように、トランザクションの期間中だけトリガを無効化するのが、便利かもしれません。
+</p><pre class="programlisting">
+BEGIN;
+ALTER EVENT TRIGGER noddl DISABLE;
+CREATE TABLE foo (id serial);
+ALTER EVENT TRIGGER noddl ENABLE;
+COMMIT;
+</pre><p>
+<span class="original">
+    (Recall that DDL commands on event triggers themselves are not affected by
+    event triggers.)
+</span>
+(イベントトリガ自体が関係するDDLコマンドは、イベントトリガの影響を受けないことを思い出してください。)
+   </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="event-trigger-interface.html" title="40.3. C言語によるイベントトリガ関数の書き方">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="event-triggers.html" title="第40章 イベントトリガ">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="event-trigger-table-rewrite-example.html" title="40.5. テーブル書き換えイベントトリガの例">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">40.3. C言語によるイベントトリガ関数の書き方 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 40.5. テーブル書き換えイベントトリガの例</td></tr></table></div></body></html>

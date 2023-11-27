@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>52.6. エグゼキュータ</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="planner-optimizer.html" title="52.5. プランナ/オプティマイザ" /><link rel="next" href="catalogs.html" title="第53章 システムカタログ" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="overview.html" title="第52章 PostgreSQL内部の概要">第52章 PostgreSQL内部の概要</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : executor.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="planner-optimizer.html" title="52.5. プランナ/オプティマイザ">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="overview.html" title="第52章 PostgreSQL内部の概要">上へ</a></td><td width="60%" align="center">52.6. エグゼキュータ</td><td width="20%" align="right"> <a accesskey="n" href="catalogs.html" title="第53章 システムカタログ">次へ</a></td></tr></table><hr /></div><div class="sect1" id="EXECUTOR"><div class="titlepage"><div><div><h2 class="title" style="clear: both">52.6. エグゼキュータ</h2></div></div></div><span class="original">
+   &lt;title&gt;Executor&lt;/title&gt;
+</span><p>
+<span class="original">
+    The &lt;firstterm&gt;executor&lt;/firstterm&gt; takes the plan created by the
+    planner/optimizer and recursively processes it to extract the required set
+    of rows.  This is essentially a demand-pull pipeline mechanism.
+    Each time a plan node is called, it must deliver one more row, or
+    report that it is done delivering rows.
+</span>
+<em class="firstterm">エグゼキュータ</em>は、プランナ/オプティマイザで作成された計画を受け取り、必要な行の集合を抽出するために再帰的に処理します。
+これは本質的に要求引き寄せ型（demand-pull）パイプライン機能です。
+計画ノードが呼ばれる度にもう1つの行を引き渡すか、行を引き渡したことの報告を行わなければなりません。
+   </p><p>
+<span class="original">
+    To provide a concrete example, assume that the top
+    node is a &lt;literal&gt;MergeJoin&lt;/literal&gt; node.
+    Before any merge can be done two rows have to be fetched (one from
+    each subplan). So the executor recursively calls itself to
+    process the subplans (it starts with the subplan attached to
+    &lt;literal&gt;lefttree&lt;/literal&gt;). The new top node (the top node of the left
+    subplan) is, let's say, a
+    &lt;literal&gt;Sort&lt;/literal&gt; node and again recursion is needed to obtain
+    an input row.  The child node of the &lt;literal&gt;Sort&lt;/literal&gt; might
+    be a &lt;literal&gt;SeqScan&lt;/literal&gt; node, representing actual reading of a table.
+    Execution of this node causes the executor to fetch a row from the
+    table and return it up to the calling node.  The &lt;literal&gt;Sort&lt;/literal&gt;
+    node will repeatedly call its child to obtain all the rows to be sorted.
+    When the input is exhausted (as indicated by the child node returning
+    a NULL instead of a row), the &lt;literal&gt;Sort&lt;/literal&gt; code performs
+    the sort, and finally is able to return its first output row, namely
+    the first one in sorted order.  It keeps the remaining rows stored so
+    that it can deliver them in sorted order in response to later demands.
+</span>
+具体的な例を提供する目的で頂点のノードが<code class="literal">MergeJoin</code>ノードである場合を想定しましょう。
+いかなるマージも実行される前に（それぞれの副計画から1つずつ）2つの行を取ってこなくてはいけません。
+ですからエグゼキュータは副計画を処理するために自分自身を再帰的に呼び出します（<code class="literal">lefttree</code>に付随する副計画から開始します）。
+新しい頂点のノード（左の副計画の頂点のノード）は<code class="literal">Sort</code>ノードであるとしましょう。ここでもノード自体が処理される前に入力行を取ってこなくてはいけません。
+<code class="literal">Sort</code>の子ノードは実際のテーブルの読み取りを表現している<code class="literal">SeqScan</code>ノードのこともあり得ます。
+このノードの処理はエグゼキュータにテーブルから行を抽出させ、呼び出しているノードに渡し戻させます。
+<code class="literal">Sort</code>ノードはソート対象の全てのノードを取得するために子ノードを繰り返し呼び出します。
+入力がなくなった時（子ノードが行ではなくNULLを返してきた時）<code class="literal">Sort</code>コードがソートを実行して最終的に最初の出力行を返すことができるようになります。
+つまりソート順における最初の結果です。
+後での要求に答えるためソート順に引き渡すことができるように残っている行は保存されます。
+   </p><p>
+<span class="original">
+    The &lt;literal&gt;MergeJoin&lt;/literal&gt; node similarly demands the first row
+    from its right subplan.  Then it compares the two rows to see if they
+    can be joined; if so, it returns a join row to its caller.  On the next
+    call, or immediately if it cannot join the current pair of inputs,
+    it advances to the next row of one table
+    or the other (depending on how the comparison came out), and again
+    checks for a match.  Eventually, one subplan or the other is exhausted,
+    and the &lt;literal&gt;MergeJoin&lt;/literal&gt; node returns NULL to indicate that
+    no more join rows can be formed.
+</span>
+<code class="literal">MergeJoin</code>ノードは同じようにしてその右副計画から最初の行を要求します。
+そこで2つの行が結合できるかどうか比較されます。もし結合できる場合には呼び出し側に結合された行が返されます。
+次の呼び出しの時に、もしくは入力された現在の組み合わせが結合できない場合はすぐに、あるテーブルあるいはそれ以外のテーブル（比較の結果に依存して）の次の行に進んで、さらに一致があるかどうか検証されます。
+最終的にはある副計画もしくは他の計画が使いきられ、<code class="literal">MergeJoin</code>ノードがこれ以上の結合行を生成できないという意味のNULLを返すことになります。
+   </p><p>
+<span class="original">
+    Complex queries can involve many levels of plan nodes, but the general
+    approach is the same: each node computes and returns its next output
+    row each time it is called.  Each node is also responsible for applying
+    any selection or projection expressions that were assigned to it by
+    the planner.
+</span>
+複雑な問い合わせは多くの階層となった計画ノードに関わるかもしれませんが、概略的な取り扱い方は同じです。
+それぞれのノードは呼び出される度に次の出力行を計算して返します。
+それぞれのノードは同時にプランナによって割り当てられたいかなる選択式や射影式でも適用する責任があります。
+   </p><p>
+<span class="original">
+    The executor mechanism is used to evaluate all four basic SQL query
+    types: &lt;command&gt;SELECT&lt;/command&gt;, &lt;command&gt;INSERT&lt;/command&gt;,
+    &lt;command&gt;UPDATE&lt;/command&gt;, and &lt;command&gt;DELETE&lt;/command&gt;.
+    For &lt;command&gt;SELECT&lt;/command&gt;, the top-level executor code
+    only needs to send each row returned by the query plan tree
+    off to the client.  &lt;command&gt;INSERT ... SELECT&lt;/command&gt;,
+    &lt;command&gt;UPDATE&lt;/command&gt;, and &lt;command&gt;DELETE&lt;/command&gt;
+    are effectively &lt;command&gt;SELECT&lt;/command&gt;s under a special
+    top-level plan node called &lt;literal&gt;ModifyTable&lt;/literal&gt;.
+</span>
+エグゼキュータ機構は4つの基本的なSQL問い合わせの種類すべてを検証するために用いられます。
+4つのSQL問い合わせの種類とは<code class="command">SELECT</code>、<code class="command">INSERT</code>、<code class="command">UPDATE</code>、そして<code class="command">DELETE</code>です。
+<code class="command">SELECT</code>では、最上位階層のエグゼキュータコードは問い合わせ計画ツリーによって返されるそれぞれの行をクライアントへ送り返すだけでよいことになっています。
+<code class="command">INSERT ... SELECT</code>、<code class="command">UPDATE</code>、<code class="command">DELETE</code>は、実質的には<code class="literal">ModifyTable</code>と呼ばれる特別な最上位階層の計画ノードの下の<code class="command">SELECT</code>です。
+   </p><p>
+<span class="original">
+    &lt;command&gt;INSERT ... SELECT&lt;/command&gt; feeds the rows up
+    to &lt;literal&gt;ModifyTable&lt;/literal&gt; for insertion.  For
+    &lt;command&gt;UPDATE&lt;/command&gt;, the planner arranges that each
+    computed row includes all the updated column values, plus the
+    &lt;firstterm&gt;TID&lt;/firstterm&gt; (tuple ID, or row ID) of the original
+    target row; this data is fed up to the &lt;literal&gt;ModifyTable&lt;/literal&gt;
+    node, which uses the information to create a new updated row and
+    mark the old row deleted.  For &lt;command&gt;DELETE&lt;/command&gt;, the only
+    column that is actually returned by the plan is the TID, and the
+    &lt;literal&gt;ModifyTable&lt;/literal&gt; node simply uses the TID to visit each
+    target row and mark it deleted.
+</span>
+<code class="command">INSERT ... SELECT</code>は挿入のために<code class="literal">ModifyTable</code>に行を入力します。
+<code class="command">UPDATE</code>では、プランナはすべての更新された列の値を含んだ行の演算結果と元の対象業の<em class="firstterm">TID</em>(タプルID、または行ID)を準備します。
+このデータは<code class="literal">ModifyTable</code>ノードに入力され、ノードでは新しく更新された行の作成と古い行に削除の印を付けるためこの情報を利用します。
+<code class="command">DELETE</code>では、計画から実際に返されるただ1つの列はTIDで、<code class="literal">ModifyTable</code>ノードは単に各対象行を尋ね当てて削除の印を付けるためにこのTIDを使用します。
+   </p><p>
+<span class="original">
+    A simple &lt;command&gt;INSERT ... VALUES&lt;/command&gt; command creates a
+    trivial plan tree consisting of a single &lt;literal&gt;Result&lt;/literal&gt;
+    node, which computes just one result row, feeding that up
+    to &lt;literal&gt;ModifyTable&lt;/literal&gt; to perform the insertion.
+</span>
+単純な<code class="command">INSERT ... VALUES</code>コマンドは、1つの<code class="literal">Result</code>ノードからなる単純な計画ツリーを生成し、そのノードは結果としての行を1つだけ計算し、挿入を実行するためにその行が<code class="literal">ModifyTable</code>に入力されます。
+   </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="planner-optimizer.html" title="52.5. プランナ/オプティマイザ">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="overview.html" title="第52章 PostgreSQL内部の概要">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="catalogs.html" title="第53章 システムカタログ">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">52.5. プランナ/オプティマイザ </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 第53章 システムカタログ</td></tr></table></div></body></html>

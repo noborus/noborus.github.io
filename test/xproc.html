@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>38.4. ユーザ定義プロシージャ</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="xfunc.html" title="38.3. ユーザ定義関数" /><link rel="next" href="xfunc-sql.html" title="38.5. 問い合わせ言語（SQL）関数" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="extend.html" title="第38章 SQLの拡張">第38章 <acronym class="acronym">SQL</acronym>の拡張</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : xproc.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="xfunc.html" title="38.3. ユーザ定義関数">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="extend.html" title="第38章 SQLの拡張">上へ</a></td><td width="60%" align="center">38.4. ユーザ定義プロシージャ</td><td width="20%" align="right"> <a accesskey="n" href="xfunc-sql.html" title="38.5. 問い合わせ言語（SQL）関数">次へ</a></td></tr></table><hr /></div><div class="sect1" id="XPROC"><div class="titlepage"><div><div><h2 class="title" style="clear: both">38.4. ユーザ定義プロシージャ</h2></div></div></div><span class="original">
+   &lt;title&gt;User-Defined Procedures&lt;/title&gt;
+</span><a id="id-1.8.3.8.2" class="indexterm"></a><a id="id-1.8.3.8.3" class="indexterm"></a><p>
+<span class="original">
+    A procedure is a database object similar to a function.
+    The key differences are:
+</span>
+プロシージャは関数と似たデータベースオブジェクトです。
+重要な違いは以下の通りです。
+
+    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+       Procedures are defined with
+       the &lt;link linkend="sql-createprocedure"&gt;&lt;command&gt;CREATE
+       PROCEDURE&lt;/command&gt;&lt;/link&gt; command, not &lt;command&gt;CREATE
+       FUNCTION&lt;/command&gt;.
+</span>
+プロシージャは<code class="command">CREATE FUNCTION</code>ではなくて、<a class="link" href="sql-createprocedure.html" title="CREATE PROCEDURE"><code class="command">CREATE PROCEDURE</code></a>コマンドで定義します。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       Procedures do not return a function value; hence &lt;command&gt;CREATE
+       PROCEDURE&lt;/command&gt; lacks a &lt;literal&gt;RETURNS&lt;/literal&gt; clause.
+       However, procedures can instead return data to their callers via
+       output parameters.
+</span>
+プロシージャは関数値を返しません。ですから<code class="command">CREATE PROCEDURE</code>には<code class="literal">RETURNS</code>句がありません。
+しかしプロシージャはその代わりに出力パラメータを通じて呼び出し元にデータを返すことができます。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       While a function is called as part of a query or DML command, a
+       procedure is called in isolation using
+       the &lt;link linkend="sql-call"&gt;&lt;command&gt;CALL&lt;/command&gt;&lt;/link&gt; command.
+</span>
+関数が問い合わせやDMLコマンドの一部として呼び出されるのに対し、プロシージャは<a class="link" href="sql-call.html" title="CALL"><code class="command">CALL</code></a>コマンドを使って独立して呼び出されます。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       A procedure can commit or roll back transactions during its
+       execution (then automatically beginning a new transaction), so long
+       as the invoking &lt;command&gt;CALL&lt;/command&gt; command is not part of an
+       explicit transaction block.  A function cannot do that.
+</span>
+起動した<code class="command">CALL</code>コマンドが明示的なトランザクションブロックの一部でない限り、プロシージャは実行中にトランザクションをコミットあるいはロールバックできます（そして自動的に新しいトランザクションを開始します）。
+関数はそれができません。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       Certain function attributes, such as strictness, don't apply to
+       procedures.  Those attributes control how the function is
+       used in a query, which isn't relevant to procedures.
+</span>
+たとえば厳密性(strictness)のようなある種の関数の性質はプロシージャには適用されません。
+これらは問い合わせの中で関数がどのように使われるかを制御する性質であり、プロシージャには関係ありません。
+      </p></li></ul></div><p>
+   </p><p>
+<span class="original">
+    The explanations in the following sections about how to define
+    user-defined functions apply to procedures as well, except for the
+    points made above.
+</span>
+次節を含む以降の節で説明するユーザ定義関数の定義方法は、上で述べた点を除けばプロシージャにも当てはまります。
+   </p><p>
+<span class="original">
+    Collectively, functions and procedures are also known
+    as &lt;firstterm&gt;routines&lt;/firstterm&gt;&lt;indexterm&gt;&lt;primary&gt;routine&lt;/primary&gt;&lt;/indexterm&gt;.
+    There are commands such as &lt;link linkend="sql-alterroutine"&gt;&lt;command&gt;ALTER ROUTINE&lt;/command&gt;&lt;/link&gt;
+    and &lt;link linkend="sql-droproutine"&gt;&lt;command&gt;DROP ROUTINE&lt;/command&gt;&lt;/link&gt; that can operate on functions and
+    procedures without having to know which kind it is.  Note, however, that
+    there is no &lt;literal&gt;CREATE ROUTINE&lt;/literal&gt; command.
+</span>
+関数とプロシージャは、ひとまとめに<em class="firstterm">ルーチン</em><a id="id-1.8.3.8.6.2" class="indexterm"></a>とも言われます。
+関数とプロシージャを区別することなしに操作できる<a class="link" href="sql-alterroutine.html" title="ALTER ROUTINE"><code class="command">ALTER ROUTINE</code></a>や<a class="link" href="sql-droproutine.html" title="DROP ROUTINE"><code class="command">DROP ROUTINE</code></a>などのコマンドがあります。
+しかしながら、<code class="literal">CREATE ROUTINE</code>コマンドは無いことに注意してください。
+   </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="xfunc.html" title="38.3. ユーザ定義関数">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="extend.html" title="第38章 SQLの拡張">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="xfunc-sql.html" title="38.5. 問い合わせ言語（SQL）関数">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">38.3. ユーザ定義関数 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 38.5. 問い合わせ言語（<acronym class="acronym">SQL</acronym>）関数</td></tr></table></div></body></html>

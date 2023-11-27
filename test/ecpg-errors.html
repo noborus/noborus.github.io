@@ -1,0 +1,798 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>36.8. エラー処理</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="ecpg-descriptors.html" title="36.7. 記述子領域の使用" /><link rel="next" href="ecpg-preproc.html" title="36.9. プリプロセッサ指示子" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="ecpg.html" title="第36章 ECPG — C言語による埋め込みSQL">第36章 <span class="application">ECPG</span> — C言語による埋め込み<acronym class="acronym">SQL</acronym></a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : ecpg-errors.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="ecpg-descriptors.html" title="36.7. 記述子領域の使用">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="ecpg.html" title="第36章 ECPG — C言語による埋め込みSQL">上へ</a></td><td width="60%" align="center">36.8. エラー処理</td><td width="20%" align="right"> <a accesskey="n" href="ecpg-preproc.html" title="36.9. プリプロセッサ指示子">次へ</a></td></tr></table><hr /></div><div class="sect1" id="ECPG-ERRORS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">36.8. エラー処理</h2></div></div></div><span class="original">
+  &lt;title&gt;Error Handling&lt;/title&gt;
+</span><p>
+<span class="original">
+   This section describes how you can handle exceptional conditions
+   and warnings in an embedded SQL program.  There are two
+   nonexclusive facilities for this.
+</span>
+本節では、埋め込みSQLプログラムにおいて、例外条件や警告をどのように扱うことができるかについて説明します。
+このために、共に使用できる２つの機能があります。
+
+   </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem">
+<span class="original">
+      Callbacks can be configured to handle warning and error
+      conditions using the &lt;literal&gt;WHENEVER&lt;/literal&gt; command.
+</span>
+<code class="literal">WHENEVER</code>コマンドを使用して、警告条件、エラー条件を扱うようにコールバックを設定することができます。
+     </li><li class="listitem">
+<span class="original">
+      Detailed information about the error or warning can be obtained
+      from the &lt;varname&gt;sqlca&lt;/varname&gt; variable.
+</span>
+エラーまたは警告に関する詳細情報は<code class="varname">sqlca</code>変数から入手することができます。
+     </li></ul></div><p>
+  </p><div class="sect2" id="ECPG-WHENEVER"><div class="titlepage"><div><div><h3 class="title">36.8.1. コールバックの設定</h3></div></div></div><span class="original">
+   &lt;title&gt;Setting Callbacks&lt;/title&gt;
+</span><p>
+<span class="original">
+    One simple method to catch errors and warnings is to set a
+    specific action to be executed whenever a particular condition
+    occurs.  In general:
+</span>
+エラーや警告を受け取る簡単な手法の1つは、特定の条件が発生する度に特定の動作を実行するように設定することです。
+一般的には以下のようになります。
+</p><pre class="programlisting">
+EXEC SQL WHENEVER <em class="replaceable"><code>condition</code></em> <em class="replaceable"><code>action</code></em>;
+</pre><p>
+   </p><p>
+<span class="original">
+    &lt;replaceable&gt;condition&lt;/replaceable&gt; can be one of the following:
+</span>
+    <em class="replaceable"><code>condition</code></em>は以下のいずれかを取ることができます。
+
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">SQLERROR</code></span></dt><dd><p>
+<span class="original">
+        The specified action is called whenever an error occurs during
+        the execution of an SQL statement.
+</span>
+SQL文の実行中にエラーが発生する度に、指定した動作が呼び出されます。
+       </p></dd><dt><span class="term"><code class="literal">SQLWARNING</code></span></dt><dd><p>
+<span class="original">
+        The specified action is called whenever a warning occurs
+        during the execution of an SQL statement.
+</span>
+SQL文の実行中に警告が発生する度に、指定した動作が呼び出されます。
+       </p></dd><dt><span class="term"><code class="literal">NOT FOUND</code></span></dt><dd><p>
+<span class="original">
+        The specified action is called whenever an SQL statement
+        retrieves or affects zero rows.  (This condition is not an
+        error, but you might be interested in handling it specially.)
+</span>
+SQL文が0行を受け取る、もしくは0行に影響する時、指定した動作が呼び出されます。
+（この条件はエラーではありませんが、これを特別に扱いたい場合があります。）
+       </p></dd></dl></div><p>
+   </p><p>
+<span class="original">
+    &lt;replaceable&gt;action&lt;/replaceable&gt; can be one of the following:
+</span>
+<em class="replaceable"><code>action</code></em>は以下のいずれかを取ることができます。
+
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">CONTINUE</code></span></dt><dd><p>
+<span class="original">
+        This effectively means that the condition is ignored.  This is
+        the default.
+</span>
+これは、実際のところ、その条件が無視されることを意味します。
+これがデフォルトです。
+       </p></dd><dt><span class="term"><code class="literal">GOTO <em class="replaceable"><code>label</code></em></code><br /></span><span class="term"><code class="literal">GO TO <em class="replaceable"><code>label</code></em></code></span></dt><dd><p>
+<span class="original">
+        Jump to the specified label (using a C &lt;literal&gt;goto&lt;/literal&gt;
+        statement).
+</span>
+指定したラベルに移動します
+（Cの<code class="literal">goto</code>文を使用します）。
+       </p></dd><dt><span class="term"><code class="literal">SQLPRINT</code></span></dt><dd><p>
+<span class="original">
+        Print a message to standard error.  This is useful for simple
+        programs or during prototyping.  The details of the message
+        cannot be configured.
+</span>
+標準エラーにメッセージを出力します。
+これは、単純なプログラムやプロトタイプ作成時に役に立ちます。
+メッセージの詳細は設定できません。
+       </p></dd><dt><span class="term"><code class="literal">STOP</code></span></dt><dd><p>
+<span class="original">
+        Call &lt;literal&gt;exit(1)&lt;/literal&gt;, which will terminate the
+        program.
+</span>
+プログラムを終了させる<code class="literal">exit(1)</code>を呼び出します。
+       </p></dd><dt><span class="term"><code class="literal">DO BREAK</code></span></dt><dd><p>
+<span class="original">
+        Execute the C statement &lt;literal&gt;break&lt;/literal&gt;.  This should
+        only be used in loops or &lt;literal&gt;switch&lt;/literal&gt; statements.
+</span>
+Cの<code class="literal">break</code>文を実行します。
+これはループ内、もしくは<code class="literal">switch</code>文内でのみ使用しなければなりません。
+       </p></dd><dt><span class="term"><code class="literal">DO CONTINUE</code></span></dt><dd><p>
+<span class="original">
+        Execute the C statement &lt;literal&gt;continue&lt;/literal&gt;.  This should
+        only be used in loops statements.  if executed, will cause the flow
+        of control to return to the top of the loop.
+</span>
+Cの<code class="literal">continue</code>文を実行します。
+これはループ文の中でのみ実行すべきものです。
+実行した場合、制御の流れがループの先頭に戻ります。
+       </p></dd><dt><span class="term"><code class="literal">CALL <em class="replaceable"><code>name</code></em> (<em class="replaceable"><code>args</code></em>)</code><br /></span><span class="term"><code class="literal">DO <em class="replaceable"><code>name</code></em> (<em class="replaceable"><code>args</code></em>)</code></span></dt><dd><p>
+<span class="original">
+        Call the specified C functions with the specified arguments.  (This
+        use is different from the meaning of &lt;literal&gt;CALL&lt;/literal&gt;
+        and &lt;literal&gt;DO&lt;/literal&gt; in the normal PostgreSQL grammar.)
+</span>
+指定した引数で、指定したC関数を呼び出します。
+（この使用法は通常のPostgreSQL構文での<code class="literal">CALL</code>および<code class="literal">DO</code>とは意味が異なります。）
+       </p></dd></dl></div><p>
+
+<span class="original">
+    The SQL standard only provides for the actions
+    &lt;literal&gt;CONTINUE&lt;/literal&gt; and &lt;literal&gt;GOTO&lt;/literal&gt; (and
+    &lt;literal&gt;GO TO&lt;/literal&gt;).
+</span>
+標準SQLでは<code class="literal">CONTINUE</code>と<code class="literal">GOTO</code>（と<code class="literal">GO TO</code>）のみを提供しています。
+   </p><p>
+<span class="original">
+    Here is an example that you might want to use in a simple program.
+    It prints a simple message when a warning occurs and aborts the
+    program when an error happens:
+</span>
+簡単なプログラムで使用してみたくなるような例を以下に示します。
+警告が発生した場合に簡単なメッセージを表示し、エラーが発生した場合にプログラムを中断します。
+</p><pre class="programlisting">
+EXEC SQL WHENEVER SQLWARNING SQLPRINT;
+EXEC SQL WHENEVER SQLERROR STOP;
+</pre><p>
+   </p><p>
+<span class="original">
+    The statement &lt;literal&gt;EXEC SQL WHENEVER&lt;/literal&gt; is a directive
+    of the SQL preprocessor, not a C statement.  The error or warning
+    actions that it sets apply to all embedded SQL statements that
+    appear below the point where the handler is set, unless a
+    different action was set for the same condition between the first
+    &lt;literal&gt;EXEC SQL WHENEVER&lt;/literal&gt; and the SQL statement causing
+    the condition, regardless of the flow of control in the C program.
+    So neither of the two following C program excerpts will have the
+    desired effect:
+</span>
+<code class="literal">EXEC SQL WHENEVER</code>文はCの構文ではなく、SQLプリプロセッサのディレクティブです。
+設定したエラーもしくは警告動作は、最初の<code class="literal">EXEC SQL WHENEVER</code>と条件を発生させたSQL文の間で、同一条件に異なる動作が設定されない限り、ハンドラを設定した箇所より後にある、すべての埋め込みSQL文に適用されます。
+Cプログラムの制御フローは関係しません。
+ですので、以下の2つのCプログラムの抜粋はどちらも望み通りの動作を行いません。
+</p><pre class="programlisting">
+/*
+<span class="original">
+ * WRONG
+</span>
+ * 間違い
+ */
+int main(int argc, char *argv[])
+{
+    ...
+    if (verbose) {
+        EXEC SQL WHENEVER SQLWARNING SQLPRINT;
+    }
+    ...
+    EXEC SQL SELECT ...;
+    ...
+}
+</pre><p>
+
+</p><pre class="programlisting">
+/*
+<span class="original">
+ * WRONG
+</span>
+ * 間違い
+ */
+int main(int argc, char *argv[])
+{
+    ...
+    set_error_handler();
+    ...
+    EXEC SQL SELECT ...;
+    ...
+}
+
+static void set_error_handler(void)
+{
+    EXEC SQL WHENEVER SQLERROR STOP;
+}
+</pre><p>
+   </p></div><div class="sect2" id="ECPG-SQLCA"><div class="titlepage"><div><div><h3 class="title">36.8.2. sqlca</h3></div></div></div><p>
+<span class="original">
+    For more powerful error handling, the embedded SQL interface
+    provides a global variable with the name &lt;varname&gt;sqlca&lt;/varname&gt;
+    (SQL communication area)
+    that has the following structure:
+</span>
+より強力にエラーを扱うために、埋め込みSQLインタフェースは以下の構造体を持つ<code class="varname">sqlca</code>（SQL通信領域）という名前のグローバル変数を提供します。
+</p><pre class="programlisting">
+struct
+{
+    char sqlcaid[8];
+    long sqlabc;
+    long sqlcode;
+    struct
+    {
+        int sqlerrml;
+        char sqlerrmc[SQLERRMC_LEN];
+    } sqlerrm;
+    char sqlerrp[8];
+    long sqlerrd[6];
+    char sqlwarn[8];
+    char sqlstate[5];
+} sqlca;
+</pre><p>
+<span class="original">
+    (In a multithreaded program, every thread automatically gets its
+    own copy of &lt;varname&gt;sqlca&lt;/varname&gt;.  This works similarly to the
+    handling of the standard C global variable
+    &lt;varname&gt;errno&lt;/varname&gt;.)
+</span>
+（マルチスレッド化されたプログラムでは、各スレッドは自動的に<code class="varname">sqlca</code>のコピーを独自に持ちます。
+これは標準Cの<code class="varname">errno</code>グローバル変数の扱いと同様に動作します。）
+   </p><p>
+<span class="original">
+    &lt;varname&gt;sqlca&lt;/varname&gt; covers both warnings and errors.  If
+    multiple warnings or errors occur during the execution of a
+    statement, then &lt;varname&gt;sqlca&lt;/varname&gt; will only contain
+    information about the last one.
+</span>
+<code class="varname">sqlca</code>は警告とエラーの両方を対象としています。
+1つのSQL文の実行時に複数の警告やエラーが発生した場合、<code class="varname">sqlca</code>は最後のものに関した情報のみを含みます。
+   </p><p>
+<span class="original">
+    If no error occurred in the last &lt;acronym&gt;SQL&lt;/acronym&gt; statement,
+    &lt;literal&gt;sqlca.sqlcode&lt;/literal&gt; will be 0 and
+    &lt;literal&gt;sqlca.sqlstate&lt;/literal&gt; will be
+    &lt;literal&gt;"00000"&lt;/literal&gt;.  If a warning or error occurred, then
+    &lt;literal&gt;sqlca.sqlcode&lt;/literal&gt; will be negative and
+    &lt;literal&gt;sqlca.sqlstate&lt;/literal&gt; will be different from
+    &lt;literal&gt;"00000"&lt;/literal&gt;.  A positive
+    &lt;literal&gt;sqlca.sqlcode&lt;/literal&gt; indicates a harmless condition,
+    such as that the last query returned zero rows.
+    &lt;literal&gt;sqlcode&lt;/literal&gt; and &lt;literal&gt;sqlstate&lt;/literal&gt; are two
+    different error code schemes; details appear below.
+</span>
+直前の<acronym class="acronym">SQL</acronym>文でエラーがなければ、<code class="literal">sqlca.sqlcode</code>は0に、<code class="literal">sqlca.sqlstate</code>は<code class="literal">"00000"</code>になります。
+警告やエラーが発生した場合は、<code class="literal">sqlca.sqlcode</code>は負の値に、<code class="literal">sqlca.sqlstate</code>は<code class="literal">"00000"</code>以外になります。
+正の<code class="literal">sqlca.sqlcode</code>は、直前の問い合わせが0行を返したなどの無害な条件を示します。
+<code class="literal">sqlca.sqlcode</code>と<code class="literal">sqlca.sqlstate</code>は2つの異なるエラーコードスキームです。
+後で詳細に説明します。
+   </p><p>
+<span class="original">
+    If the last SQL statement was successful, then
+    &lt;literal&gt;sqlca.sqlerrd[1]&lt;/literal&gt; contains the OID of the
+    processed row, if applicable, and
+    &lt;literal&gt;sqlca.sqlerrd[2]&lt;/literal&gt; contains the number of
+    processed or returned rows, if applicable to the command.
+</span>
+直前のSQL文が成功すると、<code class="literal">sqlca.sqlerrd[1]</code>は処理された行のOIDが、もしあれば、格納されます。
+また、もしそのコマンドで適切ならば、<code class="literal">sqlca.sqlerrd[2]</code>は処理された、もしくは返された行数が格納されます。
+   </p><p>
+<span class="original">
+    In case of an error or warning,
+    &lt;literal&gt;sqlca.sqlerrm.sqlerrmc&lt;/literal&gt; will contain a string
+    that describes the error.  The field
+    &lt;literal&gt;sqlca.sqlerrm.sqlerrml&lt;/literal&gt; contains the length of
+    the error message that is stored in
+    &lt;literal&gt;sqlca.sqlerrm.sqlerrmc&lt;/literal&gt; (the result of
+    &lt;function&gt;strlen()&lt;/function&gt;, not really interesting for a C
+    programmer).  Note that some messages are too long to fit in the
+    fixed-size &lt;literal&gt;sqlerrmc&lt;/literal&gt; array; they will be truncated.
+</span>
+エラーもしくは警告の場合、<code class="literal">sqlca.sqlerrm.sqlerrmc</code>には、そのエラーを説明する文字列が格納されます。
+<code class="literal">sqlca.sqlerrm.sqlerrml</code>フィールドには<code class="literal">sqlca.sqlerrm.sqlerrmc</code>に格納されたエラーメッセージ長が格納されます
+（<code class="function">strlen()</code>の結果です。おそらくCプログラマは必要としないでしょう）。
+一部のメッセージは固定長の<code class="literal">sqlerrmc</code>配列には長過ぎることに注意してください。
+この場合は切り詰められます。
+   </p><p>
+<span class="original">
+    In case of a warning, &lt;literal&gt;sqlca.sqlwarn[2]&lt;/literal&gt; is set
+    to &lt;literal&gt;W&lt;/literal&gt;.  (In all other cases, it is set to
+    something different from &lt;literal&gt;W&lt;/literal&gt;.)  If
+    &lt;literal&gt;sqlca.sqlwarn[1]&lt;/literal&gt; is set to
+    &lt;literal&gt;W&lt;/literal&gt;, then a value was truncated when it was
+    stored in a host variable.  &lt;literal&gt;sqlca.sqlwarn[0]&lt;/literal&gt; is
+    set to &lt;literal&gt;W&lt;/literal&gt; if any of the other elements are set
+    to indicate a warning.
+</span>
+警告の場合、<code class="literal">sqlca.sqlwarn[2]</code>は<code class="literal">W</code>に設定されます
+（他のすべての場合では、これは<code class="literal">W</code>以外の何かに設定されます）。
+<code class="literal">sqlca.sqlwarn[1]</code>が<code class="literal">W</code>に設定された場合、ホスト変数に代入する際に値が切り詰められています。
+他の要素が警告を示すように設定された場合、<code class="literal">sqlca.sqlwarn[0]</code>は<code class="literal">W</code>に設定されます。
+   </p><p>
+<span class="original">
+    The fields &lt;structfield&gt;sqlcaid&lt;/structfield&gt;,
+    &lt;structfield&gt;sqlabc&lt;/structfield&gt;,
+    &lt;structfield&gt;sqlerrp&lt;/structfield&gt;, and the remaining elements of
+    &lt;structfield&gt;sqlerrd&lt;/structfield&gt; and
+    &lt;structfield&gt;sqlwarn&lt;/structfield&gt; currently contain no useful
+    information.
+</span>
+今のところ、<code class="structfield">sqlcaid</code>、<code class="structfield">sqlabc</code>、<code class="structfield">sqlerrp</code>ならびに<code class="structfield">sqlerrd</code>と<code class="structfield">sqlwarn</code>の上記以外の要素は有用な情報を持ちません。
+   </p><p>
+<span class="original">
+    The structure &lt;varname&gt;sqlca&lt;/varname&gt; is not defined in the SQL
+    standard, but is implemented in several other SQL database
+    systems.  The definitions are similar at the core, but if you want
+    to write portable applications, then you should investigate the
+    different implementations carefully.
+</span>
+<code class="varname">sqlca</code>は標準SQLでは定義されていません。
+しかし、複数の他のSQLデータベースシステムで実装されています。
+その定義は基本部分は似ていますが、移植性を持つアプリケーションを作成する場合は実装の違いを注意して調査しなければなりません。
+   </p><p>
+<span class="original">
+    Here is one example that combines the use of &lt;literal&gt;WHENEVER&lt;/literal&gt;
+    and &lt;varname&gt;sqlca&lt;/varname&gt;, printing out the contents
+    of &lt;varname&gt;sqlca&lt;/varname&gt; when an error occurs.  This is perhaps
+    useful for debugging or prototyping applications, before
+    installing a more &lt;quote&gt;user-friendly&lt;/quote&gt; error handler.
+</span>
+ここで<code class="literal">WHENEVER</code>と<code class="varname">sqlca</code>を組み合わせて使用して、エラーが発生した時に<code class="varname">sqlca</code>の内容を表示する、１つの例を示します。
+これはおそらく、より<span class="quote">「<span class="quote">ユーザ向け</span>」</span>のエラー処理を組み込む前の、アプリケーションのデバッグまたはプロトタイプで有用です。
+
+</p><pre class="programlisting">
+EXEC SQL WHENEVER SQLERROR CALL print_sqlca();
+
+void
+print_sqlca()
+{
+    fprintf(stderr, "==== sqlca ====\n");
+    fprintf(stderr, "sqlcode: %ld\n", sqlca.sqlcode);
+    fprintf(stderr, "sqlerrm.sqlerrml: %d\n", sqlca.sqlerrm.sqlerrml);
+    fprintf(stderr, "sqlerrm.sqlerrmc: %s\n", sqlca.sqlerrm.sqlerrmc);
+    fprintf(stderr, "sqlerrd: %ld %ld %ld %ld %ld %ld\n", sqlca.sqlerrd[0],sqlca.sqlerrd[1],sqlca.sqlerrd[2],
+                                                          sqlca.sqlerrd[3],sqlca.sqlerrd[4],sqlca.sqlerrd[5]);
+    fprintf(stderr, "sqlwarn: %d %d %d %d %d %d %d %d\n", sqlca.sqlwarn[0], sqlca.sqlwarn[1], sqlca.sqlwarn[2],
+                                                          sqlca.sqlwarn[3], sqlca.sqlwarn[4], sqlca.sqlwarn[5],
+                                                          sqlca.sqlwarn[6], sqlca.sqlwarn[7]);
+    fprintf(stderr, "sqlstate: %5s\n", sqlca.sqlstate);
+    fprintf(stderr, "===============\n");
+}
+</pre><p>
+
+<span class="original">
+    The result could look as follows (here an error due to a
+    misspelled table name):
+</span>
+結果は以下のようになります（ここでのエラーはテーブル名の誤記述によるものです。）。
+
+</p><pre class="screen">
+==== sqlca ====
+sqlcode: -400
+sqlerrm.sqlerrml: 49
+sqlerrm.sqlerrmc: relation "pg_databasep" does not exist on line 38
+sqlerrd: 0 0 0 0 0 0
+sqlwarn: 0 0 0 0 0 0 0 0
+sqlstate: 42P01
+===============
+</pre><p>
+   </p></div><div class="sect2" id="ECPG-SQLSTATE-SQLCODE"><div class="titlepage"><div><div><h3 class="title">36.8.3. <code class="literal">SQLSTATE</code>対<code class="literal">SQLCODE</code></h3></div></div></div><span class="original">
+   &lt;title&gt;&lt;literal&gt;SQLSTATE&lt;/literal&gt; vs. &lt;literal&gt;SQLCODE&lt;/literal&gt;&lt;/title&gt;
+</span><p>
+<span class="original">
+    The fields &lt;literal&gt;sqlca.sqlstate&lt;/literal&gt; and
+    &lt;literal&gt;sqlca.sqlcode&lt;/literal&gt; are two different schemes that
+    provide error codes.  Both are derived from the SQL standard, but
+    &lt;literal&gt;SQLCODE&lt;/literal&gt; has been marked deprecated in the SQL-92
+    edition of the standard and has been dropped in later editions.
+    Therefore, new applications are strongly encouraged to use
+    &lt;literal&gt;SQLSTATE&lt;/literal&gt;.
+</span>
+<code class="literal">sqlca.sqlstate</code>と<code class="literal">sqlca.sqlcode</code>はエラーコードを提供する異なる2つの機構です。
+共に標準SQLから派生されたものですが、<code class="literal">SQLCODE</code>はSQL-92版では廃れたものとされ、以降の版から削除されました。
+したがって、新規アプリケーションでは<code class="literal">SQLSTATE</code>を使用することを強く勧めます。
+   </p><p>
+<span class="original">
+    &lt;literal&gt;SQLSTATE&lt;/literal&gt; is a five-character array.  The five
+    characters contain digits or upper-case letters that represent
+    codes of various error and warning conditions.
+    &lt;literal&gt;SQLSTATE&lt;/literal&gt; has a hierarchical scheme: the first
+    two characters indicate the general class of the condition, the
+    last three characters indicate a subclass of the general
+    condition.  A successful state is indicated by the code
+    &lt;literal&gt;00000&lt;/literal&gt;.  The &lt;literal&gt;SQLSTATE&lt;/literal&gt; codes are for
+    the most part defined in the SQL standard.  The
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; server natively supports
+    &lt;literal&gt;SQLSTATE&lt;/literal&gt; error codes; therefore a high degree
+    of consistency can be achieved by using this error code scheme
+    throughout all applications.  For further information see
+    &lt;xref linkend="errcodes-appendix"/&gt;.
+</span>
+<code class="literal">SQLSTATE</code>は5要素の文字配列です。
+この5文字は、各種のエラー条件、警告条件のコードを表現する数字、大文字から構成されます。
+<code class="literal">SQLSTATE</code>は階層を持った機構です。
+最初の2文字は条件を汎化したクラスを示し、残り3文字は汎化クラスの副クラスを示します。
+成功状態は<code class="literal">00000</code>というコードで示されます。
+<code class="literal">SQLSTATE</code>コードのほとんどは標準SQLで定義されています。
+<span class="productname">PostgreSQL</span>サーバは本質的に<code class="literal">SQLSTATE</code>エラーコードをサポートしています。
+したがって、すべてのアプリケーションでこのエラーコードを使用することで、高度な一貫性を達成することができます。
+詳細については<a class="xref" href="errcodes-appendix.html" title="付録A PostgreSQLエラーコード">付録A</a>を参照してください。
+   </p><p>
+<span class="original">
+    &lt;literal&gt;SQLCODE&lt;/literal&gt;, the deprecated error code scheme, is a
+    simple integer.  A value of 0 indicates success, a positive value
+    indicates success with additional information, a negative value
+    indicates an error.  The SQL standard only defines the positive
+    value +100, which indicates that the last command returned or
+    affected zero rows, and no specific negative values.  Therefore,
+    this scheme can only achieve poor portability and does not have a
+    hierarchical code assignment.  Historically, the embedded SQL
+    processor for &lt;productname&gt;PostgreSQL&lt;/productname&gt; has assigned
+    some specific &lt;literal&gt;SQLCODE&lt;/literal&gt; values for its use, which
+    are listed below with their numeric value and their symbolic name.
+    Remember that these are not portable to other SQL implementations.
+    To simplify the porting of applications to the
+    &lt;literal&gt;SQLSTATE&lt;/literal&gt; scheme, the corresponding
+    &lt;literal&gt;SQLSTATE&lt;/literal&gt; is also listed.  There is, however, no
+    one-to-one or one-to-many mapping between the two schemes (indeed
+    it is many-to-many), so you should consult the global
+    &lt;literal&gt;SQLSTATE&lt;/literal&gt; listing in &lt;xref linkend="errcodes-appendix"/&gt;
+    in each case.
+</span>
+廃止されたエラーコードの機構である<code class="literal">SQLCODE</code>は単なる整数です。
+0という値は成功を意味し、正の値は追加情報を持った成功を、負の値はエラーを示します。
+標準SQLでは、直前のコマンドが0行を返す、もしくは0行に影響したことを示す+100という正の値のみを定義しています。
+負の値は規定されていません。
+したがって、この機構では低い移植性しか達成できず、また、コード体系も階層を持っていません。
+歴史的に、<span class="productname">PostgreSQL</span>の埋め込みSQLプロセッサには、いくつかの特殊な<code class="literal">SQLCODE</code>の値が専用に割り当てられていました。
+以下に、その数値とそのシンボル名の一覧を示します。
+これらは他のSQL実装への移植性がないことを忘れないでください。
+アプリケーションの<code class="literal">SQLSTATE</code>機構への移行を簡易化するために、対応する<code class="literal">SQLSTATE</code>も示しています。
+しかし、2つのしくみの間の関係は1対1ではなく1対多です
+（実際は多対多です）。
+ですので、場合ごとに<a class="xref" href="errcodes-appendix.html" title="付録A PostgreSQLエラーコード">付録A</a>に示したグローバルな各<code class="literal">SQLSTATE</code>を参照しなければなりません。
+   </p><p>
+<span class="original">
+    These are the assigned &lt;literal&gt;SQLCODE&lt;/literal&gt; values:
+</span>
+以下は割り当て済みの<code class="literal">SQLCODE</code>です。
+
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">0 (<code class="symbol">ECPG_NO_ERROR</code>)</span></dt><dd><p>
+<span class="original">
+        Indicates no error. (SQLSTATE 00000)
+</span>
+エラーがないことを示す。(SQLSTATE 00000)
+      </p></dd><dt><span class="term">100 (<code class="symbol">ECPG_NOT_FOUND</code>)</span></dt><dd><p>
+<span class="original">
+       This is a harmless condition indicating that the last command
+       retrieved or processed zero rows, or that you are at the end of
+       the cursor.  (SQLSTATE 02000)
+</span>
+これは、最後に実行したコマンドが取り出した、または、処理した行がゼロ行であったこと、あるいは、カーソルの最後であることを示す、害のない条件です。(SQLSTATE 02000)
+      </p><p>
+<span class="original">
+       When processing a cursor in a loop, you could use this code as
+       a way to detect when to abort the loop, like this:
+</span>
+以下のように、カーソルをループ内で処理する時、ループを中断する時を検知する方法として、このコードを使用することができます。
+</p><pre class="programlisting">
+while (1)
+{
+    EXEC SQL FETCH ... ;
+    if (sqlca.sqlcode == ECPG_NOT_FOUND)
+        break;
+}
+</pre><p>
+<span class="original">
+       But &lt;literal&gt;WHENEVER NOT FOUND DO BREAK&lt;/literal&gt; effectively
+       does this internally, so there is usually no advantage in
+       writing this out explicitly.
+</span>
+しかし、<code class="literal">WHENEVER NOT FOUND DO BREAK</code>はこれを内部で効率的に行います。
+このため、通常、外部で明示的に記述する利点はありません。
+      </p></dd><dt><span class="term">-12 (<code class="symbol">ECPG_OUT_OF_MEMORY</code>)</span></dt><dd><p>
+<span class="original">
+        Indicates that your virtual memory is exhausted.  The numeric
+        value is defined as &lt;literal&gt;-ENOMEM&lt;/literal&gt;.  (SQLSTATE
+        YE001)
+</span>
+仮想メモリ不足を示します。
+この数値は<code class="literal">-ENOMEM</code>として定義します。
+（SQLSTATE YE001）
+      </p></dd><dt><span class="term">-200 (<code class="symbol">ECPG_UNSUPPORTED</code>)</span></dt><dd><p>
+<span class="original">
+       Indicates the preprocessor has generated something that the
+       library does not know about.  Perhaps you are running
+       incompatible versions of the preprocessor and the
+       library. (SQLSTATE YE002)
+</span>
+ライブラリが把握していない何かをプリプロセッサが生成したことを示します。
+おそらく、互換性がないプリプロセッサとライブラリのバージョンを使用しています。
+（SQLSTATE YE002）
+      </p></dd><dt><span class="term">-201 (<code class="symbol">ECPG_TOO_MANY_ARGUMENTS</code>)</span></dt><dd><p>
+<span class="original">
+       This means that the command specified more host variables than
+       the command expected.  (SQLSTATE 07001 or 07002)
+</span>
+コマンドの想定より多くのホスト変数が指定されたことを意味します。
+（SQLSTATE 07001もしくは07002）
+      </p></dd><dt><span class="term">-202 (<code class="symbol">ECPG_TOO_FEW_ARGUMENTS</code>)</span></dt><dd><p>
+<span class="original">
+       This means that the command specified fewer host variables than
+       the command expected.  (SQLSTATE 07001 or 07002)
+</span>
+コマンドの想定よりも少ないホスト変数が指定されたことを意味します。
+（SQLSTATE 07001もしくは07002）
+      </p></dd><dt><span class="term">-203 (<code class="symbol">ECPG_TOO_MANY_MATCHES</code>)</span></dt><dd><p>
+<span class="original">
+       This means a query has returned multiple rows but the statement
+       was only prepared to store one result row (for example, because
+       the specified variables are not arrays).  (SQLSTATE 21000)
+</span>
+問い合わせが複数行を返したけれども、SQL文では1つの結果の格納の準備だけしかしていなかったことを意味します
+（例えば、指定された変数が配列ではなかった）。
+（SQLSTATE 21000）
+      </p></dd><dt><span class="term">-204 (<code class="symbol">ECPG_INT_FORMAT</code>)</span></dt><dd><p>
+<span class="original">
+       The host variable is of type &lt;type&gt;int&lt;/type&gt; and the datum in
+       the database is of a different type and contains a value that
+       cannot be interpreted as an &lt;type&gt;int&lt;/type&gt;.  The library uses
+       &lt;function&gt;strtol()&lt;/function&gt; for this conversion.  (SQLSTATE
+       42804)
+</span>
+ホスト変数の型が<code class="type">int</code>ですが、データベース内のデータ型が異なり、その値を<code class="type">int</code>として解釈させることができませんでした。
+ライブラリはこの変換に<code class="function">strtol()</code>を使用します。
+（SQLSTATE 42804）
+      </p></dd><dt><span class="term">-205 (<code class="symbol">ECPG_UINT_FORMAT</code>)</span></dt><dd><p>
+<span class="original">
+       The host variable is of type &lt;type&gt;unsigned int&lt;/type&gt; and the
+       datum in the database is of a different type and contains a
+       value that cannot be interpreted as an &lt;type&gt;unsigned
+       int&lt;/type&gt;.  The library uses &lt;function&gt;strtoul()&lt;/function&gt;
+       for this conversion.  (SQLSTATE 42804)
+</span>
+ホスト変数の型が<code class="type">unsigned int</code>ですが、データベース内のデータ型が異なり、その値を<code class="type">unsigned int</code>として解釈させることができませんでした。
+ライブラリはこの変換に<code class="function">strtoul()</code>を使用します。
+（SQLSTATE 42804）
+      </p></dd><dt><span class="term">-206 (<code class="symbol">ECPG_FLOAT_FORMAT</code>)</span></dt><dd><p>
+<span class="original">
+       The host variable is of type &lt;type&gt;float&lt;/type&gt; and the datum
+       in the database is of another type and contains a value that
+       cannot be interpreted as a &lt;type&gt;float&lt;/type&gt;.  The library
+       uses &lt;function&gt;strtod()&lt;/function&gt; for this conversion.
+       (SQLSTATE 42804)
+</span>
+ホスト変数の型が<code class="type">float</code>ですが、データベース内のデータ型が異なり、その値を<code class="type">float</code>として解釈させることができませんでした。
+ライブラリはこの変換に<code class="function">strtod()</code>を使用します。
+（SQLSTATE 42804）
+      </p></dd><dt><span class="term">-207 (<code class="symbol">ECPG_NUMERIC_FORMAT</code>)</span></dt><dd><p>
+<span class="original">
+       The host variable is of type &lt;type&gt;numeric&lt;/type&gt; and the datum
+       in the database is of another type and contains a value that
+       cannot be interpreted as a &lt;type&gt;numeric&lt;/type&gt; value.
+       (SQLSTATE 42804)
+</span>
+ホスト変数の型が<code class="type">numeric</code>ですが、データベース内のデータ型が異なり、その値を<code class="type">numeric</code>として解釈させることができませんでした。
+（SQLSTATE 42804）
+      </p></dd><dt><span class="term">-208 (<code class="symbol">ECPG_INTERVAL_FORMAT</code>)</span></dt><dd><p>
+<span class="original">
+       The host variable is of type &lt;type&gt;interval&lt;/type&gt; and the datum
+       in the database is of another type and contains a value that
+       cannot be interpreted as an &lt;type&gt;interval&lt;/type&gt; value.
+       (SQLSTATE 42804)
+</span>
+ホスト変数の型が<code class="type">interval</code>であり、データベース内のデータが他の型であり、<code class="type">interval</code>値として解釈することができない値を含みます。
+       (SQLSTATE 42804)
+      </p></dd><dt><span class="term">-209 (<code class="symbol">ECPG_DATE_FORMAT</code>)</span></dt><dd><p>
+<span class="original">
+       The host variable is of type &lt;type&gt;date&lt;/type&gt; and the datum in
+       the database is of another type and contains a value that
+       cannot be interpreted as a &lt;type&gt;date&lt;/type&gt; value.
+       (SQLSTATE 42804)
+</span>
+ホスト変数の型が<code class="type">date</code>であり、データベース内のデータが他の型であり、<code class="type">date</code>値として解釈することができない値を含みます。
+       (SQLSTATE 42804)
+      </p></dd><dt><span class="term">-210 (<code class="symbol">ECPG_TIMESTAMP_FORMAT</code>)</span></dt><dd><p>
+<span class="original">
+       The host variable is of type &lt;type&gt;timestamp&lt;/type&gt; and the
+       datum in the database is of another type and contains a value
+       that cannot be interpreted as a &lt;type&gt;timestamp&lt;/type&gt; value.
+       (SQLSTATE 42804)
+</span>
+ホスト変数の型が<code class="type">timestamp</code>であり、データベース内のデータが他の型であり、<code class="type">timestamp</code>値として解釈することができない値を含みます。
+(SQLSTATE 42804)
+      </p></dd><dt><span class="term">-211 (<code class="symbol">ECPG_CONVERT_BOOL</code>)</span></dt><dd><p>
+<span class="original">
+       This means the host variable is of type &lt;type&gt;bool&lt;/type&gt; and
+       the datum in the database is neither &lt;literal&gt;'t'&lt;/literal&gt; nor
+       &lt;literal&gt;'f'&lt;/literal&gt;.  (SQLSTATE 42804)
+</span>
+これは、ホスト変数の型が<code class="type">bool</code>ですが、データベース内のデータが<code class="literal">'t'</code>でも<code class="literal">'f'</code>でもなかったことを意味します。
+（SQLSTATE 42804）
+      </p></dd><dt><span class="term">-212 (<code class="symbol">ECPG_EMPTY</code>)</span></dt><dd><p>
+<span class="original">
+       The statement sent to the &lt;productname&gt;PostgreSQL&lt;/productname&gt;
+       server was empty.  (This cannot normally happen in an embedded
+       SQL program, so it might point to an internal error.)  (SQLSTATE
+       YE002)
+</span>
+<span class="productname">PostgreSQL</span>サーバに送信されたSQL文が空でした
+（通常埋め込みSQLプログラムでは発生しません。ですので、これは内部エラーを示しているかもしれません）。
+（SQLSTATE YE002）
+      </p></dd><dt><span class="term">-213 (<code class="symbol">ECPG_MISSING_INDICATOR</code>)</span></dt><dd><p>
+<span class="original">
+       A null value was returned and no null indicator variable was
+       supplied.  (SQLSTATE 22002)
+</span>
+NULL値が返されましたが、NULL用の指示子変数が与えられていませんでした。
+（SQLSTATE 22002）
+      </p></dd><dt><span class="term">-214 (<code class="symbol">ECPG_NO_ARRAY</code>)</span></dt><dd><p>
+<span class="original">
+       An ordinary variable was used in a place that requires an
+       array.  (SQLSTATE 42804)
+</span>
+配列が必要な箇所に普通の変数が使用されていました。
+（SQLSTATE 42804）
+      </p></dd><dt><span class="term">-215 (<code class="symbol">ECPG_DATA_NOT_ARRAY</code>)</span></dt><dd><p>
+<span class="original">
+       The database returned an ordinary variable in a place that
+       requires array value.  (SQLSTATE 42804)
+</span>
+配列値が必要な箇所にデータベースが普通の変数を返しました。
+（SQLSTATE 42804）
+      </p></dd><dt><span class="term">-216 (<code class="symbol">ECPG_ARRAY_INSERT</code>)</span></dt><dd><p>
+<span class="original">
+       The value could not be inserted into the array.  (SQLSTATE
+       42804)
+</span>
+値を配列に挿入できません。
+(SQLSTATE 42804)
+      </p></dd><dt><span class="term">-220 (<code class="symbol">ECPG_NO_CONN</code>)</span></dt><dd><p>
+<span class="original">
+       The program tried to access a connection that does not exist.
+       (SQLSTATE 08003)
+</span>
+存在しない接続にプログラムがアクセスしようとしました。
+       （SQLSTATE 08003）
+      </p></dd><dt><span class="term">-221 (<code class="symbol">ECPG_NOT_CONN</code>)</span></dt><dd><p>
+<span class="original">
+       The program tried to access a connection that does exist but is
+       not open.  (This is an internal error.)  (SQLSTATE YE002)
+</span>
+存在するが開いていない接続にプログラムがアクセスしようとしました
+（これは内部エラーです）。
+（SQLSTATE YE002）
+      </p></dd><dt><span class="term">-230 (<code class="symbol">ECPG_INVALID_STMT</code>)</span></dt><dd><p>
+<span class="original">
+       The statement you are trying to use has not been prepared.
+       (SQLSTATE 26000)
+</span>
+使用しようとしたSQL文がプリペアされていませんでした。
+       （SQLSTATE 26000）
+      </p></dd><dt><span class="term">-239 (<code class="symbol">ECPG_INFORMIX_DUPLICATE_KEY</code>)</span></dt><dd><p>
+<span class="original">
+       Duplicate key error, violation of unique constraint (Informix
+       compatibility mode).  (SQLSTATE 23505)
+</span>
+重複キーエラー。一意性制約違反（Informix互換モード）。
+(SQLSTATE 23505)
+      </p></dd><dt><span class="term">-240 (<code class="symbol">ECPG_UNKNOWN_DESCRIPTOR</code>)</span></dt><dd><p>
+<span class="original">
+       The descriptor specified was not found.  The statement you are
+       trying to use has not been prepared.  (SQLSTATE 33000)
+</span>
+指定した記述子が見つかりませんでした。
+使用しようとしたSQL文はプリペアされていませんでした。
+（SQLSTATE 33000）
+      </p></dd><dt><span class="term">-241 (<code class="symbol">ECPG_INVALID_DESCRIPTOR_INDEX</code>)</span></dt><dd><p>
+<span class="original">
+       The descriptor index specified was out of range.  (SQLSTATE
+       07009)
+</span>
+記述子のインデックスが範囲外でした。
+（SQLSTATE 07009）
+      </p></dd><dt><span class="term">-242 (<code class="symbol">ECPG_UNKNOWN_DESCRIPTOR_ITEM</code>)</span></dt><dd><p>
+<span class="original">
+       An invalid descriptor item was requested.  (This is an internal
+       error.)  (SQLSTATE YE002)
+</span>
+無効な記述子項目が要求されました。（これは内部エラーです。）
+（SQLSTATE YE002）
+      </p></dd><dt><span class="term">-243 (<code class="symbol">ECPG_VAR_NOT_NUMERIC</code>)</span></dt><dd><p>
+<span class="original">
+       During the execution of a dynamic statement, the database
+       returned a numeric value and the host variable was not numeric.
+       (SQLSTATE 07006)
+</span>
+動的なSQL文の実行時にデータベースが数値を返しましたが、ホスト変数が数値でありませんでした。
+（SQLSTATE 07006）
+      </p></dd><dt><span class="term">-244 (<code class="symbol">ECPG_VAR_NOT_CHAR</code>)</span></dt><dd><p>
+<span class="original">
+       During the execution of a dynamic statement, the database
+       returned a non-numeric value and the host variable was numeric.
+       (SQLSTATE 07006)
+</span>
+動的なSQL文の実行時にデータベースが数値以外を返しましたが、ホスト変数が数値でした。
+       （SQLSTATE 07006）
+      </p></dd><dt><span class="term">-284 (<code class="symbol">ECPG_INFORMIX_SUBSELECT_NOT_ONE</code>)</span></dt><dd><p>
+<span class="original">
+       A result of the subquery is not single row (Informix
+       compatibility mode).  (SQLSTATE 21000)
+</span>
+副問い合わせの結果が単一行ではありません（Informix互換モード）。
+(SQLSTATE 21000)
+      </p></dd><dt><span class="term">-400 (<code class="symbol">ECPG_PGSQL</code>)</span></dt><dd><p>
+<span class="original">
+       Some error caused by the &lt;productname&gt;PostgreSQL&lt;/productname&gt;
+       server.  The message contains the error message from the
+       &lt;productname&gt;PostgreSQL&lt;/productname&gt; server.
+</span>
+<span class="productname">PostgreSQL</span>サーバで何らかのエラーが発生しました。
+このメッセージは<span class="productname">PostgreSQL</span>サーバからのエラーメッセージを含みます。
+      </p></dd><dt><span class="term">-401 (<code class="symbol">ECPG_TRANS</code>)</span></dt><dd><p>
+<span class="original">
+       The &lt;productname&gt;PostgreSQL&lt;/productname&gt; server signaled that
+       we cannot start, commit, or rollback the transaction.
+       (SQLSTATE 08007)
+</span>
+<span class="productname">PostgreSQL</span>サーバがトランザクションのコミットやロールバックを始めることができないことを通知しました。
+（SQLSTATE 08007）
+      </p></dd><dt><span class="term">-402 (<code class="symbol">ECPG_CONNECT</code>)</span></dt><dd><p>
+<span class="original">
+       The connection attempt to the database did not succeed.
+       (SQLSTATE 08001)
+</span>
+データベースへの接続試行に失敗しました。
+       (SQLSTATE 08001)
+      </p></dd><dt><span class="term">-403 (<code class="symbol">ECPG_DUPLICATE_KEY</code>)</span></dt><dd><p>
+<span class="original">
+       Duplicate key error, violation of unique constraint.  (SQLSTATE
+       23505)
+</span>
+重複キーエラー。一意性制約違反。
+(SQLSTATE 23505)
+      </p></dd><dt><span class="term">-404 (<code class="symbol">ECPG_SUBSELECT_NOT_ONE</code>)</span></dt><dd><p>
+<span class="original">
+       A result for the subquery is not single row. (SQLSTATE 21000)
+</span>
+副問い合わせの結果が単一行ではありません。
+(SQLSTATE 21000)
+      </p></dd><span class="original"> currently not used by the code </span><span class="original">
+    &lt;varlistentry&gt;
+     &lt;term&gt;-600 (&lt;symbol&gt;ECPG_WARNING_UNRECOGNIZED&lt;/symbol&gt;)&lt;/term&gt;
+     &lt;listitem&gt;
+      &lt;para&gt;
+       An unrecognized warning was received from the server.
+      &lt;/para&gt;
+     &lt;/listitem&gt;
+    &lt;/varlistentry&gt;
+
+    &lt;varlistentry&gt;
+     &lt;term&gt;-601 (&lt;symbol&gt;ECPG_WARNING_QUERY_IGNORED&lt;/symbol&gt;)&lt;/term&gt;
+     &lt;listitem&gt;
+      &lt;para&gt;
+       Current transaction is aborted.  Queries are ignored until the
+       end of the transaction block.
+      &lt;/para&gt;
+     &lt;/listitem&gt;
+    &lt;/varlistentry&gt;
+</span><dt><span class="term">-602 (<code class="symbol">ECPG_WARNING_UNKNOWN_PORTAL</code>)</span></dt><dd><p>
+<span class="original">
+       An invalid cursor name was specified. (SQLSTATE 34000)
+</span>
+無効なカーソル名が指定されました。
+(SQLSTATE 34000)
+      </p></dd><dt><span class="term">-603 (<code class="symbol">ECPG_WARNING_IN_TRANSACTION</code>)</span></dt><dd><p>
+<span class="original">
+       Transaction is in progress. (SQLSTATE 25001)
+</span>
+トランザクションが進行中です。
+(SQLSTATE 25001)
+      </p></dd><dt><span class="term">-604 (<code class="symbol">ECPG_WARNING_NO_TRANSACTION</code>)</span></dt><dd><p>
+<span class="original">
+       There is no active (in-progress) transaction. (SQLSTATE 25P01)
+</span>
+活動中（進行中）のトランザクションがありません。
+(SQLSTATE 25P01)
+      </p></dd><dt><span class="term">-605 (<code class="symbol">ECPG_WARNING_PORTAL_EXISTS</code>)</span></dt><dd><p>
+<span class="original">
+       An existing cursor name was specified. (SQLSTATE 42P03)
+</span>
+既存のカーソル名が指定されました。
+(SQLSTATE 42P03)
+      </p></dd></dl></div><p>
+  </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ecpg-descriptors.html" title="36.7. 記述子領域の使用">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="ecpg.html" title="第36章 ECPG — C言語による埋め込みSQL">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="ecpg-preproc.html" title="36.9. プリプロセッサ指示子">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">36.7. 記述子領域の使用 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 36.9. プリプロセッサ指示子</td></tr></table></div></body></html>

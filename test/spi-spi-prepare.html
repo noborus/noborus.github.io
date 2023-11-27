@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>SPI_prepare</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="spi-spi-execute-with-args.html" title="SPI_execute_with_args" /><link rel="next" href="spi-spi-prepare-cursor.html" title="SPI_prepare_cursor" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="spi-interface.html" title="47.1. インタフェース関数">47.1. インタフェース関数</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : spi-spi-prepare.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="spi-spi-execute-with-args.html" title="SPI_execute_with_args">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="spi-interface.html" title="47.1. インタフェース関数">上へ</a></td><td width="60%" align="center">SPI_prepare</td><td width="20%" align="right"> <a accesskey="n" href="spi-spi-prepare-cursor.html" title="SPI_prepare_cursor">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SPI-SPI-PREPARE"><div class="titlepage"></div><a id="id-1.8.12.8.8.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">SPI_prepare</span></h2><p>SPI_prepare<span class="original">
+  &lt;refpurpose&gt;prepare a statement, without executing it yet&lt;/refpurpose&gt;
+</span> — 文を準備する。文の実行はまだ行わない</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
+SPIPlanPtr SPI_prepare(const char * <em class="parameter"><code>command</code></em>, int <em class="parameter"><code>nargs</code></em>, Oid * <em class="parameter"><code>argtypes</code></em>)
+</pre></div><div class="refsect1" id="id-1.8.12.8.8.5"><h2>説明</h2><span class="original">
+  &lt;title&gt;Description&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;function&gt;SPI_prepare&lt;/function&gt; creates and returns a prepared
+   statement for the specified command, but doesn't execute the command.
+   The prepared statement can later be executed repeatedly using
+   &lt;function&gt;SPI_execute_plan&lt;/function&gt;.
+</span>
+<code class="function">SPI_prepare</code>は指定したコマンド用の準備済み文を作成し、それを返します。
+しかし、そのコマンドは実行しません。
+その準備済み文は<code class="function">SPI_execute_plan</code>を使って後で繰り返し実行できます。
+  </p><p>
+<span class="original">
+   When the same or a similar command is to be executed repeatedly, it
+   is generally advantageous to perform parse analysis only once, and
+   might furthermore be advantageous to re-use an execution plan for the
+   command.
+   &lt;function&gt;SPI_prepare&lt;/function&gt; converts a command string into a
+   prepared statement that encapsulates the results of parse analysis.
+   The prepared statement also provides a place for caching an execution plan
+   if it is found that generating a custom plan for each execution is not
+   helpful.
+</span>
+同じ、あるいは類似のコマンドが繰り返し実行される場合、一度だけ解析を計画作成を行うことには一般に利点があります。
+また、コマンドの実行計画を再利用することにはさらに利点があるかも知れません。
+<code class="function">SPI_prepare</code>はコマンド文字列を、解析結果をカプセル化した準備済み文に変換します。
+実行の度に独自計画を生成するのが役に立たないと分かった場合には、準備済み文は実行計画をキャッシュする場所も提供します。
+  </p><p>
+<span class="original">
+   A prepared command can be generalized by writing parameters
+   (&lt;literal&gt;$1&lt;/literal&gt;, &lt;literal&gt;$2&lt;/literal&gt;, etc.) in place of what would be
+   constants in a normal command.  The actual values of the parameters
+   are then specified when &lt;function&gt;SPI_execute_plan&lt;/function&gt; is called.
+   This allows the prepared command to be used over a wider range of
+   situations than would be possible without parameters.
+</span>
+プリペアドコマンドは、通常のコマンド内の定数となる場所を（<code class="literal">$1</code>、<code class="literal">$2</code>などの）パラメータで記述することで一般化することができます。
+そしてパラメータの実際の値は、<code class="function">SPI_execute_plan</code> が呼び出される時に指定されます。
+これにより、プリペアドコマンドは、パラメータがない場合に比べ、より広範な状況で使用できるようになります。
+  </p><p>
+<span class="original">
+   The statement returned by &lt;function&gt;SPI_prepare&lt;/function&gt; can be used
+   only in the current invocation of the C function, since
+   &lt;function&gt;SPI_finish&lt;/function&gt; frees memory allocated for such a
+   statement.  But the statement can be saved for longer using the functions
+   &lt;function&gt;SPI_keepplan&lt;/function&gt; or &lt;function&gt;SPI_saveplan&lt;/function&gt;.
+</span>
+<code class="function">SPI_finish</code>が文のために割り当てられたメモリを解放しますので、<code class="function">SPI_prepare</code>で返される文は、そのC関数の現在の呼び出し内でのみ使用することができます。
+しかし、関数<code class="function">SPI_keepplan</code>や<code class="function">SPI_saveplan</code>を使用して長期間文を保存することもできます。
+  </p></div><div class="refsect1" id="id-1.8.12.8.8.6"><h2>引数</h2><span class="original">
+  &lt;title&gt;Arguments&lt;/title&gt;
+</span><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">const char * <em class="parameter"><code>command</code></em></code></span></dt><dd><p>
+<span class="original">
+      command string
+</span>
+コマンド文字列
+     </p></dd><dt><span class="term"><code class="literal">int <em class="parameter"><code>nargs</code></em></code></span></dt><dd><p>
+<span class="original">
+      number of input parameters (&lt;literal&gt;$1&lt;/literal&gt;, &lt;literal&gt;$2&lt;/literal&gt;, etc.)
+</span>
+入力パラメータ（<code class="literal">$1</code>、<code class="literal">$2</code>など）の数
+     </p></dd><dt><span class="term"><code class="literal">Oid * <em class="parameter"><code>argtypes</code></em></code></span></dt><dd><p>
+<span class="original">
+      pointer to an array containing the &lt;acronym&gt;OID&lt;/acronym&gt;s of
+      the data types of the parameters
+</span>
+パラメータのデータ型の<acronym class="acronym">OID</acronym>を持つ配列へのポインタ
+     </p></dd></dl></div></div><div class="refsect1" id="id-1.8.12.8.8.7"><h2>戻り値</h2><span class="original">
+  &lt;title&gt;Return Value&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;function&gt;SPI_prepare&lt;/function&gt; returns a non-null pointer to an
+   &lt;type&gt;SPIPlan&lt;/type&gt;, which is an opaque struct representing a prepared
+   statement.  On error, &lt;symbol&gt;NULL&lt;/symbol&gt; will be returned,
+   and &lt;varname&gt;SPI_result&lt;/varname&gt; will be set to one of the same
+   error codes used by &lt;function&gt;SPI_execute&lt;/function&gt;, except that
+   it is set to &lt;symbol&gt;SPI_ERROR_ARGUMENT&lt;/symbol&gt; if
+   &lt;parameter&gt;command&lt;/parameter&gt; is &lt;symbol&gt;NULL&lt;/symbol&gt;, or if
+   &lt;parameter&gt;nargs&lt;/parameter&gt; is less than 0, or if &lt;parameter&gt;nargs&lt;/parameter&gt; is
+   greater than 0 and &lt;parameter&gt;argtypes&lt;/parameter&gt; is &lt;symbol&gt;NULL&lt;/symbol&gt;.
+</span>
+<code class="function">SPI_prepare</code>は<code class="type">SPIPlan</code>への非NULLのポインタを返します。
+ここで<code class="type">SPIPlan</code>は準備済み文を表すopaque構造体です
+エラーの場合、<code class="symbol">NULL</code>が返され、<code class="function">SPI_execute</code>で使用されるエラーコードと同じコードの1つが<code class="varname">SPI_result</code>に設定されます。
+しかし、<em class="parameter"><code>command</code></em>が<code class="symbol">NULL</code>の場合や、<em class="parameter"><code>nargs</code></em>が0未満の場合、<em class="parameter"><code>nargs</code></em>が0より大きくかつ<em class="parameter"><code>argtypes</code></em>が<code class="symbol">NULL</code>の場合は、<code class="symbol">SPI_ERROR_ARGUMENT</code>に設定されます。
+  </p></div><div class="refsect1" id="id-1.8.12.8.8.8"><h2>注意</h2><span class="original">
+  &lt;title&gt;Notes&lt;/title&gt;
+</span><p>
+<span class="original">
+   If no parameters are defined, a generic plan will be created at the
+   first use of &lt;function&gt;SPI_execute_plan&lt;/function&gt;, and used for all
+   subsequent executions as well.  If there are parameters, the first few uses
+   of &lt;function&gt;SPI_execute_plan&lt;/function&gt; will generate custom plans
+   that are specific to the supplied parameter values.  After enough uses
+   of the same prepared statement, &lt;function&gt;SPI_execute_plan&lt;/function&gt; will
+   build a generic plan, and if that is not too much more expensive than the
+   custom plans, it will start using the generic plan instead of re-planning
+   each time.  If this default behavior is unsuitable, you can alter it by
+   passing the &lt;literal&gt;CURSOR_OPT_GENERIC_PLAN&lt;/literal&gt; or
+   &lt;literal&gt;CURSOR_OPT_CUSTOM_PLAN&lt;/literal&gt; flag to
+   &lt;function&gt;SPI_prepare_cursor&lt;/function&gt;, to force use of generic or custom
+   plans respectively.
+</span>
+パラメータが定義されていなければ、<code class="function">SPI_execute_plan</code>が最初に使用された時に一般的な計画が作成され、以降の実行すべてでも利用されます。
+パラメータがあれば、始めの何回かの<code class="function">SPI_execute_plan</code>の使用で、与えられたパラメータの値に固有の独自計画が作成されます。
+同じ準備済み文が十分に使用された後、<code class="function">SPI_execute_plan</code>は一般的な計画を作成し、独自計画よりもそれほど高価でなければ、毎回再計画する代わりに一般的な計画を使い始めるようになります。
+このデフォルトの動作が不適切であれば、<code class="function">SPI_prepare_cursor</code>に<code class="literal">CURSOR_OPT_GENERIC_PLAN</code>または<code class="literal">CURSOR_OPT_CUSTOM_PLAN</code>フラグを設定することで、それぞれ一般的な計画か独自計画を強制的に利用するよう変更できます。
+  </p><p>
+<span class="original">
+   Although the main point of a prepared statement is to avoid repeated parse
+   analysis and planning of the statement, &lt;productname&gt;PostgreSQL&lt;/productname&gt; will
+   force re-analysis and re-planning of the statement before using it
+   whenever database objects used in the statement have undergone
+   definitional (DDL) changes since the previous use of the prepared
+   statement.  Also, if the value of &lt;xref linkend="guc-search-path"/&gt; changes
+   from one use to the next, the statement will be re-parsed using the new
+   &lt;varname&gt;search_path&lt;/varname&gt;.  (This latter behavior is new as of
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; 9.3.)  See &lt;xref
+   linkend="sql-prepare"/&gt; for more information about the behavior of prepared
+   statements.
+</span>
+プリペアド文の主要な利点は、文の解析処理と計画作成処理の繰り返しを防止することですが、<span class="productname">PostgreSQL</span>では、以前にそのプリペアド文を使用してから、文の中で使用されているデータベースオブジェクトが定義（DDL）の変更を受けた時は常に再解析処理と計画再作成処理を強制します。
+また、一度使用してから<a class="xref" href="runtime-config-client.html#GUC-SEARCH-PATH">search_path</a>の値が変わった場合も、文は新しい<code class="varname">search_path</code>を使用して再解析されます。
+（後者の振る舞いは<span class="productname">PostgreSQL</span> 9.3の時に追加されました。）
+プリペアド文の動作については<a class="xref" href="sql-prepare.html" title="PREPARE"><span class="refentrytitle">PREPARE</span></a>を参照してください。
+  </p><p>
+<span class="original">
+   This function should only be called from a connected C function.
+</span>
+この関数は接続済みのC関数からのみ呼び出してください。
+  </p><p>
+<span class="original">
+   &lt;type&gt;SPIPlanPtr&lt;/type&gt; is declared as a pointer to an opaque struct type in
+   &lt;filename&gt;spi.h&lt;/filename&gt;.  It is unwise to try to access its contents
+   directly, as that makes your code much more likely to break in
+   future revisions of &lt;productname&gt;PostgreSQL&lt;/productname&gt;.
+</span>
+<code class="type">SPIPlanPtr</code>は<code class="filename">spi.h</code>内でopaque構造体型へのポインタとして宣言されています。
+たいていの場合将来のバージョンの<span class="productname">PostgreSQL</span>でそのコードが壊れてしまうため、この内容に直接アクセスすることは避けてください。
+  </p><p>
+<span class="original">
+   The name &lt;type&gt;SPIPlanPtr&lt;/type&gt; is somewhat historical, since the data
+   structure no longer necessarily contains an execution plan.
+</span>
+そのデータ構造はもはや実行計画を含むとは限りませんので、<code class="type">SPIPlanPtr</code>という名前はいくらか歴史的なものです。
+  </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="spi-spi-execute-with-args.html" title="SPI_execute_with_args">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="spi-interface.html" title="47.1. インタフェース関数">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="spi-spi-prepare-cursor.html" title="SPI_prepare_cursor">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">SPI_execute_with_args </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> SPI_prepare_cursor</td></tr></table></div></body></html>

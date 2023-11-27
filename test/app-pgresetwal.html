@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>pg_resetwal</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="app-pg-ctl.html" title="pg_ctl" /><link rel="next" href="app-pgrewind.html" title="pg_rewind" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="reference-server.html" title="PostgreSQLサーバアプリケーション">PostgreSQLサーバアプリケーション</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : app-pgresetwal.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="app-pg-ctl.html" title="pg_ctl">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="reference-server.html" title="PostgreSQLサーバアプリケーション">上へ</a></td><td width="60%" align="center"><span class="application">pg_resetwal</span></td><td width="20%" align="right"> <a accesskey="n" href="app-pgrewind.html" title="pg_rewind">次へ</a></td></tr></table><hr /></div><div class="refentry" id="APP-PGRESETWAL"><div class="titlepage"></div><a id="id-1.9.5.8.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle"><span class="application">pg_resetwal</span></span></h2><p>pg_resetwal<span class="original">
+  &lt;refpurpose&gt;reset the write-ahead log and other control information of a &lt;productname&gt;PostgreSQL&lt;/productname&gt; database cluster&lt;/refpurpose&gt;
+</span> — <span class="productname">PostgreSQL</span>データベースクラスタの先行書き込みログやその他の制御情報を初期化する</p></div><div class="refsynopsisdiv"><h2>概要</h2><div class="cmdsynopsis"><p id="id-1.9.5.8.4.1"><code class="command">pg_resetwal</code> [ <code class="option">-f</code>  |   <code class="option">--force</code> ] [ <code class="option">-n</code>  |   <code class="option">--dry-run</code> ] [<em class="replaceable"><code>option</code></em>...]  [ <code class="option">-D</code>  |   <code class="option">--pgdata</code> ]<em class="replaceable"><code>datadir</code></em> </p></div></div><div class="refsect1" id="R1-APP-PGRESETWAL-1"><h2>説明</h2><span class="original">
+  &lt;title&gt;Description&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;command&gt;pg_resetwal&lt;/command&gt; clears the write-ahead log (WAL) and
+   optionally resets some other control information stored in the
+   &lt;filename&gt;pg_control&lt;/filename&gt; file.  This function is sometimes needed
+   if these files have become corrupted.  It should be used only as a
+   last resort, when the server will not start due to such corruption.
+</span>
+<code class="command">pg_resetwal</code>は、先行書き込みログ（WAL）を消去し、さらにオプションで<code class="filename">pg_control</code>ファイル内に保存された制御情報の一部を初期化します。
+この機能は、これらのファイルが破損した場合に必要になることがあります。
+このような破損などが原因でサーバを起動できない場合の最後の手段としてのみ、この機能を使用してください。
+  </p><p>
+<span class="original">
+   After running this command, it should be possible to start the server,
+   but bear in mind that the database might contain inconsistent data due to
+   partially-committed transactions.  You should immediately dump your data,
+   run &lt;command&gt;initdb&lt;/command&gt;, and restore.  After restore, check for
+   inconsistencies and repair as needed.
+</span>
+このコマンドを実行すると、サーバが開始できるようになるはずです。
+ただし、不完全にコミットされたトランザクションが原因でデータベースのデータに矛盾が起こる可能性があることに注意してください。
+コマンドの実行後は、ただちにデータをダンプし、<code class="command">initdb</code>を実行し、リストアすべきです。
+リストア後、矛盾がないか検査し、必要に応じて修復を行ってください。
+  </p><p>
+<span class="original">
+   This utility can only be run by the user who installed the server, because
+   it requires read/write access to the data directory.
+   For safety reasons, you must specify the data directory on the command line.
+   &lt;command&gt;pg_resetwal&lt;/command&gt; does not use the environment variable
+   &lt;envar&gt;PGDATA&lt;/envar&gt;.
+</span>
+このユーティリティの実行にはデータディレクトリへの読み込み/書き込みアクセス権限が必要となるため、サーバをインストールしたユーザのみが実行できます。
+安全のため、データディレクトリをコマンドラインで指定する必要があります。
+<code class="command">pg_resetwal</code>は、環境変数<code class="envar">PGDATA</code>を使用しません。
+  </p><p>
+<span class="original">
+   If &lt;command&gt;pg_resetwal&lt;/command&gt; complains that it cannot determine
+   valid data for &lt;filename&gt;pg_control&lt;/filename&gt;, you can force it to proceed anyway
+   by specifying the &lt;option&gt;-f&lt;/option&gt; (force) option.  In this case plausible
+   values will be substituted for the missing data.  Most of the fields can be
+   expected to match, but manual assistance might be needed for the next OID,
+   next transaction ID and epoch, next multitransaction ID and offset, and
+   WAL starting location fields. These fields can be set using the options
+   discussed below. If you are not able to determine correct values for all
+   these fields, &lt;option&gt;-f&lt;/option&gt; can still be used, but
+   the recovered database must be treated with even more suspicion than
+   usual: an immediate dump and restore is imperative.  &lt;emphasis&gt;Do not&lt;/emphasis&gt;
+   execute any data-modifying operations in the database before you dump,
+   as any such action is likely to make the corruption worse.
+</span>
+<code class="command">pg_resetwal</code>が<code class="filename">pg_control</code>に対する有効なデータを判別できない場合、<code class="option">-f</code>（force,強制）オプションを指定すれば強制的に処理を進めることができます。
+その場合、欠落したデータは無難な値で代用されます。
+ほとんどのフィールドでは適切な値が使用されますが、次のOID、次のトランザクションIDとエポック時間、マルチトランザクションIDとそのオフセット、WAL開始位置の値については、手動の操作が必要な場合があります。
+これらの値は下記で説明するオプションを使用して設定することができます。
+すべてに対して正しい値を決定できない場合でも<code class="option">-f</code>を使用することができますが、この場合は回復したデータベースを通常よりさらに注意深く検査する必要があります。
+必ず、ただちにダンプおよびリストアを行ってください。
+決して、ダンプを行う前にデータ変更などの操作を行っては<span class="emphasis"><em>なりません</em></span>。
+そのような操作は、破損状態をさらに悪化させます。
+  </p></div><div class="refsect1" id="id-1.9.5.8.6"><h2>オプション</h2><span class="original">
+  &lt;title&gt;Options&lt;/title&gt;
+</span><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="option">-f</code><br /></span><span class="term"><code class="option">--force</code></span></dt><dd><p>
+<span class="original">
+      Force &lt;command&gt;pg_resetwal&lt;/command&gt; to proceed even if it cannot determine
+      valid data for &lt;filename&gt;pg_control&lt;/filename&gt;, as explained above.
+</span>
+上で説明したように、<code class="filename">pg_control</code>に有効なデータが確認できない場合でも、強制的に<code class="command">pg_resetwal</code>の処理を実行します。
+     </p></dd><dt><span class="term"><code class="option">-n</code><br /></span><span class="term"><code class="option">--dry-run</code></span></dt><dd><p>
+<span class="original">
+      The &lt;option&gt;-n&lt;/option&gt;/&lt;option&gt;&amp;#45;-dry-run&lt;/option&gt; option instructs
+      &lt;command&gt;pg_resetwal&lt;/command&gt; to print the values reconstructed from
+      &lt;filename&gt;pg_control&lt;/filename&gt; and values about to be changed, and then exit
+      without modifying anything. This is mainly a debugging tool, but can be
+      useful as a sanity check before allowing &lt;command&gt;pg_resetwal&lt;/command&gt;
+      to proceed for real.
+</span>
+<code class="option">-n</code>/<code class="option">--dry-run</code>オプションを指定すると、<code class="command">pg_resetwal</code>は<code class="filename">pg_control</code>から再構築した値、および変更される値を出力して、何も変更せずに終了します。
+これは主にデバッグと目的としたツールですが、<code class="command">pg_resetwal</code>を実際に進める前の検査としても有用な場合があります。
+     </p></dd><dt><span class="term"><code class="option">-V</code><br /></span><span class="term"><code class="option">--version</code></span></dt><dd><p>バージョン情報を表示して終了します。</p></dd><dt><span class="term"><code class="option">-?</code><br /></span><span class="term"><code class="option">--help</code></span></dt><dd><p>ヘルプを表示して終了します。</p></dd></dl></div><p>
+<span class="original">
+   The following options are only needed when
+   &lt;command&gt;pg_resetwal&lt;/command&gt; is unable to determine appropriate values
+   by reading &lt;filename&gt;pg_control&lt;/filename&gt;.  Safe values can be determined as
+   described below.  For values that take numeric arguments, hexadecimal
+   values can be specified by using the prefix &lt;literal&gt;0x&lt;/literal&gt;.
+</span>
+以下のオプションは<code class="command">pg_resetwal</code>が<code class="filename">pg_control</code>を読んでも適切な値を決定できない場合にのみ必要になります。
+安全な値は以下で説明するようにして決定できます。
+数値を引数として取る値については、<code class="literal">0x</code>の接頭辞をつけることで16進数の値を指定できます。
+  </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="option">-c <em class="replaceable"><code>xid</code></em>,<em class="replaceable"><code>xid</code></em></code><br /></span><span class="term"><code class="option">--commit-timestamp-ids=<em class="replaceable"><code>xid</code></em>,<em class="replaceable"><code>xid</code></em></code></span></dt><dd><p>
+<span class="original">
+      Manually set the oldest and newest transaction IDs for which the commit
+      time can be retrieved.
+</span>
+コミットの時刻が取り出せる最古のトランザクションIDと最新のトランザクションIDを手作業で設定します。
+     </p><p>
+<span class="original">
+      A safe value for the oldest transaction ID for which the commit time can
+      be retrieved (first part) can be determined by looking
+      for the numerically smallest file name in the directory
+      &lt;filename&gt;pg_commit_ts&lt;/filename&gt; under the data directory.  Conversely, a safe
+      value for the newest transaction ID for which the commit time can be
+      retrieved (second part) can be determined by looking for the numerically
+      greatest file name in the same directory.  The file names are in
+      hexadecimal.
+</span>
+コミット時刻が取り出せる最古のトランザクションIDとして安全な値（1番目の部分）はデータディレクトリの下の<code class="filename">pg_commit_ts</code>ディレクトリの中で、数値的に最小のファイル名を探すことで決定できます。
+逆に、コミット時刻が取り出せる最新のトランザクションIDとして安全な値（2番目の部分）は同じディレクトリの中で、数値的に最大のファイル名を探すことで決定できます。
+ファイル名は16進数になっています。
+     </p></dd><dt><span class="term"><code class="option">-e <em class="replaceable"><code>xid_epoch</code></em></code><br /></span><span class="term"><code class="option">--epoch=<em class="replaceable"><code>xid_epoch</code></em></code></span></dt><dd><p>
+<span class="original">
+      Manually set the next transaction ID's epoch.
+</span>
+次のトランザクションIDのエポック時間を手作業で設定します。
+     </p><p>
+<span class="original">
+      The transaction ID epoch is not actually stored anywhere in the database
+      except in the field that is set by &lt;command&gt;pg_resetwal&lt;/command&gt;,
+      so any value will work so far as the database itself is concerned.
+      You might need to adjust this value to ensure that replication
+      systems such as &lt;application&gt;Slony-I&lt;/application&gt; and
+      &lt;application&gt;Skytools&lt;/application&gt; work correctly &amp;mdash;
+      if so, an appropriate value should be obtainable from the state of
+      the downstream replicated database.
+</span>
+<code class="command">pg_resetwal</code>で設定されるフィールドを除き、トランザクションIDのエポック時間は実際にはデータベース内のどこにも格納されません。
+そのため、データベース自体だけを考えるのであれば、任意の値で動作するでしょう。
+<span class="application">Slony-I</span>や<span class="application">Skytools</span>などのレプリケーションシステムが確実に正しく動作するように、この値を調整しなければならない可能性があります。
+その場合、適切な値は下流で複製されたデータベースの状態から得られるはずです。
+     </p></dd><dt><span class="term"><code class="option">-l <em class="replaceable"><code>walfile</code></em></code><br /></span><span class="term"><code class="option">--next-wal-file=<em class="replaceable"><code>walfile</code></em></code></span></dt><dd><p>
+<span class="original">
+      Manually set the WAL starting location by specifying the name of the
+      next WAL segment file.
+</span>
+次のWALセグメントファイル名を指定することでWAL開始位置を手動で設定します。
+     </p><p>
+<span class="original">
+      The name of next WAL segment file should be
+      larger than any WAL segment file name currently existing in
+      the directory &lt;filename&gt;pg_wal&lt;/filename&gt; under the data directory.
+      These names are also in hexadecimal and have three parts.  The first
+      part is the &lt;quote&gt;timeline ID&lt;/quote&gt; and should usually be kept the same.
+      For example, if &lt;filename&gt;00000001000000320000004A&lt;/filename&gt; is the
+      largest entry in &lt;filename&gt;pg_wal&lt;/filename&gt;, use &lt;literal&gt;-l 00000001000000320000004B&lt;/literal&gt; or higher.
+</span>
+次のWALセグメントファイル名は、データディレクトリ以下の<code class="filename">pg_wal</code>に現在存在するどのWALセグメントファイル名よりも大きくならなければなりません。
+この名前も16進数で、3つの部分に分かれています。
+最初の部分は<span class="quote">「<span class="quote">時系列ID</span>」</span>で、通常、この値は変更すべきではありません。
+例えば、<code class="filename">pg_wal</code>内で最大のエントリが<code class="filename">00000001000000320000004A</code>である場合は、<code class="literal">-l 00000001000000320000004B</code>以上を使用してください。
+     </p><p>
+<span class="original">
+      Note that when using nondefault WAL segment sizes, the numbers in the WAL
+      file names are different from the LSNs that are reported by system
+      functions and system views.  This option takes a WAL file name, not an
+      LSN.
+</span>
+デフォルト以外のWALセグメントサイズを使用しているときには、WALファイル名の番号はシステム関数やシステムビューで報告されるLSNとは異なるということに注意してください。
+このオプションはLSNではなくWALファイル名を引数に取ります。
+     </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+       &lt;command&gt;pg_resetwal&lt;/command&gt; itself looks at the files in
+       &lt;filename&gt;pg_wal&lt;/filename&gt; and chooses a default &lt;option&gt;-l&lt;/option&gt; setting
+       beyond the last existing file name.  Therefore, manual adjustment of
+       &lt;option&gt;-l&lt;/option&gt; should only be needed if you are aware of WAL segment
+       files that are not currently present in &lt;filename&gt;pg_wal&lt;/filename&gt;, such as
+       entries in an offline archive; or if the contents of
+       &lt;filename&gt;pg_wal&lt;/filename&gt; have been lost entirely.
+</span>
+<code class="command">pg_resetwal</code>自体は<code class="filename">pg_wal</code>内のファイルを参照し、最後の既存のファイル名より大きな値をデフォルトの<code class="option">-l</code>設定として選択します。
+したがって、手作業による<code class="option">-l</code>の調整は、オフラインアーカイブ内の項目など<code class="filename">pg_wal</code>に現存しないWALセグメントファイルがあることに気づいた場合、または、<code class="filename">pg_wal</code>の内容が完全に失われている場合にのみ必要とされます。
+      </p></div></dd><dt><span class="term"><code class="option">-m <em class="replaceable"><code>mxid</code></em>,<em class="replaceable"><code>mxid</code></em></code><br /></span><span class="term"><code class="option">--multixact-ids=<em class="replaceable"><code>mxid</code></em>,<em class="replaceable"><code>mxid</code></em></code></span></dt><dd><p>
+<span class="original">
+      Manually set the next and oldest multitransaction ID.
+</span>
+次のマルチトランザクションIDと最古のマルチトランザクションIDを手作業で設定します。
+     </p><p>
+<span class="original">
+      A safe value for the next multitransaction ID (first part) can be
+      determined by looking for the numerically largest file name in the
+      directory &lt;filename&gt;pg_multixact/offsets&lt;/filename&gt; under the data directory,
+      adding one, and then multiplying by 65536 (0x10000).  Conversely, a safe
+      value for the oldest multitransaction ID (second part of
+      &lt;option&gt;-m&lt;/option&gt;) can be determined by looking for the numerically smallest
+      file name in the same directory and multiplying by 65536.  The file
+      names are in hexadecimal, so the easiest way to do this is to specify
+      the option value in hexadecimal and append four zeroes.
+</span>
+次のマルチトランザクションIDとして安全な値（1番目の部分）は、データディレクトリの下の<code class="filename">pg_multixact/offsets</code>ディレクトリの中で数値的に最大のファイル名を探し、1を加えてから65536(0x10000)を掛けることで決定できます。
+逆に、最古のマルチトランザクションIDとして安全な値（<code class="option">-m</code>の2番目の部分）は、同じディレクトリの中で数値的に最小のファイル名を探し、65536を掛けることで決定できます。
+ファイル名は16進ですので、このための最も簡単なやり方は、オプション値を16進で指定し、ゼロを4つ追加することです。
+     </p></dd><dt><span class="term"><code class="option">-o <em class="replaceable"><code>oid</code></em></code><br /></span><span class="term"><code class="option">--next-oid=<em class="replaceable"><code>oid</code></em></code></span></dt><dd><p>
+<span class="original">
+      Manually set the next OID.
+</span>
+次のOIDを手作業で設定します。
+     </p><p>
+<span class="original">
+      There is no comparably easy way to determine a next OID that's beyond
+      the largest one in the database, but fortunately it is not critical to
+      get the next-OID setting right.
+</span>
+データベース内のOIDの最大値よりも大きな次のOIDを決定するには、上記のような簡単な方法はありません。
+しかし、幸いにも、次のOIDの設定を正しく取得することは、それほど重要ではありません。
+     </p></dd><dt><span class="term"><code class="option">-O <em class="replaceable"><code>mxoff</code></em></code><br /></span><span class="term"><code class="option">--multixact-offset=<em class="replaceable"><code>mxoff</code></em></code></span></dt><dd><p>
+<span class="original">
+      Manually set the next multitransaction offset.
+</span>
+次のマルチトランザクションオフセットを手作業で設定します。
+     </p><p>
+<span class="original">
+      A safe value can be determined by looking for the numerically largest
+      file name in the directory &lt;filename&gt;pg_multixact/members&lt;/filename&gt; under the
+      data directory, adding one, and then multiplying by 52352 (0xCC80).
+      The file names are in hexadecimal.  There is no simple recipe such as
+      the ones for other options of appending zeroes.
+</span>
+安全な値は、データディレクトリの下の<code class="filename">pg_multixact/members</code>ディレクトリの中で数値的に最も大きなファイル名を探し、1を加えてから、52352(0xCC80)を掛けることで決定できます。
+ファイル名は16進数です。
+他のオプションのような0をつけるだけの簡単な計算方法はありません。
+     </p></dd><dt><span class="term"><code class="option">--wal-segsize=<em class="replaceable"><code>wal_segment_size</code></em></code></span></dt><dd><p>
+<span class="original">
+      Set the new WAL segment size, in megabytes.  The value must be set to a
+      power of 2 between 1 and 1024 (megabytes).  See the same option of &lt;xref
+      linkend="app-initdb"/&gt; for more information.
+</span>
+新たなWALセグメントサイズをメガバイトで設定します。
+値には1から1024（メガバイト）の2の冪乗を設定しなければなりません。
+詳しくは<a class="xref" href="app-initdb.html" title="initdb"><span class="refentrytitle"><span class="application">initdb</span></span></a>の同じオプションを参照してください。
+     </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+       While &lt;command&gt;pg_resetwal&lt;/command&gt; will set the WAL starting address
+       beyond the latest existing WAL segment file, some segment size changes
+       can cause previous WAL file names to be reused.  It is recommended to
+       use &lt;option&gt;-l&lt;/option&gt; together with this option to manually set the
+       WAL starting address if WAL file name overlap will cause problems with
+       your archiving strategy.
+</span>
+<code class="command">pg_resetwal</code>が存在する最も新しいWALセグメントファイルを超えたWAL開始位置を設定するとき、一部のセグメントサイズ変更は前のWALファイル名の再使用をひき起こす可能性があります。
+あなたのアーカイブ戦略でWALファイル名のオーバーラップが問題を起こす場合には、このオプションと共にWAL開始位置を手動で設定する<code class="option">-l</code>も使うことを推奨します。
+      </p></div></dd><dt><span class="term"><code class="option">-u <em class="replaceable"><code>xid</code></em></code><br /></span><span class="term"><code class="option">--oldest-transaction-id=<em class="replaceable"><code>xid</code></em></code></span></dt><dd><p>
+<span class="original">
+      Manually set the oldest unfrozen transaction ID.
+</span>
+最も古い凍結されていないトランザクションIDを手作業で設定します。
+     </p><p>
+<span class="original">
+      A safe value can be determined by looking for the numerically smallest
+      file name in the directory &lt;filename&gt;pg_xact&lt;/filename&gt; under the data directory
+      and then multiplying by 1048576 (0x100000).  Note that the file names are in
+      hexadecimal.  It is usually easiest to specify the option value in
+      hexadecimal too. For example, if &lt;filename&gt;0007&lt;/filename&gt; is the smallest entry
+      in &lt;filename&gt;pg_xact&lt;/filename&gt;, &lt;literal&gt;-u 0x700000&lt;/literal&gt; will work (five
+      trailing zeroes provide the proper multiplier).
+</span>
+安全な値は、データディレクトリの下の<code class="filename">pg_xact</code>ディレクトリの中で数値的に最も小さなファイル名を探し、1048576(0x100000)を掛けることで決定できます。
+ファイル名は16進数であることに注意してください。
+通常は、オプションの値も16進数で指定するのが最も簡単でしょう。
+例えば、<code class="filename">0007</code>が<code class="filename">pg_xact</code>で最も小さなエントリであれば、<code class="literal">-u 0x700000</code>とすれば良いです（後ろにゼロを5つ付けると、正しく掛け算をしたことになります）。
+     </p></dd><dt><span class="term"><code class="option">-x <em class="replaceable"><code>xid</code></em></code><br /></span><span class="term"><code class="option">--next-transaction-id=<em class="replaceable"><code>xid</code></em></code></span></dt><dd><p>
+<span class="original">
+      Manually set the next transaction ID.
+</span>
+次のトランザクションIDを手作業で設定します。
+     </p><p>
+<span class="original">
+      A safe value can be determined by looking for the numerically largest
+      file name in the directory &lt;filename&gt;pg_xact&lt;/filename&gt; under the data directory,
+      adding one,
+      and then multiplying by 1048576 (0x100000).  Note that the file names are in
+      hexadecimal.  It is usually easiest to specify the option value in
+      hexadecimal too. For example, if &lt;filename&gt;0011&lt;/filename&gt; is the largest entry
+      in &lt;filename&gt;pg_xact&lt;/filename&gt;, &lt;literal&gt;-x 0x1200000&lt;/literal&gt; will work (five
+      trailing zeroes provide the proper multiplier).
+</span>
+安全な値は、データディレクトリの下の<code class="filename">pg_xact</code>ディレクトリの中で数値的に最も大きなファイル名を探し、1を加えてから、1048576(0x100000)を掛けることで決定できます。
+ファイル名は16進数であることに注意して下さい。
+通常は、オプションの値も16進数で指定するのが最も簡単でしょう。
+例えば、<code class="filename">0011</code>が<code class="filename">pg_xact</code>で最も大きなエントリであれば、<code class="literal">-x 0x1200000</code>とすれば良いです（後ろにゼロを5つ付けると、正しく掛け算をしたことになります）。
+     </p></dd></dl></div></div><div class="refsect1" id="id-1.9.5.8.7"><h2>環境</h2><span class="original">
+  &lt;title&gt;Environment&lt;/title&gt;
+</span><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="envar">PG_COLOR</code></span></dt><dd><p>
+<span class="original">
+      Specifies whether to use color in diagnostic messages. Possible values
+      are &lt;literal&gt;always&lt;/literal&gt;, &lt;literal&gt;auto&lt;/literal&gt; and
+      &lt;literal&gt;never&lt;/literal&gt;.
+</span>
+診断メッセージで色を使うかどうかを指定します。
+可能な値は<code class="literal">always</code>、<code class="literal">auto</code>、<code class="literal">never</code>です。
+     </p></dd></dl></div></div><div class="refsect1" id="id-1.9.5.8.8"><h2>注釈</h2><span class="original">
+  &lt;title&gt;Notes&lt;/title&gt;
+</span><p>
+<span class="original">
+   This command must not be used when the server is
+   running.  &lt;command&gt;pg_resetwal&lt;/command&gt; will refuse to start up if
+   it finds a server lock file in the data directory.  If the
+   server crashed then a lock file might have been left
+   behind; in that case you can remove the lock file to allow
+   &lt;command&gt;pg_resetwal&lt;/command&gt; to run.  But before you do
+   so, make doubly certain that there is no server process still alive.
+</span>
+このコマンドは、サーバの稼動中に使用してはいけません。
+<code class="command">pg_resetwal</code>は、データディレクトリにサーバのロックファイルがあると、実行されません。
+サーバがクラッシュした場合、ロックファイルがそのまま残される場合があります。
+その場合は、ロックファイルを削除すれば<code class="command">pg_resetwal</code>を実行することができます。
+しかし、そのようなことをする前に、まだ稼働中のサーバプロセスが一切ないことを慎重に確認してください。
+  </p><p>
+<span class="original">
+   &lt;command&gt;pg_resetwal&lt;/command&gt; works only with servers of the same
+   major version.
+</span>
+<code class="command">pg_resetwal</code>は同一のメジャーバージョンのサーバに対してのみ動作します。
+  </p></div><div class="refsect1" id="id-1.9.5.8.9"><h2>関連項目</h2><span class="original">
+  &lt;title&gt;See Also&lt;/title&gt;
+</span><span class="simplelist"><a class="xref" href="app-pgcontroldata.html" title="pg_controldata"><span class="refentrytitle"><span class="application">pg_controldata</span></span></a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="app-pg-ctl.html" title="pg_ctl">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="reference-server.html" title="PostgreSQLサーバアプリケーション">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="app-pgrewind.html" title="pg_rewind">次へ</a></td></tr><tr><td width="40%" align="left" valign="top"><span class="application">pg_ctl</span> </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> <span class="application">pg_rewind</span></td></tr></table></div></body></html>

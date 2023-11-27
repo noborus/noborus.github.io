@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>64.6. インデックスコスト推定関数</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="index-unique-checks.html" title="64.5. インデックス一意性検査" /><link rel="next" href="generic-wal.html" title="第65章 汎用WALレコード" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="indexam.html" title="第64章 インデックスアクセスメソッドのインタフェース定義">第64章 インデックスアクセスメソッドのインタフェース定義</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : index-cost-estimation.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="index-unique-checks.html" title="64.5. インデックス一意性検査">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="indexam.html" title="第64章 インデックスアクセスメソッドのインタフェース定義">上へ</a></td><td width="60%" align="center">64.6. インデックスコスト推定関数</td><td width="20%" align="right"> <a accesskey="n" href="generic-wal.html" title="第65章 汎用WALレコード">次へ</a></td></tr></table><hr /></div><div class="sect1" id="INDEX-COST-ESTIMATION"><div class="titlepage"><div><div><h2 class="title" style="clear: both">64.6. インデックスコスト推定関数</h2></div></div></div><span class="original">
+  &lt;title&gt;Index Cost Estimation Functions&lt;/title&gt;
+</span><p>
+<span class="original">
+   The &lt;function&gt;amcostestimate&lt;/function&gt; function is given information describing
+   a possible index scan, including lists of WHERE and ORDER BY clauses that
+   have been determined to be usable with the index.  It must return estimates
+   of the cost of accessing the index and the selectivity of the WHERE
+   clauses (that is, the fraction of parent-table rows that will be
+   retrieved during the index scan).  For simple cases, nearly all the
+   work of the cost estimator can be done by calling standard routines
+   in the optimizer; the point of having an &lt;function&gt;amcostestimate&lt;/function&gt; function is
+   to allow index access methods to provide index-type-specific knowledge,
+   in case it is possible to improve on the standard estimates.
+</span>
+<code class="function">amcostestimate</code>関数には、インデックスと共に使用できることが決まっているWHERE句およびORDER BY句のリストを含む、インデックススキャンの可能性を記述する情報が与えられます。
+この関数はインデックスにアクセスするコストの概算とWHERE句の選択度（つまりインデックススキャンにて抽出される行の親テーブルにおける割合）を返さなくてはなりません。
+単純な場合だと、ほとんどすべてのコスト概算の作業は、オプティマイザの標準ルーチンを呼び出すことで行われます。
+<code class="function">amcostestimate</code>関数を持つことの意味は、標準の概算を改善することができる場合に、インデックスアクセスメソッドがインデックス型固有の知識体系を提供することができるということです。
+  </p><p>
+<span class="original">
+   Each &lt;function&gt;amcostestimate&lt;/function&gt; function must have the signature:
+</span>
+それぞれの<code class="function">amcostestimate</code>関数は以下のシグネチャを持たなければいけません。
+
+</p><pre class="programlisting">
+void
+amcostestimate (PlannerInfo *root,
+                IndexPath *path,
+                double loop_count,
+                Cost *indexStartupCost,
+                Cost *indexTotalCost,
+                Selectivity *indexSelectivity,
+                double *indexCorrelation,
+                double *indexPages);
+</pre><p>
+
+<span class="original">
+   The first three parameters are inputs:
+</span>
+最初の3つのパラメータは入力です。
+
+   </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><em class="parameter"><code>root</code></em></span></dt><dd><p>
+<span class="original">
+       The planner's information about the query being processed.
+</span>
+処理されている問い合わせに関するプランナの情報。
+      </p></dd><dt><span class="term"><em class="parameter"><code>path</code></em></span></dt><dd><p>
+<span class="original">
+       The index access path being considered.  All fields except cost and
+       selectivity values are valid.
+</span>
+考慮されるインデックスアクセスパス。
+コストと選択性値を除くすべてのフィールドが有効です。
+      </p></dd><dt><span class="term"><em class="parameter"><code>loop_count</code></em></span></dt><dd><p>
+<span class="original">
+       The number of repetitions of the index scan that should be factored
+       into the cost estimates.  This will typically be greater than one when
+       considering a parameterized scan for use in the inside of a nestloop
+       join.  Note that the cost estimates should still be for just one scan;
+       a larger &lt;parameter&gt;loop_count&lt;/parameter&gt; means that it may be appropriate
+       to allow for some caching effects across multiple scans.
+</span>
+コスト概算の算出対象となるインデックススキャンが繰り返された回数です。
+これは通常、ネステッドループ結合の内部で利用されるパラメータ化されたスキャンの回数よりも大きい値になります。
+コスト概算は1回のスキャンのための値であることに注意してください。<em class="parameter"><code>loop_count</code></em>がより大きい場合、複数のスキャンにより得られる効果をみるには十分な値といえるでしょう。
+      </p></dd></dl></div><p>
+  </p><p>
+<span class="original">
+   The last five parameters are pass-by-reference outputs:
+</span>
+最後の5つのパラメータは参照渡しの出力です。
+
+   </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><em class="parameter"><code>*indexStartupCost</code></em></span></dt><dd><p>
+<span class="original">
+       Set to cost of index start-up processing
+</span>
+インデックスの起動処理にかかるコストに設定されます。
+      </p></dd><dt><span class="term"><em class="parameter"><code>*indexTotalCost</code></em></span></dt><dd><p>
+<span class="original">
+       Set to total cost of index processing
+</span>
+インデックス処理の全体のコストに設定されます。
+      </p></dd><dt><span class="term"><em class="parameter"><code>*indexSelectivity</code></em></span></dt><dd><p>
+<span class="original">
+       Set to index selectivity
+</span>
+インデックスの選択度に設定されます。
+      </p></dd><dt><span class="term"><em class="parameter"><code>*indexCorrelation</code></em></span></dt><dd><p>
+<span class="original">
+       Set to correlation coefficient between index scan order and
+       underlying table's order
+</span>
+インデックススキャンの順番と背後のテーブルの順番間の相関係数に設定されます。
+      </p></dd><dt><span class="term"><em class="parameter"><code>*indexPages</code></em></span></dt><dd><p>
+<span class="original">
+       Set to number of index leaf pages
+</span>
+インデックスのリーフページ数が設定されます。
+      </p></dd></dl></div><p>
+  </p><p>
+<span class="original">
+   Note that cost estimate functions must be written in C, not in SQL or
+   any available procedural language, because they must access internal
+   data structures of the planner/optimizer.
+</span>
+コスト概算関数は、SQLやその他の手続き言語ではなく、C言語で書かれなければいけないことに注意してください。
+理由はプランナ/オプティマイザの内部データ構造にアクセスしなければいけないためです。
+  </p><p>
+<span class="original">
+   The index access costs should be computed using the parameters used by
+   &lt;filename&gt;src/backend/optimizer/path/costsize.c&lt;/filename&gt;: a sequential
+   disk block fetch has cost &lt;varname&gt;seq_page_cost&lt;/varname&gt;, a nonsequential fetch
+   has cost &lt;varname&gt;random_page_cost&lt;/varname&gt;, and the cost of processing one index
+   row should usually be taken as &lt;varname&gt;cpu_index_tuple_cost&lt;/varname&gt;.  In
+   addition, an appropriate multiple of &lt;varname&gt;cpu_operator_cost&lt;/varname&gt; should
+   be charged for any comparison operators invoked during index processing
+   (especially evaluation of the indexquals themselves).
+</span>
+インデックスアクセスコストは<code class="filename">src/backend/optimizer/path/costsize.c</code>で使われる、逐次的なディスクブロックの取り出しには<code class="varname">seq_page_cost</code>のコストが、順不同の取り出しには<code class="varname">random_page_cost</code>のコストが、そして、1つのインデックス行の処理には通常<code class="varname">cpu_index_tuple_cost</code>というコストがかかる、というパラメータで計算されなければなりません。
+さらに、インデックス処理（特にindexquals自体の評価）の間に呼び出される比較演算すべてに対して、<code class="varname">cpu_operator_cost</code>に適当な係数をかけたコストがかかります。
+  </p><p>
+<span class="original">
+   The access costs should include all disk and CPU costs associated with
+   scanning the index itself, but &lt;emphasis&gt;not&lt;/emphasis&gt; the costs of retrieving or
+   processing the parent-table rows that are identified by the index.
+</span>
+アクセスコストは、インデックス自身のスキャンと関係するすべてのディスクとCPUコストも含むべきですが、インデックスで識別される親テーブルの行の処理や抽出にかかるコストは含めては<span class="emphasis"><em>いけません</em></span>。
+  </p><p>
+<span class="original">
+   The &lt;quote&gt;start-up cost&lt;/quote&gt; is the part of the total scan cost that
+   must be expended before we can begin to fetch the first row.  For most
+   indexes this can be taken as zero, but an index type with a high start-up
+   cost might want to set it nonzero.
+</span>
+<span class="quote">「<span class="quote">起動用コスト</span>」</span>は、最初の行を取り出し始めることができるようになる前に費やされなければならない総スキャンコストの一部です。
+ほとんどのインデックスでは、これはゼロとすることができます。
+しかし、高い起動用コストを持つインデックス種類ではこれを非ゼロにすることを勧めます。
+  </p><p>
+<span class="original">
+   The &lt;parameter&gt;indexSelectivity&lt;/parameter&gt; should be set to the estimated fraction of the parent
+   table rows that will be retrieved during the index scan.  In the case
+   of a lossy query, this will typically be higher than the fraction of
+   rows that actually pass the given qual conditions.
+</span>
+<em class="parameter"><code>indexSelectivity</code></em>は、インデックススキャンの間に抽出される親テーブルの行の概算された割合として設定されるべきです。
+非可逆問い合わせの場合はこの値が、与えられた制約条件を実際に通過する行の割合よりも高くなることがよくあります。
+  </p><p>
+<span class="original">
+   The &lt;parameter&gt;indexCorrelation&lt;/parameter&gt; should be set to the correlation (ranging between
+   -1.0 and 1.0) between the index order and the table order.  This is used
+   to adjust the estimate for the cost of fetching rows from the parent
+   table.
+</span>
+<em class="parameter"><code>indexCorrelation</code></em>は、インデックスの順番とテーブルの順番の間の（-1.0から1.0までの間の値を取る）相関として設定されるべきです。
+この値は、メインテーブルから行を取り出すためのコスト概算を調整するために使用されます。
+  </p><p>
+<span class="original">
+   The &lt;parameter&gt;indexPages&lt;/parameter&gt; should be set to the number of leaf pages.
+   This is used to estimate the number of workers for parallel index scan.
+</span>
+<em class="parameter"><code>indexPages</code></em>は、リーフページ数が設定されるべきです。
+これは、パラレルインデックススキャンのワーカー数の見積もりに使用されます。
+  </p><p>
+<span class="original">
+   When &lt;parameter&gt;loop_count&lt;/parameter&gt; is greater than one, the returned numbers
+   should be averages expected for any one scan of the index.
+</span>
+<em class="parameter"><code>loop_count</code></em>の値が1より大きい場合、戻り値はインデックスを利用した1回のスキャンを想定した平均値であるべきです。
+  </p><div class="procedure" id="id-1.10.15.14.13"><p class="title"><strong>コスト概算</strong></p><span class="original">
+   &lt;title&gt;Cost Estimation&lt;/title&gt;
+</span><p>
+<span class="original">
+    A typical cost estimator will proceed as follows:
+</span>
+典型的なコスト概算は次のように進められます。
+   </p><ol class="procedure" type="1"><li class="step"><p>
+<span class="original">
+     Estimate and return the fraction of parent-table rows that will be visited
+     based on the given qual conditions.  In the absence of any index-type-specific
+     knowledge, use the standard optimizer function &lt;function&gt;clauselist_selectivity()&lt;/function&gt;:
+</span>
+与えられた制約条件に基づいて訪れられるメインテーブルの行の割合を概算して返します。
+インデックス型固有の知識体系を持たない場合、標準のオプティマイザの関数である<code class="function">clauselist_selectivity()</code>を使用してください。
+
+</p><pre class="programlisting">
+*indexSelectivity = clauselist_selectivity(root, path-&gt;indexquals,
+                                           path-&gt;indexinfo-&gt;rel-&gt;relid,
+                                           JOIN_INNER, NULL);
+</pre><p>
+    </p></li><li class="step"><p>
+<span class="original">
+     Estimate the number of index rows that will be visited during the
+     scan.  For many index types this is the same as &lt;parameter&gt;indexSelectivity&lt;/parameter&gt; times
+     the number of rows in the index, but it might be more.  (Note that the
+     index's size in pages and rows is available from the
+     &lt;literal&gt;path-&amp;gt;indexinfo&lt;/literal&gt; struct.)
+</span>
+スキャン中に訪れられるインデックスの行数を概算します。
+多くのインデックス種類では、これは<em class="parameter"><code>indexSelectivity</code></em>とインデックスの中にある行数を掛けたものと等しいですが、それより多い場合もあります。
+（ページおよび行内のインデックスのサイズは<code class="literal">path-&gt;indexinfo</code>構造体から得ることができることに注意してください。）
+    </p></li><li class="step"><p>
+<span class="original">
+     Estimate the number of index pages that will be retrieved during the scan.
+     This might be just &lt;parameter&gt;indexSelectivity&lt;/parameter&gt; times the index's size in pages.
+</span>
+スキャン中に抽出されるインデックスページ数を概算します。
+これは単に<em class="parameter"><code>indexSelectivity</code></em>にページ内のインデックスのサイズを掛けたものになるでしょう。
+    </p></li><li class="step"><p>
+<span class="original">
+     Compute the index access cost.  A generic estimator might do this:
+</span>
+インデックスアクセスコストを計算します。
+汎用的な概算においては以下のように行うでしょう。
+
+</p><pre class="programlisting">
+/*
+<span class="original">
+ * Our generic assumption is that the index pages will be read
+ * sequentially, so they cost seq_page_cost each, not random_page_cost.
+ * Also, we charge for evaluation of the indexquals at each index row.
+ * All the costs are assumed to be paid incrementally during the scan.
+</span>
+ * 一般的な仮定は、インデックスページは逐次的に読まれるので、
+ * random_page_costではなく、それぞれseq_page_costが掛かるというものです。
+ * 各インデックス行でのindexqualsの評価にもコストが掛かります。
+ * コストはすべてスキャンの間に徐々に支払われると仮定します。
+ */
+cost_qual_eval(&amp;index_qual_cost, path-&gt;indexquals, root);
+*indexStartupCost = index_qual_cost.startup;
+*indexTotalCost = seq_page_cost * numIndexPages +
+    (cpu_index_tuple_cost + index_qual_cost.per_tuple) * numIndexTuples;
+</pre><p>
+
+<span class="original">
+     However, the above does not account for amortization of index reads
+     across repeated index scans.
+</span>
+しかし、上では繰り返されるインデックススキャンにかかるインデックス読み込みについて減価償却を考慮していません。
+    </p></li><li class="step"><p>
+<span class="original">
+     Estimate the index correlation.  For a simple ordered index on a single
+     field, this can be retrieved from pg_statistic.  If the correlation
+     is not known, the conservative estimate is zero (no correlation).
+</span>
+インデックスの相関を概算します。
+1つのフィールドに対する単純な順番のインデックスでは、これはpg_statisticから入手することができます。
+相関が未知の場合、概算を用心深く考えるとゼロ（無相関）となります。
+    </p></li></ol></div><p>
+<span class="original">
+   Examples of cost estimator functions can be found in
+   &lt;filename&gt;src/backend/utils/adt/selfuncs.c&lt;/filename&gt;.
+</span>
+コスト概算関数の例は<code class="filename">src/backend/utils/adt/selfuncs.c</code>にあります。
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="index-unique-checks.html" title="64.5. インデックス一意性検査">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="indexam.html" title="第64章 インデックスアクセスメソッドのインタフェース定義">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="generic-wal.html" title="第65章 汎用WALレコード">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">64.5. インデックス一意性検査 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 第65章 汎用WALレコード</td></tr></table></div></body></html>

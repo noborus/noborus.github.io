@@ -1,0 +1,748 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>49.6. ロジカルデコーディングの出力プラグイン</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="logicaldecoding-catalogs.html" title="49.5. ロジカルデコーディング関連のシステムカタログ" /><link rel="next" href="logicaldecoding-writer.html" title="49.7. ロジカルデコーディング出力ライタ" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="logicaldecoding.html" title="第49章 ロジカルデコーディング">第49章 ロジカルデコーディング</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : logicaldecoding-output-plugin.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="logicaldecoding-catalogs.html" title="49.5. ロジカルデコーディング関連のシステムカタログ">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="logicaldecoding.html" title="第49章 ロジカルデコーディング">上へ</a></td><td width="60%" align="center">49.6. ロジカルデコーディングの出力プラグイン</td><td width="20%" align="right"> <a accesskey="n" href="logicaldecoding-writer.html" title="49.7. ロジカルデコーディング出力ライタ">次へ</a></td></tr></table><hr /></div><div class="sect1" id="LOGICALDECODING-OUTPUT-PLUGIN"><div class="titlepage"><div><div><h2 class="title" style="clear: both">49.6. ロジカルデコーディングの出力プラグイン</h2></div></div></div><span class="original">
+   &lt;title&gt;Logical Decoding Output Plugins&lt;/title&gt;
+</span><p>
+<span class="original">
+    An example output plugin can be found in the
+    &lt;link linkend="test-decoding"&gt;
+     &lt;filename&gt;contrib/test_decoding&lt;/filename&gt;
+    &lt;/link&gt;
+    subdirectory of the PostgreSQL source tree.
+</span>
+PostgreSQLのソースコードのサブディレクトリ<a class="link" href="test-decoding.html" title="F.45. test_decoding">
+     <code class="filename">contrib/test_decoding</code>
+    </a>にサンプル出力プラグインがあります。
+   </p><div class="sect2" id="LOGICALDECODING-OUTPUT-INIT"><div class="titlepage"><div><div><h3 class="title">49.6.1. 初期化関数</h3></div></div></div><span class="original">
+    &lt;title&gt;Initialization Function&lt;/title&gt;
+</span><a id="id-1.8.14.13.3.2" class="indexterm"></a><p>
+<span class="original">
+     An output plugin is loaded by dynamically loading a shared library with
+     the output plugin's name as the library base name. The normal library
+     search path is used to locate the library. To provide the required output
+     plugin callbacks and to indicate that the library is actually an output
+     plugin it needs to provide a function named
+     &lt;function&gt;_PG_output_plugin_init&lt;/function&gt;. This function is passed a
+     struct that needs to be filled with the callback function pointers for
+     individual actions.
+</span>
+出力プラグインは、出力プラグインの名前をライブラリのベース名として持つ共有ライブラリを動的にロードすることによってロードされます。
+必要な出力プラグインコールバックを提供し、そのライブラリが実際に出力プラグインであることを示すために、<code class="function">_PG_output_plugin_init</code>という名前の関数を作成しなければなりません。
+この関数には、各々のアクションに対応するコールバック関数へのポインタを持つ構造体が渡されます。
+</p><pre class="programlisting">
+typedef struct OutputPluginCallbacks
+{
+    LogicalDecodeStartupCB startup_cb;
+    LogicalDecodeBeginCB begin_cb;
+    LogicalDecodeChangeCB change_cb;
+    LogicalDecodeTruncateCB truncate_cb;
+    LogicalDecodeCommitCB commit_cb;
+    LogicalDecodeMessageCB message_cb;
+    LogicalDecodeFilterByOriginCB filter_by_origin_cb;
+    LogicalDecodeShutdownCB shutdown_cb;
+    LogicalDecodeFilterPrepareCB filter_prepare_cb;
+    LogicalDecodeBeginPrepareCB begin_prepare_cb;
+    LogicalDecodePrepareCB prepare_cb;
+    LogicalDecodeCommitPreparedCB commit_prepared_cb;
+    LogicalDecodeRollbackPreparedCB rollback_prepared_cb;
+    LogicalDecodeStreamStartCB stream_start_cb;
+    LogicalDecodeStreamStopCB stream_stop_cb;
+    LogicalDecodeStreamAbortCB stream_abort_cb;
+    LogicalDecodeStreamPrepareCB stream_prepare_cb;
+    LogicalDecodeStreamCommitCB stream_commit_cb;
+    LogicalDecodeStreamChangeCB stream_change_cb;
+    LogicalDecodeStreamMessageCB stream_message_cb;
+    LogicalDecodeStreamTruncateCB stream_truncate_cb;
+} OutputPluginCallbacks;
+
+typedef void (*LogicalOutputPluginInit) (struct OutputPluginCallbacks *cb);
+</pre><p>
+<span class="original">
+     The &lt;function&gt;begin_cb&lt;/function&gt;, &lt;function&gt;change_cb&lt;/function&gt;
+     and &lt;function&gt;commit_cb&lt;/function&gt; callbacks are required,
+     while &lt;function&gt;startup_cb&lt;/function&gt;,
+     &lt;function&gt;filter_by_origin_cb&lt;/function&gt;, &lt;function&gt;truncate_cb&lt;/function&gt;,
+     and &lt;function&gt;shutdown_cb&lt;/function&gt; are optional.
+     If &lt;function&gt;truncate_cb&lt;/function&gt; is not set but a
+     &lt;command&gt;TRUNCATE&lt;/command&gt; is to be decoded, the action will be ignored.
+</span>
+コールバック関数の<code class="function">begin_cb</code>、<code class="function">change_cb</code>、および、<code class="function">commit_cb</code>は必須ですが、<code class="function">startup_cb</code>、<code class="function">filter_by_origin_cb</code>、<code class="function">truncate_cb</code>、および、<code class="function">shutdown_cb</code>は必須ではありません。
+<code class="function">truncate_cb</code>が設定されていないけれども、<code class="command">TRUNCATE</code>がデコードされることになった場合、この動作は無視されます。
+    </p><p>
+<span class="original">
+     An output plugin may also define functions to support streaming of large,
+     in-progress transactions. The &lt;function&gt;stream_start_cb&lt;/function&gt;,
+     &lt;function&gt;stream_stop_cb&lt;/function&gt;, &lt;function&gt;stream_abort_cb&lt;/function&gt;,
+     &lt;function&gt;stream_commit_cb&lt;/function&gt;, &lt;function&gt;stream_change_cb&lt;/function&gt;,
+     and &lt;function&gt;stream_prepare_cb&lt;/function&gt;
+     are required, while &lt;function&gt;stream_message_cb&lt;/function&gt; and
+     &lt;function&gt;stream_truncate_cb&lt;/function&gt; are optional.
+</span>
+出力プラグインは、大きな継続中(in-progress)トランザクションのストリーミングをサポートする関数を定義することもできます。
+<code class="function">stream_start_cb</code>、<code class="function">stream_stop_cb</code>、<code class="function">stream_abort_cb</code>、<code class="function">stream_commit_cb</code>、<code class="function">stream_change_cb</code>、<code class="function">stream_prepare_cb</code>は必須ですが、<code class="function">stream_message_cb</code>と<code class="function">stream_truncate_cb</code>は必須ではありません。
+    </p><p>
+<span class="original">
+    An output plugin may also define functions to support two-phase commits,
+    which allows actions to be decoded on the &lt;command&gt;PREPARE TRANSACTION&lt;/command&gt;.
+    The &lt;function&gt;begin_prepare_cb&lt;/function&gt;, &lt;function&gt;prepare_cb&lt;/function&gt;,
+    &lt;function&gt;stream_prepare_cb&lt;/function&gt;,
+    &lt;function&gt;commit_prepared_cb&lt;/function&gt; and &lt;function&gt;rollback_prepared_cb&lt;/function&gt;
+    callbacks are required, while &lt;function&gt;filter_prepare_cb&lt;/function&gt; is optional.
+</span>
+出力プラグインは、<code class="command">PREPARE TRANSACTION</code>でアクションをデコードできるようにする2相コミットをサポートする関数を定義することもできます。
+<code class="function">begin_prepare_cb</code>、<code class="function">prepare_cb</code>、<code class="function">stream_prepare_cb</code>、<code class="function">commit_prepared_cb</code>、<code class="function">rollback_prepared_cb</code>コールバックは必須ですが、<code class="function">filter_prepare_cb</code>は必須ではありません。
+    </p></div><div class="sect2" id="LOGICALDECODING-CAPABILITIES"><div class="titlepage"><div><div><h3 class="title">49.6.2. 機能</h3></div></div></div><span class="original">
+    &lt;title&gt;Capabilities&lt;/title&gt;
+</span><p>
+<span class="original">
+     To decode, format and output changes, output plugins can use most of the
+     backend's normal infrastructure, including calling output functions. Read
+     only access to relations is permitted as long as only relations are
+     accessed that either have been created by &lt;command&gt;initdb&lt;/command&gt; in
+     the &lt;literal&gt;pg_catalog&lt;/literal&gt; schema, or have been marked as user
+     provided catalog tables using
+</span>
+更新データをデコード、整形、出力するために、出力関数を呼び出すことを含め、出力プラグインはバックエンドの通常のインフラストラクチャのほとんどを利用できます。
+テーブルは、<code class="command">initdb</code>で作られ、<code class="literal">pg_catalog</code>スキーマに含まれているか、以下のコマンドでユーザ定義のカタログテーブルであると印が付けられている限り、読み込み専用のアクセスが許可されます。
+</p><pre class="programlisting">
+ALTER TABLE user_catalog_table SET (user_catalog_table = true);
+CREATE TABLE another_catalog_table(data text) WITH (user_catalog_table = true);
+</pre><p>
+<span class="original">
+     Note that access to user catalog tables or regular system catalog tables
+     in the output plugins has to be done via the &lt;literal&gt;systable_*&lt;/literal&gt;
+     scan APIs only. Access via the &lt;literal&gt;heap_*&lt;/literal&gt; scan APIs will
+     error out. Additionally, any actions leading to transaction ID assignment
+     are prohibited. That, among others, includes writing to tables, performing
+     DDL changes, and calling &lt;literal&gt;pg_current_xact_id()&lt;/literal&gt;.
+</span>
+出力プラグイン内のユーザカタログテーブルまたは通常のシステムカタログテーブルへのアクセスは、<code class="literal">systable_*</code>スキャンAPIを介してのみ行う必要があることに注意してください。
+<code class="literal">heap_*</code>スキャンAPIを介したアクセスはエラーになります。
+さらに、トランザクションIDの割り当てにつながるアクションは禁止されています。
+これには、テーブルへの書き込み、DDL変更の実行、<code class="literal">pg_current_xact_id()</code>の呼び出しなどが含まれます。
+    </p></div><div class="sect2" id="LOGICALDECODING-OUTPUT-MODE"><div class="titlepage"><div><div><h3 class="title">49.6.3. 出力モード</h3></div></div></div><span class="original">
+    &lt;title&gt;Output Modes&lt;/title&gt;
+</span><p>
+<span class="original">
+     Output plugin callbacks can pass data to the consumer in nearly arbitrary
+     formats. For some use cases, like viewing the changes via SQL, returning
+     data in a data type that can contain arbitrary data (e.g., &lt;type&gt;bytea&lt;/type&gt;) is
+     cumbersome. If the output plugin only outputs textual data in the
+     server's encoding, it can declare that by
+     setting &lt;literal&gt;OutputPluginOptions.output_type&lt;/literal&gt;
+     to &lt;literal&gt;OUTPUT_PLUGIN_TEXTUAL_OUTPUT&lt;/literal&gt; instead
+     of &lt;literal&gt;OUTPUT_PLUGIN_BINARY_OUTPUT&lt;/literal&gt; in
+     the &lt;link linkend="logicaldecoding-output-plugin-startup"&gt;startup
+     callback&lt;/link&gt;. In that case, all the data has to be in the server's encoding
+     so that a &lt;type&gt;text&lt;/type&gt; datum can contain it. This is checked in assertion-enabled
+     builds.
+</span>
+出力プラグインコールバックは、かなり自由な形式で消費者にデータを渡すことができます。
+SQLで変更データを見るような場合、任意のかたちでデータを返すことのできるデータ型(たとえば<code class="type">bytea</code>)は扱いにくいです。
+出力プラグインがサーバエンコーディングのテキストデータのみを含むことにするには、<a class="link" href="logicaldecoding-output-plugin.html#LOGICALDECODING-OUTPUT-PLUGIN-STARTUP" title="49.6.4.1. 開始コールバック">起動コールバック</a>で、<code class="literal">OutputPluginOptions.output_type</code>に<code class="literal">OUTPUT_PLUGIN_BINARY_OUTPUT</code>ではなく、<code class="literal">OUTPUT_PLUGIN_TEXTUAL_OUTPUT</code>を設定することによって宣言できます。
+この場合、<code class="type">text</code>datumが格納することができるように、すべてのデータはサーバエンコーディングでエンコードされていなければなりません。
+    </p></div><div class="sect2" id="LOGICALDECODING-OUTPUT-PLUGIN-CALLBACKS"><div class="titlepage"><div><div><h3 class="title">49.6.4. 出力プラグインコールバック</h3></div></div></div><span class="original">
+    &lt;title&gt;Output Plugin Callbacks&lt;/title&gt;
+</span><p>
+<span class="original">
+     An output plugin gets notified about changes that are happening via
+     various callbacks it needs to provide.
+</span>
+出力プラグインには、必要に応じて発生した更新に関する通知が様々なコールバックを通じて送られます。
+    </p><p>
+<span class="original">
+     Concurrent transactions are decoded in commit order, and only changes
+     belonging to a specific transaction are decoded between
+     the &lt;literal&gt;begin&lt;/literal&gt; and &lt;literal&gt;commit&lt;/literal&gt;
+     callbacks. Transactions that were rolled back explicitly or implicitly
+     never get
+     decoded. Successful savepoints are
+     folded into the transaction containing them in the order they were
+     executed within that transaction. A transaction that is prepared for
+     a two-phase commit using &lt;command&gt;PREPARE TRANSACTION&lt;/command&gt; will
+     also be decoded if the output plugin callbacks needed for decoding
+     them are provided. It is possible that the current prepared transaction
+     which is being decoded is aborted concurrently via a
+     &lt;command&gt;ROLLBACK PREPARED&lt;/command&gt; command. In that case, the logical
+     decoding of this transaction will be aborted too. All the changes of such
+     a transaction are skipped once the abort is detected and the
+     &lt;function&gt;prepare_cb&lt;/function&gt; callback is invoked. Thus even in case of
+     a concurrent abort, enough information is provided to the output plugin
+     for it to properly deal with &lt;command&gt;ROLLBACK PREPARED&lt;/command&gt; once
+     that is decoded.
+</span>
+同時に実行されたトランザクションは、コミットした順番にデコードされます。
+指定したトランザクションに含まれる更新だけが<code class="literal">begin</code>と<code class="literal">commit</code>の間のコールバックによってデコードされます。
+明示的あるいは暗黙的にロールバックされたトランザクションは、決してデコードされません。
+成功したセーブポイントは、実行された順番にセーブポイントが実行されたトランザクションの中に折り込まれます。
+<code class="command">PREPARE TRANSACTION</code>を使用して2相コミット用に準備されたトランザクションも、デコードに必要な出力プラグインコールバックが提供されていればデコードされます。
+<code class="command">ROLLBACK PREPARED</code>コマンドを使用して、現在準備されているトランザクションが同時にアボートされる可能性があります。
+その場合、このトランザクションのロジカルデコーディングもアボートされます。
+そのようなトランザクションのすべての変更は、アボートが検出され、<code class="function">prepare_cb</code>コールバックが呼び出されるとスキップされます。
+このように、同時にアボートされた場合でも、デコードされた<code class="command">ROLLBACK PREPARED</code>を適切に処理するために十分な情報が出力プラグインに提供されます。
+    </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+      Only transactions that have already safely been flushed to disk will be
+      decoded. That can lead to a &lt;command&gt;COMMIT&lt;/command&gt; not immediately being decoded in a
+      directly following &lt;literal&gt;pg_logical_slot_get_changes()&lt;/literal&gt;
+      when &lt;varname&gt;synchronous_commit&lt;/varname&gt; is set
+      to &lt;literal&gt;off&lt;/literal&gt;.
+</span>
+ディスクに安全に書きだされたトランザクションだけがデコードされます。
+そのため、<code class="varname">synchronous_commit</code>が<code class="literal">off</code>の場合には、直後に呼び出された<code class="literal">pg_logical_slot_get_changes()</code>がその<code class="command">COMMIT</code>をデコードしないことがあります。
+     </p></div><div class="sect3" id="LOGICALDECODING-OUTPUT-PLUGIN-STARTUP"><div class="titlepage"><div><div><h4 class="title">49.6.4.1. 開始コールバック</h4></div></div></div><span class="original">
+     &lt;title&gt;Startup Callback&lt;/title&gt;
+</span><p>
+<span class="original">
+      The optional &lt;function&gt;startup_cb&lt;/function&gt; callback is called whenever
+      a replication slot is created or asked to stream changes, independent
+      of the number of changes that are ready to be put out.
+</span>
+ストリームに投入可能な更新の数に関係なく、レプリケーションスロットが作られるか、ストリームの変更がリクエストされた場合にオプションの<code class="function">startup_cb</code>コールバック呼び出されます。
+</p><pre class="programlisting">
+typedef void (*LogicalDecodeStartupCB) (struct LogicalDecodingContext *ctx,
+                                        OutputPluginOptions *options,
+                                        bool is_init);
+</pre><p>
+<span class="original">
+      The &lt;literal&gt;is_init&lt;/literal&gt; parameter will be true when the
+      replication slot is being created and false
+      otherwise. &lt;parameter&gt;options&lt;/parameter&gt; points to a struct of options
+      that output plugins can set:
+</span>
+<code class="literal">is_init</code> パラメータは、レプリケーションスロットが作られる際にはtrue、それ以外ではfalseになります。
+<em class="parameter"><code>options</code></em>は、出力プラグインが書き込む以下の構造体を指します。
+</p><pre class="programlisting">
+typedef struct OutputPluginOptions
+{
+    OutputPluginOutputType output_type;
+    bool        receive_rewrites;
+} OutputPluginOptions;
+</pre><p>
+<span class="original">
+      &lt;literal&gt;output_type&lt;/literal&gt; has to either be set to
+      &lt;literal&gt;OUTPUT_PLUGIN_TEXTUAL_OUTPUT&lt;/literal&gt;
+      or &lt;literal&gt;OUTPUT_PLUGIN_BINARY_OUTPUT&lt;/literal&gt;. See also
+      &lt;xref linkend="logicaldecoding-output-mode"/&gt;.
+      If &lt;literal&gt;receive_rewrites&lt;/literal&gt; is true, the output plugin will
+      also be called for changes made by heap rewrites during certain DDL
+      operations.  These are of interest to plugins that handle DDL
+      replication, but they require special handling.
+</span>
+<code class="literal">output_type</code>は<code class="literal">OUTPUT_PLUGIN_TEXTUAL_OUTPUT</code>か<code class="literal">OUTPUT_PLUGIN_BINARY_OUTPUT</code>のどちらかです。
+<a class="xref" href="logicaldecoding-output-plugin.html#LOGICALDECODING-OUTPUT-MODE" title="49.6.3. 出力モード">49.6.3</a>も参照してください。
+<code class="literal">receive_rewrites</code>が真なら、何らかDDL操作時のヒープ書き換えで生じた変更に対して、出力プラグインも呼ばれます。
+これはDDLレプリケーションを処理するプラグインを対象としていますが、これらは特別な処理を必要とします。
+     </p><p>
+<span class="original">
+      The startup callback should validate the options present in
+      &lt;literal&gt;ctx-&amp;gt;output_plugin_options&lt;/literal&gt;. If the output plugin
+      needs to have a state, it can
+      use &lt;literal&gt;ctx-&amp;gt;output_plugin_private&lt;/literal&gt; to store it.
+</span>
+開始コールバックでは、<code class="literal">ctx-&gt;output_plugin_options</code>で指定されるオプションを検証しましょう。
+出力プラグインが状態を持つ必要がある場合には、<code class="literal">ctx-&gt;output_plugin_private</code>を利用できます。
+     </p></div><div class="sect3" id="LOGICALDECODING-OUTPUT-PLUGIN-SHUTDOWN"><div class="titlepage"><div><div><h4 class="title">49.6.4.2. 終了コールバック</h4></div></div></div><span class="original">
+     &lt;title&gt;Shutdown Callback&lt;/title&gt;
+</span><p>
+<span class="original">
+      The optional &lt;function&gt;shutdown_cb&lt;/function&gt; callback is called
+      whenever a formerly active replication slot is not used anymore and can
+      be used to deallocate resources private to the output plugin. The slot
+      isn't necessarily being dropped, streaming is just being stopped.
+</span>
+以前アクティブだったレプリケーションスロットが使われなくなったら、いつでも<code class="function">shutdown_cb</code>コールバックが呼び出され、出力プラグインのプライベートリソースが解放されます。
+スロットは削除される必要はありません。単にストリームが停止します。
+</p><pre class="programlisting">
+typedef void (*LogicalDecodeShutdownCB) (struct LogicalDecodingContext *ctx);
+</pre><p>
+     </p></div><div class="sect3" id="LOGICALDECODING-OUTPUT-PLUGIN-BEGIN"><div class="titlepage"><div><div><h4 class="title">49.6.4.3. トランザクション開始コールバック</h4></div></div></div><span class="original">
+     &lt;title&gt;Transaction Begin Callback&lt;/title&gt;
+</span><p>
+<span class="original">
+      The required &lt;function&gt;begin_cb&lt;/function&gt; callback is called whenever a
+      start of a committed transaction has been decoded. Aborted transactions
+      and their contents never get decoded.
+</span>
+必須である<code class="function">begin_cb</code>コールバックは、コミットしたトランザクションの開始がデコードされる際に必ず呼び出されます。
+アボートしたトランザクションとその内容は決してデコードされません。
+</p><pre class="programlisting">
+typedef void (*LogicalDecodeBeginCB) (struct LogicalDecodingContext *ctx,
+                                      ReorderBufferTXN *txn);
+</pre><p>
+<span class="original">
+      The &lt;parameter&gt;txn&lt;/parameter&gt; parameter contains meta information about
+      the transaction, like the time stamp at which it has been committed and
+      its XID.
+</span>
+<em class="parameter"><code>txn</code></em>引数は、コミット時のタイムスタンプやトランザクションIDなどのトランザクションに関するメタ情報を含みます。
+     </p></div><div class="sect3" id="LOGICALDECODING-OUTPUT-PLUGIN-COMMIT"><div class="titlepage"><div><div><h4 class="title">49.6.4.4. トランザクション終了コールバック</h4></div></div></div><span class="original">
+     &lt;title&gt;Transaction End Callback&lt;/title&gt;
+</span><p>
+<span class="original">
+      The required &lt;function&gt;commit_cb&lt;/function&gt; callback is called whenever
+      a transaction commit has been
+      decoded. The &lt;function&gt;change_cb&lt;/function&gt; callbacks for all modified
+      rows will have been called before this, if there have been any modified
+      rows.
+</span>
+必須である<code class="function">commit_cb</code>コールバックは、トランザクションのコミットがデコードされる際に必ず呼び出されます。
+行が更新された場合は、それぞれの行に対して<code class="function">change_cb</code>コールバックが、<code class="function">commit_cb</code>の前に呼び出されます。
+</p><pre class="programlisting">
+typedef void (*LogicalDecodeCommitCB) (struct LogicalDecodingContext *ctx,
+                                       ReorderBufferTXN *txn,
+                                       XLogRecPtr commit_lsn);
+</pre><p>
+     </p></div><div class="sect3" id="LOGICALDECODING-OUTPUT-PLUGIN-CHANGE"><div class="titlepage"><div><div><h4 class="title">49.6.4.5. 更新コールバック</h4></div></div></div><span class="original">
+     &lt;title&gt;Change Callback&lt;/title&gt;
+</span><p>
+<span class="original">
+      The required &lt;function&gt;change_cb&lt;/function&gt; callback is called for every
+      individual row modification inside a transaction, may it be
+      an &lt;command&gt;INSERT&lt;/command&gt;, &lt;command&gt;UPDATE&lt;/command&gt;,
+      or &lt;command&gt;DELETE&lt;/command&gt;. Even if the original command modified
+      several rows at once the callback will be called individually for each
+      row. The &lt;function&gt;change_cb&lt;/function&gt; callback may access system or
+      user catalog tables to aid in the process of outputting the row
+      modification details. In case of decoding a prepared (but yet
+      uncommitted) transaction or decoding of an uncommitted transaction, this
+      change callback might also error out due to simultaneous rollback of
+      this very same transaction. In that case, the logical decoding of this
+      aborted transaction is stopped gracefully.
+</span>
+トランザクション内の<code class="command">INSERT</code>、<code class="command">UPDATE</code>、<code class="command">DELETE</code>の更新に対して、必須コールバックである<code class="function">change_cb</code>が呼び出されます。
+元の更新コマンドが複数の行を一度に更新する場合は、それぞれの行に対してこのコールバックが呼び出されます。
+<code class="function">change_cb</code>コールバックは、システムまたはユーザカタログテーブルにアクセスして、行変更の詳細を出力する処理を支援することができます。
+準備された(まだコミットされていない)トランザクションをデコードする場合、またはコミットされていないトランザクションをデコードする場合、この変更コールバックは、まったく同じトランザクションが同時にロールバックされるためにエラーになることもあります。
+この場合、このアボートされたトランザクションのロジカルデコーディングは正常に停止されます。
+</p><pre class="programlisting">
+typedef void (*LogicalDecodeChangeCB) (struct LogicalDecodingContext *ctx,
+                                       ReorderBufferTXN *txn,
+                                       Relation relation,
+                                       ReorderBufferChange *change);
+</pre><p>
+<span class="original">
+      The &lt;parameter&gt;ctx&lt;/parameter&gt; and &lt;parameter&gt;txn&lt;/parameter&gt; parameters
+      have the same contents as for the &lt;function&gt;begin_cb&lt;/function&gt;
+      and &lt;function&gt;commit_cb&lt;/function&gt; callbacks, but additionally the
+      relation descriptor &lt;parameter&gt;relation&lt;/parameter&gt; points to the
+      relation the row belongs to and a struct
+      &lt;parameter&gt;change&lt;/parameter&gt; describing the row modification are passed
+      in.
+</span>
+<em class="parameter"><code>ctx</code></em>と<em class="parameter"><code>txn</code></em>は、<code class="function">begin_cb</code>、<code class="function">commit_cb</code>コールバックでは同じ内容になります。
+これに加えて<em class="parameter"><code>relation</code></em>は行が属するリレーションを指定し、行の変更を記述する<em class="parameter"><code>change</code></em>パラメータが渡されます。
+     </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+       Only changes in user defined tables that are not unlogged
+       (see &lt;xref linkend="sql-createtable-unlogged"/&gt;) and not temporary
+       (see &lt;xref linkend="sql-createtable-temporary"/&gt;) can be extracted using
+       logical decoding.
+</span>
+unloggedテーブル(<a class="xref" href="sql-createtable.html#SQL-CREATETABLE-UNLOGGED"><code class="literal">UNLOGGED</code></a>参照)と(<a class="xref" href="sql-createtable.html#SQL-CREATETABLE-TEMPORARY"><code class="literal">TEMPORARY</code>または<code class="literal">TEMP</code></a>参照)以外のユーザ定義テーブルだけが、ロジカルデコーディングを使って更新データを取得できます。
+      </p></div></div><div class="sect3" id="LOGICALDECODING-OUTPUT-PLUGIN-TRUNCATE"><div class="titlepage"><div><div><h4 class="title">49.6.4.6. TRUNCATEコールバック</h4></div></div></div><span class="original">
+     &lt;title&gt;Truncate Callback&lt;/title&gt;
+</span><p>
+<span class="original">
+      The &lt;function&gt;truncate_cb&lt;/function&gt; callback is called for a
+      &lt;command&gt;TRUNCATE&lt;/command&gt; command.
+</span>
+<code class="function">truncate_cb</code>コールバックは、<code class="command">TRUNCATE</code>コマンドに対して呼ばれます。
+</p><pre class="programlisting">
+typedef void (*LogicalDecodeTruncateCB) (struct LogicalDecodingContext *ctx,
+                                         ReorderBufferTXN *txn,
+                                         int nrelations,
+                                         Relation relations[],
+                                         ReorderBufferChange *change);
+</pre><p>
+<span class="original">
+      The parameters are analogous to the &lt;function&gt;change_cb&lt;/function&gt;
+      callback.  However, because &lt;command&gt;TRUNCATE&lt;/command&gt; actions on
+      tables connected by foreign keys need to be executed together, this
+      callback receives an array of relations instead of just a single one.
+      See the description of the &lt;xref linkend="sql-truncate"/&gt; statement for
+      details.
+</span>
+パラメータは<code class="function">change_cb</code>コールバックと似ています。
+しかしながら、外部キーで結びついたテーブル群の<code class="command">TRUNCATE</code>動作は一緒に実行される必要があるため、このコールバックは単一リレーションではなく、リレーションの配列を受け取ります。
+詳しくは<a class="xref" href="sql-truncate.html" title="TRUNCATE"><span class="refentrytitle">TRUNCATE</span></a>文の説明を参照してください。
+     </p></div><div class="sect3" id="LOGICALDECODING-OUTPUT-PLUGIN-FILTER-ORIGIN"><div class="titlepage"><div><div><h4 class="title">49.6.4.7. オリジンフィルターコールバック</h4></div></div></div><span class="original">
+     &lt;title&gt;Origin Filter Callback&lt;/title&gt;
+</span><p>
+<span class="original">
+       The optional &lt;function&gt;filter_by_origin_cb&lt;/function&gt; callback
+       is called to determine whether data that has been replayed
+       from &lt;parameter&gt;origin_id&lt;/parameter&gt; is of interest to the
+       output plugin.
+</span>
+オプションの<code class="function">filter_by_origin_cb</code>コールバックは、<em class="parameter"><code>origin_id</code></em>からリプレイされたデータがアウトプットプラグインの対象となるかどうかを判定するために呼び出されます。
+</p><pre class="programlisting">
+typedef bool (*LogicalDecodeFilterByOriginCB) (struct LogicalDecodingContext *ctx,
+                                               RepOriginId origin_id);
+</pre><p>
+<span class="original">
+      The &lt;parameter&gt;ctx&lt;/parameter&gt; parameter has the same contents
+      as for the other callbacks. No information but the origin is
+      available. To signal that changes originating on the passed in
+      node are irrelevant, return true, causing them to be filtered
+      away; false otherwise. The other callbacks will not be called
+      for transactions and changes that have been filtered away.
+</span>
+<em class="parameter"><code>ctx</code></em>パラメータは、他のコールバックと同じ内容を持ちます。
+オリジンの情報だけが得られます。
+渡されたノードで発生した変更が無関係であることを伝えるには、trueを返します。
+これにより、その変更は無視されることになります。
+無視されたトランザクション変更に関わる他のコールバックは呼び出されません。
+     </p><p>
+<span class="original">
+       This is useful when implementing cascading or multidirectional
+       replication solutions. Filtering by the origin allows to
+       prevent replicating the same changes back and forth in such
+       setups.  While transactions and changes also carry information
+       about the origin, filtering via this callback is noticeably
+       more efficient.
+</span>
+これは、カスケード、あるいは双方向レプリケーションソリューションを実装する際に有用です。
+オリジンでフィルターすることにより、そのような構成で、同じ変更のレプリケーションが往復するのを防ぐことができます。
+トランザクションや変更もオリジンに関する情報を持っていますが、このコールバックでフィルターするほうがずっと効率的です。
+     </p></div><div class="sect3" id="LOGICALDECODING-OUTPUT-PLUGIN-MESSAGE"><div class="titlepage"><div><div><h4 class="title">49.6.4.8. 汎用メッセージコールバック</h4></div></div></div><span class="original">
+     &lt;title&gt;Generic Message Callback&lt;/title&gt;
+</span><p>
+<span class="original">
+      The optional &lt;function&gt;message_cb&lt;/function&gt; callback is called whenever
+      a logical decoding message has been decoded.
+</span>
+オプションの<code class="function">message_cb</code>コールバックは、ロジカルデコーディングメッセージがデコードされる度に呼び出されます。
+</p><pre class="programlisting">
+typedef void (*LogicalDecodeMessageCB) (struct LogicalDecodingContext *ctx,
+                                        ReorderBufferTXN *txn,
+                                        XLogRecPtr message_lsn,
+                                        bool transactional,
+                                        const char *prefix,
+                                        Size message_size,
+                                        const char *message);
+</pre><p>
+<span class="original">
+      The &lt;parameter&gt;txn&lt;/parameter&gt; parameter contains meta information about
+      the transaction, like the time stamp at which it has been committed and
+      its XID. Note however that it can be NULL when the message is
+      non-transactional and the XID was not assigned yet in the transaction
+      which logged the message. The &lt;parameter&gt;lsn&lt;/parameter&gt; has WAL
+      location of the message. The &lt;parameter&gt;transactional&lt;/parameter&gt; says
+      if the message was sent as transactional or not. Similar to the change
+      callback, in case of decoding a prepared (but yet uncommitted)
+      transaction or decoding of an uncommitted transaction, this message
+      callback might also error out due to simultaneous rollback of
+      this very same transaction. In that case, the logical decoding of this
+      aborted transaction is stopped gracefully.
+
+      The &lt;parameter&gt;prefix&lt;/parameter&gt; is arbitrary null-terminated prefix
+      which can be used for identifying interesting messages for the current
+      plugin. And finally the &lt;parameter&gt;message&lt;/parameter&gt; parameter holds
+      the actual message of &lt;parameter&gt;message_size&lt;/parameter&gt; size.
+</span>
+<em class="parameter"><code>txn</code></em>パラメータは、コミット時のタイムスタンプとXIDのような、トランザクションに関するメタ情報を含んでいます。
+ただし、そのメッセージがトランザクション扱いではなく、メッセージをログしたトランザクションにXIDが割り当てられてない場合はNULLになることに注意してください。
+<em class="parameter"><code>lsn</code></em>は、メッセージに対応するWALの位置です。
+<em class="parameter"><code>transactional</code></em>は、メッセージがトランザクションとして送られたものかどうかを表しています。
+変更コールバックと同様に、準備された(まだコミットされていない)トランザクションをデコードする場合、またはコミットされていないトランザクションをデコードする場合、このメッセージコールバックも、まったく同じトランザクションの同時ロールバックのためにエラーになることがあります。
+この場合、アボートされたトランザクションのロジカルデコーディングは正常に停止されます。
+
+<em class="parameter"><code>prefix</code></em>はnull終端された任意の接頭辞で、現在のプラグインが興味のあるメッセージを特定するために利用できます。
+最後に、<em class="parameter"><code>message</code></em>パラメータは、大きさが<em class="parameter"><code>message_size</code></em>の、実際のメッセージを保持します。
+     </p><p>
+<span class="original">
+      Extra care should be taken to ensure that the prefix the output plugin
+      considers interesting is unique. Using name of the extension or the
+      output plugin itself is often a good choice.
+</span>
+出力プラグインが利用を考慮している接頭辞が一意になるように、特に注意を払ってください。
+拡張の名前か、出力プラグインの名前を使うのが良い場合が多いです。
+     </p></div><div class="sect3" id="LOGICALDECODING-OUTPUT-PLUGIN-FILTER-PREPARE"><div class="titlepage"><div><div><h4 class="title">49.6.4.9. フィルタコールバックの準備</h4></div></div></div><span class="original">
+     &lt;title&gt;Prepare Filter Callback&lt;/title&gt;
+</span><p>
+<span class="original">
+       The optional &lt;function&gt;filter_prepare_cb&lt;/function&gt; callback
+       is called to determine whether data that is part of the current
+       two-phase commit transaction should be considered for decoding
+       at this prepare stage or later as a regular one-phase transaction at
+       &lt;command&gt;COMMIT PREPARED&lt;/command&gt; time. To signal that
+       decoding should be skipped, return &lt;literal&gt;true&lt;/literal&gt;;
+       &lt;literal&gt;false&lt;/literal&gt; otherwise. When the callback is not
+       defined, &lt;literal&gt;false&lt;/literal&gt; is assumed (i.e. no filtering, all
+       transactions using two-phase commit are decoded in two phases as well).
+</span>
+オプションの<code class="function">filter_prepare_cb</code>コールバックは、現在の2相コミットトランザクションの一部であるデータを、この準備段階でデコードするか、または<code class="command">COMMIT PREPARED</code>時に通常の1相トランザクションとしてデコードするかを決定するために呼び出されます。
+デコードをスキップするように合図するには、<code class="literal">true</code>を返します。
+そうでなければ<code class="literal">false</code>を返します。
+コールバックが定義されていない場合、<code class="literal">false</code>が想定されます(すなわち、フィルタリングなしで、2相コミットを使用するすべてのトランザクションも同様に2相でデコードされます)。
+</p><pre class="programlisting">
+typedef bool (*LogicalDecodeFilterPrepareCB) (struct LogicalDecodingContext *ctx,
+                                              TransactionId xid,
+                                              const char *gid);
+</pre><p>
+<span class="original">
+       The &lt;parameter&gt;ctx&lt;/parameter&gt; parameter has the same contents as for
+       the other callbacks. The parameters &lt;parameter&gt;xid&lt;/parameter&gt;
+       and &lt;parameter&gt;gid&lt;/parameter&gt; provide two different ways to identify
+       the transaction.  The later &lt;command&gt;COMMIT PREPARED&lt;/command&gt; or
+       &lt;command&gt;ROLLBACK PREPARED&lt;/command&gt; carries both identifiers,
+       providing an output plugin the choice of what to use.
+</span>
+<em class="parameter"><code>ctx</code></em>パラメータは他のコールバックと同じ内容です。
+パラメータ<em class="parameter"><code>xid</code></em>と<em class="parameter"><code>gid</code></em>は、トランザクションを識別するための2つの異なる方法を提供します。
+後の<code class="command">COMMIT PREPARED</code>または<code class="command">ROLLBACK PREPARED</code>は両方の識別子を持ち、出力プラグインに何を使用するかの選択を提供します。
+     </p><p>
+<span class="original">
+       The callback may be invoked multiple times per transaction to decode
+       and must provide the same static answer for a given pair of
+       &lt;parameter&gt;xid&lt;/parameter&gt; and &lt;parameter&gt;gid&lt;/parameter&gt; every time
+       it is called.
+</span>
+このコールバックは、デコードするトランザクションごとに複数回呼び出すことができ、呼び出されるたびに<em class="parameter"><code>xid</code></em>と<em class="parameter"><code>gid</code></em>の与えられたペアに対して同じ静的な答えを提供しなければなりません。
+     </p></div><div class="sect3" id="LOGICALDECODING-OUTPUT-PLUGIN-BEGIN-PREPARE"><div class="titlepage"><div><div><h4 class="title">49.6.4.10. トランザクション開始準備コールバック</h4></div></div></div><span class="original">
+     &lt;title&gt;Transaction Begin Prepare Callback&lt;/title&gt;
+</span><p>
+<span class="original">
+      The required &lt;function&gt;begin_prepare_cb&lt;/function&gt; callback is called
+      whenever the start of a prepared transaction has been decoded. The
+      &lt;parameter&gt;gid&lt;/parameter&gt; field, which is part of the
+      &lt;parameter&gt;txn&lt;/parameter&gt; parameter, can be used in this callback to
+      check if the plugin has already received this &lt;command&gt;PREPARE&lt;/command&gt;
+      in which case it can either error out or skip the remaining changes of
+      the transaction.
+&lt;programlisting&gt;
+typedef void (*LogicalDecodeBeginPrepareCB) (struct LogicalDecodingContext *ctx,
+                                             ReorderBufferTXN *txn);
+&lt;/programlisting&gt;
+</span>
+《マッチ度[68.505338]》必須である<code class="function">begin_prepare_cb</code>コールバックは、準備されたトランザクションの開始がデコードされるたびに呼び出されます。
+<em class="parameter"><code>txn</code></em>パラメータの一部である<em class="parameter"><code>gid</code></em>フィールドをこのコールバックで使用して、プラグインがこの<code class="command">PREPARE</code>を既に受信しているかどうかをチェックできます。
+この場合、エラーになるか、トランザクションの残りの変更をスキップできます。
+     </p></div><div class="sect3" id="LOGICALDECODING-OUTPUT-PLUGIN-PREPARE"><div class="titlepage"><div><div><h4 class="title">49.6.4.11. トランザクション準備コールバック</h4></div></div></div><span class="original">
+     &lt;title&gt;Transaction Prepare Callback&lt;/title&gt;
+</span><p>
+<span class="original">
+      The required &lt;function&gt;prepare_cb&lt;/function&gt; callback is called whenever
+      a transaction which is prepared for two-phase commit has been
+      decoded. The &lt;function&gt;change_cb&lt;/function&gt; callback for all modified
+      rows will have been called before this, if there have been any modified
+      rows. The &lt;parameter&gt;gid&lt;/parameter&gt; field, which is part of the
+      &lt;parameter&gt;txn&lt;/parameter&gt; parameter, can be used in this callback.
+</span>
+必須である<code class="function">prepare_cb</code>コールバックは、2相コミット用に準備されたトランザクションがデコードされるたびに呼び出されます。
+修正された行がある場合、すべての修正された行に対する<code class="function">change_cb</code>コールバックはこの前に呼び出されています。
+<em class="parameter"><code>txn</code></em>パラメータの一部である<em class="parameter"><code>gid</code></em>フィールドは、このコールバックで使用できます。
+</p><pre class="programlisting">
+typedef void (*LogicalDecodePrepareCB) (struct LogicalDecodingContext *ctx,
+                                        ReorderBufferTXN *txn,
+                                        XLogRecPtr prepare_lsn);
+</pre><p>
+     </p></div><div class="sect3" id="LOGICALDECODING-OUTPUT-PLUGIN-COMMIT-PREPARED"><div class="titlepage"><div><div><h4 class="title">49.6.4.12. トランザクションコミット準備コールバック</h4></div></div></div><span class="original">
+     &lt;title&gt;Transaction Commit Prepared Callback&lt;/title&gt;
+</span><p>
+<span class="original">
+      The required &lt;function&gt;commit_prepared_cb&lt;/function&gt; callback is called
+      whenever a transaction &lt;command&gt;COMMIT PREPARED&lt;/command&gt; has been decoded.
+      The &lt;parameter&gt;gid&lt;/parameter&gt; field, which is part of the
+      &lt;parameter&gt;txn&lt;/parameter&gt; parameter, can be used in this callback.
+</span>
+必須である<code class="function">commit_prepared_cb</code>コールバックは、トランザクション<code class="command">COMMIT PREPARED</code>がデコードされるたびに呼び出されます。
+<em class="parameter"><code>txn</code></em>パラメータの一部である<em class="parameter"><code>gid</code></em>フィールドは、このコールバックで使用できます。
+</p><pre class="programlisting">
+typedef void (*LogicalDecodeCommitPreparedCB) (struct LogicalDecodingContext *ctx,
+                                               ReorderBufferTXN *txn,
+                                               XLogRecPtr commit_lsn);
+</pre><p>
+     </p></div><div class="sect3" id="LOGICALDECODING-OUTPUT-PLUGIN-ROLLBACK-PREPARED"><div class="titlepage"><div><div><h4 class="title">49.6.4.13. トランザクションロールバック準備コールバック</h4></div></div></div><span class="original">
+     &lt;title&gt;Transaction Rollback Prepared Callback&lt;/title&gt;
+</span><p>
+<span class="original">
+      The required &lt;function&gt;rollback_prepared_cb&lt;/function&gt; callback is called
+      whenever a transaction &lt;command&gt;ROLLBACK PREPARED&lt;/command&gt; has been
+      decoded. The &lt;parameter&gt;gid&lt;/parameter&gt; field, which is part of the
+      &lt;parameter&gt;txn&lt;/parameter&gt; parameter, can be used in this callback. The
+      parameters &lt;parameter&gt;prepare_end_lsn&lt;/parameter&gt; and
+      &lt;parameter&gt;prepare_time&lt;/parameter&gt; can be used to check if the plugin
+      has received this &lt;command&gt;PREPARE TRANSACTION&lt;/command&gt; in which case
+      it can apply the rollback, otherwise, it can skip the rollback operation. The
+      &lt;parameter&gt;gid&lt;/parameter&gt; alone is not sufficient because the downstream
+      node can have a prepared transaction with same identifier.
+</span>
+必須である<code class="function">rollback_prepared_cb</code>コールバックは、トランザクション<code class="command">ROLLBACK PREPARED</code>がデコードされるたびに呼び出されます。
+<em class="parameter"><code>txn</code></em>パラメータの一部である<em class="parameter"><code>gid</code></em>フィールドは、このコールバックで使用できます。
+パラメータ<em class="parameter"><code>prepare_end_lsn</code></em>と<em class="parameter"><code>prepare_time</code></em>は、プラグインがこの<code class="command">PREPARE TRANSACTION</code>を受信したかどうかをチェックするために使用できます。
+この場合、プラグインはロールバックを適用できます。
+そうでない場合は、ロールバック操作をスキップできます。
+<em class="parameter"><code>gid</code></em>だけでは十分ではありません。
+なぜなら、下流ノードは同じ識別子を持つ準備されたトランザクションを持つことができるからです。
+</p><pre class="programlisting">
+typedef void (*LogicalDecodeRollbackPreparedCB) (struct LogicalDecodingContext *ctx,
+                                                 ReorderBufferTXN *txn,
+                                                 XLogRecPtr prepare_end_lsn,
+                                                 TimestampTz prepare_time);
+</pre><p>
+     </p></div><div class="sect3" id="LOGICALDECODING-OUTPUT-PLUGIN-STREAM-START"><div class="titlepage"><div><div><h4 class="title">49.6.4.14. ストリーム開始コールバック</h4></div></div></div><span class="original">
+     &lt;title&gt;Stream Start Callback&lt;/title&gt;
+</span><p>
+<span class="original">
+      The &lt;function&gt;stream_start_cb&lt;/function&gt; callback is called when opening
+      a block of streamed changes from an in-progress transaction.
+</span>
+<code class="function">stream_start_cb</code>コールバックは、継続中のトランザクションからストリーム化された変更のブロックを開くときに呼び出されます。
+</p><pre class="programlisting">
+typedef void (*LogicalDecodeStreamStartCB) (struct LogicalDecodingContext *ctx,
+                                            ReorderBufferTXN *txn);
+</pre><p>
+     </p></div><div class="sect3" id="LOGICALDECODING-OUTPUT-PLUGIN-STREAM-STOP"><div class="titlepage"><div><div><h4 class="title">49.6.4.15. ストリーム停止コールバック</h4></div></div></div><span class="original">
+     &lt;title&gt;Stream Stop Callback&lt;/title&gt;
+</span><p>
+<span class="original">
+      The &lt;function&gt;stream_stop_cb&lt;/function&gt; callback is called when closing
+      a block of streamed changes from an in-progress transaction.
+</span>
+<code class="function">stream_stop_cb</code>コールバックは、継続中のトランザクションからストリーム化された変更のブロックをクローズするときに呼び出されます。
+</p><pre class="programlisting">
+typedef void (*LogicalDecodeStreamStopCB) (struct LogicalDecodingContext *ctx,
+                                           ReorderBufferTXN *txn);
+</pre><p>
+     </p></div><div class="sect3" id="LOGICALDECODING-OUTPUT-PLUGIN-STREAM-ABORT"><div class="titlepage"><div><div><h4 class="title">49.6.4.16. ストリームアボートコールバック</h4></div></div></div><span class="original">
+     &lt;title&gt;Stream Abort Callback&lt;/title&gt;
+</span><p>
+<span class="original">
+      The &lt;function&gt;stream_abort_cb&lt;/function&gt; callback is called to abort
+      a previously streamed transaction.
+</span>
+<code class="function">stream_abort_cb</code>コールバックは、以前にストリーム化されたトランザクションをアボートするために呼び出されます。
+</p><pre class="programlisting">
+typedef void (*LogicalDecodeStreamAbortCB) (struct LogicalDecodingContext *ctx,
+                                            ReorderBufferTXN *txn,
+                                            XLogRecPtr abort_lsn);
+</pre><p>
+     </p></div><div class="sect3" id="LOGICALDECODING-OUTPUT-PLUGIN-STREAM-PREPARE"><div class="titlepage"><div><div><h4 class="title">49.6.4.17. ストリーム準備コールバック</h4></div></div></div><span class="original">
+     &lt;title&gt;Stream Prepare Callback&lt;/title&gt;
+</span><p>
+<span class="original">
+      The &lt;function&gt;stream_prepare_cb&lt;/function&gt; callback is called to prepare
+      a previously streamed transaction as part of a two-phase commit.
+</span>
+<code class="function">stream_prepare_cb</code>コールバックは、2相コミットの一部として前にストリーム化されたトランザクションを準備するために呼び出されます。
+</p><pre class="programlisting">
+typedef void (*LogicalDecodeStreamPrepareCB) (struct LogicalDecodingContext *ctx,
+                                              ReorderBufferTXN *txn,
+                                              XLogRecPtr prepare_lsn);
+</pre><p>
+     </p></div><div class="sect3" id="LOGICALDECODING-OUTPUT-PLUGIN-STREAM-COMMIT"><div class="titlepage"><div><div><h4 class="title">49.6.4.18. ストリームコミットコールバック</h4></div></div></div><span class="original">
+     &lt;title&gt;Stream Commit Callback&lt;/title&gt;
+</span><p>
+<span class="original">
+      The &lt;function&gt;stream_commit_cb&lt;/function&gt; callback is called to commit
+      a previously streamed transaction.
+</span>
+<code class="function">stream_commit_cb</code>コールバックは、以前にストリーム化されたトランザクションをコミットするために呼び出されます。
+</p><pre class="programlisting">
+typedef void (*LogicalDecodeStreamCommitCB) (struct LogicalDecodingContext *ctx,
+                                             ReorderBufferTXN *txn,
+                                             XLogRecPtr commit_lsn);
+</pre><p>
+     </p></div><div class="sect3" id="LOGICALDECODING-OUTPUT-PLUGIN-STREAM-CHANGE"><div class="titlepage"><div><div><h4 class="title">49.6.4.19. ストリーム変更コールバック</h4></div></div></div><span class="original">
+     &lt;title&gt;Stream Change Callback&lt;/title&gt;
+</span><p>
+<span class="original">
+      The &lt;function&gt;stream_change_cb&lt;/function&gt; callback is called when sending
+      a change in a block of streamed changes (demarcated by
+      &lt;function&gt;stream_start_cb&lt;/function&gt; and &lt;function&gt;stream_stop_cb&lt;/function&gt; calls).
+      The actual changes are not displayed as the transaction can abort at a later
+      point in time and we don't decode changes for aborted transactions.
+</span>
+<code class="function">stream_change_cb</code>コールバックは、ストリーム化された変更のブロック(<code class="function">stream_start_cb</code>と<code class="function">stream_stop_cb</code>呼び出しで区切られます)で変更を送信するときに呼び出されます。
+実際の変更は表示されません。
+なぜなら、トランザクションは後の時点でアボートする可能性があり、アボートされたトランザクションの変更はデコードされないからです。
+</p><pre class="programlisting">
+typedef void (*LogicalDecodeStreamChangeCB) (struct LogicalDecodingContext *ctx,
+                                             ReorderBufferTXN *txn,
+                                             Relation relation,
+                                             ReorderBufferChange *change);
+</pre><p>
+     </p></div><div class="sect3" id="LOGICALDECODING-OUTPUT-PLUGIN-STREAM-MESSAGE"><div class="titlepage"><div><div><h4 class="title">49.6.4.20. ストリームメッセージコールバック</h4></div></div></div><span class="original">
+     &lt;title&gt;Stream Message Callback&lt;/title&gt;
+</span><p>
+<span class="original">
+      The &lt;function&gt;stream_message_cb&lt;/function&gt; callback is called when sending
+      a generic message in a block of streamed changes (demarcated by
+      &lt;function&gt;stream_start_cb&lt;/function&gt; and &lt;function&gt;stream_stop_cb&lt;/function&gt; calls).
+      The message contents for transactional messages are not displayed as the transaction
+      can abort at a later point in time and we don't decode changes for aborted
+      transactions.
+</span>
+<code class="function">stream_message_cb</code>コールバックは、ストリーム化された変更のブロック(<code class="function">stream_start_cb</code>と<code class="function">stream_stop_cb</code>コールで区切られた)で汎用メッセージを送信するときに呼び出されます。
+トランザクションメッセージのメッセージ内容は表示されません。
+なぜなら、トランザクションは後の時点でアボートする可能性があり、アボートされたトランザクションの変更はデコードされないからです。
+</p><pre class="programlisting">
+typedef void (*LogicalDecodeStreamMessageCB) (struct LogicalDecodingContext *ctx,
+                                              ReorderBufferTXN *txn,
+                                              XLogRecPtr message_lsn,
+                                              bool transactional,
+                                              const char *prefix,
+                                              Size message_size,
+                                              const char *message);
+</pre><p>
+     </p></div><div class="sect3" id="LOGICALDECODING-OUTPUT-PLUGIN-STREAM-TRUNCATE"><div class="titlepage"><div><div><h4 class="title">49.6.4.21. ストリームTRUNCATEコールバック</h4></div></div></div><span class="original">
+     &lt;title&gt;Stream Truncate Callback&lt;/title&gt;
+</span><p>
+<span class="original">
+      The &lt;function&gt;stream_truncate_cb&lt;/function&gt; callback is called for a
+      &lt;command&gt;TRUNCATE&lt;/command&gt; command in a block of streamed changes
+      (demarcated by &lt;function&gt;stream_start_cb&lt;/function&gt; and
+      &lt;function&gt;stream_stop_cb&lt;/function&gt; calls).
+</span>
+<code class="function">stream_truncate_cb</code>コールバックは、ストリーム化された変更のブロック(<code class="function">stream_start_cb</code>と<code class="function">stream_stop_cb</code>呼び出しで区切られます)内の<code class="command">TRUNCATE</code>コマンドに対して呼び出されます。
+</p><pre class="programlisting">
+typedef void (*LogicalDecodeStreamTruncateCB) (struct LogicalDecodingContext *ctx,
+                                               ReorderBufferTXN *txn,
+                                               int nrelations,
+                                               Relation relations[],
+                                               ReorderBufferChange *change);
+</pre><p>
+<span class="original">
+      The parameters are analogous to the &lt;function&gt;stream_change_cb&lt;/function&gt;
+      callback.  However, because &lt;command&gt;TRUNCATE&lt;/command&gt; actions on
+      tables connected by foreign keys need to be executed together, this
+      callback receives an array of relations instead of just a single one.
+      See the description of the &lt;xref linkend="sql-truncate"/&gt; statement for
+      details.
+</span>
+パラメータは<code class="function">stream_change_cb</code>コールバックに類似しています。
+ただし、外部キーで接続されたテーブルに対する<code class="command">TRUNCATE</code>アクションは一緒に実行する必要があるため、このコールバックは単一のリレーションではなくリレーションの配列を受け取ります。
+詳細は<a class="xref" href="sql-truncate.html" title="TRUNCATE"><span class="refentrytitle">TRUNCATE</span></a>文の説明を参照してください。
+     </p></div></div><div class="sect2" id="LOGICALDECODING-OUTPUT-PLUGIN-OUTPUT"><div class="titlepage"><div><div><h3 class="title">49.6.5. 出力生成関数</h3></div></div></div><span class="original">
+    &lt;title&gt;Functions for Producing Output&lt;/title&gt;
+</span><p>
+<span class="original">
+     To actually produce output, output plugins can write data to
+     the &lt;literal&gt;StringInfo&lt;/literal&gt; output buffer
+     in &lt;literal&gt;ctx-&amp;gt;out&lt;/literal&gt; when inside
+     the &lt;function&gt;begin_cb&lt;/function&gt;, &lt;function&gt;commit_cb&lt;/function&gt;,
+     or &lt;function&gt;change_cb&lt;/function&gt; callbacks. Before writing to the output
+     buffer, &lt;function&gt;OutputPluginPrepareWrite(ctx, last_write)&lt;/function&gt; has
+     to be called, and after finishing writing to the
+     buffer, &lt;function&gt;OutputPluginWrite(ctx, last_write)&lt;/function&gt; has to be
+     called to perform the write. The &lt;parameter&gt;last_write&lt;/parameter&gt;
+     indicates whether a particular write was the callback's last write.
+</span>
+<code class="function">begin_cb</code>、<code class="function">commit_cb</code>、<code class="function">change_cb</code>コールバックにおいて、出力プラグインは実際にデータ出力するために<code class="literal">ctx-&gt;out</code>の<code class="literal">StringInfo</code>出力バッファに書き込みます。
+出力バッファに書き込む前に、<code class="function">OutputPluginPrepareWrite(ctx, last_write)</code>を呼び出します。
+また、書き込みバッファにデータを書き終えたら、<code class="function">OutputPluginWrite(ctx, last_write)</code>を呼び出してデータの書き込みを実施します。
+<em class="parameter"><code>last_write</code></em>引数により、その書き込みがコールバックの最終的な書き込みであるかどうかを指定します。
+    </p><p>
+<span class="original">
+     The following example shows how to output data to the consumer of an
+     output plugin:
+</span>
+以下の例では、出力プラグインにおいて消費者に向けてデータを出力する方法を示します。
+</p><pre class="programlisting">
+OutputPluginPrepareWrite(ctx, true);
+appendStringInfo(ctx-&gt;out, "BEGIN %u", txn-&gt;xid);
+OutputPluginWrite(ctx, true);
+</pre><p>
+    </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="logicaldecoding-catalogs.html" title="49.5. ロジカルデコーディング関連のシステムカタログ">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="logicaldecoding.html" title="第49章 ロジカルデコーディング">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="logicaldecoding-writer.html" title="49.7. ロジカルデコーディング出力ライタ">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">49.5. ロジカルデコーディング関連のシステムカタログ </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 49.7. ロジカルデコーディング出力ライタ</td></tr></table></div></body></html>

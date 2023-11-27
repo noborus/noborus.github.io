@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>19.8. 暗号化オプション</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="preventing-server-spoofing.html" title="19.7. サーバのなりすまし防止" /><link rel="next" href="ssl-tcp.html" title="19.9. SSLによる安全なTCP/IP接続" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="runtime.html" title="第19章 サーバの準備と運用">第19章 サーバの準備と運用</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : encryption-options.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="preventing-server-spoofing.html" title="19.7. サーバのなりすまし防止">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="runtime.html" title="第19章 サーバの準備と運用">上へ</a></td><td width="60%" align="center">19.8. 暗号化オプション</td><td width="20%" align="right"> <a accesskey="n" href="ssl-tcp.html" title="19.9. SSLによる安全なTCP/IP接続">次へ</a></td></tr></table><hr /></div><div class="sect1" id="ENCRYPTION-OPTIONS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">19.8. 暗号化オプション</h2></div></div></div><span class="original">
+  &lt;title&gt;Encryption Options&lt;/title&gt;
+</span><a id="id-1.6.6.11.2" class="indexterm"></a><a id="id-1.6.6.11.3" class="indexterm"></a><p>
+<span class="original">
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; offers encryption at several
+   levels, and provides flexibility in protecting data from disclosure
+   due to database server theft, unscrupulous administrators, and
+   insecure networks. Encryption might also be required to secure
+   sensitive data such as medical records or financial transactions.
+</span>
+<span class="productname">PostgreSQL</span>は、複数レベルの暗号化を備え、データベースサーバ自身、管理者の注意不足、安全ではないネットワークを原因とした漏洩からデータを柔軟に保護することができます。
+また、医療記録や金融取引など高セキュリティが求められるデータを格納する場合に暗号化が必要な場合もあります。
+  </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">パスワードの暗号化</span></dt><dd><p>
+<span class="original">
+     Database user passwords are stored as hashes (determined by the setting
+     &lt;xref linkend="guc-password-encryption"/&gt;), so the administrator cannot
+     determine the actual password assigned to the user. If SCRAM or MD5
+     encryption is used for client authentication, the unencrypted password is
+     never even temporarily present on the server because the client encrypts
+     it before being sent across the network. SCRAM is preferred, because it
+     is an Internet standard and is more secure than the PostgreSQL-specific
+     MD5 authentication protocol.
+</span>
+データベースユーザのパスワードは（<a class="xref" href="runtime-config-connection.html#GUC-PASSWORD-ENCRYPTION">password_encryption</a>によって決定される）ハッシュとして格納されます。ですので、ユーザに割り当てられているパスワードは管理者でも分かりません。
+SCRAM又はMD5暗号化がクライアント認証に使用されている場合、平文のパスワードはサーバ上に一時的にも存在することはありません。ネットワーク上に流れる前にクライアントが暗号化を行うからです。
+SCRAMは、インターネット標準で、PostgreSQL特有なMD5認証プロトコルよりセキュアであるため、より望ましいです。
+    </p></dd><dt><span class="term">特定の列に関する暗号化</span></dt><dd><p>
+<span class="original">
+     The &lt;xref linkend="pgcrypto"/&gt; module allows certain fields to be
+     stored encrypted.
+     This is useful if only some of the data is sensitive.
+     The client supplies the decryption key and the data is decrypted
+     on the server and then sent to the client.
+</span>
+<a class="xref" href="pgcrypto.html" title="F.28. pgcrypto">pgcrypto</a>モジュールにより、あるフィールドを暗号化して保存することができます。
+データの一部が極秘データであるような場合に有用です。
+クライアントが提供した復号化用のキーで、サーバ上のデータを復号化し、クライアントに返されます。
+    </p><p>
+<span class="original">
+     The decrypted data and the decryption key are present on the
+     server for a brief time while it is being decrypted and
+     communicated between the client and server. This presents a brief
+     moment where the data and keys can be intercepted by someone with
+     complete access to the database server, such as the system
+     administrator.
+</span>
+復号化されたデータと復号化用のキーは、復号処理中およびクライアントサーバ間の通信中サーバ上に存在している時間があります。
+このため、データベースサーバへのすべてのアクセス権限を持つユーザ（例えばシステム管理者）によって、データとキーが盗まれるわずかな時間があります。
+    </p></dd><dt><span class="term">データパーティションに関する暗号化</span></dt><dd><p>
+<span class="original">
+     Storage encryption can be performed at the file system level or the
+     block level.  Linux file system encryption options include eCryptfs
+     and EncFS, while FreeBSD uses PEFS.  Block level or full disk
+     encryption options include dm-crypt + LUKS on Linux and GEOM
+     modules geli and gbde on FreeBSD.  Many other operating systems
+     support this functionality, including Windows.
+</span>
+ストレージの暗号化は、ファイルシステムレベルまたはブロックレベルで行うことができます。
+Linuxファイルシステムの暗号化オプションには、eCryptfsとEncFSがあります。一方、FreeBSDではPEFSを使用します。
+ブロックレベルまたはフルディスクの暗号化オプションとして、Linuxにはdm-crypt + LUKS、FreeBSDにはGEOMモジュールのgeliとgbdeがあります。
+これにより、ファイルシステムパーティション全体をディスク上で暗号化することができます。
+他の多くのオペレーティングシステムは、Windowsを含め、この機能をサポートしています。
+    </p><p>
+<span class="original">
+     This mechanism prevents unencrypted data from being read from the
+     drives if the drives or the entire computer is stolen. This does
+     not protect against attacks while the file system is mounted,
+     because when mounted, the operating system provides an unencrypted
+     view of the data. However, to mount the file system, you need some
+     way for the encryption key to be passed to the operating system,
+     and sometimes the key is stored somewhere on the host that mounts
+     the disk.
+</span>
+この機構により、ディスク装置やコンピュータ全体が盗まれた場合でも、ディスクから平文のデータが読み取られることを防止できます。
+ファイルシステムがマウントされている時は、この機構による保護は働きません。
+マウント時にはオペレーティングシステムが復号化したデータを提供するからです。
+しかし、ファイルシステムをマウントするためになんらかの方法で暗号化キーをオペレーティングシステムに渡さなければなりません。
+そのディスク装置をマウントするホストのどこかに暗号化キーを格納している場合もあります。
+    </p></dd><dt><span class="term">ネットワーク越しのデータ暗号化</span></dt><dd><p>
+<span class="original">
+      SSL connections encrypt all data sent across the network: the
+      password, the queries, and the data returned. The
+      &lt;filename&gt;pg_hba.conf&lt;/filename&gt; file allows administrators to specify
+      which hosts can use non-encrypted connections (&lt;literal&gt;host&lt;/literal&gt;)
+      and which require SSL-encrypted connections
+      (&lt;literal&gt;hostssl&lt;/literal&gt;). Also, clients can specify that they
+      connect to servers only via SSL.
+</span>
+SSL接続により、ネットワーク越しに送信されるデータ（パスワード、問い合わせ、結果のデータ）はすべて暗号化されます。
+<code class="filename">pg_hba.conf</code>ファイルを使用して、管理者はどのホストは暗号化しない接続を使用し（<code class="literal">host</code>）、どのホストがSSLで暗号化された接続を必要とするか（<code class="literal">hostssl</code>）を指定することができます。
+また、SSL経由のサーバとの接続のみを使用するようにクライアントで指定することもできます。
+     </p><p>
+<span class="original">
+      GSSAPI-encrypted connections encrypt all data sent across the network,
+      including queries and data returned.  (No password is sent across the
+      network.)  The &lt;filename&gt;pg_hba.conf&lt;/filename&gt; file allows
+      administrators to specify which hosts can use non-encrypted connections
+      (&lt;literal&gt;host&lt;/literal&gt;) and which require GSSAPI-encrypted connections
+      (&lt;literal&gt;hostgssenc&lt;/literal&gt;).  Also, clients can specify that they
+      connect to servers only on GSSAPI-encrypted connections
+      (&lt;literal&gt;gssencmode=require&lt;/literal&gt;).
+</span>
+GSSAPI暗号化接続は、問い合わせ及び返却されるデータを含めてネットワーク上に転送されるすべてのデータを暗号化します。
+（パスワードはネットワーク上に送信されません。）
+管理者は<code class="filename">pg_hba.conf</code>ファイルを使ってどのホストが非暗号化接続を使うか(<code class="literal">host</code>)、どのホストがGSSAPI暗号化接続を要求するか(<code class="literal">hostgssenc</code>)を指定できます。
+クライアントはGSSAPI暗号化接続のみを使ってサーバに接続することも指定できます(<code class="literal">gssencmode=require</code>)。
+     </p><p>
+<span class="original">
+      &lt;application&gt;Stunnel&lt;/application&gt; or
+      &lt;application&gt;SSH&lt;/application&gt; can also be used to encrypt
+      transmissions.
+</span>
+<span class="application">Stunnel</span>や<span class="application">SSH</span>を使用して暗号化転送を行うこともできます。
+     </p></dd><dt><span class="term">SSLホスト認証</span></dt><dd><p>
+<span class="original">
+     It is possible for both the client and server to provide SSL
+     certificates to each other. It takes some extra configuration
+     on each side, but this provides stronger verification of identity
+     than the mere use of passwords. It prevents a computer from
+     pretending to be the server just long enough to read the password
+     sent by the client. It also helps prevent &lt;quote&gt;man in the middle&lt;/quote&gt;
+     attacks where a computer between the client and server pretends to
+     be the server and reads and passes all data between the client and
+     server.
+</span>
+クライアントとサーバの両方で証明書を互いに提供することができます。
+これには両方で追加の設定を行わなければなりませんが、これにより単なるパスワードの使用よりも強力な身元の検証を行うことができます。
+クライアントから送信されたパスワードを盗聴する偽装サーバからコンピュータを保護します。
+また、クライアントとサーバとの間にあるコンピュータがサーバになりすまし、クライアントとサーバ間で流れるデータを読み取り中継する、<span class="quote">「<span class="quote">中間者</span>」</span>攻撃から保護することもできます。
+    </p></dd><dt><span class="term">クライアントサイドの暗号化</span></dt><dd><p>
+<span class="original">
+     If the system administrator for the server's machine cannot be trusted,
+     it is necessary
+     for the client to encrypt the data; this way, unencrypted data
+     never appears on the database server. Data is encrypted on the
+     client before being sent to the server, and database results have
+     to be decrypted on the client before being used.
+</span>
+サーバマシンのシステム管理者を信頼できない場合、クライアント側でデータを暗号化する必要があります。
+この場合、平文のデータはデータベースサーバ上に存在しません。
+データはサーバに送信される前にクライアント上で暗号化されます。
+また、使用する前にデータベースからの結果をクライアントで復号化しなければなりません。
+    </p></dd></dl></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="preventing-server-spoofing.html" title="19.7. サーバのなりすまし防止">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="runtime.html" title="第19章 サーバの準備と運用">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="ssl-tcp.html" title="19.9. SSLによる安全なTCP/IP接続">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">19.7. サーバのなりすまし防止 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 19.9. SSLによる安全なTCP/IP接続</td></tr></table></div></body></html>

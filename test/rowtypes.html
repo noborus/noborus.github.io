@@ -1,0 +1,685 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>8.16. 複合型</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="arrays.html" title="8.15. 配列" /><link rel="next" href="rangetypes.html" title="8.17. 範囲型" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="datatype.html" title="第8章 データ型">第8章 データ型</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : rowtypes.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="arrays.html" title="8.15. 配列">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="datatype.html" title="第8章 データ型">上へ</a></td><td width="60%" align="center">8.16. 複合型</td><td width="20%" align="right"> <a accesskey="n" href="rangetypes.html" title="8.17. 範囲型">次へ</a></td></tr></table><hr /></div><div class="sect1" id="ROWTYPES"><div class="titlepage"><div><div><h2 class="title" style="clear: both">8.16. 複合型</h2></div></div></div><span class="original">
+ &lt;title&gt;Composite Types&lt;/title&gt;
+</span><a id="id-1.5.7.26.2" class="indexterm"></a><a id="id-1.5.7.26.3" class="indexterm"></a><a id="id-1.5.7.26.4" class="indexterm"></a><a id="id-1.5.7.26.5" class="indexterm"></a><p>
+<span class="original">
+  A &lt;firstterm&gt;composite type&lt;/firstterm&gt; represents the structure of a row or record;
+  it is essentially just a list of field names and their data types.
+  &lt;productname&gt;PostgreSQL&lt;/productname&gt; allows  composite types to be
+  used in many of the same ways that simple types can be used.  For example, a
+  column of a table can be declared to be of a composite type.
+</span>
+<em class="firstterm">複合型</em>は、行もしくはレコードの構造を表現します。
+本質的には、これは単なるフィールド名とそのデータ型のリストです。
+<span class="productname">PostgreSQL</span>では、単純な型において使用される方法と多くは同じ方法で複合型を使用できます。
+例えば、テーブルの列は複合型の型のものとして宣言することができます。
+ </p><div class="sect2" id="ROWTYPES-DECLARING"><div class="titlepage"><div><div><h3 class="title">8.16.1. 複合型の宣言</h3></div></div></div><span class="original">
+  &lt;title&gt;Declaration of Composite Types&lt;/title&gt;
+</span><p>
+<span class="original">
+  Here are two simple examples of defining composite types:
+</span>
+複合型の宣言の例を以下に2つ示します。
+</p><pre class="programlisting">
+CREATE TYPE complex AS (
+    r       double precision,
+    i       double precision
+);
+
+CREATE TYPE inventory_item AS (
+    name            text,
+    supplier_id     integer,
+    price           numeric
+);
+</pre><p>
+<span class="original">
+  The syntax is comparable to &lt;command&gt;CREATE TABLE&lt;/command&gt;, except that only
+  field names and types can be specified; no constraints (such as &lt;literal&gt;NOT
+  NULL&lt;/literal&gt;) can presently be included.  Note that the &lt;literal&gt;AS&lt;/literal&gt; keyword
+  is essential; without it, the system will think a different kind
+  of &lt;command&gt;CREATE TYPE&lt;/command&gt; command is meant, and you will get odd syntax
+  errors.
+</span>
+この構文は、フィールド名とその型のみを指定できるという点を除き、<code class="command">CREATE TABLE</code>と同等です。
+現在は、制約（<code class="literal">NOT NULL</code>など）を含めることはできません。
+<code class="literal">AS</code>キーワードが重要であることに注意してください。
+これがないと、システムは<code class="command">CREATE TYPE</code>の意味を異なって解釈し、おかしな構文エラーを引き起こします。
+ </p><p>
+<span class="original">
+  Having defined the types, we can use them to create tables:
+</span>
+定義済みの型を使用して、以下のようにテーブルや関数を生成することができます。
+
+</p><pre class="programlisting">
+CREATE TABLE on_hand (
+    item      inventory_item,
+    count     integer
+);
+
+INSERT INTO on_hand VALUES (ROW('fuzzy dice', 42, 1.99), 1000);
+</pre><p>
+
+<span class="original">
+  or functions:
+</span>
+また、関数においては以下のように利用できます。
+
+</p><pre class="programlisting">
+CREATE FUNCTION price_extension(inventory_item, integer) RETURNS numeric
+AS 'SELECT $1.price * $2' LANGUAGE SQL;
+
+SELECT price_extension(item, 10) FROM on_hand;
+</pre><p>
+
+ </p><p>
+<span class="original">
+  Whenever you create a table, a composite type is also automatically
+  created, with the same name as the table, to represent the table's
+  row type.  For example, had we said:
+</span>
+テーブルを生成する時には、テーブルの行型を表現するために、テーブル名と同じ名前の複合型も自動的に生成されます。
+例えば、以下のように
+</p><pre class="programlisting">
+CREATE TABLE inventory_item (
+    name            text,
+    supplier_id     integer REFERENCES suppliers,
+    price           numeric CHECK (price &gt; 0)
+);
+</pre><p>
+<span class="original">
+  then the same &lt;literal&gt;inventory_item&lt;/literal&gt; composite type shown above would
+  come into being as a
+  byproduct, and could be used just as above.  Note however an important
+  restriction of the current implementation: since no constraints are
+  associated with a composite type, the constraints shown in the table
+  definition &lt;emphasis&gt;do not apply&lt;/emphasis&gt; to values of the composite type
+  outside the table.  (To work around this, create a
+  &lt;glossterm linkend="glossary-domain"&gt;domain&lt;/glossterm&gt; over the composite
+  type, and apply the desired constraints as &lt;literal&gt;CHECK&lt;/literal&gt;
+  constraints of the domain.)
+</span>
+テーブルを作成すると、上述のものと同じ<code class="literal">inventory_item</code>という複合型が副次的に作成され、同様に使用することができるようになります。
+しかし、現在の実装には、次のような重要な制限があることに注意してください。
+複合型には制約が関連付けられませんので、テーブル定義に含まれる制約は、テーブルの外部に作成される複合型には<span class="emphasis"><em>適用されません</em></span>。
+（これを回避するためには、複合型を含む<a class="glossterm" href="glossary.html#GLOSSARY-DOMAIN"><em class="glossterm"><a class="glossterm" href="glossary.html#GLOSSARY-DOMAIN" title="Domain【ドメイン】">ドメイン</a></em></a>を作成し、ドメインの<code class="literal">CHECK</code>制約として望みの制約を適用します。）
+ </p></div><div class="sect2" id="id-1.5.7.26.8"><div class="titlepage"><div><div><h3 class="title">8.16.2. 複合型の値の構成</h3></div></div></div><span class="original">
+  &lt;title&gt;Constructing Composite Values&lt;/title&gt;
+</span><a id="id-1.5.7.26.8.2" class="indexterm"></a><a id="id-1.5.7.26.8.3" class="indexterm"></a><p>
+<span class="original">
+   To write a composite value as a literal constant, enclose the field
+   values within parentheses and separate them by commas.  You can put double
+   quotes around any field value, and must do so if it contains commas or
+   parentheses.  (More details appear &lt;link
+   linkend="rowtypes-io-syntax"&gt;below&lt;/link&gt;.)  Thus, the general format of
+   a composite constant is the following:
+</span>
+複合型をリテラル定数として記述するには、フィールド値をカンマで区切り、それらを括弧で括ります。
+フィールド値を二重引用符で括ることができ、また、値にカンマや括弧を含む場合は二重引用符で括らなければなりません
+（より詳細については<a class="link" href="rowtypes.html#ROWTYPES-IO-SYNTAX" title="8.16.6. 複合型の入出力構文">後</a>で説明します）。
+したがって、複合型の定数の一般的な書式は以下のようになります。
+</p><pre class="synopsis">
+'( <em class="replaceable"><code>val1</code></em> , <em class="replaceable"><code>val2</code></em> , ... )'
+</pre><p>
+<span class="original">
+   An example is:
+</span>
+以下に例を示します。
+</p><pre class="programlisting">
+'("fuzzy dice",42,1.99)'
+</pre><p>
+<span class="original">
+   which would be a valid value of the &lt;literal&gt;inventory_item&lt;/literal&gt; type
+   defined above.  To make a field be NULL, write no characters at all
+   in its position in the list.  For example, this constant specifies
+   a NULL third field:
+</span>
+これは、上述の<code class="literal">inventory_item</code>型の値として有効なものです。
+フィールドをNULLにするには、リスト中の該当位置を空にします。
+例えば、以下の定数は3番目のフィールドにNULLを指定しています。
+</p><pre class="programlisting">
+'("fuzzy dice",42,)'
+</pre><p>
+<span class="original">
+   If you want an empty string rather than NULL, write double quotes:
+</span>
+NULLではなく空文字列にしたいのであれば、以下のように引用符を二重に記述します。
+</p><pre class="programlisting">
+'("",42,)'
+</pre><p>
+<span class="original">
+   Here the first field is a non-NULL empty string, the third is NULL.
+</span>
+これにより、最初のフィールドは非NULLの空文字列に、3番目のフィールドはNULLになります。
+  </p><p>
+<span class="original">
+   (These constants are actually only a special case of
+   the generic type constants discussed in &lt;xref
+   linkend="sql-syntax-constants-generic"/&gt;.  The constant is initially
+   treated as a string and passed to the composite-type input conversion
+   routine.  An explicit type specification might be necessary to tell
+   which type to convert the constant to.)
+</span>
+（実際には、こうした定数は<a class="xref" href="sql-syntax-lexical.html#SQL-SYNTAX-CONSTANTS-GENERIC" title="4.1.2.7. 他の型の定数">4.1.2.7</a>で説明した、一般的な型の定数の特殊な場合に過ぎません。
+定数はまず、文字列として扱われ、複合型の入力変換処理に渡されます。
+定数をどの型に変換するかを示すため、明示的な型指定が必要になることもあります。）
+  </p><p>
+<span class="original">
+  The &lt;literal&gt;ROW&lt;/literal&gt; expression syntax can also be used to
+  construct composite values.  In most cases this is considerably
+  simpler to use than the string-literal syntax since you don't have
+  to worry about multiple layers of quoting.  We already used this
+  method above:
+</span>
+また、<code class="literal">ROW</code>式構文も、複合値を生成する際に使用することができます。
+複数の階層に渡る引用符について考慮する必要がないため、おそらくほとんどの場合、これは文字列リテラル構文よりも簡単に使用できます。
+上記において、既にこの方法を使用しています。
+</p><pre class="programlisting">
+ROW('fuzzy dice', 42, 1.99)
+ROW('', 42, NULL)
+</pre><p>
+<span class="original">
+  The ROW keyword is actually optional as long as you have more than one
+  field in the expression, so these can be simplified to:
+</span>
+式の中に2つ以上のフィールドがある場合には、ROWキーワードは実際には省略することができます。
+ですので、以下のように簡略化することができます。
+</p><pre class="programlisting">
+('fuzzy dice', 42, 1.99)
+('', 42, NULL)
+</pre><p>
+<span class="original">
+  The &lt;literal&gt;ROW&lt;/literal&gt; expression syntax is discussed in more detail in &lt;xref
+  linkend="sql-syntax-row-constructors"/&gt;.
+</span>
+<code class="literal">ROW</code>構文については<a class="xref" href="sql-expressions.html#SQL-SYNTAX-ROW-CONSTRUCTORS" title="4.2.13. 行コンストラクタ">4.2.13</a>でより詳細に説明します。
+ </p></div><div class="sect2" id="ROWTYPES-ACCESSING"><div class="titlepage"><div><div><h3 class="title">8.16.3. 複合型へのアクセス</h3></div></div></div><span class="original">
+  &lt;title&gt;Accessing Composite Types&lt;/title&gt;
+</span><p>
+<span class="original">
+  To access a field of a composite column, one writes a dot and the field
+  name, much like selecting a field from a table name.  In fact, it's so
+  much like selecting from a table name that you often have to use parentheses
+  to keep from confusing the parser.  For example, you might try to select
+  some subfields from our &lt;literal&gt;on_hand&lt;/literal&gt; example table with something
+  like:
+</span>
+複合型の列のフィールドにアクセスするには、テーブル名からフィールドを選択する場合とほぼ同様に、ドットとフィールド名を記述します。
+実際、テーブル名からの選択とかなり似ていますので、パーサを混乱させないように括弧を使用しなければならないことがしばしばあります。
+例えば、<code class="literal">on_hand</code>というテーブルの例からサブフィールドを選択しようとした場合、以下のように書くかもしれません。
+
+</p><pre class="programlisting">
+SELECT item.name FROM on_hand WHERE item.price &gt; 9.99;
+</pre><p>
+
+<span class="original">
+  This will not work since the name &lt;literal&gt;item&lt;/literal&gt; is taken to be a table
+  name, not a column name of &lt;literal&gt;on_hand&lt;/literal&gt;, per SQL syntax rules.
+  You must write it like this:
+</span>
+これは、SQLの構文規則に従って<code class="literal">item</code>が<code class="literal">on_hand</code>の列名ではなくテーブル名として解釈されるため、動作しません。
+以下のように記述しなければなりません。
+
+</p><pre class="programlisting">
+SELECT (item).name FROM on_hand WHERE (item).price &gt; 9.99;
+</pre><p>
+
+<span class="original">
+  or if you need to use the table name as well (for instance in a multitable
+  query), like this:
+</span>
+また、テーブル名も使用しなければならない場合（例えば複数テーブルに対する問い合わせ）、以下のようになります。
+
+</p><pre class="programlisting">
+SELECT (on_hand.item).name FROM on_hand WHERE (on_hand.item).price &gt; 9.99;
+</pre><p>
+
+<span class="original">
+  Now the parenthesized object is correctly interpreted as a reference to
+  the &lt;literal&gt;item&lt;/literal&gt; column, and then the subfield can be selected from it.
+</span>
+これで、括弧で括られたオブジェクトは正しく<code class="literal">item</code>列への参照として解釈され、サブフィールドはそこから選択できるようになります。
+ </p><p>
+<span class="original">
+  Similar syntactic issues apply whenever you select a field from a composite
+  value.  For instance, to select just one field from the result of a function
+  that returns a composite value, you'd need to write something like:
+</span>
+似たような構文上の問題は、複合型からフィールドを選択する時、常に発生します。
+例えば、複合型の値を返す関数の結果から1つだけフィールドを選択する場合、以下のように記述しなければなりません。
+
+</p><pre class="programlisting">
+SELECT (my_func(...)).field FROM ...
+</pre><p>
+
+<span class="original">
+  Without the extra parentheses, this will generate a syntax error.
+</span>
+追加の括弧がないと、これは構文エラーを生成します。
+ </p><p>
+<span class="original">
+  The special field name &lt;literal&gt;*&lt;/literal&gt; means &lt;quote&gt;all fields&lt;/quote&gt;, as
+  further explained in &lt;xref linkend="rowtypes-usage"/&gt;.
+</span>
+<a class="xref" href="rowtypes.html#ROWTYPES-USAGE" title="8.16.5. 問い合わせでの複合型の使用">8.16.5</a>でより詳細に説明する通り、<code class="literal">*</code>という特別なフィールド名は<span class="quote">「<span class="quote">すべてのフィールド</span>」</span>を意味します。
+ </p></div><div class="sect2" id="id-1.5.7.26.10"><div class="titlepage"><div><div><h3 class="title">8.16.4. 複合型の変更</h3></div></div></div><span class="original">
+  &lt;title&gt;Modifying Composite Types&lt;/title&gt;
+</span><p>
+<span class="original">
+  Here are some examples of the proper syntax for inserting and updating
+  composite columns.
+  First, inserting or updating a whole column:
+</span>
+複合型の列への挿入と更新についての適切な構文の例をいくつか示します。
+まず、列全体を挿入、更新する例です。
+
+</p><pre class="programlisting">
+INSERT INTO mytab (complex_col) VALUES((1.1,2.2));
+
+UPDATE mytab SET complex_col = ROW(1.1,2.2) WHERE ...;
+</pre><p>
+
+<span class="original">
+  The first example omits &lt;literal&gt;ROW&lt;/literal&gt;, the second uses it; we
+  could have done it either way.
+</span>
+最初の例では<code class="literal">ROW</code>を省略し、2番目の例では<code class="literal">ROW</code>を使用しています。
+どちらの方法でも行うことができます。
+ </p><p>
+<span class="original">
+  We can update an individual subfield of a composite column:
+</span>
+以下のようにして、複合型の列の個々のサブフィールドを更新することができます。
+
+</p><pre class="programlisting">
+UPDATE mytab SET complex_col.r = (complex_col).r + 1 WHERE ...;
+</pre><p>
+
+<span class="original">
+  Notice here that we don't need to (and indeed cannot)
+  put parentheses around the column name appearing just after
+  &lt;literal&gt;SET&lt;/literal&gt;, but we do need parentheses when referencing the same
+  column in the expression to the right of the equal sign.
+</span>
+ここで、<code class="literal">SET</code>直後の列名の周りに括弧を記述する必要がないこと（実際には記述できないこと）、しかし、等号の右で同じ列を参照する場合には括弧が必要なことに注意してください。
+ </p><p>
+<span class="original">
+  And we can specify subfields as targets for &lt;command&gt;INSERT&lt;/command&gt;, too:
+</span>
+また、<code class="command">INSERT</code>の対象としてサブフィールドを指定することもできます。
+
+</p><pre class="programlisting">
+INSERT INTO mytab (complex_col.r, complex_col.i) VALUES(1.1, 2.2);
+</pre><p>
+
+<span class="original">
+  Had we not supplied values for all the subfields of the column, the
+  remaining subfields would have been filled with null values.
+</span>
+列のサブフィールド全ての値を与えていなければ、残りのサブフィールドはNULL値になります。
+ </p></div><div class="sect2" id="ROWTYPES-USAGE"><div class="titlepage"><div><div><h3 class="title">8.16.5. 問い合わせでの複合型の使用</h3></div></div></div><span class="original">
+  &lt;title&gt;Using Composite Types in Queries&lt;/title&gt;
+</span><p>
+<span class="original">
+   There are various special syntax rules and behaviors associated with
+   composite types in queries.  These rules provide useful shortcuts,
+   but can be confusing if you don't know the logic behind them.
+</span>
+問い合わせ内での複合型に関連して様々な特別な構文規則や動作があります。
+これらの規則により便利なショートカットが提供されますが、その背後にある論理を知らないと混乱を招くかもしれません。
+  </p><p>
+<span class="original">
+   In &lt;productname&gt;PostgreSQL&lt;/productname&gt;, a reference to a table name (or alias)
+   in a query is effectively a reference to the composite value of the
+   table's current row.  For example, if we had a table
+   &lt;structname&gt;inventory_item&lt;/structname&gt; as shown
+   &lt;link linkend="rowtypes-declaring"&gt;above&lt;/link&gt;, we could write:
+</span>
+<span class="productname">PostgreSQL</span>では、問い合わせでのテーブル名（または別名）の参照は、実質的にはテーブルの現在行の複合型の値への参照と同じになります。
+例えば、<a class="link" href="rowtypes.html#ROWTYPES-DECLARING" title="8.16.1. 複合型の宣言">前に</a>示した<code class="structname">inventory_item</code>というテーブルがあるとして、次のように記述することができます。
+</p><pre class="programlisting">
+SELECT c FROM inventory_item c;
+</pre><p>
+<span class="original">
+   This query produces a single composite-valued column, so we might get
+   output like:
+</span>
+この問い合わせは単一の複合型の値の列を生成するので、出力は以下のようになります。
+</p><pre class="programlisting">
+           c
+------------------------
+ ("fuzzy dice",42,1.99)
+(1 row)
+</pre><p>
+<span class="original">
+   Note however that simple names are matched to column names before table
+   names, so this example works only because there is no column
+   named &lt;structfield&gt;c&lt;/structfield&gt; in the query's tables.
+</span>
+ただし、単純な名前はテーブル名より先に列名に対してマッチさせられるので、この例は問い合わせのテーブルに<code class="structfield">c</code>という名前の列がないから動作したに過ぎないことに注意してください。
+  </p><p>
+<span class="original">
+   The ordinary qualified-column-name
+   syntax &lt;replaceable&gt;table_name&lt;/replaceable&gt;&lt;literal&gt;.&lt;/literal&gt;&lt;replaceable&gt;column_name&lt;/replaceable&gt;
+   can be understood as applying &lt;link linkend="field-selection"&gt;field
+   selection&lt;/link&gt; to the composite value of the table's current row.
+   (For efficiency reasons, it's not actually implemented that way.)
+</span>
+通常の<em class="replaceable"><code>table_name</code></em><code class="literal">.</code><em class="replaceable"><code>column_name</code></em>という列名修飾の構文は、<a class="link" href="sql-expressions.html#FIELD-SELECTION" title="4.2.4. フィールド選択">フィールド選択</a>をテーブルの現在行の複合型の値に対して適用していると考えることもできます。
+（効率の問題から、実際にはそのような実装にはなっていません。）
+  </p><p>
+<span class="original">
+   When we write
+</span>
+</p><pre class="programlisting">
+SELECT c.* FROM inventory_item c;
+</pre><p>
+<span class="original">
+   then, according to the SQL standard, we should get the contents of the
+   table expanded into separate columns:
+</span>
+上記のSQLについて、標準SQLではテーブルの内容が別々の列に展開されて、次のような結果になることを定めています。
+</p><pre class="programlisting">
+    name    | supplier_id | price
+------------+-------------+-------
+ fuzzy dice |          42 |  1.99
+(1 row)
+</pre><p>
+<span class="original">
+   as if the query were
+</span>
+つまりこれは、問い合わせが以下であったかのように動作するということです。
+</p><pre class="programlisting">
+SELECT c.name, c.supplier_id, c.price FROM inventory_item c;
+</pre><p>
+<span class="original">
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; will apply this expansion behavior to
+   any composite-valued expression, although as shown &lt;link
+   linkend="rowtypes-accessing"&gt;above&lt;/link&gt;, you need to write parentheses
+   around the value that &lt;literal&gt;.*&lt;/literal&gt; is applied to whenever it's not a
+   simple table name.  For example, if &lt;function&gt;myfunc()&lt;/function&gt; is a function
+   returning a composite type with columns &lt;structfield&gt;a&lt;/structfield&gt;,
+   &lt;structfield&gt;b&lt;/structfield&gt;, and &lt;structfield&gt;c&lt;/structfield&gt;, then these two queries have the
+   same result:
+</span>
+<span class="productname">PostgreSQL</span>では、この展開の動作をすべての複合型の値の式に適用します。
+ただし、<a class="link" href="rowtypes.html#ROWTYPES-ACCESSING" title="8.16.3. 複合型へのアクセス">前に</a>説明したように、<code class="literal">.*</code>をつける値が単純なテーブル名でないときは、必ずそれを括弧で括る必要があります。
+例えば、<code class="function">myfunc()</code>が列<code class="structfield">a</code>、<code class="structfield">b</code>、<code class="structfield">c</code>からなる複合型を返す関数だとすると、次の２つの問い合わせは同じ結果を返します。
+</p><pre class="programlisting">
+SELECT (myfunc(x)).* FROM some_table;
+SELECT (myfunc(x)).a, (myfunc(x)).b, (myfunc(x)).c FROM some_table;
+</pre><p>
+  </p><div class="tip"><h3 class="title">ヒント</h3><p>
+<span class="original">
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; handles column expansion by
+    actually transforming the first form into the second.  So, in this
+    example, &lt;function&gt;myfunc()&lt;/function&gt; would get invoked three times per row
+    with either syntax.  If it's an expensive function you may wish to
+    avoid that, which you can do with a query like:
+</span>
+<span class="productname">PostgreSQL</span>では、上の１番目の構文を２番目の構文に実際に変換することで列の展開を処理します。
+従って、この例ではどちらの構文を使っても<code class="function">myfunc()</code>は各行に対して３回ずつ呼び出されます。
+それが高価な関数でそのような事態を避けたいなら、次のような問い合わせにすることもできます。
+</p><pre class="programlisting">
+SELECT m.* FROM some_table, LATERAL myfunc(x) AS m;
+</pre><p>
+<span class="original">
+    Placing the function in
+    a &lt;literal&gt;LATERAL&lt;/literal&gt; &lt;literal&gt;FROM&lt;/literal&gt; item keeps it from
+    being invoked more than once per row.  &lt;literal&gt;m.*&lt;/literal&gt; is still
+    expanded into &lt;literal&gt;m.a, m.b, m.c&lt;/literal&gt;, but now those variables
+    are just references to the output of the &lt;literal&gt;FROM&lt;/literal&gt; item.
+    (The &lt;literal&gt;LATERAL&lt;/literal&gt; keyword is optional here, but we show it
+    to clarify that the function is getting &lt;structfield&gt;x&lt;/structfield&gt;
+    from &lt;structname&gt;some_table&lt;/structname&gt;.)
+</span>
+<code class="literal">LATERAL</code> <code class="literal">FROM</code>項目の中に関数を置くと、関数は1行につき2度以上は呼び出されません。
+<code class="literal">m.*</code>はまだ<code class="literal">m.a, m.b, m.c</code>に展開されますが、その変数は<code class="literal">FROM</code>項目の出力の単なる参照です。
+(<code class="literal">LATERAL</code>キーワードはここでは省略可能ですが、関数が<code class="structname">some_table</code>から<code class="structfield">x</code>を入手していることを明確にするために書きました。)
+   </p></div><p>
+<span class="original">
+   The &lt;replaceable&gt;composite_value&lt;/replaceable&gt;&lt;literal&gt;.*&lt;/literal&gt; syntax results in
+   column expansion of this kind when it appears at the top level of
+   a &lt;link linkend="queries-select-lists"&gt;&lt;command&gt;SELECT&lt;/command&gt; output
+   list&lt;/link&gt;, a &lt;link linkend="dml-returning"&gt;&lt;literal&gt;RETURNING&lt;/literal&gt;
+   list&lt;/link&gt; in &lt;command&gt;INSERT&lt;/command&gt;/&lt;command&gt;UPDATE&lt;/command&gt;/&lt;command&gt;DELETE&lt;/command&gt;,
+   a &lt;link linkend="queries-values"&gt;&lt;literal&gt;VALUES&lt;/literal&gt; clause&lt;/link&gt;, or
+   a &lt;link linkend="sql-syntax-row-constructors"&gt;row constructor&lt;/link&gt;.
+   In all other contexts (including when nested inside one of those
+   constructs), attaching &lt;literal&gt;.*&lt;/literal&gt; to a composite value does not
+   change the value, since it means &lt;quote&gt;all columns&lt;/quote&gt; and so the
+   same composite value is produced again.  For example,
+   if &lt;function&gt;somefunc()&lt;/function&gt; accepts a composite-valued argument,
+   these queries are the same:
+</span>
+<em class="replaceable"><code>composite_value</code></em><code class="literal">.*</code>の構文は、それが<a class="link" href="queries-select-lists.html" title="7.3. 選択リスト"><code class="command">SELECT</code>の出力リスト</a>、<code class="command">INSERT</code>/<code class="command">UPDATE</code>/<code class="command">DELETE</code>の<a class="link" href="dml-returning.html" title="6.4. 更新された行のデータを返す"><code class="literal">RETURNING</code>リスト</a>、<a class="link" href="queries-values.html" title="7.7. VALUESリスト"><code class="literal">VALUES</code>句</a>あるいは<a class="link" href="sql-expressions.html#SQL-SYNTAX-ROW-CONSTRUCTORS" title="4.2.13. 行コンストラクタ">行コンストラクタ</a>の最上位に記述された場合、この種の列展開がされます。
+それ以外の場合（これらの構文の内側に入れ子になっている場合を含みます）は、複合型の値に<code class="literal">.*</code>を付加しても、値は変わりません。
+なぜなら、それは<span class="quote">「<span class="quote">すべての列</span>」</span>を意味するため、同じ複合型の値が繰り返し生成されるからです。
+例えば、<code class="function">somefunc()</code>が複合型の値の引数をとるとして、以下の問い合わせは同じです。
+
+</p><pre class="programlisting">
+SELECT somefunc(c.*) FROM inventory_item c;
+SELECT somefunc(c) FROM inventory_item c;
+</pre><p>
+
+<span class="original">
+   In both cases, the current row of &lt;structname&gt;inventory_item&lt;/structname&gt; is
+   passed to the function as a single composite-valued argument.
+   Even though &lt;literal&gt;.*&lt;/literal&gt; does nothing in such cases, using it is good
+   style, since it makes clear that a composite value is intended.  In
+   particular, the parser will consider &lt;literal&gt;c&lt;/literal&gt; in &lt;literal&gt;c.*&lt;/literal&gt; to
+   refer to a table name or alias, not to a column name, so that there is
+   no ambiguity; whereas without &lt;literal&gt;.*&lt;/literal&gt;, it is not clear
+   whether &lt;literal&gt;c&lt;/literal&gt; means a table name or a column name, and in fact
+   the column-name interpretation will be preferred if there is a column
+   named &lt;literal&gt;c&lt;/literal&gt;.
+</span>
+どちらの場合も<code class="structname">inventory_item</code>の現在行が単一の複合型の値の引数として関数に渡されます。
+このような場合に<code class="literal">.*</code>は何もしませんが、それをつけることにより、複合型の値であることを意図しているのが明確になるので、つけるのは良い習慣です。
+特に、パーサが<code class="literal">c.*</code>の<code class="literal">c</code>を列名ではなくテーブル名あるいは別名を参照するものとみなす一方、<code class="literal">.*</code>がないと<code class="literal">c</code>がテーブル名なのか列名なのか明らかではなく、実際には、<code class="literal">c</code>という名前の列があれば列名としての解釈が優先されてしまいます。
+  </p><p>
+<span class="original">
+   Another example demonstrating these concepts is that all these queries
+   mean the same thing:
+</span>
+これらの考え方を示す別の例をあげると、以下の３つの問い合わせは同じ意味になります。
+</p><pre class="programlisting">
+SELECT * FROM inventory_item c ORDER BY c;
+SELECT * FROM inventory_item c ORDER BY c.*;
+SELECT * FROM inventory_item c ORDER BY ROW(c.*);
+</pre><p>
+<span class="original">
+   All of these &lt;literal&gt;ORDER BY&lt;/literal&gt; clauses specify the row's composite
+   value, resulting in sorting the rows according to the rules described
+   in &lt;xref linkend="composite-type-comparison"/&gt;.  However,
+   if &lt;structname&gt;inventory_item&lt;/structname&gt; contained a column
+   named &lt;structfield&gt;c&lt;/structfield&gt;, the first case would be different from the
+   others, as it would mean to sort by that column only.  Given the column
+   names previously shown, these queries are also equivalent to those above:
+</span>
+これらの<code class="literal">ORDER BY</code>句はすべて行の複合型の値を指定しており、<a class="xref" href="functions-comparisons.html#COMPOSITE-TYPE-COMPARISON" title="9.24.6. 複合型の比較">9.24.6</a>で説明される規則に従って行を並べ替えた結果になります。
+ただし、<code class="structname">inventory_item</code>に<code class="structfield">c</code>という名前の列がある場合は、最初の例はその列によってのみ並べ替えられるので、他の２つとは異なるものになります。
+以前に示したのと同じ列名であるとしたら、以下の問い合わせも上記のものと同じになります。
+</p><pre class="programlisting">
+SELECT * FROM inventory_item c ORDER BY ROW(c.name, c.supplier_id, c.price);
+SELECT * FROM inventory_item c ORDER BY (c.name, c.supplier_id, c.price);
+</pre><p>
+<span class="original">
+   (The last case uses a row constructor with the key word &lt;literal&gt;ROW&lt;/literal&gt;
+   omitted.)
+</span>
+（最後の例はキーワード<code class="literal">ROW</code>を省略した行コンストラクタを使用しています。）
+  </p><p>
+<span class="original">
+   Another special syntactical behavior associated with composite values is
+   that we can use &lt;firstterm&gt;functional notation&lt;/firstterm&gt; for extracting a field
+   of a composite value.  The simple way to explain this is that
+   the notations &lt;literal&gt;&lt;replaceable&gt;field&lt;/replaceable&gt;(&lt;replaceable&gt;table&lt;/replaceable&gt;)&lt;/literal&gt;
+   and &lt;literal&gt;&lt;replaceable&gt;table&lt;/replaceable&gt;.&lt;replaceable&gt;field&lt;/replaceable&gt;&lt;/literal&gt;
+   are interchangeable.  For example, these queries are equivalent:
+</span>
+複合型の値に関連したもう一つの特別な構文的動作は、複合型の値のフィールドを取り出す時に<em class="firstterm">関数的記法</em>を使用できることです。
+これを簡単に説明するなら、<code class="literal"><em class="replaceable"><code>field</code></em>(<em class="replaceable"><code>table</code></em>)</code>という記法と<code class="literal"><em class="replaceable"><code>table</code></em>.<em class="replaceable"><code>field</code></em></code>という記法は相互に交換可能です。
+例えば、以下の問い合わせは同等です。
+
+</p><pre class="programlisting">
+SELECT c.name FROM inventory_item c WHERE c.price &gt; 1000;
+SELECT name(c) FROM inventory_item c WHERE price(c) &gt; 1000;
+</pre><p>
+
+<span class="original">
+   Moreover, if we have a function that accepts a single argument of a
+   composite type, we can call it with either notation.  These queries are
+   all equivalent:
+</span>
+さらに、複合型の引数を１つだけとる関数があるとして、それをどちらの記法でも呼び出すことができます。
+以下の問い合わせはすべて同等です。
+
+</p><pre class="programlisting">
+SELECT somefunc(c) FROM inventory_item c;
+SELECT somefunc(c.*) FROM inventory_item c;
+SELECT c.somefunc FROM inventory_item c;
+</pre><p>
+  </p><p>
+<span class="original">
+   This equivalence between functional notation and field notation
+   makes it possible to use functions on composite types to implement
+   &lt;quote&gt;computed fields&lt;/quote&gt;.
+</span>
+この関数的記法とフィールド記法の同等性により、複合型に対する関数を使用して<span class="quote">「<span class="quote">計算されたフィールド</span>」</span>を実装することができます。
+   <a id="id-1.5.7.26.11.10.2" class="indexterm"></a>
+   <a id="id-1.5.7.26.11.10.3" class="indexterm"></a>
+   <a id="id-1.5.7.26.11.10.4" class="indexterm"></a>
+   <a id="id-1.5.7.26.11.10.5" class="indexterm"></a>
+<span class="original">
+   An application using the last query above wouldn't need to be directly
+   aware that &lt;literal&gt;somefunc&lt;/literal&gt; isn't a real column of the table.
+</span>
+上の最後の問い合わせを使用するアプリケーションは、<code class="literal">somefunc</code>がテーブルの真の列ではないことを直接には意識する必要がありません。
+  </p><div class="tip"><h3 class="title">ヒント</h3><p>
+<span class="original">
+    Because of this behavior, it's unwise to give a function that takes a
+    single composite-type argument the same name as any of the fields of
+    that composite type.  If there is ambiguity, the field-name
+    interpretation will be chosen if field-name syntax is used, while the
+    function will be chosen if function-call syntax is used.  However,
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; versions before 11 always chose the
+    field-name interpretation, unless the syntax of the call required it to
+    be a function call.  One way to force the function interpretation in
+    older versions is to schema-qualify the function name, that is, write
+    &lt;literal&gt;&lt;replaceable&gt;schema&lt;/replaceable&gt;.&lt;replaceable&gt;func&lt;/replaceable&gt;(&lt;replaceable&gt;compositevalue&lt;/replaceable&gt;)&lt;/literal&gt;.
+</span>
+このような動作になるため、複合型の引数を一つだけとる関数に、その複合型に含まれるフィールドと同じ名前をつけることは賢明ではありません。
+曖昧なときには、フィールド名の構文が使われていれば、フィールド名の解釈が選ばれ、関数呼び出しの構文が使われていれば、関数が選ばれます。
+しかしながら、11より前の<span class="productname">PostgreSQL</span>のバージョンでは、呼び出し構文が関数呼び出しとしてしか扱えない場合を除いて、常にフィールド名の解釈を選んでいました。
+関数としての解釈を強制する一つの方法は、関数名をスキーマ修飾する、つまり<code class="literal"><em class="replaceable"><code>schema</code></em>.<em class="replaceable"><code>func</code></em>(<em class="replaceable"><code>compositevalue</code></em>)</code>とすることです。
+   </p></div></div><div class="sect2" id="ROWTYPES-IO-SYNTAX"><div class="titlepage"><div><div><h3 class="title">8.16.6. 複合型の入出力構文</h3></div></div></div><span class="original">
+  &lt;title&gt;Composite Type Input and Output Syntax&lt;/title&gt;
+</span><p>
+<span class="original">
+   The external text representation of a composite value consists of items that
+   are interpreted according to the I/O conversion rules for the individual
+   field types, plus decoration that indicates the composite structure.
+   The decoration consists of parentheses (&lt;literal&gt;(&lt;/literal&gt; and &lt;literal&gt;)&lt;/literal&gt;)
+   around the whole value, plus commas (&lt;literal&gt;,&lt;/literal&gt;) between adjacent
+   items.  Whitespace outside the parentheses is ignored, but within the
+   parentheses it is considered part of the field value, and might or might not be
+   significant depending on the input conversion rules for the field data type.
+   For example, in:
+</span>
+複合型の外部テキスト表現は、個々のフィールド用のI/O変換規則に従って解釈される項目群と、複合構造を意味する修飾から構成されます。
+この修飾は、値全体を括る括弧（<code class="literal">(</code>および<code class="literal">)</code>）と隣接した項目間のカンマ（<code class="literal">,</code>）で構成されます。
+括弧の外側の空白文字は無視されますが、括弧の内部ではフィールド値の一部とみなされます。
+ただし、空白に意味があるかないかについては、そのフィールドのデータ型用の入力変換規則に従います。
+例えば、
+</p><pre class="programlisting">
+'(  42)'
+</pre><p>
+<span class="original">
+   the whitespace will be ignored if the field type is integer, but not if
+   it is text.
+</span>
+括弧内の空白文字は、そのフィールド型が整数の場合は無視されますが、テキストの場合は無視されません。
+  </p><p>
+<span class="original">
+   As shown previously, when writing a composite value you can write double
+   quotes around any individual field value.
+   You &lt;emphasis&gt;must&lt;/emphasis&gt; do so if the field value would otherwise
+   confuse the composite-value parser.  In particular, fields containing
+   parentheses, commas, double quotes, or backslashes must be double-quoted.
+   To put a double quote or backslash in a quoted composite field value,
+   precede it with a backslash.  (Also, a pair of double quotes within a
+   double-quoted field value is taken to represent a double quote character,
+   analogously to the rules for single quotes in SQL literal strings.)
+   Alternatively, you can avoid quoting and use backslash-escaping to
+   protect all data characters
+   that would otherwise be taken as composite syntax.
+</span>
+前述の通り、複合型の値を記述する時には、個々のフィールド値を二重引用符で括ることができます。
+もし、フィールド値が複合型値用のパーサを混乱させる場合には、これは<span class="emphasis"><em>必須</em></span>です。
+具体的には、括弧、カンマ、二重引用符、バックスラッシュを含むフィールドの場合、二重引用符で括る必要があります。
+引用符で括った複合型のフィールド値内に二重引用符やバックスラッシュが存在する場合、その前にバックスラッシュを付けてください
+（また、引用符で括った複合型のフィールド値内に二重の引用符の組み合わせがあると、これは二重引用符を表す文字として解釈されます。
+これは、SQLリテラル文字列内の単一引用符の規則と同じです）。
+そのままでは複合型に対する構文として解釈されてしまう、全てのデータ文字を保護する他の方法として、引用符付けをせずにバックスラッシュによるエスケープを使用することができます。
+  </p><p>
+<span class="original">
+   A completely empty field value (no characters at all between the commas
+   or parentheses) represents a NULL.  To write a value that is an empty
+   string rather than NULL, write &lt;literal&gt;""&lt;/literal&gt;.
+</span>
+完全な空フィールド値（カンマや括弧の間にまったく文字がないもの）はNULLを表します。
+NULLではなく空文字列を値として記述するには <code class="literal">""</code> と記述してください。
+  </p><p>
+<span class="original">
+   The composite output routine will put double quotes around field values
+   if they are empty strings or contain parentheses, commas,
+   double quotes, backslashes, or white space.  (Doing so for white space
+   is not essential, but aids legibility.)  Double quotes and backslashes
+   embedded in field values will be doubled.
+</span>
+複合型の出力処理では、もしフィールド値が空文字列の場合や括弧、カンマ、二重引用符、バックスラッシュ、空白文字を含む場合には、そのフィールド値を二重引用符で括って出力します
+（空白文字に対するこの処理は重要ではありませんが、可読性を高めます）。
+フィールド値内に埋め込まれた二重引用符やバックスラッシュは二重化されます。
+  </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+   Remember that what you write in an SQL command will first be interpreted
+   as a string literal, and then as a composite.  This doubles the number of
+   backslashes you need (assuming escape string syntax is used).
+   For example, to insert a &lt;type&gt;text&lt;/type&gt; field
+   containing a double quote and a backslash in a composite
+   value, you'd need to write:
+</span>
+SQLコマンド内部に記述したものは、まず文字列リテラルとして、その後、複合型として解釈されることを覚えておいてください。
+これは必要なバックスラッシュの数を倍にします（エスケープ文字列構文が使用されることを仮定しています）。
+例えば、複合型の値の中に二重引用符とバックスラッシュを持つ<code class="type">text</code>フィールドに挿入するには、以下のように書かなければなりません。
+</p><pre class="programlisting">
+INSERT ... VALUES ('("\"\\")');
+</pre><p>
+<span class="original">
+   The string-literal processor removes one level of backslashes, so that
+   what arrives at the composite-value parser looks like
+   &lt;literal&gt;("\"\\")&lt;/literal&gt;.  In turn, the string
+   fed to the &lt;type&gt;text&lt;/type&gt; data type's input routine
+   becomes &lt;literal&gt;"\&lt;/literal&gt;.  (If we were working
+   with a data type whose input routine also treated backslashes specially,
+   &lt;type&gt;bytea&lt;/type&gt; for example, we might need as many as eight backslashes
+   in the command to get one backslash into the stored composite field.)
+   Dollar quoting (see &lt;xref linkend="sql-syntax-dollar-quoting"/&gt;) can be
+   used to avoid the need to double backslashes.
+</span>
+文字列リテラルプロセッサが第1レベルのバックスラッシュを取り除くため、複合型値のパーサに渡されるものは <code class="literal">("\"\\")</code> のようになります。
+そして、<code class="type">text</code>データ型の入力関数に渡される文字列は<code class="literal">"\</code>になります
+（もし、例えば<code class="type">bytea</code>といった、その入力関数もバックスラッシュを特別に扱うデータ型を扱っている場合、1つのバックスラッシュを複合型のフィールドに格納するためにコマンド内に8個ものバックスラッシュが必要になります）。
+ドル引用符付け（<a class="xref" href="sql-syntax-lexical.html#SQL-SYNTAX-DOLLAR-QUOTING" title="4.1.2.4. ドル記号で引用符付けされた文字列定数">4.1.2.4</a>を参照）を使用して、このバックスラッシュの二重化を防ぐことができます。
+  </p></div><div class="tip"><h3 class="title">ヒント</h3><p>
+<span class="original">
+   The &lt;literal&gt;ROW&lt;/literal&gt; constructor syntax is usually easier to work with
+   than the composite-literal syntax when writing composite values in SQL
+   commands.
+   In &lt;literal&gt;ROW&lt;/literal&gt;, individual field values are written the same way
+   they would be written when not members of a composite.
+</span>
+SQLコマンド内に複合型の値を書く時、通常、<code class="literal">ROW</code>生成構文の方が複合型のリテラル構文より作業が簡単です。
+<code class="literal">ROW</code>による記述では、複合型のメンバ以外の記述方法と同じ方法で個々のフィールド値を記述することができます。
+  </p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="arrays.html" title="8.15. 配列">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="datatype.html" title="第8章 データ型">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="rangetypes.html" title="8.17. 範囲型">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">8.15. 配列 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 8.17. 範囲型</td></tr></table></div></body></html>

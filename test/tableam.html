@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>第63章 テーブルアクセスメソッドのインタフェース定義</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="geqo-biblio.html" title="62.4. さらに深く知るには" /><link rel="next" href="indexam.html" title="第64章 インデックスアクセスメソッドのインタフェース定義" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="internals.html" title="パート VII. 内部情報">パート VII. 内部情報</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : tableam.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="geqo-biblio.html" title="62.4. さらに深く知るには">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="internals.html" title="パート VII. 内部情報">上へ</a></td><td width="60%" align="center">第63章 テーブルアクセスメソッドのインタフェース定義</td><td width="20%" align="right"> <a accesskey="n" href="indexam.html" title="第64章 インデックスアクセスメソッドのインタフェース定義">次へ</a></td></tr></table><hr /></div><div class="chapter" id="TABLEAM"><div class="titlepage"><div><div><h2 class="title">第63章 テーブルアクセスメソッドのインタフェース定義</h2></div></div></div><span class="original">
+ &lt;title&gt;Table Access Method Interface Definition&lt;/title&gt;
+</span><a id="id-1.10.14.2" class="indexterm"></a><a id="id-1.10.14.3" class="indexterm"></a><a id="id-1.10.14.4" class="indexterm"></a><a id="id-1.10.14.5" class="indexterm"></a><p>
+<span class="original">
+  This chapter explains the interface between the core
+  &lt;productname&gt;PostgreSQL&lt;/productname&gt; system and &lt;firstterm&gt;table access
+  methods&lt;/firstterm&gt;, which manage the storage for tables. The core system
+  knows little about these access methods beyond what is specified here, so
+  it is possible to develop entirely new access method types by writing
+  add-on code.
+</span>
+本章は、<span class="productname">PostgreSQL</span>のコアシステムと、テーブルの格納を制御する<em class="firstterm">テーブルアクセスメソッド</em>とのインタフェースを説明します。
+コアシステムはこのアクセスメソッドについて、ここで指定されたことのみを把握しています。これにより、追加コードを記述することで全く新しいアクセスメソッド種類を開発することができます。
+ </p><p>
+<span class="original">
+  Each table access method is described by a row in the &lt;link
+  linkend="catalog-pg-am"&gt;&lt;structname&gt;pg_am&lt;/structname&gt;&lt;/link&gt; system
+  catalog. The &lt;structname&gt;pg_am&lt;/structname&gt; entry specifies a name and a
+  &lt;firstterm&gt;handler function&lt;/firstterm&gt; for the table access method.  These
+  entries can be created and deleted using the &lt;xref
+  linkend="sql-create-access-method"/&gt; and &lt;xref
+  linkend="sql-drop-access-method"/&gt; SQL commands.
+</span>
+各テーブルアクセスメソッドは<a class="link" href="catalog-pg-am.html" title="53.3. pg_am"><code class="structname">pg_am</code></a>システムカタログの行で記述されます。
+<code class="structname">pg_am</code>のエントリではテーブルアクセスメソッドの名前と<em class="firstterm">ハンドラ関数</em>を指定します。
+これらのエントリはSQLコマンド<a class="xref" href="sql-create-access-method.html" title="CREATE ACCESS METHOD"><span class="refentrytitle">CREATE ACCESS METHOD</span></a>と<a class="xref" href="sql-drop-access-method.html" title="DROP ACCESS METHOD"><span class="refentrytitle">DROP ACCESS METHOD</span></a>を使って、作成および削除することができます。
+ </p><p>
+<span class="original">
+  A table access method handler function must be declared to accept a single
+  argument of type &lt;type&gt;internal&lt;/type&gt; and to return the pseudo-type
+  &lt;type&gt;table_am_handler&lt;/type&gt;.  The argument is a dummy value that simply
+  serves to prevent handler functions from being called directly from SQL commands.
+
+  The result of the function must be a pointer to a struct of type
+  &lt;structname&gt;TableAmRoutine&lt;/structname&gt;, which contains everything that the
+  core code needs to know to make use of the table access method. The return
+  value needs to be of server lifetime, which is typically achieved by
+  defining it as a &lt;literal&gt;static const&lt;/literal&gt; variable in global
+  scope. The &lt;structname&gt;TableAmRoutine&lt;/structname&gt; struct, also called the
+  access method's &lt;firstterm&gt;API struct&lt;/firstterm&gt;, defines the behavior of
+  the access method using callbacks. These callbacks are pointers to plain C
+  functions and are not visible or callable at the SQL level. All the
+  callbacks and their behavior is defined in the
+  &lt;structname&gt;TableAmRoutine&lt;/structname&gt; structure (with comments inside the
+  struct defining the requirements for callbacks). Most callbacks have
+  wrapper functions, which are documented from the point of view of a user
+  (rather than an implementor) of the table access method.  For details,
+  please refer to the &lt;ulink url="https://git.postgresql.org/gitweb/?p=postgresql.git;a=blob;f=src/include/access/tableam.h;hb=HEAD"&gt;
+  &lt;filename&gt;src/include/access/tableam.h&lt;/filename&gt;&lt;/ulink&gt; file.
+</span>
+テーブルアクセスメソッドのハンドラ関数は<code class="type">internal</code>型の引数を一つ取り、<code class="type">table_am_handler</code>疑似型を返すように宣言されなければなりません。
+この引数はハンドラ関数がSQLコマンドから直接呼び出されるのを防ぐためだけのダミーの値です。
+関数の結果は<code class="structname">TableAmRoutine</code>型の構造体のポインタでなければならず、そこにはテーブルアクセスメソッドを使用するためにコアコードが知る必要のあるすべてのことが含まれます。
+サーバ生存期間の間、戻り値は必要で、通常これはグローバルスコープで<code class="literal">static const</code>変数として定義することで達成されます。
+アクセスメソッドの<em class="firstterm">API構造体</em>とも呼ばれる、<code class="structname">TableAmRoutine</code>構造体はコールバックを使ってアクセスメソッドの振る舞いを定義します。
+これらのコールバックは通常のC関数へのポインタで、SQLレベルでは見ることも呼び出すこともできません。
+全てのコールバックとその振る舞いは、<code class="structname">TableAmRoutine</code>構造体（とコールバックの必要性を説明する構造体内のコメント）で定義されます。
+たいていのコールバックはラッパー関数を持ちます。これらはテーブルアクセスメソッドの（開発者ではなく）使用者の立場でドキュメント記載されています。
+詳細は、<a class="ulink" href="https://git.postgresql.org/gitweb/?p=postgresql.git;a=blob;f=src/include/access/tableam.h;hb=HEAD" target="_top"><code class="filename">src/include/access/tableam.h</code></a>ファイルを参照してください。
+ </p><p>
+<span class="original">
+  To implement an access method, an implementor will typically need to
+  implement an AM-specific type of tuple table slot (see
+  &lt;ulink url="https://git.postgresql.org/gitweb/?p=postgresql.git;a=blob;f=src/include/executor/tuptable.h;hb=HEAD"&gt;
+   &lt;filename&gt;src/include/executor/tuptable.h&lt;/filename&gt;&lt;/ulink&gt;), which allows
+   code outside the access method to hold references to tuples of the AM, and
+   to access the columns of the tuple.
+</span>
+アクセスメソッドを実装するには開発者は通常、タプルテーブルスロットのAM固有の型を実装する必要があります（<a class="ulink" href="https://git.postgresql.org/gitweb/?p=postgresql.git;a=blob;f=src/include/executor/tuptable.h;hb=HEAD" target="_top"><code class="filename">src/include/executor/tuptable.h</code></a>を参照してください）。
+これはアクセスメソッド外のコードが、AMのタプルへの参照を保持できるようにして、そのタプルの列にアクセスできるようにするものです。
+ </p><p>
+<span class="original">
+  Currently, the way an AM actually stores data is fairly unconstrained. For
+  example, it's possible, but not required, to use postgres' shared buffer
+  cache.  In case it is used, it likely makes sense to use
+  &lt;productname&gt;PostgreSQL&lt;/productname&gt;'s standard page layout as described in
+  &lt;xref linkend="storage-page-layout"/&gt;.
+</span>
+今のところAMが実際にデータを格納する方法は全く制限されていません。
+例えば、postgresの共有バッファキャッシュを使うことも、必須ではありませんが、可能です。
+使う場合、おそらく<a class="xref" href="storage-page-layout.html" title="73.6. データベースページのレイアウト">73.6</a>に記述された<span class="productname">PostgreSQL</span>の標準ページレイアウトを使うには有意義でしょう。
+ </p><p>
+<span class="original">
+  One fairly large constraint of the table access method API is that,
+  currently, if the AM wants to support modifications and/or indexes, it is
+  necessary for each tuple to have a tuple identifier (&lt;acronym&gt;TID&lt;/acronym&gt;)
+  consisting of a block number and an item number (see also &lt;xref
+  linkend="storage-page-layout"/&gt;).  It is not strictly necessary that the
+  sub-parts of &lt;acronym&gt;TIDs&lt;/acronym&gt; have the same meaning they e.g., have
+  for &lt;literal&gt;heap&lt;/literal&gt;, but if bitmap scan support is desired (it is
+  optional), the block number needs to provide locality.
+</span>
+現在のテーブルアクセスメソッドAPIのそれなりに大きい制約は、AMが更新および/またはインデックスに対応したい場合、各タプルがブロック番号とアイテム番号から成るタプル識別子（<acronym class="acronym">TID</acronym>）を持つ必要があることです（<a class="xref" href="storage-page-layout.html" title="73.6. データベースページのレイアウト">73.6</a>も参照してください）。
+<acronym class="acronym">TIDs</acronym>の下位要素が、例えば<code class="literal">heap</code>に対して持つのと同じ意味を持つことは、厳密には必要ありません。しかし、ビットマップスキャン対応（これは任意です）を望むなら、ブロック番号は局所性を備える必要があります。
+ </p><p>
+<span class="original">
+  For crash safety, an AM can use postgres' &lt;link
+  linkend="wal"&gt;&lt;acronym&gt;WAL&lt;/acronym&gt;&lt;/link&gt;, or a custom implementation.
+  If &lt;acronym&gt;WAL&lt;/acronym&gt; is chosen, either &lt;link
+  linkend="generic-wal"&gt;Generic WAL Records&lt;/link&gt; can be used,
+  or a &lt;link linkend="custom-rmgr"&gt;Custom WAL Resource Manager&lt;/link&gt; can be
+  implemented.
+</span>
+クラッシュ安全性のために、AMはpostgresの<a class="link" href="wal.html" title="第30章 信頼性とログ先行書き込み"><acronym class="acronym">WAL</acronym></a>、あるいは、カスタム実装を使うことができます。
+<acronym class="acronym">WAL</acronym>を選んだ場合、<a class="link" href="generic-wal.html" title="第65章 汎用WALレコード">汎用WALレコード</a>を利用するか、<a class="link" href="custom-rmgr.html" title="第66章 Custom WAL Resource Managers">カスタムWALリソースマネージャ</a>を実装することができます。
+ </p><p>
+<span class="original">
+  To implement transactional support in a manner that allows different table
+  access methods be accessed within a single transaction, it likely is
+  necessary to closely integrate with the machinery in
+  &lt;filename&gt;src/backend/access/transam/xlog.c&lt;/filename&gt;.
+</span>
+異なるテーブルアクセスメソッドが単一トランザクション内でアクセスできるという類のトランザクション対応を実装するには、おそらく<code class="filename">src/backend/access/transam/xlog.c</code>の仕組みと注意深く統合することが必要でしょう。
+ </p><p>
+<span class="original">
+  Any developer of a new &lt;literal&gt;table access method&lt;/literal&gt; can refer to
+  the existing &lt;literal&gt;heap&lt;/literal&gt; implementation present in
+  &lt;filename&gt;src/backend/access/heap/heapam_handler.c&lt;/filename&gt; for details of
+  its implementation.
+</span>
+新<code class="literal">テーブルアクセスメソッド</code>の開発者は、実装の詳細について、<code class="filename">src/backend/access/heap/heapam_handler.c</code>にある既存の<code class="literal">heap</code>の実装を参照できます。
+ </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="geqo-biblio.html" title="62.4. さらに深く知るには">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="internals.html" title="パート VII. 内部情報">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="indexam.html" title="第64章 インデックスアクセスメソッドのインタフェース定義">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">62.4. さらに深く知るには </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 第64章 インデックスアクセスメソッドのインタフェース定義</td></tr></table></div></body></html>
