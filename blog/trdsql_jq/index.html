@@ -1,96 +1,287 @@
-<!doctype html><html lang=en dir=ltr><head><meta charset=utf-8><meta name=viewport content="height=device-height,width=device-width,initial-scale=1,minimum-scale=1"><meta name=generator content="Hugo 0.120.4"><meta name=generator content="Relearn 5.23.2+tip"><meta name=description content="trdsqlとPostgreSQL 14を使用してjqに対抗します。"><meta name=author content><meta name=twitter:card content="summary_large_image"><meta name=twitter:image content="https://noborus.github.io/images/noborus.png"><meta name=twitter:title content="trdsql+PostgreSQL 14でJSONを処理する :: Noboru Saito's page"><meta name=twitter:description content="trdsqlとPostgreSQL 14を使用してjqに対抗します。"><meta property="og:title" content="trdsql+PostgreSQL 14でJSONを処理する :: Noboru Saito's page"><meta property="og:description" content="trdsqlとPostgreSQL 14を使用してjqに対抗します。"><meta property="og:type" content="article"><meta property="og:url" content="https://noborus.github.io/blog/trdsql_jq/index.html"><meta property="og:image" content="https://noborus.github.io/images/noborus.png"><meta property="article:section" content="Blog :: Noboru Saito's page"><meta property="article:published_time" content="2021-12-18T15:40:00+09:00"><meta property="article:modified_time" content="2021-12-18T15:40:00+09:00"><meta property="og:site_name" content="Noboru Saito's page"><title>trdsql+PostgreSQL 14でJSONを処理する :: Noboru Saito's page</title>
-<link href=https://noborus.github.io/blog/trdsql_jq/index.html rel=alternate hreflang=x-default><link href=https://noborus.github.io/blog/trdsql_jq/index.html rel=alternate hreflang=en><link href=https://noborus.github.io/ja/blog/trdsql_jq/index.html rel=alternate hreflang=ja><link href=/images/logo.svg?1701122935 rel=icon type=image/svg+xml><link href=/css/fontawesome-all.min.css?1701122935 rel=stylesheet media=print onload='this.media="all",this.onload=null'><noscript><link href=/css/fontawesome-all.min.css?1701122935 rel=stylesheet></noscript><link href=/css/nucleus.css?1701122935 rel=stylesheet><link href=/css/auto-complete.css?1701122935 rel=stylesheet media=print onload='this.media="all",this.onload=null'><noscript><link href=/css/auto-complete.css?1701122935 rel=stylesheet></noscript><link href=/css/perfect-scrollbar.min.css?1701122935 rel=stylesheet><link href=/css/fonts.css?1701122935 rel=stylesheet media=print onload='this.media="all",this.onload=null'><noscript><link href=/css/fonts.css?1701122935 rel=stylesheet></noscript><link href=/css/theme.css?1701122935 rel=stylesheet><link href=/css/theme-my-custom-variant.css?1701122935 rel=stylesheet id=R-variant-style><link href=/css/chroma-relearn-light.css?1701122935 rel=stylesheet id=R-variant-chroma-style><link href=/css/variant.css?1701122935 rel=stylesheet><link href=/css/print.css?1701122935 rel=stylesheet media=print><link href=/css/ie.css?1701122935 rel=stylesheet><script src=/js/url.js?1701122935></script><script src=/js/variant.js?1701122935></script><script>window.index_json_url="/index.json";var root_url="/",baseUri=root_url.replace(/\/$/,"");window.relearn=window.relearn||{},window.relearn.baseUriFull="https://noborus.github.io/",window.variants&&variants.init(["my-custom-variant"]),window.T_Copy_to_clipboard=`Copy to clipboard`,window.T_Copied_to_clipboard=`Copied to clipboard!`,window.T_Copy_link_to_clipboard=`Copy link to clipboard`,window.T_Link_copied_to_clipboard=`Copied link to clipboard!`,window.T_Reset_view=`Reset view`,window.T_View_reset=`View reset!`,window.T_No_results_found=`No results found for "{0}"`,window.T_N_results_found=`{1} results found for "{0}"`</script><script async src="https://www.googletagmanager.com/gtag/js?id=G-CGNLN23TRR"></script><script>var doNotTrack=!1;if(!doNotTrack){window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-CGNLN23TRR",{anonymize_ip:!1})}</script><meta property="og:title" content="trdsql+PostgreSQL 14でJSONを処理する"><meta property="og:description" content="trdsqlとPostgreSQL 14を使用してjqに対抗します。"><meta property="og:type" content="article"><meta property="og:url" content="https://noborus.github.io/blog/trdsql_jq/"><meta property="og:image" content="https://noborus.github.io/images/noborus.png"><meta property="article:section" content="blog"><meta property="article:published_time" content="2021-12-18T15:40:00+09:00"><meta property="article:modified_time" content="2021-12-18T15:40:00+09:00"><meta name=twitter:card content="summary_large_image"><meta name=twitter:image content="https://noborus.github.io/images/noborus.png"><meta name=twitter:title content="trdsql+PostgreSQL 14でJSONを処理する"><meta name=twitter:description content="trdsqlとPostgreSQL 14を使用してjqに対抗します。"></head><body class="mobile-support html" data-url=/blog/trdsql_jq/index.html><div id=R-body class=default-animation><div id=R-body-overlay></div><nav id=R-topbar><div class=topbar-wrapper><div class=topbar-sidebar-divider></div><div class="topbar-area topbar-area-start" data-area=start><div class="topbar-button topbar-button-sidebar" data-content-empty=disable data-width-s=show data-width-m=hide data-width-l=hide><button class=topbar-control onclick=toggleNav() type=button title="Menu (CTRL+ALT+n)">
-<i class="fa-fw fas fa-bars"></i></button></div><div class="topbar-button topbar-button-toc" data-content-empty=hide data-width-s=show data-width-m=show data-width-l=show><button class=topbar-control onclick=toggleTopbarFlyout(this) type=button title="Table of Contents (CTRL+ALT+t)">
-<i class="fa-fw fas fa-list-alt"></i></button><div class=topbar-content><div class=topbar-content-wrapper><nav class=TableOfContents><ul><li><a href=#基本的な使用法>基本的な使用法</a></li><li><a href=#jqの使用例をtrdsqlで実行する>jqの使用例をtrdsqlで実行する</a><ul><li><a href=#jq-コマンドで-json-を-csv-に変換するhttpsmediumcomveltra-engineeringjq-supports-json-to-csv-fb5c951a9575-の例><a href=https://medium.com/veltra-engineering/jq-supports-json-to-csv-fb5c951a9575>jq コマンドで JSON を CSV に変換する</a> の例</a></li><li><a href=#jqの代わりにperlを使ったりmysqlを使ったりできなかったhttpsyoku0825blogspotcom202112jqperlmysqlhtml-の例><a href=https://yoku0825.blogspot.com/2021/12/jqperlmysql.html>jqの代わりにperlを使ったり、mysqlを使ったり(できなかった)</a> の例</a></li><li><a href=#jq-で-ip-アドレスを-sort_by-しようと思ったがうまくいかなかったので大人しく-sort--v-を使ったhttpsdevclassmethodjparticlesjq-ip-address-sort-の例><a href=https://dev.classmethod.jp/articles/jq-ip-address-sort/>jq で IP アドレスを sort_by しようと思ったがうまくいかなかったので大人しく sort -V を使った</a> の例</a></li></ul></li></ul></nav></div></div></div></div><ol class="topbar-breadcrumbs breadcrumbs highlightable" itemscope itemtype=http://schema.org/BreadcrumbList><li itemscope itemtype=https://schema.org/ListItem itemprop=itemListElement><a itemprop=item href=/index.html><span itemprop=name>Top</span></a><meta itemprop=position content="1">&nbsp;>&nbsp;</li><li itemscope itemtype=https://schema.org/ListItem itemprop=itemListElement><a itemprop=item href=/blog/index.html><span itemprop=name>Blog</span></a><meta itemprop=position content="2">&nbsp;>&nbsp;</li><li itemscope itemtype=https://schema.org/ListItem itemprop=itemListElement><span itemprop=name>trdsql+PostgreSQL 14でJSONを処理する</span><meta itemprop=position content="3"></li></ol><div class="topbar-area topbar-area-end" data-area=end><div class="topbar-button topbar-button-prev" data-content-empty=disable data-width-s=show data-width-m=show data-width-l=show><a class=topbar-control href=/blog/ov_095/index.html title="ov v0.9.5 (🡐)"><i class="fa-fw fas fa-chevron-left"></i></a></div><div class="topbar-button topbar-button-next" data-content-empty=disable data-width-s=show data-width-m=show data-width-l=show><a class=topbar-control href=/blog/ov_094/index.html title="ov v0.9.4 (🡒)"><i class="fa-fw fas fa-chevron-right"></i></a></div><div class="topbar-button topbar-button-more" data-content-empty=hide data-width-s=show data-width-m=show data-width-l=show><button class=topbar-control onclick=toggleTopbarFlyout(this) type=button title=More>
-<i class="fa-fw fas fa-ellipsis-v"></i></button><div class=topbar-content><div class=topbar-content-wrapper><div class="topbar-area topbar-area-more" data-area=more></div></div></div></div></div></div></nav><div id=R-main-overlay></div><main id=R-body-inner class="highlightable default" tabindex=-1><div class=flex-block-wrapper><article class=default><header class=headline><div class="taxonomy-tags term-list cstyle tags" title=Tags style=--VARIABLE-TAGS-BG-color:var(--INTERNAL-TAG-BG-color)><ul><li><a class=term-link href=/tags/jq/index.html>jq</a></li><li><a class=term-link href=/tags/postgresql/index.html>postgresql</a></li><li><a class=term-link href=/tags/trdsql/index.html>trdsql</a></li></ul></div></header><h1 id=trdsqlpostgresql-14でjsonを処理する>trdsql+PostgreSQL 14でJSONを処理する</h1><div class=c-time>Posted on:
-<time datetime=2021-12-18T15:40:00+09:00>December 18, 2021</time></div><p>trdsql はCSVやLTSVと共にJSONに対してもSQLを実行できるツールですが、SQLを使用するため得意な対象はフラットなJSONです。
-ただし、v0.9.0からjqの構文が使え、SQL内でもSQLの関数が使えるため、内容によっては簡単に書くことができる場合があります。</p><p>デフォルトのsqlite3にもJSON関数がありますが、ここではよりJSON関数が充実しているPostgreSQL 14を使用します。</p><h2 id=基本的な使用法>基本的な使用法</h2><p>SQLを実行する対象として複数の列のリストの形になっているものが対象です。
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="height=device-height, width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <meta name="generator" content="Hugo 0.120.4">
+    <meta name="generator" content="Relearn 5.23.2+tip">
+    <meta name="description" content="trdsqlとPostgreSQL 14を使用してjqに対抗します。">
+    <meta name="author" content="">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://noborus.github.io/images/noborus.png">
+    <meta name="twitter:title" content="trdsql&#43;PostgreSQL 14でJSONを処理する :: Noboru Saito&#39;s page">
+    <meta name="twitter:description" content="trdsqlとPostgreSQL 14を使用してjqに対抗します。">
+    <meta property="og:title" content="trdsql&#43;PostgreSQL 14でJSONを処理する :: Noboru Saito&#39;s page">
+    <meta property="og:description" content="trdsqlとPostgreSQL 14を使用してjqに対抗します。">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://noborus.github.io/blog/trdsql_jq/index.html">
+    <meta property="og:image" content="https://noborus.github.io/images/noborus.png">
+    <meta property="article:section" content="Blog :: Noboru Saito&#39;s page">
+    <meta property="article:published_time" content="2021-12-18T15:40:00+09:00">
+    <meta property="article:modified_time" content="2021-12-18T15:40:00+09:00">
+    <meta property="og:site_name" content="Noboru Saito&#39;s page">
+    <title>trdsql&#43;PostgreSQL 14でJSONを処理する :: Noboru Saito&#39;s page</title>
+    <link href="https://noborus.github.io/blog/trdsql_jq/index.html" rel="alternate" hreflang="x-default">
+    <link href="https://noborus.github.io/blog/trdsql_jq/index.html" rel="alternate" hreflang="en">
+    <link href="https://noborus.github.io/ja/blog/trdsql_jq/index.html" rel="alternate" hreflang="ja">
+    <link href="/images/logo.svg?1701125638" rel="icon" type="image/svg+xml">
+    <!-- https://github.com/filamentgroup/loadCSS/blob/master/README.md#how-to-use -->
+    <link href="/css/fontawesome-all.min.css?1701125638" rel="stylesheet" media="print" onload="this.media='all';this.onload=null;"><noscript><link href="/css/fontawesome-all.min.css?1701125638" rel="stylesheet"></noscript>
+    <link href="/css/nucleus.css?1701125638" rel="stylesheet">
+    <link href="/css/auto-complete.css?1701125638" rel="stylesheet" media="print" onload="this.media='all';this.onload=null;"><noscript><link href="/css/auto-complete.css?1701125638" rel="stylesheet"></noscript>
+    <link href="/css/perfect-scrollbar.min.css?1701125638" rel="stylesheet">
+    <link href="/css/fonts.css?1701125638" rel="stylesheet" media="print" onload="this.media='all';this.onload=null;"><noscript><link href="/css/fonts.css?1701125638" rel="stylesheet"></noscript>
+    <link href="/css/theme.css?1701125638" rel="stylesheet">
+    <link href="/css/theme-my-custom-variant.css?1701125638" rel="stylesheet" id="R-variant-style">
+    <link href="/css/chroma-relearn-light.css?1701125638" rel="stylesheet" id="R-variant-chroma-style">
+    <link href="/css/variant.css?1701125638" rel="stylesheet">
+    <link href="/css/print.css?1701125638" rel="stylesheet" media="print">
+    <link href="/css/ie.css?1701125638" rel="stylesheet">
+    <script src="/js/url.js?1701125638"></script>
+    <script src="/js/variant.js?1701125638"></script>
+    <script>
+      // hack to let hugo tell us how to get to the root when using relativeURLs, it needs to be called *url= for it to do its magic:
+      // https://github.com/gohugoio/hugo/blob/145b3fcce35fbac25c7033c91c1b7ae6d1179da8/transform/urlreplacers/absurlreplacer.go#L72
+      window.index_js_url="/index.search.js";
+      var root_url="/";
+      var baseUri=root_url.replace(/\/$/, '');
+      window.relearn = window.relearn || {};
+      window.relearn.baseUriFull='https:\/\/noborus.github.io/';
+      // variant stuff
+      window.variants && variants.init( [ 'my-custom-variant' ] );
+      // translations
+      window.T_Copy_to_clipboard = `Copy to clipboard`;
+      window.T_Copied_to_clipboard = `Copied to clipboard!`;
+      window.T_Copy_link_to_clipboard = `Copy link to clipboard`;
+      window.T_Link_copied_to_clipboard = `Copied link to clipboard!`;
+      window.T_Reset_view = `Reset view`;
+      window.T_View_reset = `View reset!`;
+      window.T_No_results_found = `No results found for "{0}"`;
+      window.T_N_results_found = `{1} results found for "{0}"`;
+    </script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-CGNLN23TRR"></script>
+<script>
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
+	gtag('config', 'G-CGNLN23TRR', { 'anonymize_ip': false });
+}
+</script>
+
+<meta property="og:title" content="trdsql&#43;PostgreSQL 14でJSONを処理する" />
+<meta property="og:description" content="trdsqlとPostgreSQL 14を使用してjqに対抗します。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://noborus.github.io/blog/trdsql_jq/" /><meta property="og:image" content="https://noborus.github.io/images/noborus.png"/><meta property="article:section" content="blog" />
+<meta property="article:published_time" content="2021-12-18T15:40:00+09:00" />
+<meta property="article:modified_time" content="2021-12-18T15:40:00+09:00" />
+
+
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://noborus.github.io/images/noborus.png"/>
+
+<meta name="twitter:title" content="trdsql&#43;PostgreSQL 14でJSONを処理する"/>
+<meta name="twitter:description" content="trdsqlとPostgreSQL 14を使用してjqに対抗します。"/>
+
+
+  </head>
+  <body class="mobile-support html" data-url="/blog/trdsql_jq/index.html">
+    <div id="R-body" class="default-animation">
+      <div id="R-body-overlay"></div>
+      <nav id="R-topbar">
+        <div class="topbar-wrapper">
+          <div class="topbar-sidebar-divider"></div>
+          <div class="topbar-area topbar-area-start" data-area="start">
+            <div class="topbar-button topbar-button-sidebar" data-content-empty="disable" data-width-s="show" data-width-m="hide" data-width-l="hide">
+              <button class="topbar-control" onclick="toggleNav()" type="button" title="Menu (CTRL&#43;ALT&#43;n)">
+                <i class="fa-fw fas fa-bars"></i>
+              </button>
+            </div>
+            <div class="topbar-button topbar-button-toc" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show">
+              <button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="Table of Contents (CTRL&#43;ALT&#43;t)">
+                <i class="fa-fw fas fa-list-alt"></i>
+              </button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper"><nav class="TableOfContents">
+  <ul>
+    <li><a href="#基本的な使用法">基本的な使用法</a></li>
+    <li><a href="#jqの使用例をtrdsqlで実行する">jqの使用例をtrdsqlで実行する</a>
+      <ul>
+        <li><a href="#jq-コマンドで-json-を-csv-に変換するhttpsmediumcomveltra-engineeringjq-supports-json-to-csv-fb5c951a9575-の例"><a href="https://medium.com/veltra-engineering/jq-supports-json-to-csv-fb5c951a9575">jq コマンドで JSON を CSV に変換する</a> の例</a></li>
+        <li><a href="#jqの代わりにperlを使ったりmysqlを使ったりできなかったhttpsyoku0825blogspotcom202112jqperlmysqlhtml-の例"><a href="https://yoku0825.blogspot.com/2021/12/jqperlmysql.html">jqの代わりにperlを使ったり、mysqlを使ったり(できなかった)</a> の例</a></li>
+        <li><a href="#jq-で-ip-アドレスを-sort_by-しようと思ったがうまくいかなかったので大人しく-sort--v-を使ったhttpsdevclassmethodjparticlesjq-ip-address-sort-の例"><a href="https://dev.classmethod.jp/articles/jq-ip-address-sort/">jq で IP アドレスを sort_by しようと思ったがうまくいかなかったので大人しく sort -V を使った</a> の例</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+                </div>
+              </div>
+            </div>
+          </div>
+          <ol class="topbar-breadcrumbs breadcrumbs highlightable" itemscope itemtype="http://schema.org/BreadcrumbList"><li
+            itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement"><a itemprop="item" href="/index.html"><span itemprop="name">Top</span></a><meta itemprop="position" content="1">&nbsp;>&nbsp;</li><li
+            itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement"><a itemprop="item" href="/blog/index.html"><span itemprop="name">Blog</span></a><meta itemprop="position" content="2">&nbsp;>&nbsp;</li><li
+            itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement"><span itemprop="name">trdsql&#43;PostgreSQL 14でJSONを処理する</span><meta itemprop="position" content="3"></li>
+          </ol>
+          <div class="topbar-area topbar-area-end" data-area="end">
+            <div class="topbar-button topbar-button-prev" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show">
+              <a class="topbar-control" href="/blog/ov_095/index.html" title="ov v0.9.5 (🡐)">
+                <i class="fa-fw fas fa-chevron-left"></i>
+              </a>
+            </div>
+            <div class="topbar-button topbar-button-next" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show">
+              <a class="topbar-control" href="/blog/ov_094/index.html" title="ov v0.9.4 (🡒)">
+                <i class="fa-fw fas fa-chevron-right"></i>
+              </a>
+            </div>
+            <div class="topbar-button topbar-button-more" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show">
+              <button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="More">
+                <i class="fa-fw fas fa-ellipsis-v"></i>
+              </button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+                  <div class="topbar-area topbar-area-more" data-area="more">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+      <div id="R-main-overlay"></div>
+      <main id="R-body-inner" class="highlightable default" tabindex="-1">
+        <div class="flex-block-wrapper">
+          <article class="default">
+            <header class="headline">
+<div class=" taxonomy-tags term-list cstyle  tags" title="Tags" style="--VARIABLE-TAGS-BG-color: var(--INTERNAL-TAG-BG-color);">
+  <ul>
+    <li><a class="term-link" href="/tags/jq/index.html">jq</a></li>
+    <li><a class="term-link" href="/tags/postgresql/index.html">postgresql</a></li>
+    <li><a class="term-link" href="/tags/trdsql/index.html">trdsql</a></li>
+  </ul>
+</div>
+            </header>
+<h1 id="trdsqlpostgresql-14でjsonを処理する">trdsql&#43;PostgreSQL 14でJSONを処理する</h1>
+<div class="c-time">
+    Posted on:
+    <time datetime="2021-12-18T15:40:00&#43;09:00">
+      December 18, 2021
+    </time>
+</div>
+
+
+
+<p>trdsql はCSVやLTSVと共にJSONに対してもSQLを実行できるツールですが、SQLを使用するため得意な対象はフラットなJSONです。
+ただし、v0.9.0からjqの構文が使え、SQL内でもSQLの関数が使えるため、内容によっては簡単に書くことができる場合があります。</p>
+<p>デフォルトのsqlite3にもJSON関数がありますが、ここではよりJSON関数が充実しているPostgreSQL 14を使用します。</p>
+<h2 id="基本的な使用法">基本的な使用法</h2>
+<p>SQLを実行する対象として複数の列のリストの形になっているものが対象です。
 以下のように<code>{``}</code>で囲まれた複数の<code>名前:</code> <code>値</code>が<code>,</code>で並べられたJSONが基本的な形です。
-改行で区切られた（実際には）複数のJSONが並べられたLDJSONやJSONLと呼ばれるものは一番SQLで実行しやすい形です。</p><div class="wrap-code highlight"><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-example0.json data-lang=example0.json><span style=display:flex><span>{ <span style=color:#f92672>&#34;name&#34;</span>: <span style=color:#e6db74>&#34;Tanaka&#34;</span>, <span style=color:#f92672>&#34;age&#34;</span>: <span style=color:#ae81ff>26</span> }
-</span></span><span style=display:flex><span>{ <span style=color:#f92672>&#34;name&#34;</span>: <span style=color:#e6db74>&#34;Suzuki&#34;</span>, <span style=color:#f92672>&#34;age&#34;</span>: <span style=color:#ae81ff>32</span> }</span></span></code></pre></div><p>一つのJSONの場合は上記を配列化します。</p><div class="wrap-code highlight"><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-example0.json data-lang=example0.json><span style=display:flex><span>[
-</span></span><span style=display:flex><span>  {
-</span></span><span style=display:flex><span>    <span style=color:#f92672>&#34;age&#34;</span>: <span style=color:#e6db74>&#34;26&#34;</span>,
-</span></span><span style=display:flex><span>    <span style=color:#f92672>&#34;name&#34;</span>: <span style=color:#e6db74>&#34;Tanaka&#34;</span>
-</span></span><span style=display:flex><span>  },
-</span></span><span style=display:flex><span>  {
-</span></span><span style=display:flex><span>    <span style=color:#f92672>&#34;age&#34;</span>: <span style=color:#e6db74>&#34;32&#34;</span>,
-</span></span><span style=display:flex><span>    <span style=color:#f92672>&#34;name&#34;</span>: <span style=color:#e6db74>&#34;Suzuki&#34;</span>
-</span></span><span style=display:flex><span>  }
-</span></span><span style=display:flex><span>]</span></span></code></pre></div><p>どちらもそのまま<code>SELECT name, age FROM example0.json</code>のようにtrdsqlのSQLとして実行できます。</p><p>JSONはオブジェクトや配列で入れ子に出来るため、ルートが対象とならない場合があります。以下の場合は、そのまま実行すると menu 列が一つに中身がすべて入っていることになります。</p><div class="wrap-code highlight"><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-example1.json data-lang=example1.json><span style=display:flex><span>{
-</span></span><span style=display:flex><span>    <span style=color:#f92672>&#34;menu&#34;</span>: {
-</span></span><span style=display:flex><span>        <span style=color:#f92672>&#34;id&#34;</span>: <span style=color:#e6db74>&#34;file&#34;</span>,
-</span></span><span style=display:flex><span>        <span style=color:#f92672>&#34;value&#34;</span>: <span style=color:#e6db74>&#34;File&#34;</span>,
-</span></span><span style=display:flex><span>        <span style=color:#f92672>&#34;popup&#34;</span>: {
-</span></span><span style=display:flex><span>            <span style=color:#f92672>&#34;menuitem&#34;</span>: [
-</span></span><span style=display:flex><span>                {
-</span></span><span style=display:flex><span>                    <span style=color:#f92672>&#34;value&#34;</span>: <span style=color:#e6db74>&#34;New&#34;</span>,
-</span></span><span style=display:flex><span>                    <span style=color:#f92672>&#34;onclick&#34;</span>: <span style=color:#e6db74>&#34;CreateDoc()&#34;</span>
-</span></span><span style=display:flex><span>                },
-</span></span><span style=display:flex><span>                {
-</span></span><span style=display:flex><span>                    <span style=color:#f92672>&#34;value&#34;</span>: <span style=color:#e6db74>&#34;Open&#34;</span>,
-</span></span><span style=display:flex><span>                    <span style=color:#f92672>&#34;onclick&#34;</span>: <span style=color:#e6db74>&#34;OpenDoc()&#34;</span>
-</span></span><span style=display:flex><span>                },
-</span></span><span style=display:flex><span>                {
-</span></span><span style=display:flex><span>                    <span style=color:#f92672>&#34;value&#34;</span>: <span style=color:#e6db74>&#34;Save&#34;</span>,
-</span></span><span style=display:flex><span>                    <span style=color:#f92672>&#34;onclick&#34;</span>: <span style=color:#e6db74>&#34;SaveDoc()&#34;</span>
-</span></span><span style=display:flex><span>                }
-</span></span><span style=display:flex><span>            ]
-</span></span><span style=display:flex><span>        }
-</span></span><span style=display:flex><span>    }
-</span></span><span style=display:flex><span>}</span></span></code></pre></div><p>SQLのJSON関数を使用することで内部のオブジェクトにアクセスできますが、ほとんどがJSON関数の記述になってしまうのでSQLで実行するメリットが感じられません。</p><p>trdsqlではjq構文を使用して、JSONから必要な箇所を取り出せます。menuitemに対してSQLを実行するには、以下のようにできます。</p><div class="wrap-code highlight"><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span>trdsql -oat &#34;SELECT * FROM example.json::\&#34;.menu.popup.menuitem\&#34;&#34;
-</span></span></code></pre></div><div class="wrap-code highlight"><pre tabindex=0><code class=language-asciitable data-lang=asciitable>+-------+-------------+
+改行で区切られた（実際には）複数のJSONが並べられたLDJSONやJSONLと呼ばれるものは一番SQLで実行しやすい形です。</p>
+<div class="wrap-code highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-example0.json" data-lang="example0.json"><span style="display:flex;"><span>{ <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;Tanaka&#34;</span>, <span style="color:#f92672">&#34;age&#34;</span>: <span style="color:#ae81ff">26</span> }
+</span></span><span style="display:flex;"><span>{ <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;Suzuki&#34;</span>, <span style="color:#f92672">&#34;age&#34;</span>: <span style="color:#ae81ff">32</span> }</span></span></code></pre></div><p>一つのJSONの場合は上記を配列化します。</p>
+<div class="wrap-code highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-example0.json" data-lang="example0.json"><span style="display:flex;"><span>[
+</span></span><span style="display:flex;"><span>  {
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;age&#34;</span>: <span style="color:#e6db74">&#34;26&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;Tanaka&#34;</span>
+</span></span><span style="display:flex;"><span>  },
+</span></span><span style="display:flex;"><span>  {
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;age&#34;</span>: <span style="color:#e6db74">&#34;32&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;name&#34;</span>: <span style="color:#e6db74">&#34;Suzuki&#34;</span>
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>]</span></span></code></pre></div><p>どちらもそのまま<code>SELECT name, age FROM example0.json</code>のようにtrdsqlのSQLとして実行できます。</p>
+<p>JSONはオブジェクトや配列で入れ子に出来るため、ルートが対象とならない場合があります。以下の場合は、そのまま実行すると menu 列が一つに中身がすべて入っていることになります。</p>
+<div class="wrap-code highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-example1.json" data-lang="example1.json"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;menu&#34;</span>: {
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;id&#34;</span>: <span style="color:#e6db74">&#34;file&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;value&#34;</span>: <span style="color:#e6db74">&#34;File&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;popup&#34;</span>: {
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">&#34;menuitem&#34;</span>: [
+</span></span><span style="display:flex;"><span>                {
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;value&#34;</span>: <span style="color:#e6db74">&#34;New&#34;</span>,
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;onclick&#34;</span>: <span style="color:#e6db74">&#34;CreateDoc()&#34;</span>
+</span></span><span style="display:flex;"><span>                },
+</span></span><span style="display:flex;"><span>                {
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;value&#34;</span>: <span style="color:#e6db74">&#34;Open&#34;</span>,
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;onclick&#34;</span>: <span style="color:#e6db74">&#34;OpenDoc()&#34;</span>
+</span></span><span style="display:flex;"><span>                },
+</span></span><span style="display:flex;"><span>                {
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;value&#34;</span>: <span style="color:#e6db74">&#34;Save&#34;</span>,
+</span></span><span style="display:flex;"><span>                    <span style="color:#f92672">&#34;onclick&#34;</span>: <span style="color:#e6db74">&#34;SaveDoc()&#34;</span>
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>            ]
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div><p>SQLのJSON関数を使用することで内部のオブジェクトにアクセスできますが、ほとんどがJSON関数の記述になってしまうのでSQLで実行するメリットが感じられません。</p>
+<p>trdsqlではjq構文を使用して、JSONから必要な箇所を取り出せます。menuitemに対してSQLを実行するには、以下のようにできます。</p>
+<div class="wrap-code highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>trdsql -oat &#34;SELECT * FROM example.json::\&#34;.menu.popup.menuitem\&#34;&#34;
+</span></span></code></pre></div><div class="wrap-code highlight"><pre tabindex="0"><code class="language-asciitable" data-lang="asciitable">+-------+-------------+
 | value |   onclick   |
 +-------+-------------+
 | New   | CreateDoc() |
 | Open  | OpenDoc()   |
 | Save  | SaveDoc()   |
-+-------+-------------+</code></pre></div><p>jq構文はファイル名の後に<code>::</code>でつないだ後や <code>-ijq</code>オプションに書くことができます（一行で書く場合、シェルに解釈されるためエスケープが必要な場合があります。ダブルクォーテーションは必要なければ省略できます)。</p><h2 id=jqの使用例をtrdsqlで実行する>jqの使用例をtrdsqlで実行する</h2><p>JSONをCSVに変換するのをjqでやる方法がよく紹介されていますが、trdsqlではデフォルトの動作です。</p><h3 id=jq-コマンドで-json-を-csv-に変換するhttpsmediumcomveltra-engineeringjq-supports-json-to-csv-fb5c951a9575-の例><a href=https://medium.com/veltra-engineering/jq-supports-json-to-csv-fb5c951a9575 target=_blank>jq コマンドで JSON を CSV に変換する</a> の例</h3><div class="wrap-code highlight"><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sample1.json data-lang=sample1.json><span style=display:flex><span>[
-</span></span><span style=display:flex><span>    {<span style=color:#f92672>&#34;key1&#34;</span>: <span style=color:#e6db74>&#34;value11&#34;</span>, <span style=color:#f92672>&#34;key2&#34;</span>: <span style=color:#e6db74>&#34;value12&#34;</span>, <span style=color:#f92672>&#34;key3&#34;</span>: <span style=color:#e6db74>&#34;value13&#34;</span>},
-</span></span><span style=display:flex><span>    {<span style=color:#f92672>&#34;key1&#34;</span>: <span style=color:#e6db74>&#34;value21&#34;</span>, <span style=color:#f92672>&#34;key2&#34;</span>: <span style=color:#e6db74>&#34;value22&#34;</span>, <span style=color:#f92672>&#34;key3&#34;</span>: <span style=color:#e6db74>&#34;value23&#34;</span>},
-</span></span><span style=display:flex><span>    {<span style=color:#f92672>&#34;key1&#34;</span>: <span style=color:#e6db74>&#34;value31&#34;</span>, <span style=color:#f92672>&#34;key2&#34;</span>: <span style=color:#e6db74>&#34;value32&#34;</span>, <span style=color:#f92672>&#34;key3&#34;</span>: <span style=color:#e6db74>&#34;value33&#34;</span>},
-</span></span><span style=display:flex><span>    {<span style=color:#f92672>&#34;key1&#34;</span>: <span style=color:#e6db74>&#34;value41&#34;</span>, <span style=color:#f92672>&#34;key2&#34;</span>: <span style=color:#e6db74>&#34;value42&#34;</span>, <span style=color:#f92672>&#34;key3&#34;</span>: <span style=color:#e6db74>&#34;value43&#34;</span>}
-</span></span><span style=display:flex><span>]</span></span></code></pre></div><p>CSV出力はデフォルトなので、一番シンプルです。</p><div class="wrap-code highlight"><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span>trdsql &#34;SELECT * FROM sample1.json&#34;
-</span></span></code></pre></div><p>列名をヘッダーとして出力するには <code>-oh</code>オプションをつけます。</p><div class="wrap-code highlight"><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span>trdsql -oh &#34;SELECT * FROM sample1.json&#34;
-</span></span></code></pre></div><p>ダブルクォーテーションで括るのを強制するなら<code>-oaq</code>オプションも追加します。</p><div class="wrap-code highlight"><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span>trdsql -oh -oaq &#34;SELECT * FROM sample1.json&#34; 
-</span></span></code></pre></div><div class="wrap-code highlight"><pre tabindex=0><code class=language-csv data-lang=csv>&#34;key2&#34;,&#34;key3&#34;,&#34;key1&#34;
++-------+-------------+</code></pre></div><p>jq構文はファイル名の後に<code>::</code>でつないだ後や <code>-ijq</code>オプションに書くことができます（一行で書く場合、シェルに解釈されるためエスケープが必要な場合があります。ダブルクォーテーションは必要なければ省略できます)。</p>
+<h2 id="jqの使用例をtrdsqlで実行する">jqの使用例をtrdsqlで実行する</h2>
+<p>JSONをCSVに変換するのをjqでやる方法がよく紹介されていますが、trdsqlではデフォルトの動作です。</p>
+<h3 id="jq-コマンドで-json-を-csv-に変換するhttpsmediumcomveltra-engineeringjq-supports-json-to-csv-fb5c951a9575-の例"><a href="https://medium.com/veltra-engineering/jq-supports-json-to-csv-fb5c951a9575" target="_blank">jq コマンドで JSON を CSV に変換する</a> の例</h3>
+<div class="wrap-code highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sample1.json" data-lang="sample1.json"><span style="display:flex;"><span>[
+</span></span><span style="display:flex;"><span>    {<span style="color:#f92672">&#34;key1&#34;</span>: <span style="color:#e6db74">&#34;value11&#34;</span>, <span style="color:#f92672">&#34;key2&#34;</span>: <span style="color:#e6db74">&#34;value12&#34;</span>, <span style="color:#f92672">&#34;key3&#34;</span>: <span style="color:#e6db74">&#34;value13&#34;</span>},
+</span></span><span style="display:flex;"><span>    {<span style="color:#f92672">&#34;key1&#34;</span>: <span style="color:#e6db74">&#34;value21&#34;</span>, <span style="color:#f92672">&#34;key2&#34;</span>: <span style="color:#e6db74">&#34;value22&#34;</span>, <span style="color:#f92672">&#34;key3&#34;</span>: <span style="color:#e6db74">&#34;value23&#34;</span>},
+</span></span><span style="display:flex;"><span>    {<span style="color:#f92672">&#34;key1&#34;</span>: <span style="color:#e6db74">&#34;value31&#34;</span>, <span style="color:#f92672">&#34;key2&#34;</span>: <span style="color:#e6db74">&#34;value32&#34;</span>, <span style="color:#f92672">&#34;key3&#34;</span>: <span style="color:#e6db74">&#34;value33&#34;</span>},
+</span></span><span style="display:flex;"><span>    {<span style="color:#f92672">&#34;key1&#34;</span>: <span style="color:#e6db74">&#34;value41&#34;</span>, <span style="color:#f92672">&#34;key2&#34;</span>: <span style="color:#e6db74">&#34;value42&#34;</span>, <span style="color:#f92672">&#34;key3&#34;</span>: <span style="color:#e6db74">&#34;value43&#34;</span>}
+</span></span><span style="display:flex;"><span>]</span></span></code></pre></div><p>CSV出力はデフォルトなので、一番シンプルです。</p>
+<div class="wrap-code highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>trdsql &#34;SELECT * FROM sample1.json&#34;
+</span></span></code></pre></div><p>列名をヘッダーとして出力するには <code>-oh</code>オプションをつけます。</p>
+<div class="wrap-code highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>trdsql -oh &#34;SELECT * FROM sample1.json&#34;
+</span></span></code></pre></div><p>ダブルクォーテーションで括るのを強制するなら<code>-oaq</code>オプションも追加します。</p>
+<div class="wrap-code highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>trdsql -oh -oaq &#34;SELECT * FROM sample1.json&#34; 
+</span></span></code></pre></div><div class="wrap-code highlight"><pre tabindex="0"><code class="language-csv" data-lang="csv">&#34;key2&#34;,&#34;key3&#34;,&#34;key1&#34;
 &#34;value12&#34;,&#34;value13&#34;,&#34;value11&#34;
 &#34;value22&#34;,&#34;value23&#34;,&#34;value21&#34;
 &#34;value32&#34;,&#34;value33&#34;,&#34;value31&#34;
-&#34;value42&#34;,&#34;value43&#34;,&#34;value41&#34;</code></pre></div><p>LTSVやJSONLにもオプションのみです。つまりJSON&lt;->JSONLの相互変換が可能です。</p><div class="wrap-code highlight"><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span>trdsql -oltsv &#34;SELECT * FROM sample1.json&#34;
-</span></span></code></pre></div><div class="wrap-code highlight"><pre tabindex=0><code class=language-ltsv data-lang=ltsv>key1:value11	key2:value12	key3:value13
+&#34;value42&#34;,&#34;value43&#34;,&#34;value41&#34;</code></pre></div><p>LTSVやJSONLにもオプションのみです。つまりJSON&lt;-&gt;JSONLの相互変換が可能です。</p>
+<div class="wrap-code highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>trdsql -oltsv &#34;SELECT * FROM sample1.json&#34;
+</span></span></code></pre></div><div class="wrap-code highlight"><pre tabindex="0"><code class="language-ltsv" data-lang="ltsv">key1:value11	key2:value12	key3:value13
 key1:value21	key2:value22	key3:value23
 key1:value31	key2:value32	key3:value33
-key1:value41	key2:value42	key3:value43</code></pre></div><div class="wrap-code highlight"><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span>trdsql -ojsonl &#34;SELECT * FROM sample1.json&#34;
-</span></span></code></pre></div><div class="wrap-code highlight"><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-json data-lang=json><span style=display:flex><span>{<span style=color:#f92672>&#34;key1&#34;</span>:<span style=color:#e6db74>&#34;value11&#34;</span>,<span style=color:#f92672>&#34;key2&#34;</span>:<span style=color:#e6db74>&#34;value12&#34;</span>,<span style=color:#f92672>&#34;key3&#34;</span>:<span style=color:#e6db74>&#34;value13&#34;</span>}
-</span></span><span style=display:flex><span>{<span style=color:#f92672>&#34;key1&#34;</span>:<span style=color:#e6db74>&#34;value21&#34;</span>,<span style=color:#f92672>&#34;key2&#34;</span>:<span style=color:#e6db74>&#34;value22&#34;</span>,<span style=color:#f92672>&#34;key3&#34;</span>:<span style=color:#e6db74>&#34;value23&#34;</span>}
-</span></span><span style=display:flex><span>{<span style=color:#f92672>&#34;key1&#34;</span>:<span style=color:#e6db74>&#34;value31&#34;</span>,<span style=color:#f92672>&#34;key2&#34;</span>:<span style=color:#e6db74>&#34;value32&#34;</span>,<span style=color:#f92672>&#34;key3&#34;</span>:<span style=color:#e6db74>&#34;value33&#34;</span>}
-</span></span><span style=display:flex><span>{<span style=color:#f92672>&#34;key1&#34;</span>:<span style=color:#e6db74>&#34;value41&#34;</span>,<span style=color:#f92672>&#34;key2&#34;</span>:<span style=color:#e6db74>&#34;value42&#34;</span>,<span style=color:#f92672>&#34;key3&#34;</span>:<span style=color:#e6db74>&#34;value43&#34;</span>}</span></span></code></pre></div><p>sample2.jsonの例はjqでもSQLのJSON関数でも複雑です。</p><div class="wrap-code highlight"><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-sample2.json data-lang=sample2.json><span style=display:flex><span>[
-</span></span><span style=display:flex><span>    {
-</span></span><span style=display:flex><span>        <span style=color:#f92672>&#34;id&#34;</span> : <span style=color:#ae81ff>1</span>,
-</span></span><span style=display:flex><span>        <span style=color:#f92672>&#34;created_at&#34;</span> : <span style=color:#e6db74>&#34;2018-05-27&#34;</span>,
-</span></span><span style=display:flex><span>        <span style=color:#f92672>&#34;attrs&#34;</span> : [
-</span></span><span style=display:flex><span>            { <span style=color:#f92672>&#34;key&#34;</span>: <span style=color:#e6db74>&#34;firstname&#34;</span>,   <span style=color:#f92672>&#34;value&#34;</span>: <span style=color:#e6db74>&#34;John&#34;</span> },
-</span></span><span style=display:flex><span>            { <span style=color:#f92672>&#34;key&#34;</span>: <span style=color:#e6db74>&#34;lastname&#34;</span>,    <span style=color:#f92672>&#34;value&#34;</span>: <span style=color:#e6db74>&#34;Smith&#34;</span> },
-</span></span><span style=display:flex><span>            { <span style=color:#f92672>&#34;key&#34;</span>: <span style=color:#e6db74>&#34;middlename&#34;</span>,  <span style=color:#f92672>&#34;value&#34;</span>: <span style=color:#e6db74>&#34;W&#34;</span> }
-</span></span><span style=display:flex><span>        ]
-</span></span><span style=display:flex><span>    },
-</span></span><span style=display:flex><span>    {
-</span></span><span style=display:flex><span>        <span style=color:#f92672>&#34;id&#34;</span> : <span style=color:#ae81ff>2</span>,
-</span></span><span style=display:flex><span>        <span style=color:#f92672>&#34;created_at&#34;</span> : <span style=color:#e6db74>&#34;2018-05-26&#34;</span>,
-</span></span><span style=display:flex><span>        <span style=color:#f92672>&#34;attrs&#34;</span> : [
-</span></span><span style=display:flex><span>            { <span style=color:#f92672>&#34;key&#34;</span>: <span style=color:#e6db74>&#34;firstname&#34;</span>,   <span style=color:#f92672>&#34;value&#34;</span>: <span style=color:#e6db74>&#34;太郎&#34;</span> },
-</span></span><span style=display:flex><span>            { <span style=color:#f92672>&#34;key&#34;</span>: <span style=color:#e6db74>&#34;lastname&#34;</span>,    <span style=color:#f92672>&#34;value&#34;</span>: <span style=color:#e6db74>&#34;山田&#34;</span> }
-</span></span><span style=display:flex><span>        ]
-</span></span><span style=display:flex><span>    }
-</span></span><span style=display:flex><span>]</span></span></code></pre></div><p>idとcreated_atはそのまま列名になりますが、まずattrsはtextとして扱われます。middlenameを取り出すのはJSONやJSONBにキャストしてSQLのJSON関数で取り出す方法でやってみます。</p><div class="wrap-code highlight"><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span>trdsql \
-</span></span><span style=display:flex><span>&#34;SELECT \
-</span></span><span style=display:flex><span>  id, \
-</span></span><span style=display:flex><span>  jsonb_path_query_array(attrs::jsonb, &#39;$ ? (@.key == \&#34;middlename\&#34;).value&#39;)-&gt;&gt;0 as middle, \
-</span></span><span style=display:flex><span>  created_at \
-</span></span><span style=display:flex><span>FROM sample2.json&#34;
-</span></span></code></pre></div><div class="wrap-code highlight"><pre tabindex=0><code class=language-csv data-lang=csv>1,W,2018-05-27
-2,,2018-05-26</code></pre></div><p>jq では要素がない場合にif文を使用していましたが、<code>jsonb_path_query</code> だと同様にidが1しか該当しないので<code>jsonb_path_query_array</code>を使用することで配列化しています。返ってくるのはjsonオブジェクトなので<code>"</code>で括られた文字列からSQLの文字列を取り出すために<code>->>0</code>を使用しています。</p><h3 id=jqの代わりにperlを使ったりmysqlを使ったりできなかったhttpsyoku0825blogspotcom202112jqperlmysqlhtml-の例><a href=https://yoku0825.blogspot.com/2021/12/jqperlmysql.html target=_blank>jqの代わりにperlを使ったり、mysqlを使ったり(できなかった)</a> の例</h3><p><a href=https://json-generator.com/ target=_blank>JSON Generator – Tool for generating random data</a>で生成されたJSONは、フラットで一部配列を使用しているのでtrdsql向けです。</p><div class="wrap-code highlight"><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span>trdsql -oat &#34;SELECT _id,tags FROM generated.json&#34;
-</span></span></code></pre></div><div class="wrap-code highlight"><pre tabindex=0><code>+--------------------------+-------------------------------------------------------------------------------+
+key1:value41	key2:value42	key3:value43</code></pre></div><div class="wrap-code highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>trdsql -ojsonl &#34;SELECT * FROM sample1.json&#34;
+</span></span></code></pre></div><div class="wrap-code highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span>{<span style="color:#f92672">&#34;key1&#34;</span>:<span style="color:#e6db74">&#34;value11&#34;</span>,<span style="color:#f92672">&#34;key2&#34;</span>:<span style="color:#e6db74">&#34;value12&#34;</span>,<span style="color:#f92672">&#34;key3&#34;</span>:<span style="color:#e6db74">&#34;value13&#34;</span>}
+</span></span><span style="display:flex;"><span>{<span style="color:#f92672">&#34;key1&#34;</span>:<span style="color:#e6db74">&#34;value21&#34;</span>,<span style="color:#f92672">&#34;key2&#34;</span>:<span style="color:#e6db74">&#34;value22&#34;</span>,<span style="color:#f92672">&#34;key3&#34;</span>:<span style="color:#e6db74">&#34;value23&#34;</span>}
+</span></span><span style="display:flex;"><span>{<span style="color:#f92672">&#34;key1&#34;</span>:<span style="color:#e6db74">&#34;value31&#34;</span>,<span style="color:#f92672">&#34;key2&#34;</span>:<span style="color:#e6db74">&#34;value32&#34;</span>,<span style="color:#f92672">&#34;key3&#34;</span>:<span style="color:#e6db74">&#34;value33&#34;</span>}
+</span></span><span style="display:flex;"><span>{<span style="color:#f92672">&#34;key1&#34;</span>:<span style="color:#e6db74">&#34;value41&#34;</span>,<span style="color:#f92672">&#34;key2&#34;</span>:<span style="color:#e6db74">&#34;value42&#34;</span>,<span style="color:#f92672">&#34;key3&#34;</span>:<span style="color:#e6db74">&#34;value43&#34;</span>}</span></span></code></pre></div><p>sample2.jsonの例はjqでもSQLのJSON関数でも複雑です。</p>
+<div class="wrap-code highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sample2.json" data-lang="sample2.json"><span style="display:flex;"><span>[
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;id&#34;</span> : <span style="color:#ae81ff">1</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;created_at&#34;</span> : <span style="color:#e6db74">&#34;2018-05-27&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;attrs&#34;</span> : [
+</span></span><span style="display:flex;"><span>            { <span style="color:#f92672">&#34;key&#34;</span>: <span style="color:#e6db74">&#34;firstname&#34;</span>,   <span style="color:#f92672">&#34;value&#34;</span>: <span style="color:#e6db74">&#34;John&#34;</span> },
+</span></span><span style="display:flex;"><span>            { <span style="color:#f92672">&#34;key&#34;</span>: <span style="color:#e6db74">&#34;lastname&#34;</span>,    <span style="color:#f92672">&#34;value&#34;</span>: <span style="color:#e6db74">&#34;Smith&#34;</span> },
+</span></span><span style="display:flex;"><span>            { <span style="color:#f92672">&#34;key&#34;</span>: <span style="color:#e6db74">&#34;middlename&#34;</span>,  <span style="color:#f92672">&#34;value&#34;</span>: <span style="color:#e6db74">&#34;W&#34;</span> }
+</span></span><span style="display:flex;"><span>        ]
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;id&#34;</span> : <span style="color:#ae81ff">2</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;created_at&#34;</span> : <span style="color:#e6db74">&#34;2018-05-26&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&#34;attrs&#34;</span> : [
+</span></span><span style="display:flex;"><span>            { <span style="color:#f92672">&#34;key&#34;</span>: <span style="color:#e6db74">&#34;firstname&#34;</span>,   <span style="color:#f92672">&#34;value&#34;</span>: <span style="color:#e6db74">&#34;太郎&#34;</span> },
+</span></span><span style="display:flex;"><span>            { <span style="color:#f92672">&#34;key&#34;</span>: <span style="color:#e6db74">&#34;lastname&#34;</span>,    <span style="color:#f92672">&#34;value&#34;</span>: <span style="color:#e6db74">&#34;山田&#34;</span> }
+</span></span><span style="display:flex;"><span>        ]
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>]</span></span></code></pre></div><p>idとcreated_atはそのまま列名になりますが、まずattrsはtextとして扱われます。middlenameを取り出すのはJSONやJSONBにキャストしてSQLのJSON関数で取り出す方法でやってみます。</p>
+<div class="wrap-code highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>trdsql \
+</span></span><span style="display:flex;"><span>&#34;SELECT \
+</span></span><span style="display:flex;"><span>  id, \
+</span></span><span style="display:flex;"><span>  jsonb_path_query_array(attrs::jsonb, &#39;$ ? (@.key == \&#34;middlename\&#34;).value&#39;)-&gt;&gt;0 as middle, \
+</span></span><span style="display:flex;"><span>  created_at \
+</span></span><span style="display:flex;"><span>FROM sample2.json&#34;
+</span></span></code></pre></div><div class="wrap-code highlight"><pre tabindex="0"><code class="language-csv" data-lang="csv">1,W,2018-05-27
+2,,2018-05-26</code></pre></div><p>jq では要素がない場合にif文を使用していましたが、<code>jsonb_path_query</code> だと同様にidが1しか該当しないので<code>jsonb_path_query_array</code>を使用することで配列化しています。返ってくるのはjsonオブジェクトなので<code>&quot;</code>で括られた文字列からSQLの文字列を取り出すために<code>-&gt;&gt;0</code>を使用しています。</p>
+<h3 id="jqの代わりにperlを使ったりmysqlを使ったりできなかったhttpsyoku0825blogspotcom202112jqperlmysqlhtml-の例"><a href="https://yoku0825.blogspot.com/2021/12/jqperlmysql.html" target="_blank">jqの代わりにperlを使ったり、mysqlを使ったり(できなかった)</a> の例</h3>
+<p><a href="https://json-generator.com/" target="_blank">JSON Generator – Tool for generating random data</a>で生成されたJSONは、フラットで一部配列を使用しているのでtrdsql向けです。</p>
+<div class="wrap-code highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>trdsql -oat &#34;SELECT _id,tags FROM generated.json&#34;
+</span></span></code></pre></div><div class="wrap-code highlight"><pre tabindex="0"><code>+--------------------------+-------------------------------------------------------------------------------+
 |           _id            |                                     tags                                      |
 +--------------------------+-------------------------------------------------------------------------------+
 | 61b88031bd73e2425c51b44f | [&#34;enim&#34;,&#34;id&#34;,&#34;minim&#34;,&#34;anim&#34;,&#34;occaecat&#34;,&#34;cupidatat&#34;,&#34;excepteur&#34;]               |
@@ -98,25 +289,30 @@ key1:value41	key2:value42	key3:value43</code></pre></div><div class="wrap-code h
 | 61b880316ca649ff358b5978 | [&#34;exercitation&#34;,&#34;fugiat&#34;,&#34;esse&#34;,&#34;irure&#34;,&#34;elit&#34;,&#34;irure&#34;,&#34;magna&#34;]               |
 | 61b8803159cfcb4349795b06 | [&#34;pariatur&#34;,&#34;nisi&#34;,&#34;consectetur&#34;,&#34;aute&#34;,&#34;veniam&#34;,&#34;incididunt&#34;,&#34;ad&#34;]           |
 | 61b88031ee810a0f624f0b55 | [&#34;excepteur&#34;,&#34;officia&#34;,&#34;magna&#34;,&#34;aliquip&#34;,&#34;consectetur&#34;,&#34;cupidatat&#34;,&#34;aliquip&#34;] |
-+--------------------------+-------------------------------------------------------------------------------+</code></pre></div><h3 id=jq-で-ip-アドレスを-sort_by-しようと思ったがうまくいかなかったので大人しく-sort--v-を使ったhttpsdevclassmethodjparticlesjq-ip-address-sort-の例><a href=https://dev.classmethod.jp/articles/jq-ip-address-sort/ target=_blank>jq で IP アドレスを sort_by しようと思ったがうまくいかなかったので大人しく sort -V を使った</a> の例</h3><p>jqのsort_by関数ではIPアドレスに対応していませんが、PostgreSQLにはネットワークアドレス型があるため、IPアドレスのソートが簡単におこなえます。</p><p>ip-ranges.jsonは以下のような、大きなJSONファイルです。</p><div class="wrap-code highlight"><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-ip-ranges.json data-lang=ip-ranges.json><span style=display:flex><span>{
-</span></span><span style=display:flex><span>  <span style=color:#f92672>&#34;syncToken&#34;</span>: <span style=color:#e6db74>&#34;1632282194&#34;</span>,
-</span></span><span style=display:flex><span>  <span style=color:#f92672>&#34;createDate&#34;</span>: <span style=color:#e6db74>&#34;2021-09-22-03-43-14&#34;</span>,
-</span></span><span style=display:flex><span>  <span style=color:#f92672>&#34;prefixes&#34;</span>: [
-</span></span><span style=display:flex><span>    {
-</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;ip_prefix&#34;</span>: <span style=color:#e6db74>&#34;3.5.140.0/22&#34;</span>,
-</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;region&#34;</span>: <span style=color:#e6db74>&#34;ap-northeast-2&#34;</span>,
-</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;service&#34;</span>: <span style=color:#e6db74>&#34;AMAZON&#34;</span>,
-</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;network_border_group&#34;</span>: <span style=color:#e6db74>&#34;ap-northeast-2&#34;</span>
-</span></span><span style=display:flex><span>    },
-</span></span><span style=display:flex><span>    {
-</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;ip_prefix&#34;</span>: <span style=color:#e6db74>&#34;13.34.37.64/27&#34;</span>,
-</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;region&#34;</span>: <span style=color:#e6db74>&#34;ap-southeast-4&#34;</span>,
-</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;service&#34;</span>: <span style=color:#e6db74>&#34;AMAZON&#34;</span>,
-</span></span><span style=display:flex><span>      <span style=color:#f92672>&#34;network_border_group&#34;</span>: <span style=color:#e6db74>&#34;ap-southeast-4&#34;</span>
-</span></span><span style=display:flex><span>    },
-</span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010>....</span></span></span></code></pre></div><p>IPアドレスが入っているリストは<code>prefixes</code>項目に入っているため、JSONファイルそのままをSQLの対象とするとJSON関数でprefixesを取り出して処理することになります。可能は可能ですが、この場合はjq構文で<code>.prefixes</code>
-を指定し、そのリストに対してSQLを実行します。</p><p>PostgreSQLでは<code>cidr型</code>にキャストすればIPアドレスとしてソートできます。</p><div class="wrap-code highlight"><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span>trdsql &#34;SELECT ip_prefix FROM ip-ranges.json::.prefixes ORDER BY ip_prefix::cidr&#34;
-</span></span></code></pre></div><div class="wrap-code highlight"><pre tabindex=0><code class=language-csv data-lang=csv>3.0.0.0/15
++--------------------------+-------------------------------------------------------------------------------+</code></pre></div><h3 id="jq-で-ip-アドレスを-sort_by-しようと思ったがうまくいかなかったので大人しく-sort--v-を使ったhttpsdevclassmethodjparticlesjq-ip-address-sort-の例"><a href="https://dev.classmethod.jp/articles/jq-ip-address-sort/" target="_blank">jq で IP アドレスを sort_by しようと思ったがうまくいかなかったので大人しく sort -V を使った</a> の例</h3>
+<p>jqのsort_by関数ではIPアドレスに対応していませんが、PostgreSQLにはネットワークアドレス型があるため、IPアドレスのソートが簡単におこなえます。</p>
+<p>ip-ranges.jsonは以下のような、大きなJSONファイルです。</p>
+<div class="wrap-code highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-ip-ranges.json" data-lang="ip-ranges.json"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;syncToken&#34;</span>: <span style="color:#e6db74">&#34;1632282194&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;createDate&#34;</span>: <span style="color:#e6db74">&#34;2021-09-22-03-43-14&#34;</span>,
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&#34;prefixes&#34;</span>: [
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;ip_prefix&#34;</span>: <span style="color:#e6db74">&#34;3.5.140.0/22&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;region&#34;</span>: <span style="color:#e6db74">&#34;ap-northeast-2&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;service&#34;</span>: <span style="color:#e6db74">&#34;AMAZON&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;network_border_group&#34;</span>: <span style="color:#e6db74">&#34;ap-northeast-2&#34;</span>
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span>    {
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;ip_prefix&#34;</span>: <span style="color:#e6db74">&#34;13.34.37.64/27&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;region&#34;</span>: <span style="color:#e6db74">&#34;ap-southeast-4&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;service&#34;</span>: <span style="color:#e6db74">&#34;AMAZON&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&#34;network_border_group&#34;</span>: <span style="color:#e6db74">&#34;ap-southeast-4&#34;</span>
+</span></span><span style="display:flex;"><span>    },
+</span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010">....</span></span></span></code></pre></div><p>IPアドレスが入っているリストは<code>prefixes</code>項目に入っているため、JSONファイルそのままをSQLの対象とするとJSON関数でprefixesを取り出して処理することになります。可能は可能ですが、この場合はjq構文で<code>.prefixes</code>
+を指定し、そのリストに対してSQLを実行します。</p>
+<p>PostgreSQLでは<code>cidr型</code>にキャストすればIPアドレスとしてソートできます。</p>
+<div class="wrap-code highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-console" data-lang="console"><span style="display:flex;"><span>trdsql &#34;SELECT ip_prefix FROM ip-ranges.json::.prefixes ORDER BY ip_prefix::cidr&#34;
+</span></span></code></pre></div><div class="wrap-code highlight"><pre tabindex="0"><code class="language-csv" data-lang="csv">3.0.0.0/15
 3.0.0.0/15
 3.0.5.32/29
 3.0.5.224/27
@@ -126,12 +322,291 @@ key1:value41	key2:value42	key3:value43</code></pre></div><div class="wrap-code h
 3.2.2.0/24
 3.2.3.0/24
 3.2.3.0/24
-...</code></pre></div><footer class=footline><div class="taxonomy-categories term-list cstyle" title=Categories style=--VARIABLE-TAGS-BG-color:var(--INTERNAL-TAG-BG-color)><i class="fa-fw fas fa-layer-group"></i><ul><li><a class=term-link href=/categories/trdsql/index.html>trdsql</a></li></ul></div></footer></article></div></main></div><aside id=R-sidebar class=default-animation><div id=R-header-topbar class=default-animation></div><div id=R-header-wrapper class=default-animation><div id=R-header class=default-animation><a id=logo href=./index.html><style>#sidebar a#logo{display:flex;align-items:center;font-size:1.3rem;font-weight:600;color:#777}#logo object{margin-right:.1rem}</style><img width=50 height=50 src=/images/logo.svg></img>Noboru Saito’s site</a></div><div class="searchbox default-animation"><i class="fas fa-search" title="Search (CTRL+ALT+f)"></i>
-<label class=a11y-only for=R-search-by>Search</label>
-<input data-search-input id=R-search-by name=search-by class=search-by type=search placeholder=Search...>
-<button class=search-clear type=button data-search-clear title="Clear search"><i class="fas fa-times" title="Clear search"></i></button></div><script>var contentLangs=["en","ja"]</script><script src=/js/auto-complete.js?1701122937 defer></script><script src=/js/lunr/lunr.min.js?1701122937 defer></script><script src=/js/lunr/lunr.stemmer.support.min.js?1701122937 defer></script><script src=/js/lunr/lunr.multi.min.js?1701122937 defer></script><script src=/js/lunr/lunr.en.min.js?1701122937 defer></script><script src=/js/lunr/tinyseg.js?1701122937 defer></script><script src=/js/lunr/lunr.ja.min.js?1701122937 defer></script><script src=/js/search.js?1701122937 defer></script></div><div id=R-homelinks class="default-animation homelinks"><ul><li><a class=padding href=/index.html><i class="fas fa-home"></i> Home</a></li></ul><hr class=padding></div><div id=R-content-wrapper class=highlightable><div id=R-topics><ul class="enlarge morespace collapsible-menu"><li data-nav-id=/blog/index.html class=parent><input type=checkbox id=R-section-e5771ef0a5755d5af1982ccf165846c6 aria-controls=R-subsections-e5771ef0a5755d5af1982ccf165846c6 checked><label for=R-section-e5771ef0a5755d5af1982ccf165846c6><i class="fas fa-chevron-down"></i><i class="fas fa-chevron-right"></i><span class=a11y-only>Submenu Blog</span></label><a class=padding href=/blog/index.html>Blog</a><ul id=R-subsections-e5771ef0a5755d5af1982ccf165846c6 class="morespace collapsible-menu"><li data-nav-id=/blog/trdsql_0130/index.html><a class=padding href=/blog/trdsql_0130/index.html>trdsql v0.13.0</a></li><li data-nav-id=/blog/ov_032_1/index.html><a class=padding href=/blog/ov_032_1/index.html>ov v0.32.1</a></li><li data-nav-id=/blog/trdsql_0121/index.html><a class=padding href=/blog/trdsql_0121/index.html>trdsql v0.12.1</a></li><li data-nav-id=/blog/trdsql_0120/index.html><a class=padding href=/blog/trdsql_0120/index.html>trdsql v0.12.0</a></li><li data-nav-id=/blog/ov_032_0/index.html><a class=padding href=/blog/ov_032_0/index.html>ov v0.32.0</a></li><li data-nav-id=/blog/ov_031_0/index.html><a class=padding href=/blog/ov_031_0/index.html>ov v0.31.0</a></li><li data-nav-id=/blog/psql-pager/index.html><a class=padding href=/blog/psql-pager/index.html>psqlのPAGERを設定する</a></li><li data-nav-id=/blog/ov_030_0/index.html><a class=padding href=/blog/ov_030_0/index.html>ov v0.30.0</a></li><li data-nav-id=/blog/guesswidth/index.html><a class=padding href=/blog/guesswidth/index.html>Guess the width of the width-specified format</a></li><li data-nav-id=/blog/trdsql_0111/index.html><a class=padding href=/blog/trdsql_0111/index.html>trdsql v0.11.1</a></li><li data-nav-id=/blog/ov_015_0/index.html><a class=padding href=/blog/ov_015_0/index.html>ov v0.15.0</a></li><li data-nav-id=/blog/ov_014_2/index.html><a class=padding href=/blog/ov_014_2/index.html>ov v0.14.2</a></li><li data-nav-id=/blog/ov_014_1/index.html><a class=padding href=/blog/ov_014_1/index.html>ov v0.14.1</a></li><li data-nav-id=/blog/ov_014_0/index.html><a class=padding href=/blog/ov_014_0/index.html>ov v0.14.0</a></li><li data-nav-id=/blog/ov_012_0/index.html><a class=padding href=/blog/ov_012_0/index.html>ov v0.12.0</a></li><li data-nav-id=/blog/column0/index.html><a class=padding href=/blog/column0/index.html>PostgreSQLで0列の扱い</a></li><li data-nav-id=/blog/35_jq/index.html><a class=padding href=/blog/35_jq/index.html>trdsql jq構文</a></li><li data-nav-id=/blog/ov_011_1/index.html><a class=padding href=/blog/ov_011_1/index.html>ov v0.11.1</a></li><li data-nav-id=/blog/ov_011_0/index.html><a class=padding href=/blog/ov_011_0/index.html>ov v0.11.0</a></li><li data-nav-id=/blog/sql/index.html><a class=padding href=/blog/sql/index.html>手っ取り遅くSQLを学ぶ</a></li><li data-nav-id=/blog/jqsql/index.html><a class=padding href=/blog/jqsql/index.html>Another way to aggregate json(jq + SQL)</a></li><li data-nav-id=/blog/trdsql_0100/index.html><a class=padding href=/blog/trdsql_0100/index.html>trdsql v0.10.0</a></li><li data-nav-id=/blog/pgunconf/index.html><a class=padding href=/blog/pgunconf/index.html>第32回 PostgreSQLアンカンファレンス@オンラインで発表しました</a></li><li data-nav-id=/blog/ov_010_0/index.html><a class=padding href=/blog/ov_010_0/index.html>ov v0.10.0</a></li><li data-nav-id=/blog/trdsql_091/index.html><a class=padding href=/blog/trdsql_091/index.html>trdsql v0.9.1</a></li><li data-nav-id=/blog/ov_096/index.html><a class=padding href=/blog/ov_096/index.html>ov v0.9.6</a></li><li data-nav-id=/blog/jpug-doc-tool/index.html><a class=padding href=/blog/jpug-doc-tool/index.html>Jpug-doc-tool</a></li><li data-nav-id=/blog/ov_095/index.html><a class=padding href=/blog/ov_095/index.html>ov v0.9.5</a></li><li data-nav-id=/blog/trdsql_jq/index.html class=active><a class=padding href=/blog/trdsql_jq/index.html>trdsql+PostgreSQL 14でJSONを処理する</a></li><li data-nav-id=/blog/ov_094/index.html><a class=padding href=/blog/ov_094/index.html>ov v0.9.4</a></li><li data-nav-id=/blog/mdtsql_003/index.html><a class=padding href=/blog/mdtsql_003/index.html>mdtsql v0.0.3</a></li><li data-nav-id=/blog/pgsp/index.html><a class=padding href=/blog/pgsp/index.html>pgsp</a></li><li data-nav-id=/blog/trdsql_090/index.html><a class=padding href=/blog/trdsql_090/index.html>trdsql v0.9.0</a></li><li data-nav-id=/blog/ov_090/index.html><a class=padding href=/blog/ov_090/index.html>ov v0.9.0</a></li><li data-nav-id=/blog/ov_081/index.html><a class=padding href=/blog/ov_081/index.html>ov v0.8.1</a></li><li data-nav-id=/blog/trdsql_080/index.html><a class=padding href=/blog/trdsql_080/index.html>trdsql v0.8.0</a></li><li data-nav-id=/blog/ov_080/index.html><a class=padding href=/blog/ov_080/index.html>ov v0.8.0</a></li><li data-nav-id=/blog/go_tui2020/index.html><a class=padding href=/blog/go_tui2020/index.html>goのTUIについて2020年最終版</a></li><li data-nav-id=/blog/ov_070/index.html><a class=padding href=/blog/ov_070/index.html>ov v0.7.0</a></li><li data-nav-id=/blog/sqlorder/index.html><a class=padding href=/blog/sqlorder/index.html>SQLのORDER BY 列番号と式</a></li><li data-nav-id=/blog/cbind/index.html><a class=padding href=/blog/cbind/index.html>tcell/tviewでTUIを作るならキー割り当てにcbindを利用しよう</a></li><li data-nav-id=/blog/ov_062/index.html><a class=padding href=/blog/ov_062/index.html>ov v0.6.2</a></li><li data-nav-id=/blog/ov_050/index.html><a class=padding href=/blog/ov_050/index.html>ov v0.5.0</a></li><li data-nav-id=/blog/ov_020/index.html><a class=padding href=/blog/ov_020/index.html>ov v0.2.0</a></li><li data-nav-id=/blog/tcell_02/index.html><a class=padding href=/blog/tcell_02/index.html>tcellについて2</a></li><li data-nav-id=/blog/tcell_01/index.html><a class=padding href=/blog/tcell_01/index.html>tcellについて</a></li><li data-nav-id=/blog/go_tui/index.html><a class=padding href=/blog/go_tui/index.html>goのTUIについて</a></li><li data-nav-id=/blog/ov_013/index.html><a class=padding href=/blog/ov_013/index.html>ov v0.1.3</a></li><li data-nav-id=/blog/oviewer/index.html><a class=padding href=/blog/oviewer/index.html>ov</a></li><li data-nav-id=/blog/runewidth/index.html><a class=padding href=/blog/runewidth/index.html>GoのTUIで表示が崩れる場合</a></li><li data-nav-id=/blog/trdsql_075/index.html><a class=padding href=/blog/trdsql_075/index.html>trdsql 0.7.5</a></li><li data-nav-id=/blog/34_output/index.html><a class=padding href=/blog/34_output/index.html>trdsql output</a></li><li data-nav-id=/blog/33_compression/index.html><a class=padding href=/blog/33_compression/index.html>trdsql 圧縮ファイル</a></li><li data-nav-id=/blog/mysql-load/index.html><a class=padding href=/blog/mysql-load/index.html>MySQL の LOAD DATA INFILE (go)</a></li><li data-nav-id=/blog/trdsql_074/index.html><a class=padding href=/blog/trdsql_074/index.html>trdsql 0.7.4</a></li><li data-nav-id=/blog/32_case/index.html><a class=padding href=/blog/32_case/index.html>trdsql CASE式</a></li><li data-nav-id=/blog/31_rollup/index.html><a class=padding href=/blog/31_rollup/index.html>trdsql 合計を行に追加する</a></li><li data-nav-id=/blog/30_convert_log/index.html><a class=padding href=/blog/30_convert_log/index.html>trdsql convert log</a></li><li data-nav-id=/blog/29_generate_series/index.html><a class=padding href=/blog/29_generate_series/index.html>trdsql generate_series</a></li><li data-nav-id=/blog/28_cross_join/index.html><a class=padding href=/blog/28_cross_join/index.html>trdsql CROSS JOIN</a></li><li data-nav-id=/blog/27_config/index.html><a class=padding href=/blog/27_config/index.html>trdsql config</a></li><li data-nav-id=/blog/26_file_sql/index.html><a class=padding href=/blog/26_file_sql/index.html>trdsql SQLファイル指定</a></li><li data-nav-id=/blog/25_library/index.html><a class=padding href=/blog/25_library/index.html>trdsql ライブラリ使用</a></li><li data-nav-id=/blog/24_graph/index.html><a class=padding href=/blog/24_graph/index.html>trdsql グラフ</a></li><li data-nav-id=/blog/23_except/index.html><a class=padding href=/blog/23_except/index.html>trdsql 差分、比較</a></li><li data-nav-id=/blog/22_json_output/index.html><a class=padding href=/blog/22_json_output/index.html>trdsql JSON出力</a></li><li data-nav-id=/blog/21_json_parse/index.html><a class=padding href=/blog/21_json_parse/index.html>trdsql JSON解析</a></li><li data-nav-id=/blog/20_date/index.html><a class=padding href=/blog/20_date/index.html>trdsql 日付・時刻処理</a></li><li data-nav-id=/blog/19_window/index.html><a class=padding href=/blog/19_window/index.html>trdsql Window関数</a></li><li data-nav-id=/blog/18_edit_columns/index.html><a class=padding href=/blog/18_edit_columns/index.html>trdsql 列の編集</a></li><li data-nav-id=/blog/17_file_table/index.html><a class=padding href=/blog/17_file_table/index.html>trdsql ファイルとテーブルのJOIN</a></li><li data-nav-id=/blog/16_join/index.html><a class=padding href=/blog/16_join/index.html>trdsql JOIN</a></li><li data-nav-id=/blog/15_import/index.html><a class=padding href=/blog/15_import/index.html>trdsql DBインポート</a></li><li data-nav-id=/blog/14_sqlite3/index.html><a class=padding href=/blog/14_sqlite3/index.html>trdsql SQLite3エンジンの使用</a></li><li data-nav-id=/blog/13_mysql/index.html><a class=padding href=/blog/13_mysql/index.html>trdsql MySQLエンジンの使用</a></li><li data-nav-id=/blog/12_postgres/index.html><a class=padding href=/blog/12_postgres/index.html>trdsql PostgreSQLエンジンの使用</a></li><li data-nav-id=/blog/11_summary/index.html><a class=padding href=/blog/11_summary/index.html>trdsql 処理の概要</a></li><li data-nav-id=/blog/10_stdin/index.html><a class=padding href=/blog/10_stdin/index.html>trdsql 標準入力</a></li><li data-nav-id=/blog/09_wildcard/index.html><a class=padding href=/blog/09_wildcard/index.html>trdsql ワイルドカード、圧縮ファイル</a></li><li data-nav-id=/blog/08_log/index.html><a class=padding href=/blog/08_log/index.html>trdsql Log集計</a></li><li data-nav-id=/blog/07_group/index.html><a class=padding href=/blog/07_group/index.html>trdsql GROUP集計</a></li><li data-nav-id=/blog/06_calculation/index.html><a class=padding href=/blog/06_calculation/index.html>trdsql 集計計算</a></li><li data-nav-id=/blog/05_aggregate/index.html><a class=padding href=/blog/05_aggregate/index.html>trdsql 集計</a></li><li data-nav-id=/blog/04_sql2/index.html><a class=padding href=/blog/04_sql2/index.html>trdsql 簡単なSQL その２</a></li><li data-nav-id=/blog/03_sql/index.html><a class=padding href=/blog/03_sql/index.html>trdsql 簡単なSQL</a></li><li data-nav-id=/blog/02_convert/index.html><a class=padding href=/blog/02_convert/index.html>trdsql ファイルフォーマット変換</a></li><li data-nav-id=/blog/01_install/index.html><a class=padding href=/blog/01_install/index.html>trdsql インストール</a></li></ul></li><li data-nav-id=/trdsql/index.html><input type=checkbox id=R-section-a127209ea9757fb2737b7f62423c1089 aria-controls=R-subsections-a127209ea9757fb2737b7f62423c1089><label for=R-section-a127209ea9757fb2737b7f62423c1089><i class="fas fa-chevron-down"></i><i class="fas fa-chevron-right"></i><span class=a11y-only>Submenu trdsql</span></label><a class=padding href=/trdsql/index.html>trdsql</a><ul id=R-subsections-a127209ea9757fb2737b7f62423c1089 class="morespace collapsible-menu"><li data-nav-id=/trdsql/01_install/index.html><a class=padding href=/trdsql/01_install/index.html>trdsql install</a></li><li data-nav-id=/trdsql/02_convert/index.html><a class=padding href=/trdsql/02_convert/index.html>trdsql File format conversion</a></li><li data-nav-id=/trdsql/03_sql/index.html><a class=padding href=/trdsql/03_sql/index.html>trdsql Easy SQL</a></li><li data-nav-id=/trdsql/04_sql2/index.html><a class=padding href=/trdsql/04_sql2/index.html>trdsql 簡単なSQL その２</a></li><li data-nav-id=/trdsql/05_aggregate/index.html><a class=padding href=/trdsql/05_aggregate/index.html>trdsql 集計</a></li><li data-nav-id=/trdsql/06_calculation/index.html><a class=padding href=/trdsql/06_calculation/index.html>trdsql 集計計算</a></li><li data-nav-id=/trdsql/07_group/index.html><a class=padding href=/trdsql/07_group/index.html>trdsql GROUP集計</a></li><li data-nav-id=/trdsql/08_log/index.html><a class=padding href=/trdsql/08_log/index.html>trdsql Log集計</a></li><li data-nav-id=/trdsql/09_wildcard/index.html><a class=padding href=/trdsql/09_wildcard/index.html>trdsql ワイルドカード、圧縮ファイル</a></li><li data-nav-id=/trdsql/10_stdin/index.html><a class=padding href=/trdsql/10_stdin/index.html>trdsql 標準入力</a></li><li data-nav-id=/trdsql/11_summary/index.html><a class=padding href=/trdsql/11_summary/index.html>trdsql 処理の概要</a></li><li data-nav-id=/trdsql/12_postgres/index.html><a class=padding href=/trdsql/12_postgres/index.html>trdsql PostgreSQLエンジンの使用</a></li><li data-nav-id=/trdsql/13_mysql/index.html><a class=padding href=/trdsql/13_mysql/index.html>trdsql MySQLエンジンの使用</a></li><li data-nav-id=/trdsql/14_sqlite3/index.html><a class=padding href=/trdsql/14_sqlite3/index.html>trdsql SQLite3エンジンの使用</a></li><li data-nav-id=/trdsql/15_import/index.html><a class=padding href=/trdsql/15_import/index.html>trdsql DBインポート</a></li><li data-nav-id=/trdsql/16_join/index.html><a class=padding href=/trdsql/16_join/index.html>trdsql JOIN</a></li><li data-nav-id=/trdsql/17_file_table/index.html><a class=padding href=/trdsql/17_file_table/index.html>trdsql ファイルとテーブルのJOIN</a></li><li data-nav-id=/trdsql/18_edit_columns/index.html><a class=padding href=/trdsql/18_edit_columns/index.html>trdsql 列の編集</a></li><li data-nav-id=/trdsql/19_window/index.html><a class=padding href=/trdsql/19_window/index.html>trdsql Window関数</a></li><li data-nav-id=/trdsql/20_date/index.html><a class=padding href=/trdsql/20_date/index.html>trdsql 日付・時刻処理</a></li><li data-nav-id=/trdsql/21_json_parse/index.html><a class=padding href=/trdsql/21_json_parse/index.html>trdsql JSON解析</a></li><li data-nav-id=/trdsql/22_json_output/index.html><a class=padding href=/trdsql/22_json_output/index.html>trdsql JSON出力</a></li><li data-nav-id=/trdsql/23_except/index.html><a class=padding href=/trdsql/23_except/index.html>trdsql 差分、比較</a></li><li data-nav-id=/trdsql/24_graph/index.html><a class=padding href=/trdsql/24_graph/index.html>trdsql グラフ</a></li><li data-nav-id=/trdsql/25_library/index.html><a class=padding href=/trdsql/25_library/index.html>trdsql ライブラリ使用</a></li><li data-nav-id=/trdsql/26_file_sql/index.html><a class=padding href=/trdsql/26_file_sql/index.html>trdsql SQLファイル指定</a></li><li data-nav-id=/trdsql/27_config/index.html><a class=padding href=/trdsql/27_config/index.html>trdsql config</a></li><li data-nav-id=/trdsql/28_cross_join/index.html><a class=padding href=/trdsql/28_cross_join/index.html>trdsql CROSS JOIN</a></li><li data-nav-id=/trdsql/29_generate_series/index.html><a class=padding href=/trdsql/29_generate_series/index.html>trdsql generate_series</a></li><li data-nav-id=/trdsql/30_convert_log/index.html><a class=padding href=/trdsql/30_convert_log/index.html>trdsql convert log</a></li><li data-nav-id=/trdsql/31_rollup/index.html><a class=padding href=/trdsql/31_rollup/index.html>trdsql 合計を行に追加する</a></li><li data-nav-id=/trdsql/32_case/index.html><a class=padding href=/trdsql/32_case/index.html>trdsql CASE式</a></li><li data-nav-id=/trdsql/33_compression/index.html><a class=padding href=/trdsql/33_compression/index.html>trdsql 圧縮ファイル</a></li><li data-nav-id=/trdsql/34_output/index.html><a class=padding href=/trdsql/34_output/index.html>trdsql output</a></li><li data-nav-id=/trdsql/35_jq/index.html><a class=padding href=/trdsql/35_jq/index.html>trdsql jq構文</a></li><li data-nav-id=/trdsql/36_guesswidth/index.html><a class=padding href=/trdsql/36_guesswidth/index.html>trdsql For fixed width</a></li></ul></li><li data-nav-id=/ov/index.html><input type=checkbox id=R-section-46f423e8c5dcd692046cb56c3632ac71 aria-controls=R-subsections-46f423e8c5dcd692046cb56c3632ac71><label for=R-section-46f423e8c5dcd692046cb56c3632ac71><i class="fas fa-chevron-down"></i><i class="fas fa-chevron-right"></i><span class=a11y-only>Submenu ov</span></label><a class=padding href=/ov/index.html>ov</a><ul id=R-subsections-46f423e8c5dcd692046cb56c3632ac71 class="morespace collapsible-menu"><li data-nav-id=/ov/psql/index.html><a class=padding href=/ov/psql/index.html>psql</a></li><li data-nav-id=/ov/git/index.html><a class=padding href=/ov/git/index.html>git</a></li><li data-nav-id=/ov/delta/index.html><a class=padding href=/ov/delta/index.html>delta</a></li><li data-nav-id=/ov/mysql/index.html><a class=padding href=/ov/mysql/index.html>mysql</a></li><li data-nav-id=/ov/pgcli/index.html><a class=padding href=/ov/pgcli/index.html>pgcli</a></li><li data-nav-id=/ov/mycli/index.html><a class=padding href=/ov/mycli/index.html>mycli</a></li><li data-nav-id=/ov/ps/index.html><a class=padding href=/ov/ps/index.html>ps</a></li><li data-nav-id=/ov/man/index.html><a class=padding href=/ov/man/index.html>man</a></li><li data-nav-id=/ov/top/index.html><a class=padding href=/ov/top/index.html>top</a></li><li data-nav-id=/ov/procs/index.html><a class=padding href=/ov/procs/index.html>procs</a></li><li data-nav-id=/ov/bat/index.html><a class=padding href=/ov/bat/index.html>bat</a></li><li data-nav-id=/ov/watch/index.html><a class=padding href=/ov/watch/index.html>Watch files with ov</a></li><li data-nav-id=/ov/csv/index.html><a class=padding href=/ov/csv/index.html>view csv</a></li><li data-nav-id=/ov/markdown/index.html><a class=padding href=/ov/markdown/index.html>View markdown</a></li><li data-nav-id=/ov/multifile/index.html><a class=padding href=/ov/multifile/index.html>multiple files</a></li><li data-nav-id=/ov/multicolor/index.html><a class=padding href=/ov/multicolor/index.html>Multicolor highlights multiple words</a></li><li data-nav-id=/ov/speed/index.html><a class=padding href=/ov/speed/index.html>speed of opening large files</a></li><li data-nav-id=/ov/exec/index.html><a class=padding href=/ov/exec/index.html>execute command</a></li><li data-nav-id=/ov/tail/index.html><a class=padding href=/ov/tail/index.html>How to use follow mode</a></li><li data-nav-id=/ov/section/index.html><a class=padding href=/ov/section/index.html>How to use section</a></li><li data-nav-id=/ov/memory/index.html><a class=padding href=/ov/memory/index.html>Memory management</a></li></ul></li><li data-nav-id=/about/index.html><a class=padding href=/about/index.html>About</a></li></ul></div><div id=R-shortcuts><div class="nav-title padding"></div><ul class=space><li><a class=padding href=/categories/index.html><i class='fas fa-list'></i> Categories</a></li><li><a class=padding href=/tags/index.html><i class='fas fa-tags'></i> Tags</a></li></ul></div><div class="padding footermargin footerLangSwitch footerVariantSwitch footerVisitedLinks footerFooter showLangSwitch showFooter"></div><div id=R-menu-footer><hr class="padding default-animation footerLangSwitch footerVariantSwitch footerVisitedLinks footerFooter showLangSwitch showFooter"><div id=R-prefooter class="footerLangSwitch footerVariantSwitch footerVisitedLinks showLangSwitch"><ul><li id=R-select-language-container class="footerLangSwitch showLangSwitch"><div class="padding menu-control"><i class="fas fa-language fa-fw"></i>
-<span>&nbsp;</span><div class=control-style><label class=a11y-only for=R-select-language>Language</label>
-<select id=R-select-language onchange="location=baseUri+this.value"><option id=R-en value=/blog/trdsql_jq/index.html lang=en selected>English</option><option id=R-ja value=/ja/blog/trdsql_jq/index.html lang=ja>Japanese</option></select></div><div class=clear></div></div></li><li id=R-select-variant-container class=footerVariantSwitch><div class="padding menu-control"><i class="fas fa-paint-brush fa-fw"></i>
-<span>&nbsp;</span><div class=control-style><label class=a11y-only for=R-select-variant>Theme</label>
-<select id=R-select-variant onchange=window.variants&&variants.changeVariant(this.value)><option id=R-my-custom-variant value=my-custom-variant selected>My Custom Variant</option></select></div><div class=clear></div></div><script>window.variants&&variants.markSelectedVariant()</script></li><li class=footerVisitedLinks><div class="padding menu-control"><i class="fas fa-history fa-fw"></i>
-<span>&nbsp;</span><div class=control-style><button onclick=clearHistory()>Clear History</button></div><div class=clear></div></div></li></ul></div><div id=R-footer class="footerFooter showFooter"><style>#footer{font-size:.1.0rem;height:6.25rem;margin-left:auto;margin-right:auto;padding:2rem 1rem;text-align:center;min-width:14.375rem;max-width:18.75rem}#footer p{margin:0}</style><p><a href=https://github.com/noborus><i class="fab fa-github"></i>GitHub</a></p><p>Built with <a href=https://github.com/McShelby/hugo-theme-relearn title=love><i class="fas fa-heart"></i></a> by <a href=https://gohugo.io/>Hugo</a></p></div></div></div></aside><script src=/js/clipboard.min.js?1701122937 defer></script><script src=/js/perfect-scrollbar.min.js?1701122937 defer></script><script src=/js/theme.js?1701122937 defer></script></body></html>
+...</code></pre></div>
+            <footer class="footline">
+<div class=" taxonomy-categories term-list cstyle  " title="Categories" style="--VARIABLE-TAGS-BG-color: var(--INTERNAL-TAG-BG-color);">
+  <i class="fa-fw fas fa-layer-group"></i>
+  <ul>
+    <li><a class="term-link" href="/categories/trdsql/index.html">trdsql</a></li>
+  </ul>
+</div>
+            </footer>
+          </article>
+        </div>
+      </main>
+    </div>
+    <aside id="R-sidebar" class="default-animation">
+      <div id="R-header-topbar" class="default-animation"></div>
+      <div id="R-header-wrapper" class="default-animation">
+        <div id="R-header" class="default-animation">
+<a id="logo" href="./index.html">
+    <style>
+        #sidebar a#logo {
+          display: flex;
+          align-items: center;
+          font-size: 1.3rem;
+          font-weight: 600;
+          color: #777;
+        }
+        #logo object {
+          margin-right: 0.1rem;
+        }
+  </style>
+   <img width="50" height="50" src="/images/logo.svg"></img>Noboru Saito’s site
+</a>
+        </div>
+        <div class="searchbox default-animation">
+          <i class="fas fa-search" title="Search (CTRL+ALT+f)"></i>
+          <label class="a11y-only" for="R-search-by">Search</label>
+          <input data-search-input id="R-search-by" name="search-by" class="search-by" type="search" placeholder="Search...">
+          <button class="search-clear" type="button" data-search-clear="" title="Clear search"><i class="fas fa-times" title="Clear search"></i></button>
+        </div>
+        <script>
+          var contentLangs=['en', 'ja'];
+        </script>
+        <script src="/js/auto-complete.js?1701125640" defer></script>
+        <script src="/js/lunr/lunr.min.js?1701125640" defer></script>
+        <script src="/js/lunr/lunr.stemmer.support.min.js?1701125640" defer></script>
+        <script src="/js/lunr/lunr.multi.min.js?1701125640" defer></script>
+        <script src="/js/lunr/lunr.en.min.js?1701125640" defer></script>
+        <script src="/js/lunr/tinyseg.js?1701125640" defer></script>
+        <script src="/js/lunr/lunr.ja.min.js?1701125640" defer></script>
+        <script src="/js/search.js?1701125640" defer></script>
+      </div>
+      <div id="R-homelinks" class="default-animation homelinks">
+        <ul>
+          <li><a class="padding" href="/index.html"><i class="fas fa-home"></i> Home</a></li>
+        </ul>
+        <hr class="padding">
+      </div>
+      <div id="R-content-wrapper" class="highlightable">
+        <div id="R-topics">
+          <ul class="enlarge morespace collapsible-menu">
+          <li data-nav-id="/blog/index.html" class="parent "><input type="checkbox" id="R-section-e5771ef0a5755d5af1982ccf165846c6" aria-controls="R-subsections-e5771ef0a5755d5af1982ccf165846c6" checked><label for="R-section-e5771ef0a5755d5af1982ccf165846c6"><i class="fas fa-chevron-down"></i><i class="fas fa-chevron-right"></i><span class="a11y-only">Submenu Blog</span></label><a class="padding" href="/blog/index.html">Blog</a><ul id="R-subsections-e5771ef0a5755d5af1982ccf165846c6" class="morespace collapsible-menu">
+          <li data-nav-id="/blog/trdsql_0130/index.html" class=""><a class="padding" href="/blog/trdsql_0130/index.html">trdsql v0.13.0</a></li>
+          <li data-nav-id="/blog/ov_032_1/index.html" class=""><a class="padding" href="/blog/ov_032_1/index.html">ov v0.32.1</a></li>
+          <li data-nav-id="/blog/trdsql_0121/index.html" class=""><a class="padding" href="/blog/trdsql_0121/index.html">trdsql v0.12.1</a></li>
+          <li data-nav-id="/blog/trdsql_0120/index.html" class=""><a class="padding" href="/blog/trdsql_0120/index.html">trdsql v0.12.0</a></li>
+          <li data-nav-id="/blog/ov_032_0/index.html" class=""><a class="padding" href="/blog/ov_032_0/index.html">ov v0.32.0</a></li>
+          <li data-nav-id="/blog/ov_031_0/index.html" class=""><a class="padding" href="/blog/ov_031_0/index.html">ov v0.31.0</a></li>
+          <li data-nav-id="/blog/psql-pager/index.html" class=""><a class="padding" href="/blog/psql-pager/index.html">psqlのPAGERを設定する</a></li>
+          <li data-nav-id="/blog/ov_030_0/index.html" class=""><a class="padding" href="/blog/ov_030_0/index.html">ov v0.30.0</a></li>
+          <li data-nav-id="/blog/guesswidth/index.html" class=""><a class="padding" href="/blog/guesswidth/index.html">Guess the width of the width-specified format</a></li>
+          <li data-nav-id="/blog/trdsql_0111/index.html" class=""><a class="padding" href="/blog/trdsql_0111/index.html">trdsql v0.11.1</a></li>
+          <li data-nav-id="/blog/ov_015_0/index.html" class=""><a class="padding" href="/blog/ov_015_0/index.html">ov v0.15.0</a></li>
+          <li data-nav-id="/blog/ov_014_2/index.html" class=""><a class="padding" href="/blog/ov_014_2/index.html">ov v0.14.2</a></li>
+          <li data-nav-id="/blog/ov_014_1/index.html" class=""><a class="padding" href="/blog/ov_014_1/index.html">ov v0.14.1</a></li>
+          <li data-nav-id="/blog/ov_014_0/index.html" class=""><a class="padding" href="/blog/ov_014_0/index.html">ov v0.14.0</a></li>
+          <li data-nav-id="/blog/ov_012_0/index.html" class=""><a class="padding" href="/blog/ov_012_0/index.html">ov v0.12.0</a></li>
+          <li data-nav-id="/blog/column0/index.html" class=""><a class="padding" href="/blog/column0/index.html">PostgreSQLで0列の扱い</a></li>
+          <li data-nav-id="/blog/35_jq/index.html" class=""><a class="padding" href="/blog/35_jq/index.html">trdsql jq構文</a></li>
+          <li data-nav-id="/blog/ov_011_1/index.html" class=""><a class="padding" href="/blog/ov_011_1/index.html">ov v0.11.1</a></li>
+          <li data-nav-id="/blog/ov_011_0/index.html" class=""><a class="padding" href="/blog/ov_011_0/index.html">ov v0.11.0</a></li>
+          <li data-nav-id="/blog/sql/index.html" class=""><a class="padding" href="/blog/sql/index.html">手っ取り遅くSQLを学ぶ</a></li>
+          <li data-nav-id="/blog/jqsql/index.html" class=""><a class="padding" href="/blog/jqsql/index.html">Another way to aggregate json(jq &#43; SQL)</a></li>
+          <li data-nav-id="/blog/trdsql_0100/index.html" class=""><a class="padding" href="/blog/trdsql_0100/index.html">trdsql v0.10.0</a></li>
+          <li data-nav-id="/blog/pgunconf/index.html" class=""><a class="padding" href="/blog/pgunconf/index.html">第32回 PostgreSQLアンカンファレンス@オンラインで発表しました</a></li>
+          <li data-nav-id="/blog/ov_010_0/index.html" class=""><a class="padding" href="/blog/ov_010_0/index.html">ov v0.10.0</a></li>
+          <li data-nav-id="/blog/trdsql_091/index.html" class=""><a class="padding" href="/blog/trdsql_091/index.html">trdsql v0.9.1</a></li>
+          <li data-nav-id="/blog/ov_096/index.html" class=""><a class="padding" href="/blog/ov_096/index.html">ov v0.9.6</a></li>
+          <li data-nav-id="/blog/jpug-doc-tool/index.html" class=""><a class="padding" href="/blog/jpug-doc-tool/index.html">Jpug-doc-tool</a></li>
+          <li data-nav-id="/blog/ov_095/index.html" class=""><a class="padding" href="/blog/ov_095/index.html">ov v0.9.5</a></li>
+          <li data-nav-id="/blog/trdsql_jq/index.html" class="active"><a class="padding" href="/blog/trdsql_jq/index.html">trdsql&#43;PostgreSQL 14でJSONを処理する</a></li>
+          <li data-nav-id="/blog/ov_094/index.html" class=""><a class="padding" href="/blog/ov_094/index.html">ov v0.9.4</a></li>
+          <li data-nav-id="/blog/mdtsql_003/index.html" class=""><a class="padding" href="/blog/mdtsql_003/index.html">mdtsql v0.0.3</a></li>
+          <li data-nav-id="/blog/pgsp/index.html" class=""><a class="padding" href="/blog/pgsp/index.html">pgsp</a></li>
+          <li data-nav-id="/blog/trdsql_090/index.html" class=""><a class="padding" href="/blog/trdsql_090/index.html">trdsql v0.9.0</a></li>
+          <li data-nav-id="/blog/ov_090/index.html" class=""><a class="padding" href="/blog/ov_090/index.html">ov v0.9.0</a></li>
+          <li data-nav-id="/blog/ov_081/index.html" class=""><a class="padding" href="/blog/ov_081/index.html">ov v0.8.1</a></li>
+          <li data-nav-id="/blog/trdsql_080/index.html" class=""><a class="padding" href="/blog/trdsql_080/index.html">trdsql v0.8.0</a></li>
+          <li data-nav-id="/blog/ov_080/index.html" class=""><a class="padding" href="/blog/ov_080/index.html">ov v0.8.0</a></li>
+          <li data-nav-id="/blog/go_tui2020/index.html" class=""><a class="padding" href="/blog/go_tui2020/index.html">goのTUIについて2020年最終版</a></li>
+          <li data-nav-id="/blog/ov_070/index.html" class=""><a class="padding" href="/blog/ov_070/index.html">ov v0.7.0</a></li>
+          <li data-nav-id="/blog/sqlorder/index.html" class=""><a class="padding" href="/blog/sqlorder/index.html">SQLのORDER BY 列番号と式</a></li>
+          <li data-nav-id="/blog/cbind/index.html" class=""><a class="padding" href="/blog/cbind/index.html">tcell/tviewでTUIを作るならキー割り当てにcbindを利用しよう</a></li>
+          <li data-nav-id="/blog/ov_062/index.html" class=""><a class="padding" href="/blog/ov_062/index.html">ov v0.6.2</a></li>
+          <li data-nav-id="/blog/ov_050/index.html" class=""><a class="padding" href="/blog/ov_050/index.html">ov v0.5.0</a></li>
+          <li data-nav-id="/blog/ov_020/index.html" class=""><a class="padding" href="/blog/ov_020/index.html">ov v0.2.0</a></li>
+          <li data-nav-id="/blog/tcell_02/index.html" class=""><a class="padding" href="/blog/tcell_02/index.html">tcellについて2</a></li>
+          <li data-nav-id="/blog/tcell_01/index.html" class=""><a class="padding" href="/blog/tcell_01/index.html">tcellについて</a></li>
+          <li data-nav-id="/blog/go_tui/index.html" class=""><a class="padding" href="/blog/go_tui/index.html">goのTUIについて</a></li>
+          <li data-nav-id="/blog/ov_013/index.html" class=""><a class="padding" href="/blog/ov_013/index.html">ov v0.1.3</a></li>
+          <li data-nav-id="/blog/oviewer/index.html" class=""><a class="padding" href="/blog/oviewer/index.html">ov</a></li>
+          <li data-nav-id="/blog/runewidth/index.html" class=""><a class="padding" href="/blog/runewidth/index.html">GoのTUIで表示が崩れる場合</a></li>
+          <li data-nav-id="/blog/trdsql_075/index.html" class=""><a class="padding" href="/blog/trdsql_075/index.html">trdsql 0.7.5</a></li>
+          <li data-nav-id="/blog/34_output/index.html" class=""><a class="padding" href="/blog/34_output/index.html">trdsql output</a></li>
+          <li data-nav-id="/blog/33_compression/index.html" class=""><a class="padding" href="/blog/33_compression/index.html">trdsql 圧縮ファイル</a></li>
+          <li data-nav-id="/blog/mysql-load/index.html" class=""><a class="padding" href="/blog/mysql-load/index.html">MySQL の LOAD DATA INFILE (go)</a></li>
+          <li data-nav-id="/blog/trdsql_074/index.html" class=""><a class="padding" href="/blog/trdsql_074/index.html">trdsql 0.7.4</a></li>
+          <li data-nav-id="/blog/32_case/index.html" class=""><a class="padding" href="/blog/32_case/index.html">trdsql CASE式</a></li>
+          <li data-nav-id="/blog/31_rollup/index.html" class=""><a class="padding" href="/blog/31_rollup/index.html">trdsql 合計を行に追加する</a></li>
+          <li data-nav-id="/blog/30_convert_log/index.html" class=""><a class="padding" href="/blog/30_convert_log/index.html">trdsql convert log</a></li>
+          <li data-nav-id="/blog/29_generate_series/index.html" class=""><a class="padding" href="/blog/29_generate_series/index.html">trdsql generate_series</a></li>
+          <li data-nav-id="/blog/28_cross_join/index.html" class=""><a class="padding" href="/blog/28_cross_join/index.html">trdsql CROSS JOIN</a></li>
+          <li data-nav-id="/blog/27_config/index.html" class=""><a class="padding" href="/blog/27_config/index.html">trdsql config</a></li>
+          <li data-nav-id="/blog/26_file_sql/index.html" class=""><a class="padding" href="/blog/26_file_sql/index.html">trdsql SQLファイル指定</a></li>
+          <li data-nav-id="/blog/25_library/index.html" class=""><a class="padding" href="/blog/25_library/index.html">trdsql ライブラリ使用</a></li>
+          <li data-nav-id="/blog/24_graph/index.html" class=""><a class="padding" href="/blog/24_graph/index.html">trdsql グラフ</a></li>
+          <li data-nav-id="/blog/23_except/index.html" class=""><a class="padding" href="/blog/23_except/index.html">trdsql 差分、比較</a></li>
+          <li data-nav-id="/blog/22_json_output/index.html" class=""><a class="padding" href="/blog/22_json_output/index.html">trdsql JSON出力</a></li>
+          <li data-nav-id="/blog/21_json_parse/index.html" class=""><a class="padding" href="/blog/21_json_parse/index.html">trdsql JSON解析</a></li>
+          <li data-nav-id="/blog/20_date/index.html" class=""><a class="padding" href="/blog/20_date/index.html">trdsql 日付・時刻処理</a></li>
+          <li data-nav-id="/blog/19_window/index.html" class=""><a class="padding" href="/blog/19_window/index.html">trdsql Window関数</a></li>
+          <li data-nav-id="/blog/18_edit_columns/index.html" class=""><a class="padding" href="/blog/18_edit_columns/index.html">trdsql 列の編集</a></li>
+          <li data-nav-id="/blog/17_file_table/index.html" class=""><a class="padding" href="/blog/17_file_table/index.html">trdsql ファイルとテーブルのJOIN</a></li>
+          <li data-nav-id="/blog/16_join/index.html" class=""><a class="padding" href="/blog/16_join/index.html">trdsql JOIN</a></li>
+          <li data-nav-id="/blog/15_import/index.html" class=""><a class="padding" href="/blog/15_import/index.html">trdsql DBインポート</a></li>
+          <li data-nav-id="/blog/14_sqlite3/index.html" class=""><a class="padding" href="/blog/14_sqlite3/index.html">trdsql SQLite3エンジンの使用</a></li>
+          <li data-nav-id="/blog/13_mysql/index.html" class=""><a class="padding" href="/blog/13_mysql/index.html">trdsql MySQLエンジンの使用</a></li>
+          <li data-nav-id="/blog/12_postgres/index.html" class=""><a class="padding" href="/blog/12_postgres/index.html">trdsql PostgreSQLエンジンの使用</a></li>
+          <li data-nav-id="/blog/11_summary/index.html" class=""><a class="padding" href="/blog/11_summary/index.html">trdsql 処理の概要</a></li>
+          <li data-nav-id="/blog/10_stdin/index.html" class=""><a class="padding" href="/blog/10_stdin/index.html">trdsql 標準入力</a></li>
+          <li data-nav-id="/blog/09_wildcard/index.html" class=""><a class="padding" href="/blog/09_wildcard/index.html">trdsql ワイルドカード、圧縮ファイル</a></li>
+          <li data-nav-id="/blog/08_log/index.html" class=""><a class="padding" href="/blog/08_log/index.html">trdsql Log集計</a></li>
+          <li data-nav-id="/blog/07_group/index.html" class=""><a class="padding" href="/blog/07_group/index.html">trdsql GROUP集計</a></li>
+          <li data-nav-id="/blog/06_calculation/index.html" class=""><a class="padding" href="/blog/06_calculation/index.html">trdsql 集計計算</a></li>
+          <li data-nav-id="/blog/05_aggregate/index.html" class=""><a class="padding" href="/blog/05_aggregate/index.html">trdsql 集計</a></li>
+          <li data-nav-id="/blog/04_sql2/index.html" class=""><a class="padding" href="/blog/04_sql2/index.html">trdsql 簡単なSQL その２</a></li>
+          <li data-nav-id="/blog/03_sql/index.html" class=""><a class="padding" href="/blog/03_sql/index.html">trdsql 簡単なSQL</a></li>
+          <li data-nav-id="/blog/02_convert/index.html" class=""><a class="padding" href="/blog/02_convert/index.html">trdsql ファイルフォーマット変換</a></li>
+          <li data-nav-id="/blog/01_install/index.html" class=""><a class="padding" href="/blog/01_install/index.html">trdsql インストール</a></li></ul></li>
+          <li data-nav-id="/trdsql/index.html" class=""><input type="checkbox" id="R-section-a127209ea9757fb2737b7f62423c1089" aria-controls="R-subsections-a127209ea9757fb2737b7f62423c1089"><label for="R-section-a127209ea9757fb2737b7f62423c1089"><i class="fas fa-chevron-down"></i><i class="fas fa-chevron-right"></i><span class="a11y-only">Submenu trdsql</span></label><a class="padding" href="/trdsql/index.html">trdsql</a><ul id="R-subsections-a127209ea9757fb2737b7f62423c1089" class="morespace collapsible-menu">
+          <li data-nav-id="/trdsql/01_install/index.html" class=""><a class="padding" href="/trdsql/01_install/index.html">trdsql install</a></li>
+          <li data-nav-id="/trdsql/02_convert/index.html" class=""><a class="padding" href="/trdsql/02_convert/index.html">trdsql File format conversion</a></li>
+          <li data-nav-id="/trdsql/03_sql/index.html" class=""><a class="padding" href="/trdsql/03_sql/index.html">trdsql Easy SQL </a></li>
+          <li data-nav-id="/trdsql/04_sql2/index.html" class=""><a class="padding" href="/trdsql/04_sql2/index.html">trdsql 簡単なSQL その２</a></li>
+          <li data-nav-id="/trdsql/05_aggregate/index.html" class=""><a class="padding" href="/trdsql/05_aggregate/index.html">trdsql 集計</a></li>
+          <li data-nav-id="/trdsql/06_calculation/index.html" class=""><a class="padding" href="/trdsql/06_calculation/index.html">trdsql 集計計算</a></li>
+          <li data-nav-id="/trdsql/07_group/index.html" class=""><a class="padding" href="/trdsql/07_group/index.html">trdsql GROUP集計</a></li>
+          <li data-nav-id="/trdsql/08_log/index.html" class=""><a class="padding" href="/trdsql/08_log/index.html">trdsql Log集計</a></li>
+          <li data-nav-id="/trdsql/09_wildcard/index.html" class=""><a class="padding" href="/trdsql/09_wildcard/index.html">trdsql ワイルドカード、圧縮ファイル</a></li>
+          <li data-nav-id="/trdsql/10_stdin/index.html" class=""><a class="padding" href="/trdsql/10_stdin/index.html">trdsql 標準入力</a></li>
+          <li data-nav-id="/trdsql/11_summary/index.html" class=""><a class="padding" href="/trdsql/11_summary/index.html">trdsql 処理の概要</a></li>
+          <li data-nav-id="/trdsql/12_postgres/index.html" class=""><a class="padding" href="/trdsql/12_postgres/index.html">trdsql PostgreSQLエンジンの使用</a></li>
+          <li data-nav-id="/trdsql/13_mysql/index.html" class=""><a class="padding" href="/trdsql/13_mysql/index.html">trdsql MySQLエンジンの使用</a></li>
+          <li data-nav-id="/trdsql/14_sqlite3/index.html" class=""><a class="padding" href="/trdsql/14_sqlite3/index.html">trdsql SQLite3エンジンの使用</a></li>
+          <li data-nav-id="/trdsql/15_import/index.html" class=""><a class="padding" href="/trdsql/15_import/index.html">trdsql DBインポート</a></li>
+          <li data-nav-id="/trdsql/16_join/index.html" class=""><a class="padding" href="/trdsql/16_join/index.html">trdsql JOIN</a></li>
+          <li data-nav-id="/trdsql/17_file_table/index.html" class=""><a class="padding" href="/trdsql/17_file_table/index.html">trdsql ファイルとテーブルのJOIN</a></li>
+          <li data-nav-id="/trdsql/18_edit_columns/index.html" class=""><a class="padding" href="/trdsql/18_edit_columns/index.html">trdsql 列の編集</a></li>
+          <li data-nav-id="/trdsql/19_window/index.html" class=""><a class="padding" href="/trdsql/19_window/index.html">trdsql Window関数</a></li>
+          <li data-nav-id="/trdsql/20_date/index.html" class=""><a class="padding" href="/trdsql/20_date/index.html">trdsql 日付・時刻処理</a></li>
+          <li data-nav-id="/trdsql/21_json_parse/index.html" class=""><a class="padding" href="/trdsql/21_json_parse/index.html">trdsql JSON解析</a></li>
+          <li data-nav-id="/trdsql/22_json_output/index.html" class=""><a class="padding" href="/trdsql/22_json_output/index.html">trdsql JSON出力</a></li>
+          <li data-nav-id="/trdsql/23_except/index.html" class=""><a class="padding" href="/trdsql/23_except/index.html">trdsql 差分、比較</a></li>
+          <li data-nav-id="/trdsql/24_graph/index.html" class=""><a class="padding" href="/trdsql/24_graph/index.html">trdsql グラフ</a></li>
+          <li data-nav-id="/trdsql/25_library/index.html" class=""><a class="padding" href="/trdsql/25_library/index.html">trdsql ライブラリ使用</a></li>
+          <li data-nav-id="/trdsql/26_file_sql/index.html" class=""><a class="padding" href="/trdsql/26_file_sql/index.html">trdsql SQLファイル指定</a></li>
+          <li data-nav-id="/trdsql/27_config/index.html" class=""><a class="padding" href="/trdsql/27_config/index.html">trdsql config</a></li>
+          <li data-nav-id="/trdsql/28_cross_join/index.html" class=""><a class="padding" href="/trdsql/28_cross_join/index.html">trdsql CROSS JOIN</a></li>
+          <li data-nav-id="/trdsql/29_generate_series/index.html" class=""><a class="padding" href="/trdsql/29_generate_series/index.html">trdsql generate_series</a></li>
+          <li data-nav-id="/trdsql/30_convert_log/index.html" class=""><a class="padding" href="/trdsql/30_convert_log/index.html">trdsql convert log</a></li>
+          <li data-nav-id="/trdsql/31_rollup/index.html" class=""><a class="padding" href="/trdsql/31_rollup/index.html">trdsql 合計を行に追加する</a></li>
+          <li data-nav-id="/trdsql/32_case/index.html" class=""><a class="padding" href="/trdsql/32_case/index.html">trdsql CASE式</a></li>
+          <li data-nav-id="/trdsql/33_compression/index.html" class=""><a class="padding" href="/trdsql/33_compression/index.html">trdsql 圧縮ファイル</a></li>
+          <li data-nav-id="/trdsql/34_output/index.html" class=""><a class="padding" href="/trdsql/34_output/index.html">trdsql output</a></li>
+          <li data-nav-id="/trdsql/35_jq/index.html" class=""><a class="padding" href="/trdsql/35_jq/index.html">trdsql jq構文</a></li>
+          <li data-nav-id="/trdsql/36_guesswidth/index.html" class=""><a class="padding" href="/trdsql/36_guesswidth/index.html">trdsql For fixed width</a></li></ul></li>
+          <li data-nav-id="/ov/index.html" class=""><input type="checkbox" id="R-section-46f423e8c5dcd692046cb56c3632ac71" aria-controls="R-subsections-46f423e8c5dcd692046cb56c3632ac71"><label for="R-section-46f423e8c5dcd692046cb56c3632ac71"><i class="fas fa-chevron-down"></i><i class="fas fa-chevron-right"></i><span class="a11y-only">Submenu ov</span></label><a class="padding" href="/ov/index.html">ov</a><ul id="R-subsections-46f423e8c5dcd692046cb56c3632ac71" class="morespace collapsible-menu">
+          <li data-nav-id="/ov/psql/index.html" class=""><a class="padding" href="/ov/psql/index.html">psql</a></li>
+          <li data-nav-id="/ov/git/index.html" class=""><a class="padding" href="/ov/git/index.html">git</a></li>
+          <li data-nav-id="/ov/delta/index.html" class=""><a class="padding" href="/ov/delta/index.html">delta</a></li>
+          <li data-nav-id="/ov/mysql/index.html" class=""><a class="padding" href="/ov/mysql/index.html">mysql</a></li>
+          <li data-nav-id="/ov/pgcli/index.html" class=""><a class="padding" href="/ov/pgcli/index.html">pgcli</a></li>
+          <li data-nav-id="/ov/mycli/index.html" class=""><a class="padding" href="/ov/mycli/index.html">mycli</a></li>
+          <li data-nav-id="/ov/ps/index.html" class=""><a class="padding" href="/ov/ps/index.html">ps</a></li>
+          <li data-nav-id="/ov/man/index.html" class=""><a class="padding" href="/ov/man/index.html">man</a></li>
+          <li data-nav-id="/ov/top/index.html" class=""><a class="padding" href="/ov/top/index.html">top</a></li>
+          <li data-nav-id="/ov/procs/index.html" class=""><a class="padding" href="/ov/procs/index.html">procs</a></li>
+          <li data-nav-id="/ov/bat/index.html" class=""><a class="padding" href="/ov/bat/index.html">bat</a></li>
+          <li data-nav-id="/ov/watch/index.html" class=""><a class="padding" href="/ov/watch/index.html">Watch files with ov</a></li>
+          <li data-nav-id="/ov/csv/index.html" class=""><a class="padding" href="/ov/csv/index.html">view csv</a></li>
+          <li data-nav-id="/ov/markdown/index.html" class=""><a class="padding" href="/ov/markdown/index.html">View markdown</a></li>
+          <li data-nav-id="/ov/multifile/index.html" class=""><a class="padding" href="/ov/multifile/index.html">multiple files</a></li>
+          <li data-nav-id="/ov/multicolor/index.html" class=""><a class="padding" href="/ov/multicolor/index.html">Multicolor highlights multiple words</a></li>
+          <li data-nav-id="/ov/speed/index.html" class=""><a class="padding" href="/ov/speed/index.html">speed of opening large files</a></li>
+          <li data-nav-id="/ov/exec/index.html" class=""><a class="padding" href="/ov/exec/index.html">execute command</a></li>
+          <li data-nav-id="/ov/tail/index.html" class=""><a class="padding" href="/ov/tail/index.html">How to use follow mode</a></li>
+          <li data-nav-id="/ov/section/index.html" class=""><a class="padding" href="/ov/section/index.html">How to use section</a></li>
+          <li data-nav-id="/ov/memory/index.html" class=""><a class="padding" href="/ov/memory/index.html">Memory management</a></li></ul></li>
+          <li data-nav-id="/about/index.html" class=""><a class="padding" href="/about/index.html">About</a></li>
+          </ul>
+        </div>
+        <div id="R-shortcuts">
+          <div class="nav-title padding"></div>
+          <ul class="space">
+            <li><a class="padding" href="/categories/index.html"><i class='fas fa-list'></i> Categories</a></li>
+            <li><a class="padding" href="/tags/index.html"><i class='fas fa-tags'></i> Tags</a></li>
+          </ul>
+        </div>
+        <div class="padding footermargin footerLangSwitch footerVariantSwitch footerVisitedLinks footerFooter showLangSwitch showFooter"></div>
+        <div id="R-menu-footer">
+          <hr class="padding default-animation footerLangSwitch footerVariantSwitch footerVisitedLinks footerFooter showLangSwitch showFooter">
+          <div id="R-prefooter" class="footerLangSwitch footerVariantSwitch footerVisitedLinks showLangSwitch">
+            <ul>
+              <li id="R-select-language-container" class="footerLangSwitch showLangSwitch">
+                <div class="padding menu-control">
+                  <i class="fas fa-language fa-fw"></i>
+                  <span>&nbsp;</span>
+                  <div class="control-style">
+                    <label class="a11y-only" for="R-select-language">Language</label>
+                    <select id="R-select-language" onchange="location = baseUri + this.value;">
+                      <option id="R-en" value="/blog/trdsql_jq/index.html" lang="en" selected>English</option>
+                      <option id="R-ja" value="/ja/blog/trdsql_jq/index.html" lang="ja">Japanese</option>
+                    </select>
+                  </div>
+                  <div class="clear"></div>
+                </div>
+              </li>
+              <li id="R-select-variant-container" class="footerVariantSwitch">
+                <div class="padding menu-control">
+                  <i class="fas fa-paint-brush fa-fw"></i>
+                  <span>&nbsp;</span>
+                  <div class="control-style">
+                    <label class="a11y-only" for="R-select-variant">Theme</label>
+                    <select id="R-select-variant" onchange="window.variants && variants.changeVariant( this.value );">
+                      <option id="R-my-custom-variant" value="my-custom-variant" selected>My Custom Variant</option>
+                    </select>
+                  </div>
+                  <div class="clear"></div>
+                </div>
+                <script>window.variants && variants.markSelectedVariant();</script>
+              </li>
+              <li class="footerVisitedLinks">
+                <div class="padding menu-control">
+                  <i class="fas fa-history fa-fw"></i>
+                  <span>&nbsp;</span>
+                  <div class="control-style">
+                    <button onclick="clearHistory();">Clear History</button>
+                  </div>
+                  <div class="clear"></div>
+                </div>
+              </li>
+            </ul>
+          </div>
+          <div id="R-footer" class="footerFooter showFooter"><style>
+	#footer {
+	  font-size: .1.0rem;
+	  height: 6.25rem;
+	  margin-left: auto;
+	  margin-right: auto;
+	  padding: 2rem 1rem;
+	  text-align: center;
+	  min-width: 14.375rem;
+	  max-width: 18.75rem;
+	}
+	#footer p {
+	  margin: 0;
+	}
+  </style>
+  		<p><a href="https://github.com/noborus"><i class="fab fa-github"></i>GitHub</a></p>
+	    <p>Built with <a href="https://github.com/McShelby/hugo-theme-relearn" title="love"><i class="fas fa-heart"></i></a> by <a href="https://gohugo.io/">Hugo</a></p>
+          </div>
+        </div>
+      </div>
+    </aside>
+    <script src="/js/clipboard.min.js?1701125640" defer></script>
+    <script src="/js/perfect-scrollbar.min.js?1701125640" defer></script>
+    <script src="/js/theme.js?1701125640" defer></script>
+  </body>
+</html>

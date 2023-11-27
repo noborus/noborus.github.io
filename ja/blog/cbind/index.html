@@ -1,211 +1,691 @@
-<!doctype html><html lang=ja dir=ltr><head><meta charset=utf-8><meta name=viewport content="height=device-height,width=device-width,initial-scale=1,minimum-scale=1"><meta name=generator content="Hugo 0.120.4"><meta name=generator content="Relearn 5.23.2+tip"><meta name=description content="Noboru Saito's site"><meta name=author content><meta name=twitter:card content="summary_large_image"><meta name=twitter:image content="https://noborus.github.io/images/noborus.png"><meta name=twitter:title content="tcell/tviewでTUIを作るならキー割り当てにcbindを利用しよう :: 斉藤登のページ"><meta name=twitter:description content="cbindとは？ cbindはtcellのキーイベントとイベントハンドラを結びつけるライブラリです。
+<!DOCTYPE html>
+<html lang="ja" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="height=device-height, width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <meta name="generator" content="Hugo 0.120.4">
+    <meta name="generator" content="Relearn 5.23.2+tip">
+    <meta name="description" content="Noboru Saito&#39;s site">
+    <meta name="author" content="">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://noborus.github.io/images/noborus.png">
+    <meta name="twitter:title" content="tcell/tviewでTUIを作るならキー割り当てにcbindを利用しよう :: 斉藤登のページ">
+    <meta name="twitter:description" content="cbindとは？ cbindはtcellのキーイベントとイベントハンドラを結びつけるライブラリです。
 tcellのキーイベント tcell ではキー入力がイベントの１つとして取得できます。 tviewでもtcellのイベントを使用しているので、同じ様にイベントとして取得します。
 tcellのキーイベントを取得するのは以下のようにswitch caseでキーを判別して、イベントハンドラを呼び出すのが一般的です。
 ev := screen.PollEvent() switch ev := ev.(type) { case *tcell.EventKey: switch ev.Key() { case tcell.KeyEscape: close(quit) return } case tcell.KeyEnter: action() return }ここのtcell.KeyEscapeは constの数値として定義されています（キーボードに存在する英数字などの文字はruneで入ってきます）。 キー割り当てが少ないうちは、このまま追加していけば機能を増やせるので分かりやすいですが、キー割り当てが多くなってくると以下のような問題が出てきます。
-修飾キー(CTRL、ALT&mldr;)が押された場合に動作が変わる場合はさらに分岐する キー割り当てをドキュメント化するのが大変になる キー割り当てのヘルプが必要になる キー割り当てを人によって変更したくなる ドキュメント化やヘルプはコードで実装した後、手間を掛けて書いていけばなんとか解決できますが、キー割り当ての変更に対応するには、元のままのコードでは不可能です。
+修飾キー(CTRL、ALT&hellip;)が押された場合に動作が変わる場合はさらに分岐する キー割り当てをドキュメント化するのが大変になる キー割り当てのヘルプが必要になる キー割り当てを人によって変更したくなる ドキュメント化やヘルプはコードで実装した後、手間を掛けて書いていけばなんとか解決できますが、キー割り当ての変更に対応するには、元のままのコードでは不可能です。
 cbindを使用 そこで使用したいのがcbindです。
 cbind は Set()でキーの文字列といイベントハンドラを結びつけて登録できます。 実際にキーイベントが起きたら、cbindに任せれば登録されていたイベントハンドラが実行されることになります。
-実際の使用例です キーの登録は、まずcbind.NewConfiguration()をしてConfigurationを作成します。 そのConfigurationにキー文字列とハンドラをSet(&#34;Alt+s&#34;, handleSave)のように登録します。 または、Decodeでイベントキーに変換して、SetRuneまたはSetKeyで登録します。
-実際に登録するときには、キー文字列（Alt+s等）とイベントハンドラ（func）を直接結びつけるのではなく、アクション名（文字列）を介しておくと、ヘルプや設定ファイル化するときに便利です。
+実際の使用例です キーの登録は、まずcbind.NewConfiguration()をしてConfigurationを作成します。 そのConfigurationにキー文字列とハンドラをSet(&quot;Alt&#43;s&quot;, handleSave)のように登録します。 または、Decodeでイベントキーに変換して、SetRuneまたはSetKeyで登録します。
+実際に登録するときには、キー文字列（Alt&#43;s等）とイベントハンドラ（func）を直接結びつけるのではなく、アクション名（文字列）を介しておくと、ヘルプや設定ファイル化するときに便利です。
 アクション名とキー文字列のマップ(keyBind)とアクション名とイベントハンドラのマップ(actionHandlers)をあらかじめ定義しておいてsetKeyBindで登録しています。
-const ( // アクション名 actionQuit = &#34;quit&#34; ) var keyBind = map[string][]string{ // アクション名に対してキー文字列をマッピング（キー文字列は複数可能） actionQuit: {&#34;q&#34;, &#34;ctrl+q&#34;}, } var actionHandlers = map[string]func(){ // アクション名に対してイベントハンドラをマッピング actionQuit: handleQuit, } // 終了のイベントハンドラ var quit = make(chan struct{}) var handleQuit = func() { close(quit) } func setKeyBind() (*cbind."><meta property="og:title" content="tcell/tviewでTUIを作るならキー割り当てにcbindを利用しよう :: 斉藤登のページ"><meta property="og:description" content="cbindとは？ cbindはtcellのキーイベントとイベントハンドラを結びつけるライブラリです。
+const ( // アクション名 actionQuit = &#34;quit&#34; ) var keyBind = map[string][]string{ // アクション名に対してキー文字列をマッピング（キー文字列は複数可能） actionQuit: {&#34;q&#34;, &#34;ctrl&#43;q&#34;}, } var actionHandlers = map[string]func(){ // アクション名に対してイベントハンドラをマッピング actionQuit: handleQuit, } // 終了のイベントハンドラ var quit = make(chan struct{}) var handleQuit = func() { close(quit) } func setKeyBind() (*cbind.">
+    <meta property="og:title" content="tcell/tviewでTUIを作るならキー割り当てにcbindを利用しよう :: 斉藤登のページ">
+    <meta property="og:description" content="cbindとは？ cbindはtcellのキーイベントとイベントハンドラを結びつけるライブラリです。
 tcellのキーイベント tcell ではキー入力がイベントの１つとして取得できます。 tviewでもtcellのイベントを使用しているので、同じ様にイベントとして取得します。
 tcellのキーイベントを取得するのは以下のようにswitch caseでキーを判別して、イベントハンドラを呼び出すのが一般的です。
 ev := screen.PollEvent() switch ev := ev.(type) { case *tcell.EventKey: switch ev.Key() { case tcell.KeyEscape: close(quit) return } case tcell.KeyEnter: action() return }ここのtcell.KeyEscapeは constの数値として定義されています（キーボードに存在する英数字などの文字はruneで入ってきます）。 キー割り当てが少ないうちは、このまま追加していけば機能を増やせるので分かりやすいですが、キー割り当てが多くなってくると以下のような問題が出てきます。
-修飾キー(CTRL、ALT&mldr;)が押された場合に動作が変わる場合はさらに分岐する キー割り当てをドキュメント化するのが大変になる キー割り当てのヘルプが必要になる キー割り当てを人によって変更したくなる ドキュメント化やヘルプはコードで実装した後、手間を掛けて書いていけばなんとか解決できますが、キー割り当ての変更に対応するには、元のままのコードでは不可能です。
+修飾キー(CTRL、ALT&hellip;)が押された場合に動作が変わる場合はさらに分岐する キー割り当てをドキュメント化するのが大変になる キー割り当てのヘルプが必要になる キー割り当てを人によって変更したくなる ドキュメント化やヘルプはコードで実装した後、手間を掛けて書いていけばなんとか解決できますが、キー割り当ての変更に対応するには、元のままのコードでは不可能です。
 cbindを使用 そこで使用したいのがcbindです。
 cbind は Set()でキーの文字列といイベントハンドラを結びつけて登録できます。 実際にキーイベントが起きたら、cbindに任せれば登録されていたイベントハンドラが実行されることになります。
-実際の使用例です キーの登録は、まずcbind.NewConfiguration()をしてConfigurationを作成します。 そのConfigurationにキー文字列とハンドラをSet(&#34;Alt+s&#34;, handleSave)のように登録します。 または、Decodeでイベントキーに変換して、SetRuneまたはSetKeyで登録します。
-実際に登録するときには、キー文字列（Alt+s等）とイベントハンドラ（func）を直接結びつけるのではなく、アクション名（文字列）を介しておくと、ヘルプや設定ファイル化するときに便利です。
+実際の使用例です キーの登録は、まずcbind.NewConfiguration()をしてConfigurationを作成します。 そのConfigurationにキー文字列とハンドラをSet(&quot;Alt&#43;s&quot;, handleSave)のように登録します。 または、Decodeでイベントキーに変換して、SetRuneまたはSetKeyで登録します。
+実際に登録するときには、キー文字列（Alt&#43;s等）とイベントハンドラ（func）を直接結びつけるのではなく、アクション名（文字列）を介しておくと、ヘルプや設定ファイル化するときに便利です。
 アクション名とキー文字列のマップ(keyBind)とアクション名とイベントハンドラのマップ(actionHandlers)をあらかじめ定義しておいてsetKeyBindで登録しています。
-const ( // アクション名 actionQuit = &#34;quit&#34; ) var keyBind = map[string][]string{ // アクション名に対してキー文字列をマッピング（キー文字列は複数可能） actionQuit: {&#34;q&#34;, &#34;ctrl+q&#34;}, } var actionHandlers = map[string]func(){ // アクション名に対してイベントハンドラをマッピング actionQuit: handleQuit, } // 終了のイベントハンドラ var quit = make(chan struct{}) var handleQuit = func() { close(quit) } func setKeyBind() (*cbind."><meta property="og:type" content="article"><meta property="og:url" content="https://noborus.github.io/ja/blog/cbind/index.html"><meta property="og:image" content="https://noborus.github.io/images/noborus.png"><meta property="article:section" content="Blog(ブログ) :: 斉藤登のページ"><meta property="article:published_time" content="2020-10-27T10:00:00+09:00"><meta property="article:modified_time" content="2020-10-27T10:00:00+09:00"><meta property="og:site_name" content="斉藤登のページ"><title>tcell/tviewでTUIを作るならキー割り当てにcbindを利用しよう :: 斉藤登のページ</title>
-<link href=https://noborus.github.io/blog/cbind/index.html rel=alternate hreflang=x-default><link href=https://noborus.github.io/blog/cbind/index.html rel=alternate hreflang=en><link href=https://noborus.github.io/ja/blog/cbind/index.html rel=alternate hreflang=ja><link href=/images/logo.svg?1701122940 rel=icon type=image/svg+xml><link href=/css/fontawesome-all.min.css?1701122940 rel=stylesheet media=print onload='this.media="all",this.onload=null'><noscript><link href=/css/fontawesome-all.min.css?1701122940 rel=stylesheet></noscript><link href=/css/nucleus.css?1701122940 rel=stylesheet><link href=/css/auto-complete.css?1701122940 rel=stylesheet media=print onload='this.media="all",this.onload=null'><noscript><link href=/css/auto-complete.css?1701122940 rel=stylesheet></noscript><link href=/css/perfect-scrollbar.min.css?1701122940 rel=stylesheet><link href=/css/fonts.css?1701122940 rel=stylesheet media=print onload='this.media="all",this.onload=null'><noscript><link href=/css/fonts.css?1701122940 rel=stylesheet></noscript><link href=/css/theme.css?1701122940 rel=stylesheet><link href=/css/theme-my-custom-variant.css?1701122940 rel=stylesheet id=R-variant-style><link href=/css/chroma-relearn-light.css?1701122940 rel=stylesheet id=R-variant-chroma-style><link href=/css/variant.css?1701122940 rel=stylesheet><link href=/css/print.css?1701122940 rel=stylesheet media=print><link href=/css/ie.css?1701122940 rel=stylesheet><script src=/js/url.js?1701122940></script><script src=/js/variant.js?1701122940></script><script>window.index_json_url="/ja/index.json";var root_url="/",baseUri=root_url.replace(/\/$/,"");window.relearn=window.relearn||{},window.relearn.baseUriFull="https://noborus.github.io/",window.variants&&variants.init(["my-custom-variant"]),window.T_Copy_to_clipboard=`クリップボードにコピー`,window.T_Copied_to_clipboard=`クリップボードにコピー!`,window.T_Copy_link_to_clipboard=`リンクをクリップボードにコピー`,window.T_Link_copied_to_clipboard=`リンクをクリップボードにコピーしました!`,window.T_Reset_view=`ビューのリセット`,window.T_View_reset=`リセットを見る`,window.T_No_results_found=`"{0}" の結果が見つかりません`,window.T_N_results_found=`"{0}" で {1} 件の結果が見つかりました`</script><script async src="https://www.googletagmanager.com/gtag/js?id=G-CGNLN23TRR"></script><script>var doNotTrack=!1;if(!doNotTrack){window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-CGNLN23TRR",{anonymize_ip:!1})}</script><meta property="og:title" content="tcell/tviewでTUIを作るならキー割り当てにcbindを利用しよう"><meta property="og:description" content="cbindとは？ cbindはtcellのキーイベントとイベントハンドラを結びつけるライブラリです。
+const ( // アクション名 actionQuit = &#34;quit&#34; ) var keyBind = map[string][]string{ // アクション名に対してキー文字列をマッピング（キー文字列は複数可能） actionQuit: {&#34;q&#34;, &#34;ctrl&#43;q&#34;}, } var actionHandlers = map[string]func(){ // アクション名に対してイベントハンドラをマッピング actionQuit: handleQuit, } // 終了のイベントハンドラ var quit = make(chan struct{}) var handleQuit = func() { close(quit) } func setKeyBind() (*cbind.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://noborus.github.io/ja/blog/cbind/index.html">
+    <meta property="og:image" content="https://noborus.github.io/images/noborus.png">
+    <meta property="article:section" content="Blog(ブログ) :: 斉藤登のページ">
+    <meta property="article:published_time" content="2020-10-27T10:00:00+09:00">
+    <meta property="article:modified_time" content="2020-10-27T10:00:00+09:00">
+    <meta property="og:site_name" content="斉藤登のページ">
+    <title>tcell/tviewでTUIを作るならキー割り当てにcbindを利用しよう :: 斉藤登のページ</title>
+    <link href="https://noborus.github.io/blog/cbind/index.html" rel="alternate" hreflang="x-default">
+    <link href="https://noborus.github.io/blog/cbind/index.html" rel="alternate" hreflang="en">
+    <link href="https://noborus.github.io/ja/blog/cbind/index.html" rel="alternate" hreflang="ja">
+    <link href="/images/logo.svg?1701125643" rel="icon" type="image/svg+xml">
+    <!-- https://github.com/filamentgroup/loadCSS/blob/master/README.md#how-to-use -->
+    <link href="/css/fontawesome-all.min.css?1701125643" rel="stylesheet" media="print" onload="this.media='all';this.onload=null;"><noscript><link href="/css/fontawesome-all.min.css?1701125643" rel="stylesheet"></noscript>
+    <link href="/css/nucleus.css?1701125643" rel="stylesheet">
+    <link href="/css/auto-complete.css?1701125643" rel="stylesheet" media="print" onload="this.media='all';this.onload=null;"><noscript><link href="/css/auto-complete.css?1701125643" rel="stylesheet"></noscript>
+    <link href="/css/perfect-scrollbar.min.css?1701125643" rel="stylesheet">
+    <link href="/css/fonts.css?1701125643" rel="stylesheet" media="print" onload="this.media='all';this.onload=null;"><noscript><link href="/css/fonts.css?1701125643" rel="stylesheet"></noscript>
+    <link href="/css/theme.css?1701125643" rel="stylesheet">
+    <link href="/css/theme-my-custom-variant.css?1701125643" rel="stylesheet" id="R-variant-style">
+    <link href="/css/chroma-relearn-light.css?1701125643" rel="stylesheet" id="R-variant-chroma-style">
+    <link href="/css/variant.css?1701125643" rel="stylesheet">
+    <link href="/css/print.css?1701125643" rel="stylesheet" media="print">
+    <link href="/css/ie.css?1701125643" rel="stylesheet">
+    <script src="/js/url.js?1701125643"></script>
+    <script src="/js/variant.js?1701125643"></script>
+    <script>
+      // hack to let hugo tell us how to get to the root when using relativeURLs, it needs to be called *url= for it to do its magic:
+      // https://github.com/gohugoio/hugo/blob/145b3fcce35fbac25c7033c91c1b7ae6d1179da8/transform/urlreplacers/absurlreplacer.go#L72
+      window.index_js_url="/ja/index.search.js";
+      var root_url="/";
+      var baseUri=root_url.replace(/\/$/, '');
+      window.relearn = window.relearn || {};
+      window.relearn.baseUriFull='https:\/\/noborus.github.io/';
+      // variant stuff
+      window.variants && variants.init( [ 'my-custom-variant' ] );
+      // translations
+      window.T_Copy_to_clipboard = `クリップボードにコピー`;
+      window.T_Copied_to_clipboard = `クリップボードにコピー!`;
+      window.T_Copy_link_to_clipboard = `リンクをクリップボードにコピー`;
+      window.T_Link_copied_to_clipboard = `リンクをクリップボードにコピーしました!`;
+      window.T_Reset_view = `ビューのリセット`;
+      window.T_View_reset = `リセットを見る`;
+      window.T_No_results_found = `"{0}" の結果が見つかりません`;
+      window.T_N_results_found = `"{0}" で {1} 件の結果が見つかりました`;
+    </script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-CGNLN23TRR"></script>
+<script>
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
+	gtag('config', 'G-CGNLN23TRR', { 'anonymize_ip': false });
+}
+</script>
+
+<meta property="og:title" content="tcell/tviewでTUIを作るならキー割り当てにcbindを利用しよう" />
+<meta property="og:description" content="cbindとは？ cbindはtcellのキーイベントとイベントハンドラを結びつけるライブラリです。
 tcellのキーイベント tcell ではキー入力がイベントの１つとして取得できます。 tviewでもtcellのイベントを使用しているので、同じ様にイベントとして取得します。
 tcellのキーイベントを取得するのは以下のようにswitch caseでキーを判別して、イベントハンドラを呼び出すのが一般的です。
 ev := screen.PollEvent() switch ev := ev.(type) { case *tcell.EventKey: switch ev.Key() { case tcell.KeyEscape: close(quit) return } case tcell.KeyEnter: action() return }ここのtcell.KeyEscapeは constの数値として定義されています（キーボードに存在する英数字などの文字はruneで入ってきます）。 キー割り当てが少ないうちは、このまま追加していけば機能を増やせるので分かりやすいですが、キー割り当てが多くなってくると以下のような問題が出てきます。
-修飾キー(CTRL、ALT&mldr;)が押された場合に動作が変わる場合はさらに分岐する キー割り当てをドキュメント化するのが大変になる キー割り当てのヘルプが必要になる キー割り当てを人によって変更したくなる ドキュメント化やヘルプはコードで実装した後、手間を掛けて書いていけばなんとか解決できますが、キー割り当ての変更に対応するには、元のままのコードでは不可能です。
+修飾キー(CTRL、ALT&hellip;)が押された場合に動作が変わる場合はさらに分岐する キー割り当てをドキュメント化するのが大変になる キー割り当てのヘルプが必要になる キー割り当てを人によって変更したくなる ドキュメント化やヘルプはコードで実装した後、手間を掛けて書いていけばなんとか解決できますが、キー割り当ての変更に対応するには、元のままのコードでは不可能です。
 cbindを使用 そこで使用したいのがcbindです。
 cbind は Set()でキーの文字列といイベントハンドラを結びつけて登録できます。 実際にキーイベントが起きたら、cbindに任せれば登録されていたイベントハンドラが実行されることになります。
-実際の使用例です キーの登録は、まずcbind.NewConfiguration()をしてConfigurationを作成します。 そのConfigurationにキー文字列とハンドラをSet(&#34;Alt+s&#34;, handleSave)のように登録します。 または、Decodeでイベントキーに変換して、SetRuneまたはSetKeyで登録します。
-実際に登録するときには、キー文字列（Alt+s等）とイベントハンドラ（func）を直接結びつけるのではなく、アクション名（文字列）を介しておくと、ヘルプや設定ファイル化するときに便利です。
+実際の使用例です キーの登録は、まずcbind.NewConfiguration()をしてConfigurationを作成します。 そのConfigurationにキー文字列とハンドラをSet(&quot;Alt&#43;s&quot;, handleSave)のように登録します。 または、Decodeでイベントキーに変換して、SetRuneまたはSetKeyで登録します。
+実際に登録するときには、キー文字列（Alt&#43;s等）とイベントハンドラ（func）を直接結びつけるのではなく、アクション名（文字列）を介しておくと、ヘルプや設定ファイル化するときに便利です。
 アクション名とキー文字列のマップ(keyBind)とアクション名とイベントハンドラのマップ(actionHandlers)をあらかじめ定義しておいてsetKeyBindで登録しています。
-const ( // アクション名 actionQuit = &#34;quit&#34; ) var keyBind = map[string][]string{ // アクション名に対してキー文字列をマッピング（キー文字列は複数可能） actionQuit: {&#34;q&#34;, &#34;ctrl+q&#34;}, } var actionHandlers = map[string]func(){ // アクション名に対してイベントハンドラをマッピング actionQuit: handleQuit, } // 終了のイベントハンドラ var quit = make(chan struct{}) var handleQuit = func() { close(quit) } func setKeyBind() (*cbind."><meta property="og:type" content="article"><meta property="og:url" content="https://noborus.github.io/ja/blog/cbind/"><meta property="og:image" content="https://noborus.github.io/images/noborus.png"><meta property="article:section" content="blog"><meta property="article:published_time" content="2020-10-27T10:00:00+09:00"><meta property="article:modified_time" content="2020-10-27T10:00:00+09:00"><meta name=twitter:card content="summary_large_image"><meta name=twitter:image content="https://noborus.github.io/images/noborus.png"><meta name=twitter:title content="tcell/tviewでTUIを作るならキー割り当てにcbindを利用しよう"><meta name=twitter:description content="cbindとは？ cbindはtcellのキーイベントとイベントハンドラを結びつけるライブラリです。
+const ( // アクション名 actionQuit = &#34;quit&#34; ) var keyBind = map[string][]string{ // アクション名に対してキー文字列をマッピング（キー文字列は複数可能） actionQuit: {&#34;q&#34;, &#34;ctrl&#43;q&#34;}, } var actionHandlers = map[string]func(){ // アクション名に対してイベントハンドラをマッピング actionQuit: handleQuit, } // 終了のイベントハンドラ var quit = make(chan struct{}) var handleQuit = func() { close(quit) } func setKeyBind() (*cbind." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://noborus.github.io/ja/blog/cbind/" /><meta property="og:image" content="https://noborus.github.io/images/noborus.png"/><meta property="article:section" content="blog" />
+<meta property="article:published_time" content="2020-10-27T10:00:00+09:00" />
+<meta property="article:modified_time" content="2020-10-27T10:00:00+09:00" />
+
+
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://noborus.github.io/images/noborus.png"/>
+
+<meta name="twitter:title" content="tcell/tviewでTUIを作るならキー割り当てにcbindを利用しよう"/>
+<meta name="twitter:description" content="cbindとは？ cbindはtcellのキーイベントとイベントハンドラを結びつけるライブラリです。
 tcellのキーイベント tcell ではキー入力がイベントの１つとして取得できます。 tviewでもtcellのイベントを使用しているので、同じ様にイベントとして取得します。
 tcellのキーイベントを取得するのは以下のようにswitch caseでキーを判別して、イベントハンドラを呼び出すのが一般的です。
 ev := screen.PollEvent() switch ev := ev.(type) { case *tcell.EventKey: switch ev.Key() { case tcell.KeyEscape: close(quit) return } case tcell.KeyEnter: action() return }ここのtcell.KeyEscapeは constの数値として定義されています（キーボードに存在する英数字などの文字はruneで入ってきます）。 キー割り当てが少ないうちは、このまま追加していけば機能を増やせるので分かりやすいですが、キー割り当てが多くなってくると以下のような問題が出てきます。
-修飾キー(CTRL、ALT&mldr;)が押された場合に動作が変わる場合はさらに分岐する キー割り当てをドキュメント化するのが大変になる キー割り当てのヘルプが必要になる キー割り当てを人によって変更したくなる ドキュメント化やヘルプはコードで実装した後、手間を掛けて書いていけばなんとか解決できますが、キー割り当ての変更に対応するには、元のままのコードでは不可能です。
+修飾キー(CTRL、ALT&hellip;)が押された場合に動作が変わる場合はさらに分岐する キー割り当てをドキュメント化するのが大変になる キー割り当てのヘルプが必要になる キー割り当てを人によって変更したくなる ドキュメント化やヘルプはコードで実装した後、手間を掛けて書いていけばなんとか解決できますが、キー割り当ての変更に対応するには、元のままのコードでは不可能です。
 cbindを使用 そこで使用したいのがcbindです。
 cbind は Set()でキーの文字列といイベントハンドラを結びつけて登録できます。 実際にキーイベントが起きたら、cbindに任せれば登録されていたイベントハンドラが実行されることになります。
-実際の使用例です キーの登録は、まずcbind.NewConfiguration()をしてConfigurationを作成します。 そのConfigurationにキー文字列とハンドラをSet(&#34;Alt+s&#34;, handleSave)のように登録します。 または、Decodeでイベントキーに変換して、SetRuneまたはSetKeyで登録します。
-実際に登録するときには、キー文字列（Alt+s等）とイベントハンドラ（func）を直接結びつけるのではなく、アクション名（文字列）を介しておくと、ヘルプや設定ファイル化するときに便利です。
+実際の使用例です キーの登録は、まずcbind.NewConfiguration()をしてConfigurationを作成します。 そのConfigurationにキー文字列とハンドラをSet(&quot;Alt&#43;s&quot;, handleSave)のように登録します。 または、Decodeでイベントキーに変換して、SetRuneまたはSetKeyで登録します。
+実際に登録するときには、キー文字列（Alt&#43;s等）とイベントハンドラ（func）を直接結びつけるのではなく、アクション名（文字列）を介しておくと、ヘルプや設定ファイル化するときに便利です。
 アクション名とキー文字列のマップ(keyBind)とアクション名とイベントハンドラのマップ(actionHandlers)をあらかじめ定義しておいてsetKeyBindで登録しています。
-const ( // アクション名 actionQuit = &#34;quit&#34; ) var keyBind = map[string][]string{ // アクション名に対してキー文字列をマッピング（キー文字列は複数可能） actionQuit: {&#34;q&#34;, &#34;ctrl+q&#34;}, } var actionHandlers = map[string]func(){ // アクション名に対してイベントハンドラをマッピング actionQuit: handleQuit, } // 終了のイベントハンドラ var quit = make(chan struct{}) var handleQuit = func() { close(quit) } func setKeyBind() (*cbind."></head><body class="mobile-support html" data-url=/ja/blog/cbind/index.html><div id=R-body class=default-animation><div id=R-body-overlay></div><nav id=R-topbar><div class=topbar-wrapper><div class=topbar-sidebar-divider></div><div class="topbar-area topbar-area-start" data-area=start><div class="topbar-button topbar-button-sidebar" data-content-empty=disable data-width-s=show data-width-m=hide data-width-l=hide><button class=topbar-control onclick=toggleNav() type=button title="メニュー (CTRL+ALT+n)">
-<i class="fa-fw fas fa-bars"></i></button></div><div class="topbar-button topbar-button-toc" data-content-empty=hide data-width-s=show data-width-m=show data-width-l=show><button class=topbar-control onclick=toggleTopbarFlyout(this) type=button title="目次 (CTRL+ALT+t)">
-<i class="fa-fw fas fa-list-alt"></i></button><div class=topbar-content><div class=topbar-content-wrapper><nav class=TableOfContents><ul><li><a href=#cbindとは>cbindとは？</a></li><li><a href=#tcellのキーイベント>tcellのキーイベント</a></li><li><a href=#cbindを使用>cbindを使用</a><ul><li><a href=#実際の使用例です>実際の使用例です</a></li></ul></li><li><a href=#全体のソース>全体のソース</a></li><li><a href=#cbindの使用例>cbindの使用例</a></li><li><a href=#履歴>履歴</a></li></ul></nav></div></div></div></div><ol class="topbar-breadcrumbs breadcrumbs highlightable" itemscope itemtype=http://schema.org/BreadcrumbList><li itemscope itemtype=https://schema.org/ListItem itemprop=itemListElement><a itemprop=item href=/ja/index.html><span itemprop=name>Top</span></a><meta itemprop=position content="1">&nbsp;>&nbsp;</li><li itemscope itemtype=https://schema.org/ListItem itemprop=itemListElement><a itemprop=item href=/ja/blog/index.html><span itemprop=name>Blog(ブログ)</span></a><meta itemprop=position content="2">&nbsp;>&nbsp;</li><li itemscope itemtype=https://schema.org/ListItem itemprop=itemListElement><span itemprop=name>tcell/tviewでTUIを作るならキー割り当てにcbindを利用しよう</span><meta itemprop=position content="3"></li></ol><div class="topbar-area topbar-area-end" data-area=end><div class="topbar-button topbar-button-prev" data-content-empty=disable data-width-s=show data-width-m=show data-width-l=show><a class=topbar-control href=/ja/blog/sqlorder/index.html title="SQLのORDER BY 列番号と式 (🡐)"><i class="fa-fw fas fa-chevron-left"></i></a></div><div class="topbar-button topbar-button-next" data-content-empty=disable data-width-s=show data-width-m=show data-width-l=show><a class=topbar-control href=/ja/blog/ov_062/index.html title="ov v0.6.2 (🡒)"><i class="fa-fw fas fa-chevron-right"></i></a></div><div class="topbar-button topbar-button-more" data-content-empty=hide data-width-s=show data-width-m=show data-width-l=show><button class=topbar-control onclick=toggleTopbarFlyout(this) type=button title=更に>
-<i class="fa-fw fas fa-ellipsis-v"></i></button><div class=topbar-content><div class=topbar-content-wrapper><div class="topbar-area topbar-area-more" data-area=more></div></div></div></div></div></div></nav><div id=R-main-overlay></div><main id=R-body-inner class="highlightable default" tabindex=-1><div class=flex-block-wrapper><article class=default><header class=headline><div class="taxonomy-tags term-list cstyle tags" title=Tags style=--VARIABLE-TAGS-BG-color:var(--INTERNAL-TAG-BG-color)><ul><li><a class=term-link href=/ja/tags/cbind/index.html>cbind</a></li><li><a class=term-link href=/ja/tags/go/index.html>go</a></li><li><a class=term-link href=/ja/tags/tcell/index.html>tcell</a></li><li><a class=term-link href=/ja/tags/tui/index.html>tui</a></li></ul></div></header><h1 id=tcelltviewでtuiを作るならキー割り当てにcbindを利用しよう>tcell/tviewでTUIを作るならキー割り当てにcbindを利用しよう</h1><div class=c-time>Posted on:
-<time datetime=2020-10-27T10:00:00+09:00>2020年10月27日</time></div><h2 id=cbindとは>cbindとは？</h2><p><a href=https://code.rocketnine.space/tslocum/cbind target=_blank>cbind</a>は<a href=https://github.com/gdamore/tcell target=_blank>tcell</a>のキーイベントとイベントハンドラを結びつけるライブラリです。</p><h2 id=tcellのキーイベント>tcellのキーイベント</h2><p><a href=https://github.com/gdamore/tcell target=_blank>tcell</a> ではキー入力がイベントの１つとして取得できます。
-<a href=https://github.com/rivo/tview target=_blank>tview</a>でもtcellのイベントを使用しているので、同じ様にイベントとして取得します。</p><p>tcellのキーイベントを取得するのは以下のように<code>switch case</code>でキーを判別して、イベントハンドラを呼び出すのが一般的です。</p><div class="wrap-code highlight"><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span>	<span style=color:#a6e22e>ev</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>screen</span>.<span style=color:#a6e22e>PollEvent</span>()
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>switch</span> <span style=color:#a6e22e>ev</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>ev</span>.(<span style=color:#66d9ef>type</span>) {
-</span></span><span style=display:flex><span>        <span style=color:#66d9ef>case</span> <span style=color:#f92672>*</span><span style=color:#a6e22e>tcell</span>.<span style=color:#a6e22e>EventKey</span>:
-</span></span><span style=display:flex><span>		    <span style=color:#66d9ef>switch</span> <span style=color:#a6e22e>ev</span>.<span style=color:#a6e22e>Key</span>() {
-</span></span><span style=display:flex><span>			<span style=color:#66d9ef>case</span> <span style=color:#a6e22e>tcell</span>.<span style=color:#a6e22e>KeyEscape</span>:
-</span></span><span style=display:flex><span>				close(<span style=color:#a6e22e>quit</span>)
-</span></span><span style=display:flex><span>				<span style=color:#66d9ef>return</span>
-</span></span><span style=display:flex><span>            }
-</span></span><span style=display:flex><span>            <span style=color:#66d9ef>case</span> <span style=color:#a6e22e>tcell</span>.<span style=color:#a6e22e>KeyEnter</span>:
-</span></span><span style=display:flex><span>                <span style=color:#a6e22e>action</span>()
-</span></span><span style=display:flex><span>                <span style=color:#66d9ef>return</span>
-</span></span><span style=display:flex><span>    }</span></span></code></pre></div><p>ここの<code>tcell.KeyEscape</code>は constの数値として定義されています（キーボードに存在する英数字などの文字は<code>rune</code>で入ってきます）。
-キー割り当てが少ないうちは、このまま追加していけば機能を増やせるので分かりやすいですが、キー割り当てが多くなってくると以下のような問題が出てきます。</p><ul><li>修飾キー(CTRL、ALT&mldr;)が押された場合に動作が変わる場合はさらに分岐する</li><li>キー割り当てをドキュメント化するのが大変になる</li><li>キー割り当てのヘルプが必要になる</li><li>キー割り当てを人によって変更したくなる</li></ul><p>ドキュメント化やヘルプはコードで実装した後、手間を掛けて書いていけばなんとか解決できますが、キー割り当ての変更に対応するには、元のままのコードでは不可能です。</p><h2 id=cbindを使用>cbindを使用</h2><p>そこで使用したいのが<a href=https://code.rocketnine.space/tslocum/cbind target=_blank>cbind</a>です。</p><p>cbind は <code>Set()</code>でキーの文字列といイベントハンドラを結びつけて登録できます。
-実際にキーイベントが起きたら、cbindに任せれば登録されていたイベントハンドラが実行されることになります。</p><h3 id=実際の使用例です>実際の使用例です</h3><p>キーの登録は、まず<code>cbind.NewConfiguration()</code>をしてConfigurationを作成します。
-そのConfigurationにキー文字列とハンドラを<code>Set("Alt+s", handleSave)</code>のように登録します。
-または、<code>Decode</code>でイベントキーに変換して、<code>SetRune</code>または<code>SetKey</code>で登録します。</p><p>実際に登録するときには、キー文字列（<code>Alt+s</code>等）とイベントハンドラ（func）を直接結びつけるのではなく、アクション名（文字列）を介しておくと、ヘルプや設定ファイル化するときに便利です。</p><p>アクション名とキー文字列のマップ(keyBind)とアクション名とイベントハンドラのマップ(actionHandlers)をあらかじめ定義しておいて<code>setKeyBind</code>で登録しています。</p><div class="wrap-code highlight"><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#66d9ef>const</span> (
-</span></span><span style=display:flex><span>    <span style=color:#75715e>// アクション名
-</span></span></span><span style=display:flex><span><span style=color:#75715e></span>	<span style=color:#a6e22e>actionQuit</span> = <span style=color:#e6db74>&#34;quit&#34;</span>
-</span></span><span style=display:flex><span>)
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#66d9ef>var</span> <span style=color:#a6e22e>keyBind</span> = <span style=color:#66d9ef>map</span>[<span style=color:#66d9ef>string</span>][]<span style=color:#66d9ef>string</span>{
-</span></span><span style=display:flex><span>    <span style=color:#75715e>// アクション名に対してキー文字列をマッピング（キー文字列は複数可能）
-</span></span></span><span style=display:flex><span><span style=color:#75715e></span>	<span style=color:#a6e22e>actionQuit</span>: {<span style=color:#e6db74>&#34;q&#34;</span>, <span style=color:#e6db74>&#34;ctrl+q&#34;</span>},
-</span></span><span style=display:flex><span>}
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#66d9ef>var</span> <span style=color:#a6e22e>actionHandlers</span> = <span style=color:#66d9ef>map</span>[<span style=color:#66d9ef>string</span>]<span style=color:#66d9ef>func</span>(){
-</span></span><span style=display:flex><span>    <span style=color:#75715e>// アクション名に対してイベントハンドラをマッピング
-</span></span></span><span style=display:flex><span><span style=color:#75715e></span>	<span style=color:#a6e22e>actionQuit</span>: <span style=color:#a6e22e>handleQuit</span>,
-</span></span><span style=display:flex><span>}
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#75715e>// 終了のイベントハンドラ
-</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>var</span> <span style=color:#a6e22e>quit</span> = make(<span style=color:#66d9ef>chan</span> <span style=color:#66d9ef>struct</span>{})
-</span></span><span style=display:flex><span><span style=color:#66d9ef>var</span> <span style=color:#a6e22e>handleQuit</span> = <span style=color:#66d9ef>func</span>() {
-</span></span><span style=display:flex><span>	close(<span style=color:#a6e22e>quit</span>)
-</span></span><span style=display:flex><span>}
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#66d9ef>func</span> <span style=color:#a6e22e>setKeyBind</span>() (<span style=color:#f92672>*</span><span style=color:#a6e22e>cbind</span>.<span style=color:#a6e22e>Configuration</span>, <span style=color:#66d9ef>error</span>) {
-</span></span><span style=display:flex><span>	<span style=color:#a6e22e>c</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>cbind</span>.<span style=color:#a6e22e>NewConfiguration</span>()
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>	<span style=color:#66d9ef>for</span> <span style=color:#a6e22e>a</span>, <span style=color:#a6e22e>keys</span> <span style=color:#f92672>:=</span> <span style=color:#66d9ef>range</span> <span style=color:#a6e22e>keyBind</span> {
-</span></span><span style=display:flex><span>        <span style=color:#75715e>// キーバインドのアクション名からイベントハンドラに変換
-</span></span></span><span style=display:flex><span><span style=color:#75715e></span>		<span style=color:#a6e22e>handler</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>actionHandlers</span>[<span style=color:#a6e22e>a</span>]
-</span></span><span style=display:flex><span>		<span style=color:#66d9ef>if</span> <span style=color:#a6e22e>handler</span> <span style=color:#f92672>==</span> <span style=color:#66d9ef>nil</span> {
-</span></span><span style=display:flex><span>			<span style=color:#66d9ef>return</span> <span style=color:#66d9ef>nil</span>, <span style=color:#a6e22e>fmt</span>.<span style=color:#a6e22e>Errorf</span>(<span style=color:#e6db74>&#34;[%s] unknown action&#34;</span>, <span style=color:#a6e22e>a</span>)
-</span></span><span style=display:flex><span>		}
-</span></span><span style=display:flex><span>		<span style=color:#66d9ef>for</span> <span style=color:#a6e22e>_</span>, <span style=color:#a6e22e>key</span> <span style=color:#f92672>:=</span> <span style=color:#66d9ef>range</span> <span style=color:#a6e22e>keys</span> {
-</span></span><span style=display:flex><span>			<span style=color:#66d9ef>if</span> <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>c</span>.<span style=color:#a6e22e>Set</span>(<span style=color:#a6e22e>key</span>, <span style=color:#a6e22e>wrapEventHandler</span>(<span style=color:#a6e22e>handler</span>)); <span style=color:#a6e22e>err</span> <span style=color:#f92672>!=</span> <span style=color:#66d9ef>nil</span> {
-</span></span><span style=display:flex><span>				<span style=color:#66d9ef>return</span> <span style=color:#66d9ef>nil</span>, <span style=color:#a6e22e>fmt</span>.<span style=color:#a6e22e>Errorf</span>(<span style=color:#e6db74>&#34;failed to set keybind: %s&#34;</span>, <span style=color:#a6e22e>err</span>)
-</span></span><span style=display:flex><span>			}
-</span></span><span style=display:flex><span>		}
-</span></span><span style=display:flex><span>	}
-</span></span><span style=display:flex><span>	<span style=color:#66d9ef>return</span> <span style=color:#a6e22e>c</span>, <span style=color:#66d9ef>nil</span>
-</span></span><span style=display:flex><span>}
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#75715e>// func(*tcell.EventKey) *tcell.EventKey という形式のため、
-</span></span></span><span style=display:flex><span><span style=color:#75715e>// 引数、返り値を無しの関数を登録するためのラップ関数
-</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>func</span> <span style=color:#a6e22e>wrapEventHandler</span>(<span style=color:#a6e22e>f</span> <span style=color:#66d9ef>func</span>()) <span style=color:#66d9ef>func</span>(<span style=color:#a6e22e>_</span> <span style=color:#f92672>*</span><span style=color:#a6e22e>tcell</span>.<span style=color:#a6e22e>EventKey</span>) <span style=color:#f92672>*</span><span style=color:#a6e22e>tcell</span>.<span style=color:#a6e22e>EventKey</span> {
-</span></span><span style=display:flex><span>	<span style=color:#66d9ef>return</span> <span style=color:#66d9ef>func</span>(<span style=color:#a6e22e>_</span> <span style=color:#f92672>*</span><span style=color:#a6e22e>tcell</span>.<span style=color:#a6e22e>EventKey</span>) <span style=color:#f92672>*</span><span style=color:#a6e22e>tcell</span>.<span style=color:#a6e22e>EventKey</span> {
-</span></span><span style=display:flex><span>		<span style=color:#a6e22e>f</span>()
-</span></span><span style=display:flex><span>		<span style=color:#66d9ef>return</span> <span style=color:#66d9ef>nil</span>
-</span></span><span style=display:flex><span>	}
-</span></span><span style=display:flex><span>}</span></span></code></pre></div><p>keyBindがマップになっているのでアクション名に対するキー文字列を（設定ファイル等により）変更するだけで、キーバインドの変更が簡単に出来るようになります。</p><p>イベントハンドラの実行はcbindの<code>Capture</code>にイベントを渡せば登録してあるイベントハンドラが実行されます。</p><div class="wrap-code highlight"><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span>	<span style=color:#a6e22e>ev</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>screen</span>.<span style=color:#a6e22e>PollEvent</span>()
-</span></span><span style=display:flex><span>    <span style=color:#66d9ef>switch</span> <span style=color:#a6e22e>ev</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>ev</span>.(<span style=color:#66d9ef>type</span>) {
-</span></span><span style=display:flex><span>        <span style=color:#66d9ef>case</span> <span style=color:#f92672>*</span><span style=color:#a6e22e>tcell</span>.<span style=color:#a6e22e>EventKey</span>:
-</span></span><span style=display:flex><span>            <span style=color:#a6e22e>c</span>.<span style=color:#a6e22e>Capture</span>(<span style=color:#a6e22e>ev</span>)
-</span></span><span style=display:flex><span>    }</span></span></code></pre></div><h2 id=全体のソース>全体のソース</h2><div class="wrap-code highlight"><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#f92672>package</span> <span style=color:#a6e22e>main</span>
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#f92672>import</span> (
-</span></span><span style=display:flex><span>	<span style=color:#e6db74>&#34;fmt&#34;</span>
-</span></span><span style=display:flex><span>	<span style=color:#e6db74>&#34;log&#34;</span>
-</span></span><span style=display:flex><span>	<span style=color:#e6db74>&#34;strings&#34;</span>
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>	<span style=color:#e6db74>&#34;code.rocketnine.space/tslocum/cbind&#34;</span>
-</span></span><span style=display:flex><span>	<span style=color:#e6db74>&#34;github.com/gdamore/tcell/v2&#34;</span>
-</span></span><span style=display:flex><span>	<span style=color:#e6db74>&#34;github.com/mattn/go-runewidth&#34;</span>
-</span></span><span style=display:flex><span>)
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#66d9ef>const</span> (
-</span></span><span style=display:flex><span>	<span style=color:#a6e22e>actionQuit</span> = <span style=color:#e6db74>&#34;quit&#34;</span>
-</span></span><span style=display:flex><span>)
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#66d9ef>var</span> <span style=color:#a6e22e>keyBind</span> = <span style=color:#66d9ef>map</span>[<span style=color:#66d9ef>string</span>][]<span style=color:#66d9ef>string</span>{
-</span></span><span style=display:flex><span>	<span style=color:#a6e22e>actionQuit</span>: {<span style=color:#e6db74>&#34;q&#34;</span>, <span style=color:#e6db74>&#34;ctrl+q&#34;</span>},
-</span></span><span style=display:flex><span>}
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#66d9ef>var</span> <span style=color:#a6e22e>actionHandlers</span> = <span style=color:#66d9ef>map</span>[<span style=color:#66d9ef>string</span>]<span style=color:#66d9ef>func</span>(){
-</span></span><span style=display:flex><span>	<span style=color:#a6e22e>actionQuit</span>: <span style=color:#a6e22e>handleQuit</span>,
-</span></span><span style=display:flex><span>}
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#66d9ef>var</span> <span style=color:#a6e22e>quit</span> = make(<span style=color:#66d9ef>chan</span> <span style=color:#66d9ef>struct</span>{})
-</span></span><span style=display:flex><span><span style=color:#66d9ef>var</span> <span style=color:#a6e22e>handleQuit</span> = <span style=color:#66d9ef>func</span>() {
-</span></span><span style=display:flex><span>	close(<span style=color:#a6e22e>quit</span>)
-</span></span><span style=display:flex><span>}
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#66d9ef>func</span> <span style=color:#a6e22e>setKeyBind</span>() (<span style=color:#f92672>*</span><span style=color:#a6e22e>cbind</span>.<span style=color:#a6e22e>Configuration</span>, <span style=color:#66d9ef>error</span>) {
-</span></span><span style=display:flex><span>	<span style=color:#a6e22e>c</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>cbind</span>.<span style=color:#a6e22e>NewConfiguration</span>()
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>	<span style=color:#66d9ef>for</span> <span style=color:#a6e22e>a</span>, <span style=color:#a6e22e>keys</span> <span style=color:#f92672>:=</span> <span style=color:#66d9ef>range</span> <span style=color:#a6e22e>keyBind</span> {
-</span></span><span style=display:flex><span>		<span style=color:#a6e22e>handler</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>actionHandlers</span>[<span style=color:#a6e22e>a</span>]
-</span></span><span style=display:flex><span>		<span style=color:#66d9ef>if</span> <span style=color:#a6e22e>handler</span> <span style=color:#f92672>==</span> <span style=color:#66d9ef>nil</span> {
-</span></span><span style=display:flex><span>			<span style=color:#66d9ef>return</span> <span style=color:#66d9ef>nil</span>, <span style=color:#a6e22e>fmt</span>.<span style=color:#a6e22e>Errorf</span>(<span style=color:#e6db74>&#34;[%s] unknown action&#34;</span>, <span style=color:#a6e22e>a</span>)
-</span></span><span style=display:flex><span>		}
-</span></span><span style=display:flex><span>		<span style=color:#66d9ef>for</span> <span style=color:#a6e22e>_</span>, <span style=color:#a6e22e>key</span> <span style=color:#f92672>:=</span> <span style=color:#66d9ef>range</span> <span style=color:#a6e22e>keys</span> {
-</span></span><span style=display:flex><span>			<span style=color:#66d9ef>if</span> <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>c</span>.<span style=color:#a6e22e>Set</span>(<span style=color:#a6e22e>key</span>, <span style=color:#a6e22e>wrapEventHandler</span>(<span style=color:#a6e22e>handler</span>)); <span style=color:#a6e22e>err</span> <span style=color:#f92672>!=</span> <span style=color:#66d9ef>nil</span> {
-</span></span><span style=display:flex><span>				<span style=color:#66d9ef>return</span> <span style=color:#66d9ef>nil</span>, <span style=color:#a6e22e>fmt</span>.<span style=color:#a6e22e>Errorf</span>(<span style=color:#e6db74>&#34;failed to set keybind: %s&#34;</span>, <span style=color:#a6e22e>err</span>)
-</span></span><span style=display:flex><span>			}
-</span></span><span style=display:flex><span>		}
-</span></span><span style=display:flex><span>	}
-</span></span><span style=display:flex><span>	<span style=color:#66d9ef>return</span> <span style=color:#a6e22e>c</span>, <span style=color:#66d9ef>nil</span>
-</span></span><span style=display:flex><span>}
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#66d9ef>func</span> <span style=color:#a6e22e>wrapEventHandler</span>(<span style=color:#a6e22e>f</span> <span style=color:#66d9ef>func</span>()) <span style=color:#66d9ef>func</span>(<span style=color:#a6e22e>_</span> <span style=color:#f92672>*</span><span style=color:#a6e22e>tcell</span>.<span style=color:#a6e22e>EventKey</span>) <span style=color:#f92672>*</span><span style=color:#a6e22e>tcell</span>.<span style=color:#a6e22e>EventKey</span> {
-</span></span><span style=display:flex><span>	<span style=color:#66d9ef>return</span> <span style=color:#66d9ef>func</span>(<span style=color:#a6e22e>_</span> <span style=color:#f92672>*</span><span style=color:#a6e22e>tcell</span>.<span style=color:#a6e22e>EventKey</span>) <span style=color:#f92672>*</span><span style=color:#a6e22e>tcell</span>.<span style=color:#a6e22e>EventKey</span> {
-</span></span><span style=display:flex><span>		<span style=color:#a6e22e>f</span>()
-</span></span><span style=display:flex><span>		<span style=color:#66d9ef>return</span> <span style=color:#66d9ef>nil</span>
-</span></span><span style=display:flex><span>	}
-</span></span><span style=display:flex><span>}
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#66d9ef>func</span> <span style=color:#a6e22e>main</span>() {
-</span></span><span style=display:flex><span>	<span style=color:#a6e22e>screen</span>, <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>tcell</span>.<span style=color:#a6e22e>NewScreen</span>()
-</span></span><span style=display:flex><span>	<span style=color:#66d9ef>if</span> <span style=color:#a6e22e>err</span> <span style=color:#f92672>!=</span> <span style=color:#66d9ef>nil</span> {
-</span></span><span style=display:flex><span>		<span style=color:#a6e22e>log</span>.<span style=color:#a6e22e>Fatal</span>(<span style=color:#a6e22e>err</span>)
-</span></span><span style=display:flex><span>	}
-</span></span><span style=display:flex><span>	<span style=color:#66d9ef>if</span> <span style=color:#a6e22e>err</span> = <span style=color:#a6e22e>screen</span>.<span style=color:#a6e22e>Init</span>(); <span style=color:#a6e22e>err</span> <span style=color:#f92672>!=</span> <span style=color:#66d9ef>nil</span> {
-</span></span><span style=display:flex><span>		<span style=color:#a6e22e>log</span>.<span style=color:#a6e22e>Fatal</span>(<span style=color:#a6e22e>err</span>)
-</span></span><span style=display:flex><span>	}
-</span></span><span style=display:flex><span>	<span style=color:#66d9ef>defer</span> <span style=color:#a6e22e>screen</span>.<span style=color:#a6e22e>Fini</span>()
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>	<span style=color:#a6e22e>c</span>, <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>setKeyBind</span>()
-</span></span><span style=display:flex><span>	<span style=color:#66d9ef>if</span> <span style=color:#a6e22e>err</span> <span style=color:#f92672>!=</span> <span style=color:#66d9ef>nil</span> {
-</span></span><span style=display:flex><span>		<span style=color:#a6e22e>log</span>.<span style=color:#a6e22e>Fatal</span>(<span style=color:#a6e22e>err</span>)
-</span></span><span style=display:flex><span>	}
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>	<span style=color:#75715e>// Start application.
-</span></span></span><span style=display:flex><span><span style=color:#75715e></span>	<span style=color:#a6e22e>str</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>fmt</span>.<span style=color:#a6e22e>Sprintf</span>(<span style=color:#e6db74>&#34;[%s] %s&#34;</span>, <span style=color:#a6e22e>strings</span>.<span style=color:#a6e22e>Join</span>(<span style=color:#a6e22e>keyBind</span>[<span style=color:#a6e22e>actionQuit</span>], <span style=color:#e6db74>&#34;,&#34;</span>), <span style=color:#a6e22e>actionQuit</span>)
-</span></span><span style=display:flex><span>	<span style=color:#a6e22e>setContents</span>(<span style=color:#a6e22e>screen</span>, <span style=color:#ae81ff>0</span>, <span style=color:#ae81ff>0</span>, <span style=color:#a6e22e>str</span>, <span style=color:#a6e22e>tcell</span>.<span style=color:#a6e22e>StyleDefault</span>)
-</span></span><span style=display:flex><span>	<span style=color:#a6e22e>screen</span>.<span style=color:#a6e22e>Show</span>()
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span>	<span style=color:#75715e>// Main routine.
-</span></span></span><span style=display:flex><span><span style=color:#75715e></span>	<span style=color:#66d9ef>go</span> <span style=color:#66d9ef>func</span>() {
-</span></span><span style=display:flex><span>		<span style=color:#66d9ef>for</span> {
-</span></span><span style=display:flex><span>			<span style=color:#a6e22e>ev</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>screen</span>.<span style=color:#a6e22e>PollEvent</span>()
-</span></span><span style=display:flex><span>			<span style=color:#66d9ef>switch</span> <span style=color:#a6e22e>ev</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>ev</span>.(<span style=color:#66d9ef>type</span>) {
-</span></span><span style=display:flex><span>			<span style=color:#66d9ef>case</span> <span style=color:#f92672>*</span><span style=color:#a6e22e>tcell</span>.<span style=color:#a6e22e>EventKey</span>:
-</span></span><span style=display:flex><span>				<span style=color:#a6e22e>c</span>.<span style=color:#a6e22e>Capture</span>(<span style=color:#a6e22e>ev</span>)
-</span></span><span style=display:flex><span>			}
-</span></span><span style=display:flex><span>		}
-</span></span><span style=display:flex><span>	}()
-</span></span><span style=display:flex><span>	<span style=color:#f92672>&lt;-</span><span style=color:#a6e22e>quit</span>
-</span></span><span style=display:flex><span>}
-</span></span><span style=display:flex><span>
-</span></span><span style=display:flex><span><span style=color:#66d9ef>func</span> <span style=color:#a6e22e>setContents</span>(<span style=color:#a6e22e>screen</span> <span style=color:#a6e22e>tcell</span>.<span style=color:#a6e22e>Screen</span>, <span style=color:#a6e22e>x</span> <span style=color:#66d9ef>int</span>, <span style=color:#a6e22e>y</span> <span style=color:#66d9ef>int</span>, <span style=color:#a6e22e>str</span> <span style=color:#66d9ef>string</span>, <span style=color:#a6e22e>style</span> <span style=color:#a6e22e>tcell</span>.<span style=color:#a6e22e>Style</span>) {
-</span></span><span style=display:flex><span>	<span style=color:#66d9ef>for</span> <span style=color:#a6e22e>_</span>, <span style=color:#a6e22e>r</span> <span style=color:#f92672>:=</span> <span style=color:#66d9ef>range</span> <span style=color:#a6e22e>str</span> {
-</span></span><span style=display:flex><span>		<span style=color:#a6e22e>screen</span>.<span style=color:#a6e22e>SetContent</span>(<span style=color:#a6e22e>x</span>, <span style=color:#a6e22e>y</span>, <span style=color:#a6e22e>r</span>, <span style=color:#66d9ef>nil</span>, <span style=color:#a6e22e>style</span>)
-</span></span><span style=display:flex><span>		<span style=color:#a6e22e>x</span> <span style=color:#f92672>+=</span> <span style=color:#a6e22e>runewidth</span>.<span style=color:#a6e22e>RuneWidth</span>(<span style=color:#a6e22e>r</span>)
-</span></span><span style=display:flex><span>	}
-</span></span><span style=display:flex><span>}</span></span></code></pre></div><h2 id=cbindの使用例>cbindの使用例</h2><p><a href="https://pkg.go.dev/code.rocketnine.space/tslocum/cbind?tab=importedby" target=_blank>pkg.go.devのImported By</a>に作者の方が実際に使用している例があるので、そちらを参考にすると良いでしょう。</p><p>また、拙作<a href=https://github.com/noborus/ov target=_blank>ov</a>でもcbindを使用して、キーバインドをカスタマイズ可能にしています。<a href=https://github.com/noborus/ov target=_blank>こちらも</a>も参考にしてみてください。</p><h2 id=履歴>履歴</h2><ul><li>2022/6/23 tcell/v2を対象に変更</li></ul><footer class=footline><div class="taxonomy-categories term-list cstyle" title=Categories style=--VARIABLE-TAGS-BG-color:var(--INTERNAL-TAG-BG-color)><i class="fa-fw fas fa-layer-group"></i><ul><li><a class=term-link href=/ja/categories/tui/index.html>tui</a></li></ul></div></footer></article></div></main></div><aside id=R-sidebar class=default-animation><div id=R-header-topbar class=default-animation></div><div id=R-header-wrapper class=default-animation><div id=R-header class=default-animation><a id=logo href=./index.html><style>#sidebar a#logo{display:flex;align-items:center;font-size:1.3rem;font-weight:600;color:#777}#logo object{margin-right:.1rem}</style><img width=50 height=50 src=/images/logo.svg></img>Noboru Saito’s site</a></div><div class="searchbox default-animation"><i class="fas fa-search" title="検索 (CTRL+ALT+f)"></i>
-<label class=a11y-only for=R-search-by>検索</label>
-<input data-search-input id=R-search-by name=search-by class=search-by type=search placeholder=検索...>
-<button class=search-clear type=button data-search-clear title=検索をクリア><i class="fas fa-times" title=検索をクリア></i></button></div><script>var contentLangs=["en","ja"]</script><script src=/js/auto-complete.js?1701122940 defer></script><script src=/js/lunr/lunr.min.js?1701122940 defer></script><script src=/js/lunr/lunr.stemmer.support.min.js?1701122940 defer></script><script src=/js/lunr/lunr.multi.min.js?1701122940 defer></script><script src=/js/lunr/lunr.en.min.js?1701122940 defer></script><script src=/js/lunr/tinyseg.js?1701122940 defer></script><script src=/js/lunr/lunr.ja.min.js?1701122940 defer></script><script src=/js/search.js?1701122940 defer></script></div><div id=R-homelinks class="default-animation homelinks"><ul><li><a class=padding href=/ja/index.html><i class="fas fa-home"></i> Home</a></li></ul><hr class=padding></div><div id=R-content-wrapper class=highlightable><div id=R-topics><ul class="enlarge morespace collapsible-menu"><li data-nav-id=/ja/blog/index.html class=parent><input type=checkbox id=R-section-b27ddda9d3ce7493d063281af5dfe780 aria-controls=R-subsections-b27ddda9d3ce7493d063281af5dfe780 checked><label for=R-section-b27ddda9d3ce7493d063281af5dfe780><i class="fas fa-chevron-down"></i><i class="fas fa-chevron-right"></i><span class=a11y-only>サブメニュー Blog(ブログ)</span></label><a class=padding href=/ja/blog/index.html>Blog(ブログ)</a><ul id=R-subsections-b27ddda9d3ce7493d063281af5dfe780 class="morespace collapsible-menu"><li data-nav-id=/ja/blog/trdsql_0130/index.html><a class=padding href=/ja/blog/trdsql_0130/index.html>trdsql v0.13.0</a></li><li data-nav-id=/ja/blog/ov_032_1/index.html><a class=padding href=/ja/blog/ov_032_1/index.html>ov v0.32.1</a></li><li data-nav-id=/ja/blog/trdsql_0121/index.html><a class=padding href=/ja/blog/trdsql_0121/index.html>trdsql v0.12.1</a></li><li data-nav-id=/ja/blog/trdsql_0120/index.html><a class=padding href=/ja/blog/trdsql_0120/index.html>trdsql v0.12.0</a></li><li data-nav-id=/ja/blog/ov_032_0/index.html><a class=padding href=/ja/blog/ov_032_0/index.html>ov v0.32.0</a></li><li data-nav-id=/ja/blog/ov_031_0/index.html><a class=padding href=/ja/blog/ov_031_0/index.html>ov v0.31.0</a></li><li data-nav-id=/ja/blog/psql-pager/index.html><a class=padding href=/ja/blog/psql-pager/index.html>psqlのPAGERを設定する</a></li><li data-nav-id=/ja/blog/ov_030_0/index.html><a class=padding href=/ja/blog/ov_030_0/index.html>ov v0.30.0</a></li><li data-nav-id=/ja/blog/guesswidth/index.html><a class=padding href=/ja/blog/guesswidth/index.html>幅指定フォーマットの幅を推測する</a></li><li data-nav-id=/ja/blog/trdsql_0111/index.html><a class=padding href=/ja/blog/trdsql_0111/index.html>trdsql v0.11.1</a></li><li data-nav-id=/ja/blog/ov_015_0/index.html><a class=padding href=/ja/blog/ov_015_0/index.html>ov v0.15.0</a></li><li data-nav-id=/ja/blog/ov_014_2/index.html><a class=padding href=/ja/blog/ov_014_2/index.html>ov v0.14.2</a></li><li data-nav-id=/ja/blog/ov_014_1/index.html><a class=padding href=/ja/blog/ov_014_1/index.html>ov v0.14.1</a></li><li data-nav-id=/ja/blog/ov_014_0/index.html><a class=padding href=/ja/blog/ov_014_0/index.html>ov v0.14.0</a></li><li data-nav-id=/ja/blog/ov_012_0/index.html><a class=padding href=/ja/blog/ov_012_0/index.html>ov v0.12.0</a></li><li data-nav-id=/ja/blog/column0/index.html><a class=padding href=/ja/blog/column0/index.html>PostgreSQLで0列の扱い</a></li><li data-nav-id=/ja/blog/35_jq/index.html><a class=padding href=/ja/blog/35_jq/index.html>trdsql jq構文</a></li><li data-nav-id=/ja/blog/ov_011_1/index.html><a class=padding href=/ja/blog/ov_011_1/index.html>ov v0.11.1</a></li><li data-nav-id=/ja/blog/ov_011_0/index.html><a class=padding href=/ja/blog/ov_011_0/index.html>ov v0.11.0</a></li><li data-nav-id=/ja/blog/sql/index.html><a class=padding href=/ja/blog/sql/index.html>手っ取り遅くSQLを学ぶ</a></li><li data-nav-id=/ja/blog/trdsql_0100/index.html><a class=padding href=/ja/blog/trdsql_0100/index.html>trdsql v0.10.0</a></li><li data-nav-id=/ja/blog/pgunconf/index.html><a class=padding href=/ja/blog/pgunconf/index.html>第32回 PostgreSQLアンカンファレンス@オンラインで発表しました</a></li><li data-nav-id=/ja/blog/ov_010_0/index.html><a class=padding href=/ja/blog/ov_010_0/index.html>ov v0.10.0</a></li><li data-nav-id=/ja/blog/trdsql_091/index.html><a class=padding href=/ja/blog/trdsql_091/index.html>trdsql v0.9.1</a></li><li data-nav-id=/ja/blog/ov_096/index.html><a class=padding href=/ja/blog/ov_096/index.html>ov v0.9.6</a></li><li data-nav-id=/ja/blog/jpug-doc-tool/index.html><a class=padding href=/ja/blog/jpug-doc-tool/index.html>Jpug-doc-tool</a></li><li data-nav-id=/ja/blog/ov_095/index.html><a class=padding href=/ja/blog/ov_095/index.html>ov v0.9.5</a></li><li data-nav-id=/ja/blog/trdsql_jq/index.html><a class=padding href=/ja/blog/trdsql_jq/index.html>trdsql+PostgreSQL 14でJSONを処理する</a></li><li data-nav-id=/ja/blog/ov_094/index.html><a class=padding href=/ja/blog/ov_094/index.html>ov v0.9.4</a></li><li data-nav-id=/ja/blog/mdtsql_003/index.html><a class=padding href=/ja/blog/mdtsql_003/index.html>mdtsql v0.0.3</a></li><li data-nav-id=/ja/blog/pgsp/index.html><a class=padding href=/ja/blog/pgsp/index.html>pgsp</a></li><li data-nav-id=/ja/blog/trdsql_090/index.html><a class=padding href=/ja/blog/trdsql_090/index.html>trdsql v0.9.0</a></li><li data-nav-id=/ja/blog/ov_090/index.html><a class=padding href=/ja/blog/ov_090/index.html>ov v0.9.0</a></li><li data-nav-id=/ja/blog/ov_081/index.html><a class=padding href=/ja/blog/ov_081/index.html>ov v0.8.1</a></li><li data-nav-id=/ja/blog/trdsql_080/index.html><a class=padding href=/ja/blog/trdsql_080/index.html>trdsql v0.8.0</a></li><li data-nav-id=/ja/blog/ov_080/index.html><a class=padding href=/ja/blog/ov_080/index.html>ov v0.8.0</a></li><li data-nav-id=/ja/blog/go_tui2020/index.html><a class=padding href=/ja/blog/go_tui2020/index.html>goのTUIについて2020年最終版</a></li><li data-nav-id=/ja/blog/ov_070/index.html><a class=padding href=/ja/blog/ov_070/index.html>ov v0.7.0</a></li><li data-nav-id=/ja/blog/sqlorder/index.html><a class=padding href=/ja/blog/sqlorder/index.html>SQLのORDER BY 列番号と式</a></li><li data-nav-id=/ja/blog/cbind/index.html class=active><a class=padding href=/ja/blog/cbind/index.html>tcell/tviewでTUIを作るならキー割り当てにcbindを利用しよう</a></li><li data-nav-id=/ja/blog/ov_062/index.html><a class=padding href=/ja/blog/ov_062/index.html>ov v0.6.2</a></li><li data-nav-id=/ja/blog/ov_050/index.html><a class=padding href=/ja/blog/ov_050/index.html>ov v0.5.0</a></li><li data-nav-id=/ja/blog/ov_020/index.html><a class=padding href=/ja/blog/ov_020/index.html>ov v0.2.0</a></li><li data-nav-id=/ja/blog/tcell_02/index.html><a class=padding href=/ja/blog/tcell_02/index.html>tcellについて2</a></li><li data-nav-id=/ja/blog/tcell_01/index.html><a class=padding href=/ja/blog/tcell_01/index.html>tcellについて</a></li><li data-nav-id=/ja/blog/go_tui/index.html><a class=padding href=/ja/blog/go_tui/index.html>goのTUIについて</a></li><li data-nav-id=/ja/blog/ov_013/index.html><a class=padding href=/ja/blog/ov_013/index.html>ov v0.1.3</a></li><li data-nav-id=/ja/blog/oviewer/index.html><a class=padding href=/ja/blog/oviewer/index.html>ov</a></li><li data-nav-id=/ja/blog/runewidth/index.html><a class=padding href=/ja/blog/runewidth/index.html>GoのTUIで表示が崩れる場合</a></li><li data-nav-id=/ja/blog/trdsql_075/index.html><a class=padding href=/ja/blog/trdsql_075/index.html>trdsql 0.7.5</a></li><li data-nav-id=/ja/blog/34_output/index.html><a class=padding href=/ja/blog/34_output/index.html>trdsql output</a></li><li data-nav-id=/ja/blog/33_compression/index.html><a class=padding href=/ja/blog/33_compression/index.html>trdsql 圧縮ファイル</a></li><li data-nav-id=/ja/blog/mysql-load/index.html><a class=padding href=/ja/blog/mysql-load/index.html>MySQL の LOAD DATA INFILE (go)</a></li><li data-nav-id=/ja/blog/trdsql_074/index.html><a class=padding href=/ja/blog/trdsql_074/index.html>trdsql 0.7.4</a></li><li data-nav-id=/ja/blog/32_case/index.html><a class=padding href=/ja/blog/32_case/index.html>trdsql CASE式</a></li><li data-nav-id=/ja/blog/31_rollup/index.html><a class=padding href=/ja/blog/31_rollup/index.html>trdsql 合計を行に追加する</a></li><li data-nav-id=/ja/blog/30_convert_log/index.html><a class=padding href=/ja/blog/30_convert_log/index.html>trdsql convert log</a></li><li data-nav-id=/ja/blog/29_generate_series/index.html><a class=padding href=/ja/blog/29_generate_series/index.html>trdsql generate_series</a></li><li data-nav-id=/ja/blog/28_cross_join/index.html><a class=padding href=/ja/blog/28_cross_join/index.html>trdsql CROSS JOIN</a></li><li data-nav-id=/ja/blog/27_config/index.html><a class=padding href=/ja/blog/27_config/index.html>trdsql config</a></li><li data-nav-id=/ja/blog/26_file_sql/index.html><a class=padding href=/ja/blog/26_file_sql/index.html>trdsql SQLファイル指定</a></li><li data-nav-id=/ja/blog/25_library/index.html><a class=padding href=/ja/blog/25_library/index.html>trdsql ライブラリ使用</a></li><li data-nav-id=/ja/blog/24_graph/index.html><a class=padding href=/ja/blog/24_graph/index.html>trdsql グラフ</a></li><li data-nav-id=/ja/blog/23_except/index.html><a class=padding href=/ja/blog/23_except/index.html>trdsql 差分、比較</a></li><li data-nav-id=/ja/blog/22_json_output/index.html><a class=padding href=/ja/blog/22_json_output/index.html>trdsql JSON出力</a></li><li data-nav-id=/ja/blog/21_json_parse/index.html><a class=padding href=/ja/blog/21_json_parse/index.html>trdsql JSON解析</a></li><li data-nav-id=/ja/blog/20_date/index.html><a class=padding href=/ja/blog/20_date/index.html>trdsql 日付・時刻処理</a></li><li data-nav-id=/ja/blog/19_window/index.html><a class=padding href=/ja/blog/19_window/index.html>trdsql Window関数</a></li><li data-nav-id=/ja/blog/18_edit_columns/index.html><a class=padding href=/ja/blog/18_edit_columns/index.html>trdsql 列の編集</a></li><li data-nav-id=/ja/blog/17_file_table/index.html><a class=padding href=/ja/blog/17_file_table/index.html>trdsql ファイルとテーブルのJOIN</a></li><li data-nav-id=/ja/blog/16_join/index.html><a class=padding href=/ja/blog/16_join/index.html>trdsql JOIN</a></li><li data-nav-id=/ja/blog/15_import/index.html><a class=padding href=/ja/blog/15_import/index.html>trdsql DBインポート</a></li><li data-nav-id=/ja/blog/14_sqlite3/index.html><a class=padding href=/ja/blog/14_sqlite3/index.html>trdsql SQLite3エンジンの使用</a></li><li data-nav-id=/ja/blog/13_mysql/index.html><a class=padding href=/ja/blog/13_mysql/index.html>trdsql MySQLエンジンの使用</a></li><li data-nav-id=/ja/blog/12_postgres/index.html><a class=padding href=/ja/blog/12_postgres/index.html>trdsql PostgreSQLエンジンの使用</a></li><li data-nav-id=/ja/blog/11_summary/index.html><a class=padding href=/ja/blog/11_summary/index.html>trdsql 処理の概要</a></li><li data-nav-id=/ja/blog/10_stdin/index.html><a class=padding href=/ja/blog/10_stdin/index.html>trdsql 標準入力</a></li><li data-nav-id=/ja/blog/09_wildcard/index.html><a class=padding href=/ja/blog/09_wildcard/index.html>trdsql ワイルドカード、圧縮ファイル</a></li><li data-nav-id=/ja/blog/08_log/index.html><a class=padding href=/ja/blog/08_log/index.html>trdsql Log集計</a></li><li data-nav-id=/ja/blog/07_group/index.html><a class=padding href=/ja/blog/07_group/index.html>trdsql GROUP集計</a></li><li data-nav-id=/ja/blog/06_calculation/index.html><a class=padding href=/ja/blog/06_calculation/index.html>trdsql 集計計算</a></li><li data-nav-id=/ja/blog/05_aggregate/index.html><a class=padding href=/ja/blog/05_aggregate/index.html>trdsql 集計</a></li><li data-nav-id=/ja/blog/04_sql2/index.html><a class=padding href=/ja/blog/04_sql2/index.html>trdsql 簡単なSQL その２</a></li><li data-nav-id=/ja/blog/03_sql/index.html><a class=padding href=/ja/blog/03_sql/index.html>trdsql 簡単なSQL</a></li><li data-nav-id=/ja/blog/02_convert/index.html><a class=padding href=/ja/blog/02_convert/index.html>trdsql ファイルフォーマット変換</a></li><li data-nav-id=/ja/blog/01_install/index.html><a class=padding href=/ja/blog/01_install/index.html>trdsql インストール</a></li></ul></li><li data-nav-id=/ja/trdsql/index.html><input type=checkbox id=R-section-2cca1cccbfcacfa7fc048280484c6643 aria-controls=R-subsections-2cca1cccbfcacfa7fc048280484c6643><label for=R-section-2cca1cccbfcacfa7fc048280484c6643><i class="fas fa-chevron-down"></i><i class="fas fa-chevron-right"></i><span class=a11y-only>サブメニュー trdsql</span></label><a class=padding href=/ja/trdsql/index.html>trdsql</a><ul id=R-subsections-2cca1cccbfcacfa7fc048280484c6643 class="morespace collapsible-menu"><li data-nav-id=/ja/trdsql/01_install/index.html><a class=padding href=/ja/trdsql/01_install/index.html>trdsql インストール</a></li><li data-nav-id=/ja/trdsql/02_convert/index.html><a class=padding href=/ja/trdsql/02_convert/index.html>trdsql ファイルフォーマット変換</a></li><li data-nav-id=/ja/trdsql/03_sql/index.html><a class=padding href=/ja/trdsql/03_sql/index.html>trdsql 簡単なSQL</a></li><li data-nav-id=/ja/trdsql/04_sql2/index.html><a class=padding href=/ja/trdsql/04_sql2/index.html>trdsql 簡単なSQL その２</a></li><li data-nav-id=/ja/trdsql/05_aggregate/index.html><a class=padding href=/ja/trdsql/05_aggregate/index.html>trdsql 集計</a></li><li data-nav-id=/ja/trdsql/06_calculation/index.html><a class=padding href=/ja/trdsql/06_calculation/index.html>trdsql 集計計算</a></li><li data-nav-id=/ja/trdsql/07_group/index.html><a class=padding href=/ja/trdsql/07_group/index.html>trdsql GROUP集計</a></li><li data-nav-id=/ja/trdsql/08_log/index.html><a class=padding href=/ja/trdsql/08_log/index.html>trdsql Log集計</a></li><li data-nav-id=/ja/trdsql/09_wildcard/index.html><a class=padding href=/ja/trdsql/09_wildcard/index.html>trdsql ワイルドカード、圧縮ファイル</a></li><li data-nav-id=/ja/trdsql/10_stdin/index.html><a class=padding href=/ja/trdsql/10_stdin/index.html>trdsql 標準入力</a></li><li data-nav-id=/ja/trdsql/11_summary/index.html><a class=padding href=/ja/trdsql/11_summary/index.html>trdsql 処理の概要</a></li><li data-nav-id=/ja/trdsql/12_postgres/index.html><a class=padding href=/ja/trdsql/12_postgres/index.html>trdsql PostgreSQLエンジンの使用</a></li><li data-nav-id=/ja/trdsql/13_mysql/index.html><a class=padding href=/ja/trdsql/13_mysql/index.html>trdsql MySQLエンジンの使用</a></li><li data-nav-id=/ja/trdsql/14_sqlite3/index.html><a class=padding href=/ja/trdsql/14_sqlite3/index.html>trdsql SQLite3エンジンの使用</a></li><li data-nav-id=/ja/trdsql/15_import/index.html><a class=padding href=/ja/trdsql/15_import/index.html>trdsql DBインポート</a></li><li data-nav-id=/ja/trdsql/16_join/index.html><a class=padding href=/ja/trdsql/16_join/index.html>trdsql JOIN</a></li><li data-nav-id=/ja/trdsql/17_file_table/index.html><a class=padding href=/ja/trdsql/17_file_table/index.html>trdsql ファイルとテーブルのJOIN</a></li><li data-nav-id=/ja/trdsql/18_edit_columns/index.html><a class=padding href=/ja/trdsql/18_edit_columns/index.html>trdsql 列の編集</a></li><li data-nav-id=/ja/trdsql/19_window/index.html><a class=padding href=/ja/trdsql/19_window/index.html>trdsql Window関数</a></li><li data-nav-id=/ja/trdsql/20_date/index.html><a class=padding href=/ja/trdsql/20_date/index.html>trdsql 日付・時刻処理</a></li><li data-nav-id=/ja/trdsql/21_json_parse/index.html><a class=padding href=/ja/trdsql/21_json_parse/index.html>trdsql JSON解析</a></li><li data-nav-id=/ja/trdsql/22_json_output/index.html><a class=padding href=/ja/trdsql/22_json_output/index.html>trdsql JSON出力</a></li><li data-nav-id=/ja/trdsql/23_except/index.html><a class=padding href=/ja/trdsql/23_except/index.html>trdsql 差分、比較</a></li><li data-nav-id=/ja/trdsql/24_graph/index.html><a class=padding href=/ja/trdsql/24_graph/index.html>trdsql グラフ</a></li><li data-nav-id=/ja/trdsql/25_library/index.html><a class=padding href=/ja/trdsql/25_library/index.html>trdsql ライブラリ使用</a></li><li data-nav-id=/ja/trdsql/26_file_sql/index.html><a class=padding href=/ja/trdsql/26_file_sql/index.html>trdsql SQLファイル指定</a></li><li data-nav-id=/ja/trdsql/27_config/index.html><a class=padding href=/ja/trdsql/27_config/index.html>trdsql config</a></li><li data-nav-id=/ja/trdsql/28_cross_join/index.html><a class=padding href=/ja/trdsql/28_cross_join/index.html>trdsql CROSS JOIN</a></li><li data-nav-id=/ja/trdsql/29_generate_series/index.html><a class=padding href=/ja/trdsql/29_generate_series/index.html>trdsql generate_series</a></li><li data-nav-id=/ja/trdsql/30_convert_log/index.html><a class=padding href=/ja/trdsql/30_convert_log/index.html>trdsql convert log</a></li><li data-nav-id=/ja/trdsql/31_rollup/index.html><a class=padding href=/ja/trdsql/31_rollup/index.html>trdsql 合計を行に追加する</a></li><li data-nav-id=/ja/trdsql/32_case/index.html><a class=padding href=/ja/trdsql/32_case/index.html>trdsql CASE式</a></li><li data-nav-id=/ja/trdsql/33_compression/index.html><a class=padding href=/ja/trdsql/33_compression/index.html>trdsql 圧縮ファイル</a></li><li data-nav-id=/ja/trdsql/34_output/index.html><a class=padding href=/ja/trdsql/34_output/index.html>trdsql output</a></li><li data-nav-id=/ja/trdsql/35_jq/index.html><a class=padding href=/ja/trdsql/35_jq/index.html>trdsql jq構文</a></li><li data-nav-id=/ja/trdsql/36_guesswidth/index.html><a class=padding href=/ja/trdsql/36_guesswidth/index.html>trdsql 固定幅を対象</a></li></ul></li><li data-nav-id=/ja/ov/index.html><input type=checkbox id=R-section-2eac1030f11272ef88f25827f775fb73 aria-controls=R-subsections-2eac1030f11272ef88f25827f775fb73><label for=R-section-2eac1030f11272ef88f25827f775fb73><i class="fas fa-chevron-down"></i><i class="fas fa-chevron-right"></i><span class=a11y-only>サブメニュー ov</span></label><a class=padding href=/ja/ov/index.html>ov</a><ul id=R-subsections-2eac1030f11272ef88f25827f775fb73 class="morespace collapsible-menu"><li data-nav-id=/ja/ov/psql/index.html><a class=padding href=/ja/ov/psql/index.html>psql</a></li><li data-nav-id=/ja/ov/git/index.html><a class=padding href=/ja/ov/git/index.html>git</a></li><li data-nav-id=/ja/ov/delta/index.html><a class=padding href=/ja/ov/delta/index.html>delta</a></li><li data-nav-id=/ja/ov/mysql/index.html><a class=padding href=/ja/ov/mysql/index.html>mysql</a></li><li data-nav-id=/ja/ov/pgcli/index.html><a class=padding href=/ja/ov/pgcli/index.html>pgcli</a></li><li data-nav-id=/ja/ov/mycli/index.html><a class=padding href=/ja/ov/mycli/index.html>mycli</a></li><li data-nav-id=/ja/ov/ps/index.html><a class=padding href=/ja/ov/ps/index.html>ps</a></li><li data-nav-id=/ja/ov/man/index.html><a class=padding href=/ja/ov/man/index.html>man</a></li><li data-nav-id=/ja/ov/procs/index.html><a class=padding href=/ja/ov/procs/index.html>procs</a></li><li data-nav-id=/ja/ov/top/index.html><a class=padding href=/ja/ov/top/index.html>top</a></li><li data-nav-id=/ja/ov/watch/index.html><a class=padding href=/ja/ov/watch/index.html>ovでファイル監視（ウォッチ）</a></li><li data-nav-id=/ja/ov/bat/index.html><a class=padding href=/ja/ov/bat/index.html>bat</a></li><li data-nav-id=/ja/ov/csv/index.html><a class=padding href=/ja/ov/csv/index.html>csvの表示</a></li><li data-nav-id=/ja/ov/markdown/index.html><a class=padding href=/ja/ov/markdown/index.html>markdown表示</a></li><li data-nav-id=/ja/ov/multifile/index.html><a class=padding href=/ja/ov/multifile/index.html>複数ファイル</a></li><li data-nav-id=/ja/ov/multicolor/index.html><a class=padding href=/ja/ov/multicolor/index.html>複数の単語を複数の色でハイライト</a></li><li data-nav-id=/ja/ov/speed/index.html><a class=padding href=/ja/ov/speed/index.html>大きなファイルを開く速度</a></li><li data-nav-id=/ja/ov/exec/index.html><a class=padding href=/ja/ov/exec/index.html>コマンド実行</a></li><li data-nav-id=/ja/ov/tail/index.html><a class=padding href=/ja/ov/tail/index.html>フォローモードの使い方</a></li><li data-nav-id=/ja/ov/section/index.html><a class=padding href=/ja/ov/section/index.html>セクションの使い方</a></li><li data-nav-id=/ja/ov/memory/index.html><a class=padding href=/ja/ov/memory/index.html>メモリ管理</a></li></ul></li><li data-nav-id=/ja/about/index.html><a class=padding href=/ja/about/index.html>About</a></li></ul></div><div id=R-shortcuts><div class="nav-title padding"></div><ul class=space><li><a class=padding href=/ja/categories/index.html><i class='fas fa-list'></i> カテゴリー</a></li><li><a class=padding href=/ja/tags/index.html><i class='fas fa-tags'></i> タグ</a></li></ul></div><div class="padding footermargin footerLangSwitch footerVariantSwitch footerVisitedLinks footerFooter showLangSwitch showFooter"></div><div id=R-menu-footer><hr class="padding default-animation footerLangSwitch footerVariantSwitch footerVisitedLinks footerFooter showLangSwitch showFooter"><div id=R-prefooter class="footerLangSwitch footerVariantSwitch footerVisitedLinks showLangSwitch"><ul><li id=R-select-language-container class="footerLangSwitch showLangSwitch"><div class="padding menu-control"><i class="fas fa-language fa-fw"></i>
-<span>&nbsp;</span><div class=control-style><label class=a11y-only for=R-select-language>言語</label>
-<select id=R-select-language onchange="location=baseUri+this.value"><option id=R-en value=/blog/cbind/index.html lang=en>English</option><option id=R-ja value=/ja/blog/cbind/index.html lang=ja selected>Japanese</option></select></div><div class=clear></div></div></li><li id=R-select-variant-container class=footerVariantSwitch><div class="padding menu-control"><i class="fas fa-paint-brush fa-fw"></i>
-<span>&nbsp;</span><div class=control-style><label class=a11y-only for=R-select-variant>テーマ</label>
-<select id=R-select-variant onchange=window.variants&&variants.changeVariant(this.value)><option id=R-my-custom-variant value=my-custom-variant selected>My Custom Variant</option></select></div><div class=clear></div></div><script>window.variants&&variants.markSelectedVariant()</script></li><li class=footerVisitedLinks><div class="padding menu-control"><i class="fas fa-history fa-fw"></i>
-<span>&nbsp;</span><div class=control-style><button onclick=clearHistory()>履歴削除</button></div><div class=clear></div></div></li></ul></div><div id=R-footer class="footerFooter showFooter"><style>#footer{font-size:.1.0rem;height:6.25rem;margin-left:auto;margin-right:auto;padding:2rem 1rem;text-align:center;min-width:14.375rem;max-width:18.75rem}#footer p{margin:0}</style><p><a href=https://github.com/noborus><i class="fab fa-github"></i>GitHub</a></p><p>Built with <a href=https://github.com/McShelby/hugo-theme-relearn title=love><i class="fas fa-heart"></i></a> by <a href=https://gohugo.io/>Hugo</a></p></div></div></div></aside><script src=/js/clipboard.min.js?1701122941 defer></script><script src=/js/perfect-scrollbar.min.js?1701122941 defer></script><script src=/js/theme.js?1701122941 defer></script></body></html>
+const ( // アクション名 actionQuit = &#34;quit&#34; ) var keyBind = map[string][]string{ // アクション名に対してキー文字列をマッピング（キー文字列は複数可能） actionQuit: {&#34;q&#34;, &#34;ctrl&#43;q&#34;}, } var actionHandlers = map[string]func(){ // アクション名に対してイベントハンドラをマッピング actionQuit: handleQuit, } // 終了のイベントハンドラ var quit = make(chan struct{}) var handleQuit = func() { close(quit) } func setKeyBind() (*cbind."/>
+
+
+  </head>
+  <body class="mobile-support html" data-url="/ja/blog/cbind/index.html">
+    <div id="R-body" class="default-animation">
+      <div id="R-body-overlay"></div>
+      <nav id="R-topbar">
+        <div class="topbar-wrapper">
+          <div class="topbar-sidebar-divider"></div>
+          <div class="topbar-area topbar-area-start" data-area="start">
+            <div class="topbar-button topbar-button-sidebar" data-content-empty="disable" data-width-s="show" data-width-m="hide" data-width-l="hide">
+              <button class="topbar-control" onclick="toggleNav()" type="button" title="メニュー (CTRL&#43;ALT&#43;n)">
+                <i class="fa-fw fas fa-bars"></i>
+              </button>
+            </div>
+            <div class="topbar-button topbar-button-toc" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show">
+              <button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="目次 (CTRL&#43;ALT&#43;t)">
+                <i class="fa-fw fas fa-list-alt"></i>
+              </button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper"><nav class="TableOfContents">
+  <ul>
+    <li><a href="#cbindとは">cbindとは？</a></li>
+    <li><a href="#tcellのキーイベント">tcellのキーイベント</a></li>
+    <li><a href="#cbindを使用">cbindを使用</a>
+      <ul>
+        <li><a href="#実際の使用例です">実際の使用例です</a></li>
+      </ul>
+    </li>
+    <li><a href="#全体のソース">全体のソース</a></li>
+    <li><a href="#cbindの使用例">cbindの使用例</a></li>
+    <li><a href="#履歴">履歴</a></li>
+  </ul>
+</nav>
+                </div>
+              </div>
+            </div>
+          </div>
+          <ol class="topbar-breadcrumbs breadcrumbs highlightable" itemscope itemtype="http://schema.org/BreadcrumbList"><li
+            itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement"><a itemprop="item" href="/ja/index.html"><span itemprop="name">Top</span></a><meta itemprop="position" content="1">&nbsp;>&nbsp;</li><li
+            itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement"><a itemprop="item" href="/ja/blog/index.html"><span itemprop="name">Blog(ブログ)</span></a><meta itemprop="position" content="2">&nbsp;>&nbsp;</li><li
+            itemscope itemtype="https://schema.org/ListItem" itemprop="itemListElement"><span itemprop="name">tcell/tviewでTUIを作るならキー割り当てにcbindを利用しよう</span><meta itemprop="position" content="3"></li>
+          </ol>
+          <div class="topbar-area topbar-area-end" data-area="end">
+            <div class="topbar-button topbar-button-prev" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show">
+              <a class="topbar-control" href="/ja/blog/sqlorder/index.html" title="SQLのORDER BY 列番号と式 (🡐)">
+                <i class="fa-fw fas fa-chevron-left"></i>
+              </a>
+            </div>
+            <div class="topbar-button topbar-button-next" data-content-empty="disable" data-width-s="show" data-width-m="show" data-width-l="show">
+              <a class="topbar-control" href="/ja/blog/ov_062/index.html" title="ov v0.6.2 (🡒)">
+                <i class="fa-fw fas fa-chevron-right"></i>
+              </a>
+            </div>
+            <div class="topbar-button topbar-button-more" data-content-empty="hide" data-width-s="show" data-width-m="show" data-width-l="show">
+              <button class="topbar-control" onclick="toggleTopbarFlyout(this)" type="button" title="更に">
+                <i class="fa-fw fas fa-ellipsis-v"></i>
+              </button>
+              <div class="topbar-content">
+                <div class="topbar-content-wrapper">
+                  <div class="topbar-area topbar-area-more" data-area="more">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+      <div id="R-main-overlay"></div>
+      <main id="R-body-inner" class="highlightable default" tabindex="-1">
+        <div class="flex-block-wrapper">
+          <article class="default">
+            <header class="headline">
+<div class=" taxonomy-tags term-list cstyle  tags" title="Tags" style="--VARIABLE-TAGS-BG-color: var(--INTERNAL-TAG-BG-color);">
+  <ul>
+    <li><a class="term-link" href="/ja/tags/cbind/index.html">cbind</a></li>
+    <li><a class="term-link" href="/ja/tags/go/index.html">go</a></li>
+    <li><a class="term-link" href="/ja/tags/tcell/index.html">tcell</a></li>
+    <li><a class="term-link" href="/ja/tags/tui/index.html">tui</a></li>
+  </ul>
+</div>
+            </header>
+<h1 id="tcelltviewでtuiを作るならキー割り当てにcbindを利用しよう">tcell/tviewでTUIを作るならキー割り当てにcbindを利用しよう</h1>
+<div class="c-time">
+    Posted on:
+    <time datetime="2020-10-27T10:00:00&#43;09:00">
+      2020年10月27日
+    </time>
+</div>
+
+
+
+<h2 id="cbindとは">cbindとは？</h2>
+<p><a href="https://code.rocketnine.space/tslocum/cbind" target="_blank">cbind</a>は<a href="https://github.com/gdamore/tcell" target="_blank">tcell</a>のキーイベントとイベントハンドラを結びつけるライブラリです。</p>
+<h2 id="tcellのキーイベント">tcellのキーイベント</h2>
+<p><a href="https://github.com/gdamore/tcell" target="_blank">tcell</a> ではキー入力がイベントの１つとして取得できます。
+<a href="https://github.com/rivo/tview" target="_blank">tview</a>でもtcellのイベントを使用しているので、同じ様にイベントとして取得します。</p>
+<p>tcellのキーイベントを取得するのは以下のように<code>switch case</code>でキーを判別して、イベントハンドラを呼び出すのが一般的です。</p>
+<div class="wrap-code highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span>	<span style="color:#a6e22e">ev</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">screen</span>.<span style="color:#a6e22e">PollEvent</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">switch</span> <span style="color:#a6e22e">ev</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ev</span>.(<span style="color:#66d9ef">type</span>) {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">case</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">tcell</span>.<span style="color:#a6e22e">EventKey</span>:
+</span></span><span style="display:flex;"><span>		    <span style="color:#66d9ef">switch</span> <span style="color:#a6e22e">ev</span>.<span style="color:#a6e22e">Key</span>() {
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">case</span> <span style="color:#a6e22e">tcell</span>.<span style="color:#a6e22e">KeyEscape</span>:
+</span></span><span style="display:flex;"><span>				close(<span style="color:#a6e22e">quit</span>)
+</span></span><span style="display:flex;"><span>				<span style="color:#66d9ef">return</span>
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">case</span> <span style="color:#a6e22e">tcell</span>.<span style="color:#a6e22e">KeyEnter</span>:
+</span></span><span style="display:flex;"><span>                <span style="color:#a6e22e">action</span>()
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">return</span>
+</span></span><span style="display:flex;"><span>    }</span></span></code></pre></div><p>ここの<code>tcell.KeyEscape</code>は constの数値として定義されています（キーボードに存在する英数字などの文字は<code>rune</code>で入ってきます）。
+キー割り当てが少ないうちは、このまま追加していけば機能を増やせるので分かりやすいですが、キー割り当てが多くなってくると以下のような問題が出てきます。</p>
+<ul>
+<li>修飾キー(CTRL、ALT&hellip;)が押された場合に動作が変わる場合はさらに分岐する</li>
+<li>キー割り当てをドキュメント化するのが大変になる</li>
+<li>キー割り当てのヘルプが必要になる</li>
+<li>キー割り当てを人によって変更したくなる</li>
+</ul>
+<p>ドキュメント化やヘルプはコードで実装した後、手間を掛けて書いていけばなんとか解決できますが、キー割り当ての変更に対応するには、元のままのコードでは不可能です。</p>
+<h2 id="cbindを使用">cbindを使用</h2>
+<p>そこで使用したいのが<a href="https://code.rocketnine.space/tslocum/cbind" target="_blank">cbind</a>です。</p>
+<p>cbind は <code>Set()</code>でキーの文字列といイベントハンドラを結びつけて登録できます。
+実際にキーイベントが起きたら、cbindに任せれば登録されていたイベントハンドラが実行されることになります。</p>
+<h3 id="実際の使用例です">実際の使用例です</h3>
+<p>キーの登録は、まず<code>cbind.NewConfiguration()</code>をしてConfigurationを作成します。
+そのConfigurationにキー文字列とハンドラを<code>Set(&quot;Alt+s&quot;, handleSave)</code>のように登録します。
+または、<code>Decode</code>でイベントキーに変換して、<code>SetRune</code>または<code>SetKey</code>で登録します。</p>
+<p>実際に登録するときには、キー文字列（<code>Alt+s</code>等）とイベントハンドラ（func）を直接結びつけるのではなく、アクション名（文字列）を介しておくと、ヘルプや設定ファイル化するときに便利です。</p>
+<p>アクション名とキー文字列のマップ(keyBind)とアクション名とイベントハンドラのマップ(actionHandlers)をあらかじめ定義しておいて<code>setKeyBind</code>で登録しています。</p>
+<div class="wrap-code highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">const</span> (
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// アクション名
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">actionQuit</span> = <span style="color:#e6db74">&#34;quit&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">keyBind</span> = <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>][]<span style="color:#66d9ef">string</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// アクション名に対してキー文字列をマッピング（キー文字列は複数可能）
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">actionQuit</span>: {<span style="color:#e6db74">&#34;q&#34;</span>, <span style="color:#e6db74">&#34;ctrl+q&#34;</span>},
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">actionHandlers</span> = <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">func</span>(){
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// アクション名に対してイベントハンドラをマッピング
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">actionQuit</span>: <span style="color:#a6e22e">handleQuit</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// 終了のイベントハンドラ
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">quit</span> = make(<span style="color:#66d9ef">chan</span> <span style="color:#66d9ef">struct</span>{})
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">handleQuit</span> = <span style="color:#66d9ef">func</span>() {
+</span></span><span style="display:flex;"><span>	close(<span style="color:#a6e22e">quit</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">setKeyBind</span>() (<span style="color:#f92672">*</span><span style="color:#a6e22e">cbind</span>.<span style="color:#a6e22e">Configuration</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">c</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">cbind</span>.<span style="color:#a6e22e">NewConfiguration</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">a</span>, <span style="color:#a6e22e">keys</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">keyBind</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// キーバインドのアクション名からイベントハンドラに変換
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#a6e22e">handler</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">actionHandlers</span>[<span style="color:#a6e22e">a</span>]
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">handler</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>, <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;[%s] unknown action&#34;</span>, <span style="color:#a6e22e">a</span>)
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">key</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">keys</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#a6e22e">key</span>, <span style="color:#a6e22e">wrapEventHandler</span>(<span style="color:#a6e22e">handler</span>)); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>				<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>, <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;failed to set keybind: %s&#34;</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>			}
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">c</span>, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// func(*tcell.EventKey) *tcell.EventKey という形式のため、
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// 引数、返り値を無しの関数を登録するためのラップ関数
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">wrapEventHandler</span>(<span style="color:#a6e22e">f</span> <span style="color:#66d9ef">func</span>()) <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">_</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">tcell</span>.<span style="color:#a6e22e">EventKey</span>) <span style="color:#f92672">*</span><span style="color:#a6e22e">tcell</span>.<span style="color:#a6e22e">EventKey</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">_</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">tcell</span>.<span style="color:#a6e22e">EventKey</span>) <span style="color:#f92672">*</span><span style="color:#a6e22e">tcell</span>.<span style="color:#a6e22e">EventKey</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">f</span>()
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div><p>keyBindがマップになっているのでアクション名に対するキー文字列を（設定ファイル等により）変更するだけで、キーバインドの変更が簡単に出来るようになります。</p>
+<p>イベントハンドラの実行はcbindの<code>Capture</code>にイベントを渡せば登録してあるイベントハンドラが実行されます。</p>
+<div class="wrap-code highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span>	<span style="color:#a6e22e">ev</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">screen</span>.<span style="color:#a6e22e">PollEvent</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">switch</span> <span style="color:#a6e22e">ev</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ev</span>.(<span style="color:#66d9ef">type</span>) {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">case</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">tcell</span>.<span style="color:#a6e22e">EventKey</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">Capture</span>(<span style="color:#a6e22e">ev</span>)
+</span></span><span style="display:flex;"><span>    }</span></span></code></pre></div><h2 id="全体のソース">全体のソース</h2>
+<div class="wrap-code highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;fmt&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;log&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;strings&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;code.rocketnine.space/tslocum/cbind&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;github.com/gdamore/tcell/v2&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;github.com/mattn/go-runewidth&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">const</span> (
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">actionQuit</span> = <span style="color:#e6db74">&#34;quit&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">keyBind</span> = <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>][]<span style="color:#66d9ef">string</span>{
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">actionQuit</span>: {<span style="color:#e6db74">&#34;q&#34;</span>, <span style="color:#e6db74">&#34;ctrl+q&#34;</span>},
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">actionHandlers</span> = <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">func</span>(){
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">actionQuit</span>: <span style="color:#a6e22e">handleQuit</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">quit</span> = make(<span style="color:#66d9ef">chan</span> <span style="color:#66d9ef">struct</span>{})
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">handleQuit</span> = <span style="color:#66d9ef">func</span>() {
+</span></span><span style="display:flex;"><span>	close(<span style="color:#a6e22e">quit</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">setKeyBind</span>() (<span style="color:#f92672">*</span><span style="color:#a6e22e">cbind</span>.<span style="color:#a6e22e">Configuration</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">c</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">cbind</span>.<span style="color:#a6e22e">NewConfiguration</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">a</span>, <span style="color:#a6e22e">keys</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">keyBind</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">handler</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">actionHandlers</span>[<span style="color:#a6e22e">a</span>]
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">handler</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>, <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;[%s] unknown action&#34;</span>, <span style="color:#a6e22e">a</span>)
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">key</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">keys</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#a6e22e">key</span>, <span style="color:#a6e22e">wrapEventHandler</span>(<span style="color:#a6e22e">handler</span>)); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>				<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>, <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;failed to set keybind: %s&#34;</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>			}
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">c</span>, <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">wrapEventHandler</span>(<span style="color:#a6e22e">f</span> <span style="color:#66d9ef">func</span>()) <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">_</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">tcell</span>.<span style="color:#a6e22e">EventKey</span>) <span style="color:#f92672">*</span><span style="color:#a6e22e">tcell</span>.<span style="color:#a6e22e">EventKey</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">_</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">tcell</span>.<span style="color:#a6e22e">EventKey</span>) <span style="color:#f92672">*</span><span style="color:#a6e22e">tcell</span>.<span style="color:#a6e22e">EventKey</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">f</span>()
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">screen</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">tcell</span>.<span style="color:#a6e22e">NewScreen</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> = <span style="color:#a6e22e">screen</span>.<span style="color:#a6e22e">Init</span>(); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">screen</span>.<span style="color:#a6e22e">Fini</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">c</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">setKeyBind</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Start application.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">str</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;[%s] %s&#34;</span>, <span style="color:#a6e22e">strings</span>.<span style="color:#a6e22e">Join</span>(<span style="color:#a6e22e">keyBind</span>[<span style="color:#a6e22e">actionQuit</span>], <span style="color:#e6db74">&#34;,&#34;</span>), <span style="color:#a6e22e">actionQuit</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">setContents</span>(<span style="color:#a6e22e">screen</span>, <span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">0</span>, <span style="color:#a6e22e">str</span>, <span style="color:#a6e22e">tcell</span>.<span style="color:#a6e22e">StyleDefault</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">screen</span>.<span style="color:#a6e22e">Show</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// Main routine.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#66d9ef">go</span> <span style="color:#66d9ef">func</span>() {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">for</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">ev</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">screen</span>.<span style="color:#a6e22e">PollEvent</span>()
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">switch</span> <span style="color:#a6e22e">ev</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ev</span>.(<span style="color:#66d9ef">type</span>) {
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">case</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">tcell</span>.<span style="color:#a6e22e">EventKey</span>:
+</span></span><span style="display:flex;"><span>				<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">Capture</span>(<span style="color:#a6e22e">ev</span>)
+</span></span><span style="display:flex;"><span>			}
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>	}()
+</span></span><span style="display:flex;"><span>	<span style="color:#f92672">&lt;-</span><span style="color:#a6e22e">quit</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">setContents</span>(<span style="color:#a6e22e">screen</span> <span style="color:#a6e22e">tcell</span>.<span style="color:#a6e22e">Screen</span>, <span style="color:#a6e22e">x</span> <span style="color:#66d9ef">int</span>, <span style="color:#a6e22e">y</span> <span style="color:#66d9ef">int</span>, <span style="color:#a6e22e">str</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">style</span> <span style="color:#a6e22e">tcell</span>.<span style="color:#a6e22e">Style</span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">r</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">str</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">screen</span>.<span style="color:#a6e22e">SetContent</span>(<span style="color:#a6e22e">x</span>, <span style="color:#a6e22e">y</span>, <span style="color:#a6e22e">r</span>, <span style="color:#66d9ef">nil</span>, <span style="color:#a6e22e">style</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">x</span> <span style="color:#f92672">+=</span> <span style="color:#a6e22e">runewidth</span>.<span style="color:#a6e22e">RuneWidth</span>(<span style="color:#a6e22e">r</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>}</span></span></code></pre></div><h2 id="cbindの使用例">cbindの使用例</h2>
+<p><a href="https://pkg.go.dev/code.rocketnine.space/tslocum/cbind?tab=importedby" target="_blank">pkg.go.devのImported By</a>に作者の方が実際に使用している例があるので、そちらを参考にすると良いでしょう。</p>
+<p>また、拙作<a href="https://github.com/noborus/ov" target="_blank">ov</a>でもcbindを使用して、キーバインドをカスタマイズ可能にしています。<a href="https://github.com/noborus/ov" target="_blank">こちらも</a>も参考にしてみてください。</p>
+<h2 id="履歴">履歴</h2>
+<ul>
+<li>2022/6/23 tcell/v2を対象に変更</li>
+</ul>
+
+            <footer class="footline">
+<div class=" taxonomy-categories term-list cstyle  " title="Categories" style="--VARIABLE-TAGS-BG-color: var(--INTERNAL-TAG-BG-color);">
+  <i class="fa-fw fas fa-layer-group"></i>
+  <ul>
+    <li><a class="term-link" href="/ja/categories/tui/index.html">tui</a></li>
+  </ul>
+</div>
+            </footer>
+          </article>
+        </div>
+      </main>
+    </div>
+    <aside id="R-sidebar" class="default-animation">
+      <div id="R-header-topbar" class="default-animation"></div>
+      <div id="R-header-wrapper" class="default-animation">
+        <div id="R-header" class="default-animation">
+<a id="logo" href="./index.html">
+    <style>
+        #sidebar a#logo {
+          display: flex;
+          align-items: center;
+          font-size: 1.3rem;
+          font-weight: 600;
+          color: #777;
+        }
+        #logo object {
+          margin-right: 0.1rem;
+        }
+  </style>
+   <img width="50" height="50" src="/images/logo.svg"></img>Noboru Saito’s site
+</a>
+        </div>
+        <div class="searchbox default-animation">
+          <i class="fas fa-search" title="検索 (CTRL+ALT+f)"></i>
+          <label class="a11y-only" for="R-search-by">検索</label>
+          <input data-search-input id="R-search-by" name="search-by" class="search-by" type="search" placeholder="検索...">
+          <button class="search-clear" type="button" data-search-clear="" title="検索をクリア"><i class="fas fa-times" title="検索をクリア"></i></button>
+        </div>
+        <script>
+          var contentLangs=['en', 'ja'];
+        </script>
+        <script src="/js/auto-complete.js?1701125644" defer></script>
+        <script src="/js/lunr/lunr.min.js?1701125644" defer></script>
+        <script src="/js/lunr/lunr.stemmer.support.min.js?1701125644" defer></script>
+        <script src="/js/lunr/lunr.multi.min.js?1701125644" defer></script>
+        <script src="/js/lunr/lunr.en.min.js?1701125644" defer></script>
+        <script src="/js/lunr/tinyseg.js?1701125644" defer></script>
+        <script src="/js/lunr/lunr.ja.min.js?1701125644" defer></script>
+        <script src="/js/search.js?1701125644" defer></script>
+      </div>
+      <div id="R-homelinks" class="default-animation homelinks">
+        <ul>
+          <li><a class="padding" href="/ja/index.html"><i class="fas fa-home"></i> Home</a></li>
+        </ul>
+        <hr class="padding">
+      </div>
+      <div id="R-content-wrapper" class="highlightable">
+        <div id="R-topics">
+          <ul class="enlarge morespace collapsible-menu">
+          <li data-nav-id="/ja/blog/index.html" class="parent "><input type="checkbox" id="R-section-b27ddda9d3ce7493d063281af5dfe780" aria-controls="R-subsections-b27ddda9d3ce7493d063281af5dfe780" checked><label for="R-section-b27ddda9d3ce7493d063281af5dfe780"><i class="fas fa-chevron-down"></i><i class="fas fa-chevron-right"></i><span class="a11y-only">サブメニュー Blog(ブログ)</span></label><a class="padding" href="/ja/blog/index.html">Blog(ブログ)</a><ul id="R-subsections-b27ddda9d3ce7493d063281af5dfe780" class="morespace collapsible-menu">
+          <li data-nav-id="/ja/blog/trdsql_0130/index.html" class=""><a class="padding" href="/ja/blog/trdsql_0130/index.html">trdsql v0.13.0</a></li>
+          <li data-nav-id="/ja/blog/ov_032_1/index.html" class=""><a class="padding" href="/ja/blog/ov_032_1/index.html">ov v0.32.1</a></li>
+          <li data-nav-id="/ja/blog/trdsql_0121/index.html" class=""><a class="padding" href="/ja/blog/trdsql_0121/index.html">trdsql v0.12.1</a></li>
+          <li data-nav-id="/ja/blog/trdsql_0120/index.html" class=""><a class="padding" href="/ja/blog/trdsql_0120/index.html">trdsql v0.12.0</a></li>
+          <li data-nav-id="/ja/blog/ov_032_0/index.html" class=""><a class="padding" href="/ja/blog/ov_032_0/index.html">ov v0.32.0</a></li>
+          <li data-nav-id="/ja/blog/ov_031_0/index.html" class=""><a class="padding" href="/ja/blog/ov_031_0/index.html">ov v0.31.0</a></li>
+          <li data-nav-id="/ja/blog/psql-pager/index.html" class=""><a class="padding" href="/ja/blog/psql-pager/index.html">psqlのPAGERを設定する</a></li>
+          <li data-nav-id="/ja/blog/ov_030_0/index.html" class=""><a class="padding" href="/ja/blog/ov_030_0/index.html">ov v0.30.0</a></li>
+          <li data-nav-id="/ja/blog/guesswidth/index.html" class=""><a class="padding" href="/ja/blog/guesswidth/index.html">幅指定フォーマットの幅を推測する</a></li>
+          <li data-nav-id="/ja/blog/trdsql_0111/index.html" class=""><a class="padding" href="/ja/blog/trdsql_0111/index.html">trdsql v0.11.1</a></li>
+          <li data-nav-id="/ja/blog/ov_015_0/index.html" class=""><a class="padding" href="/ja/blog/ov_015_0/index.html">ov v0.15.0</a></li>
+          <li data-nav-id="/ja/blog/ov_014_2/index.html" class=""><a class="padding" href="/ja/blog/ov_014_2/index.html">ov v0.14.2</a></li>
+          <li data-nav-id="/ja/blog/ov_014_1/index.html" class=""><a class="padding" href="/ja/blog/ov_014_1/index.html">ov v0.14.1</a></li>
+          <li data-nav-id="/ja/blog/ov_014_0/index.html" class=""><a class="padding" href="/ja/blog/ov_014_0/index.html">ov v0.14.0</a></li>
+          <li data-nav-id="/ja/blog/ov_012_0/index.html" class=""><a class="padding" href="/ja/blog/ov_012_0/index.html">ov v0.12.0</a></li>
+          <li data-nav-id="/ja/blog/column0/index.html" class=""><a class="padding" href="/ja/blog/column0/index.html">PostgreSQLで0列の扱い</a></li>
+          <li data-nav-id="/ja/blog/35_jq/index.html" class=""><a class="padding" href="/ja/blog/35_jq/index.html">trdsql jq構文</a></li>
+          <li data-nav-id="/ja/blog/ov_011_1/index.html" class=""><a class="padding" href="/ja/blog/ov_011_1/index.html">ov v0.11.1</a></li>
+          <li data-nav-id="/ja/blog/ov_011_0/index.html" class=""><a class="padding" href="/ja/blog/ov_011_0/index.html">ov v0.11.0</a></li>
+          <li data-nav-id="/ja/blog/sql/index.html" class=""><a class="padding" href="/ja/blog/sql/index.html">手っ取り遅くSQLを学ぶ</a></li>
+          <li data-nav-id="/ja/blog/trdsql_0100/index.html" class=""><a class="padding" href="/ja/blog/trdsql_0100/index.html">trdsql v0.10.0</a></li>
+          <li data-nav-id="/ja/blog/pgunconf/index.html" class=""><a class="padding" href="/ja/blog/pgunconf/index.html">第32回 PostgreSQLアンカンファレンス@オンラインで発表しました</a></li>
+          <li data-nav-id="/ja/blog/ov_010_0/index.html" class=""><a class="padding" href="/ja/blog/ov_010_0/index.html">ov v0.10.0</a></li>
+          <li data-nav-id="/ja/blog/trdsql_091/index.html" class=""><a class="padding" href="/ja/blog/trdsql_091/index.html">trdsql v0.9.1</a></li>
+          <li data-nav-id="/ja/blog/ov_096/index.html" class=""><a class="padding" href="/ja/blog/ov_096/index.html">ov v0.9.6</a></li>
+          <li data-nav-id="/ja/blog/jpug-doc-tool/index.html" class=""><a class="padding" href="/ja/blog/jpug-doc-tool/index.html">Jpug-doc-tool</a></li>
+          <li data-nav-id="/ja/blog/ov_095/index.html" class=""><a class="padding" href="/ja/blog/ov_095/index.html">ov v0.9.5</a></li>
+          <li data-nav-id="/ja/blog/trdsql_jq/index.html" class=""><a class="padding" href="/ja/blog/trdsql_jq/index.html">trdsql&#43;PostgreSQL 14でJSONを処理する</a></li>
+          <li data-nav-id="/ja/blog/ov_094/index.html" class=""><a class="padding" href="/ja/blog/ov_094/index.html">ov v0.9.4</a></li>
+          <li data-nav-id="/ja/blog/mdtsql_003/index.html" class=""><a class="padding" href="/ja/blog/mdtsql_003/index.html">mdtsql v0.0.3</a></li>
+          <li data-nav-id="/ja/blog/pgsp/index.html" class=""><a class="padding" href="/ja/blog/pgsp/index.html">pgsp</a></li>
+          <li data-nav-id="/ja/blog/trdsql_090/index.html" class=""><a class="padding" href="/ja/blog/trdsql_090/index.html">trdsql v0.9.0</a></li>
+          <li data-nav-id="/ja/blog/ov_090/index.html" class=""><a class="padding" href="/ja/blog/ov_090/index.html">ov v0.9.0</a></li>
+          <li data-nav-id="/ja/blog/ov_081/index.html" class=""><a class="padding" href="/ja/blog/ov_081/index.html">ov v0.8.1</a></li>
+          <li data-nav-id="/ja/blog/trdsql_080/index.html" class=""><a class="padding" href="/ja/blog/trdsql_080/index.html">trdsql v0.8.0</a></li>
+          <li data-nav-id="/ja/blog/ov_080/index.html" class=""><a class="padding" href="/ja/blog/ov_080/index.html">ov v0.8.0</a></li>
+          <li data-nav-id="/ja/blog/go_tui2020/index.html" class=""><a class="padding" href="/ja/blog/go_tui2020/index.html">goのTUIについて2020年最終版</a></li>
+          <li data-nav-id="/ja/blog/ov_070/index.html" class=""><a class="padding" href="/ja/blog/ov_070/index.html">ov v0.7.0</a></li>
+          <li data-nav-id="/ja/blog/sqlorder/index.html" class=""><a class="padding" href="/ja/blog/sqlorder/index.html">SQLのORDER BY 列番号と式</a></li>
+          <li data-nav-id="/ja/blog/cbind/index.html" class="active"><a class="padding" href="/ja/blog/cbind/index.html">tcell/tviewでTUIを作るならキー割り当てにcbindを利用しよう</a></li>
+          <li data-nav-id="/ja/blog/ov_062/index.html" class=""><a class="padding" href="/ja/blog/ov_062/index.html">ov v0.6.2</a></li>
+          <li data-nav-id="/ja/blog/ov_050/index.html" class=""><a class="padding" href="/ja/blog/ov_050/index.html">ov v0.5.0</a></li>
+          <li data-nav-id="/ja/blog/ov_020/index.html" class=""><a class="padding" href="/ja/blog/ov_020/index.html">ov v0.2.0</a></li>
+          <li data-nav-id="/ja/blog/tcell_02/index.html" class=""><a class="padding" href="/ja/blog/tcell_02/index.html">tcellについて2</a></li>
+          <li data-nav-id="/ja/blog/tcell_01/index.html" class=""><a class="padding" href="/ja/blog/tcell_01/index.html">tcellについて</a></li>
+          <li data-nav-id="/ja/blog/go_tui/index.html" class=""><a class="padding" href="/ja/blog/go_tui/index.html">goのTUIについて</a></li>
+          <li data-nav-id="/ja/blog/ov_013/index.html" class=""><a class="padding" href="/ja/blog/ov_013/index.html">ov v0.1.3</a></li>
+          <li data-nav-id="/ja/blog/oviewer/index.html" class=""><a class="padding" href="/ja/blog/oviewer/index.html">ov</a></li>
+          <li data-nav-id="/ja/blog/runewidth/index.html" class=""><a class="padding" href="/ja/blog/runewidth/index.html">GoのTUIで表示が崩れる場合</a></li>
+          <li data-nav-id="/ja/blog/trdsql_075/index.html" class=""><a class="padding" href="/ja/blog/trdsql_075/index.html">trdsql 0.7.5</a></li>
+          <li data-nav-id="/ja/blog/34_output/index.html" class=""><a class="padding" href="/ja/blog/34_output/index.html">trdsql output</a></li>
+          <li data-nav-id="/ja/blog/33_compression/index.html" class=""><a class="padding" href="/ja/blog/33_compression/index.html">trdsql 圧縮ファイル</a></li>
+          <li data-nav-id="/ja/blog/mysql-load/index.html" class=""><a class="padding" href="/ja/blog/mysql-load/index.html">MySQL の LOAD DATA INFILE (go)</a></li>
+          <li data-nav-id="/ja/blog/trdsql_074/index.html" class=""><a class="padding" href="/ja/blog/trdsql_074/index.html">trdsql 0.7.4</a></li>
+          <li data-nav-id="/ja/blog/32_case/index.html" class=""><a class="padding" href="/ja/blog/32_case/index.html">trdsql CASE式</a></li>
+          <li data-nav-id="/ja/blog/31_rollup/index.html" class=""><a class="padding" href="/ja/blog/31_rollup/index.html">trdsql 合計を行に追加する</a></li>
+          <li data-nav-id="/ja/blog/30_convert_log/index.html" class=""><a class="padding" href="/ja/blog/30_convert_log/index.html">trdsql convert log</a></li>
+          <li data-nav-id="/ja/blog/29_generate_series/index.html" class=""><a class="padding" href="/ja/blog/29_generate_series/index.html">trdsql generate_series</a></li>
+          <li data-nav-id="/ja/blog/28_cross_join/index.html" class=""><a class="padding" href="/ja/blog/28_cross_join/index.html">trdsql CROSS JOIN</a></li>
+          <li data-nav-id="/ja/blog/27_config/index.html" class=""><a class="padding" href="/ja/blog/27_config/index.html">trdsql config</a></li>
+          <li data-nav-id="/ja/blog/26_file_sql/index.html" class=""><a class="padding" href="/ja/blog/26_file_sql/index.html">trdsql SQLファイル指定</a></li>
+          <li data-nav-id="/ja/blog/25_library/index.html" class=""><a class="padding" href="/ja/blog/25_library/index.html">trdsql ライブラリ使用</a></li>
+          <li data-nav-id="/ja/blog/24_graph/index.html" class=""><a class="padding" href="/ja/blog/24_graph/index.html">trdsql グラフ</a></li>
+          <li data-nav-id="/ja/blog/23_except/index.html" class=""><a class="padding" href="/ja/blog/23_except/index.html">trdsql 差分、比較</a></li>
+          <li data-nav-id="/ja/blog/22_json_output/index.html" class=""><a class="padding" href="/ja/blog/22_json_output/index.html">trdsql JSON出力</a></li>
+          <li data-nav-id="/ja/blog/21_json_parse/index.html" class=""><a class="padding" href="/ja/blog/21_json_parse/index.html">trdsql JSON解析</a></li>
+          <li data-nav-id="/ja/blog/20_date/index.html" class=""><a class="padding" href="/ja/blog/20_date/index.html">trdsql 日付・時刻処理</a></li>
+          <li data-nav-id="/ja/blog/19_window/index.html" class=""><a class="padding" href="/ja/blog/19_window/index.html">trdsql Window関数</a></li>
+          <li data-nav-id="/ja/blog/18_edit_columns/index.html" class=""><a class="padding" href="/ja/blog/18_edit_columns/index.html">trdsql 列の編集</a></li>
+          <li data-nav-id="/ja/blog/17_file_table/index.html" class=""><a class="padding" href="/ja/blog/17_file_table/index.html">trdsql ファイルとテーブルのJOIN</a></li>
+          <li data-nav-id="/ja/blog/16_join/index.html" class=""><a class="padding" href="/ja/blog/16_join/index.html">trdsql JOIN</a></li>
+          <li data-nav-id="/ja/blog/15_import/index.html" class=""><a class="padding" href="/ja/blog/15_import/index.html">trdsql DBインポート</a></li>
+          <li data-nav-id="/ja/blog/14_sqlite3/index.html" class=""><a class="padding" href="/ja/blog/14_sqlite3/index.html">trdsql SQLite3エンジンの使用</a></li>
+          <li data-nav-id="/ja/blog/13_mysql/index.html" class=""><a class="padding" href="/ja/blog/13_mysql/index.html">trdsql MySQLエンジンの使用</a></li>
+          <li data-nav-id="/ja/blog/12_postgres/index.html" class=""><a class="padding" href="/ja/blog/12_postgres/index.html">trdsql PostgreSQLエンジンの使用</a></li>
+          <li data-nav-id="/ja/blog/11_summary/index.html" class=""><a class="padding" href="/ja/blog/11_summary/index.html">trdsql 処理の概要</a></li>
+          <li data-nav-id="/ja/blog/10_stdin/index.html" class=""><a class="padding" href="/ja/blog/10_stdin/index.html">trdsql 標準入力</a></li>
+          <li data-nav-id="/ja/blog/09_wildcard/index.html" class=""><a class="padding" href="/ja/blog/09_wildcard/index.html">trdsql ワイルドカード、圧縮ファイル</a></li>
+          <li data-nav-id="/ja/blog/08_log/index.html" class=""><a class="padding" href="/ja/blog/08_log/index.html">trdsql Log集計</a></li>
+          <li data-nav-id="/ja/blog/07_group/index.html" class=""><a class="padding" href="/ja/blog/07_group/index.html">trdsql GROUP集計</a></li>
+          <li data-nav-id="/ja/blog/06_calculation/index.html" class=""><a class="padding" href="/ja/blog/06_calculation/index.html">trdsql 集計計算</a></li>
+          <li data-nav-id="/ja/blog/05_aggregate/index.html" class=""><a class="padding" href="/ja/blog/05_aggregate/index.html">trdsql 集計</a></li>
+          <li data-nav-id="/ja/blog/04_sql2/index.html" class=""><a class="padding" href="/ja/blog/04_sql2/index.html">trdsql 簡単なSQL その２</a></li>
+          <li data-nav-id="/ja/blog/03_sql/index.html" class=""><a class="padding" href="/ja/blog/03_sql/index.html">trdsql 簡単なSQL</a></li>
+          <li data-nav-id="/ja/blog/02_convert/index.html" class=""><a class="padding" href="/ja/blog/02_convert/index.html">trdsql ファイルフォーマット変換</a></li>
+          <li data-nav-id="/ja/blog/01_install/index.html" class=""><a class="padding" href="/ja/blog/01_install/index.html">trdsql インストール</a></li></ul></li>
+          <li data-nav-id="/ja/trdsql/index.html" class=""><input type="checkbox" id="R-section-2cca1cccbfcacfa7fc048280484c6643" aria-controls="R-subsections-2cca1cccbfcacfa7fc048280484c6643"><label for="R-section-2cca1cccbfcacfa7fc048280484c6643"><i class="fas fa-chevron-down"></i><i class="fas fa-chevron-right"></i><span class="a11y-only">サブメニュー trdsql</span></label><a class="padding" href="/ja/trdsql/index.html">trdsql</a><ul id="R-subsections-2cca1cccbfcacfa7fc048280484c6643" class="morespace collapsible-menu">
+          <li data-nav-id="/ja/trdsql/01_install/index.html" class=""><a class="padding" href="/ja/trdsql/01_install/index.html">trdsql インストール</a></li>
+          <li data-nav-id="/ja/trdsql/02_convert/index.html" class=""><a class="padding" href="/ja/trdsql/02_convert/index.html">trdsql ファイルフォーマット変換</a></li>
+          <li data-nav-id="/ja/trdsql/03_sql/index.html" class=""><a class="padding" href="/ja/trdsql/03_sql/index.html">trdsql 簡単なSQL</a></li>
+          <li data-nav-id="/ja/trdsql/04_sql2/index.html" class=""><a class="padding" href="/ja/trdsql/04_sql2/index.html">trdsql 簡単なSQL その２</a></li>
+          <li data-nav-id="/ja/trdsql/05_aggregate/index.html" class=""><a class="padding" href="/ja/trdsql/05_aggregate/index.html">trdsql 集計</a></li>
+          <li data-nav-id="/ja/trdsql/06_calculation/index.html" class=""><a class="padding" href="/ja/trdsql/06_calculation/index.html">trdsql 集計計算</a></li>
+          <li data-nav-id="/ja/trdsql/07_group/index.html" class=""><a class="padding" href="/ja/trdsql/07_group/index.html">trdsql GROUP集計</a></li>
+          <li data-nav-id="/ja/trdsql/08_log/index.html" class=""><a class="padding" href="/ja/trdsql/08_log/index.html">trdsql Log集計</a></li>
+          <li data-nav-id="/ja/trdsql/09_wildcard/index.html" class=""><a class="padding" href="/ja/trdsql/09_wildcard/index.html">trdsql ワイルドカード、圧縮ファイル</a></li>
+          <li data-nav-id="/ja/trdsql/10_stdin/index.html" class=""><a class="padding" href="/ja/trdsql/10_stdin/index.html">trdsql 標準入力</a></li>
+          <li data-nav-id="/ja/trdsql/11_summary/index.html" class=""><a class="padding" href="/ja/trdsql/11_summary/index.html">trdsql 処理の概要</a></li>
+          <li data-nav-id="/ja/trdsql/12_postgres/index.html" class=""><a class="padding" href="/ja/trdsql/12_postgres/index.html">trdsql PostgreSQLエンジンの使用</a></li>
+          <li data-nav-id="/ja/trdsql/13_mysql/index.html" class=""><a class="padding" href="/ja/trdsql/13_mysql/index.html">trdsql MySQLエンジンの使用</a></li>
+          <li data-nav-id="/ja/trdsql/14_sqlite3/index.html" class=""><a class="padding" href="/ja/trdsql/14_sqlite3/index.html">trdsql SQLite3エンジンの使用</a></li>
+          <li data-nav-id="/ja/trdsql/15_import/index.html" class=""><a class="padding" href="/ja/trdsql/15_import/index.html">trdsql DBインポート</a></li>
+          <li data-nav-id="/ja/trdsql/16_join/index.html" class=""><a class="padding" href="/ja/trdsql/16_join/index.html">trdsql JOIN</a></li>
+          <li data-nav-id="/ja/trdsql/17_file_table/index.html" class=""><a class="padding" href="/ja/trdsql/17_file_table/index.html">trdsql ファイルとテーブルのJOIN</a></li>
+          <li data-nav-id="/ja/trdsql/18_edit_columns/index.html" class=""><a class="padding" href="/ja/trdsql/18_edit_columns/index.html">trdsql 列の編集</a></li>
+          <li data-nav-id="/ja/trdsql/19_window/index.html" class=""><a class="padding" href="/ja/trdsql/19_window/index.html">trdsql Window関数</a></li>
+          <li data-nav-id="/ja/trdsql/20_date/index.html" class=""><a class="padding" href="/ja/trdsql/20_date/index.html">trdsql 日付・時刻処理</a></li>
+          <li data-nav-id="/ja/trdsql/21_json_parse/index.html" class=""><a class="padding" href="/ja/trdsql/21_json_parse/index.html">trdsql JSON解析</a></li>
+          <li data-nav-id="/ja/trdsql/22_json_output/index.html" class=""><a class="padding" href="/ja/trdsql/22_json_output/index.html">trdsql JSON出力</a></li>
+          <li data-nav-id="/ja/trdsql/23_except/index.html" class=""><a class="padding" href="/ja/trdsql/23_except/index.html">trdsql 差分、比較</a></li>
+          <li data-nav-id="/ja/trdsql/24_graph/index.html" class=""><a class="padding" href="/ja/trdsql/24_graph/index.html">trdsql グラフ</a></li>
+          <li data-nav-id="/ja/trdsql/25_library/index.html" class=""><a class="padding" href="/ja/trdsql/25_library/index.html">trdsql ライブラリ使用</a></li>
+          <li data-nav-id="/ja/trdsql/26_file_sql/index.html" class=""><a class="padding" href="/ja/trdsql/26_file_sql/index.html">trdsql SQLファイル指定</a></li>
+          <li data-nav-id="/ja/trdsql/27_config/index.html" class=""><a class="padding" href="/ja/trdsql/27_config/index.html">trdsql config</a></li>
+          <li data-nav-id="/ja/trdsql/28_cross_join/index.html" class=""><a class="padding" href="/ja/trdsql/28_cross_join/index.html">trdsql CROSS JOIN</a></li>
+          <li data-nav-id="/ja/trdsql/29_generate_series/index.html" class=""><a class="padding" href="/ja/trdsql/29_generate_series/index.html">trdsql generate_series</a></li>
+          <li data-nav-id="/ja/trdsql/30_convert_log/index.html" class=""><a class="padding" href="/ja/trdsql/30_convert_log/index.html">trdsql convert log</a></li>
+          <li data-nav-id="/ja/trdsql/31_rollup/index.html" class=""><a class="padding" href="/ja/trdsql/31_rollup/index.html">trdsql 合計を行に追加する</a></li>
+          <li data-nav-id="/ja/trdsql/32_case/index.html" class=""><a class="padding" href="/ja/trdsql/32_case/index.html">trdsql CASE式</a></li>
+          <li data-nav-id="/ja/trdsql/33_compression/index.html" class=""><a class="padding" href="/ja/trdsql/33_compression/index.html">trdsql 圧縮ファイル</a></li>
+          <li data-nav-id="/ja/trdsql/34_output/index.html" class=""><a class="padding" href="/ja/trdsql/34_output/index.html">trdsql output</a></li>
+          <li data-nav-id="/ja/trdsql/35_jq/index.html" class=""><a class="padding" href="/ja/trdsql/35_jq/index.html">trdsql jq構文</a></li>
+          <li data-nav-id="/ja/trdsql/36_guesswidth/index.html" class=""><a class="padding" href="/ja/trdsql/36_guesswidth/index.html">trdsql 固定幅を対象</a></li></ul></li>
+          <li data-nav-id="/ja/ov/index.html" class=""><input type="checkbox" id="R-section-2eac1030f11272ef88f25827f775fb73" aria-controls="R-subsections-2eac1030f11272ef88f25827f775fb73"><label for="R-section-2eac1030f11272ef88f25827f775fb73"><i class="fas fa-chevron-down"></i><i class="fas fa-chevron-right"></i><span class="a11y-only">サブメニュー ov</span></label><a class="padding" href="/ja/ov/index.html">ov</a><ul id="R-subsections-2eac1030f11272ef88f25827f775fb73" class="morespace collapsible-menu">
+          <li data-nav-id="/ja/ov/psql/index.html" class=""><a class="padding" href="/ja/ov/psql/index.html">psql</a></li>
+          <li data-nav-id="/ja/ov/git/index.html" class=""><a class="padding" href="/ja/ov/git/index.html">git</a></li>
+          <li data-nav-id="/ja/ov/delta/index.html" class=""><a class="padding" href="/ja/ov/delta/index.html">delta</a></li>
+          <li data-nav-id="/ja/ov/mysql/index.html" class=""><a class="padding" href="/ja/ov/mysql/index.html">mysql</a></li>
+          <li data-nav-id="/ja/ov/pgcli/index.html" class=""><a class="padding" href="/ja/ov/pgcli/index.html">pgcli</a></li>
+          <li data-nav-id="/ja/ov/mycli/index.html" class=""><a class="padding" href="/ja/ov/mycli/index.html">mycli</a></li>
+          <li data-nav-id="/ja/ov/ps/index.html" class=""><a class="padding" href="/ja/ov/ps/index.html">ps</a></li>
+          <li data-nav-id="/ja/ov/man/index.html" class=""><a class="padding" href="/ja/ov/man/index.html">man</a></li>
+          <li data-nav-id="/ja/ov/procs/index.html" class=""><a class="padding" href="/ja/ov/procs/index.html">procs</a></li>
+          <li data-nav-id="/ja/ov/top/index.html" class=""><a class="padding" href="/ja/ov/top/index.html">top</a></li>
+          <li data-nav-id="/ja/ov/watch/index.html" class=""><a class="padding" href="/ja/ov/watch/index.html">ovでファイル監視（ウォッチ）</a></li>
+          <li data-nav-id="/ja/ov/bat/index.html" class=""><a class="padding" href="/ja/ov/bat/index.html">bat</a></li>
+          <li data-nav-id="/ja/ov/csv/index.html" class=""><a class="padding" href="/ja/ov/csv/index.html">csvの表示</a></li>
+          <li data-nav-id="/ja/ov/markdown/index.html" class=""><a class="padding" href="/ja/ov/markdown/index.html">markdown表示</a></li>
+          <li data-nav-id="/ja/ov/multifile/index.html" class=""><a class="padding" href="/ja/ov/multifile/index.html">複数ファイル</a></li>
+          <li data-nav-id="/ja/ov/multicolor/index.html" class=""><a class="padding" href="/ja/ov/multicolor/index.html">複数の単語を複数の色でハイライト</a></li>
+          <li data-nav-id="/ja/ov/speed/index.html" class=""><a class="padding" href="/ja/ov/speed/index.html">大きなファイルを開く速度</a></li>
+          <li data-nav-id="/ja/ov/exec/index.html" class=""><a class="padding" href="/ja/ov/exec/index.html">コマンド実行</a></li>
+          <li data-nav-id="/ja/ov/tail/index.html" class=""><a class="padding" href="/ja/ov/tail/index.html">フォローモードの使い方</a></li>
+          <li data-nav-id="/ja/ov/section/index.html" class=""><a class="padding" href="/ja/ov/section/index.html">セクションの使い方</a></li>
+          <li data-nav-id="/ja/ov/memory/index.html" class=""><a class="padding" href="/ja/ov/memory/index.html">メモリ管理</a></li></ul></li>
+          <li data-nav-id="/ja/about/index.html" class=""><a class="padding" href="/ja/about/index.html">About</a></li>
+          </ul>
+        </div>
+        <div id="R-shortcuts">
+          <div class="nav-title padding"></div>
+          <ul class="space">
+            <li><a class="padding" href="/ja/categories/index.html"><i class='fas fa-list'></i> カテゴリー</a></li>
+            <li><a class="padding" href="/ja/tags/index.html"><i class='fas fa-tags'></i> タグ</a></li>
+          </ul>
+        </div>
+        <div class="padding footermargin footerLangSwitch footerVariantSwitch footerVisitedLinks footerFooter showLangSwitch showFooter"></div>
+        <div id="R-menu-footer">
+          <hr class="padding default-animation footerLangSwitch footerVariantSwitch footerVisitedLinks footerFooter showLangSwitch showFooter">
+          <div id="R-prefooter" class="footerLangSwitch footerVariantSwitch footerVisitedLinks showLangSwitch">
+            <ul>
+              <li id="R-select-language-container" class="footerLangSwitch showLangSwitch">
+                <div class="padding menu-control">
+                  <i class="fas fa-language fa-fw"></i>
+                  <span>&nbsp;</span>
+                  <div class="control-style">
+                    <label class="a11y-only" for="R-select-language">言語</label>
+                    <select id="R-select-language" onchange="location = baseUri + this.value;">
+                      <option id="R-en" value="/blog/cbind/index.html" lang="en">English</option>
+                      <option id="R-ja" value="/ja/blog/cbind/index.html" lang="ja" selected>Japanese</option>
+                    </select>
+                  </div>
+                  <div class="clear"></div>
+                </div>
+              </li>
+              <li id="R-select-variant-container" class="footerVariantSwitch">
+                <div class="padding menu-control">
+                  <i class="fas fa-paint-brush fa-fw"></i>
+                  <span>&nbsp;</span>
+                  <div class="control-style">
+                    <label class="a11y-only" for="R-select-variant">テーマ</label>
+                    <select id="R-select-variant" onchange="window.variants && variants.changeVariant( this.value );">
+                      <option id="R-my-custom-variant" value="my-custom-variant" selected>My Custom Variant</option>
+                    </select>
+                  </div>
+                  <div class="clear"></div>
+                </div>
+                <script>window.variants && variants.markSelectedVariant();</script>
+              </li>
+              <li class="footerVisitedLinks">
+                <div class="padding menu-control">
+                  <i class="fas fa-history fa-fw"></i>
+                  <span>&nbsp;</span>
+                  <div class="control-style">
+                    <button onclick="clearHistory();">履歴削除</button>
+                  </div>
+                  <div class="clear"></div>
+                </div>
+              </li>
+            </ul>
+          </div>
+          <div id="R-footer" class="footerFooter showFooter"><style>
+	#footer {
+	  font-size: .1.0rem;
+	  height: 6.25rem;
+	  margin-left: auto;
+	  margin-right: auto;
+	  padding: 2rem 1rem;
+	  text-align: center;
+	  min-width: 14.375rem;
+	  max-width: 18.75rem;
+	}
+	#footer p {
+	  margin: 0;
+	}
+  </style>
+  		<p><a href="https://github.com/noborus"><i class="fab fa-github"></i>GitHub</a></p>
+	    <p>Built with <a href="https://github.com/McShelby/hugo-theme-relearn" title="love"><i class="fas fa-heart"></i></a> by <a href="https://gohugo.io/">Hugo</a></p>
+          </div>
+        </div>
+      </div>
+    </aside>
+    <script src="/js/clipboard.min.js?1701125644" defer></script>
+    <script src="/js/perfect-scrollbar.min.js?1701125644" defer></script>
+    <script src="/js/theme.js?1701125644" defer></script>
+  </body>
+</html>
