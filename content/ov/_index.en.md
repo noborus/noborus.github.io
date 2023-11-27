@@ -4,7 +4,7 @@ title = "ov - Feature-rich pager"
 date = "2023-06-08"
 tags = "ov"
 weight = 3
-menuTitle = "ov"
+linktitle = "ov"
 +++
 
 [en | [Ja](/ja/ov/)]

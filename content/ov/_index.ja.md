@@ -4,7 +4,7 @@ title = "ov - 機能豊富なページャー"
 date = "2023-06-08"
 tags = "ov"
 weight = 3
-menuTitle = "ov"
+linktitle = "ov"
 +++
 [ [en](/ov/) | Ja ]
 [![ov](ov.gif)](https://github.com/noborus/ov)
