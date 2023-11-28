@@ -88,4 +88,4 @@ trdsql -oz zst "SELECT * FROM testdata/test.csv" > test.csv.zst
 
 また`-out ファイル名`ではファイル名から推測して出力する機能があります。
 
-詳細は[ファイル名を指定しての出力](../34_output)を参照して下さい。
+詳細は[ファイル名を指定しての出力](/trdsql/34_output)を参照して下さい。

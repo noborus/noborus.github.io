@@ -16,7 +16,7 @@ categories = [
 
 ## SetContent()
 
-[goのTUIについて](../go_tui)で書いたように[tcell](https://github.com/gdamore/tcell)のSetContent()は1文字設置していくのでASCIIの範囲内だと簡単ですが、Unicodeの世界では注意すべき点があります。
+[goのTUIについて](/blog/go_tui)で書いたように[tcell](https://github.com/gdamore/tcell)のSetContent()は1文字設置していくのでASCIIの範囲内だと簡単ですが、Unicodeの世界では注意すべき点があります。
 
 まず日本語などの全角幅の文字と半角幅の文字が混在すると全角幅のときには、次の文字は1つとばして設置するといったことが必要になります。
 
@@ -70,7 +70,7 @@ func main() {
 
 また、`runewidth.RuneWidth()`で、0幅と出る文字の中にはタブ（`\t`）等、アプリケーションによって判断が変わる文字もあります。
 
-さらに [GoのTUIで表示が崩れる場合](../runewidth)で書いたように[go-runewidth](https://github.com/mattn/go-runewidth)では、曖昧幅がロケールや環境変数`RUNEWIDTH_EASTASIAN`で変わる文字幅があるので注意が必要です。
+さらに [GoのTUIで表示が崩れる場合](/blog/runewidth)で書いたように[go-runewidth](https://github.com/mattn/go-runewidth)では、曖昧幅がロケールや環境変数`RUNEWIDTH_EASTASIAN`で変わる文字幅があるので注意が必要です。
 
 ### Style
 

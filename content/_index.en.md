@@ -191,16 +191,6 @@ A repository for translating PostgreSQL manuals.
   * [github](https://github.com/pgsql-jp/pgsql-jp.github.io)
 * [taiyaku](https://github.com/pgsql-jp/taiyaku) PostgreSQL Manual Bilingual Collection
 
-#### test version
-
-Updated irregularly. There is an experimental change that has not been decided on.
-
-[CSS sample](css/html)
-
-last-updated: 2019-08-06 15:01:23 JST
-
-[Test PDF](test/postgres-A4.pdf)
-
 ---
 
 <iframe src="https://github.com/sponsors/noborus/card" title="Sponsor noborus" height="225" width="600" style="border: 0;"></iframe>

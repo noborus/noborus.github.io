@@ -16,8 +16,8 @@ categories = [
 
 ## これまで
 
-1. [goのTUIについて](../go_tui)
-2. [tcellについて](../tcell_01)
+1. [goのTUIについて](/blog/go_tui)
+2. [tcellについて](/blog/tcell_01)
 
 ## イベント
 

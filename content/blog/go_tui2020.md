@@ -17,7 +17,7 @@ categories = [
 
 ## 概要
 
-[goのTUIについて](../go_tui)の2020年の最終更新版です。
+[goのTUIについて](/blog/go_tui)の2020年の最終更新版です。
 
 goでTUI(text user interface)を作成する場合にライブラリを使用するのが一般的です。
 
