@@ -41,7 +41,7 @@ var relearn_search_index = [
   {
     "breadcrumb": "Top \u003e ov - 機能豊富なページャー",
     "content": "ovでgitのlogを見やすくする gitのlogを見やすくする工夫はいろんなところで紹介されていますが、gitの設定等により表示を変更する方法にとどまります。 gitの出力をセクション区切りで分割することで、より使いやすくなります。 また、それに合わせてjump-targetを\"section\"しておくことをおすすめします。 以下はgitの推奨設定例です。\n[pager] diff = ov -F --section-delimiter \"^diff\" --section-header\" log = ov -F --section-delimiter \"^commit\" --jump-target \"section\"（--jump-target \"section\"はお好みで追加してください）\ngit log git logはcommit毎に区切られます。 上記の設定によりcommit毎に移動できます。\ngit diff git diffはdiffまたはファイル毎に区切られます。 上記の設定によりdiff毎に移動できます。\nさらに --section-headerを指定することで、diffのファイル名を表示し続けられます。\n検索 上記の設定により検索したときの移動がコミット単位で表示するようになります。 通常は検索結果が一番上に表示するため、途中の行であった場合はさかのぼる必要がありますが、コミットの先頭から表示されます。\n",
-    "description": "",
+    "description": "ovでgitのlogを見やすくする",
     "tags": [
       "ov"
     ],
@@ -81,7 +81,7 @@ var relearn_search_index = [
   {
     "breadcrumb": "Top \u003e ov - 機能豊富なページャー",
     "content": "deltaはpagerをサポートしています。\ndeltaはgitのpagerとしてよく指定されますが、pagerは実際にはdelta内部から呼び出されます。\nしたがって、deltaの設定はgitconfigに書いて指定することが多いです。 以下はgitconfigの設定例です。\n[core] pager = delta [delta] navigate = true side-by-side = true file-style = yellow[delta]のnavigate = true はlessを使用するときにn/Nで移動できるようにするための設定ですが、 この設定により必要な場所をマークが付きます。\novではこのマークを使用して環境変数DELTA_PAGERをセットします。\nexport DELTA_PAGER=\"ov --section-delimiter '^(commit|added:|removed:|renamed:|Δ)' --section-header --pattern '•'\"これらの設定を組み合わせることで、ファイル毎にファイル(space key of ^ key)、diff毎にn/N keyで移動できます。 さらに、行を移動しても差分ファイル名が表示されます。\n",
-    "description": "",
+    "description": "ovをdeltaのpagerとして使用する",
     "tags": [
       "ov",
       "git",
@@ -192,7 +192,7 @@ var relearn_search_index = [
   {
     "breadcrumb": "Top \u003e ov - 機能豊富なページャー",
     "content": "ovはmanページを表示するページャーとしても使えます。 環境変数MANPAGERにovを設定してください。\nMANPAGER=ovmanページでカラフルに表示したいときはStyleOverStrikeとStyleOverLineスタイルによりカスタマイズできます。\nStyleOverStrike: Foreground: \"aqua\" Bold: true StyleOverLine: Foreground: \"red\" Underline: true",
-    "description": "",
+    "description": "Display man pages with ov",
     "tags": [
       "ov"
     ],
@@ -255,7 +255,7 @@ var relearn_search_index = [
   {
     "breadcrumb": "Top \u003e ov - 機能豊富なページャー",
     "content": "bat のページャーとしてもサポートしています。\n環境変数PAGERまたはBAT_PAGERにovを設定してください。\nexport BAT_PAGER=\"ov -F -H3\" bat を使用するときには折り返さない(--wrap=never)で使用することをおすすめします。 batで折り返してしまうと、折り返さない表示に切り替えることができません。 ovの方で折り返しを行ったほうが、ovの機能を活用できます。\nbat --wrap=never README.md ",
-    "description": "",
+    "description": "ovをbatのページャーとして使用する",
     "tags": [
       "ov"
     ],
@@ -282,7 +282,7 @@ var relearn_search_index = [
   {
     "breadcrumb": "Top \u003e ov - 機能豊富なページャー",
     "content": "ovをCSVビューアとして使うことができます。 ヘッダーの有無や区切りも文字を指定できます。\nov -H1 -C -d',' -c --column-rainbow MOCK_DATA.csv ",
-    "description": "",
+    "description": "ovをCSVビューアとして使うことができます。",
     "tags": [
       "ov",
       "csv"
@@ -304,7 +304,7 @@ var relearn_search_index = [
   {
     "breadcrumb": "Top \u003e ov - 機能豊富なページャー",
     "content": "ovはmarkdownビューアとしても使えます。 セクション区切りとしてmarkdownのヘッダを指定することで、次のセクションに移動しやすくなります。\nov --section-delimiter \"^#\" README.md ",
-    "description": "",
+    "description": "ovはmarkdownビューアとしても使う。",
     "tags": [
       "ov"
     ],
@@ -640,7 +640,7 @@ var relearn_search_index = [
   {
     "breadcrumb": "Top \u003e ov - 機能豊富なページャー",
     "content": "通常ページャーは実行した出力をパイプでovに渡しますが、stdoutとstderrをどちらか、または両方を混在させて表示することになります。\nmake |ov make 2\u003e\u00261 |ov Execモードはovからコマンドを実行します。 ovから実行することで、stdoutとstderrを別々のドキュメントとして表示できます。\nさらに--follow-allと同時に使うことで、最後に出力された方を表示できます。\nつまり、makeの標準出力とエラー出力を別々に表示しながら、エラーがあれば画面を切り替えできます。\nov --follow-all --exec -- make ",
-    "description": "",
+    "description": "ovからコマンドを実行する",
     "tags": [
       "ov"
     ],

@@ -63,7 +63,7 @@ var relearn_search_index = [
   {
     "breadcrumb": "Top \u003e ov - Feature-rich pager",
     "content": "Git calls pager when needed. Git output will be easier to use if each is separated by section-delimiter. Also, it is recommended to set the jump-target to “section” accordingly.\nIt is recommended to set the following in gitconfig.\n[pager] diff = ov -F --section-delimiter \"^diff\" --section-header\" log = ov -F --section-delimiter \"^commit\" --jump-target \"section\"(Please add --jump-target \"section\" if you like)\ngit log The git log is separated by commit. You will be able to move by commit unit.\ngit diff git diff is separated by diff or file. You will be able to move in diff units. You can move to the next section (space key) or previous section (^ key) in one go.\nFurthermore, by specifying --section-header, the diff file name will be displayed even if you scroll.\nsearch The above settings will display the search results in commit units. Normally, the search results are displayed at the top, so if it is in the middle of the line, you need to go back, but it will be displayed from the beginning of the commit.\n",
-    "description": "",
+    "description": "Make git log more readable with ov",
     "tags": [
       "ov"
     ],
@@ -94,7 +94,7 @@ var relearn_search_index = [
   {
     "breadcrumb": "Top \u003e ov - Feature-rich pager",
     "content": "delta supports pager.\ndelta is often specified as git’s pager, but the pager is actually called from within delta.\nTherefore, delta settings are often specified by writing them in gitconfig. This is an example of gitconfig settings.\n[core] pager = delta [delta] navigate = true side-by-side = true file-style = yellownavigate = true of delta is set to allow you to move in diff units using the n/N keys of less. This setting allows you to mark the necessary locations.\nUse that mark to set `ov`` with environment variables.\nexport DELTA_PAGER=\"ov --section-delimiter '^(commit|added:|removed:|renamed:|Δ)' --section-header --pattern '•'\"By combining these settings, you can move files by file (space key of ^ key) and diff by n/N key.\nFurthermore, even if you move a line, the difference file name can be displayed.\n",
-    "description": "",
+    "description": "ov can also be used as a pager for delta.",
     "tags": [
       "ov",
       "git",
@@ -245,7 +245,7 @@ var relearn_search_index = [
   {
     "breadcrumb": "Top \u003e ov - Feature-rich pager",
     "content": "bat supports pager.\nYou can use it by setting the environment variable PAGER or BAT_PAGER.\nexport BAT_PAGER=\"ov -F -H3\" bat should not be wrapped (--wrap=never). If it wraps with bat, it cannot be switched to unwrap. It is better to operate with ov.\nbat --wrap=never README.md ",
-    "description": "",
+    "description": "ov can also be used as a pager for bat.",
     "tags": [
       "ov"
     ],
@@ -282,7 +282,7 @@ var relearn_search_index = [
   {
     "breadcrumb": "Top \u003e ov - Feature-rich pager",
     "content": "ov can also be used as a csv viewer.\nov -H1 -C -d',' -c --column-rainbow MOCK_DATA.csv ",
-    "description": "",
+    "description": "ov can also be used as a csv viewer.",
     "tags": [
       "ov"
     ],
@@ -303,7 +303,7 @@ var relearn_search_index = [
   {
     "breadcrumb": "Top \u003e ov - Feature-rich pager",
     "content": "ov can also be used as a markdown viewer. Specifying the markdown header as a section delimiter makes it easier to move to the next section.\nov --section-delimiter \"^#\" README.md ",
-    "description": "",
+    "description": "ov can also be used as a markdown viewer.",
     "tags": [
       "ov"
     ],
@@ -638,7 +638,7 @@ var relearn_search_index = [
   {
     "breadcrumb": "Top \u003e ov - Feature-rich pager",
     "content": "Exec mode executes commands from ov. In Exec mode, stdout and stderr can be displayed as separate documents.\nBy using it at the same time as --follow-all, you can display the one that was output last.\nFor example, while displaying the standard output of make and the error output separately, you can switch the screen if there is an error.\nov --follow-all --exec -- make ",
-    "description": "",
+    "description": "ov can execute commands and display the output.",
     "tags": [
       "ov"
     ],
