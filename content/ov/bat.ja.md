@@ -1,6 +1,7 @@
 ---
 author: "Noboru Saito"
 title: "bat"
+description: "ovをbatのページャーとして使用する"
 date: 2023-06-30T06:00:00+09:00
 tags: ["ov"]
 categories: ["ov"]

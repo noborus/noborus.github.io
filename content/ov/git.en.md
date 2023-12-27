@@ -1,6 +1,7 @@
 ---
 author: "Noboru Saito"
 title: "git"
+description: "Make git log more readable with ov"
 date: 2022-09-24T10:00:00+09:00
 tags: ["ov"]
 categories: ["ov"]

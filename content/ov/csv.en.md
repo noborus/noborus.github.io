@@ -1,6 +1,7 @@
 ---
 author: "Noboru Saito"
 title: "view csv"
+description: "ov can also be used as a csv viewer."
 date: 2022-05-24T09:00:00+09:00
 tags: ["ov"]
 categories: ["ov"]

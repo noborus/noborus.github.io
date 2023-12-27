@@ -1,6 +1,7 @@
 ---
 author: "Noboru Saito"
 title: "delta"
+description: "ov can also be used as a pager for delta."
 date: 2022-09-27T18:00:00+09:00
 tags: ["ov", "git", "delta"]
 categories: ["ov"]
