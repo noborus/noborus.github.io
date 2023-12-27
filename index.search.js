@@ -1,7 +1,7 @@
 var relearn_search_index = [
   {
     "breadcrumb": "Top",
-    "content": "English tag ",
+    "content": "English tag trdsql v0.13.0 ov v0.32.1 trdsql v0.12.1 trdsql v0.12.0 ov v0.32.0 ov v0.31.0 psqlのPAGERを設定する ov v0.30.0 Guess the width of the width-specified format trdsql v0.11.1 ov v0.15.0 ov v0.14.2 ov v0.14.1 ov v0.14.0 ov v0.12.0 PostgreSQLで0列の扱い trdsql jq構文 ov v0.11.1 ov v0.11.0 手っ取り遅くSQLを学ぶ Another way to aggregate json(jq + SQL) trdsql v0.10.0 第32回 PostgreSQLアンカンファレンス@オンラインで発表しました ov v0.10.0 trdsql v0.9.1 ov v0.9.6 Jpug-doc-tool ov v0.9.5 trdsql+PostgreSQL 14でJSONを処理する ov v0.9.4 mdtsql v0.0.3 pgsp trdsql v0.9.0 ov v0.9.0 ov v0.8.1 trdsql v0.8.0 ov v0.8.0 goのTUIについて2020年最終版 ov v0.7.0 SQLのORDER BY 列番号と式 tcell/tviewでTUIを作るならキー割り当てにcbindを利用しよう ov v0.6.2 ov v0.5.0 ov v0.2.0 tcellについて2 tcellについて goのTUIについて ov v0.1.3 ov GoのTUIで表示が崩れる場合 trdsql 0.7.5 trdsql output trdsql 圧縮ファイル MySQL の LOAD DATA INFILE (go) trdsql 0.7.4 trdsql CASE式 trdsql 合計を行に追加する trdsql convert log trdsql generate_series trdsql CROSS JOIN trdsql config trdsql SQLファイル指定 trdsql ライブラリ使用 trdsql グラフ trdsql 差分、比較 trdsql JSON出力 trdsql JSON解析 trdsql 日付・時刻処理 trdsql Window関数 trdsql 列の編集 trdsql ファイルとテーブルのJOIN trdsql JOIN trdsql DBインポート trdsql SQLite3エンジンの使用 trdsql MySQLエンジンの使用 trdsql PostgreSQLエンジンの使用 trdsql 処理の概要 trdsql 標準入力 trdsql ワイルドカード、圧縮ファイル trdsql Log集計 trdsql GROUP集計 trdsql 集計計算 trdsql 集計 trdsql 簡単なSQL その２ trdsql 簡単なSQL trdsql ファイルフォーマット変換 trdsql インストール ",
     "description": "",
     "tags": null,
     "title": "Blog",
@@ -40,7 +40,7 @@ var relearn_search_index = [
   },
   {
     "breadcrumb": "Top",
-    "content": "This is the document of trdsql, a tool that can execute SQL on CSV, LTSV, JSON, TBLN files.\noverview trdsql is a CLI tool that executes SQL on text in table format. A tabular format is data that consists of rows and columns, such as:\n1 column 2 columns 1 row a1 a2 2 lines b1 b2 Since the results can be output in various formats, it can also be used for format conversion of tabular data.\ntable of contents ",
+    "content": "This is the document of trdsql, a tool that can execute SQL on CSV, LTSV, JSON, TBLN files.\noverview trdsql is a CLI tool that executes SQL on text in table format. A tabular format is data that consists of rows and columns, such as:\n1 column 2 columns 1 row a1 a2 2 lines b1 b2 Since the results can be output in various formats, it can also be used for format conversion of tabular data.\ntable of contents trdsql install trdsql File format conversion trdsql Easy SQL trdsql 簡単なSQL その２ trdsql 集計 trdsql 集計計算 trdsql GROUP集計 trdsql Log集計 trdsql ワイルドカード、圧縮ファイル trdsql 標準入力 trdsql 処理の概要 trdsql PostgreSQLエンジンの使用 trdsql MySQLエンジンの使用 trdsql SQLite3エンジンの使用 trdsql DBインポート trdsql JOIN trdsql ファイルとテーブルのJOIN trdsql 列の編集 trdsql Window関数 trdsql 日付・時刻処理 trdsql JSON解析 trdsql JSON出力 trdsql 差分、比較 trdsql グラフ trdsql ライブラリ使用 trdsql SQLファイル指定 trdsql config trdsql CROSS JOIN trdsql generate_series trdsql convert log trdsql 合計を行に追加する trdsql CASE式 trdsql 圧縮ファイル trdsql output trdsql jq構文 trdsql For fixed width ",
     "description": "",
     "tags": null,
     "title": "trdsql",
@@ -85,7 +85,7 @@ var relearn_search_index = [
   },
   {
     "breadcrumb": "Top",
-    "content": "[en | Ja] Download\nPlease refer to the github site for installation and settings.\nFeatures ov provides a more convenient function by separating text, not only the pager function to display at the terminal size.\nSpecify a fixed line to be displayed as a header. Table-formatted text can be interpreted as a column by the delimiter. Text can be interpreted as a section by splitting the line with a delimiter. Supports files larger than memory. Use case ",
+    "content": "[en | Ja] Download\nPlease refer to the github site for installation and settings.\nFeatures ov provides a more convenient function by separating text, not only the pager function to display at the terminal size.\nSpecify a fixed line to be displayed as a header. Table-formatted text can be interpreted as a column by the delimiter. Text can be interpreted as a section by splitting the line with a delimiter. Supports files larger than memory. Use case psql git delta mysql pgcli mycli ps man top procs bat Watch files with ov view csv View markdown multiple files Multicolor highlights multiple words speed of opening large files execute command How to use follow mode How to use section Memory management ",
     "description": "",
     "tags": "ov",
     "title": "ov - Feature-rich pager",
