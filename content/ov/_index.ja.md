@@ -6,7 +6,7 @@ tags = "ov"
 weight = 3
 linktitle = "ov"
 +++
-[ [en](/ov/) | Ja ]
+[ [en](/en/ov/) | Ja ]
 [![ov](ov.gif)](https://github.com/noborus/ov)
 
 [Download](https://github.com/noborus/ov/releases/latest)
