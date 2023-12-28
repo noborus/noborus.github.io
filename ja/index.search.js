@@ -49,6 +49,14 @@ var relearn_search_index = [
     "uri": "/ja/ov/git/index.html"
   },
   {
+    "breadcrumb": "Top",
+    "content": " Download CSV,LTSV,JSON,TBLNファイルにSQLを実行できるツールのtrdsqlのドキュメントです。\n最初は、trdsql Advent Calendar 2019として書かれました。その後追記しています。\n概要 trdsqlはテーブル（表）形式のテキストに対してSQLを実行するCLIツールです。 テーブル形式とは、行と列で構成される以下のようなデータです。\n1列 2列 1行 a1 a2 2行 b1 b2 結果をざまざまなフォーマットに出力できるので、テーブル形式データのフォーマット変換にも使用できます。\n目次 trdsql インストール trdsql ファイルフォーマット変換 trdsql 簡単なSQL trdsql 簡単なSQL その２ trdsql 集計 trdsql 集計計算 trdsql GROUP集計 trdsql Log集計 trdsql ワイルドカード、圧縮ファイル trdsql 標準入力 trdsql 処理の概要 trdsql PostgreSQLエンジンの使用 trdsql MySQLエンジンの使用 trdsql SQLite3エンジンの使用 trdsql DBインポート trdsql JOIN trdsql ファイルとテーブルのJOIN trdsql 列の編集 trdsql Window関数 trdsql 日付・時刻処理 trdsql JSON解析 trdsql JSON出力 trdsql 差分、比較 trdsql グラフ trdsql ライブラリ使用 trdsql SQLファイル指定 trdsql config trdsql CROSS JOIN trdsql generate_series trdsql convert log trdsql 合計を行に追加する trdsql CASE式 trdsql 圧縮ファイル trdsql output trdsql jq構文 trdsql 固定幅を対象 ",
+    "description": "",
+    "tags": null,
+    "title": "trdsql",
+    "uri": "/ja/trdsql/index.html"
+  },
+  {
     "breadcrumb": "Top \u003e trdsql",
     "content": "trdsqlはCSV等のファイルをSQLで処理するツールとして説明していますが、単純にファイル形式を変換するツールとしても使用できます。\nその場合、SQLは以下の定型句さえ覚えておけば、十分です。 ファイル内のすべての行と列を出力します。\nSELECT * FROM ファイル名後は、オプションとして入力形式(-i…)と出力形式(-o…)を指定してあげればファイル形式の変換が可能です。 CSV、LTSV、JSON等の相互変換ができます。\nCSV(-icsv)からLTSV(-oltsv)への変換は以下のようにします。\ntrdsql -icsv -oltsv \"SELECT * FROM ファイル名\" CSV header CSVファイルはヘッダーに列名がついている場合 -ih でヘッダーを解釈して列名として使用できます。\nheader.csv\nid,name 1,Orange 2,Melon 3,Appletrdsql -icsv -ih -oltsv \"SELECT * FROM header.csv\" \u003e test.ltsv test.ltsv\nid:1\tname:Orange id:2\tname:Melon id:3\tname:Appleヘッダーが無い場合は、列名はc1,c2,c3…の連番になります。\nLTSV入力 上記で出力されたLTSVを入力に使用すれば、CSVに戻ります。\ntrdsql -iltsv -ocsv -oh \"SELECT * FROM test.ltsv\" id,name 1,Orange 2,Melon 3,Apple区切り文字の変更（TSV） また、CSVはComma-Separated Valuesではなく、Character-separated valuesとも呼ばれたりすることがあるように、区切り文字として「,」以外を使用できます。\n-id オプションの後に文字を指定することにより変更ができます。 タブ区切りの場合（TSVとも呼ばれます）は、\"\\t\"を使用します。\n以下はTSVからCSVの変更になります。\ntrdsql -icsv -id \"\\t\" -ih \"SELECT * FROM test.tsv\" JSON出力 JSON出力では、全体を配列としてのJSONが出力されます。\ntrdsql -icsv -ih -ojson \"SELECT * FROM header.csv\" [ { \"id\": \"1\", \"name\": \"Orange\" }, { \"id\": \"2\", \"name\": \"Melon\" }, { \"id\": \"3\", \"name\": \"Apple\" } ]JSON入力 trdsqlではJSONは、行と列で構成されているフォーマットを想定しています。 一つは、上記で出力したような、トップが配列になっていて、名前と値が含まれているフォーマットです。\nもう一つは、下記のように１行が１つのJSONになっているNDJSON、LDJSON、JSONLとも呼ばれるフォーマットです。\n{\"id\":\"1\",\"name\":\"Orange\"} {\"id\":\"2\",\"name\":\"Melon\"} {\"id\":\"3\",\"name\":\"Apple\"}このような列が同じで揃っていれば、CSVやLTSVと同様に入力が可能です。\ntrdsql -ijson -ocsv \"SELECT * FROM test.json\" (JSONのオブジェクトは順序が不定のため、列の順番はname,idのように前後することがあります。)\nその他の出力 また出力だけならば、更に多くのフォーマットに対応しているため、マークダウンのテーブル(CSV2MDとかJSON2MDとかLTSV2MDとか呼ばれるツールに相当)として出力できます。\ntrdsql -icsv -ih -ovf \"SELECT * FROM header.csv\" | id | name | |----|--------| | 1 | Orange | | 2 | Melon | | 3 | Apple |列が多いCSVファイル等で横に長くなってしまって見づらいファイルをVerticalフォーマットで縦に表示したり出来ます。\ntrdsql -icsv -ih -ovf \"SELECT * FROM header.csv\" ---[ 1]----------------------------------------------------- id | 1 name | Orange ---[ 2]----------------------------------------------------- id | 2 name | Melon ---[ 3]----------------------------------------------------- id | 3 name | Apple使用できるフォーマット フォーマット 入力 出力 注釈 CSV ○ ○ TSV等もオプションにより対応 LTSV ○ ○ ltsv.org JSON ○ ○ www.json.org JSONL ○ ○ 入力はJSONで可能 TBLN ○ ○ tbln.dev RAW × ○ そのまま出力（エスケープ処理をしない） MD × ○ MarkDownテーブル AT × ○ ASCIIテーブル VF × ○ Verticalフォーマット CSV id,name 1,Orange 2,Melon 3,AppleLTSV id:1\tname:Orange id:2\tname:Melon id:3\tname:AppleJSON [ { \"id\": \"1\", \"name\": \"Orange\" }, { \"id\": \"2\", \"name\": \"Melon\" }, { \"id\": \"3\", \"name\": \"Apple\" } ]JSONL {\"id\":\"1\",\"name\":\"Orange\"} {\"id\":\"2\",\"name\":\"Melon\"} {\"id\":\"3\",\"name\":\"Apple\"}TBLN ; name: | id | name | ; type: | text | text | | 1 | Orange | | 2 | Melon | | 3 | Apple |RAW id,name 1,Orange 2,Melon 3,AppleMD | id | name | |----|--------| | 1 | Orange | | 2 | Melon | | 3 | Apple |AT +----+--------+ | id | name | +----+--------+ | 1 | Orange | | 2 | Melon | | 3 | Apple | +----+--------+VF ---[ 1]------------------------------------------------------------------- id | 1 name | Orange ---[ 2]------------------------------------------------------------------- id | 2 name | Melon ---[ 3]------------------------------------------------------------------- id | 3 name | Apple",
     "description": "trdsqlのファイルフォーマット変換",
@@ -64,15 +72,7 @@ var relearn_search_index = [
   },
   {
     "breadcrumb": "Top",
-    "content": "CSV,LTSV,JSON,TBLNファイルにSQLを実行できるツールのtrdsqlのドキュメントです。\n最初は、trdsql Advent Calendar 2019として書かれました。その後追記しています。\n概要 trdsqlはテーブル（表）形式のテキストに対してSQLを実行するCLIツールです。 テーブル形式とは、行と列で構成される以下のようなデータです。\n1列 2列 1行 a1 a2 2行 b1 b2 結果をざまざまなフォーマットに出力できるので、テーブル形式データのフォーマット変換にも使用できます。\n目次 trdsql インストール trdsql ファイルフォーマット変換 trdsql 簡単なSQL trdsql 簡単なSQL その２ trdsql 集計 trdsql 集計計算 trdsql GROUP集計 trdsql Log集計 trdsql ワイルドカード、圧縮ファイル trdsql 標準入力 trdsql 処理の概要 trdsql PostgreSQLエンジンの使用 trdsql MySQLエンジンの使用 trdsql SQLite3エンジンの使用 trdsql DBインポート trdsql JOIN trdsql ファイルとテーブルのJOIN trdsql 列の編集 trdsql Window関数 trdsql 日付・時刻処理 trdsql JSON解析 trdsql JSON出力 trdsql 差分、比較 trdsql グラフ trdsql ライブラリ使用 trdsql SQLファイル指定 trdsql config trdsql CROSS JOIN trdsql generate_series trdsql convert log trdsql 合計を行に追加する trdsql CASE式 trdsql 圧縮ファイル trdsql output trdsql jq構文 trdsql 固定幅を対象 ",
-    "description": "",
-    "tags": null,
-    "title": "trdsql",
-    "uri": "/ja/trdsql/index.html"
-  },
-  {
-    "breadcrumb": "Top",
-    "content": "[ en | Ja ] Download\nインストール、設定についてはgithub siteを参照してください。\n特徴 ov は端末サイズで表示するページャー機能だけでなく、テキストを区切ることでより便利な機能を提供します。\nヘッダー行を固定表示 列を区切ってテーブル形式の表示 行を区切ってセクション単位での表示 メモリよりも大きなファイルをサポート 使用事例 psql git delta mysql pgcli mycli ps man procs top ovでファイル監視（ウォッチ） bat csvの表示 markdown表示 複数ファイル 複数の単語を複数の色でハイライト 大きなファイルを開く速度 コマンド実行 フォローモードの使い方 セクションの使い方 メモリ管理 ",
+    "content": " Download インストール、設定についてはgithub siteを参照してください。\n特徴 ov は端末サイズで表示するページャー機能だけでなく、テキストを区切ることでより便利な機能を提供します。\nヘッダー行を固定表示 列を区切ってテーブル形式の表示 行を区切ってセクション単位での表示 メモリよりも大きなファイルをサポート 使用事例 psql git delta mysql pgcli mycli ps man procs top ovでファイル監視（ウォッチ） bat csvの表示 markdown表示 複数ファイル 複数の単語を複数の色でハイライト 大きなファイルを開く速度 コマンド実行 フォローモードの使い方 セクションの使い方 メモリ管理 ",
     "description": "",
     "tags": "ov",
     "title": "ov - 機能豊富なページャー",
