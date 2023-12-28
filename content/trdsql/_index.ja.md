@@ -1,9 +1,12 @@
 +++
 author = "Noboru Saito"
 title = "trdsql"
-date = "2019-12-01"
 weight = 2
 +++
+
+<div id="download">
+{{% button icon="download" style="info" href="https://github.com/noborus/trdsql/releases/latest" %}}Download{{% /button %}}
+</div>
 
 CSV,LTSV,JSON,TBLNファイルにSQLを実行できるツールの[trdsql](https://github.com/noborus/trdsql)のドキュメントです。
 
@@ -23,4 +26,4 @@ CSV,LTSV,JSON,TBLNファイルにSQLを実行できるツールの[trdsql](https
 
 ## 目次
 
-{{% children sort="weight" %}}
+{{% children containerstyle="div" style="div" depth="1" sort="weight" %}}

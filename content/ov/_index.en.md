@@ -1,16 +1,16 @@
 +++
 author = "Noboru Saito"
 title = "ov - Feature-rich pager"
-date = "2023-06-08"
 tags = "ov"
 weight = 3
 linktitle = "ov"
 +++
 
-[en | [Ja](/ja/ov/)]
-[![ov](ov.gif)](https://github.com/noborus/ov)
+<div id="download">
+{{% button icon="download" style="info" href="https://github.com/noborus/ov/releases/latest" %}}Download{{% /button %}}
+</div>
 
-{{% icon download %}} [Download](https://github.com/noborus/ov/releases/latest)
+[![ov](ov.gif)](https://github.com/noborus/ov)
 
 Please refer to the [<i class="fab fa-github"></i>github site](https://github.com/noborus/ov) for **installation and settings.**
 

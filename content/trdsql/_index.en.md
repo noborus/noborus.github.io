@@ -1,9 +1,12 @@
 +++
 author = "Noboru Saito"
 title = "trdsql"
-date = "2023-06-10"
 weight = 2
 +++
+
+<div id="download">
+{{% button icon="download" style="info" href="https://github.com/noborus/trdsql/releases/latest" %}}Download{{% /button %}}
+</div>
 
 This is the document of [trdsql](https://github.com/noborus/trdsql), a tool that can execute SQL on CSV, LTSV, JSON, TBLN files.
 
@@ -21,4 +24,4 @@ Since the results can be output in various formats, it can also be used for form
 
 ## table of contents
 
-{{% children sort="weight" %}}
+{{% children containerstyle="div" style="div" depth="1" sort="weight" %}}

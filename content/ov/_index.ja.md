@@ -1,15 +1,14 @@
 +++
 author = "Noboru Saito"
 title = "ov - 機能豊富なページャー"
-date = "2023-06-08"
 tags = "ov"
 weight = 3
 linktitle = "ov"
 +++
-[ [en](/en/ov/) | Ja ]
-[![ov](ov.gif)](https://github.com/noborus/ov)
 
-[Download](https://github.com/noborus/ov/releases/latest)
+<div id="download">
+{{% button icon="download" style="info" href="https://github.com/noborus/ov/releases/latest" %}}Download{{% /button %}}
+</div>
 
  インストール、設定については[github site](https://github.com/noborus/ov)を参照してください。
 
