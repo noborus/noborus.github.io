@@ -2,6 +2,7 @@
 author: "Noboru Saito"
 title: "Multicolor highlights multiple words"
 date: 2023-07-21T06:00:00+09:00
+description: "ov can highlight multiple words in multiple colors."
 tags: ["ov"]
 categories: ["ov"]
 weight: 13

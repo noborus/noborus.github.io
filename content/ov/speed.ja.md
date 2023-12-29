@@ -2,6 +2,7 @@
 author: "Noboru Saito"
 title: "大きなファイルを開く速度"
 date: 2023-08-10T15:00:00+09:00
+description: "ovは大きなファイルを開く速度が速い"
 tags: ["ov", "speed"]
 categories: ["ov"]
 weight: 14

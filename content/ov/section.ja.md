@@ -2,6 +2,7 @@
 author: "Noboru Saito"
 title: "セクションの使い方"
 date: 2023-07-21T06:00:00+09:00
+description: "ovのセクションの使い方"
 tags: ["ov"]
 categories: ["ov"]
 weight: 99

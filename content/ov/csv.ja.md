@@ -1,7 +1,7 @@
 ---
 author: "Noboru Saito"
 title: "csvの表示"
-description: "ovをCSVビューアとして使うことができます。"
+description: "ovをCSVビューアとして使う"
 date: 2023-06-30T06:00:00+09:00
 tags: ["ov", "csv"]
 categories: ["ov"]

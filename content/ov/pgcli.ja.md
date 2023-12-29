@@ -2,7 +2,7 @@
 author: "Noboru Saito"
 title: "pgcli"
 date: 2023-07-21T06:00:00+09:00
-tags: ["ov"]
+tags: ["ov", "pgcli", "PostgreSQL"]
 categories: ["ov"]
 weight: 5
 ---

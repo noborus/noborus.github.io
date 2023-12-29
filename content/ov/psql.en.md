@@ -2,6 +2,7 @@
 author: "Noboru Saito"
 title: "psql"
 date: 2023-07-21T09:00:00+09:00
+description: PostgreSQL client tool psql with ov
 tags: ["ov", "psql"]
 categories: ["ov"]
 weight: 1

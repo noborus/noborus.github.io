@@ -1,8 +1,12 @@
-+++
-author = "Noboru Saito"
-title = "メモリ管理"
-date = "2023-07-07"
-+++
+---
+author: "Noboru Saito"
+title: "メモリ管理"
+date: 2023-07-07T06:00:00+09:00
+description: "ovのメモリ管理"
+tags: ["ov", "memory"]
+categories: ["ov"]
+weight: 100
+---
 
 ## メモリ管理
 

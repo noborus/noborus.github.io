@@ -2,7 +2,8 @@
 author: "Noboru Saito"
 title: "フォローモードの使い方"
 date: 2023-07-21T06:00:00+09:00
-tags: ["ov"]
+description: "ovのフォローモードの使い方"
+tags: ["ov", "tail"]
 categories: ["ov"]
 weight: 90
 ---

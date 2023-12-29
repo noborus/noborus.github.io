@@ -1,7 +1,8 @@
 ---
 author: "Noboru Saito"
 title: "psql"
-date: 2023-07-21T9:00:00+09:00
+date: 2023-07-21T09:00:00+09:00
+description: PostgreSQLクライアントpsqlでovを使用する
 tags: ["ov", "psql"]
 categories: ["ov"]
 weight: 1

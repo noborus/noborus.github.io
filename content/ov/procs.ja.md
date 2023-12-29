@@ -2,7 +2,8 @@
 author: "Noboru Saito"
 title: "procs"
 date: 2023-07-21T06:00:00+09:00
-tags: ["ov"]
+description: "procsのページャーとしてovを使用する"
+tags: ["ov", "procs"]
 categories: ["ov"]
 weight: 8
 ---

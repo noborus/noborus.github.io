@@ -2,7 +2,8 @@
 author: "Noboru Saito"
 title: "mycli"
 date: 2022-05-24T09:00:00+09:00
-tags: ["ov"]
+description: "Use 'ov' as a pager for mysql"
+tags: ["ov", "mycli", "mysql"]
 categories: ["ov"]
 weight: 6
 ---

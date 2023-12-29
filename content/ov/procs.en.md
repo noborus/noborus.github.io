@@ -2,7 +2,8 @@
 author: "Noboru Saito"
 title: "procs"
 date: 2022-05-24T09:00:00+09:00
-tags: ["ov"]
+description: "Use 'ov' as a pager for procs"
+tags: ["ov", "procs"]
 categories: ["ov"]
 weight: 8
 ---

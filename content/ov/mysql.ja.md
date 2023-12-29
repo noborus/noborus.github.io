@@ -2,6 +2,7 @@
 author: "Noboru Saito"
 title: "mysql"
 date: 2023-06-30T09:00:00+09:00
+description: "ovをmysqlのpagerとして使用する"
 tags: ["ov"]
 categories: ["ov"]
 weight: 4

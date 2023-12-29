@@ -2,7 +2,8 @@
 author: "Noboru Saito"
 title: "ps"
 date: 2023-07-08T15:00:00+09:00
-tags: ["ov"]
+description: "psのページャーとしてovを使用する"
+tags: ["ov", "ps"]
 categories: ["ov"]
 weight: 7
 ---

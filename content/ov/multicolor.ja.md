@@ -2,6 +2,7 @@
 author: "Noboru Saito"
 title: "複数の単語を複数の色でハイライト"
 date: 2023-07-21T06:00:00+09:00
+description: "複数の単語を複数の色でハイライト"
 tags: ["ov"]
 categories: ["ov"]
 weight: 13

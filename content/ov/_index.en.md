@@ -26,4 +26,4 @@ not only the pager function to display at the terminal size.
 
 ## Use case
 
-{{% children containerstyle="div" style="div" depth="1" sort="weight" %}}
+{{% children containerstyle="div" description="true" style="h3" depth="1" sort="weight" %}}

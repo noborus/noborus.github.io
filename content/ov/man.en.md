@@ -1,9 +1,9 @@
 ---
 author: "Noboru Saito"
 title: "man"
-description: 
+description: "Use 'ov' as a pager for man pages"
 date: 2022-05-24T09:00:00+09:00
-tags: ["ov"]
+tags: ["ov", "man"]
 categories: ["ov"]
 weight: 7
 ---

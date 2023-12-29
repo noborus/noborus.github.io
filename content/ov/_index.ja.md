@@ -23,4 +23,4 @@ linktitle = "ov"
 
 ## 使用事例
 
-{{% children containerstyle="div" style="div" depth="1" sort="weight" %}}
+{{% children containerstyle="div" description="true" style="h3" depth="1" sort="weight" %}}

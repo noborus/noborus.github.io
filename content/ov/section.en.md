@@ -2,7 +2,8 @@
 author: "Noboru Saito"
 title: "How to use section"
 date: 2022-05-26T08:00:00+09:00
-tags: ["ov"]
+description: "How to use section of ov"
+tags: ["ov", "section"]
 categories: ["ov"]
 weight: 99
 ---

@@ -3,7 +3,7 @@ author: "Noboru Saito"
 title: "bat"
 description: "ov can also be used as a pager for bat."
 date: 2022-05-30T09:00:00+09:00
-tags: ["ov"]
+tags: ["ov", "bat"]
 categories: ["ov"]
 weight: 9
 ---

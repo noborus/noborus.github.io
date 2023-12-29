@@ -2,7 +2,8 @@
 author: "Noboru Saito"
 title: "top"
 date: 2023-01-30T01:00:00+09:00
-tags: ["ov"]
+description: "Use 'ov' as a pager for top"
+tags: ["ov", "top"]
 categories: ["ov"]
 weight: 8
 ---

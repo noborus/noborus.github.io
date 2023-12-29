@@ -2,12 +2,12 @@
 author: "Noboru Saito"
 title: "top"
 date: 2023-07-08T15:00:00+09:00
-tags: ["ov"]
+description: "topのページャーとしてovを使用する"
+tags: ["ov", "top"]
 categories: ["ov"]
 weight: 8
 ---
 
-`top` works fine when started in batch mode (it doesn't work as-is when started normally because it steals keystrokes).
 `top`コマンドは自前で画面に合わせて描画するためページャーは必要ありませんが(通常起動するとキーストロークを奪ってしまうためそのままでは動作しません)、
 現在の状態を表示するだけで、履歴を表示することはできません。
 バッチモードで起動すると表示を繰り返すため、それをページャーで受け取って表示すれば履歴を表示できます。

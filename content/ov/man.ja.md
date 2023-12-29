@@ -1,9 +1,9 @@
 ---
 author: "Noboru Saito"
 title: "man"
-description: "Display man pages with ov"
+description: "manページのページャーとしてovを使用する"
 date: 2023-06-30T06:00:00+09:00
-tags: ["ov"]
+tags: ["ov", "man"]
 categories: ["ov"]
 weight: 7
 ---

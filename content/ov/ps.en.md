@@ -2,7 +2,8 @@
 author: "Noboru Saito"
 title: "ps"
 date: 2023-05-31T09:00:00+09:00
-tags: ["ov"]
+description: "Use 'ov' as a pager for ps"
+tags: ["ov", "ps"]
 categories: ["ov"]
 weight: 7
 ---
