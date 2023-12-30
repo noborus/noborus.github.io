@@ -2,7 +2,7 @@
 author: "Noboru Saito"
 title: "git"
 description: "Use ov as a pager for git"
-date: 2022-09-24T10:00:00+09:00
+date: 2023-12-30T15:00:00+09:00
 tags: ["ov"]
 categories: ["ov"]
 weight: 2
@@ -16,8 +16,8 @@ It is recommended to set the following in gitconfig.
 
 ```config
 [pager]
-    diff = ov -F --section-delimiter "^diff" --section-header"
-    log = ov -F --section-delimiter "^commit" --jump-target "section"
+    diff = "ov -F --section-delimiter '^diff' --section-header"
+    log = "ov -F --section-delimiter '^commit' --section-header-num 3"
 ```
 
 (Please add `--jump-target "section"` if you like)
