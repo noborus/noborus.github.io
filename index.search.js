@@ -1,19 +1,19 @@
 var relearn_search_index = [
   {
-    "breadcrumb": "Top",
-    "content": "English tag trdsql v0.13.0 ov v0.32.1 trdsql v0.12.1 trdsql v0.12.0 ov v0.32.0 ov v0.31.0 psqlのPAGERを設定する ov v0.30.0 Guess the width of the width-specified format trdsql v0.11.1 ov v0.15.0 ov v0.14.2 ov v0.14.1 ov v0.14.0 ov v0.12.0 PostgreSQLで0列の扱い trdsql jq構文 ov v0.11.1 ov v0.11.0 手っ取り遅くSQLを学ぶ Another way to aggregate json(jq + SQL) trdsql v0.10.0 第32回 PostgreSQLアンカンファレンス@オンラインで発表しました ov v0.10.0 trdsql v0.9.1 ov v0.9.6 Jpug-doc-tool ov v0.9.5 trdsql+PostgreSQL 14でJSONを処理する ov v0.9.4 mdtsql v0.0.3 pgsp trdsql v0.9.0 ov v0.9.0 ov v0.8.1 trdsql v0.8.0 ov v0.8.0 goのTUIについて2020年最終版 ov v0.7.0 SQLのORDER BY 列番号と式 tcell/tviewでTUIを作るならキー割り当てにcbindを利用しよう ov v0.6.2 ov v0.5.0 ov v0.2.0 tcellについて2 tcellについて goのTUIについて ov v0.1.3 ov GoのTUIで表示が崩れる場合 trdsql 0.7.5 trdsql output trdsql 圧縮ファイル MySQL の LOAD DATA INFILE (go) trdsql 0.7.4 trdsql CASE式 trdsql 合計を行に追加する trdsql convert log trdsql generate_series trdsql CROSS JOIN trdsql config trdsql SQLファイル指定 trdsql ライブラリ使用 trdsql グラフ trdsql 差分、比較 trdsql JSON出力 trdsql JSON解析 trdsql 日付・時刻処理 trdsql Window関数 trdsql 列の編集 trdsql ファイルとテーブルのJOIN trdsql JOIN trdsql DBインポート trdsql SQLite3エンジンの使用 trdsql MySQLエンジンの使用 trdsql PostgreSQLエンジンの使用 trdsql 処理の概要 trdsql 標準入力 trdsql ワイルドカード、圧縮ファイル trdsql Log集計 trdsql GROUP集計 trdsql 集計計算 trdsql 集計 trdsql 簡単なSQL その２ trdsql 簡単なSQL trdsql ファイルフォーマット変換 trdsql インストール ",
-    "description": "",
-    "tags": null,
-    "title": "Blog",
-    "uri": "/blog/index.html"
-  },
-  {
     "breadcrumb": "",
     "content": " Products trdsql Star Fork A tool that can execute SQL on CSV, LTSV, JSON, TBLN files\ntrdsql Blog Created a command line tool called trdsql(Qiita) trdsql is a tool to import CSV, LTSV, JSON into DB (PostgreSQL, MySQL)(Zenn) trdsql Category(Blog) ov Star Fork Feature-rich terminal Pager\nA terminal pager that can be used as an alternative to less or more.\nov pages Introduction to ov(Zenn) Terminal Pager New Era(Qiita) Alternatives to popular CLI tools: more ov Category(Blog) ovcs Star Fork A client/server version of Terminal Pager ov.\nBy combining terminal pager with client/server and tmux, it became the strongest SQL client mdviewer Star Fork View markdown in pager.\ntbln Star Fork Libraries and tools that handle file formats (tbln) that are compatible with database tables.\ntbln.dev psutilsql Star Fork A tool that executes SQL to display system information.\nmdtsql Star Fork A tool to execute SQL against a markdown table.\nmdtsql Category xlsxsql Star Fork A tool that executes SQL against an Excel file.\npgsp Star Fork CLI tool to monitor and display pg_stat_progress of PostgreSQL.\npgsp Category go-textra Star Fork\nMin’na no Jidou Hon’yaku@textra’s Library for client API.\njpug-doc-tool Star Fork\nJapanese manual translation tool for PostgreSQL.\njpug-doc Category guesswidth Star Fork Library tool to infer column widths in CLI output.\nGuess the width of the width format Guess the width of the width-specified format Participating projects jpug-doc A repository for translating PostgreSQL manuals.\n(Qiita) About the PostgreSQL Japanese manual PostgreSQL Japan User Group (Annex) Site with the latest version of the translated manual github taiyaku PostgreSQL Manual Bilingual Collection ",
     "description": "",
     "tags": null,
     "title": "Top",
     "uri": "/index.html"
+  },
+  {
+    "breadcrumb": "Top",
+    "content": "English tag trdsql v0.13.0 ov v0.32.1 trdsql v0.12.1 trdsql v0.12.0 ov v0.32.0 ov v0.31.0 psqlのPAGERを設定する ov v0.30.0 Guess the width of the width-specified format trdsql v0.11.1 ov v0.15.0 ov v0.14.2 ov v0.14.1 ov v0.14.0 ov v0.12.0 PostgreSQLで0列の扱い trdsql jq構文 ov v0.11.1 ov v0.11.0 手っ取り遅くSQLを学ぶ Another way to aggregate json(jq + SQL) trdsql v0.10.0 第32回 PostgreSQLアンカンファレンス@オンラインで発表しました ov v0.10.0 trdsql v0.9.1 ov v0.9.6 Jpug-doc-tool ov v0.9.5 trdsql+PostgreSQL 14でJSONを処理する ov v0.9.4 mdtsql v0.0.3 pgsp trdsql v0.9.0 ov v0.9.0 ov v0.8.1 trdsql v0.8.0 ov v0.8.0 goのTUIについて2020年最終版 ov v0.7.0 SQLのORDER BY 列番号と式 tcell/tviewでTUIを作るならキー割り当てにcbindを利用しよう ov v0.6.2 ov v0.5.0 ov v0.2.0 tcellについて2 tcellについて goのTUIについて ov v0.1.3 ov GoのTUIで表示が崩れる場合 trdsql 0.7.5 trdsql output trdsql 圧縮ファイル MySQL の LOAD DATA INFILE (go) trdsql 0.7.4 trdsql CASE式 trdsql 合計を行に追加する trdsql convert log trdsql generate_series trdsql CROSS JOIN trdsql config trdsql SQLファイル指定 trdsql ライブラリ使用 trdsql グラフ trdsql 差分、比較 trdsql JSON出力 trdsql JSON解析 trdsql 日付・時刻処理 trdsql Window関数 trdsql 列の編集 trdsql ファイルとテーブルのJOIN trdsql JOIN trdsql DBインポート trdsql SQLite3エンジンの使用 trdsql MySQLエンジンの使用 trdsql PostgreSQLエンジンの使用 trdsql 処理の概要 trdsql 標準入力 trdsql ワイルドカード、圧縮ファイル trdsql Log集計 trdsql GROUP集計 trdsql 集計計算 trdsql 集計 trdsql 簡単なSQL その２ trdsql 簡単なSQL trdsql ファイルフォーマット変換 trdsql インストール ",
+    "description": "",
+    "tags": null,
+    "title": "Blog",
+    "uri": "/blog/index.html"
   },
   {
     "breadcrumb": "Top \u003e ov",
@@ -39,6 +39,16 @@ var relearn_search_index = [
     "uri": "/trdsql/01_install/index.html"
   },
   {
+    "breadcrumb": "Top \u003e ov",
+    "content": "Git calls pager when needed. Git output will be easier to use if each is separated by section-delimiter. Also, it is recommended to set the jump-target to “section” accordingly.\nIt is recommended to set the following in gitconfig.\n[pager] diff = \"ov -F --section-delimiter '^diff' --section-header\" log = \"ov -F --section-delimiter '^commit' --section-header-num 3\"(Please add --jump-target \"section\" if you like)\ngit log The git log is separated by commit. You will be able to move by commit unit.\ngit diff git diff is separated by diff or file. You will be able to move in diff units. You can move to the next section (space key) or previous section (^ key) in one go.\nFurthermore, by specifying --section-header, the diff file name will be displayed even if you scroll.\nsearch The above settings will display the search results in commit units. Normally, the search results are displayed at the top, so if it is in the middle of the line, you need to go back, but it will be displayed from the beginning of the commit.\n",
+    "description": "Use ov as a pager for git",
+    "tags": [
+      "ov"
+    ],
+    "title": "git",
+    "uri": "/ov/git/index.html"
+  },
+  {
     "breadcrumb": "Top",
     "content": " Download This is the document of trdsql, a tool that can execute SQL on CSV, LTSV, JSON, TBLN files.\noverview trdsql is a CLI tool that executes SQL on text in table format. A tabular format is data that consists of rows and columns, such as:\n1 column 2 columns 1 row a1 a2 2 lines b1 b2 Since the results can be output in various formats, it can also be used for format conversion of tabular data.\ntable of contents trdsql install trdsql File format conversion trdsql Easy SQL trdsql 簡単なSQL その２ trdsql 集計 trdsql 集計計算 trdsql GROUP集計 trdsql Log集計 trdsql ワイルドカード、圧縮ファイル trdsql 標準入力 trdsql 処理の概要 trdsql PostgreSQLエンジンの使用 trdsql MySQLエンジンの使用 trdsql SQLite3エンジンの使用 trdsql DBインポート trdsql JOIN trdsql ファイルとテーブルのJOIN trdsql 列の編集 trdsql Window関数 trdsql 日付・時刻処理 trdsql JSON解析 trdsql JSON出力 trdsql 差分、比較 trdsql グラフ trdsql ライブラリ使用 trdsql SQLファイル指定 trdsql config trdsql CROSS JOIN trdsql generate_series trdsql convert log trdsql 合計を行に追加する trdsql CASE式 trdsql 圧縮ファイル trdsql output trdsql jq構文 trdsql For fixed width ",
     "description": "",
@@ -59,16 +69,6 @@ var relearn_search_index = [
     ],
     "title": "trdsql File format conversion",
     "uri": "/trdsql/02_convert/index.html"
-  },
-  {
-    "breadcrumb": "Top \u003e ov",
-    "content": "Git calls pager when needed. Git output will be easier to use if each is separated by section-delimiter. Also, it is recommended to set the jump-target to “section” accordingly.\nIt is recommended to set the following in gitconfig.\n[pager] diff = ov -F --section-delimiter \"^diff\" --section-header\" log = ov -F --section-delimiter \"^commit\" --jump-target \"section\"(Please add --jump-target \"section\" if you like)\ngit log The git log is separated by commit. You will be able to move by commit unit.\ngit diff git diff is separated by diff or file. You will be able to move in diff units. You can move to the next section (space key) or previous section (^ key) in one go.\nFurthermore, by specifying --section-header, the diff file name will be displayed even if you scroll.\nsearch The above settings will display the search results in commit units. Normally, the search results are displayed at the top, so if it is in the middle of the line, you need to go back, but it will be displayed from the beginning of the commit.\n",
-    "description": "Use ov as a pager for git",
-    "tags": [
-      "ov"
-    ],
-    "title": "git",
-    "uri": "/ov/git/index.html"
   },
   {
     "breadcrumb": "Top",
@@ -700,6 +700,22 @@ var relearn_search_index = [
     "uri": "/categories/index.html"
   },
   {
+    "breadcrumb": "Top \u003e Tags",
+    "content": "",
+    "description": "",
+    "tags": null,
+    "title": "Tag :: ov",
+    "uri": "/tags/ov/index.html"
+  },
+  {
+    "breadcrumb": "Top \u003e Categories",
+    "content": "",
+    "description": "",
+    "tags": null,
+    "title": "Category :: ov",
+    "uri": "/categories/ov/index.html"
+  },
+  {
     "breadcrumb": "Top",
     "content": "",
     "description": "",
@@ -732,22 +748,6 @@ var relearn_search_index = [
     ],
     "title": "trdsql v0.13.0",
     "uri": "/blog/trdsql_0130/index.html"
-  },
-  {
-    "breadcrumb": "Top \u003e Tags",
-    "content": "",
-    "description": "",
-    "tags": null,
-    "title": "Tag :: ov",
-    "uri": "/tags/ov/index.html"
-  },
-  {
-    "breadcrumb": "Top \u003e Categories",
-    "content": "",
-    "description": "",
-    "tags": null,
-    "title": "Category :: ov",
-    "uri": "/categories/ov/index.html"
   },
   {
     "breadcrumb": "Top \u003e Blog",

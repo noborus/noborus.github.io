@@ -1,19 +1,19 @@
 var relearn_search_index = [
   {
-    "breadcrumb": "Top",
-    "content": " trdsql v0.13.0 ov v0.32.1 trdsql v0.12.1 trdsql v0.12.0 ov v0.32.0 ov v0.31.0 psqlのPAGERを設定する ov v0.30.0 幅指定フォーマットの幅を推測する trdsql v0.11.1 ov v0.15.0 ov v0.14.2 ov v0.14.1 ov v0.14.0 ov v0.12.0 PostgreSQLで0列の扱い trdsql jq構文 ov v0.11.1 ov v0.11.0 手っ取り遅くSQLを学ぶ trdsql v0.10.0 第32回 PostgreSQLアンカンファレンス@オンラインで発表しました ov v0.10.0 trdsql v0.9.1 ov v0.9.6 Jpug-doc-tool ov v0.9.5 trdsql+PostgreSQL 14でJSONを処理する ov v0.9.4 mdtsql v0.0.3 pgsp trdsql v0.9.0 ov v0.9.0 ov v0.8.1 trdsql v0.8.0 ov v0.8.0 goのTUIについて2020年最終版 ov v0.7.0 SQLのORDER BY 列番号と式 tcell/tviewでTUIを作るならキー割り当てにcbindを利用しよう ov v0.6.2 ov v0.5.0 ov v0.2.0 tcellについて2 tcellについて goのTUIについて ov v0.1.3 ov GoのTUIで表示が崩れる場合 trdsql 0.7.5 trdsql output trdsql 圧縮ファイル MySQL の LOAD DATA INFILE (go) trdsql 0.7.4 trdsql CASE式 trdsql 合計を行に追加する trdsql convert log trdsql generate_series trdsql CROSS JOIN trdsql config trdsql SQLファイル指定 trdsql ライブラリ使用 trdsql グラフ trdsql 差分、比較 trdsql JSON出力 trdsql JSON解析 trdsql 日付・時刻処理 trdsql Window関数 trdsql 列の編集 trdsql ファイルとテーブルのJOIN trdsql JOIN trdsql DBインポート trdsql SQLite3エンジンの使用 trdsql MySQLエンジンの使用 trdsql PostgreSQLエンジンの使用 trdsql 処理の概要 trdsql 標準入力 trdsql ワイルドカード、圧縮ファイル trdsql Log集計 trdsql GROUP集計 trdsql 集計計算 trdsql 集計 trdsql 簡単なSQL その２ trdsql 簡単なSQL trdsql ファイルフォーマット変換 trdsql インストール ",
-    "description": "",
-    "tags": null,
-    "title": "Blog(ブログ)",
-    "uri": "/ja/blog/index.html"
-  },
-  {
     "breadcrumb": "",
     "content": " 作ったもの trdsql Star Fork CSV,LTSV,JSON,TBLNファイルにSQLを実行できるツール\ntrdsqlのBlog trdsqlというコマンドラインツールを作った(Qiita) trdsqlはCSV,LTSV,JSONをDB(PostgreSQL,MySQL)にインポートするツールです(Zenn) trdsql Category ov Star Fork Feature-rich terminal Pager\nless,moreの代わりとしても動作する高機能ページャー。\nov pages ovの紹介(Zenn) ターミナルページャー新時代(Qiita) ov Category ovcs Star Fork Terminal Pager ov を client/server化したもの。\nterminal pagerをclient/server化してtmuxを組み合わせたら最強のSQLクライアントになった mdviewer Star Fork マークダウンをページャーで表示\ntbln Star Fork データベースのテーブルと親和性のあるファイルフォーマット(tbln)を扱うライブラリ＆ツール\ntbln.dev psutilsql Star Fork システム情報にSQLを実行して表示するツール\nmdtsql Star Fork マークダウンのテーブルに対してSQLを実行するツール\nmdtsql Category xlsxsql Star Fork Excelファイルに対してSQLを実行するツール\nxlsxファイルにSQLを実行するxlsxsql(Qiita) pgsp Star Fork\nPostgreSQL の pg_stat_progressを監視、表示するCLIツール\npgsp Category go-textra Star Fork\nみんなの自動翻訳@textra’s client API用ライブラリです。\njpug-doc-tool Star Fork\nPostgreSQLの日本語マニュアル翻訳ツール\njpug-doc Category guesswidth Star Fork CLI出力の列の幅を推測するライブラリ・ツール\n幅指定フォーマットの幅を推測する Guess the width of the width-specified format 参加しているプロジェクト jpug-doc PostgreSQLマニュアルの翻訳作業をしているレポジトリ。\nPostgreSQL日本語マニュアルについて(Qiita) 日本PostgreSQLユーザ会（別館） 最新版の翻訳マニュアルがあるサイト github 対訳集 PostgreSQLマニュアルの対訳集 ",
     "description": "",
     "tags": null,
     "title": "Top",
     "uri": "/ja/index.html"
+  },
+  {
+    "breadcrumb": "Top",
+    "content": " trdsql v0.13.0 ov v0.32.1 trdsql v0.12.1 trdsql v0.12.0 ov v0.32.0 ov v0.31.0 psqlのPAGERを設定する ov v0.30.0 幅指定フォーマットの幅を推測する trdsql v0.11.1 ov v0.15.0 ov v0.14.2 ov v0.14.1 ov v0.14.0 ov v0.12.0 PostgreSQLで0列の扱い trdsql jq構文 ov v0.11.1 ov v0.11.0 手っ取り遅くSQLを学ぶ trdsql v0.10.0 第32回 PostgreSQLアンカンファレンス@オンラインで発表しました ov v0.10.0 trdsql v0.9.1 ov v0.9.6 Jpug-doc-tool ov v0.9.5 trdsql+PostgreSQL 14でJSONを処理する ov v0.9.4 mdtsql v0.0.3 pgsp trdsql v0.9.0 ov v0.9.0 ov v0.8.1 trdsql v0.8.0 ov v0.8.0 goのTUIについて2020年最終版 ov v0.7.0 SQLのORDER BY 列番号と式 tcell/tviewでTUIを作るならキー割り当てにcbindを利用しよう ov v0.6.2 ov v0.5.0 ov v0.2.0 tcellについて2 tcellについて goのTUIについて ov v0.1.3 ov GoのTUIで表示が崩れる場合 trdsql 0.7.5 trdsql output trdsql 圧縮ファイル MySQL の LOAD DATA INFILE (go) trdsql 0.7.4 trdsql CASE式 trdsql 合計を行に追加する trdsql convert log trdsql generate_series trdsql CROSS JOIN trdsql config trdsql SQLファイル指定 trdsql ライブラリ使用 trdsql グラフ trdsql 差分、比較 trdsql JSON出力 trdsql JSON解析 trdsql 日付・時刻処理 trdsql Window関数 trdsql 列の編集 trdsql ファイルとテーブルのJOIN trdsql JOIN trdsql DBインポート trdsql SQLite3エンジンの使用 trdsql MySQLエンジンの使用 trdsql PostgreSQLエンジンの使用 trdsql 処理の概要 trdsql 標準入力 trdsql ワイルドカード、圧縮ファイル trdsql Log集計 trdsql GROUP集計 trdsql 集計計算 trdsql 集計 trdsql 簡単なSQL その２ trdsql 簡単なSQL trdsql ファイルフォーマット変換 trdsql インストール ",
+    "description": "",
+    "tags": null,
+    "title": "Blog(ブログ)",
+    "uri": "/ja/blog/index.html"
   },
   {
     "breadcrumb": "Top \u003e ov",
@@ -40,7 +40,7 @@ var relearn_search_index = [
   },
   {
     "breadcrumb": "Top \u003e ov",
-    "content": "ovでgitのlogを見やすくする gitのlogを見やすくする工夫はいろんなところで紹介されていますが、gitの設定等により表示を変更する方法にとどまります。 gitの出力をセクション区切りで分割することで、より使いやすくなります。 また、それに合わせてjump-targetを\"section\"しておくことをおすすめします。 以下はgitの推奨設定例です。\n[pager] diff = ov -F --section-delimiter \"^diff\" --section-header\" log = ov -F --section-delimiter \"^commit\" --jump-target \"section\"（--jump-target \"section\"はお好みで追加してください）\ngit log git logはcommit毎に区切られます。 上記の設定によりcommit毎に移動できます。\ngit diff git diffはdiffまたはファイル毎に区切られます。 上記の設定によりdiff毎に移動できます。\nさらに --section-headerを指定することで、diffのファイル名を表示し続けられます。\n検索 上記の設定により検索したときの移動がコミット単位で表示するようになります。 通常は検索結果が一番上に表示するため、途中の行であった場合はさかのぼる必要がありますが、コミットの先頭から表示されます。\n",
+    "content": "ovでgitのlogを見やすくする gitのlogを見やすくする工夫はいろんなところで紹介されていますが、gitの設定等により表示を変更する方法にとどまります。 gitの出力をセクション区切りで分割することで、より使いやすくなります。 また、それに合わせてjump-targetを\"section\"しておくことをおすすめします。 以下はgitの推奨設定例です。\n[pager] diff = \"ov -F --section-delimiter '^diff' --section-header\" log = \"ov -F --section-delimiter '^commit' --section-header-num 3\"（--jump-target \"section\"はお好みで追加してください）\ngit log git logはcommit毎に区切られます。 上記の設定によりcommit毎に移動できます。\ngit diff git diffはdiffまたはファイル毎に区切られます。 上記の設定によりdiff毎に移動できます。\nさらに --section-headerを指定することで、diffのファイル名を表示し続けられます。\n検索 上記の設定により検索したときの移動がコミット単位で表示するようになります。 通常は検索結果が一番上に表示するため、途中の行であった場合はさかのぼる必要がありますが、コミットの先頭から表示されます。\n",
     "description": "gitのページャーとしてovを使用する",
     "tags": [
       "ov"
@@ -700,6 +700,22 @@ var relearn_search_index = [
     "uri": "/ja/categories/index.html"
   },
   {
+    "breadcrumb": "Top \u003e Tags",
+    "content": "",
+    "description": "",
+    "tags": null,
+    "title": "タグ :: ov",
+    "uri": "/ja/tags/ov/index.html"
+  },
+  {
+    "breadcrumb": "Top \u003e Categories",
+    "content": "",
+    "description": "",
+    "tags": null,
+    "title": "カテゴリー :: ov",
+    "uri": "/ja/categories/ov/index.html"
+  },
+  {
     "breadcrumb": "Top",
     "content": "",
     "description": "",
@@ -732,22 +748,6 @@ var relearn_search_index = [
     ],
     "title": "trdsql v0.13.0",
     "uri": "/ja/blog/trdsql_0130/index.html"
-  },
-  {
-    "breadcrumb": "Top \u003e Tags",
-    "content": "",
-    "description": "",
-    "tags": null,
-    "title": "タグ :: ov",
-    "uri": "/ja/tags/ov/index.html"
-  },
-  {
-    "breadcrumb": "Top \u003e Categories",
-    "content": "",
-    "description": "",
-    "tags": null,
-    "title": "カテゴリー :: ov",
-    "uri": "/ja/categories/ov/index.html"
   },
   {
     "breadcrumb": "Top \u003e Blog(ブログ)",
