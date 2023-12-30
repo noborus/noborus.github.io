@@ -16,7 +16,7 @@ var relearn_search_index = [
     "uri": "/ja/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - 機能豊富なページャー",
+    "breadcrumb": "Top \u003e ov",
     "content": "PostgreSQLのクライアントツールであるpsqlは結果を表示するときにPAGERを利用できます。 PSQLのPAGERを設定するも参照してください。\npsql psqlは、結果を表示するときに最初の行にヘッダーとして列名が表示され、その下に列が|で区切られて表示されます。 ovを利用すると、ヘッダーと列を指定することで、より見やすく表示できます。\n以下はPSQL_PAGER の推奨設定例です。 ヘッダー1を指定(-H1)、列の区切りに\"|“を指定(-d \"|\")、カラムモード(-C)を設定します。 画面に収まる場合は、ページャーを終了します(-F)。 列の色を変える(--column-rainbow)のもおすすめです。\nPSQL_PAGER 'ov -F -C -d \"|\" -H1 --column-rainbow'画面ではデフォルトから色を変えてconfig.yamlで以下の設定をしています。\nStyleHeader: Background: \"#23274f\" Bold: true StyleColumnHighlight: Foreground: \"lightcyan\" Reverse: true StyleAlternate: Background: \"#2a2a2a\" watch(PostgreSQL 15) PostgreSQL 15からはwatchが利用できます。 PSQL_WATCH_PAGER には以下の設定を推奨します。 これにより空行で区切られた最後のセクションを表示し続けます。\nPSQL_WATCH_PAGER='ov --follow-section --section-delimiter \"^$\"' expanded output (\\x) 拡張出力(\\x)で表示のときには、レコード区切りをセクション区切りとして扱うと、レコード区切りでスクロールするため、見やすくなります。\nPAGER 'ov -F --section-delimiter \"^-\"' (\\x)と\\watchを組み合わせることもできます。\nunaligned (\\a) アラインメントなし（列を揃えない）表示でも、列ハイライトを利用することで、快適に表示されます。 以下のように、PAGERの指定は変更しません。\nPSQL_PAGER='ov -F -C -d \"|\" -H1'. ",
     "description": "PostgreSQLクライアントpsqlでovを使用する",
     "tags": [
@@ -39,7 +39,7 @@ var relearn_search_index = [
     "uri": "/ja/trdsql/01_install/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - 機能豊富なページャー",
+    "breadcrumb": "Top \u003e ov",
     "content": "ovでgitのlogを見やすくする gitのlogを見やすくする工夫はいろんなところで紹介されていますが、gitの設定等により表示を変更する方法にとどまります。 gitの出力をセクション区切りで分割することで、より使いやすくなります。 また、それに合わせてjump-targetを\"section\"しておくことをおすすめします。 以下はgitの推奨設定例です。\n[pager] diff = ov -F --section-delimiter \"^diff\" --section-header\" log = ov -F --section-delimiter \"^commit\" --jump-target \"section\"（--jump-target \"section\"はお好みで追加してください）\ngit log git logはcommit毎に区切られます。 上記の設定によりcommit毎に移動できます。\ngit diff git diffはdiffまたはファイル毎に区切られます。 上記の設定によりdiff毎に移動できます。\nさらに --section-headerを指定することで、diffのファイル名を表示し続けられます。\n検索 上記の設定により検索したときの移動がコミット単位で表示するようになります。 通常は検索結果が一番上に表示するため、途中の行であった場合はさかのぼる必要がありますが、コミットの先頭から表示されます。\n",
     "description": "gitのページャーとしてovを使用する",
     "tags": [
@@ -72,14 +72,14 @@ var relearn_search_index = [
   },
   {
     "breadcrumb": "Top",
-    "content": " Download インストール、設定についてはgithub siteを参照してください。\n特徴 ov は端末サイズで表示するページャー機能だけでなく、テキストを区切ることでより便利な機能を提供します。\nヘッダー行を固定表示 列を区切ってテーブル形式の表示 行を区切ってセクション単位での表示 メモリよりも大きなファイルをサポート 使用事例 psqlPostgreSQLクライアントpsqlでovを使用する\ngitgitのページャーとしてovを使用する\ndeltaovをdeltaのpagerとして使用する\nmysqlovをmysqlのpagerとして使用する\npgcliovはpgcliのページャーとしても使用可能です。 ~/.config/pgcli/config に以下のように設定します。 pager = 'ov -C -d \"|\" --skip-lines 1 -H1'\nmycliUse 'ov' as a pager for mycli\npspsのページャーとしてovを使用する\nmanmanページのページャーとしてovを使用する\nprocsprocsのページャーとしてovを使用する\ntoptopのページャーとしてovを使用する\novでファイル監視（ウォッチ）ovでファイル監視（ウォッチ）\nbatovをbatのページャーとして使用する\ncsvの表示ovをCSVビューアとして使う\nmarkdown表示ovはmarkdownビューアとしても使う。\n複数ファイル複数ファイルを指定して表示\n複数の単語を複数の色でハイライト複数の単語を複数の色でハイライト\n大きなファイルを開く速度ovは大きなファイルを開く速度が速い\nコマンド実行ovからコマンドを実行する\nフォローモードの使い方ovのフォローモードの使い方\nセクションの使い方ovのセクションの使い方\nメモリ管理ovのメモリ管理\n",
-    "description": "",
+    "content": "機能豊富なターミナルページャー Download Note インストール、設定についてはgithubを参照してください。\n特徴 ov は端末サイズで表示するページャー機能だけでなく、テキストを区切ることでより便利な機能を提供します。\nヘッダー行を固定表示 列を区切ってテーブル形式の表示 行を区切ってセクション単位での表示 メモリよりも大きなファイルをサポート 使用事例 psqlPostgreSQLクライアントpsqlでovを使用する\ngitgitのページャーとしてovを使用する\ndeltaovをdeltaのpagerとして使用する\nmysqlovをmysqlのpagerとして使用する\npgcliovはpgcliのページャーとしても使用可能です。 ~/.config/pgcli/config に以下のように設定します。 pager = 'ov -C -d \"|\" --skip-lines 1 -H1'\nmycliUse 'ov' as a pager for mycli\npspsのページャーとしてovを使用する\nmanmanページのページャーとしてovを使用する\nprocsprocsのページャーとしてovを使用する\ntoptopのページャーとしてovを使用する\novでファイル監視（ウォッチ）ovでファイル監視（ウォッチ）\nbatovをbatのページャーとして使用する\ncsvの表示ovをCSVビューアとして使う\nmarkdown表示ovはmarkdownビューアとしても使う。\n複数ファイル複数ファイルを指定して表示\n複数の単語を複数の色でハイライト複数の単語を複数の色でハイライト\n大きなファイルを開く速度ovは大きなファイルを開く速度が速い\nコマンド実行ovからコマンドを実行する\nフォローモードの使い方ovのフォローモードの使い方\nセクションの使い方ovのセクションの使い方\nメモリ管理ovのメモリ管理\n",
+    "description": "ov - 機能豊富なページャー",
     "tags": "ov",
-    "title": "ov - 機能豊富なページャー",
+    "title": "ov",
     "uri": "/ja/ov/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - 機能豊富なページャー",
+    "breadcrumb": "Top \u003e ov",
     "content": "deltaはpagerをサポートしています。\ndeltaはgitのpagerとしてよく指定されますが、pagerは実際にはdelta内部から呼び出されます。\nしたがって、deltaの設定はgitconfigに書いて指定することが多いです。 以下はgitconfigの設定例です。\n[core] pager = delta [delta] navigate = true side-by-side = true file-style = yellow[delta]のnavigate = true はlessを使用するときにn/Nで移動できるようにするための設定ですが、 この設定により必要な場所をマークが付きます。\novではこのマークを使用して環境変数DELTA_PAGERをセットします。\nexport DELTA_PAGER=\"ov --section-delimiter '^(commit|added:|removed:|renamed:|Δ)' --section-header --pattern '•'\"これらの設定を組み合わせることで、ファイル毎にファイル(space key of ^ key)、diff毎にn/N keyで移動できます。 さらに、行を移動しても差分ファイル名が表示されます。\n",
     "description": "ovをdeltaのpagerとして使用する",
     "tags": [
@@ -104,7 +104,7 @@ var relearn_search_index = [
     "uri": "/ja/trdsql/03_sql/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - 機能豊富なページャー",
+    "breadcrumb": "Top \u003e ov",
     "content": "ov はmysqlクライアントやMySQL Shellのページャーとしても使用できます。 mysqlクライアントは--pagerオプションで指定できます。\nmysql --pager='ov -w=f -H3 -F -C -d \"|\"' ~/.my.cnf設定ファイルに以下を書くことでも使用できます。\n[client] pager=ov -w=f -H3 -F -C -d \"|\" mysqlのヘッダーは3行なので、-H3で指定していますが、うち2行は区切りの線です。 もし区切りの線を常に表示しておかなくてもよいのであれば、-H1を指定して、さらに--skip-lines 1で1行目をスキップするようにします。\nov -w=f --skip-lines 1 -H1 -F -C -d \"|\"' mysqlshでは、--pagerオプションを使うか、mysqlshが起動している間に設定します。 例えば、jsモードでは、以下のコマンドで永続的に設定できます。\nshell.options.setPersist(\"pager\",\"ov -H1 --skip-lines 1 -C -w=false -d'|' -F\")日本語：SQLモードとPythonモードでは、以下のように設定します。\n```console \\option --persist pager \"ov -w=f -H1 --skip-lines 1 -F -C -d '|'\" ",
     "description": "ovをmysqlのpagerとして使用する",
     "tags": [
@@ -134,7 +134,7 @@ var relearn_search_index = [
     "uri": "/ja/trdsql/04_sql2/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - 機能豊富なページャー",
+    "breadcrumb": "Top \u003e ov",
     "content": "ovはpgcliのページャーとしても使用可能です。\n~/.config/pgcli/config に以下のように設定します。\npager = 'ov -C -d \"|\" --skip-lines 1 -H1'",
     "description": "",
     "tags": [
@@ -158,7 +158,7 @@ var relearn_search_index = [
     "uri": "/ja/trdsql/05_aggregate/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - 機能豊富なページャー",
+    "breadcrumb": "Top \u003e ov",
     "content": "ovはmycliのページャーとしても使用できます。\nmycliはmysqlの~/.my.cnfファイルを使用して設定できます。 https://www.mycli.net/configを参照してください。\n[client] pager=\"ov -C --skip-lines 1 --header 1 -d'|'\"",
     "description": "Use 'ov' as a pager for mycli",
     "tags": [
@@ -184,7 +184,7 @@ var relearn_search_index = [
     "uri": "/ja/trdsql/06_calculation/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - 機能豊富なページャー",
+    "breadcrumb": "Top \u003e ov",
     "content": "psの出力を列区切りで表示できます。 --column-widthを使用するとスペース区切りよりも賢く列を認識できます。\nps aux | ov --column-width --column-rainbow -H1 ",
     "description": "psのページャーとしてovを使用する",
     "tags": [
@@ -195,7 +195,7 @@ var relearn_search_index = [
     "uri": "/ja/ov/ps/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - 機能豊富なページャー",
+    "breadcrumb": "Top \u003e ov",
     "content": "ovはmanページを表示するページャーとしても使えます。 環境変数MANPAGERにovを設定してください。\nMANPAGER=ovmanページでカラフルに表示したいときはStyleOverStrikeとStyleOverLineスタイルによりカスタマイズできます。\nStyleOverStrike: Foreground: \"aqua\" Bold: true StyleOverLine: Foreground: \"red\" Underline: true",
     "description": "manページのページャーとしてovを使用する",
     "tags": [
@@ -217,7 +217,7 @@ var relearn_search_index = [
     "uri": "/ja/trdsql/07_group/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - 機能豊富なページャー",
+    "breadcrumb": "Top \u003e ov",
     "content": "procs のページャーとしても使用可能です。\nconfiguration file に以下のように設定します。 ヘッダー行を1または2で設定すると便利です。\n[pager] command = \"ov -H=1 -w=false -d=│\"",
     "description": "procsのページャーとしてovを使用する",
     "tags": [
@@ -228,7 +228,7 @@ var relearn_search_index = [
     "uri": "/ja/ov/procs/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - 機能豊富なページャー",
+    "breadcrumb": "Top \u003e ov",
     "content": "topコマンドは自前で画面に合わせて描画するためページャーは必要ありませんが(通常起動するとキーストロークを奪ってしまうためそのままでは動作しません)、 現在の状態を表示するだけで、履歴を表示することはできません。 バッチモードで起動すると表示を繰り返すため、それをページャーで受け取って表示すれば履歴を表示できます。\ntopを-bバッチモードで起動すると先頭が\"top\"から始まる出力で繰り返し出力されます。その出力をovで受け取り、--follow-sectionで繰り返し表示します。 そうするとfollow section modeが動作しているときには、最新が表示され、とめればさかのぼって履歴を表示できます。\ntop -b -c -w512|ov --column-delimiter \"/\\s+/\" --section-delimiter \"^top\" --column-mode --column-rainbow --follow-section -w=false ",
     "description": "topのページャーとしてovを使用する",
     "tags": [
@@ -251,7 +251,7 @@ var relearn_search_index = [
     "uri": "/ja/trdsql/08_log/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - 機能豊富なページャー",
+    "breadcrumb": "Top \u003e ov",
     "content": "ovはウォッチモードをサポートしています。ウォッチモードは一定間隔でファイルを読み込みます。 ファイルは指定した時間ごとに追加されます。\nov --watch 1 /proc/meminfo 日本語：その時、EOFの代わりにformfeed(\\f)を追加します。 ウォッチモードは自動的にfollow-section “\\f\"を設定します。\n",
     "description": "ovでファイル監視（ウォッチ）",
     "tags": [
@@ -262,7 +262,7 @@ var relearn_search_index = [
     "uri": "/ja/ov/watch/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - 機能豊富なページャー",
+    "breadcrumb": "Top \u003e ov",
     "content": "bat のページャーとしてもサポートしています。\n環境変数PAGERまたはBAT_PAGERにovを設定してください。\nexport BAT_PAGER=\"ov -F -H3\" bat を使用するときには折り返さない(--wrap=never)で使用することをおすすめします。 batで折り返してしまうと、折り返さない表示に切り替えることができません。 ovの方で折り返しを行ったほうが、ovの機能を活用できます。\nbat --wrap=never README.md ",
     "description": "ovをbatのページャーとして使用する",
     "tags": [
@@ -290,7 +290,7 @@ var relearn_search_index = [
     "uri": "/ja/trdsql/09_wildcard/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - 機能豊富なページャー",
+    "breadcrumb": "Top \u003e ov",
     "content": "ovをCSVビューアとして使うことができます。 ヘッダーの有無や区切りも文字を指定できます。\nov -H1 -C -d',' -c --column-rainbow MOCK_DATA.csv ",
     "description": "ovをCSVビューアとして使う",
     "tags": [
@@ -312,7 +312,7 @@ var relearn_search_index = [
     "uri": "/ja/trdsql/10_stdin/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - 機能豊富なページャー",
+    "breadcrumb": "Top \u003e ov",
     "content": "ovはmarkdownビューアとしても使えます。 セクション区切りとしてmarkdownのヘッダを指定することで、次のセクションに移動しやすくなります。\nov --section-delimiter \"^#\" README.md ",
     "description": "ovはmarkdownビューアとしても使う。",
     "tags": [
@@ -333,7 +333,7 @@ var relearn_search_index = [
     "uri": "/ja/trdsql/11_summary/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - 機能豊富なページャー",
+    "breadcrumb": "Top \u003e ov",
     "content": "ovは複数ファイルを指定可能です。\n] キーで次のドキュメントを表示します。 [ キーで前のドキュメントを表示します。 (デフォルトキー設定)\nov *.go ",
     "description": "複数ファイルを指定して表示",
     "tags": [
@@ -354,7 +354,7 @@ var relearn_search_index = [
     "uri": "/ja/trdsql/12_postgres/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - 機能豊富なページャー",
+    "breadcrumb": "Top \u003e ov",
     "content": "ovは複数の単語を複数の色でハイライトできます。\nov --multi-color \"ERROR.*,WARN,INFO,DEBUG,not,^.{24}\" access.log 入力方法 正規表現をスペースで区切って入力します。 スペースを含む場合は、引用符で囲みます。\n.（デフォルトキー） でmulticolorの入力モードになります。 ERROR.* WARN \"error is\"カスタマイズ 色（スタイル）はカスタマイズ可能です。 github customizeを参照してください。\nStyleMultiColorHighlight: - Foreground: \"red\" - Foreground: \"aqua\" - Foreground: \"yellow\" - Foreground: \"fuchsia\" - Foreground: \"lime\" - Foreground: \"blue\" - Foreground: \"grey\"",
     "description": "複数の単語を複数の色でハイライト",
     "tags": [
@@ -375,7 +375,7 @@ var relearn_search_index = [
     "uri": "/ja/trdsql/13_mysql/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - 機能豊富なページャー",
+    "breadcrumb": "Top \u003e ov",
     "content": "多くのページャーはファイルを全部読み込む前に表示を開始するため、単純な速度比較は難しいですが、最後尾に移動したり行数が必要な処理（行番号の表示等）をする場合は、ファイル全体を読む必要があり速度に差が出ます。\novは、大きなファイルを読み込むときには、ファイルの先頭以外は行数と位置を記録して後で読み直せるようにするため、メモリ使用量を抑えて、速度も速く動作します。 また、ファイル操作は別のゴルーチンがおこなうため、ファイルの読み込みが発生しても操作がブロックされることはありません。\nそのため、大きなファイルを開いても操作によって待たされることが無いようになっています。\nlessと比較してみます。\novは、大きなファイルではメモリに読み込まずにカウントと記録だけおこなうため、全行数のカウントが早く終わります。行数が把握できるとそこからすぐに最後尾に移動できるため操作が止まることはありません。\nまた、全行数を読み込む前であってもlessのように最後尾に移動する場合は、先に最後尾に移動してからカウントを再開するため、最後尾に移動するのも即座に可能です。\n",
     "description": "ovは大きなファイルを開く速度が速い",
     "tags": [
@@ -649,7 +649,7 @@ var relearn_search_index = [
     "uri": "/ja/trdsql/35_jq/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - 機能豊富なページャー",
+    "breadcrumb": "Top \u003e ov",
     "content": "通常ページャーは実行した出力をパイプでovに渡しますが、stdoutとstderrをどちらか、または両方を混在させて表示することになります。\nmake |ov make 2\u003e\u00261 |ov Execモードはovからコマンドを実行します。 ovから実行することで、stdoutとstderrを別々のドキュメントとして表示できます。\nさらに--follow-allと同時に使うことで、最後に出力された方を表示できます。\nつまり、makeの標準出力とエラー出力を別々に表示しながら、エラーがあれば画面を切り替えできます。\nov --follow-all --exec -- make ",
     "description": "ovからコマンドを実行する",
     "tags": [
@@ -660,7 +660,7 @@ var relearn_search_index = [
     "uri": "/ja/ov/exec/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - 機能豊富なページャー",
+    "breadcrumb": "Top \u003e ov",
     "content": "出力されたデータを追加して、最下行に移動します（tail -fのように）。\novはfollowモードで入力検索などの操作が可能です（インクリメンタルサーチも！）。\ndocker run chentex/random-logger:latest 100 400 |ov --follow-mode ",
     "description": "ovのフォローモードの使い方",
     "tags": [
@@ -671,7 +671,7 @@ var relearn_search_index = [
     "uri": "/ja/ov/tail/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - 機能豊富なページャー",
+    "breadcrumb": "Top \u003e ov",
     "content": "ovは複数行のブロックをセクションとして表示できます。 セクションのブロックはセクション区切り行で区切られます。 セクション区切り行はStyleSectionLineのスタイル(背景色緑)で表示されます。\nThe section delimiter is optionally specified as a regular expression string at startup. セクション区切りは、起動時に正規表現文字列としてオプションで指定できます。\nov --section-delimiter \"^$\" 起動後は、セクション区切りを入力モードで入力することで設定できます。 セクション区切りの入力モードは、section_delimiterのキーバインディング(alt + d)で入力できます。\nSection delimiter: ^$ セクション区切りが不要な場合(空行など)は、--section-start 1を使うことで次の行から表示できます。\n--follow-sectionは、フォローモードの行の代わりにセクションを使用します。\n\\watch of psqlとの併用に適しています。\n",
     "description": "ovのセクションの使い方",
     "tags": [
@@ -681,7 +681,7 @@ var relearn_search_index = [
     "uri": "/ja/ov/section/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - 機能豊富なページャー",
+    "breadcrumb": "Top \u003e ov",
     "content": "メモリ管理 通常ファイル ov は ChunkSize（10,000行）毎にChunkに分けて管理しています。 例えば、73,210行のファイルは以下の図のように7つのChunkに分割されます。\n最初の Chunk (Chunk0) は常にメモリにロードされたままになります。 Chunk3 と Chunk4 もメモリにロードされます。表示時に2つの Chunk にまたがる可能性があるためです。 Chunk1 と Chunk2 は以前に使用されていてメモリにロードされていますが、制限を超えると解放されます。 通常のファイルの場合、シークしながらメモリをロードして解放することで、メモリと速度を節約することができます。\n通常ファイル以外 seek できないファイル（パイプや圧縮ファイル）も Chunk 単位で管理していますが、一度解放するとメモリにロードすることはできないため、できるだけメモリにロードします。 メモリ制限がある場合は、メモリ制限まで読み込んでから読み込みを一時停止します。\n例えば、41230行に移動すると、Chunk1、Chunk2、Chunk3が解放され、現在の位置から先読みされます。\nメモリ制限 通常ファイルのデフォルトのメモリ制限は100（100万行）です。 あまり変更する必要はないと思いますが、--memory-limit-file で指定することができます。\nov --memory-limit-file 10 large.log 通常ファイル以外のメモリ制限のデフォルトは-1（無制限）です。\nメモリ不足を避けるためにメモリに応じて制限したほうがよいでしょう。 ov.yaml に MemoryLimit: 10000(or 1000) のように設定することをお勧めします。\nMemoryLimit: 10000コマンドラインオプションでも --memory-limit 1000 のように指定できます。\ncommand | ov --memory-limit 1000 メモリ制限オプションを指定しても、大きなファイルはメモリを多く使用します。 GCを頻繁に実行するために GOMEMLIMIT を設定すると、一時的なメモリの増加も抑制されます。\nexport GOMEMLIMIT=400MiB ov --memory-limit-file 10 large.log ",
     "description": "ovのメモリ管理",
     "tags": [

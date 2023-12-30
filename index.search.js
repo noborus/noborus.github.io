@@ -16,7 +16,7 @@ var relearn_search_index = [
     "uri": "/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - Feature-rich pager",
+    "breadcrumb": "Top \u003e ov",
     "content": "This is the setting for psql, a client tool for PostgreSQL.\npsql This is the recommended setting for PSQL_PAGER. Header 1 is specified(-H1),\"|\" is used to separate columns(-d \"|\"), and column mode(-C) is set. If it fits on the screen, exit the pager(-F). It is also recommended to change the color of the columns(--column-rainbow).\nPSQL_PAGER 'ov -F -C -d \"|\" -H1 --column-rainbow'The following sets the header style of config.yaml.\nStyleHeader: Background: \"#23274f\" Bold: true StyleColumnHighlight: Foreground: \"lightcyan\" Reverse: true StyleAlternate: Background: \"#2a2a2a\" watch(PostgreSQL 15) A pager is available for WATCH from PostgreSQL version 15. This is the recommended value for PSQL_WATCH_PAGER. Continues to display the last section separated by blank lines.\nPSQL_WATCH_PAGER 'ov --follow-section --section-delimiter \"^$\"' expanded output (\\x) Even when displaying in the extended output (\\x), if the record delimiter is treated as a section delimiter, the display when moved will be easier to see.\nPAGER='ov -F --section-delimiter \"^-\"' You can also display expanded output (\\x) with \\watch.\nunaligned (\\a) Even in unaligned display, it is displayed comfortably by using column highlighting.\nThe PAGER specification does not change with the following.\nPSQL_PAGER='ov -F -C -d \"|\" -H1'. ",
     "description": "PostgreSQL client tool psql with ov",
     "tags": [
@@ -61,7 +61,7 @@ var relearn_search_index = [
     "uri": "/trdsql/02_convert/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - Feature-rich pager",
+    "breadcrumb": "Top \u003e ov",
     "content": "Git calls pager when needed. Git output will be easier to use if each is separated by section-delimiter. Also, it is recommended to set the jump-target to “section” accordingly.\nIt is recommended to set the following in gitconfig.\n[pager] diff = ov -F --section-delimiter \"^diff\" --section-header\" log = ov -F --section-delimiter \"^commit\" --jump-target \"section\"(Please add --jump-target \"section\" if you like)\ngit log The git log is separated by commit. You will be able to move by commit unit.\ngit diff git diff is separated by diff or file. You will be able to move in diff units. You can move to the next section (space key) or previous section (^ key) in one go.\nFurthermore, by specifying --section-header, the diff file name will be displayed even if you scroll.\nsearch The above settings will display the search results in commit units. Normally, the search results are displayed at the top, so if it is in the middle of the line, you need to go back, but it will be displayed from the beginning of the commit.\n",
     "description": "Use ov as a pager for git",
     "tags": [
@@ -72,10 +72,10 @@ var relearn_search_index = [
   },
   {
     "breadcrumb": "Top",
-    "content": " Download Please refer to the github site for installation and settings.\nFeatures ov provides a more convenient function by separating text, not only the pager function to display at the terminal size.\nSpecify a fixed line to be displayed as a header. Table-formatted text can be interpreted as a column by the delimiter. Text can be interpreted as a section by splitting the line with a delimiter. Supports files larger than memory. Use case psqlPostgreSQL client tool psql with ov\ngitUse ov as a pager for git\ndeltaov can also be used as a pager for delta.\nmysqlUse 'ov' as a pager for mysql\npgcliUse 'ov' as a pager for pgcli\nmycliUse 'ov' as a pager for mysql\npsUse 'ov' as a pager for ps\nmanUse 'ov' as a pager for man pages\ntopUse 'ov' as a pager for top\nprocsUse 'ov' as a pager for procs\nbatov can also be used as a pager for bat.\nWatch files with ovFile monitoring (watch) with ov\nview csvov can also be used as a csv viewer.\nView markdownov can also be used as a markdown viewer.\nmultiple filesDisplay multiple files\nMulticolor highlights multiple wordsov can highlight multiple words in multiple colors.\nspeed of opening large filesspeed of opening large files\nexecute commandov can execute commands and display the output.\nHow to use follow modeHow to use follow mode of ov\nHow to use sectionHow to use section of ov\nMemory managementMemory management of ov\n",
-    "description": "",
+    "content": "Feature-rich terminal pager Download Note Please refer to the github for installation and settings.\nFeatures ov provides a more convenient function by separating text, not only the pager function to display at the terminal size.\nSpecify a fixed line to be displayed as a header. Table-formatted text can be interpreted as a column by the delimiter. Text can be interpreted as a section by splitting the line with a delimiter. Supports files larger than memory. Use case psqlPostgreSQL client tool psql with ov\ngitUse ov as a pager for git\ndeltaov can also be used as a pager for delta.\nmysqlUse 'ov' as a pager for mysql\npgcliUse 'ov' as a pager for pgcli\nmycliUse 'ov' as a pager for mysql\npsUse 'ov' as a pager for ps\nmanUse 'ov' as a pager for man pages\ntopUse 'ov' as a pager for top\nprocsUse 'ov' as a pager for procs\nbatov can also be used as a pager for bat.\nWatch files with ovFile monitoring (watch) with ov\nview csvov can also be used as a csv viewer.\nView markdownov can also be used as a markdown viewer.\nmultiple filesDisplay multiple files\nMulticolor highlights multiple wordsov can highlight multiple words in multiple colors.\nspeed of opening large filesspeed of opening large files\nexecute commandov can execute commands and display the output.\nHow to use follow modeHow to use follow mode of ov\nHow to use sectionHow to use section of ov\nMemory managementMemory management of ov\n",
+    "description": "ov - Feature-rich terminal pager",
     "tags": "ov",
-    "title": "ov - Feature-rich pager",
+    "title": "ov",
     "uri": "/ov/index.html"
   },
   {
@@ -92,7 +92,7 @@ var relearn_search_index = [
     "uri": "/trdsql/03_sql/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - Feature-rich pager",
+    "breadcrumb": "Top \u003e ov",
     "content": "delta supports pager.\ndelta is often specified as git’s pager, but the pager is actually called from within delta.\nTherefore, delta settings are often specified by writing them in gitconfig. This is an example of gitconfig settings.\n[core] pager = delta [delta] navigate = true side-by-side = true file-style = yellownavigate = true of delta is set to allow you to move in diff units using the n/N keys of less. This setting allows you to mark the necessary locations.\nUse that mark to set `ov`` with environment variables.\nexport DELTA_PAGER=\"ov --section-delimiter '^(commit|added:|removed:|renamed:|Δ)' --section-header --pattern '•'\"By combining these settings, you can move files by file (space key of ^ key) and diff by n/N key.\nFurthermore, even if you move a line, the difference file name can be displayed.\n",
     "description": "ov can also be used as a pager for delta.",
     "tags": [
@@ -112,7 +112,7 @@ var relearn_search_index = [
     "uri": "/about/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - Feature-rich pager",
+    "breadcrumb": "Top \u003e ov",
     "content": "ov can be used as a pager for mysql or MySQL Shell.\nUse the –pager option with the mysql client.\nmysql --pager='ov -w=f -H3 -F -C -d \"|\"' You can also write in ~/.my.cnf.\n[client] pager=ov -w=f -H3 -F -C -d \"|\" The header line for mysql is 3, but it’s surrounded by a separator line. You can increase the display area by setting the skip line to 1 and the header to 1.\nov -w=f --skip-lines 1 -H1 -F -C -d \"|\"' For mysqlsh, use the --pager option or set it while mysqlsh is running. For example, in js mode, it can be made persistent by the following command.\nshell.options.setPersist(\"pager\",\"ov -H1 --skip-lines 1 -C -w=false -d'|' -F\")SQL mode and Python mode.\n\\option --persist pager \"ov -w=f -H1 --skip-lines 1 -F -C -d '|'\" ",
     "description": "Use 'ov' as a pager for mysql",
     "tags": [
@@ -135,7 +135,7 @@ var relearn_search_index = [
     "uri": "/trdsql/04_sql2/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - Feature-rich pager",
+    "breadcrumb": "Top \u003e ov",
     "content": "ov can be set as a pager for pgcli.\n~/.config/pgcli/config\npager = 'ov -C -d \"|\" --skip-lines 1 -H1'",
     "description": "Use 'ov' as a pager for pgcli",
     "tags": [
@@ -159,7 +159,7 @@ var relearn_search_index = [
     "uri": "/trdsql/05_aggregate/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - Feature-rich pager",
+    "breadcrumb": "Top \u003e ov",
     "content": "ov can be set as a pager for mycli.\nmycli reads the client section of ~/.my.cnf in mysql. Please refer to https://www.mycli.net/config.\n[client] pager=\"ov -C --skip-lines 1 --header 1 -d'|'\"",
     "description": "Use 'ov' as a pager for mysql",
     "tags": [
@@ -185,7 +185,7 @@ var relearn_search_index = [
     "uri": "/trdsql/06_calculation/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - Feature-rich pager",
+    "breadcrumb": "Top \u003e ov",
     "content": "The ps output is properly columned. --column-width can divide columns better than spaces.\nps aux | ov --column-width --column-rainbow -H1 ",
     "description": "Use 'ov' as a pager for ps",
     "tags": [
@@ -196,7 +196,7 @@ var relearn_search_index = [
     "uri": "/ov/ps/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - Feature-rich pager",
+    "breadcrumb": "Top \u003e ov",
     "content": "ov can also be used as a man pager.\nMANPAGER=\"ov --section-delimiter '^[^\\s]' --section-header\"In the man page, you can set the color by the StyleOverStrike and StyleOverLine styles.\nStyleOverStrike: Foreground: \"aqua\" Bold: true StyleOverLine: Foreground: \"red\" Underline: true",
     "description": "Use 'ov' as a pager for man pages",
     "tags": [
@@ -218,7 +218,7 @@ var relearn_search_index = [
     "uri": "/trdsql/07_group/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - Feature-rich pager",
+    "breadcrumb": "Top \u003e ov",
     "content": "top works fine when started in batch mode (it doesn’t work as-is when started normally because it steals keystrokes).\nIt is convenient because you can browse the history of top.\ntop -b -c -w512|ov --column-delimiter \"/\\s+/\" --section-delimiter \"^top\" --column-mode --column-rainbow --follow-section -w=false ",
     "description": "Use 'ov' as a pager for top",
     "tags": [
@@ -229,7 +229,7 @@ var relearn_search_index = [
     "uri": "/ov/top/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - Feature-rich pager",
+    "breadcrumb": "Top \u003e ov",
     "content": "procs supports pager.\nYou can specify the pager in the configuration file.\nIt is convenient to set header(-H) to 1 or 2.\n[pager] command = \"ov -H=1 -w=false -d=│\"",
     "description": "Use 'ov' as a pager for procs",
     "tags": [
@@ -252,7 +252,7 @@ var relearn_search_index = [
     "uri": "/trdsql/08_log/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - Feature-rich pager",
+    "breadcrumb": "Top \u003e ov",
     "content": "bat supports pager.\nYou can use it by setting the environment variable PAGER or BAT_PAGER.\nexport BAT_PAGER=\"ov -F -H3\" bat should not be wrapped (--wrap=never). If it wraps with bat, it cannot be switched to unwrap. It is better to operate with ov.\nbat --wrap=never README.md ",
     "description": "ov can also be used as a pager for bat.",
     "tags": [
@@ -263,7 +263,7 @@ var relearn_search_index = [
     "uri": "/ov/bat/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - Feature-rich pager",
+    "breadcrumb": "Top \u003e ov",
     "content": "ov supports watch mode, which reads files at regular intervals. The file is added every specified time.\nov --watch 1 /proc/meminfo At that time, add formfeed (\\f) instead of EOF. watch mode automatically sets follow-section “\\f”.\n",
     "description": "File monitoring (watch) with ov",
     "tags": [
@@ -291,7 +291,7 @@ var relearn_search_index = [
     "uri": "/trdsql/09_wildcard/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - Feature-rich pager",
+    "breadcrumb": "Top \u003e ov",
     "content": "ov can also be used as a csv viewer.\nov -H1 -C -d',' -c --column-rainbow MOCK_DATA.csv ",
     "description": "ov can also be used as a csv viewer.",
     "tags": [
@@ -312,7 +312,7 @@ var relearn_search_index = [
     "uri": "/trdsql/10_stdin/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - Feature-rich pager",
+    "breadcrumb": "Top \u003e ov",
     "content": "ov can also be used as a markdown viewer. Specifying the markdown header as a section delimiter makes it easier to move to the next section.\nov --section-delimiter \"^#\" README.md ",
     "description": "ov can also be used as a markdown viewer.",
     "tags": [
@@ -333,7 +333,7 @@ var relearn_search_index = [
     "uri": "/trdsql/11_summary/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - Feature-rich pager",
+    "breadcrumb": "Top \u003e ov",
     "content": "ov can specify multiple files.\n] key to view the next document [ key to view previous document (With default key bindings).\nov *.go ",
     "description": "Display multiple files",
     "tags": [
@@ -354,7 +354,7 @@ var relearn_search_index = [
     "uri": "/trdsql/12_postgres/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - Feature-rich pager",
+    "breadcrumb": "Top \u003e ov",
     "content": "ov can highlight multiple words in multiple colors.\nov --multi-color \"ERROR.*,WARN,INFO,DEBUG,not,^.{24}\" access.log input mode Enter regular expressions separated by spaces. Enclose in quotation marks if it contains spaces.\n.(default key bindings) multicolor input mode. ERROR.* WARN \"error is\"customize The colors(styles) displayed are customizable. See github customize for settings.\nStyleMultiColorHighlight: - Foreground: \"red\" - Foreground: \"aqua\" - Foreground: \"yellow\" - Foreground: \"fuchsia\" - Foreground: \"lime\" - Foreground: \"blue\" - Foreground: \"grey\"",
     "description": "ov can highlight multiple words in multiple colors.",
     "tags": [
@@ -375,7 +375,7 @@ var relearn_search_index = [
     "uri": "/trdsql/13_mysql/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - Feature-rich pager",
+    "breadcrumb": "Top \u003e ov",
     "content": "Many pagers start displaying before reading the entire file, so it is difficult to make a simple speed comparison, but if you need to move to the end or need the number of lines (display line numbers, etc.), you need to read the entire file, which can make a difference in speed.\nWhen reading a large file, ov records the number of lines and positions so that it can be read again later, so it uses less memory and runs faster.\nTherefore, even if you open a large file, you will not be delayed by the operation. Let’s compare it with less.\nov does not read to memory for large files, so it only counts and records, so the count of the total number of lines ends quickly. Once you know the number of lines, you can move to the end immediately, so there is no interruption in operation.\nAlso, even if you move to the end like less before reading all the lines, you can move to the end immediately because you move to the end first and then resume counting.\n",
     "description": "speed of opening large files",
     "tags": [
@@ -648,7 +648,7 @@ var relearn_search_index = [
     "uri": "/trdsql/35_jq/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - Feature-rich pager",
+    "breadcrumb": "Top \u003e ov",
     "content": "Exec mode executes commands from ov. In Exec mode, stdout and stderr can be displayed as separate documents.\nBy using it at the same time as --follow-all, you can display the one that was output last.\nFor example, while displaying the standard output of make and the error output separately, you can switch the screen if there is an error.\nov --follow-all --exec -- make ",
     "description": "ov can execute commands and display the output.",
     "tags": [
@@ -659,7 +659,7 @@ var relearn_search_index = [
     "uri": "/ov/exec/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - Feature-rich pager",
+    "breadcrumb": "Top \u003e ov",
     "content": "Output appended data and move it to the bottom line (like tail -f).\nov can perform operations such as search input without stopping follow-mode (also incremental search!).\ndocker run chentex/random-logger:latest 100 400 |ov --follow-mode ",
     "description": "How to use follow mode of ov",
     "tags": [
@@ -670,7 +670,7 @@ var relearn_search_index = [
     "uri": "/ov/tail/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - Feature-rich pager",
+    "breadcrumb": "Top \u003e ov",
     "content": "ov can use a unit called section. Sections are blocks separated by section delimiters. The section delimiter line is displayed in the style of StyleSectionLine (background color green).\nThe section delimiter is optionally specified as a regular expression string at startup.\nov --section-delimiter \"^$\" If you want to set the section delimiter after startup, enter it in input mode with the section_delimiter key binding (alt + d).\nSection delimiter: ^$ If section delimiters are not required (blank lines, etc.), --section-start 1 can be used to display from the next line.\n--follow-section uses the section instead of the follow-mode line.\nSuitable for use with \\watch of psql.\n",
     "description": "How to use section of ov",
     "tags": [
@@ -681,7 +681,7 @@ var relearn_search_index = [
     "uri": "/ov/section/index.html"
   },
   {
-    "breadcrumb": "Top \u003e ov - Feature-rich pager",
+    "breadcrumb": "Top \u003e ov",
     "content": "Memory management Regular file ov is managed by dividing it into Chunks for each ChunkSize (10,000) lines. For example, a file with 73210 lines is divided into 7 chunks.\nThe first Chunk (Chunk0) is always loaded into memory. Chunk3 and Chunk4 must also be loaded into memory, as they may span two Chunks when displayed. Chunk1 and Chunk2 have been used before and are loaded into memory, but can be freed if they exceed their limits. For regular files, it is possible to save memory and speed by loading and freeing memory while seeking.\nNon-regular file Files that cannot be seek (pipes and compressed files) are also managed in chunk units, but once released, they cannot be loaded into memory, so load them into memory as much as possible. If there is a memory limit, read up to the memory limit and then pause reading.\nThen, for example, when you go to line 41230, Chunk1, Chunk2, and Chunk3 are freed and read ahead from where they are now.\nmemory limit The default memory limit for regular files is 100 (1 million lines). I don’t think you need to change much, but you can specify it with --memory-limit-file.\nov --memory-limit-file 10 large.log The default memory limit for non-regular files is -1 ( unlimited).\nIt is recommended to limit this according to memory. It is recommended to set MemoryLimit: 10000(or 1000) in ov.yaml.\nMemoryLimit: 10000You can also use options like --memory-limit 1000.\ncommand | ov --memory-limit 1000 Even with the memory limit option specified, large files can still use a lot of memory. Setting GOMEMLIMIT to run GC frequently will also suppress temporary memory increase.\nexport GOMEMLIMIT=400MiB ov --memory-limit-file 10 large.log ",
     "description": "Memory management of ov",
     "tags": [
