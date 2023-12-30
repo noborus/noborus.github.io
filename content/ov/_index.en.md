@@ -1,10 +1,13 @@
 +++
 author = "Noboru Saito"
-title = "ov - Feature-rich pager"
+title = "ov"
+description = "ov - Feature-rich terminal pager"
 tags = "ov"
 weight = 3
 linktitle = "ov"
 +++
+
+# Feature-rich terminal pager
 
 <div id="download">
 {{% button icon="download" style="info" href="https://github.com/noborus/ov/releases/latest" %}}Download{{% /button %}}
@@ -12,7 +15,9 @@ linktitle = "ov"
 
 [![ov](ov.gif)](https://github.com/noborus/ov)
 
-Please refer to the [<i class="fab fa-github"></i>github site](https://github.com/noborus/ov) for **installation and settings.**
+{{% notice style="note" title="Note" %}}
+[<i class="fab fa-github"></i>Please refer to the github  for **installation and settings.**](https://github.com/noborus/ov)
+{{% /notice %}}
 
 ## Features
 

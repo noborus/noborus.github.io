@@ -1,16 +1,23 @@
 +++
 author = "Noboru Saito"
-title = "ov - 機能豊富なページャー"
+title = "ov"
+description = "ov - 機能豊富なページャー"
 tags = "ov"
 weight = 3
 linktitle = "ov"
 +++
 
+# 機能豊富なターミナルページャー
+
 <div id="download">
 {{% button icon="download" style="info" href="https://github.com/noborus/ov/releases/latest" %}}Download{{% /button %}}
 </div>
 
- インストール、設定については[github site](https://github.com/noborus/ov)を参照してください。
+[![ov](ov.gif)](https://github.com/noborus/ov)
+
+{{% notice style="note" title="Note" %}}
+[<i class="fab fa-github"></i>インストール、設定についてはgithubを参照してください。](https://github.com/noborus/ov)
+{{% /notice %}}
 
 ## 特徴
 
