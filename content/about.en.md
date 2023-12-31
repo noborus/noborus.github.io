@@ -3,6 +3,7 @@ title = "About"
 description = "Noboru Saito"
 date = "2023-06-12"
 menu = "main"
+menuPre = "<i class='fas fa-user'></i> "
 weight = 4
 +++
 

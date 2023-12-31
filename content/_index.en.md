@@ -180,6 +180,20 @@ Library tool to infer column widths in CLI output.
 
 ---
 
+### <i class="fab fa-github"></i> [sqlss](https://github.com/noborus/sqlss)
+
+
+<a class="github-button" href="https://github.com/noborus/sqlss" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/sqlss on GitHub">Star</a>
+<a class="github-button" href="https://github.com/noborus/sqlss/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/sqlss on GitHub">Fork</a>
+<span class="project-badge">
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/sqlss?lightbox=false)](https://pkg.go.dev/github.com/noborus/sqlss)
+[![Latest Release](https://img.shields.io/github/v/release/noborus/sqlss.svg?lightbox=false)](https://github.com/noborus/sqlss/releases)
+</span>
+
+Split SQL into statements.
+
+---
+
 ## <i class="fas fa-share-alt"></i> Participating projects
 
 ### <i class="fab fa-github"></i> [jpug-doc](https://github.com/pgsql-jp/jpug-doc)

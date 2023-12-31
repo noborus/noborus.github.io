@@ -1,6 +1,7 @@
 +++
 author = "Noboru Saito"
 title = "ov"
+menuPre = "<i class='fab fa-github'></i> "
 description = "ov - Feature-rich terminal pager"
 tags = "ov"
 weight = 3

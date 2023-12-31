@@ -1,6 +1,8 @@
 +++
 author = "Noboru Saito"
 title = "trdsql"
+menuPre = "<i class='fab fa-github'></i> "
+description = "trdsql - CSV, LTSV, JSON, YAML, TBLN などにSQLを実行"
 weight = 2
 +++
 

@@ -1,6 +1,7 @@
 +++
 author = "Noboru Saito"
 title = "ov"
+menuPre = "<i class='fab fa-github'></i> "
 description = "ov - 機能豊富なページャー"
 tags = "ov"
 weight = 3
