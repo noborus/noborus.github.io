@@ -51,7 +51,7 @@ var relearn_search_index = [
   {
     "breadcrumb": "Top",
     "content": " Download CSV,LTSV,JSON,TBLNファイルにSQLを実行できるツールのtrdsqlのドキュメントです。\n最初は、trdsql Advent Calendar 2019として書かれました。その後追記しています。\n概要 trdsqlはテーブル（表）形式のテキストに対してSQLを実行するCLIツールです。 テーブル形式とは、行と列で構成される以下のようなデータです。\n1列 2列 1行 a1 a2 2行 b1 b2 結果をざまざまなフォーマットに出力できるので、テーブル形式データのフォーマット変換にも使用できます。\n目次 trdsql インストール trdsql ファイルフォーマット変換 trdsql 簡単なSQL trdsql 簡単なSQL その２ trdsql 集計 trdsql 集計計算 trdsql GROUP集計 trdsql Log集計 trdsql ワイルドカード、圧縮ファイル trdsql 標準入力 trdsql 処理の概要 trdsql PostgreSQLエンジンの使用 trdsql MySQLエンジンの使用 trdsql SQLite3エンジンの使用 trdsql DBインポート trdsql JOIN trdsql ファイルとテーブルのJOIN trdsql 列の編集 trdsql Window関数 trdsql 日付・時刻処理 trdsql JSON解析 trdsql JSON出力 trdsql 差分、比較 trdsql グラフ trdsql ライブラリ使用 trdsql SQLファイル指定 trdsql config trdsql CROSS JOIN trdsql generate_series trdsql convert log trdsql 合計を行に追加する trdsql CASE式 trdsql 圧縮ファイル trdsql output trdsql jq構文 trdsql 固定幅を対象 ",
-    "description": "",
+    "description": "trdsql - CSV, LTSV, JSON, YAML, TBLN などにSQLを実行",
     "tags": null,
     "title": "trdsql",
     "uri": "/ja/trdsql/index.html"
