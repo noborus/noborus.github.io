@@ -72,7 +72,7 @@ var relearn_search_index = [
   },
   {
     "breadcrumb": "Top",
-    "content": "機能豊富なターミナルページャー Download Note インストール、設定についてはgithubを参照してください。\n特徴 ov は端末サイズで表示するページャー機能だけでなく、テキストを区切ることでより便利な機能を提供します。\nヘッダー行を固定表示 列を区切ってテーブル形式の表示 行を区切ってセクション単位での表示 メモリよりも大きなファイルをサポート 使用事例 psqlPostgreSQLクライアントpsqlでovを使用する\ngitgitのページャーとしてovを使用する\ndeltaovをdeltaのpagerとして使用する\nmysqlovをmysqlのpagerとして使用する\npgcliovはpgcliのページャーとしても使用可能です。 ~/.config/pgcli/config に以下のように設定します。 pager = 'ov -C -d \"|\" --skip-lines 1 -H1'\nmycliUse 'ov' as a pager for mycli\npspsのページャーとしてovを使用する\nmanmanページのページャーとしてovを使用する\nprocsprocsのページャーとしてovを使用する\ntoptopのページャーとしてovを使用する\novでファイル監視（ウォッチ）ovでファイル監視（ウォッチ）\nbatovをbatのページャーとして使用する\ncsvの表示ovをCSVビューアとして使う\nmarkdown表示ovはmarkdownビューアとしても使う。\n複数ファイル複数ファイルを指定して表示\n複数の単語を複数の色でハイライト複数の単語を複数の色でハイライト\n大きなファイルを開く速度ovは大きなファイルを開く速度が速い\nコマンド実行ovからコマンドを実行する\nフォローモードの使い方ovのフォローモードの使い方\nセクションの使い方ovのセクションの使い方\nメモリ管理ovのメモリ管理\n",
+    "content": "機能豊富なターミナルページャー Download Note インストール、設定についてはgithubを参照してください。\n特徴 ov は端末サイズで表示するページャー機能だけでなく、テキストを区切ることでより便利な機能を提供します。 そのため、特に表形式のテキストを表示するのに適しています。\n大きなファイルでも素早く開くことができます。 固定ヘッダー行表示をサポート（折り返し/折り返さない両方）。 区切り文字による列を認識する列モードをサポート。 また、列モードでは、各列を色付けする列レインボーモードがあります。 区切り文字の代わりに固定幅の列をサポート。 区切り文字によるセクション分割、セクションごとの移動をサポート。 セクションのヘッダー行をサポート、ヘッダー行は複数行にできます。 動的に折り返し/折り返さないを切り替え可能。 交互の行スタイリングをサポート。 ショートカットキーはカスタマイズ可能。 装飾のスタイルはカスタマイズ可能。 フォローモードをサポート（tail -fのような）。 ファイル名によるフォローモードをサポート（tail -Fのような）。 セクションが更新されたときに表示されるフォローセクションをサポート。 複数のファイルをフォローし、更新時に切り替える（follow-all）をサポート。 stdoutとstderrを個別に表示するコマンドの実行(exec)をサポート。 定期的にファイルを読み込むウォッチモードをサポート。 execモードでのウォッチをサポート（watchコマンドと同等）。 インクリメンタル検索と正規表現検索をサポート。 複数の単語を個別にハイライトするマルチカラーをサポート。 Unicodeと東アジアの幅に対するより良いサポート。 圧縮ファイル（gzip、bzip2、zstd、lz4、xz）をサポート。 使用事例 psqlPostgreSQLクライアントpsqlでovを使用する\ngitgitのページャーとしてovを使用する\ndeltaovをdeltaのpagerとして使用する\nmysqlovをmysqlのpagerとして使用する\npgcliovはpgcliのページャーとしても使用可能です。 ~/.config/pgcli/config に以下のように設定します。 pager = 'ov -C -d \"|\" --skip-lines 1 -H1'pgcliでは複数の結果を表示することができます。 その場合は、固定ヘッダー行ではなくセクションヘッダーを使用すると便利です。 table_formatをpsql_unicodeに設定するとUnicodeで枠が表示されるため、クエリ結果の区切りが指定できるようになります。 その枠の開始を指定してセクションヘッダーを設定します。 pager = 'ov -C -d \"│\" --section-delimiter \"^┌\" --section-header-num 3 --column-rainbow --column-mode' table_format = psql_unicode myclimycliのページャーとして'ov'を使用する\npspsのページャーとしてovを使用する\nmanmanページのページャーとしてovを使用する\nprocsprocsのページャーとしてovを使用する\ntoptopのページャーとしてovを使用する\novでファイル監視（ウォッチ）ovでファイル監視（ウォッチ）\nbatovをbatのページャーとして使用する\ncsvの表示ovをCSVビューアとして使う\nmarkdown表示ovはmarkdownビューアとしても使う。\n複数ファイル複数ファイルを指定して表示\n複数の単語を複数の色でハイライト複数の単語を複数の色でハイライト\n大きなファイルを開く速度ovは大きなファイルを開く速度が速い\nコマンド実行ovからコマンドを実行する\nフォローモードの使い方ovのフォローモードの使い方\nセクションの使い方ovのセクションの使い方\nメモリ管理ovのメモリ管理\n",
     "description": "ov - 機能豊富なページャー",
     "tags": "ov",
     "title": "ov",
@@ -135,7 +135,7 @@ var relearn_search_index = [
   },
   {
     "breadcrumb": "Top \u003e ov",
-    "content": "ovはpgcliのページャーとしても使用可能です。\n~/.config/pgcli/config に以下のように設定します。\npager = 'ov -C -d \"|\" --skip-lines 1 -H1'",
+    "content": "ovはpgcliのページャーとしても使用可能です。\n~/.config/pgcli/config に以下のように設定します。\npager = 'ov -C -d \"|\" --skip-lines 1 -H1'pgcliでは複数の結果を表示することができます。 その場合は、固定ヘッダー行ではなくセクションヘッダーを使用すると便利です。 table_formatをpsql_unicodeに設定するとUnicodeで枠が表示されるため、クエリ結果の区切りが指定できるようになります。 その枠の開始を指定してセクションヘッダーを設定します。\npager = 'ov -C -d \"│\" --section-delimiter \"^┌\" --section-header-num 3 --column-rainbow --column-mode' table_format = psql_unicode ",
     "description": "",
     "tags": [
       "ov",
@@ -160,7 +160,7 @@ var relearn_search_index = [
   {
     "breadcrumb": "Top \u003e ov",
     "content": "ovはmycliのページャーとしても使用できます。\nmycliはmysqlの~/.my.cnfファイルを使用して設定できます。 https://www.mycli.net/configを参照してください。\n[client] pager=\"ov -C --skip-lines 1 --header 1 -d'|'\"",
-    "description": "Use 'ov' as a pager for mycli",
+    "description": "mycliのページャーとして'ov'を使用する",
     "tags": [
       "ov",
       "mycli",
@@ -716,6 +716,22 @@ var relearn_search_index = [
     "uri": "/ja/categories/ov/index.html"
   },
   {
+    "breadcrumb": "Top \u003e Tags",
+    "content": "",
+    "description": "",
+    "tags": null,
+    "title": "タグ :: pgcli",
+    "uri": "/ja/tags/pgcli/index.html"
+  },
+  {
+    "breadcrumb": "Top \u003e Tags",
+    "content": "",
+    "description": "",
+    "tags": null,
+    "title": "タグ :: postgresql",
+    "uri": "/ja/tags/postgresql/index.html"
+  },
+  {
     "breadcrumb": "Top",
     "content": "",
     "description": "",
@@ -820,22 +836,6 @@ var relearn_search_index = [
     "tags": null,
     "title": "タグ :: markdown",
     "uri": "/ja/tags/markdown/index.html"
-  },
-  {
-    "breadcrumb": "Top \u003e Tags",
-    "content": "",
-    "description": "",
-    "tags": null,
-    "title": "タグ :: pgcli",
-    "uri": "/ja/tags/pgcli/index.html"
-  },
-  {
-    "breadcrumb": "Top \u003e Tags",
-    "content": "",
-    "description": "",
-    "tags": null,
-    "title": "タグ :: postgresql",
-    "uri": "/ja/tags/postgresql/index.html"
   },
   {
     "breadcrumb": "Top \u003e Tags",

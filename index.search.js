@@ -72,7 +72,7 @@ var relearn_search_index = [
   },
   {
     "breadcrumb": "Top",
-    "content": "Feature-rich terminal pager Download Note Please refer to the github for installation and settings.\nFeatures ov provides a more convenient function by separating text, not only the pager function to display at the terminal size.\nSpecify a fixed line to be displayed as a header. Table-formatted text can be interpreted as a column by the delimiter. Text can be interpreted as a section by splitting the line with a delimiter. Supports files larger than memory. Use case psqlPostgreSQL client tool psql with ov\ngitUse ov as a pager for git\ndeltaov can also be used as a pager for delta.\nmysqlUse 'ov' as a pager for mysql\npgcliUse 'ov' as a pager for pgcli\nmycliUse 'ov' as a pager for mysql\npsUse 'ov' as a pager for ps\nmanUse 'ov' as a pager for man pages\ntopUse 'ov' as a pager for top\nprocsUse 'ov' as a pager for procs\nbatov can also be used as a pager for bat.\nWatch files with ovFile monitoring (watch) with ov\nview csvov can also be used as a csv viewer.\nView markdownov can also be used as a markdown viewer.\nmultiple filesDisplay multiple files\nMulticolor highlights multiple wordsov can highlight multiple words in multiple colors.\nspeed of opening large filesspeed of opening large files\nexecute commandov can execute commands and display the output.\nHow to use follow modeHow to use follow mode of ov\nHow to use sectionHow to use section of ov\nMemory managementMemory management of ov\n",
+    "content": "Feature-rich terminal pager Download Note Please refer to the github for installation and settings.\nFeatures ov provides more convenient functions by separating text, not just the pager function to display at terminal size. It is particularly suitable for displaying table-formatted text.\nCan open large files quickly. Supports fixed header line display (both wrapped and unwrapped). Supports column mode that recognizes columns by delimiter. In column mode, there is a column rainbow mode that colors each column. Supports fixed-width columns instead of delimiters. Supports section division by delimiter, and movement by section. Supports header lines of sections, and the header line can be multiple lines. Can dynamically switch between wrapping and not wrapping. Supports alternate row styling. Shortcut keys are customizable. Decorative styles are customizable. Supports follow mode (like tail -f). Supports follow mode by file name (like tail -F). Supports follow section that is displayed when the section is updated. Supports following multiple files and switching when updated (follow-all). Supports execution of commands that display stdout and stderr separately (exec). Supports watch mode that periodically reads files. Supports watch in exec mode (equivalent to watch command). Supports incremental search and regular expression search. Supports multi-color that highlights multiple words individually. Better support for Unicode and East Asian widths. Supports compressed files (gzip, bzip2, zstd, lz4, xz). Use case psqlPostgreSQL client tool psql with ov\ngitUse ov as a pager for git\ndeltaov can also be used as a pager for delta.\nmysqlUse 'ov' as a pager for mysql\npgcliUse 'ov' as a pager for pgcli\nmycliUse 'ov' as a pager for mycli\npsUse 'ov' as a pager for ps\nmanUse 'ov' as a pager for man pages\ntopUse 'ov' as a pager for top\nprocsUse 'ov' as a pager for procs\nbatov can also be used as a pager for bat.\nWatch files with ovFile monitoring (watch) with ov\nview csvov can also be used as a csv viewer.\nView markdownov can also be used as a markdown viewer.\nmultiple filesDisplay multiple files\nMulticolor highlights multiple wordsov can highlight multiple words in multiple colors.\nspeed of opening large filesspeed of opening large files\nexecute commandov can execute commands and display the output.\nHow to use follow modeHow to use follow mode of ov\nHow to use sectionHow to use section of ov\nMemory managementMemory management of ov\n",
     "description": "ov - Feature-rich terminal pager",
     "tags": "ov",
     "title": "ov",
@@ -136,7 +136,7 @@ var relearn_search_index = [
   },
   {
     "breadcrumb": "Top \u003e ov",
-    "content": "ov can be set as a pager for pgcli.\n~/.config/pgcli/config\npager = 'ov -C -d \"|\" --skip-lines 1 -H1'",
+    "content": "ov can be set as a pager for pgcli.\n~/.config/pgcli/config\npager = 'ov -C -d \"|\" --skip-lines 1 -H1'In pgcli, you can display multiple results. In such cases, it is convenient to use section headers instead of fixed header lines. By setting table_format to psql_unicode, a frame is displayed in Unicode, allowing you to specify the separation of query results. You set the section header by specifying the start of that frame.\npager = 'ov -C -d \"│\" --section-delimiter \"^┌\" --section-header-num 3 --column-rainbow --column-mode' table_format = psql_unicode ",
     "description": "Use 'ov' as a pager for pgcli",
     "tags": [
       "ov",
@@ -161,7 +161,7 @@ var relearn_search_index = [
   {
     "breadcrumb": "Top \u003e ov",
     "content": "ov can be set as a pager for mycli.\nmycli reads the client section of ~/.my.cnf in mysql. Please refer to https://www.mycli.net/config.\n[client] pager=\"ov -C --skip-lines 1 --header 1 -d'|'\"",
-    "description": "Use 'ov' as a pager for mysql",
+    "description": "Use 'ov' as a pager for mycli",
     "tags": [
       "ov",
       "mycli",
@@ -716,6 +716,22 @@ var relearn_search_index = [
     "uri": "/categories/ov/index.html"
   },
   {
+    "breadcrumb": "Top \u003e Tags",
+    "content": "",
+    "description": "",
+    "tags": null,
+    "title": "Tag :: pgcli",
+    "uri": "/tags/pgcli/index.html"
+  },
+  {
+    "breadcrumb": "Top \u003e Tags",
+    "content": "",
+    "description": "",
+    "tags": null,
+    "title": "Tag :: postgresql",
+    "uri": "/tags/postgresql/index.html"
+  },
+  {
     "breadcrumb": "Top",
     "content": "",
     "description": "",
@@ -881,14 +897,6 @@ var relearn_search_index = [
     "tags": null,
     "title": "Tag :: pager",
     "uri": "/tags/pager/index.html"
-  },
-  {
-    "breadcrumb": "Top \u003e Tags",
-    "content": "",
-    "description": "",
-    "tags": null,
-    "title": "Tag :: postgresql",
-    "uri": "/tags/postgresql/index.html"
   },
   {
     "breadcrumb": "Top \u003e Tags",
@@ -1203,14 +1211,6 @@ var relearn_search_index = [
     "tags": null,
     "title": "Tag :: mysql",
     "uri": "/tags/mysql/index.html"
-  },
-  {
-    "breadcrumb": "Top \u003e Tags",
-    "content": "",
-    "description": "",
-    "tags": null,
-    "title": "Tag :: pgcli",
-    "uri": "/tags/pgcli/index.html"
   },
   {
     "breadcrumb": "Top \u003e Tags",
