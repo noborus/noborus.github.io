@@ -22,13 +22,31 @@ linktitle = "ov"
 
 ## Features
 
-`ov` provides a more convenient function by separating text,
-not only the pager function to display at the terminal size.
+`ov` provides more convenient functions by separating text, not just the pager function to display at terminal size.
+It is particularly suitable for displaying table-formatted text.
 
-* Specify a fixed line to be displayed as a header.
-* Table-formatted text can be interpreted as a column by the delimiter.
-* Text can be interpreted as a section by splitting the line with a delimiter.
-* [Supports files larger than memory](memory).
+* Can open large files quickly.
+* Supports fixed header line display (both wrapped and unwrapped).
+* Supports column mode that recognizes columns by delimiter.
+* In column mode, there is a column rainbow mode that colors each column.
+* Supports fixed-width columns instead of delimiters.
+* Supports section division by delimiter, and movement by section.
+* Supports header lines of sections, and the header line can be multiple lines.
+* Can dynamically switch between wrapping and not wrapping.
+* Supports alternate row styling.
+* Shortcut keys are customizable.
+* Decorative styles are customizable.
+* Supports follow mode (like `tail -f`).
+* Supports follow mode by file name (like `tail -F`).
+* Supports follow section that is displayed when the section is updated.
+* Supports following multiple files and switching when updated (follow-all).
+* Supports execution of commands that display stdout and stderr separately (exec).
+* Supports watch mode that periodically reads files.
+* Supports watch in exec mode (equivalent to watch command).
+* Supports incremental search and regular expression search.
+* Supports multi-color that highlights multiple words individually.
+* Better support for Unicode and East Asian widths.
+* Supports compressed files (gzip, bzip2, zstd, lz4, xz).
 
 ## Use case
 
