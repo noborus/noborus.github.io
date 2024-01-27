@@ -1,8 +1,8 @@
 +++
 author = "Noboru Saito"
-title = "trdsql Log集計"
+title = "trdsql Log aggregation"
 date = "2019-12-08"
-description = "trdsql Log集計"
+description = "trdsql Log aggregation"
 weight = 8
 tags = [
     "trdsql",
@@ -14,21 +14,21 @@ categories = [
 ]
 +++
 
-## Log集計
+## Log aggregation
 
-ApacheやnginxなどのLogを[LTSV](http://ltsv.org)フォーマットで出力する方法も定着してきました。
+Apache and nginx Log are also becoming established in the way of outputting in [LTSV](http://ltsv.org) format.
 
-そのようなLogをtrdsqlで解析する例です。
+An example of analyzing such Log with trdsql.
 
-出力する側は、apacheのLogFormatの設定を以下のようにカスタマイズフォーマットにします。
+The output side customizes the apache LogFormat setting to the following custom format. 
 
 ```
 LogFormat "host:%h\tident:%l\tuser:%u\ttime:%t\treq:%r\tstatus:%>s\tsize:%b\treferer:\%{Referer}i\tua:%{User-Agent}i" combined_ltsv
 ```
 
-host,ident,user,time,req,status,size,referer,uaの項目が出力されます。
+The items host, ident, user, time, req, status, size, referer, ua are output.
 
-実際のLogは以下のようになります。
+The actual Log looks like this.
 
 ```
 host:176.99.192.42	ident:-	user:-	time:[21/Oct/2019:21:33:53 +0900]	req:GET /category/software HTTP/1.1	status:200	size:138	referer:-	ua:Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0)
@@ -37,9 +37,9 @@ host:88.60.137.115	ident:-	user:-	time:[21/Oct/2019:21:33:53 +0900]	req:POST /se
 ...
 ```
 
-## 解析
+## analysis
 
-まずは trdsql の -aを実行してみます。
+First, try -a of trdsql.
 
 ```
 The table name is log.ltsv.
@@ -76,15 +76,16 @@ trdsql "SELECT \`host\`, count(\`host\`) FROM log.ltsv GROUP BY \`host\`"
 trdsql "SELECT \`host\`, ident, \`user\`, \`time\`, req, \`status\`, \`size\`, referer, ua FROM log.ltsv ORDER BY \`host\` LIMIT 10"
 ```
 
-Examplesの実行例をヒントにこれまでに紹介したSQLを使用して実行していきます。
+Execute the Examples as a hint and execute it using the SQL introduced so far.
 
-### 上位を出力
+### Output the top 5
 
-アクセスが多いホストTop 5を出力
+Output the top 5 hosts with the most requests.
 
 ```console
 trdsql -oat "SELECT \`host\`, count(\`host\`) as count FROM log.ltsv GROUP BY \`host\` ORDER BY count DESC LIMIT 5"
 ```
+
 ```
 +----------------+-------+
 |      host      | count |
@@ -97,11 +98,12 @@ trdsql -oat "SELECT \`host\`, count(\`host\`) as count FROM log.ltsv GROUP BY \`
 +----------------+-------+
 ```
 
-リクエストが多い順Top 5を出力
+Output the top 5 hosts with the most requests
 
 ```console
 trdsql -oat "SELECT req, count(req) as count FROM log.ltsv GROUP BY req ORDER BY count DESC LIMIT 5"
 ```
+
 ```
 +--------------------------------+-------+
 |              req               | count |
@@ -116,13 +118,14 @@ trdsql -oat "SELECT req, count(req) as count FROM log.ltsv GROUP BY req ORDER BY
 +--------------------------------+-------+
 ```
 
-### 検索条件と組み合わせて出力
+### Output with search condition
 
-status が200以外のリクエストと回数を出力
+Output requests and counts other than status 200
 
 ```console
 trdsql -oat "SELECT req, status,count(req) as count FROM log.ltsv WHERE status != '200' GROUP BY req, status ORDER BY count DESC"
 ```
+
 ```
 +-------------------------------+--------+-------+
 |              req              | status | count |

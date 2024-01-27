@@ -29,6 +29,7 @@ categories = [
 ```console
 trdsql -icsv -ih -oh "SELECT COUNT(*) FROM header.csv"
 ```
+
 ```
 count(*)
 3
@@ -39,6 +40,7 @@ count(*)
 ```console
 trdsql -icsv -ih -oh "SELECT COUNT(*) FROM header.csv WHERE id<'1'"
 ```
+
 ```
 count(*)
 2
@@ -63,6 +65,7 @@ id,name
 ```console
 trdsql -icsv -ih -oh "SELECT COUNT(name) FROM abc.csv"
 ```
+
 ```
 count(name)
 4
@@ -71,6 +74,7 @@ count(name)
 ```console
 trdsql -ih -oh "SELECT COUNT(DISTINCT name) FROM abc.csv"
 ```
+
 ```
 COUNT(DISTINCT name)
 3
@@ -81,6 +85,7 @@ COUNT(DISTINCT name)
 ```console
 trdsql -ih -oh "SELECT COUNT(name), COUNT(DISTINCT name) FROM abc.csv"
 ```
+
 ```
 COUNT(name),COUNT(DISTINCT name)
 4,3
