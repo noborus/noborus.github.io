@@ -1,74 +1,75 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>13.5. Serialization Failure Handling</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="applevel-consistency.html" title="13.4. アプリケーションレベルでのデータの一貫性チェック" /><link rel="next" href="mvcc-caveats.html" title="13.6. 警告" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="mvcc.html" title="第13章 同時実行制御">第13章 同時実行制御</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : mvcc-serialization-failure-handling.html">誤訳等の報告
-                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="applevel-consistency.html" title="13.4. アプリケーションレベルでのデータの一貫性チェック">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="mvcc.html" title="第13章 同時実行制御">上へ</a></td><td width="60%" align="center">13.5. Serialization Failure Handling</td><td width="20%" align="right"> <a accesskey="n" href="mvcc-caveats.html" title="13.6. 警告">次へ</a></td></tr></table><hr /></div><div class="sect1" id="MVCC-SERIALIZATION-FAILURE-HANDLING"><div class="titlepage"><div><div><h2 class="title" style="clear: both">13.5. Serialization Failure Handling</h2></div></div></div><a id="id-1.5.12.9.2" class="indexterm"></a><a id="id-1.5.12.9.3" class="indexterm"></a><p>
-<span class="original">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>13.5. 直列化失敗の扱い</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="applevel-consistency.html" title="13.4. アプリケーションレベルでのデータの一貫性チェック" /><link rel="next" href="mvcc-caveats.html" title="13.6. 警告" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 16.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="mvcc.html" title="第13章 同時実行制御">第13章 同時実行制御</a></td><td width="20%" align="right"></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="applevel-consistency.html" title="13.4. アプリケーションレベルでのデータの一貫性チェック">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="mvcc.html" title="第13章 同時実行制御">上へ</a></td><td width="60%" align="center">13.5. 直列化失敗の扱い</td><td width="20%" align="right"> <a accesskey="n" href="mvcc-caveats.html" title="13.6. 警告">次へ</a></td></tr></table><hr /></div><div class="sect1" id="MVCC-SERIALIZATION-FAILURE-HANDLING"><div class="titlepage"><div><div><h2 class="title" style="clear: both">13.5. 直列化失敗の扱い <a href="#MVCC-SERIALIZATION-FAILURE-HANDLING" class="id_link">#</a></h2></div></div></div><!--
+   <title>Serialization Failure Handling</title>
+--><a id="id-1.5.12.9.2" class="indexterm"></a><a id="id-1.5.12.9.3" class="indexterm"></a><a id="id-1.5.12.9.4" class="indexterm"></a><a id="id-1.5.12.9.5" class="indexterm"></a><p>
+<!--
     Both Repeatable Read and Serializable isolation levels can produce
     errors that are designed to prevent serialization anomalies.  As
     previously stated, applications using these levels must be prepared to
     retry transactions that fail due to serialization errors.  Such an
     error's message text will vary according to the precise circumstances,
-    but it will always have the SQLSTATE code &lt;literal&gt;40001&lt;/literal&gt;
-    (&lt;literal&gt;serialization_failure&lt;/literal&gt;).
-</span>
-《機械翻訳》反復可能読取り分離レベルとシリアライザブル分離レベルはどちらも、シリアライゼーションの異常を防止するように設計されたエラーを生成する可能性があります。
-前述のように、これらのレベルを使用するアプリケーションは、シリアライゼーション・エラーが原因で失敗したトランザクションを再試行するように準備する必要があります。
-このようなエラーのメッセージ・テキストは正確な状況によって異なりますが、常にSQLSTATEコード<code class="literal">40001</code>(<code class="literal">serialization_failure</code>)があります。
+    but it will always have the SQLSTATE code <literal>40001</literal>
+    (<literal>serialization_failure</literal>).
+-->
+リピータブルリード分離レベルとシリアライザブル分離レベルはどちらも、直列化異常を防止するように設計されたエラーを生成する可能性があります。
+前述のように、これらのレベルを使用するアプリケーションは、直列化エラーが原因で失敗したトランザクションを再試行するように準備する必要があります。
+このようなエラーのメッセージ・テキストは細かい状況によって異なりますが、常にSQLSTATEコードは<code class="literal">40001</code>(<code class="literal">serialization_failure</code>)となります。
    </p><p>
-<span class="original">
+<!--
     It may also be advisable to retry deadlock failures.
-    These have the SQLSTATE code &lt;literal&gt;40P01&lt;/literal&gt;
-    (&lt;literal&gt;deadlock_detected&lt;/literal&gt;).
-</span>
-《機械翻訳》SQLSTATEコード<code class="literal">40P01</code>(<code class="literal">deadlock_detected</code>)を持つデッドロック障害を再試行することも推奨されます。
+    These have the SQLSTATE code <literal>40P01</literal>
+    (<literal>deadlock_detected</literal>).
+-->
+SQLSTATEコード<code class="literal">40P01</code>(<code class="literal">deadlock_detected</code>)を持つデッドロック障害を再試行することも推奨されます。
    </p><p>
-<span class="original">
+<!--
     In some cases it is also appropriate to retry unique-key failures,
-    which have SQLSTATE code &lt;literal&gt;23505&lt;/literal&gt;
-    (&lt;literal&gt;unique_violation&lt;/literal&gt;), and exclusion constraint
-    failures, which have SQLSTATE code &lt;literal&gt;23P01&lt;/literal&gt;
-    (&lt;literal&gt;exclusion_violation&lt;/literal&gt;).  For example, if the
+    which have SQLSTATE code <literal>23505</literal>
+    (<literal>unique_violation</literal>), and exclusion constraint
+    failures, which have SQLSTATE code <literal>23P01</literal>
+    (<literal>exclusion_violation</literal>).  For example, if the
     application selects a new value for a primary key column after
     inspecting the currently stored keys, it could get a unique-key
     failure because another application instance selected the same new key
     concurrently.  This is effectively a serialization failure, but the
-    server will not detect it as such because it cannot &lt;quote&gt;see&lt;/quote&gt;
+    server will not detect it as such because it cannot <quote>see</quote>
     the connection between the inserted value and the previous reads.
     There are also some corner cases in which the server will issue a
     unique-key or exclusion constraint error even though in principle it
     has enough information to determine that a serialization problem
     is the underlying cause.  While it's recommendable to just
-    retry &lt;literal&gt;serialization_failure&lt;/literal&gt; errors unconditionally,
+    retry <literal>serialization_failure</literal> errors unconditionally,
     more care is needed when retrying these other error codes, since they
     might represent persistent error conditions rather than transient
     failures.
-</span>
-《機械翻訳》場合によっては、SQLSTATEコード<code class="literal">23505</code>(<code class="literal">unique_violation</code>)を持つ一意キーの失敗、およびSQLSTATEコード<code class="literal">23P01</code>(<code class="literal">exclusion_violation</code>)を持つ排他制約の失敗を再試行することも適切です。
+-->
+場合によっては、SQLSTATEコード<code class="literal">23505</code>(<code class="literal">unique_violation</code>)を持つ一意キーの失敗、およびSQLSTATEコード<code class="literal">23P01</code>(<code class="literal">exclusion_violation</code>)を持つ排他制約の失敗を再試行することも適切です。
 たとえば、現在格納されているキーを検査した後にアプリケーションが主キー列に新しい値を選択した場合、別のアプリケーション・インスタンスが同じ新しいキーを同時に選択したため、一意キーの失敗が発生する可能性があります。
-これは実質的にシリアル化の失敗ですが、サーバは挿入された値と前の読み取りとの間の関係を<span class="quote">「<span class="quote">参照</span>」</span>できないため、シリアル化の失敗を検出しません。
-また、原則としてシリアル化の問題が根本原因であると判断するのに十分な情報があるにもかかわらず、サーバーが一意キーまたは排他制約のエラーを発行する場合もあります。
+これは実質的に直列化の失敗ですが、サーバは挿入された値と前の読み取りとの間の関係を<span class="quote">「<span class="quote">参照</span>」</span>できないため、直列化の失敗を検出しません。
+また、原則として直列化の問題が根本原因であると判断するのに十分な情報があるにもかかわらず、サーバーが一意キーまたは排他制約のエラーを発行する場合もあります。
 <code class="literal">serialization_failure</code>エラーを無条件に再試行することをお薦めしますが、これらの他のエラー・コードを再試行する場合は、一時的な失敗ではなく永続的なエラー条件を表す可能性があるため、より注意が必要です。
    </p><p>
-<span class="original">
+<!--
     It is important to retry the complete transaction, including all logic
     that decides which SQL to issue and/or which values to use.
-    Therefore, &lt;productname&gt;PostgreSQL&lt;/productname&gt; does not offer an
+    Therefore, <productname>PostgreSQL</productname> does not offer an
     automatic retry facility, since it cannot do so with any guarantee of
     correctness.
-</span>
-《機械翻訳》どのSQLを発行するか、どの値を使用するかを決定するすべてのロジックを含む完全なトランザクションを再試行することが重要です。
+-->
+どのSQLを発行するか、どの値を使用するかを決定するすべてのロジックを含む完全なトランザクションを再試行することが重要です。
 したがって、<span class="productname">PostgreSQL</span>は自動再試行機能を提供していません。
 なぜなら、自動再試行機能は正当性を保証できないからです。
    </p><p>
-<span class="original">
+<!--
     Transaction retry does not guarantee that the retried transaction will
     complete; multiple retries may be needed.  In cases with very high
     contention, it is possible that completion of a transaction may take
     many attempts.  In cases involving a conflicting prepared transaction,
     it may not be possible to make progress until the prepared transaction
     commits or rolls back.
-</span>
-《機械翻訳》トランザクションの再試行は、再試行されたトランザクションが完了することを保証するものではありません。
+-->
+トランザクションの再試行は、再試行されたトランザクションが完了することを保証するものではありません。
 複数回の再試行が必要になる場合があります。
 競合が非常に高い場合は、トランザクションの完了に多くの試行が必要になる可能性があります。
 競合する準備済トランザクションが関係する場合は、準備済トランザクションがコミットまたはロールバックされるまで進行できない可能性があります。
-   </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="applevel-consistency.html" title="13.4. アプリケーションレベルでのデータの一貫性チェック">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="mvcc.html" title="第13章 同時実行制御">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="mvcc-caveats.html" title="13.6. 警告">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">13.4. アプリケーションレベルでのデータの一貫性チェック </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 13.6. 警告</td></tr></table></div></body></html>
+   </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="applevel-consistency.html" title="13.4. アプリケーションレベルでのデータの一貫性チェック">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="mvcc.html" title="第13章 同時実行制御">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="mvcc-caveats.html" title="13.6. 警告">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">13.4. アプリケーションレベルでのデータの一貫性チェック </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 16.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 13.6. 警告</td></tr></table></div></body></html>

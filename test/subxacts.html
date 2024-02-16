@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>74.3. Subtransactions</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="xact-locking.html" title="74.2. Transactions and Locking" /><link rel="next" href="two-phase.html" title="74.4. Two-Phase Transactions" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 16.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="transactions.html" title="第74章 Transaction Processing">第74章 Transaction Processing</a></td><td width="20%" align="right"></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="xact-locking.html" title="74.2. Transactions and Locking">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="transactions.html" title="第74章 Transaction Processing">上へ</a></td><td width="60%" align="center">74.3. Subtransactions</td><td width="20%" align="right"> <a accesskey="n" href="two-phase.html" title="74.4. Two-Phase Transactions">次へ</a></td></tr></table><hr /></div><div class="sect1" id="SUBXACTS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">74.3. Subtransactions <a href="#SUBXACTS" class="id_link">#</a></h2></div></div></div><p>
+<!--
+   Subtransactions are started inside transactions, allowing large
+   transactions to be broken into smaller units.  Subtransactions can
+   commit or abort without affecting their parent transactions, allowing
+   parent transactions to continue. This allows errors to be handled
+   more easily, which is a common application development pattern.
+   The word subtransaction is often abbreviated as
+   <firstterm>subxact</firstterm>.
+-->
+《機械翻訳》サブトランザクションはトランザクション内で開始されるため、大きなトランザクションを小さな単位に分割できます。
+ サブトランザクションは、親トランザクションに影響を与えることなくコミットまたは中断できるため、親トランザクションを継続できます。
+ これにより、エラーの処理が容易になります。
+ この用語は、よく<em class="firstterm">subxact</em>と省略されます。
+  </p><p>
+<!--
+   Subtransactions can be started explicitly using the
+   <command>SAVEPOINT</command> command, but can also be started in
+   other ways, such as PL/pgSQL's <command>EXCEPTION</command> clause.
+   PL/Python and PL/TCL also support explicit subtransactions.
+   Subtransactions can also be started from other subtransactions.
+   The top-level transaction and its child subtransactions form a
+   hierarchy or tree, which is why we refer to the main transaction as
+   the top-level transaction.
+-->
+《機械翻訳》サブトランザクションは<code class="command">SAVEPOINT</code>コマンドを使用して明示的に開始できますが、PL/pgSQLの<code class="command">EXCEPTION</code>句などの他の方法でも開始できます。
+PL/PythonとPL/TCLも明示的なサブトランザクションをサポートしています。
+サブトランザクションは他のサブトランザクションから開始することもできます。
+トップレベルのトランザクションとその子トランザクションは階層またはツリーを形成するため、トップレベルのトランザクションをトップレベルのトランザクションと呼びます。
+  </p><p>
+<!--
+   If a subtransaction is assigned a non-virtual transaction ID,
+   its transaction ID is referred to as a <quote>subxid</quote>.
+   Read-only subtransactions are not assigned subxids, but once they
+   attempt to write, they will be assigned one. This also causes all of
+   a subxid's parents, up to and including the top-level transaction,
+   to be assigned non-virtual transaction ids.  We ensure that a parent
+   xid is always lower than any of its child subxids.
+-->
+《機械翻訳》サブトランザクションに仮想トランザクションID以外のIDが割り当てられた場合、そのトランザクションIDは<span class="quote">「<span class="quote">subxid</span>」</span>と呼ばれます。
+ 読取専用のサブトランザクションにはサブxidは割り当てられませんが、書込みを試みると割り当てられます。
+ これにより、トップレベルのトランザクションを含むすべての親サブトランザクションに、非仮想トランザクションIDが割り当てられます。
+ 親xidは常に子xidのいずれかよりも小さいことを保証します。
+  </p><p>
+<!--
+   The immediate parent xid of each subxid is recorded in the
+   <filename>pg_subtrans</filename> directory. No entry is made for
+   top-level xids since they do not have a parent, nor is an entry made
+   for read-only subtransactions.
+-->
+《機械翻訳》各サブxidの直接の親xidは<code class="filename">pg_subtrans</code>ディレクトリに記録されます。
+ トップレベルのxidには親がないのでエントリは記録されません。
+ 読み取り専用のサブトランザクションにもエントリは記録されません。
+  </p><p>
+<!--
+   When a subtransaction commits, all of its committed child
+   subtransactions with subxids will also be considered subcommitted
+   in that transaction.  When a subtransaction aborts, all of its child
+   subtransactions will also be considered aborted.
+-->
+《機械翻訳》サブトランザクションがコミットされると、その子サブトランザクションのうち、すべての子サブトランザクションの xid がコミットされたものとみなされます。
+ サブトランザクションが中断された場合、その子サブトランザクションも中断されたものとみなされます。
+  </p><p>
+<!--
+   When a top-level transaction with an xid commits, all of its
+   subcommitted child subtransactions are also persistently recorded
+   as committed in the <filename>pg_xact</filename> directory.  If the
+   top-level transaction aborts, all its subtransactions are also aborted,
+   even if they were subcommitted.
+-->
+《機械翻訳》xidを持つトップレベルトランザクションがコミットすると、そのサブトランザクションの子サブトランザクションもすべて<code class="filename">pg_xact</code>ディレクトリに永続的にコミット済みとして記録されます。
+ トップレベルトランザクションが中断された場合、そのサブトランザクションは、たとえサブトランザクションがコミットされていたとしても中断されます。
+  </p><p>
+<!--
+   The more subtransactions each transaction keeps open (not
+   rolled back or released), the greater the transaction management
+   overhead. Up to 64 open subxids are cached in shared memory for
+   each backend; after that point, the storage I/O overhead increases
+   significantly due to additional lookups of subxid entries in
+   <filename>pg_subtrans</filename>.
+-->
+《機械翻訳》トランザクションがオープンしたサブトランザクション数が多いほど（ロールバックや解放されない)、トランザクション管理のオーバーヘッドが大きくなります。
+ 各バックエンドで最大64個のオープンしたサブトランザクションが共有メモリにキャッシュされます。
+ その後、<code class="filename">pg_subtrans</code>内のサブxidエントリの追加検索により、ストレージI/Oオーバーヘッドが大幅に増加します。
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="xact-locking.html" title="74.2. Transactions and Locking">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="transactions.html" title="第74章 Transaction Processing">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="two-phase.html" title="74.4. Two-Phase Transactions">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">74.2. Transactions and Locking </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 16.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 74.4. Two-Phase Transactions</td></tr></table></div></body></html>

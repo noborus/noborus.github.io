@@ -1,37 +1,38 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>第66章 Custom WAL Resource Managers</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="generic-wal.html" title="第65章 汎用WALレコード" /><link rel="next" href="btree.html" title="第67章 B-Treeインデックス" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="internals.html" title="パート VII. 内部情報">パート VII. 内部情報</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : custom-rmgr.html">誤訳等の報告
-                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="generic-wal.html" title="第65章 汎用WALレコード">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="internals.html" title="パート VII. 内部情報">上へ</a></td><td width="60%" align="center">第66章 Custom WAL Resource Managers</td><td width="20%" align="right"> <a accesskey="n" href="btree.html" title="第67章 B-Treeインデックス">次へ</a></td></tr></table><hr /></div><div class="chapter" id="CUSTOM-RMGR"><div class="titlepage"><div><div><h2 class="title">第66章 Custom WAL Resource Managers</h2></div></div></div><p>
-<span class="original">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>第66章 カスタムWALリソースマネージャ</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="generic-wal.html" title="第65章 汎用WALレコード" /><link rel="next" href="btree.html" title="第67章 B-Treeインデックス" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 16.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="internals.html" title="パート VII. 内部情報">パート VII. 内部情報</a></td><td width="20%" align="right"></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="generic-wal.html" title="第65章 汎用WALレコード">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="internals.html" title="パート VII. 内部情報">上へ</a></td><td width="60%" align="center">第66章 カスタムWALリソースマネージャ</td><td width="20%" align="right"> <a accesskey="n" href="btree.html" title="第67章 B-Treeインデックス">次へ</a></td></tr></table><hr /></div><div class="chapter" id="CUSTOM-RMGR"><div class="titlepage"><div><div><h2 class="title">第66章 カスタムWALリソースマネージャ</h2></div></div></div><!--
+ <title>Custom WAL Resource Managers</title>
+--><p>
+<!--
   This chapter explains the interface between the core
-  &lt;productname&gt;PostgreSQL&lt;/productname&gt; system and custom WAL resource
-  managers, which enable extensions to integrate directly with the &lt;link
-  linkend="wal"&gt;&lt;acronym&gt;WAL&lt;/acronym&gt;&lt;/link&gt;.
-</span>
-《機械翻訳》この章では、コア<span class="productname">PostgreSQL</span>システムとカスタムWALリソースマネージャ間のインタフェースについて説明します。
+  <productname>PostgreSQL</productname> system and custom WAL resource
+  managers, which enable extensions to integrate directly with the <link
+  linkend="wal"><acronym>WAL</acronym></link>.
+-->
+この章では、<span class="productname">PostgreSQL</span>コアシステムとカスタムWALリソースマネージャ間のインタフェースについて説明します。
 これらは拡張モジュールが<a class="link" href="wal.html" title="第30章 信頼性とログ先行書き込み"><acronym class="acronym">WAL</acronym></a>と直接統合できるようにします。
  </p><p>
-<span class="original">
-  An extension, especially a &lt;link linkend="tableam"&gt;Table Access
-  Method&lt;/link&gt; or &lt;link linkend="indexam"&gt;Index Access Method&lt;/link&gt;, may
-  need to use WAL for recovery, replication, and/or &lt;link
-  linkend="logicaldecoding"&gt;Logical Decoding&lt;/link&gt;. Custom resource managers
-  are a more flexible alternative to &lt;link linkend="generic-wal"&gt;Generic
-  WAL&lt;/link&gt; (which does not support logical decoding), but more complex for
+<!--
+  An extension, especially a <link linkend="tableam">Table Access
+  Method</link> or <link linkend="indexam">Index Access Method</link>, may
+  need to use WAL for recovery, replication, and/or <link
+  linkend="logicaldecoding">Logical Decoding</link>. Custom resource managers
+  are a more flexible alternative to <link linkend="generic-wal">Generic
+  WAL</link> (which does not support logical decoding), but more complex for
   an extension to implement.
-</span>
-《機械翻訳》拡張、特に<a class="link" href="tableam.html" title="第63章 テーブルアクセスメソッドのインタフェース定義">Table Access Method</a>や<a class="link" href="indexam.html" title="第64章 インデックスアクセスメソッドのインタフェース定義">Index Access Method</a>は、回復、複製、および/または<a class="link" href="logicaldecoding.html" title="第49章 ロジカルデコーディング">Logical Decoding</a>にWALを使用する必要があるかもしれません。
-カスタムリソースマネージャは<a class="link" href="generic-wal.html" title="第65章 汎用WALレコード">Generic WAL</a>(論理デコードをサポートしていない)に対してより柔軟な代替手段ですが、拡張を実装するにはより複雑です。
+-->
+拡張、特に<a class="link" href="tableam.html" title="第63章 テーブルアクセスメソッドのインタフェース定義">テーブルアクセスメソッド</a>や<a class="link" href="indexam.html" title="第64章 インデックスアクセスメソッドのインタフェース定義">インデックスアクセスメソッド</a>は、リカバリ、レプリケーション、および／または<a class="link" href="logicaldecoding.html" title="第49章 ロジカルデコーディング">ロジカルデコーディング</a>にWALを使用する必要があるかもしれません。
+カスタムリソースマネージャは<a class="link" href="generic-wal.html" title="第65章 汎用WALレコード">汎用WAL</a>（ロジカルデコーディングをサポートしていない）に対してより柔軟な代替手段ですが、拡張を実装するにはより複雑です。
  </p><p>
-<span class="original">
+<!--
   To create a new custom WAL resource manager, first define an
-  &lt;structname&gt;RmgrData&lt;/structname&gt; structure with implementations for the
+  <structname>RmgrData</structname> structure with implementations for the
   resource manager methods. Refer to
-  &lt;filename&gt;src/backend/access/transam/README&lt;/filename&gt; and
-  &lt;filename&gt;src/include/access/xlog_internal.h&lt;/filename&gt; in the
-  &lt;productname&gt;PostgreSQL&lt;/productname&gt; source.
-</span>
-《機械翻訳》新しいカスタムWAL資源マネージャを作成するためには、まず資源マネージャメソッドの実装を持つ<code class="structname">RmgrData</code>構造体を定義します。
-<span class="productname">PostgreSQL</span>ソースで<code class="filename">src/backend/access/transam/README</code>と<code class="filename">src/include/access/xlog_internal.h</code>を参照してください。
+  <filename>src/backend/access/transam/README</filename> and
+  <filename>src/include/access/xlog_internal.h</filename> in the
+  <productname>PostgreSQL</productname> source.
+-->
+新しいカスタムWALリソースマネージャを作成するためには、まずリソースマネージャメソッドの実装を持つ<code class="structname">RmgrData</code>構造体を定義します。
+<span class="productname">PostgreSQL</span>ソースの<code class="filename">src/backend/access/transam/README</code>と<code class="filename">src/include/access/xlog_internal.h</code>を参照してください。
 </p><pre class="programlisting">
 /*
  * Method table for resource managers.
@@ -50,6 +51,23 @@
  * RmgrTable[] is indexed by RmgrId values (see rmgrlist.h). If rm_name is
  * NULL, the corresponding RmgrTable entry is considered invalid.
  */
+/*
+ * （日本語訳）
+ * テーブルのリソースマネージャの方法。
+ *
+ * この構造体は、rmgr.cのPG_RMGR定義と同期している必要があります。
+ *
+ * rm_identifyは、xl_info（rmidへの参照なし）に基づくレコードの名前を返す必要があります。
+ * 例えば、XLOG_BTREE_VACUUMは"VACUUM"になります。
+ * その後、rm_descを呼び出して、可能であれば（最後のブロックなど）、
+ * レコードの追加の詳細を取得できます。
+ *
+ * rm_maskリソースマネージャによって変更されたページを入力として受け取り、
+ * wal_consistency_checkingによってフラグが立てられないビットをマスクします。
+ *
+ * RmgrTable[]はRmgrId値によってインデックス化されます(rmgrlist.hを参照)。
+ * rm_nameがNULLの場合、対応するRmgrTableエントリは無効と見なされます。
+ */
 typedef struct RmgrData
 {
     const char *rm_name;
@@ -64,11 +82,18 @@ typedef struct RmgrData
 } RmgrData;
 </pre><p>
  </p><p>
-<span class="original">
+<!--
+   The <filename>src/test/modules/test_custom_rmgrs</filename> module
+   contains a working example, which demonstrates usage of custom WAL
+   resource managers.
+-->
+実例として<code class="filename">src/test/modules/test_custom_rmgrs</code>モジュールがあります。そこではカスタムWALリソースマネージャの使い方を示しています。
+  </p><p>
+<!--
   Then, register your new resource
   manager.
-</span>
-《機械翻訳》次に、新しいリソースマネージャを登録します。
+-->
+次に、新しいリソースマネージャを登録します。
 
 </p><pre class="programlisting">
 /*
@@ -80,34 +105,43 @@ typedef struct RmgrData
  * developers. During development, use RM_EXPERIMENTAL_ID to avoid needlessly
  * reserving a new ID.
  */
-extern void RegisterCustomRmgr(RmgrId rmid, RmgrData *rmgr);
+/*
+ * （日本語訳）
+ * カスタムWALリソースマネージャの登録。
+ *
+ * リソースマネージャIDは、すべての拡張にわたってグローバルにユニークである必要があります。
+ * https://wiki.postgresql.org/wiki/CustomWALResourceManagers を参照して、
+ * 拡張のユニークRmgrIdを予約し、他の拡張開発者との競合を回避します。
+ * 開発時には、RM_EXPERIMENTAL_IDを使用して、新しいIDが不必要に予約されないようにします。
+ */
+extern void RegisterCustomRmgr(RmgrId rmid, const RmgrData *rmgr);
 </pre><p>
-<span class="original">
-  &lt;function&gt;RegisterCustomRmgr&lt;/function&gt; must be called from the
-  extension module's &lt;link linkend="xfunc-c-dynload"&gt;_PG_init&lt;/link&gt; function.
-  While developing a new extension, use &lt;literal&gt;RM_EXPERIMENTAL_ID&lt;/literal&gt;
-  for &lt;parameter&gt;rmid&lt;/parameter&gt;. When you are ready to release the extension
-  to users, reserve a new resource manager ID at the &lt;ulink
-  url="https://wiki.postgresql.org/wiki/CustomWALResourceManagers"&gt;Custom WAL
-  Resource Manager&lt;/ulink&gt; page.
-</span>
-《機械翻訳》<code class="function">RegisterCustomRmgr</code>は拡張モジュールの<a class="link" href="xfunc-c.html#XFUNC-C-DYNLOAD" title="38.10.1. 動的ロード">_PG_init</a>関数から呼び出される必要があります。
- 新しい拡張を開発する際には、<em class="parameter"><code>rmid</code></em>に<code class="literal">RM_EXPERIMENTAL_ID</code>を使用してください。
+<!--
+  <function>RegisterCustomRmgr</function> must be called from the
+  extension module's <link linkend="xfunc-c-dynload">_PG_init</link> function.
+  While developing a new extension, use <literal>RM_EXPERIMENTAL_ID</literal>
+  for <parameter>rmid</parameter>. When you are ready to release the extension
+  to users, reserve a new resource manager ID at the <ulink
+  url="https://wiki.postgresql.org/wiki/CustomWALResourceManagers">Custom WAL
+  Resource Manager</ulink> page.
+-->
+<code class="function">RegisterCustomRmgr</code>は拡張モジュールの<a class="link" href="xfunc-c.html#XFUNC-C-DYNLOAD" title="38.10.1. 動的ロード">_PG_init</a>関数から呼び出される必要があります。
+新しい拡張を開発する際には、<em class="parameter"><code>rmid</code></em>に<code class="literal">RM_EXPERIMENTAL_ID</code>を使用してください。
 拡張をユーザにリリースする準備ができたら、<a class="ulink" href="https://wiki.postgresql.org/wiki/CustomWALResourceManagers" target="_top">Custom WAL Resource Manager</a>のページで新しいリソースマネージャIDを予約してください。
  </p><p>
-<span class="original">
-  Place the extension module implementing the custom resource manager in &lt;xref
-  linkend="guc-shared-preload-libraries"/&gt; so that it will be loaded early
-  during &lt;productname&gt;PostgreSQL&lt;/productname&gt; startup.
-</span>
-《機械翻訳》カスタムリソースマネージャを実装する拡張モジュールを<a class="xref" href="runtime-config-client.html#GUC-SHARED-PRELOAD-LIBRARIES">shared_preload_libraries</a>に配置して、<span class="productname">PostgreSQL</span>の起動時に早くロードされるようにします。
+<!--
+  Place the extension module implementing the custom resource manager in <xref
+  linkend="guc-shared-preload-libraries"/> so that it will be loaded early
+  during <productname>PostgreSQL</productname> startup.
+-->
+カスタムリソースマネージャを実装する拡張モジュールを<a class="xref" href="runtime-config-client.html#GUC-SHARED-PRELOAD-LIBRARIES">shared_preload_libraries</a>に配置して、<span class="productname">PostgreSQL</span>の起動の初期にロードされるようにします。
  </p><div class="note"><h3 class="title">注記</h3><p>
-<span class="original">
+<!--
     The extension must remain in shared_preload_libraries as long as any
     custom WAL records may exist in the system. Otherwise
-    &lt;productname&gt;PostgreSQL&lt;/productname&gt; will not be able to apply or decode
+    <productname>PostgreSQL</productname> will not be able to apply or decode
     the custom WAL records, which may prevent the server from starting.
-</span>
-《機械翻訳》拡張モジュールは、システム内にカスタムWALレコードが存在する限り、shared_preload_libraries内に保持されなければなりません。
+-->
+拡張モジュールは、システム内にカスタムWALレコードが存在する限り、shared_preload_libraries内に保持されなければなりません。
 そうしないと<span class="productname">PostgreSQL</span>はカスタムWALレコードを適用またはデコードすることができず、サーバの起動を妨げる可能性があります。
-   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="generic-wal.html" title="第65章 汎用WALレコード">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="internals.html" title="パート VII. 内部情報">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="btree.html" title="第67章 B-Treeインデックス">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第65章 汎用WALレコード </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 第67章 B-Treeインデックス</td></tr></table></div></body></html>
+   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="generic-wal.html" title="第65章 汎用WALレコード">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="internals.html" title="パート VII. 内部情報">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="btree.html" title="第67章 B-Treeインデックス">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第65章 汎用WALレコード </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 16.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 第67章 B-Treeインデックス</td></tr></table></div></body></html>

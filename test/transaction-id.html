@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>74.1. Transactions and Identifiers</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="transactions.html" title="第74章 Transaction Processing" /><link rel="next" href="xact-locking.html" title="74.2. Transactions and Locking" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 16.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="transactions.html" title="第74章 Transaction Processing">第74章 Transaction Processing</a></td><td width="20%" align="right"></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="transactions.html" title="第74章 Transaction Processing">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="transactions.html" title="第74章 Transaction Processing">上へ</a></td><td width="60%" align="center">74.1. Transactions and Identifiers</td><td width="20%" align="right"> <a accesskey="n" href="xact-locking.html" title="74.2. Transactions and Locking">次へ</a></td></tr></table><hr /></div><div class="sect1" id="TRANSACTION-ID"><div class="titlepage"><div><div><h2 class="title" style="clear: both">74.1. Transactions and Identifiers <a href="#TRANSACTION-ID" class="id_link">#</a></h2></div></div></div><p>
+<!--
+   Transactions can be created explicitly using <command>BEGIN</command>
+   or <command>START TRANSACTION</command> and ended using
+   <command>COMMIT</command> or <command>ROLLBACK</command>.  SQL
+   statements outside of explicit transactions automatically use
+   single-statement transactions.
+-->
+《機械翻訳》トランザクションは、<code class="command">BEGIN</code>または<code class="command">START TRANSACTION</code>を使用して明示的に作成し、<code class="command">COMMIT</code>または<code class="command">ROLLBACK</code>を使用して終了します。
+ 明示的なトランザクションの外部のSQL文は、自動的に単一文トランザクションを使用します。
+  </p><p>
+<!--
+   Every transaction is identified by a unique
+   <literal>VirtualTransactionId</literal> (also called
+   <literal>virtualXID</literal> or <literal>vxid</literal>), which
+   is comprised of a backend ID (or <literal>backendID</literal>)
+   and a sequentially-assigned number local to each backend, known as
+   <literal>localXID</literal>.  For example, the virtual transaction
+   ID <literal>4/12532</literal> has a <literal>backendID</literal>
+   of <literal>4</literal> and a <literal>localXID</literal> of
+   <literal>12532</literal>.
+-->
+《機械翻訳》各トランザクションは、一意の<code class="literal">VirtualTransactionId</code> (または<code class="literal">virtualXID</code>または<code class="literal">vxid</code>)で識別されます。
+これは、バックエンドID (または<code class="literal">backendID</code>)と、各バックエンドに固有のローカル番号で構成される<code class="literal">localXID</code>と呼ばれる、連続した番号で構成されます。
+ たとえば、仮想トランザクションID <code class="literal">4/12532</code>の<code class="literal">backendID</code>は<code class="literal">4</code>で、<code class="literal">localXID</code>は<code class="literal">12532</code>です。
+  </p><p>
+<!--
+   Non-virtual <literal>TransactionId</literal>s (or <type>xid</type>),
+   e.g., <literal>278394</literal>, are assigned sequentially to
+   transactions from a global counter used by all databases within
+   the <productname>PostgreSQL</productname> cluster.  This assignment
+   happens when a transaction first writes to the database. This means
+   lower-numbered xids started writing before higher-numbered xids.
+   Note that the order in which transactions perform their first database
+   write might be different from the order in which the transactions
+   started, particularly if the transaction started with statements that
+   only performed database reads.
+-->
+《機械翻訳》非仮想<code class="literal">TransactionId</code>(または<code class="type">xid</code>)、例えば<code class="literal">278394</code>は、<span class="productname">PostgreSQL</span>クラスタ内のすべてのデータベースでグローバルカウンタが使用するトランザクションから連続的に割り当てられます。
+ この割り当ては、トランザクションがデータベースに最初に書き込みを行ったときに行われます。
+ これは、トランザクションが最初にデータベースに書き込みを開始した順序とは異なる場合があることに注意してください。
+ 特に、トランザクションがデータベース読み取りのみを実行する文で開始した場合、トランザクションが最初のデータベース書き込みを実行するより前に、トランザクションが最初のデータベース書き込みを開始した順序とは異なる場合があります。
+  </p><p>
+<!--
+   The internal transaction ID type <type>xid</type> is 32 bits wide
+   and <link linkend="vacuum-for-wraparound">wraps around</link> every
+   4 billion transactions. A 32-bit epoch is incremented during each
+   wraparound. There is also a 64-bit type <type>xid8</type> which
+   includes this epoch and therefore does not wrap around during the
+   life of an installation;  it can be converted to xid by casting.
+   The functions in <xref linkend="functions-pg-snapshot"/>
+   return <type>xid8</type> values.  Xids are used as the
+   basis for <productname>PostgreSQL</productname>'s <link
+   linkend="mvcc">MVCC</link> concurrency mechanism and streaming
+   replication.
+-->
+《機械翻訳》内部トランザクションID型<code class="type">xid</code>は32ビット幅で、<a class="link" href="routine-vacuuming.html#VACUUM-FOR-WRAPAROUND" title="25.1.5. トランザクションIDの周回エラーの防止">ラップアラウンド</a>ごとに4,000,000,000トランザクション増加します。
+32ビットエポックは各ラップアラウンド中にインクリメントされます。
+また、このエポックを含み、インストールのライフタイム中にラップアラウンドしない64ビット型<code class="type">xid8</code>もあります。
+関数<a class="xref" href="functions-info.html#FUNCTIONS-PG-SNAPSHOT" title="表9.80 トランザクションIDとスナップショット情報関数">表 9.80</a>は<code class="type">xid8</code>値を返します。
+XIDは<span class="productname">PostgreSQL</span>の<a class="link" href="mvcc.html" title="第13章 同時実行制御">MVCC</a>同時実行性メカニズムとストリーミングレプリケーションの基礎として使用されます。
+  </p><p>
+<!--
+   When a top-level transaction with a (non-virtual) xid commits,
+   it is marked as committed in the <filename>pg_xact</filename>
+   directory. Additional information is recorded in the
+   <filename>pg_commit_ts</filename> directory if <xref
+   linkend="guc-track-commit-timestamp"/> is enabled.
+-->
+《機械翻訳》（仮想）xidを持つトップレベルのトランザクションがコミットすると、<code class="filename">pg_xact</code>ディレクトリにコミット済みとしてマークされます。
+<a class="xref" href="runtime-config-replication.html#GUC-TRACK-COMMIT-TIMESTAMP">track_commit_timestamp</a>が有効な場合、追加情報は<code class="filename">pg_commit_ts</code>ディレクトリに記録されます。
+  </p><p>
+<!--
+   In addition to <literal>vxid</literal> and <type>xid</type>,
+   prepared transactions are also assigned Global Transaction
+   Identifiers (<acronym>GID</acronym>). GIDs are string literals up
+   to 200 bytes long, which must be unique amongst other currently
+   prepared transactions.  The mapping of GID to xid is shown in <link
+   linkend="view-pg-prepared-xacts"><structname>pg_prepared_xacts</structname></link>.
+-->
+《機械翻訳》<code class="literal">vxid</code>と<code class="type">xid</code>に加えて、準備されたトランザクションにはグローバルトランザクション識別子(<acronym class="acronym">GID</acronym>)も割り当てられます。
+GIDは最大200バイトの文字列リテラルで、現在準備されている他のトランザクションと一意でなければなりません。
+GIDからxidへのマッピングは<a class="link" href="view-pg-prepared-xacts.html" title="54.16. pg_prepared_xacts"><code class="structname">pg_prepared_xacts</code></a>に示されています。
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="transactions.html" title="第74章 Transaction Processing">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="transactions.html" title="第74章 Transaction Processing">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="xact-locking.html" title="74.2. Transactions and Locking">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第74章 Transaction Processing </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 16.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 74.2. Transactions and Locking</td></tr></table></div></body></html>

@@ -1,128 +1,127 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>59.4. 外部データラッパの問い合わせプラン作成</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="fdw-helpers.html" title="59.3. 外部データラッパヘルパ関数" /><link rel="next" href="fdw-row-locking.html" title="59.5. 外部データラッパでの行ロック" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="fdwhandler.html" title="第59章 外部データラッパの作成">第59章 外部データラッパの作成</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : fdw-planning.html">誤訳等の報告
-                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="fdw-helpers.html" title="59.3. 外部データラッパヘルパ関数">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="fdwhandler.html" title="第59章 外部データラッパの作成">上へ</a></td><td width="60%" align="center">59.4. 外部データラッパの問い合わせプラン作成</td><td width="20%" align="right"> <a accesskey="n" href="fdw-row-locking.html" title="59.5. 外部データラッパでの行ロック">次へ</a></td></tr></table><hr /></div><div class="sect1" id="FDW-PLANNING"><div class="titlepage"><div><div><h2 class="title" style="clear: both">59.4. 外部データラッパの問い合わせプラン作成</h2></div></div></div><span class="original">
-    &lt;title&gt;Foreign Data Wrapper Query Planning&lt;/title&gt;
-</span><p>
-<span class="original">
-     The FDW callback functions &lt;function&gt;GetForeignRelSize&lt;/function&gt;,
-     &lt;function&gt;GetForeignPaths&lt;/function&gt;, &lt;function&gt;GetForeignPlan&lt;/function&gt;,
-     &lt;function&gt;PlanForeignModify&lt;/function&gt;, &lt;function&gt;GetForeignJoinPaths&lt;/function&gt;,
-     &lt;function&gt;GetForeignUpperPaths&lt;/function&gt;, and &lt;function&gt;PlanDirectModify&lt;/function&gt;
-     must fit into the workings of the &lt;productname&gt;PostgreSQL&lt;/productname&gt; planner.
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>59.4. 外部データラッパーの問い合わせプラン作成</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="fdw-helpers.html" title="59.3. 外部データラッパーヘルパ関数" /><link rel="next" href="fdw-row-locking.html" title="59.5. 外部データラッパーでの行ロック" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 16.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="fdwhandler.html" title="第59章 外部データラッパーの作成">第59章 外部データラッパーの作成</a></td><td width="20%" align="right"></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="fdw-helpers.html" title="59.3. 外部データラッパーヘルパ関数">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="fdwhandler.html" title="第59章 外部データラッパーの作成">上へ</a></td><td width="60%" align="center">59.4. 外部データラッパーの問い合わせプラン作成</td><td width="20%" align="right"> <a accesskey="n" href="fdw-row-locking.html" title="59.5. 外部データラッパーでの行ロック">次へ</a></td></tr></table><hr /></div><div class="sect1" id="FDW-PLANNING"><div class="titlepage"><div><div><h2 class="title" style="clear: both">59.4. 外部データラッパーの問い合わせプラン作成 <a href="#FDW-PLANNING" class="id_link">#</a></h2></div></div></div><!--
+    <title>Foreign Data Wrapper Query Planning</title>
+--><p>
+<!--
+     The FDW callback functions <function>GetForeignRelSize</function>,
+     <function>GetForeignPaths</function>, <function>GetForeignPlan</function>,
+     <function>PlanForeignModify</function>, <function>GetForeignJoinPaths</function>,
+     <function>GetForeignUpperPaths</function>, and <function>PlanDirectModify</function>
+     must fit into the workings of the <productname>PostgreSQL</productname> planner.
      Here are some notes about what they must do.
-</span>
+-->
 FDWコールバック関数の<code class="function">GetForeignRelSize</code>、<code class="function">GetForeignPaths</code>、<code class="function">GetForeignPlan</code>、<code class="function">PlanForeignModify</code>、<code class="function">GetForeignJoinPaths</code>、<code class="function">GetForeignUpperPaths</code>、<code class="function">PlanDirectModify</code>は<span class="productname">PostgreSQL</span>プランナの動作と協調しなければなりません。ここでは、これらの関数がすべき事に関するいくつかの注意事項を述べます。
     </p><p>
-<span class="original">
-     The information in &lt;literal&gt;root&lt;/literal&gt; and &lt;literal&gt;baserel&lt;/literal&gt; can be used
+<!--
+     The information in <literal>root</literal> and <literal>baserel</literal> can be used
      to reduce the amount of information that has to be fetched from the
      foreign table (and therefore reduce the cost).
-     &lt;literal&gt;baserel-&amp;gt;baserestrictinfo&lt;/literal&gt; is particularly interesting, as
-     it contains restriction quals (&lt;literal&gt;WHERE&lt;/literal&gt; clauses) that should be
+     <literal>baserel-&gt;baserestrictinfo</literal> is particularly interesting, as
+     it contains restriction quals (<literal>WHERE</literal> clauses) that should be
      used to filter the rows to be fetched.  (The FDW itself is not required
      to enforce these quals, as the core executor can check them instead.)
-     &lt;literal&gt;baserel-&amp;gt;reltarget-&amp;gt;exprs&lt;/literal&gt; can be used to determine which
+     <literal>baserel-&gt;reltarget-&gt;exprs</literal> can be used to determine which
      columns need to be fetched; but note that it only lists columns that
-     have to be emitted by the &lt;structname&gt;ForeignScan&lt;/structname&gt; plan node, not
+     have to be emitted by the <structname>ForeignScan</structname> plan node, not
      columns that are used in qual evaluation but not output by the query.
-</span>
+-->
 <code class="literal">root</code>と<code class="literal">baserel</code>に含まれる情報は、外部テーブルから取得する必要のある情報の量(とそれによるコスト)を削減するために使用できます。
 <code class="literal">baserel-&gt;baserestrictinfo</code>は、取得される行をフィルタリングする検索条件(<code class="literal">WHERE</code>句)を含んでいるため、特に興味深いものです。(コアのエグゼキュータが代わりにそれらをチェックできるので、FDW自身がこれらの制約を適用しなければならないわけではありません。)
 <code class="literal">baserel-&gt;reltarget-&gt;exprs</code>はどの列が取得される必要があるかを決定するのに使用できます。ただし、このリストは<code class="structname">ForeignScan</code>プランノードから出力すべき列しか含んでおらず、条件検査には必要だが問い合わせからは出力されない列は含まないことに注意してください。
     </p><p>
-<span class="original">
+<!--
      Various private fields are available for the FDW planning functions to
      keep information in.  Generally, whatever you store in FDW private fields
      should be palloc'd, so that it will be reclaimed at the end of planning.
-</span>
+-->
 様々なプライベートフィールドがFDWのプラン作成関数で情報を格納する目的で利用できます。
 一般的に、プラン作成の最後に回収できるように、FDW固有フィールドに格納するものは全てpallocで確保すべきです。
     </p><p>
-<span class="original">
-     &lt;literal&gt;baserel-&amp;gt;fdw_private&lt;/literal&gt; is a &lt;type&gt;void&lt;/type&gt; pointer that is
+<!--
+     <literal>baserel-&gt;fdw_private</literal> is a <type>void</type> pointer that is
      available for FDW planning functions to store information relevant to
      the particular foreign table.  The core planner does not touch it except
-     to initialize it to NULL when the &lt;literal&gt;RelOptInfo&lt;/literal&gt; node is created.
+     to initialize it to NULL when the <literal>RelOptInfo</literal> node is created.
      It is useful for passing information forward from
-     &lt;function&gt;GetForeignRelSize&lt;/function&gt; to &lt;function&gt;GetForeignPaths&lt;/function&gt; and/or
-     &lt;function&gt;GetForeignPaths&lt;/function&gt; to &lt;function&gt;GetForeignPlan&lt;/function&gt;, thereby
+     <function>GetForeignRelSize</function> to <function>GetForeignPaths</function> and/or
+     <function>GetForeignPaths</function> to <function>GetForeignPlan</function>, thereby
      avoiding recalculation.
-</span>
+-->
 <code class="literal">baserel-&gt;fdw_private</code>は、<code class="type">void</code>ポインタで、FDWのプラン作成関数で特定の外部テーブルに関する情報を格納する目的で利用できます。
 コアプランナは、<code class="literal">RelOptInfo</code>ノードが作成されるときにNULLで初期化するときを除いて、このフィールドに一切に触れません。
 このフィールドは、<code class="function">GetForeignRelSize</code>から<code class="function">GetForeignPaths</code>や<code class="function">GetForeignPaths</code>から<code class="function">GetForeignPlan</code>といったように情報を順次伝えるの便利で、結果として再計算を省くことができます。
     </p><p>
-<span class="original">
-     &lt;function&gt;GetForeignPaths&lt;/function&gt; can identify the meaning of different
+<!--
+     <function>GetForeignPaths</function> can identify the meaning of different
      access paths by storing private information in the
-     &lt;structfield&gt;fdw_private&lt;/structfield&gt; field of &lt;structname&gt;ForeignPath&lt;/structname&gt; nodes.
-     &lt;structfield&gt;fdw_private&lt;/structfield&gt; is declared as a &lt;type&gt;List&lt;/type&gt; pointer, but
+     <structfield>fdw_private</structfield> field of <structname>ForeignPath</structname> nodes.
+     <structfield>fdw_private</structfield> is declared as a <type>List</type> pointer, but
      could actually contain anything since the core planner does not touch
      it.  However, best practice is to use a representation that's dumpable
-     by &lt;function&gt;nodeToString&lt;/function&gt;, for use with debugging support available
+     by <function>nodeToString</function>, for use with debugging support available
      in the backend.
-</span>
+-->
 <code class="function">GetForeignPaths</code>では、<code class="structname">ForeignPath</code>ノードの<code class="structfield">fdw_private</code>フィールドに固有情報を格納することで、異なるアクセスパスを区別できます。<code class="structfield">fdw_private</code>は<code class="type">List</code>ポインタとして宣言されていますが、コアプランナがこのフィールドを操作することはないため、実際にはなんでも格納できます。
 しかし、バックエンドのデバッグサポート機能を利用できるように<code class="function">nodeToString</code>でダンプ出来る形式を使うのが最良の手法です。
     </p><p>
-<span class="original">
-     &lt;function&gt;GetForeignPlan&lt;/function&gt; can examine the &lt;structfield&gt;fdw_private&lt;/structfield&gt;
-     field of the selected &lt;structname&gt;ForeignPath&lt;/structname&gt; node, and can generate
-     &lt;structfield&gt;fdw_exprs&lt;/structfield&gt; and &lt;structfield&gt;fdw_private&lt;/structfield&gt; lists to be
-     placed in the &lt;structname&gt;ForeignScan&lt;/structname&gt; plan node, where they will be
+<!--
+     <function>GetForeignPlan</function> can examine the <structfield>fdw_private</structfield>
+     field of the selected <structname>ForeignPath</structname> node, and can generate
+     <structfield>fdw_exprs</structfield> and <structfield>fdw_private</structfield> lists to be
+     placed in the <structname>ForeignScan</structname> plan node, where they will be
      available at execution time.  Both of these lists must be
-     represented in a form that &lt;function&gt;copyObject&lt;/function&gt; knows how to copy.
-     The &lt;structfield&gt;fdw_private&lt;/structfield&gt; list has no other restrictions and is
+     represented in a form that <function>copyObject</function> knows how to copy.
+     The <structfield>fdw_private</structfield> list has no other restrictions and is
      not interpreted by the core backend in any way.  The
-     &lt;structfield&gt;fdw_exprs&lt;/structfield&gt; list, if not NIL, is expected to contain
+     <structfield>fdw_exprs</structfield> list, if not NIL, is expected to contain
      expression trees that are intended to be executed at run time.  These
      trees will undergo post-processing by the planner to make them fully
      executable.
-</span>
+-->
 <code class="function">GetForeignPlan</code>では、選択された<code class="structname">ForeignPath</code>ノードの<code class="structfield">fdw_private</code>フィールドを調べて、<code class="structname">ForeignScan</code>プランノード内に格納されプラン実行時に利用可能な<code class="structfield">fdw_exprs</code>と<code class="structfield">fdw_private</code>の二つのリストを生成することができます。
 これらは両方とも<code class="function">copyObject</code>がコピーできる形式でなければなりません。
 <code class="structfield">fdw_private</code>リストにはこれ以外に制約はなく、コアバックエンドによって解釈されることはありません。
 <code class="structfield">fdw_exprs</code>リストがNILでない場合は、問い合わせ実行時に実行されることを意図した式ツリーが含まれていることが期待されます。
 これらのツリーは、完全に実行可能な状態にするためにプランナによる後処理を受けます。
     </p><p>
-<span class="original">
-     In &lt;function&gt;GetForeignPlan&lt;/function&gt;, generally the passed-in target list can
-     be copied into the plan node as-is.  The passed &lt;literal&gt;scan_clauses&lt;/literal&gt; list
-     contains the same clauses as &lt;literal&gt;baserel-&amp;gt;baserestrictinfo&lt;/literal&gt;,
+<!--
+     In <function>GetForeignPlan</function>, generally the passed-in target list can
+     be copied into the plan node as-is.  The passed <literal>scan_clauses</literal> list
+     contains the same clauses as <literal>baserel-&gt;baserestrictinfo</literal>,
      but may be re-ordered for better execution efficiency.  In simple cases
-     the FDW can just strip &lt;structname&gt;RestrictInfo&lt;/structname&gt; nodes from the
-     &lt;literal&gt;scan_clauses&lt;/literal&gt; list (using &lt;function&gt;extract_actual_clauses&lt;/function&gt;) and put
+     the FDW can just strip <structname>RestrictInfo</structname> nodes from the
+     <literal>scan_clauses</literal> list (using <function>extract_actual_clauses</function>) and put
      all the clauses into the plan node's qual list, which means that all the
      clauses will be checked by the executor at run time.  More complex FDWs
      may be able to check some of the clauses internally, in which case those
      clauses can be removed from the plan node's qual list so that the
      executor doesn't waste time rechecking them.
-</span>
+-->
 <code class="function">GetForeignPlan</code>では、一般的に渡されたターゲットリストはそのままプランノードにコピーできます。
 渡された<code class="literal">scan_clauses</code>リストは<code class="literal">baserel-&gt;baserestrictinfo</code>と同じ句を含みますが、実行効率のよい別の順番に並べ替えることもできます。
 FDWにできるのが<code class="structname">RestrictInfo</code>ノードを<code class="literal">scan_clauses</code>リストから(<code class="function">extract_actual_clauses</code>を使って)抜き出して、全ての句をプランノードの条件リストに入れるだけ、といった単純なケースでは、全ての句は実行時にエグゼキュータによってチェックされます。
 より複雑なFDWは内部で一部の句をチェックできるかもしれませんが、そのような場合には、エグゼキュータが再チェックのために時間を無駄にしないように、それらの句はプランノードの条件リストから削除できます。
     </p><p>
-<span class="original">
+<!--
      As an example, the FDW might identify some restriction clauses of the
-     form &lt;replaceable&gt;foreign_variable&lt;/replaceable&gt; &lt;literal&gt;=&lt;/literal&gt;
-     &lt;replaceable&gt;sub_expression&lt;/replaceable&gt;, which it determines can be executed on
+     form <replaceable>foreign_variable</replaceable> <literal>=</literal>
+     <replaceable>sub_expression</replaceable>, which it determines can be executed on
      the remote server given the locally-evaluated value of the
-     &lt;replaceable&gt;sub_expression&lt;/replaceable&gt;.  The actual identification of such a
-     clause should happen during &lt;function&gt;GetForeignPaths&lt;/function&gt;, since it would
+     <replaceable>sub_expression</replaceable>.  The actual identification of such a
+     clause should happen during <function>GetForeignPaths</function>, since it would
      affect the cost estimate for the path.  The path's
-     &lt;structfield&gt;fdw_private&lt;/structfield&gt; field would probably include a pointer to
-     the identified clause's &lt;structname&gt;RestrictInfo&lt;/structname&gt; node.  Then
-     &lt;function&gt;GetForeignPlan&lt;/function&gt; would remove that clause from &lt;literal&gt;scan_clauses&lt;/literal&gt;,
-     but add the &lt;replaceable&gt;sub_expression&lt;/replaceable&gt; to &lt;structfield&gt;fdw_exprs&lt;/structfield&gt;
+     <structfield>fdw_private</structfield> field would probably include a pointer to
+     the identified clause's <structname>RestrictInfo</structname> node.  Then
+     <function>GetForeignPlan</function> would remove that clause from <literal>scan_clauses</literal>,
+     but add the <replaceable>sub_expression</replaceable> to <structfield>fdw_exprs</structfield>
      to ensure that it gets massaged into executable form.  It would probably
      also put control information into the plan node's
-     &lt;structfield&gt;fdw_private&lt;/structfield&gt; field to tell the execution functions what
+     <structfield>fdw_private</structfield> field to tell the execution functions what
      to do at run time.  The query transmitted to the remote server would
-     involve something like &lt;literal&gt;WHERE &lt;replaceable&gt;foreign_variable&lt;/replaceable&gt; =
-     $1&lt;/literal&gt;, with the parameter value obtained at run time from
-     evaluation of the &lt;structfield&gt;fdw_exprs&lt;/structfield&gt; expression tree.
-</span>
+     involve something like <literal>WHERE <replaceable>foreign_variable</replaceable> =
+     $1</literal>, with the parameter value obtained at run time from
+     evaluation of the <structfield>fdw_exprs</structfield> expression tree.
+-->
 たとえば、ローカル側で評価された<em class="replaceable"><code>sub_expression</code></em>の値があればリモートサーバ側で実行出来るとFDWが判断するような、<em class="replaceable"><code>foreign_variable</code></em> <code class="literal">=</code> <em class="replaceable"><code>sub_expression</code></em>といった形式の条件句をFDWが識別するかもしれません。
 パスのコスト見積もりに影響するので、そのような句の実際の識別は<code class="function">GetForeignPaths</code>でなされるべきです。
 おそらく、そのパスの<code class="structfield">fdw_private</code>フィールドは識別された句の<code class="structname">RestrictInfo</code>ノードをさすポインタを含むでしょう。
@@ -130,42 +129,42 @@ FDWにできるのが<code class="structname">RestrictInfo</code>ノードを<co
 また、おそらく、実行時に何をすべきかをプラン実行関数に伝えるためにプランノードの<code class="structfield">fdw_private</code>フィールドに制御情報を入れるでしょう。
 リモートサーバに送られた問い合わせは、実行時に<code class="structfield">fdw_exprs</code>式ツリーを評価して得られた値をパラメータ値とする<code class="literal">WHERE <em class="replaceable"><code>foreign_variable</code></em> = $1</code>のようなものを伴うでしょう。
     </p><p>
-<span class="original">
+<!--
      Any clauses removed from the plan node's qual list must instead be added
-     to &lt;literal&gt;fdw_recheck_quals&lt;/literal&gt; or rechecked by
-     &lt;literal&gt;RecheckForeignScan&lt;/literal&gt; in order to ensure correct behavior
-     at the &lt;literal&gt;READ COMMITTED&lt;/literal&gt; isolation level.  When a concurrent
+     to <literal>fdw_recheck_quals</literal> or rechecked by
+     <literal>RecheckForeignScan</literal> in order to ensure correct behavior
+     at the <literal>READ COMMITTED</literal> isolation level.  When a concurrent
      update occurs for some other table involved in the query, the executor
      may need to verify that all of the original quals are still satisfied for
      the tuple, possibly against a different set of parameter values.  Using
-     &lt;literal&gt;fdw_recheck_quals&lt;/literal&gt; is typically easier than implementing checks
-     inside &lt;literal&gt;RecheckForeignScan&lt;/literal&gt;, but this method will be
+     <literal>fdw_recheck_quals</literal> is typically easier than implementing checks
+     inside <literal>RecheckForeignScan</literal>, but this method will be
      insufficient when outer joins have been pushed down, since the join tuples
      in that case might have some fields go to NULL without rejecting the
      tuple entirely.
-</span>
+-->
 <code class="literal">READ COMMITTED</code>分離レベルでの正しい動作を保証するため、プランノードの条件リストから除かれた句はすべて、代わりに<code class="literal">fdw_recheck_quals</code>に追加されるか、<code class="literal">RecheckForeignScan</code>で再検査される必要があります。
 問い合わせに含まれる他のテーブルで同時更新があった場合、エグゼキュータはタプルが元の条件を、それも場合によっては異なるパラメータ値の組み合わせに対して満たすことを確認する必要があるかもしれません。
 <code class="literal">fdw_recheck_quals</code>を使うのは、<code class="literal">RecheckForeignScan</code>の内部で検査を実装するより、通常は簡単でしょう。
 しかしこの方法は、外部結合がプッシュダウンされる場合は不十分です。
 なぜなら、この場合の結合タプルはタプル全体を拒絶せずに、一部のフィールドをNULLにしてしまうからです。
     </p><p>
-<span class="original">
-     Another &lt;structname&gt;ForeignScan&lt;/structname&gt; field that can be filled by FDWs
-     is &lt;structfield&gt;fdw_scan_tlist&lt;/structfield&gt;, which describes the tuples returned by
+<!--
+     Another <structname>ForeignScan</structname> field that can be filled by FDWs
+     is <structfield>fdw_scan_tlist</structfield>, which describes the tuples returned by
      the FDW for this plan node.  For simple foreign table scans this can be
-     set to &lt;literal&gt;NIL&lt;/literal&gt;, implying that the returned tuples have the
-     row type declared for the foreign table.  A non-&lt;symbol&gt;NIL&lt;/symbol&gt; value must be a
-     target list (list of &lt;structname&gt;TargetEntry&lt;/structname&gt;s) containing Vars and/or
+     set to <literal>NIL</literal>, implying that the returned tuples have the
+     row type declared for the foreign table.  A non-<symbol>NIL</symbol> value must be a
+     target list (list of <structname>TargetEntry</structname>s) containing Vars and/or
      expressions representing the returned columns.  This might be used, for
      example, to show that the FDW has omitted some columns that it noticed
      won't be needed for the query.  Also, if the FDW can compute expressions
      used by the query more cheaply than can be done locally, it could add
-     those expressions to &lt;structfield&gt;fdw_scan_tlist&lt;/structfield&gt;.  Note that join
-     plans (created from paths made by &lt;function&gt;GetForeignJoinPaths&lt;/function&gt;) must
-     always supply &lt;structfield&gt;fdw_scan_tlist&lt;/structfield&gt; to describe the set of
+     those expressions to <structfield>fdw_scan_tlist</structfield>.  Note that join
+     plans (created from paths made by <function>GetForeignJoinPaths</function>) must
+     always supply <structfield>fdw_scan_tlist</structfield> to describe the set of
      columns they will return.
-</span>
+-->
 FDWがセットできる別の<code class="structname">ForeignScan</code>フィールドに<code class="structfield">fdw_scan_tlist</code>があります。
 これはこのプランノードについてFDWが返すタプルを記述するものです。
 単純な外部テーブルスキャンに対しては、これを<code class="literal">NIL</code>にセットすることができ、それは戻されるタプルが外部テーブルで宣言された行型を持つことを意味します。
@@ -174,61 +173,61 @@ FDWがセットできる別の<code class="structname">ForeignScan</code>フィ�
 また、FDWが問い合わせで使われる式をローカルで計算するより安価に計算できるなら、それらの式を<code class="structfield">fdw_scan_tlist</code>に追加することができます。
 結合プラン（<code class="function">GetForeignJoinPaths</code>が作るパスから作成される）は、それが返す列の集合を記述する<code class="structfield">fdw_scan_tlist</code>を必ず提供しなければならないことに注意して下さい。
     </p><p>
-<span class="original">
+<!--
      The FDW should always construct at least one path that depends only on
      the table's restriction clauses.  In join queries, it might also choose
      to construct path(s) that depend on join clauses, for example
-     &lt;replaceable&gt;foreign_variable&lt;/replaceable&gt; &lt;literal&gt;=&lt;/literal&gt;
-     &lt;replaceable&gt;local_variable&lt;/replaceable&gt;.  Such clauses will not be found in
-     &lt;literal&gt;baserel-&amp;gt;baserestrictinfo&lt;/literal&gt; but must be sought in the
+     <replaceable>foreign_variable</replaceable> <literal>=</literal>
+     <replaceable>local_variable</replaceable>.  Such clauses will not be found in
+     <literal>baserel-&gt;baserestrictinfo</literal> but must be sought in the
      relation's join lists.  A path using such a clause is called a
-     &lt;quote&gt;parameterized path&lt;/quote&gt;.  It must identify the other relations
+     <quote>parameterized path</quote>.  It must identify the other relations
      used in the selected join clause(s) with a suitable value of
-     &lt;literal&gt;param_info&lt;/literal&gt;; use &lt;function&gt;get_baserel_parampathinfo&lt;/function&gt;
-     to compute that value.  In &lt;function&gt;GetForeignPlan&lt;/function&gt;, the
-     &lt;replaceable&gt;local_variable&lt;/replaceable&gt; portion of the join clause would be added
-     to &lt;structfield&gt;fdw_exprs&lt;/structfield&gt;, and then at run time the case works the
+     <literal>param_info</literal>; use <function>get_baserel_parampathinfo</function>
+     to compute that value.  In <function>GetForeignPlan</function>, the
+     <replaceable>local_variable</replaceable> portion of the join clause would be added
+     to <structfield>fdw_exprs</structfield>, and then at run time the case works the
      same as for an ordinary restriction clause.
-</span>
+-->
 FDWはそのテーブルの条件句のみに依存するパスを常に少なくとも一つは生成すべきです。結合問い合わせでは、例えば<em class="replaceable"><code>foreign_variable</code></em> <code class="literal">=</code> <em class="replaceable"><code>local_variable</code></em>といった結合句に依存するパス(群)を生成することもできます。
 そのような句は<code class="literal">baserel-&gt;baserestrictinfo</code>には見つからず、リレーションの結合リストにあるはずです。
 そのような句を使用するパスは<span class="quote">「<span class="quote">パラメータ化されたパス</span>」</span>と呼ばれます。
 このようなパスでは、選択された結合句（群）で使用されているリレーション（群）を<code class="literal">param_info</code>の適合する値から特定しなければなりません;その値を計算するには<code class="function">get_baserel_parampathinfo</code>を使用します。
 <code class="function">GetForeignPlan</code>では、結合句の<em class="replaceable"><code>local_variable</code></em>部分が<code class="structfield">fdw_exprs</code>に追加され、実行時には通常の条件句と同じように動作します。
     </p><p>
-<span class="original">
-     If an FDW supports remote joins, &lt;function&gt;GetForeignJoinPaths&lt;/function&gt; should
-     produce &lt;structname&gt;ForeignPath&lt;/structname&gt;s for potential remote joins in much
-     the same way as &lt;function&gt;GetForeignPaths&lt;/function&gt; works for base tables.
+<!--
+     If an FDW supports remote joins, <function>GetForeignJoinPaths</function> should
+     produce <structname>ForeignPath</structname>s for potential remote joins in much
+     the same way as <function>GetForeignPaths</function> works for base tables.
      Information about the intended join can be passed forward
-     to &lt;function&gt;GetForeignPlan&lt;/function&gt; in the same ways described above.
-     However, &lt;structfield&gt;baserestrictinfo&lt;/structfield&gt; is not relevant for join
+     to <function>GetForeignPlan</function> in the same ways described above.
+     However, <structfield>baserestrictinfo</structfield> is not relevant for join
      relations; instead, the relevant join clauses for a particular join are
-     passed to &lt;function&gt;GetForeignJoinPaths&lt;/function&gt; as a separate parameter
-     (&lt;literal&gt;extra-&amp;gt;restrictlist&lt;/literal&gt;).
-</span>
+     passed to <function>GetForeignJoinPaths</function> as a separate parameter
+     (<literal>extra-&gt;restrictlist</literal>).
+-->
 FDWがリモートでの結合をサポートする場合、<code class="function">GetForeignPaths</code>がベーステーブルに対して処理するのとほぼ同じように、<code class="function">GetForeignJoinPaths</code>は潜在的なリモートの結合に対して<code class="structname">ForeignPath</code>を生成することになります。
 意図した結合に関する情報は、上記と同じ方法で<code class="function">GetForeignPlan</code>に送ることができます。
 しかし、<code class="structfield">baserestrictinfo</code>は結合のリレーションには関連がなく、代わりに、特定の結合に関連するJOIN句は<code class="function">GetForeignJoinPaths</code>に別のパラメータ(<code class="literal">extra-&gt;restrictlist</code>)として渡されます。
     </p><p>
-<span class="original">
+<!--
      An FDW might additionally support direct execution of some plan actions
      that are above the level of scans and joins, such as grouping or
      aggregation.  To offer such options, the FDW should generate paths and
-     insert them into the appropriate &lt;firstterm&gt;upper relation&lt;/firstterm&gt;.  For
+     insert them into the appropriate <firstterm>upper relation</firstterm>.  For
      example, a path representing remote aggregation should be inserted into
-     the &lt;literal&gt;UPPERREL_GROUP_AGG&lt;/literal&gt; relation, using &lt;function&gt;add_path&lt;/function&gt;.
+     the <literal>UPPERREL_GROUP_AGG</literal> relation, using <function>add_path</function>.
      This path will be compared on a cost basis with local aggregation
      performed by reading a simple scan path for the foreign relation (note
      that such a path must also be supplied, else there will be an error at
      plan time).  If the remote-aggregation path wins, which it usually would,
      it will be converted into a plan in the usual way, by
-     calling &lt;function&gt;GetForeignPlan&lt;/function&gt;.  The recommended place to generate
-     such paths is in the &lt;function&gt;GetForeignUpperPaths&lt;/function&gt;
+     calling <function>GetForeignPlan</function>.  The recommended place to generate
+     such paths is in the <function>GetForeignUpperPaths</function>
      callback function, which is called for each upper relation (i.e., each
      post-scan/join processing step), if all the base relations of the query
      come from the same FDW.
-</span>
+-->
 FDWはグルーピングや集約のような、スキャンや結合のレベルより上位のプラン動作の直接実行を追加的にサポートできるかもしれません。
 このような方法を行うには、FDWはパスを生成して、それを適切な<em class="firstterm">上位リレーション</em>に挿入する必要があります。
 例えば、リモート集約をあらわすパスは<code class="function">add_path</code>を使って<code class="literal">UPPERREL_GROUP_AGG</code>リレーションに挿入されるべきです。
@@ -236,56 +235,56 @@ FDWはグルーピングや集約のような、スキャンや結合のレベ�
 リモート集約パスが、通常そうなりますが、勝った場合には、パスは<code class="function">GetForeignPlan</code>を呼ぶ通常の手段でプランに変換されます。
 もし問い合わせの全てのベースリレーションが同じFDWから来るなら、このようなパスを生成するのに推奨される場所は、各上位リレーション（すなわち各スキャン/結合後の処理の段階）に対して呼び出される<code class="function">GetForeignUpperPaths</code>コールバック関数の中です。
     </p><p>
-<span class="original">
-     &lt;function&gt;PlanForeignModify&lt;/function&gt; and the other callbacks described in
-     &lt;xref linkend="fdw-callbacks-update"/&gt; are designed around the assumption
+<!--
+     <function>PlanForeignModify</function> and the other callbacks described in
+     <xref linkend="fdw-callbacks-update"/> are designed around the assumption
      that the foreign relation will be scanned in the usual way and then
-     individual row updates will be driven by a local &lt;literal&gt;ModifyTable&lt;/literal&gt;
+     individual row updates will be driven by a local <literal>ModifyTable</literal>
      plan node.  This approach is necessary for the general case where an
      update requires reading local tables as well as foreign tables.
      However, if the operation could be executed entirely by the foreign
      server, the FDW could generate a path representing that and insert it
-     into the &lt;literal&gt;UPPERREL_FINAL&lt;/literal&gt; upper relation, where it would
-     compete against the &lt;literal&gt;ModifyTable&lt;/literal&gt; approach.  This approach
-     could also be used to implement remote &lt;literal&gt;SELECT FOR UPDATE&lt;/literal&gt;,
+     into the <literal>UPPERREL_FINAL</literal> upper relation, where it would
+     compete against the <literal>ModifyTable</literal> approach.  This approach
+     could also be used to implement remote <literal>SELECT FOR UPDATE</literal>,
      rather than using the row locking callbacks described in
-     &lt;xref linkend="fdw-callbacks-row-locking"/&gt;.  Keep in mind that a path
-     inserted into &lt;literal&gt;UPPERREL_FINAL&lt;/literal&gt; is responsible for
-     implementing &lt;emphasis&gt;all&lt;/emphasis&gt; behavior of the query.
-</span>
+     <xref linkend="fdw-callbacks-row-locking"/>.  Keep in mind that a path
+     inserted into <literal>UPPERREL_FINAL</literal> is responsible for
+     implementing <emphasis>all</emphasis> behavior of the query.
+-->
 <code class="function">PlanForeignModify</code>と<a class="xref" href="fdw-callbacks.html#FDW-CALLBACKS-UPDATE" title="59.2.4. 外部テーブル更新のためのFDWルーチン">59.2.4</a>で記述された他のコールバックは、外部リレーションは通常の方法でスキャンされ、それから個別の行変更がローカルの<code class="literal">ModifyTable</code>プランノードで駆動されるという想定をもとに設計されています。
 この方法は変更が外部テーブルと同様にローカルテーブルを読む必要がある一般的な場合に必要です。
 しかしながら、操作が全体的に外部サーバで実行できるなら、FDWはそのようにするパスを生成して<code class="literal">UPPERREL_FINAL</code>上位リレーションに挿入することができます。ここでは<code class="literal">ModifyTable</code>方式に対して競合します。
 この方式は、<a class="xref" href="fdw-callbacks.html#FDW-CALLBACKS-ROW-LOCKING" title="59.2.6. 行ロックのためのFDWルーチン">59.2.6</a>で記述された行ロックコールバックを使うのでなしに、リモート<code class="literal">SELECT FOR UPDATE</code>を実装するのにも使われます。
 <code class="literal">UPPERREL_FINAL</code>に挿入されたパスは問い合わせの<span class="emphasis"><em>全ての</em></span>振る舞いの実装に責任があることに留意してください。
     </p><p>
-<span class="original">
-     When planning an &lt;command&gt;UPDATE&lt;/command&gt; or &lt;command&gt;DELETE&lt;/command&gt;,
-     &lt;function&gt;PlanForeignModify&lt;/function&gt; and &lt;function&gt;PlanDirectModify&lt;/function&gt;
-     can look up the &lt;structname&gt;RelOptInfo&lt;/structname&gt;
+<!--
+     When planning an <command>UPDATE</command> or <command>DELETE</command>,
+     <function>PlanForeignModify</function> and <function>PlanDirectModify</function>
+     can look up the <structname>RelOptInfo</structname>
      struct for the foreign table and make use of the
-     &lt;literal&gt;baserel-&amp;gt;fdw_private&lt;/literal&gt; data previously created by the
-     scan-planning functions.  However, in &lt;command&gt;INSERT&lt;/command&gt; the target
-     table is not scanned so there is no &lt;structname&gt;RelOptInfo&lt;/structname&gt; for it.
-     The &lt;structname&gt;List&lt;/structname&gt; returned by &lt;function&gt;PlanForeignModify&lt;/function&gt; has
-     the same restrictions as the &lt;structfield&gt;fdw_private&lt;/structfield&gt; list of a
-     &lt;structname&gt;ForeignScan&lt;/structname&gt; plan node, that is it must contain only
-     structures that &lt;function&gt;copyObject&lt;/function&gt; knows how to copy.
-</span>
+     <literal>baserel-&gt;fdw_private</literal> data previously created by the
+     scan-planning functions.  However, in <command>INSERT</command> the target
+     table is not scanned so there is no <structname>RelOptInfo</structname> for it.
+     The <structname>List</structname> returned by <function>PlanForeignModify</function> has
+     the same restrictions as the <structfield>fdw_private</structfield> list of a
+     <structname>ForeignScan</structname> plan node, that is it must contain only
+     structures that <function>copyObject</function> knows how to copy.
+-->
 <code class="command">UPDATE</code>や<code class="command">DELETE</code>のプランを生成しているとき、
 <code class="function">PlanForeignModify</code>と<code class="function">PlanDirectModify</code>は、事前にスキャンプラン生成関数で作られた<code class="literal">baserel-&gt;fdw_private</code>データを使うために、その外部テーブルのための<code class="structname">RelOptInfo</code>構造体を検索することができます。
 しかしながら、<code class="command">INSERT</code>では対象テーブルはスキャンされないので対応する<code class="structname">RelOptInfo</code>は存在しません。
 <code class="function">PlanForeignModify</code>から返される<code class="structname">List</code>には、<code class="structname">ForeignScan</code>プランノードの<code class="structfield">fdw_private</code>リストと同様に、<code class="function">copyObject</code>がコピーの仕方を知っている構造体しか保持してはいけないという制約があります。
     </p><p>
-<span class="original">
-     &lt;command&gt;INSERT&lt;/command&gt; with an &lt;literal&gt;ON CONFLICT&lt;/literal&gt; clause does not
+<!--
+     <command>INSERT</command> with an <literal>ON CONFLICT</literal> clause does not
      support specifying the conflict target, as unique constraints or
      exclusion constraints on remote tables are not locally known. This
-     in turn implies that &lt;literal&gt;ON CONFLICT DO UPDATE&lt;/literal&gt; is not supported,
+     in turn implies that <literal>ON CONFLICT DO UPDATE</literal> is not supported,
      since the specification is mandatory there.
-</span>
+-->
 <code class="literal">ON CONFLICT</code>句のある<code class="command">INSERT</code>は競合の対象の指定をサポートしません。
 なぜなら、リモートのテーブルの一意制約や排他制約についての情報がローカルにはないからです。
 これは結果的に<code class="literal">ON CONFLICT DO UPDATE</code>がサポートされないことを意味します。
 なぜなら、競合の対象の指定が必須だからです。
-    </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="fdw-helpers.html" title="59.3. 外部データラッパヘルパ関数">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="fdwhandler.html" title="第59章 外部データラッパの作成">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="fdw-row-locking.html" title="59.5. 外部データラッパでの行ロック">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">59.3. 外部データラッパヘルパ関数 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 59.5. 外部データラッパでの行ロック</td></tr></table></div></body></html>
+    </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="fdw-helpers.html" title="59.3. 外部データラッパーヘルパ関数">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="fdwhandler.html" title="第59章 外部データラッパーの作成">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="fdw-row-locking.html" title="59.5. 外部データラッパーでの行ロック">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">59.3. 外部データラッパーヘルパ関数 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 16.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 59.5. 外部データラッパーでの行ロック</td></tr></table></div></body></html>
