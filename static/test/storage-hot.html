@@ -1,79 +1,82 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>73.7. Heap-Only Tuples (HOT)</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="storage-page-layout.html" title="73.6. データベースページのレイアウト" /><link rel="next" href="bki.html" title="第74章 システムカタログの宣言と初期内容" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="storage.html" title="第73章 データベースの物理的な格納">第73章 データベースの物理的な格納</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : storage-hot.html">誤訳等の報告
-                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="storage-page-layout.html" title="73.6. データベースページのレイアウト">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="storage.html" title="第73章 データベースの物理的な格納">上へ</a></td><td width="60%" align="center">73.7. Heap-Only Tuples (<acronym class="acronym">HOT</acronym>)</td><td width="20%" align="right"> <a accesskey="n" href="bki.html" title="第74章 システムカタログの宣言と初期内容">次へ</a></td></tr></table><hr /></div><div class="sect1" id="STORAGE-HOT"><div class="titlepage"><div><div><h2 class="title" style="clear: both">73.7. Heap-Only Tuples (<acronym class="acronym">HOT</acronym>)</h2></div></div></div><p>
-<span class="original">
-  To allow for high concurrency, &lt;productname&gt;PostgreSQL&lt;/productname&gt;
-  uses &lt;link linkend="mvcc-intro"&gt;multiversion concurrency
-  control&lt;/link&gt; (&lt;acronym&gt;MVCC&lt;/acronym&gt;) to store rows.  However,
-  &lt;acronym&gt;MVCC&lt;/acronym&gt; has some downsides for update queries.
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>73.7. ヒープ専用タプル(HOT)</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="storage-page-layout.html" title="73.6. データベースページのレイアウト" /><link rel="next" href="transactions.html" title="第74章 Transaction Processing" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 16.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="storage.html" title="第73章 データベースの物理的な格納">第73章 データベースの物理的な格納</a></td><td width="20%" align="right"></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="storage-page-layout.html" title="73.6. データベースページのレイアウト">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="storage.html" title="第73章 データベースの物理的な格納">上へ</a></td><td width="60%" align="center">73.7. ヒープ専用タプル(<acronym class="acronym">HOT</acronym>)</td><td width="20%" align="right"> <a accesskey="n" href="transactions.html" title="第74章 Transaction Processing">次へ</a></td></tr></table><hr /></div><div class="sect1" id="STORAGE-HOT"><div class="titlepage"><div><div><h2 class="title" style="clear: both">73.7. ヒープ専用タプル(<acronym class="acronym">HOT</acronym>) <a href="#STORAGE-HOT" class="id_link">#</a></h2></div></div></div><!--
+ <title>Heap-Only Tuples (<acronym>HOT</acronym>)</title>
+--><p>
+<!--
+  To allow for high concurrency, <productname>PostgreSQL</productname>
+  uses <link linkend="mvcc-intro">multiversion concurrency
+  control</link> (<acronym>MVCC</acronym>) to store rows.  However,
+  <acronym>MVCC</acronym> has some downsides for update queries.
   Specifically, updates require new versions of rows to be added to
   tables.  This can also require new index entries for each updated row,
   and removal of old versions of rows and their index entries can be
   expensive.
-</span>
-《機械翻訳》高い同時実行性を可能にするために、<span class="productname">PostgreSQL</span>は<a class="link" href="mvcc-intro.html" title="13.1. 序文">マルチバージョン同時制御</a>(<acronym class="acronym">MVCC</acronym>)を使用して行を格納します。
+-->
+高い同時実行性を可能にするために、<span class="productname">PostgreSQL</span>は<a class="link" href="mvcc-intro.html" title="13.1. 序文">マルチバージョン同時実行制御</a>(<acronym class="acronym">MVCC</acronym>)を使用して行を格納します。
 しかし、<acronym class="acronym">MVCC</acronym>には更新クエリに対していくつかの欠点があります。
 特に、更新では、テーブルに新しいバージョンの行を追加する必要があります。
 また、更新された行ごとに新しいインデックスエントリが必要になる可能性があり、古いバージョンの行とそのインデックスエントリを削除するとコストが高くなります。
  </p><p>
-<span class="original">
+<!--
   To help reduce the overhead of updates,
-  &lt;productname&gt;PostgreSQL&lt;/productname&gt; has an optimization called
-  heap-only tuples (&lt;acronym&gt;HOT&lt;/acronym&gt;).  This optimization is
+  <productname>PostgreSQL</productname> has an optimization called
+  heap-only tuples (<acronym>HOT</acronym>).  This optimization is
   possible when:
-
-  &lt;itemizedlist&gt;
-   &lt;listitem&gt;
-    &lt;para&gt;
-     The update does not modify any columns referenced by the table's
-     indexes, including expression and partial indexes.
-</span>
-《機械翻訳》更新のオーバーヘッドを減らすために、<span class="productname">PostgreSQL</span>にはヒープのみのタプル<acronym class="acronym">HOT</acronym>と呼ばれる最適化があります。
+-->
+更新のオーバーヘッドを減らすために、<span class="productname">PostgreSQL</span>にはヒープ専用タプル<acronym class="acronym">HOT</acronym>と呼ばれる最適化があります。
 この最適化は以下の場合に可能です。
-</p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>更新は、式や部分インデックスを含むテーブルのインデックスによって参照されるカラムを変更しません。
-     </p></li><li class="listitem"><p>
-<span class="original">
-     There is sufficient free space on the page containing the old row
-     for the updated row.
-</span>
-《機械翻訳》古い行を含むページには、更新された行に対して十分な空き領域があります。
-    </p></li></ul></div><p>
-
-  In such cases, heap-only tuples provide two optimizations:
 
   </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
-<span class="original">
+<!--
+     The update does not modify any columns referenced by the table's
+     indexes, including expression and partial indexes.
+-->
+更新は、式や部分インデックスを含むテーブルのインデックスによって参照されるカラムを変更しません。
+     </p></li><li class="listitem"><p>
+<!--
+     There is sufficient free space on the page containing the old row
+     for the updated row.
+-->
+古い行を含むページには、更新された行に対して十分な空き領域があります。
+    </p></li></ul></div><p>
+
+<!--
+  In such cases, heap-only tuples provide two optimizations:
+-->
+そのような場合に、ヒープ専用タプルは2つの最適化を提供します。
+
+  </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<!--
      New index entries are not needed to represent updated rows.
-</span>
-《機械翻訳》更新された行を表すために新しいインデックスエントリは必要ありません。
+-->
+更新された行を表すために新しいインデックスエントリは必要ありません。
     </p></li><li class="listitem"><p>
-<span class="original">
+<!--
      Old versions of updated rows can be completely removed during normal
-     operation, including &lt;command&gt;SELECT&lt;/command&gt;s, instead of requiring
+     operation, including <command>SELECT</command>s, instead of requiring
      periodic vacuum operations.  (This is possible because indexes
-     do not reference their &lt;link linkend="storage-page-layout"&gt;page
-     item identifiers&lt;/link&gt;.)
-</span>
-《機械翻訳》更新された行の古いバージョンは、定期的なバキューム操作を必要とする代わりに、<code class="command">SELECT</code>を含む通常の操作中に完全に削除することができます。
-(これはインデックスが<a class="link" href="storage-page-layout.html" title="73.6. データベースページのレイアウト">ページアイテム識別子</a>を参照しないため可能です。
-)
+     do not reference their <link linkend="storage-page-layout">page
+     item identifiers</link>.)
+-->
+更新された行の古いバージョンは、定期的なバキューム操作を必要とする代わりに、<code class="command">SELECT</code>を含む通常の操作中に完全に削除することができます。
+（これはインデックスが<a class="link" href="storage-page-layout.html" title="73.6. データベースページのレイアウト">ページアイテム識別子</a>を参照しないため可能です。）
     </p></li></ul></div><p>
  </p><p>
-<span class="original">
+<!--
   In summary, heap-only tuple updates can only be created
   if columns used by indexes are not updated.  You can
   increase the likelihood of sufficient page space for
-  &lt;acronym&gt;HOT&lt;/acronym&gt; updates by decreasing a table's &lt;link
-  linkend="sql-createtable"&gt;&lt;literal&gt;fillfactor&lt;/literal&gt;&lt;/link&gt;.
-  If you don't, &lt;acronym&gt;HOT&lt;/acronym&gt; updates will still happen because
+  <acronym>HOT</acronym> updates by decreasing a table's <link
+  linkend="reloption-fillfactor"><literal>fillfactor</literal></link>.
+  If you don't, <acronym>HOT</acronym> updates will still happen because
   new rows will naturally migrate to new pages and existing pages with
-  sufficient free space for new row versions.  The system view &lt;link
-  linkend="monitoring-pg-stat-all-tables-view"&gt;pg_stat_all_tables&lt;/link&gt;
+  sufficient free space for new row versions.  The system view <link
+  linkend="monitoring-pg-stat-all-tables-view">pg_stat_all_tables</link>
   allows monitoring of the occurrence of HOT and non-HOT updates.
-</span>
-《機械翻訳》要約すると、ヒープのみのタプル更新は、インデックスで使用されるカラムが更新されない場合にのみ作成できます。
-テーブルの<a class="link" href="sql-createtable.html" title="CREATE TABLE"><code class="literal">fillfactor</code></a>を減らすことで、<acronym class="acronym">HOT</acronym>更新のための十分なページ領域の可能性を高めることができます。
+-->
+要約すると、ヒープ専用タプル更新は、インデックスで使用されるカラムが更新されない場合にのみ作成できます。
+テーブルの<a class="link" href="sql-createtable.html#RELOPTION-FILLFACTOR"><code class="literal">fillfactor</code></a>を減らすことで、<acronym class="acronym">HOT</acronym>更新のための十分なページ領域の可能性を高めることができます。
 そうしない場合でも、<acronym class="acronym">HOT</acronym>更新は発生します。
 なぜなら、新しい行は新しいページや、新しい行バージョンのために十分な空き領域を持つ既存のページに自然に移動するからです。
-システムビュー<a class="link" href="monitoring-stats.html#MONITORING-PG-STAT-ALL-TABLES-VIEW" title="28.2.17. pg_stat_all_tables">pg_stat_all_tables</a>は、HOTおよび非HOT更新の発生を監視することができます。
- </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="storage-page-layout.html" title="73.6. データベースページのレイアウト">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="storage.html" title="第73章 データベースの物理的な格納">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="bki.html" title="第74章 システムカタログの宣言と初期内容">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">73.6. データベースページのレイアウト </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 第74章 システムカタログの宣言と初期内容</td></tr></table></div></body></html>
+システムビュー<a class="link" href="monitoring-stats.html#MONITORING-PG-STAT-ALL-TABLES-VIEW" title="28.2.18. pg_stat_all_tables">pg_stat_all_tables</a>は、HOTおよび非HOT更新の発生を監視することができます。
+ </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="storage-page-layout.html" title="73.6. データベースページのレイアウト">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="storage.html" title="第73章 データベースの物理的な格納">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="transactions.html" title="第74章 Transaction Processing">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">73.6. データベースページのレイアウト </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 16.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 第74章 Transaction Processing</td></tr></table></div></body></html>

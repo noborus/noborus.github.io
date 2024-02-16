@@ -1,68 +1,68 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>49.9. ロジカルデコーディングための大規模トランザクションのストリーミング</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="logicaldecoding-synchronous.html" title="49.8. ロジカルデコーディングにおける同期レプリケーションのサポート" /><link rel="next" href="logicaldecoding-two-phase-commits.html" title="49.10. ロジカルデコーディングための2相コミット" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="logicaldecoding.html" title="第49章 ロジカルデコーディング">第49章 ロジカルデコーディング</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : logicaldecoding-streaming.html">誤訳等の報告
-                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="logicaldecoding-synchronous.html" title="49.8. ロジカルデコーディングにおける同期レプリケーションのサポート">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="logicaldecoding.html" title="第49章 ロジカルデコーディング">上へ</a></td><td width="60%" align="center">49.9. ロジカルデコーディングための大規模トランザクションのストリーミング</td><td width="20%" align="right"> <a accesskey="n" href="logicaldecoding-two-phase-commits.html" title="49.10. ロジカルデコーディングための2相コミット">次へ</a></td></tr></table><hr /></div><div class="sect1" id="LOGICALDECODING-STREAMING"><div class="titlepage"><div><div><h2 class="title" style="clear: both">49.9. ロジカルデコーディングための大規模トランザクションのストリーミング</h2></div></div></div><span class="original">
-   &lt;title&gt;Streaming of Large Transactions for Logical Decoding&lt;/title&gt;
-</span><p>
-<span class="original">
-    The basic output plugin callbacks (e.g., &lt;function&gt;begin_cb&lt;/function&gt;,
-    &lt;function&gt;change_cb&lt;/function&gt;, &lt;function&gt;commit_cb&lt;/function&gt; and
-    &lt;function&gt;message_cb&lt;/function&gt;) are only invoked when the transaction
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>49.9. ロジカルデコーディングための大規模トランザクションのストリーミング</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="logicaldecoding-synchronous.html" title="49.8. ロジカルデコーディングにおける同期レプリケーションのサポート" /><link rel="next" href="logicaldecoding-two-phase-commits.html" title="49.10. ロジカルデコーディングための2相コミット" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 16.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="logicaldecoding.html" title="第49章 ロジカルデコーディング">第49章 ロジカルデコーディング</a></td><td width="20%" align="right"></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="logicaldecoding-synchronous.html" title="49.8. ロジカルデコーディングにおける同期レプリケーションのサポート">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="logicaldecoding.html" title="第49章 ロジカルデコーディング">上へ</a></td><td width="60%" align="center">49.9. ロジカルデコーディングための大規模トランザクションのストリーミング</td><td width="20%" align="right"> <a accesskey="n" href="logicaldecoding-two-phase-commits.html" title="49.10. ロジカルデコーディングための2相コミット">次へ</a></td></tr></table><hr /></div><div class="sect1" id="LOGICALDECODING-STREAMING"><div class="titlepage"><div><div><h2 class="title" style="clear: both">49.9. ロジカルデコーディングための大規模トランザクションのストリーミング <a href="#LOGICALDECODING-STREAMING" class="id_link">#</a></h2></div></div></div><!--
+   <title>Streaming of Large Transactions for Logical Decoding</title>
+--><p>
+<!--
+    The basic output plugin callbacks (e.g., <function>begin_cb</function>,
+    <function>change_cb</function>, <function>commit_cb</function> and
+    <function>message_cb</function>) are only invoked when the transaction
     actually commits. The changes are still decoded from the transaction
     log, but are only passed to the output plugin at commit (and discarded
     if the transaction aborts).
-</span>
+-->
 基本的な出力プラグインコールバック(<code class="function">begin_cb</code>、<code class="function">change_cb</code>、<code class="function">commit_cb</code>、<code class="function">message_cb</code>など)は、トランザクションが実際にコミットしたときにのみ呼び出されます。
 変更はトランザクションログからデコードされますが、コミット時に出力プラグインに渡されるだけです(トランザクションがアボートした場合は破棄されます)。
    </p><p>
-<span class="original">
+<!--
     This means that while the decoding happens incrementally, and may spill
     to disk to keep memory usage under control, all the decoded changes have
     to be transmitted when the transaction finally commits (or more precisely,
     when the commit is decoded from the transaction log). Depending on the
     size of the transaction and network bandwidth, the transfer time may
     significantly increase the apply lag.
-</span>
+-->
 つまり、デコードは増分的に行われ、メモリー使用量を制御するためにディスクにオーバーフローする場合がありますが、デコードされたすべての変更は、トランザクションが最終的にコミットされたとき(より正確には、コミットがトランザクションログからデコードされたとき)に送信される必要があります。
 トランザクションおよびネットワーク帯域幅のサイズによっては、転送時間によって適用ラグが大幅に増加する場合があります。
    </p><p>
-<span class="original">
+<!--
     To reduce the apply lag caused by large transactions, an output plugin
     may provide additional callback to support incremental streaming of
     in-progress transactions. There are multiple required streaming callbacks
-    (&lt;function&gt;stream_start_cb&lt;/function&gt;, &lt;function&gt;stream_stop_cb&lt;/function&gt;,
-    &lt;function&gt;stream_abort_cb&lt;/function&gt;, &lt;function&gt;stream_commit_cb&lt;/function&gt;
-    and &lt;function&gt;stream_change_cb&lt;/function&gt;) and two optional callbacks
-    (&lt;function&gt;stream_message_cb&lt;/function&gt; and &lt;function&gt;stream_truncate_cb&lt;/function&gt;).
+    (<function>stream_start_cb</function>, <function>stream_stop_cb</function>,
+    <function>stream_abort_cb</function>, <function>stream_commit_cb</function>
+    and <function>stream_change_cb</function>) and two optional callbacks
+    (<function>stream_message_cb</function> and <function>stream_truncate_cb</function>).
     Also, if streaming of two-phase commands is to be supported, then additional
-    callbacks must be provided. (See &lt;xref linkend="logicaldecoding-two-phase-commits"/&gt;
+    callbacks must be provided. (See <xref linkend="logicaldecoding-two-phase-commits"/>
     for details).
-</span>
-《マッチ度[]》大規模なトランザクションによって発生する適用遅延を軽減するために、出力プラグインは、継続中のトランザクションの増分ストリーミングをサポートする追加のコールバックを提供できます。
+-->
+大規模なトランザクションによって発生する適用遅延を軽減するために、出力プラグインは、継続中のトランザクションの増分ストリーミングをサポートする追加のコールバックを提供できます。
 複数の必要なストリーミングコールバック(<code class="function">stream_start_cb</code>、<code class="function">stream_stop_cb</code>、<code class="function">stream_abort_cb</code>、<code class="function">stream_commit_cb</code>および<code class="function">stream_change_cb</code>)と2つのオプションのコールバック(<code class="function">stream_message_cb</code>および<code class="function">stream_truncate_cb</code>)があります。
+2相コマンドのストリーミングをサポートする場合は、追加のコールバックを提供する必要があります（詳細は<a class="xref" href="logicaldecoding-two-phase-commits.html" title="49.10. ロジカルデコーディングための2相コミット">49.10</a>を参照してください）。
    </p><p>
-<span class="original">
+<!--
     When streaming an in-progress transaction, the changes (and messages) are
-    streamed in blocks demarcated by &lt;function&gt;stream_start_cb&lt;/function&gt;
-    and &lt;function&gt;stream_stop_cb&lt;/function&gt; callbacks. Once all the decoded
+    streamed in blocks demarcated by <function>stream_start_cb</function>
+    and <function>stream_stop_cb</function> callbacks. Once all the decoded
     changes are transmitted, the transaction can be committed using the
-    &lt;function&gt;stream_commit_cb&lt;/function&gt; callback
-    (or possibly aborted using the &lt;function&gt;stream_abort_cb&lt;/function&gt; callback).
+    <function>stream_commit_cb</function> callback
+    (or possibly aborted using the <function>stream_abort_cb</function> callback).
     If two-phase commits are supported, the transaction can be prepared using the
-    &lt;function&gt;stream_prepare_cb&lt;/function&gt; callback,
-    &lt;command&gt;COMMIT PREPARED&lt;/command&gt; using the
-    &lt;function&gt;commit_prepared_cb&lt;/function&gt; callback or aborted using the
-    &lt;function&gt;rollback_prepared_cb&lt;/function&gt;.
-</span>
-《マッチ度[93.083573]》継続中のトランザクションをストリーミングする場合、変更(およびメッセージ)は<code class="function">stream_start_cb</code>および<code class="function">stream_stop_cb</code>コールバックで区切られたブロックでストリーミングされます。
+    <function>stream_prepare_cb</function> callback,
+    <command>COMMIT PREPARED</command> using the
+    <function>commit_prepared_cb</function> callback or aborted using the
+    <function>rollback_prepared_cb</function>.
+-->
+継続中のトランザクションをストリーミングする場合、変更(およびメッセージ)は<code class="function">stream_start_cb</code>および<code class="function">stream_stop_cb</code>コールバックで区切られたブロックでストリーミングされます。
 デコードされたすべての変更が送信されると、トランザクションは<code class="function">stream_commit_cb</code>コールバックを使用してコミットできます(または<code class="function">stream_abort_cb</code>コールバックを使用してアボートできます)。
 2相コミットがサポートされている場合、トランザクションは<code class="function">stream_prepare_cb</code>コールバックを使用して準備できます。
 <code class="command">COMMIT PREPARED</code>は<code class="function">commit_prepared_cb</code>コールバックを使用して準備できます。
 または<code class="function">rollback_prepared_cb</code>を使用してアボートできます。
    </p><p>
-<span class="original">
+<!--
     One example sequence of streaming callback calls for one transaction may
     look like this:
-</span>
+-->
 1つのトランザクションに対するストリーミングコールバック呼び出しのシーケンスの例は、次のようになります。
 </p><pre class="programlisting">
 stream_start_cb(...);   &lt;-- start of first block of changes
@@ -92,32 +92,32 @@ stream_prepare_cb(...);   &lt;-- prepare the streamed transaction
 commit_prepared_cb(...);  &lt;-- commit of the prepared transaction
 </pre><p>
    </p><p>
-<span class="original">
+<!--
     The actual sequence of callback calls may be more complicated, of course.
     There may be blocks for multiple streamed transactions, some of the
     transactions may get aborted, etc.
-</span>
+-->
 もちろん、実際のコールバック呼び出しのシーケンスはもっと複雑かもしれません。
 ストリーム化された複数のトランザクションにブロックがあったり、一部のトランザクションがアボートされたりするなどです。
    </p><p>
-<span class="original">
+<!--
     Similar to spill-to-disk behavior, streaming is triggered when the total
     amount of changes decoded from the WAL (for all in-progress transactions)
-    exceeds the limit defined by &lt;varname&gt;logical_decoding_work_mem&lt;/varname&gt; setting.
+    exceeds the limit defined by <varname>logical_decoding_work_mem</varname> setting.
     At that point, the largest top-level transaction (measured by the amount of memory
     currently used for decoded changes) is selected and streamed.  However, in
     some cases we still have to spill to disk even if streaming is enabled
     because we exceed the memory threshold but still have not decoded the
     complete tuple e.g., only decoded toast table insert but not the main table
     insert.
-</span>
+-->
 ディスクへのスピル動作と同様に、ストリーミングは、WALからデコードされた変更の合計量(すべての継続中のトランザクションについて)が<code class="varname">logical_decoding_work_mem</code>設定で定義された制限を超えたときにトリガされます。
 その時点で、最大のトップレベルトランザクション(デコードされた変更に現在使用されているメモリ量で測定されます)が選択され、ストリーミングされます。
 ただし、場合によっては、ストリーミングが有効になっていても、メモリしきい値を超えても完全なタプルがまだデコードされていない(例えば、メインテーブルの挿入ではなくトーストテーブルの挿入のみがデコードされているなど)ため、ディスクへのスピルが必要になることがあります。
    </p><p>
-<span class="original">
+<!--
     Even when streaming large transactions, the changes are still applied in
     commit order, preserving the same guarantees as the non-streaming mode.
-</span>
+-->
 大規模なトランザクションをストリーミングする場合でも、変更はコミット順に適用され、非ストリーミングモードと同じ保証が維持されます。
-   </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="logicaldecoding-synchronous.html" title="49.8. ロジカルデコーディングにおける同期レプリケーションのサポート">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="logicaldecoding.html" title="第49章 ロジカルデコーディング">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="logicaldecoding-two-phase-commits.html" title="49.10. ロジカルデコーディングための2相コミット">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">49.8. ロジカルデコーディングにおける同期レプリケーションのサポート </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 49.10. ロジカルデコーディングための2相コミット</td></tr></table></div></body></html>
+   </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="logicaldecoding-synchronous.html" title="49.8. ロジカルデコーディングにおける同期レプリケーションのサポート">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="logicaldecoding.html" title="第49章 ロジカルデコーディング">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="logicaldecoding-two-phase-commits.html" title="49.10. ロジカルデコーディングための2相コミット">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">49.8. ロジカルデコーディングにおける同期レプリケーションのサポート </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 16.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 49.10. ロジカルデコーディングための2相コミット</td></tr></table></div></body></html>
