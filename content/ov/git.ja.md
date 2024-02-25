@@ -22,6 +22,7 @@ gitの出力をセクション区切りで分割することで、より使い�
 [pager]
     diff = "ov -F --section-delimiter '^diff' --section-header"
     log = "ov -F --section-delimiter '^commit' --section-header-num 3"
+    show = "ov -F --header 3"
 ```
 
 （`--jump-target "section"`はお好みで追加してください）

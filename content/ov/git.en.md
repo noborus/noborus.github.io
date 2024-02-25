@@ -21,6 +21,7 @@ It is recommended to set the following in gitconfig.
 [pager]
     diff = "ov -F --section-delimiter '^diff' --section-header"
     log = "ov -F --section-delimiter '^commit' --section-header-num 3"
+    show = "ov -F --header 3"
 ```
 
 (Please add `--jump-target "section"` if you like)
