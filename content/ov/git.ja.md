@@ -2,8 +2,8 @@
 author: "Noboru Saito"
 title: "git"
 description: "gitのページャーとしてovを使用する"
-date: 2023-12-30T15:00:00+09:00
-tags: ["ov"]
+date: 2024-02-25T18:00:00+09:00
+tags: ["ov", "git"]
 categories: ["ov"]
 weight: 2
 ---
@@ -16,6 +16,9 @@ gitの出力をセクション区切りで分割することで、より使い�
 以下はgitの推奨設定例です。
 
 ```config
+[core]
+    pager = "ov -F"
+
 [pager]
     diff = "ov -F --section-delimiter '^diff' --section-header"
     log = "ov -F --section-delimiter '^commit' --section-header-num 3"

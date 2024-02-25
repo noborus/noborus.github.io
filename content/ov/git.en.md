@@ -2,8 +2,8 @@
 author: "Noboru Saito"
 title: "git"
 description: "Use ov as a pager for git"
-date: 2023-12-30T15:00:00+09:00
-tags: ["ov"]
+date: 2024-02-26T07:00:00+09:00
+tags: ["ov", "git"]
 categories: ["ov"]
 weight: 2
 ---
@@ -15,6 +15,9 @@ Also, it is recommended to set the jump-target to "section" accordingly.
 It is recommended to set the following in gitconfig.
 
 ```config
+[core]
+    pager = "ov -F"
+
 [pager]
     diff = "ov -F --section-delimiter '^diff' --section-header"
     log = "ov -F --section-delimiter '^commit' --section-header-num 3"
