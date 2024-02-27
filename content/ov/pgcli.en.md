@@ -26,4 +26,4 @@ pager = 'ov -C -d "│" --section-delimiter "^┌" --section-header-num 3 --colu
 table_format = psql_unicode
 ```
 
-![pgcli-section](/ov/pgcli-section.gif)
+![pgcli-section](/ov/ov-pgcli-section.gif)

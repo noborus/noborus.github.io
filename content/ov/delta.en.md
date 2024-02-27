@@ -57,4 +57,4 @@ By combining these settings, you can move files by file (`space` key of `^` key)
 
 Furthermore, even if you move a line, the difference file name can be displayed.
 
-![delta](/ov/delta.gif)
+![delta](/ov/ov-delta-01.gif)

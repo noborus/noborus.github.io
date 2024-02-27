@@ -15,4 +15,4 @@ psの出力を列区切りで表示できます。
 ps aux | ov --column-width --column-rainbow -H1
 ```
 
-![ps](/ov/ps-ov.png)
+![ps](/ov/ov-ps.png)

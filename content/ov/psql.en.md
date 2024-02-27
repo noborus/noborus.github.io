@@ -34,7 +34,7 @@ StyleAlternate:
   Background: "#2a2a2a"
 ```
 
-![psql](/ov/psql-ov.gif)
+![psql](/ov/ov-psql-01.gif)
 
 ## watch(PostgreSQL 15)
 
@@ -46,7 +46,7 @@ Continues to display the last section separated by blank lines.
 PSQL_WATCH_PAGER 'ov --follow-section --section-delimiter "^$"'
 ```
 
-![watch](/ov/psql-watch.gif)
+![watch](/ov/ov-psql-watch.gif)
 
 ## expanded output (\x)
 
@@ -56,11 +56,11 @@ Even when displaying in the extended output (\x), if the record delimiter is tre
 PAGER='ov -F --section-delimiter "^-"'
 ```
 
-![\x](/ov/psql-vf.gif)
+![\x](/ov/ov-psql-vf.gif)
 
 You can also display expanded output (\x) with `\watch`.
 
-![watch2](/ov/psql-watch2.gif)
+![watch2](/ov/ov-psql-watch2.gif)
 
 ## unaligned (\a)
 
@@ -72,4 +72,4 @@ The PAGER specification does not change with the following.
 PSQL_PAGER='ov -F -C -d "|" -H1'.
 ```
 
-![\a](/ov/psql-alignment.gif)
+![\a](/ov/pv-psql-alignment.gif)

@@ -38,7 +38,7 @@ StyleAlternate:
   Background: "#2a2a2a"
 ```
 
-![psql](/ov/psql-ov.gif)
+![psql](/ov/ov-psql-01.gif)
 
 ## watch(PostgreSQL 15)
 
@@ -50,7 +50,7 @@ PostgreSQL 15からは`watch`が利用できます。
 PSQL_WATCH_PAGER='ov --follow-section --section-delimiter "^$"'
 ```
 
-![watch](/ov/psql-watch.gif)
+![watch](/ov/ov-psql-watch.gif)
 
 ## expanded output (\x)
 
@@ -60,11 +60,11 @@ PSQL_WATCH_PAGER='ov --follow-section --section-delimiter "^$"'
 PAGER 'ov -F --section-delimiter "^-"'
 ```
 
-![\x](/ov/psql-vf.gif)
+![\x](/ov/ov-psql-vf.gif)
 
  (\x)と`\watch`を組み合わせることもできます。
 
-![watch2](/ov/psql-watch2.gif)
+![watch2](/ov/ov-psql-watch2.gif)
 
 ## unaligned (\a)
 
@@ -75,4 +75,4 @@ PAGER 'ov -F --section-delimiter "^-"'
 PSQL_PAGER='ov -F -C -d "|" -H1'.
 ```
 
-![\a](/ov/psql-alignment.gif)
+![\a](/ov/ov-psql-alignment.gif)

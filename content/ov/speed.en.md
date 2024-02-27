@@ -15,7 +15,7 @@ When reading a large file, `ov` records the number of lines and positions so tha
 Therefore, even if you open a large file, you will not be delayed by the operation.
 Let's compare it with `less`.
 
-![ov and less](/ov/open-large-file.gif)
+![ov and less](/ov/ov-open-large-file.gif)
 
 `ov` does not read to memory for large files, so it only counts and records, so the count of the total number of lines ends quickly. Once you know the number of lines, you can move to the end immediately, so there is no interruption in operation.
 

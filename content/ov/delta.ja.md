@@ -57,4 +57,4 @@ weight: 3
 これらの設定を組み合わせることで、ファイル毎にファイル(`space` key of `^` key)、diff毎に`n/N` keyで移動できます。
 さらに、行を移動しても差分ファイル名が表示されます。
 
-![delta](/ov/delta.gif)
+![delta](/ov/ov-delta.gif)

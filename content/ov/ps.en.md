@@ -15,4 +15,4 @@ The ps output is properly columned.
 ps aux | ov --column-width --column-rainbow -H1
 ```
 
-![ps](/ov/ps-ov.png)
+![ps](/ov/ov-ps.png)

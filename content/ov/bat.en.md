@@ -24,4 +24,4 @@ It is better to operate with ov.
 bat --wrap=never README.md
 ```
 
-![bat](/ov/bat.png)
+![bat](/ov/ov-bat.png)

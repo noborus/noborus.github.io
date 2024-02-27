@@ -19,4 +19,4 @@ weight: 12
 ov *.go
 ```
 
-![maultifile.gif](/ov/multifile.gif)
+![maultifile.gif](/ov/ov-multifile.gif)

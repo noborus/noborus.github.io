@@ -15,7 +15,7 @@ ovはウォッチモードをサポートしています。ウォッチモード
 ov --watch 1 /proc/meminfo
 ```
 
-![watch](/ov/watch.gif)
+![watch](/ov/ov-watch.gif)
 
 日本語：その時、EOFの代わりにformfeed(\f)を追加します。
 ウォッチモードは自動的にfollow-section "\f"を設定します。

@@ -31,7 +31,7 @@ It is recommended to set the following in gitconfig.
 The git log is separated by commit.
 You will be able to move by commit unit.
 
-![git log](/ov/git-log.gif)
+![git log](/ov/ov-git-log.gif)
 
 ## git diff
 
@@ -39,11 +39,11 @@ git diff is separated by diff or file.
 You will be able to move in diff units.
 You can move to the next section (`space` key) or previous section (`^` key) in one go.
 
-![git diff](/ov/git-diff.gif)
+![git diff](/ov/ov-git-diff.gif)
 
 Furthermore, by specifying `--section-header`, the diff file name will be displayed even if you scroll.
 
-![git-section-header](/ov/git-section-header.gif)
+![git-section-header](/ov/ov-git-section-header.gif)
 
 ## search
 

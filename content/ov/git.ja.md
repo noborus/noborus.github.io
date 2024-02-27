@@ -32,18 +32,18 @@ gitの出力をセクション区切りで分割することで、より使い�
 git logはcommit毎に区切られます。
 上記の設定によりcommit毎に移動できます。
 
-![git log](/ov/git-log.gif)
+![git log](/ov/ov-git-log.gif)
 
 ## git diff
 
 git diffはdiffまたはファイル毎に区切られます。
 上記の設定によりdiff毎に移動できます。
 
-![git diff](/ov/git-diff.gif)
+![git diff](/ov/ov-git-diff.gif)
 
 さらに `--section-header`を指定することで、diffのファイル名を表示し続けられます。
 
-![git-section-header](/ov/git-section-header.gif)
+![git-section-header](/ov/ov-git-section-header.gif)
 
 ## 検索
 

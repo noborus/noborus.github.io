@@ -24,4 +24,4 @@ export BAT_PAGER="ov -F -H3"
 bat --wrap=never README.md
 ```
 
-![bat](/ov/bat.png)
+![bat](/ov/ov-bat.png)

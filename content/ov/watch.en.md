@@ -15,7 +15,7 @@ The file is added every specified time.
 ov --watch 1 /proc/meminfo
 ```
 
-![watch](/ov/watch.gif)
+![watch](/ov/ov-watch.gif)
 
 At that time, add formfeed (\f) instead of EOF.
 watch mode automatically sets follow-section "\f".
