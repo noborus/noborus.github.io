@@ -219,6 +219,18 @@ var relearn_search_index = [
     "uri": "/trdsql/07_group/index.html"
   },
   {
+    "breadcrumb": "Top \u003e trdsql",
+    "content": "Log aggregation Apache and nginx Log are also becoming established in the way of outputting in LTSV format.\nAn example of analyzing such Log with trdsql.\nThe output side customizes the apache LogFormat setting to the following custom format.\nLogFormat \"host:%h\\tident:%l\\tuser:%u\\ttime:%t\\treq:%r\\tstatus:%\u003es\\tsize:%b\\treferer:\\%{Referer}i\\tua:%{User-Agent}i\" combined_ltsvThe items host, ident, user, time, req, status, size, referer, ua are output.\nThe actual Log looks like this.\nhost:176.99.192.42\tident:-\tuser:-\ttime:[21/Oct/2019:21:33:53 +0900]\treq:GET /category/software HTTP/1.1\tstatus:200\tsize:138\treferer:-\tua:Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0) host:192.54.157.102\tident:-\tuser:-\ttime:[21/Oct/2019:21:33:53 +0900]\treq:GET /item/electronics/4478 HTTP/1.1\tstatus:200\tsize:60\treferer:/category/sports\tua:Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:9.0.1) Gecko/20100101 Firefox/9.0.1 host:88.60.137.115\tident:-\tuser:-\ttime:[21/Oct/2019:21:33:53 +0900]\treq:POST /search/?c=Games+Electronics HTTP/1.1\tstatus:200\tsize:98\treferer:/item/networking/929\tua:Mozilla/5.0 (iPhone; CPU iPhone OS 5_0_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9A405 Safari/7534.48.3 ...analysis First, try -a of trdsql.\nThe table name is log.ltsv. The file type is LTSV. Data types: +-------------+------+ | column name | type | +-------------+------+ | \\`host\\` | text | | ident | text | | \\`user\\` | text | | \\`time\\` | text | | req | text | | \\`status\\` | text | | \\`size\\` | text | | referer | text | | ua | text | +-------------+------+ Data samples: +---------------+-------+----------+------------------------------+--------------------------------+------------+----------+---------+--------------------------------+ | \\`host\\` | ident | \\`user\\` | \\`time\\` | req | \\`status\\` | \\`size\\` | referer | ua | +---------------+-------+----------+------------------------------+--------------------------------+------------+----------+---------+--------------------------------+ | 176.99.192.42 | - | - | [21/Oct/2019:21:33:53 +0900] | GET /category/software | 200 | 138 | - | Mozilla/5.0 (compatible; MSIE | | | | | | HTTP/1.1 | | | | 9.0; Windows NT 6.1; WOW64; | | | | | | | | | | Trident/5.0) | +---------------+-------+----------+------------------------------+--------------------------------+------------+----------+---------+--------------------------------+ Examples: trdsql \"SELECT \\`host\\`, ident, \\`user\\`, \\`time\\`, req, \\`status\\`, \\`size\\`, referer, ua FROM log.ltsv\" trdsql \"SELECT \\`host\\`, ident, \\`user\\`, \\`time\\`, req, \\`status\\`, \\`size\\`, referer, ua FROM log.ltsv WHERE \\`host\\` = '176.99.192.42'\" trdsql \"SELECT \\`host\\`, count(\\`host\\`) FROM log.ltsv GROUP BY \\`host\\`\" trdsql \"SELECT \\`host\\`, ident, \\`user\\`, \\`time\\`, req, \\`status\\`, \\`size\\`, referer, ua FROM log.ltsv ORDER BY \\`host\\` LIMIT 10\"Execute the Examples as a hint and execute it using the SQL introduced so far.\nOutput the top 5 Output the top 5 hosts with the most requests.\ntrdsql -oat \"SELECT \\`host\\`, count(\\`host\\`) as count FROM log.ltsv GROUP BY \\`host\\` ORDER BY count DESC LIMIT 5\" +----------------+-------+ | host | count | +----------------+-------+ | 36.69.176.222 | 5 | | 92.132.226.51 | 4 | | 76.222.144.225 | 4 | | 28.63.137.225 | 4 | | 28.57.188.28 | 4 | +----------------+-------+Output the top 5 hosts with the most requests\ntrdsql -oat \"SELECT req, count(req) as count FROM log.ltsv GROUP BY req ORDER BY count DESC LIMIT 5\" +--------------------------------+-------+ | req | count | +--------------------------------+-------+ | GET /category/software | 74 | | HTTP/1.1 | | | GET /category/electronics | 73 | | HTTP/1.1 | | | GET /category/games HTTP/1.1 | 66 | | GET /category/books HTTP/1.1 | 44 | | GET /category/office HTTP/1.1 | 30 | +--------------------------------+-------+Output with search condition Output requests and counts other than status 200\ntrdsql -oat \"SELECT req, status,count(req) as count FROM log.ltsv WHERE status != '200' GROUP BY req, status ORDER BY count DESC\" +-------------------------------+--------+-------+ | req | status | count | +-------------------------------+--------+-------+ | GET /item/books/3230 HTTP/1.1 | 404 | 1 | | GET /item/games/4672 HTTP/1.1 | 404 | 1 | +-------------------------------+--------+-------+",
+    "description": "trdsql Log aggregation",
+    "tags": [
+      "trdsql",
+      "log",
+      "ltsv"
+    ],
+    "title": "trdsql Log aggregation",
+    "uri": "/trdsql/08_log/index.html"
+  },
+  {
     "breadcrumb": "Top \u003e ov",
     "content": "top works fine when started in batch mode (it doesn’t work as-is when started normally because it steals keystrokes).\nIt is convenient because you can browse the history of top.\ntop -b -c -w512|ov --column-delimiter \"/\\s+/\" --section-delimiter \"^top\" --column-mode --column-rainbow --follow-section -w=false ",
     "description": "Use 'ov' as a pager for top",
@@ -242,15 +254,20 @@ var relearn_search_index = [
   },
   {
     "breadcrumb": "Top \u003e trdsql",
-    "content": "Log aggregation Apache and nginx Log are also becoming established in the way of outputting in LTSV format.\nAn example of analyzing such Log with trdsql.\nThe output side customizes the apache LogFormat setting to the following custom format.\nLogFormat \"host:%h\\tident:%l\\tuser:%u\\ttime:%t\\treq:%r\\tstatus:%\u003es\\tsize:%b\\treferer:\\%{Referer}i\\tua:%{User-Agent}i\" combined_ltsvThe items host, ident, user, time, req, status, size, referer, ua are output.\nThe actual Log looks like this.\nhost:176.99.192.42\tident:-\tuser:-\ttime:[21/Oct/2019:21:33:53 +0900]\treq:GET /category/software HTTP/1.1\tstatus:200\tsize:138\treferer:-\tua:Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0) host:192.54.157.102\tident:-\tuser:-\ttime:[21/Oct/2019:21:33:53 +0900]\treq:GET /item/electronics/4478 HTTP/1.1\tstatus:200\tsize:60\treferer:/category/sports\tua:Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:9.0.1) Gecko/20100101 Firefox/9.0.1 host:88.60.137.115\tident:-\tuser:-\ttime:[21/Oct/2019:21:33:53 +0900]\treq:POST /search/?c=Games+Electronics HTTP/1.1\tstatus:200\tsize:98\treferer:/item/networking/929\tua:Mozilla/5.0 (iPhone; CPU iPhone OS 5_0_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9A405 Safari/7534.48.3 ...analysis First, try -a of trdsql.\nThe table name is log.ltsv. The file type is LTSV. Data types: +-------------+------+ | column name | type | +-------------+------+ | \\`host\\` | text | | ident | text | | \\`user\\` | text | | \\`time\\` | text | | req | text | | \\`status\\` | text | | \\`size\\` | text | | referer | text | | ua | text | +-------------+------+ Data samples: +---------------+-------+----------+------------------------------+--------------------------------+------------+----------+---------+--------------------------------+ | \\`host\\` | ident | \\`user\\` | \\`time\\` | req | \\`status\\` | \\`size\\` | referer | ua | +---------------+-------+----------+------------------------------+--------------------------------+------------+----------+---------+--------------------------------+ | 176.99.192.42 | - | - | [21/Oct/2019:21:33:53 +0900] | GET /category/software | 200 | 138 | - | Mozilla/5.0 (compatible; MSIE | | | | | | HTTP/1.1 | | | | 9.0; Windows NT 6.1; WOW64; | | | | | | | | | | Trident/5.0) | +---------------+-------+----------+------------------------------+--------------------------------+------------+----------+---------+--------------------------------+ Examples: trdsql \"SELECT \\`host\\`, ident, \\`user\\`, \\`time\\`, req, \\`status\\`, \\`size\\`, referer, ua FROM log.ltsv\" trdsql \"SELECT \\`host\\`, ident, \\`user\\`, \\`time\\`, req, \\`status\\`, \\`size\\`, referer, ua FROM log.ltsv WHERE \\`host\\` = '176.99.192.42'\" trdsql \"SELECT \\`host\\`, count(\\`host\\`) FROM log.ltsv GROUP BY \\`host\\`\" trdsql \"SELECT \\`host\\`, ident, \\`user\\`, \\`time\\`, req, \\`status\\`, \\`size\\`, referer, ua FROM log.ltsv ORDER BY \\`host\\` LIMIT 10\"Execute the Examples as a hint and execute it using the SQL introduced so far.\nOutput the top 5 Output the top 5 hosts with the most requests.\ntrdsql -oat \"SELECT \\`host\\`, count(\\`host\\`) as count FROM log.ltsv GROUP BY \\`host\\` ORDER BY count DESC LIMIT 5\" +----------------+-------+ | host | count | +----------------+-------+ | 36.69.176.222 | 5 | | 92.132.226.51 | 4 | | 76.222.144.225 | 4 | | 28.63.137.225 | 4 | | 28.57.188.28 | 4 | +----------------+-------+Output the top 5 hosts with the most requests\ntrdsql -oat \"SELECT req, count(req) as count FROM log.ltsv GROUP BY req ORDER BY count DESC LIMIT 5\" +--------------------------------+-------+ | req | count | +--------------------------------+-------+ | GET /category/software | 74 | | HTTP/1.1 | | | GET /category/electronics | 73 | | HTTP/1.1 | | | GET /category/games HTTP/1.1 | 66 | | GET /category/books HTTP/1.1 | 44 | | GET /category/office HTTP/1.1 | 30 | +--------------------------------+-------+Output with search condition Output requests and counts other than status 200\ntrdsql -oat \"SELECT req, status,count(req) as count FROM log.ltsv WHERE status != '200' GROUP BY req, status ORDER BY count DESC\" +-------------------------------+--------+-------+ | req | status | count | +-------------------------------+--------+-------+ | GET /item/books/3230 HTTP/1.1 | 404 | 1 | | GET /item/games/4672 HTTP/1.1 | 404 | 1 | +-------------------------------+--------+-------+",
-    "description": "trdsql Log aggregation",
+    "content": "Wildcard Up to this point, we have targeted one file, but log files, etc. may be rotated and become multiple files.\nIf the target file is composed of the same columns, you can use wildcards to treat multiple files as one table.\nls test*.csv test1.csv test2.csv test3.csvtrdsql -icsv \"SELECT COUNT(*) FROM test*.csv\" 15Compressed files Old log files might be compressed. If they are compressed with [gzip, bzip2, zstd, lz4, xz], they will be automatically decompressed and processed.\ntrdsql -iltsv \"SELECT * FROM access.log.2.gz\" You can also combine wildcards with compressed files for execution.\nls test*.csv access.log access.log.1 access.log.2.gztrdsql -iltsv \"SELECT * FROM access.log.*\" ",
+    "description": "trdsql wildcard, compressed file",
     "tags": [
       "trdsql",
-      "log",
-      "ltsv"
+      "wildcard",
+      "圧縮",
+      "gz",
+      "bz2",
+      "zstd",
+      "lz4",
+      "xz"
     ],
-    "title": "trdsql Log aggregation",
-    "uri": "/trdsql/08_log/index.html"
+    "title": "trdsql wildcard, compressed file",
+    "uri": "/trdsql/09_wildcard/index.html"
   },
   {
     "breadcrumb": "Top \u003e ov",
@@ -273,23 +290,6 @@ var relearn_search_index = [
     ],
     "title": "Watch files with ov",
     "uri": "/ov/watch/index.html"
-  },
-  {
-    "breadcrumb": "Top \u003e trdsql",
-    "content": "Wildcard Up to this point, we have targeted one file, but log files, etc. may be rotated and become multiple files.\nIf the target file is composed of the same columns, you can use wildcards to treat multiple files as one table.\nls test*.csv test1.csv test2.csv test3.csvtrdsql -icsv \"SELECT COUNT(*) FROM test*.csv\" 15Compressed file Old log files may be compressed. [gzip, bzip2, zstd, lz4, xz] If it is compressed, it will be automatically extended and executed.\ntrdsql -iltsv \"SELECT * FROM access.log.2.gz\" You can also combine compressed files and wildcards to execute.\nls test*.csv access.log access.log.1 access.log.2.gztrdsql -iltsv \"SELECT * FROM access.log.*\" ",
-    "description": "trdsql wildcard, compressed file",
-    "tags": [
-      "trdsql",
-      "wildcard",
-      "圧縮",
-      "gz",
-      "bz2",
-      "zstd",
-      "lz4",
-      "xz"
-    ],
-    "title": "trdsql wildcard, compressed file",
-    "uri": "/trdsql/09_wildcard/index.html"
   },
   {
     "breadcrumb": "Top \u003e ov",
@@ -745,16 +745,40 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: Pgcli",
-    "uri": "/tags/pgcli/index.html"
+    "title": "Tag :: Bz2",
+    "uri": "/tags/bz2/index.html"
   },
   {
     "breadcrumb": "Top \u003e Tags",
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: PostgreSQL",
-    "uri": "/tags/postgresql/index.html"
+    "title": "Tag :: Gz",
+    "uri": "/tags/gz/index.html"
+  },
+  {
+    "breadcrumb": "Top \u003e Tags",
+    "content": "",
+    "description": "",
+    "tags": null,
+    "title": "Tag :: Log",
+    "uri": "/tags/log/index.html"
+  },
+  {
+    "breadcrumb": "Top \u003e Tags",
+    "content": "",
+    "description": "",
+    "tags": null,
+    "title": "Tag :: Ltsv",
+    "uri": "/tags/ltsv/index.html"
+  },
+  {
+    "breadcrumb": "Top \u003e Tags",
+    "content": "",
+    "description": "",
+    "tags": null,
+    "title": "Tag :: Lz4",
+    "uri": "/tags/lz4/index.html"
   },
   {
     "breadcrumb": "Top \u003e Tags",
@@ -771,6 +795,54 @@ var relearn_search_index = [
     "tags": null,
     "title": "Category :: Trdsql",
     "uri": "/categories/trdsql/index.html"
+  },
+  {
+    "breadcrumb": "Top \u003e Tags",
+    "content": "",
+    "description": "",
+    "tags": null,
+    "title": "Tag :: Wildcard",
+    "uri": "/tags/wildcard/index.html"
+  },
+  {
+    "breadcrumb": "Top \u003e Tags",
+    "content": "",
+    "description": "",
+    "tags": null,
+    "title": "Tag :: Xz",
+    "uri": "/tags/xz/index.html"
+  },
+  {
+    "breadcrumb": "Top \u003e Tags",
+    "content": "",
+    "description": "",
+    "tags": null,
+    "title": "Tag :: Zstd",
+    "uri": "/tags/zstd/index.html"
+  },
+  {
+    "breadcrumb": "Top \u003e Tags",
+    "content": "",
+    "description": "",
+    "tags": null,
+    "title": "Tag :: 圧縮",
+    "uri": "/tags/%E5%9C%A7%E7%B8%AE/index.html"
+  },
+  {
+    "breadcrumb": "Top \u003e Tags",
+    "content": "",
+    "description": "",
+    "tags": null,
+    "title": "Tag :: Pgcli",
+    "uri": "/tags/pgcli/index.html"
+  },
+  {
+    "breadcrumb": "Top \u003e Tags",
+    "content": "",
+    "description": "",
+    "tags": null,
+    "title": "Tag :: PostgreSQL",
+    "uri": "/tags/postgresql/index.html"
   },
   {
     "breadcrumb": "Top \u003e Blog",
@@ -1883,22 +1955,6 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: Log",
-    "uri": "/tags/log/index.html"
-  },
-  {
-    "breadcrumb": "Top \u003e Tags",
-    "content": "",
-    "description": "",
-    "tags": null,
-    "title": "Tag :: Ltsv",
-    "uri": "/tags/ltsv/index.html"
-  },
-  {
-    "breadcrumb": "Top \u003e Tags",
-    "content": "",
-    "description": "",
-    "tags": null,
     "title": "Tag :: Nginx",
     "uri": "/tags/nginx/index.html"
   },
@@ -2247,30 +2303,6 @@ var relearn_search_index = [
     "uri": "/blog/10_stdin/index.html"
   },
   {
-    "breadcrumb": "Top \u003e Tags",
-    "content": "",
-    "description": "",
-    "tags": null,
-    "title": "Tag :: Bz2",
-    "uri": "/tags/bz2/index.html"
-  },
-  {
-    "breadcrumb": "Top \u003e Tags",
-    "content": "",
-    "description": "",
-    "tags": null,
-    "title": "Tag :: Gz",
-    "uri": "/tags/gz/index.html"
-  },
-  {
-    "breadcrumb": "Top \u003e Tags",
-    "content": "",
-    "description": "",
-    "tags": null,
-    "title": "Tag :: Lz4",
-    "uri": "/tags/lz4/index.html"
-  },
-  {
     "breadcrumb": "Top \u003e Blog",
     "content": "Wildcard ここまでは一つのファイルを対象としてきましたが、ログファイル等はローテートされて複数のファイルになっている場合があります。\n同じ列で構成されている対象ファイルであれば、ワイルドカードを使用して、複数のファイルを一つのテーブルとして扱うことができます。\nls test*.csv test1.csv test2.csv test3.csvtrdsql -icsv \"SELECT COUNT(*) FROM test*.csv\" 15圧縮ファイル また古いログファイルは圧縮されている場合があります。[gzip, bzip2, zstd, lz4, xz]圧縮であれば自動で伸長して実行します。\ntrdsql -iltsv \"SELECT * FROM access.log.2.gz\" 圧縮ファイルとワイルドカードを組み合わせて実行することもできます。\nls access.log access.log.1 access.log.2.gztrdsql -iltsv \"SELECT * FROM access.log.*\" ",
     "description": "",
@@ -2286,38 +2318,6 @@ var relearn_search_index = [
     ],
     "title": "trdsql ワイルドカード、圧縮ファイル",
     "uri": "/blog/09_wildcard/index.html"
-  },
-  {
-    "breadcrumb": "Top \u003e Tags",
-    "content": "",
-    "description": "",
-    "tags": null,
-    "title": "Tag :: Wildcard",
-    "uri": "/tags/wildcard/index.html"
-  },
-  {
-    "breadcrumb": "Top \u003e Tags",
-    "content": "",
-    "description": "",
-    "tags": null,
-    "title": "Tag :: Xz",
-    "uri": "/tags/xz/index.html"
-  },
-  {
-    "breadcrumb": "Top \u003e Tags",
-    "content": "",
-    "description": "",
-    "tags": null,
-    "title": "Tag :: Zstd",
-    "uri": "/tags/zstd/index.html"
-  },
-  {
-    "breadcrumb": "Top \u003e Tags",
-    "content": "",
-    "description": "",
-    "tags": null,
-    "title": "Tag :: 圧縮",
-    "uri": "/tags/%E5%9C%A7%E7%B8%AE/index.html"
   },
   {
     "breadcrumb": "Top \u003e Blog",
