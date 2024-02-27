@@ -40,10 +40,11 @@ var relearn_search_index = [
   },
   {
     "breadcrumb": "Top \u003e ov",
-    "content": "Git calls pager when needed. Git output will be easier to use if each is separated by section-delimiter. Also, it is recommended to set the jump-target to “section” accordingly.\nIt is recommended to set the following in gitconfig.\n[pager] diff = \"ov -F --section-delimiter '^diff' --section-header\" log = \"ov -F --section-delimiter '^commit' --section-header-num 3\"(Please add --jump-target \"section\" if you like)\ngit log The git log is separated by commit. You will be able to move by commit unit.\ngit diff git diff is separated by diff or file. You will be able to move in diff units. You can move to the next section (space key) or previous section (^ key) in one go.\nFurthermore, by specifying --section-header, the diff file name will be displayed even if you scroll.\nsearch The above settings will display the search results in commit units. Normally, the search results are displayed at the top, so if it is in the middle of the line, you need to go back, but it will be displayed from the beginning of the commit.\n",
+    "content": "Git calls pager when needed. Git output will be easier to use if each is separated by section-delimiter. Also, it is recommended to set the jump-target to “section” accordingly.\nIt is recommended to set the following in gitconfig.\n[core] pager = \"ov -F\" [pager] diff = \"ov -F --section-delimiter '^diff' --section-header\" log = \"ov -F --section-delimiter '^commit' --section-header-num 3\" show = \"ov -F --header 3\"(Please add --jump-target \"section\" if you like)\ngit log The git log is separated by commit. You will be able to move by commit unit.\ngit diff git diff is separated by diff or file. You will be able to move in diff units. You can move to the next section (space key) or previous section (^ key) in one go.\nFurthermore, by specifying --section-header, the diff file name will be displayed even if you scroll.\nsearch The above settings will display the search results in commit units. Normally, the search results are displayed at the top, so if it is in the middle of the line, you need to go back, but it will be displayed from the beginning of the commit.\n",
     "description": "Use ov as a pager for git",
     "tags": [
-      "ov"
+      "ov",
+      "git"
     ],
     "title": "git",
     "uri": "/ov/git/index.html"
@@ -79,6 +80,18 @@ var relearn_search_index = [
     "uri": "/ov/index.html"
   },
   {
+    "breadcrumb": "Top \u003e ov",
+    "content": "delta supports pager.\ndelta is often specified as git’s pager, but the pager is actually called from within delta.\nTherefore, delta settings are often specified by writing them in gitconfig. This is an example of gitconfig settings.\n[core] # delta will used as the default pager for git # and ov as the default pager for delta # the pager will be overloaded via the [pager] section for a few commands pager = delta --pager='ov -F' [pager] # overload delta pager for some commands show = delta --pager='ov -F --header 3' # We are now overloading some commands via \"delta features\" # This allows us to use different pager per git command # It allows to maintain a simpler config file and avoid escaping quotes diff = delta --features ov-diff log = delta --features ov-log [delta] navigate = true side-by-side = true file-style = yellow # we define the delta feature \"ov-diff\" we are using for git diff [delta \"ov-diff\"] # the idea is to overload the pager used by delta when using git diff # we are using the same pattern used by delta when the default pager (less) is used # using ov section feature brings a better experience pager=ov -F --section-delimiter '^(commit|added:|removed:|renamed:|Δ)' --section-header --pattern '•' # we define the delta feature \"ov-log\" we are using for git log [delta \"ov-log\"] # the idea is to overload the pager used by delta when using git log # using ov section feature brings a better experience pager=ov -F --section-delimiter '^commit' --section-header-num 3This setting allows you to mark the necessary locations as section for ov when using delta.\nBy combining these settings, you can move files by file (space key of ^ key) and diff by n/N key.\nFurthermore, even if you move a line, the difference file name can be displayed.\n",
+    "description": "ov can also be used as a pager for delta.",
+    "tags": [
+      "ov",
+      "git",
+      "delta"
+    ],
+    "title": "delta",
+    "uri": "/ov/delta/index.html"
+  },
+  {
     "breadcrumb": "Top \u003e trdsql",
     "content": "By using trdsql and simple SQL, you can do something that can be done by combining other UNIX tools.\nFile analysis If you want to run a simple SQL from SELECT * FROM, you need to know the column name in advance. If you execute the file name to the -a option to the -a option, it will analyze the file and output information. (If the extension of the CSV file is like .csv, -icsv can be omitted. Interpreting the-ih header, specifying the number of skips -is, etc. If necessary.If you do not attach it, it may be an unintended analysis result).\ntrdsql -ih -a header.csv The table name is header.csv. The file type is CSV. Data types: +-------------+------+ | column name | type | +-------------+------+ | id | text | | \\`name\\` | text | +-------------+------+ Data samples: +----+----------+ | id | \\`name\\` | +----+----------+ | 1 | Orange | +----+----------+ Examples: trdsql -ih \"SELECT id, \\`name\\` FROM header.csv\" trdsql -ih \"SELECT id, \\`name\\` FROM header.csv WHERE id = '1'\" trdsql -ih \"SELECT id, count(id) FROM header.csv GROUP BY id\" trdsql -ih \"SELECT id, \\`name\\` FROM header.csv ORDER BY id LIMIT 10\"Use of Examples The SQL that can be actually executed is output to Examples.\nSQL has a reservation word, and the column name that must be escaped, such as using a reservation word in the column name or using a column name other than lowercase letters, is escaped as described above (\\ by the database).`\" Or “”). When using from the command line, add “\" to escape from the shell, and surround it with “\\ ‘”.\n(The reserved word is changed depending on the implementation and version of SQL, but there is no problem to escape other than the reservation word, so the unnecessary words are escaped.)\nHere we will execute one of Examples.\ntrdsql -ih \"SELECT id, \\`name\\` FROM header.csv\" 1,Orange 2,Melon 3,AppleThe same result as select * from header.csv.\nWe will change this SQL as a dedicated type.\nSort of columns, column extractions This time, change the order of id, name, and output in the order of name, id.\ntrdsql -ih \"SELECT \\`name\\`,id FROM header.csv\" Orange,1 Melon,2 Apple,3That’s right.So you don’t need an id, so if you want to output only name, you need to leave only the name.\ntrdsql -ih \"SELECT \\`name\\` FROM header.csv\" Orange Melon AppleIt’s too easy to get angry, but if you use the UNIX tool, AWK or CUT will be the content of the explanation.\nSorting line If you have something else to sort, it’s a line. You can sort lines with ORDER BY column name. Ascending order (small → large) is ASC (default so can be omitted), descending order (large → small) is DESC.\ntrdsql -ih \"SELECT id, \\`name\\` FROM header.csv ORDER BY \\`name\\`\" 3,Apple 2,Melon 1,Orangetrdsql -ih \"SELECT id, \\`name\\` FROM header.csv ORDER BY id DESC\" 3,Apple 2,Melon 1,OrangeActually, this may not be sorted as intended. In trdsql, input data such as CSV, LTSV, JSON, etc. works as a text type. In the case of id here, if id is not treated as a number, the result will be unintended when it is more than two digits.\nTo treat as a number, use CAST (column name AS type name) in SQL as follows.\ntrdsql -ih \"SELECT id,\\`name\\` FROM header.csv ORDER BY CAST(id AS int) DESC\" Furthermore, when combined with ORDER BY, LIMIT is often used. LIMIT can be used to limit the output to the specified number of cases. It is used when you want to output only one or only the top 10.\ntrdsql -ih \"SELECT id,\\`name\\` FROM header.csv ORDER BY CAST(id AS int) DESC LIMIT 1\" 3,Apple",
     "description": "How to use a simple SQL of trdsql",
@@ -90,18 +103,6 @@ var relearn_search_index = [
     ],
     "title": "trdsql Easy SQL ",
     "uri": "/trdsql/03_sql/index.html"
-  },
-  {
-    "breadcrumb": "Top \u003e ov",
-    "content": "delta supports pager.\ndelta is often specified as git’s pager, but the pager is actually called from within delta.\nTherefore, delta settings are often specified by writing them in gitconfig. This is an example of gitconfig settings.\n[core] pager = delta [delta] navigate = true side-by-side = true file-style = yellownavigate = true of delta is set to allow you to move in diff units using the n/N keys of less. This setting allows you to mark the necessary locations.\nUse that mark to set `ov`` with environment variables.\nexport DELTA_PAGER=\"ov --section-delimiter '^(commit|added:|removed:|renamed:|Δ)' --section-header --pattern '•'\"By combining these settings, you can move files by file (space key of ^ key) and diff by n/N key.\nFurthermore, even if you move a line, the difference file name can be displayed.\n",
-    "description": "ov can also be used as a pager for delta.",
-    "tags": [
-      "ov",
-      "git",
-      "delta"
-    ],
-    "title": "delta",
-    "uri": "/ov/delta/index.html"
   },
   {
     "breadcrumb": "Top",
@@ -704,7 +705,15 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: ov",
+    "title": "Tag :: Git",
+    "uri": "/tags/git/index.html"
+  },
+  {
+    "breadcrumb": "Top \u003e Tags",
+    "content": "",
+    "description": "",
+    "tags": null,
+    "title": "Tag :: Ov",
     "uri": "/tags/ov/index.html"
   },
   {
@@ -712,24 +721,8 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Category :: ov",
+    "title": "Category :: Ov",
     "uri": "/categories/ov/index.html"
-  },
-  {
-    "breadcrumb": "Top \u003e Tags",
-    "content": "",
-    "description": "",
-    "tags": null,
-    "title": "Tag :: pgcli",
-    "uri": "/tags/pgcli/index.html"
-  },
-  {
-    "breadcrumb": "Top \u003e Tags",
-    "content": "",
-    "description": "",
-    "tags": null,
-    "title": "Tag :: postgresql",
-    "uri": "/tags/postgresql/index.html"
   },
   {
     "breadcrumb": "Top",
@@ -744,7 +737,31 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: trdsql",
+    "title": "Tag :: Delta",
+    "uri": "/tags/delta/index.html"
+  },
+  {
+    "breadcrumb": "Top \u003e Tags",
+    "content": "",
+    "description": "",
+    "tags": null,
+    "title": "Tag :: Pgcli",
+    "uri": "/tags/pgcli/index.html"
+  },
+  {
+    "breadcrumb": "Top \u003e Tags",
+    "content": "",
+    "description": "",
+    "tags": null,
+    "title": "Tag :: PostgreSQL",
+    "uri": "/tags/postgresql/index.html"
+  },
+  {
+    "breadcrumb": "Top \u003e Tags",
+    "content": "",
+    "description": "",
+    "tags": null,
+    "title": "Tag :: Trdsql",
     "uri": "/tags/trdsql/index.html"
   },
   {
@@ -752,7 +769,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Category :: trdsql",
+    "title": "Category :: Trdsql",
     "uri": "/categories/trdsql/index.html"
   },
   {
@@ -810,7 +827,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: psql",
+    "title": "Tag :: Psql",
     "uri": "/tags/psql/index.html"
   },
   {
@@ -828,7 +845,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: memory",
+    "title": "Tag :: Memory",
     "uri": "/tags/memory/index.html"
   },
   {
@@ -836,7 +853,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: guesswidth",
+    "title": "Tag :: Guesswidth",
     "uri": "/tags/guesswidth/index.html"
   },
   {
@@ -855,7 +872,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: cut",
+    "title": "Tag :: Cut",
     "uri": "/tags/cut/index.html"
   },
   {
@@ -863,7 +880,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: sort",
+    "title": "Tag :: Sort",
     "uri": "/tags/sort/index.html"
   },
   {
@@ -871,7 +888,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: sql",
+    "title": "Tag :: Sql",
     "uri": "/tags/sql/index.html"
   },
   {
@@ -879,7 +896,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: less",
+    "title": "Tag :: Less",
     "uri": "/tags/less/index.html"
   },
   {
@@ -887,7 +904,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: more",
+    "title": "Tag :: More",
     "uri": "/tags/more/index.html"
   },
   {
@@ -895,7 +912,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: pager",
+    "title": "Tag :: Pager",
     "uri": "/tags/pager/index.html"
   },
   {
@@ -903,7 +920,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: pspg",
+    "title": "Tag :: Pspg",
     "uri": "/tags/pspg/index.html"
   },
   {
@@ -911,7 +928,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Category :: psql",
+    "title": "Category :: Psql",
     "uri": "/categories/psql/index.html"
   },
   {
@@ -935,7 +952,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: csv2json",
+    "title": "Tag :: Csv2json",
     "uri": "/tags/csv2json/index.html"
   },
   {
@@ -943,7 +960,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: csv2ltsv",
+    "title": "Tag :: Csv2ltsv",
     "uri": "/tags/csv2ltsv/index.html"
   },
   {
@@ -951,7 +968,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: json2csv",
+    "title": "Tag :: Json2csv",
     "uri": "/tags/json2csv/index.html"
   },
   {
@@ -959,7 +976,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: ltsv2csv",
+    "title": "Tag :: Ltsv2csv",
     "uri": "/tags/ltsv2csv/index.html"
   },
   {
@@ -977,7 +994,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: ps",
+    "title": "Tag :: Ps",
     "uri": "/tags/ps/index.html"
   },
   {
@@ -985,7 +1002,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: english",
+    "title": "Tag :: English",
     "uri": "/tags/english/index.html"
   },
   {
@@ -1004,7 +1021,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Category :: guesswidth",
+    "title": "Category :: Guesswidth",
     "uri": "/categories/guesswidth/index.html"
   },
   {
@@ -1042,7 +1059,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: top",
+    "title": "Tag :: Top",
     "uri": "/tags/top/index.html"
   },
   {
@@ -1076,22 +1093,6 @@ var relearn_search_index = [
     "uri": "/blog/ov_012_0/index.html"
   },
   {
-    "breadcrumb": "Top \u003e Tags",
-    "content": "",
-    "description": "",
-    "tags": null,
-    "title": "Tag :: delta",
-    "uri": "/tags/delta/index.html"
-  },
-  {
-    "breadcrumb": "Top \u003e Tags",
-    "content": "",
-    "description": "",
-    "tags": null,
-    "title": "Tag :: git",
-    "uri": "/tags/git/index.html"
-  },
-  {
     "breadcrumb": "Top \u003e Blog",
     "content": "きっかけ 現在のバージョンのPostgreSQLではSELECT ;というSQL文を実行してもエラーになりません。 試してみると(1 row)と返ってきたので、あれ？なんで？となりました。\nこれは、列数が0なんですね。PostgreSQLは列数が0のテーブルが作れるので、それに合わせているようです。\nCREATE empty();\n— Tatsuo Ishii (@tatsuo_ishii) July 13, 2022 列数が0という指摘を受けて、一応0列があることを理解していたつもりだったのですけど、 その仕様を勘違いしていたことに気づきました。\nテーブルを省略したSELECTの扱い 全部のSQL実装では無いですが、SQLのSELECTはFROM句がなくても動作する実装が多いです。 psqlで実行すると以下のようになります。\nSELECT '1'; ?column? ---------- 1 (1 row)のようにすれば文字列1が返ってきます。列名は無いので?column?で表されていますが、1行1列のテーブルと同じ扱いになります。\nSELECT ;はこの流れで行数が1で、列数が0のテーブルということになります。\npsqlでは実行すると以下のように行が（改行も含めて）表示されないまま 1 row と表示されるのでちょっと変な感じがしたのですが、これはpsql側でどう表示するかの問題であって、1行0列のテーブルと同じ扱いになっています。\nSELECT ; -- (1 row)なにも指定していないので、0行0列になるかと勘違いしてましたが、1行0列の方が正しいとわかります。\nPostgreSQLは0列のテーブルが作れる 前述の石井さんから指摘にあるように最近のPostgreSQLでは0列のテーブルが作成できるようになっています。\nCREATE TABLE empty ();元からSQLでは行をINSERTしなければ0行のテーブルになるので、0列のテーブルを作っただけだと0列0行のテーブルになります。\nSELECT * FROM empty; -- (0 rows)psqlの表示では0列の場合(1 row)と(0 rows)の表示でしか区別出来ないですが、0行と1行でちゃんと違いがあって整合が取れている動作になっています。\n0列のテーブル操作 前は0列のSQLが許可されないところが多かったのですが、現在進行形で0列を許可するように修正されているので、前はエラーになったものが通るようになっていたり、これから通るようになったりする可能性があります。\nINSERT 0列のテーブルにINSERTしようとすると素直にできませんでした。\nINSERT INTO empty () VALUES (); ERROR: 42601: syntax error at or near \")\"SELECT 列数が0のテーブルだけでなく、列数が1つ以上のテーブルであってもSELECT FROM oneで列数が0で返すことができます。 これにより列数が0で、複数行のテーブルを表現できます。\n\\d one Table \"public.one\" Column | Type | Collation | Nullable | Default --------+---------+-----------+----------+--------- i | integer | | | SELECT FROM one; -- (2 rows)INSERT INTO SELECT ということはINSERT INTO table SELECTならINSERTが可能になります。\nINSERT INTO empty SELECT FROM one; INSERT 0 2INSERT出来てます。\nSELECT * FROM empty; -- (2 rows)行数が0のときとは明確に区別されます。\nINSERT INTO empty SELECT FROM one WHERE false; INSERT 0 0行数0でもSELECT i FROMにしてしまうとちゃんとエラーになります。\nINSERT INTO empty SELECT i FROM one WHERE false; ERROR: 42601: INSERT has more expressions than target columns LINE 1: INSERT INTO empty SELECT i FROM one WHERE false; ^ LOCATION: transformInsertRow, analyze.c:936",
     "description": "",
@@ -1107,7 +1108,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Category :: sql",
+    "title": "Category :: Sql",
     "uri": "/categories/sql/index.html"
   },
   {
@@ -1115,7 +1116,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: jq",
+    "title": "Tag :: Jq",
     "uri": "/tags/jq/index.html"
   },
   {
@@ -1123,7 +1124,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: json",
+    "title": "Tag :: Json",
     "uri": "/tags/json/index.html"
   },
   {
@@ -1143,7 +1144,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: bat",
+    "title": "Tag :: Bat",
     "uri": "/tags/bat/index.html"
   },
   {
@@ -1161,7 +1162,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: exec",
+    "title": "Tag :: Exec",
     "uri": "/tags/exec/index.html"
   },
   {
@@ -1169,7 +1170,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: tail",
+    "title": "Tag :: Tail",
     "uri": "/tags/tail/index.html"
   },
   {
@@ -1177,7 +1178,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: section",
+    "title": "Tag :: Section",
     "uri": "/tags/section/index.html"
   },
   {
@@ -1185,7 +1186,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: man",
+    "title": "Tag :: Man",
     "uri": "/tags/man/index.html"
   },
   {
@@ -1193,7 +1194,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: markdown",
+    "title": "Tag :: Markdown",
     "uri": "/tags/markdown/index.html"
   },
   {
@@ -1201,7 +1202,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: mycli",
+    "title": "Tag :: Mycli",
     "uri": "/tags/mycli/index.html"
   },
   {
@@ -1209,7 +1210,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: mysql",
+    "title": "Tag :: MySQL",
     "uri": "/tags/mysql/index.html"
   },
   {
@@ -1217,7 +1218,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: procs",
+    "title": "Tag :: Procs",
     "uri": "/tags/procs/index.html"
   },
   {
@@ -1225,7 +1226,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: watch",
+    "title": "Tag :: Watch",
     "uri": "/tags/watch/index.html"
   },
   {
@@ -1267,7 +1268,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: zq",
+    "title": "Tag :: Zq",
     "uri": "/tags/zq/index.html"
   },
   {
@@ -1285,7 +1286,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: pgunconf",
+    "title": "Tag :: Pgunconf",
     "uri": "/tags/pgunconf/index.html"
   },
   {
@@ -1334,7 +1335,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: jpug-doc",
+    "title": "Tag :: Jpug-Doc",
     "uri": "/tags/jpug-doc/index.html"
   },
   {
@@ -1342,16 +1343,8 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Category :: jpug-doc",
+    "title": "Category :: Jpug-Doc",
     "uri": "/categories/jpug-doc/index.html"
-  },
-  {
-    "breadcrumb": "Top \u003e Tags",
-    "content": "",
-    "description": "",
-    "tags": null,
-    "title": "Tag :: jpug-doc-tool",
-    "uri": "/tags/jpug-doc-tool/index.html"
   },
   {
     "breadcrumb": "Top \u003e Blog",
@@ -1363,6 +1356,14 @@ var relearn_search_index = [
     ],
     "title": "Jpug-doc-tool",
     "uri": "/blog/jpug-doc-tool/index.html"
+  },
+  {
+    "breadcrumb": "Top \u003e Tags",
+    "content": "",
+    "description": "",
+    "tags": null,
+    "title": "Tag :: Jpug-Doc-Tool",
+    "uri": "/tags/jpug-doc-tool/index.html"
   },
   {
     "breadcrumb": "Top \u003e Blog",
@@ -1401,7 +1402,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: mdtsql",
+    "title": "Tag :: Mdtsql",
     "uri": "/tags/mdtsql/index.html"
   },
   {
@@ -1409,7 +1410,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Category :: mdtsql",
+    "title": "Category :: Mdtsql",
     "uri": "/categories/mdtsql/index.html"
   },
   {
@@ -1427,24 +1428,8 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: bubbletea",
+    "title": "Tag :: Bubbletea",
     "uri": "/tags/bubbletea/index.html"
-  },
-  {
-    "breadcrumb": "Top \u003e Tags",
-    "content": "",
-    "description": "",
-    "tags": null,
-    "title": "Tag :: pgsp",
-    "uri": "/tags/pgsp/index.html"
-  },
-  {
-    "breadcrumb": "Top \u003e Categories",
-    "content": "",
-    "description": "",
-    "tags": null,
-    "title": "Category :: pgsp",
-    "uri": "/categories/pgsp/index.html"
   },
   {
     "breadcrumb": "Top \u003e Blog",
@@ -1457,6 +1442,22 @@ var relearn_search_index = [
     ],
     "title": "pgsp",
     "uri": "/blog/pgsp/index.html"
+  },
+  {
+    "breadcrumb": "Top \u003e Tags",
+    "content": "",
+    "description": "",
+    "tags": null,
+    "title": "Tag :: Pgsp",
+    "uri": "/tags/pgsp/index.html"
+  },
+  {
+    "breadcrumb": "Top \u003e Categories",
+    "content": "",
+    "description": "",
+    "tags": null,
+    "title": "Category :: Pgsp",
+    "uri": "/categories/pgsp/index.html"
   },
   {
     "breadcrumb": "Top \u003e Blog",
@@ -1513,7 +1514,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: go",
+    "title": "Tag :: Go",
     "uri": "/tags/go/index.html"
   },
   {
@@ -1521,7 +1522,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Category :: go",
+    "title": "Category :: Go",
     "uri": "/categories/go/index.html"
   },
   {
@@ -1542,7 +1543,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: tcell",
+    "title": "Tag :: Tcell",
     "uri": "/tags/tcell/index.html"
   },
   {
@@ -1550,7 +1551,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: tui",
+    "title": "Tag :: Tui",
     "uri": "/tags/tui/index.html"
   },
   {
@@ -1558,7 +1559,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Category :: tui",
+    "title": "Category :: Tui",
     "uri": "/categories/tui/index.html"
   },
   {
@@ -1576,7 +1577,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: order by",
+    "title": "Tag :: Order By",
     "uri": "/tags/order-by/index.html"
   },
   {
@@ -1595,7 +1596,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: cbind",
+    "title": "Tag :: Cbind",
     "uri": "/tags/cbind/index.html"
   },
   {
@@ -1703,7 +1704,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: terminal pager",
+    "title": "Tag :: Terminal Pager",
     "uri": "/tags/terminal-pager/index.html"
   },
   {
@@ -1711,7 +1712,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: ambiguous width",
+    "title": "Tag :: Ambiguous Width",
     "uri": "/tags/ambiguous-width/index.html"
   },
   {
@@ -1719,7 +1720,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: gnome-terminal",
+    "title": "Tag :: Gnome-Terminal",
     "uri": "/tags/gnome-terminal/index.html"
   },
   {
@@ -1741,7 +1742,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: runewidth",
+    "title": "Tag :: Runewidth",
     "uri": "/tags/runewidth/index.html"
   },
   {
@@ -1759,7 +1760,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: output",
+    "title": "Tag :: Output",
     "uri": "/tags/output/index.html"
   },
   {
@@ -1805,7 +1806,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Category :: mysql",
+    "title": "Category :: Mysql",
     "uri": "/categories/mysql/index.html"
   },
   {
@@ -1874,7 +1875,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: apache",
+    "title": "Tag :: Apache",
     "uri": "/tags/apache/index.html"
   },
   {
@@ -1882,7 +1883,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: log",
+    "title": "Tag :: Log",
     "uri": "/tags/log/index.html"
   },
   {
@@ -1890,7 +1891,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: ltsv",
+    "title": "Tag :: Ltsv",
     "uri": "/tags/ltsv/index.html"
   },
   {
@@ -1898,7 +1899,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: nginx",
+    "title": "Tag :: Nginx",
     "uri": "/tags/nginx/index.html"
   },
   {
@@ -1920,7 +1921,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: generate_series",
+    "title": "Tag :: Generate_series",
     "uri": "/tags/generate_series/index.html"
   },
   {
@@ -1968,7 +1969,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: config",
+    "title": "Tag :: Config",
     "uri": "/tags/config/index.html"
   },
   {
@@ -1996,7 +1997,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: file",
+    "title": "Tag :: File",
     "uri": "/tags/file/index.html"
   },
   {
@@ -2016,7 +2017,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: library",
+    "title": "Tag :: Library",
     "uri": "/tags/library/index.html"
   },
   {
@@ -2036,7 +2037,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: graph",
+    "title": "Tag :: Graph",
     "uri": "/tags/graph/index.html"
   },
   {
@@ -2056,7 +2057,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: except",
+    "title": "Tag :: Except",
     "uri": "/tags/except/index.html"
   },
   {
@@ -2123,7 +2124,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: window関数",
+    "title": "Tag :: Window関数",
     "uri": "/tags/window%E9%96%A2%E6%95%B0/index.html"
   },
   {
@@ -2166,7 +2167,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: sqlite3",
+    "title": "Tag :: SQLite3",
     "uri": "/tags/sqlite3/index.html"
   },
   {
@@ -2231,7 +2232,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: stdin",
+    "title": "Tag :: Stdin",
     "uri": "/tags/stdin/index.html"
   },
   {
@@ -2250,7 +2251,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: bz2",
+    "title": "Tag :: Bz2",
     "uri": "/tags/bz2/index.html"
   },
   {
@@ -2258,7 +2259,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: gz",
+    "title": "Tag :: Gz",
     "uri": "/tags/gz/index.html"
   },
   {
@@ -2266,7 +2267,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: lz4",
+    "title": "Tag :: Lz4",
     "uri": "/tags/lz4/index.html"
   },
   {
@@ -2291,7 +2292,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: wildcard",
+    "title": "Tag :: Wildcard",
     "uri": "/tags/wildcard/index.html"
   },
   {
@@ -2299,7 +2300,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: xz",
+    "title": "Tag :: Xz",
     "uri": "/tags/xz/index.html"
   },
   {
@@ -2307,7 +2308,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: zstd",
+    "title": "Tag :: Zstd",
     "uri": "/tags/zstd/index.html"
   },
   {
@@ -2335,7 +2336,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: group by",
+    "title": "Tag :: Group By",
     "uri": "/tags/group-by/index.html"
   },
   {
@@ -2354,7 +2355,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: avg",
+    "title": "Tag :: Avg",
     "uri": "/tags/avg/index.html"
   },
   {
@@ -2362,7 +2363,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: max",
+    "title": "Tag :: Max",
     "uri": "/tags/max/index.html"
   },
   {
@@ -2370,7 +2371,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: min",
+    "title": "Tag :: Min",
     "uri": "/tags/min/index.html"
   },
   {
@@ -2378,7 +2379,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: sum",
+    "title": "Tag :: Sum",
     "uri": "/tags/sum/index.html"
   },
   {
@@ -2400,7 +2401,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: count",
+    "title": "Tag :: Count",
     "uri": "/tags/count/index.html"
   },
   {
@@ -2467,7 +2468,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: docker",
+    "title": "Tag :: Docker",
     "uri": "/tags/docker/index.html"
   },
   {
@@ -2475,7 +2476,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "Tag :: install",
+    "title": "Tag :: Install",
     "uri": "/tags/install/index.html"
   },
   {

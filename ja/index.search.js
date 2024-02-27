@@ -40,10 +40,11 @@ var relearn_search_index = [
   },
   {
     "breadcrumb": "Top \u003e ov",
-    "content": "ovでgitのlogを見やすくする gitのlogを見やすくする工夫はいろんなところで紹介されていますが、gitの設定等により表示を変更する方法にとどまります。 gitの出力をセクション区切りで分割することで、より使いやすくなります。 また、それに合わせてjump-targetを\"section\"しておくことをおすすめします。 以下はgitの推奨設定例です。\n[pager] diff = \"ov -F --section-delimiter '^diff' --section-header\" log = \"ov -F --section-delimiter '^commit' --section-header-num 3\"（--jump-target \"section\"はお好みで追加してください）\ngit log git logはcommit毎に区切られます。 上記の設定によりcommit毎に移動できます。\ngit diff git diffはdiffまたはファイル毎に区切られます。 上記の設定によりdiff毎に移動できます。\nさらに --section-headerを指定することで、diffのファイル名を表示し続けられます。\n検索 上記の設定により検索したときの移動がコミット単位で表示するようになります。 通常は検索結果が一番上に表示するため、途中の行であった場合はさかのぼる必要がありますが、コミットの先頭から表示されます。\n",
+    "content": "ovでgitのlogを見やすくする gitのlogを見やすくする工夫はいろんなところで紹介されていますが、gitの設定等により表示を変更する方法にとどまります。 gitの出力をセクション区切りで分割することで、より使いやすくなります。 また、それに合わせてjump-targetを\"section\"しておくことをおすすめします。 以下はgitの推奨設定例です。\n[core] pager = \"ov -F\" [pager] diff = \"ov -F --section-delimiter '^diff' --section-header\" log = \"ov -F --section-delimiter '^commit' --section-header-num 3\" show = \"ov -F --header 3\"（--jump-target \"section\"はお好みで追加してください）\ngit log git logはcommit毎に区切られます。 上記の設定によりcommit毎に移動できます。\ngit diff git diffはdiffまたはファイル毎に区切られます。 上記の設定によりdiff毎に移動できます。\nさらに --section-headerを指定することで、diffのファイル名を表示し続けられます。\n検索 上記の設定により検索したときの移動がコミット単位で表示するようになります。 通常は検索結果が一番上に表示するため、途中の行であった場合はさかのぼる必要がありますが、コミットの先頭から表示されます。\n",
     "description": "gitのページャーとしてovを使用する",
     "tags": [
-      "ov"
+      "ov",
+      "git"
     ],
     "title": "git",
     "uri": "/ja/ov/git/index.html"
@@ -704,7 +705,15 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: ov",
+    "title": "タグ :: Git",
+    "uri": "/ja/tags/git/index.html"
+  },
+  {
+    "breadcrumb": "Top \u003e Tags",
+    "content": "",
+    "description": "",
+    "tags": null,
+    "title": "タグ :: Ov",
     "uri": "/ja/tags/ov/index.html"
   },
   {
@@ -712,24 +721,8 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "カテゴリー :: ov",
+    "title": "カテゴリー :: Ov",
     "uri": "/ja/categories/ov/index.html"
-  },
-  {
-    "breadcrumb": "Top \u003e Tags",
-    "content": "",
-    "description": "",
-    "tags": null,
-    "title": "タグ :: pgcli",
-    "uri": "/ja/tags/pgcli/index.html"
-  },
-  {
-    "breadcrumb": "Top \u003e Tags",
-    "content": "",
-    "description": "",
-    "tags": null,
-    "title": "タグ :: postgresql",
-    "uri": "/ja/tags/postgresql/index.html"
   },
   {
     "breadcrumb": "Top",
@@ -744,7 +737,23 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: trdsql",
+    "title": "タグ :: Pgcli",
+    "uri": "/ja/tags/pgcli/index.html"
+  },
+  {
+    "breadcrumb": "Top \u003e Tags",
+    "content": "",
+    "description": "",
+    "tags": null,
+    "title": "タグ :: PostgreSQL",
+    "uri": "/ja/tags/postgresql/index.html"
+  },
+  {
+    "breadcrumb": "Top \u003e Tags",
+    "content": "",
+    "description": "",
+    "tags": null,
+    "title": "タグ :: Trdsql",
     "uri": "/ja/tags/trdsql/index.html"
   },
   {
@@ -752,7 +761,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "カテゴリー :: trdsql",
+    "title": "カテゴリー :: Trdsql",
     "uri": "/ja/categories/trdsql/index.html"
   },
   {
@@ -810,7 +819,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: speed",
+    "title": "タグ :: Speed",
     "uri": "/ja/tags/speed/index.html"
   },
   {
@@ -818,7 +827,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: psql",
+    "title": "タグ :: Psql",
     "uri": "/ja/tags/psql/index.html"
   },
   {
@@ -826,7 +835,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: exec",
+    "title": "タグ :: Exec",
     "uri": "/ja/tags/exec/index.html"
   },
   {
@@ -834,7 +843,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: markdown",
+    "title": "タグ :: Markdown",
     "uri": "/ja/tags/markdown/index.html"
   },
   {
@@ -842,7 +851,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: procs",
+    "title": "タグ :: Procs",
     "uri": "/ja/tags/procs/index.html"
   },
   {
@@ -850,7 +859,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: tail",
+    "title": "タグ :: Tail",
     "uri": "/ja/tags/tail/index.html"
   },
   {
@@ -858,7 +867,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: watch",
+    "title": "タグ :: Watch",
     "uri": "/ja/tags/watch/index.html"
   },
   {
@@ -876,7 +885,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: mycli",
+    "title": "タグ :: Mycli",
     "uri": "/ja/tags/mycli/index.html"
   },
   {
@@ -884,7 +893,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: mysql",
+    "title": "タグ :: MySQL",
     "uri": "/ja/tags/mysql/index.html"
   },
   {
@@ -892,7 +901,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: ps",
+    "title": "タグ :: Ps",
     "uri": "/ja/tags/ps/index.html"
   },
   {
@@ -900,7 +909,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: top",
+    "title": "タグ :: Top",
     "uri": "/ja/tags/top/index.html"
   },
   {
@@ -908,7 +917,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: memory",
+    "title": "タグ :: Memory",
     "uri": "/ja/tags/memory/index.html"
   },
   {
@@ -916,7 +925,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: bat",
+    "title": "タグ :: Bat",
     "uri": "/ja/tags/bat/index.html"
   },
   {
@@ -924,7 +933,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: csv",
+    "title": "タグ :: Csv",
     "uri": "/ja/tags/csv/index.html"
   },
   {
@@ -932,7 +941,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: man",
+    "title": "タグ :: Man",
     "uri": "/ja/tags/man/index.html"
   },
   {
@@ -940,7 +949,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: guesswidth",
+    "title": "タグ :: Guesswidth",
     "uri": "/ja/tags/guesswidth/index.html"
   },
   {
@@ -959,7 +968,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: less",
+    "title": "タグ :: Less",
     "uri": "/ja/tags/less/index.html"
   },
   {
@@ -967,7 +976,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: more",
+    "title": "タグ :: More",
     "uri": "/ja/tags/more/index.html"
   },
   {
@@ -975,7 +984,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: pager",
+    "title": "タグ :: Pager",
     "uri": "/ja/tags/pager/index.html"
   },
   {
@@ -983,7 +992,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: pspg",
+    "title": "タグ :: Pspg",
     "uri": "/ja/tags/pspg/index.html"
   },
   {
@@ -991,7 +1000,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "カテゴリー :: psql",
+    "title": "カテゴリー :: Psql",
     "uri": "/ja/categories/psql/index.html"
   },
   {
@@ -1025,7 +1034,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "カテゴリー :: guesswidth",
+    "title": "カテゴリー :: Guesswidth",
     "uri": "/ja/categories/guesswidth/index.html"
   },
   {
@@ -1104,16 +1113,8 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: delta",
+    "title": "タグ :: Delta",
     "uri": "/ja/tags/delta/index.html"
-  },
-  {
-    "breadcrumb": "Top \u003e Tags",
-    "content": "",
-    "description": "",
-    "tags": null,
-    "title": "タグ :: git",
-    "uri": "/ja/tags/git/index.html"
   },
   {
     "breadcrumb": "Top \u003e Blog(ブログ)",
@@ -1131,7 +1132,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: sql",
+    "title": "タグ :: Sql",
     "uri": "/ja/tags/sql/index.html"
   },
   {
@@ -1139,7 +1140,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "カテゴリー :: sql",
+    "title": "カテゴリー :: Sql",
     "uri": "/ja/categories/sql/index.html"
   },
   {
@@ -1147,7 +1148,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: jq",
+    "title": "タグ :: Jq",
     "uri": "/ja/tags/jq/index.html"
   },
   {
@@ -1155,7 +1156,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: json",
+    "title": "タグ :: Json",
     "uri": "/ja/tags/json/index.html"
   },
   {
@@ -1215,7 +1216,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: pgunconf",
+    "title": "タグ :: Pgunconf",
     "uri": "/ja/tags/pgunconf/index.html"
   },
   {
@@ -1264,7 +1265,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: jpug-doc",
+    "title": "タグ :: Jpug-Doc",
     "uri": "/ja/tags/jpug-doc/index.html"
   },
   {
@@ -1272,16 +1273,8 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "カテゴリー :: jpug-doc",
+    "title": "カテゴリー :: Jpug-Doc",
     "uri": "/ja/categories/jpug-doc/index.html"
-  },
-  {
-    "breadcrumb": "Top \u003e Tags",
-    "content": "",
-    "description": "",
-    "tags": null,
-    "title": "タグ :: jpug-doc-tool",
-    "uri": "/ja/tags/jpug-doc-tool/index.html"
   },
   {
     "breadcrumb": "Top \u003e Blog(ブログ)",
@@ -1293,6 +1286,14 @@ var relearn_search_index = [
     ],
     "title": "Jpug-doc-tool",
     "uri": "/ja/blog/jpug-doc-tool/index.html"
+  },
+  {
+    "breadcrumb": "Top \u003e Tags",
+    "content": "",
+    "description": "",
+    "tags": null,
+    "title": "タグ :: Jpug-Doc-Tool",
+    "uri": "/ja/tags/jpug-doc-tool/index.html"
   },
   {
     "breadcrumb": "Top \u003e Blog(ブログ)",
@@ -1331,7 +1332,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: mdtsql",
+    "title": "タグ :: Mdtsql",
     "uri": "/ja/tags/mdtsql/index.html"
   },
   {
@@ -1339,7 +1340,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "カテゴリー :: mdtsql",
+    "title": "カテゴリー :: Mdtsql",
     "uri": "/ja/categories/mdtsql/index.html"
   },
   {
@@ -1357,24 +1358,8 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: bubbletea",
+    "title": "タグ :: Bubbletea",
     "uri": "/ja/tags/bubbletea/index.html"
-  },
-  {
-    "breadcrumb": "Top \u003e Tags",
-    "content": "",
-    "description": "",
-    "tags": null,
-    "title": "タグ :: pgsp",
-    "uri": "/ja/tags/pgsp/index.html"
-  },
-  {
-    "breadcrumb": "Top \u003e Categories",
-    "content": "",
-    "description": "",
-    "tags": null,
-    "title": "カテゴリー :: pgsp",
-    "uri": "/ja/categories/pgsp/index.html"
   },
   {
     "breadcrumb": "Top \u003e Blog(ブログ)",
@@ -1387,6 +1372,22 @@ var relearn_search_index = [
     ],
     "title": "pgsp",
     "uri": "/ja/blog/pgsp/index.html"
+  },
+  {
+    "breadcrumb": "Top \u003e Tags",
+    "content": "",
+    "description": "",
+    "tags": null,
+    "title": "タグ :: Pgsp",
+    "uri": "/ja/tags/pgsp/index.html"
+  },
+  {
+    "breadcrumb": "Top \u003e Categories",
+    "content": "",
+    "description": "",
+    "tags": null,
+    "title": "カテゴリー :: Pgsp",
+    "uri": "/ja/categories/pgsp/index.html"
   },
   {
     "breadcrumb": "Top \u003e Blog(ブログ)",
@@ -1443,7 +1444,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: go",
+    "title": "タグ :: Go",
     "uri": "/ja/tags/go/index.html"
   },
   {
@@ -1451,7 +1452,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "カテゴリー :: go",
+    "title": "カテゴリー :: Go",
     "uri": "/ja/categories/go/index.html"
   },
   {
@@ -1472,7 +1473,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: tcell",
+    "title": "タグ :: Tcell",
     "uri": "/ja/tags/tcell/index.html"
   },
   {
@@ -1480,7 +1481,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: tui",
+    "title": "タグ :: Tui",
     "uri": "/ja/tags/tui/index.html"
   },
   {
@@ -1488,7 +1489,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "カテゴリー :: tui",
+    "title": "カテゴリー :: Tui",
     "uri": "/ja/categories/tui/index.html"
   },
   {
@@ -1506,7 +1507,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: order by",
+    "title": "タグ :: Order By",
     "uri": "/ja/tags/order-by/index.html"
   },
   {
@@ -1525,7 +1526,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: cbind",
+    "title": "タグ :: Cbind",
     "uri": "/ja/tags/cbind/index.html"
   },
   {
@@ -1633,7 +1634,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: terminal pager",
+    "title": "タグ :: Terminal Pager",
     "uri": "/ja/tags/terminal-pager/index.html"
   },
   {
@@ -1641,7 +1642,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: ambiguous width",
+    "title": "タグ :: Ambiguous Width",
     "uri": "/ja/tags/ambiguous-width/index.html"
   },
   {
@@ -1649,7 +1650,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: gnome-terminal",
+    "title": "タグ :: Gnome-Terminal",
     "uri": "/ja/tags/gnome-terminal/index.html"
   },
   {
@@ -1671,7 +1672,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: runewidth",
+    "title": "タグ :: Runewidth",
     "uri": "/ja/tags/runewidth/index.html"
   },
   {
@@ -1689,7 +1690,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: output",
+    "title": "タグ :: Output",
     "uri": "/ja/tags/output/index.html"
   },
   {
@@ -1735,7 +1736,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "カテゴリー :: mysql",
+    "title": "カテゴリー :: Mysql",
     "uri": "/ja/categories/mysql/index.html"
   },
   {
@@ -1804,7 +1805,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: apache",
+    "title": "タグ :: Apache",
     "uri": "/ja/tags/apache/index.html"
   },
   {
@@ -1812,7 +1813,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: log",
+    "title": "タグ :: Log",
     "uri": "/ja/tags/log/index.html"
   },
   {
@@ -1820,7 +1821,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: ltsv",
+    "title": "タグ :: Ltsv",
     "uri": "/ja/tags/ltsv/index.html"
   },
   {
@@ -1828,7 +1829,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: nginx",
+    "title": "タグ :: Nginx",
     "uri": "/ja/tags/nginx/index.html"
   },
   {
@@ -1850,7 +1851,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: generate_series",
+    "title": "タグ :: Generate_series",
     "uri": "/ja/tags/generate_series/index.html"
   },
   {
@@ -1898,7 +1899,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: config",
+    "title": "タグ :: Config",
     "uri": "/ja/tags/config/index.html"
   },
   {
@@ -1926,7 +1927,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: file",
+    "title": "タグ :: File",
     "uri": "/ja/tags/file/index.html"
   },
   {
@@ -1946,7 +1947,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: library",
+    "title": "タグ :: Library",
     "uri": "/ja/tags/library/index.html"
   },
   {
@@ -1966,7 +1967,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: graph",
+    "title": "タグ :: Graph",
     "uri": "/ja/tags/graph/index.html"
   },
   {
@@ -1986,7 +1987,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: except",
+    "title": "タグ :: Except",
     "uri": "/ja/tags/except/index.html"
   },
   {
@@ -2053,7 +2054,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: window関数",
+    "title": "タグ :: Window関数",
     "uri": "/ja/tags/window%E9%96%A2%E6%95%B0/index.html"
   },
   {
@@ -2096,7 +2097,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: sqlite3",
+    "title": "タグ :: SQLite3",
     "uri": "/ja/tags/sqlite3/index.html"
   },
   {
@@ -2161,7 +2162,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: stdin",
+    "title": "タグ :: Stdin",
     "uri": "/ja/tags/stdin/index.html"
   },
   {
@@ -2180,7 +2181,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: bz2",
+    "title": "タグ :: Bz2",
     "uri": "/ja/tags/bz2/index.html"
   },
   {
@@ -2188,7 +2189,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: gz",
+    "title": "タグ :: Gz",
     "uri": "/ja/tags/gz/index.html"
   },
   {
@@ -2196,7 +2197,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: lz4",
+    "title": "タグ :: Lz4",
     "uri": "/ja/tags/lz4/index.html"
   },
   {
@@ -2221,7 +2222,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: wildcard",
+    "title": "タグ :: Wildcard",
     "uri": "/ja/tags/wildcard/index.html"
   },
   {
@@ -2229,7 +2230,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: xz",
+    "title": "タグ :: Xz",
     "uri": "/ja/tags/xz/index.html"
   },
   {
@@ -2237,7 +2238,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: zstd",
+    "title": "タグ :: Zstd",
     "uri": "/ja/tags/zstd/index.html"
   },
   {
@@ -2265,7 +2266,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: group by",
+    "title": "タグ :: Group By",
     "uri": "/ja/tags/group-by/index.html"
   },
   {
@@ -2284,7 +2285,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: avg",
+    "title": "タグ :: Avg",
     "uri": "/ja/tags/avg/index.html"
   },
   {
@@ -2292,7 +2293,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: max",
+    "title": "タグ :: Max",
     "uri": "/ja/tags/max/index.html"
   },
   {
@@ -2300,7 +2301,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: min",
+    "title": "タグ :: Min",
     "uri": "/ja/tags/min/index.html"
   },
   {
@@ -2308,7 +2309,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: sum",
+    "title": "タグ :: Sum",
     "uri": "/ja/tags/sum/index.html"
   },
   {
@@ -2330,7 +2331,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: count",
+    "title": "タグ :: Count",
     "uri": "/ja/tags/count/index.html"
   },
   {
@@ -2370,7 +2371,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: cut",
+    "title": "タグ :: Cut",
     "uri": "/ja/tags/cut/index.html"
   },
   {
@@ -2378,7 +2379,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: sort",
+    "title": "タグ :: Sort",
     "uri": "/ja/tags/sort/index.html"
   },
   {
@@ -2399,7 +2400,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: csv2json",
+    "title": "タグ :: Csv2json",
     "uri": "/ja/tags/csv2json/index.html"
   },
   {
@@ -2407,7 +2408,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: csv2ltsv",
+    "title": "タグ :: Csv2ltsv",
     "uri": "/ja/tags/csv2ltsv/index.html"
   },
   {
@@ -2415,7 +2416,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: json2csv",
+    "title": "タグ :: Json2csv",
     "uri": "/ja/tags/json2csv/index.html"
   },
   {
@@ -2423,7 +2424,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: ltsv2csv",
+    "title": "タグ :: Ltsv2csv",
     "uri": "/ja/tags/ltsv2csv/index.html"
   },
   {
@@ -2445,7 +2446,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: docker",
+    "title": "タグ :: Docker",
     "uri": "/ja/tags/docker/index.html"
   },
   {
@@ -2453,7 +2454,7 @@ var relearn_search_index = [
     "content": "",
     "description": "",
     "tags": null,
-    "title": "タグ :: install",
+    "title": "タグ :: Install",
     "uri": "/ja/tags/install/index.html"
   },
   {
