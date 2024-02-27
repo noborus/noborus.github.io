@@ -182,7 +182,6 @@ Library tool to infer column widths in CLI output.
 
 ### <i class="fab fa-github"></i> [sqlss](https://github.com/noborus/sqlss)
 
-
 <a class="github-button" href="https://github.com/noborus/sqlss" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/sqlss on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/sqlss/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/sqlss on GitHub">Fork</a>
 <span class="project-badge">
