@@ -1,7 +1,8 @@
 ---
 author: "Noboru Saito"
 title: "pgcli"
-date: 2024-01-07T08:00:00+09:00
+date: 2024-02-28T06:00:00+09:00
+description: "pgcliのページャーとして'ov'を使用する"
 tags: ["ov", "pgcli", "PostgreSQL"]
 categories: ["ov"]
 weight: 5
