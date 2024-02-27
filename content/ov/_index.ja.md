@@ -10,11 +10,11 @@ linktitle = "ov"
 
 # 機能豊富なターミナルページャー
 
+[![ov](ov.gif)](https://github.com/noborus/ov)
+
 <div id="download">
 {{% button icon="download" style="info" href="https://github.com/noborus/ov/releases/latest" %}}Download{{% /button %}}
 </div>
-
-[![ov](ov.gif)](https://github.com/noborus/ov)
 
 {{% notice style="note" title="Note" %}}
 [<i class="fab fa-github"></i>インストール、設定についてはgithubを参照してください。](https://github.com/noborus/ov)

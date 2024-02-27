@@ -1,7 +1,7 @@
 +++
 author = "Noboru Saito"
 title = "trdsql Log aggregation"
-date = "2019-12-08"
+date = "2024-01-27"
 description = "trdsql Log aggregation"
 weight = 8
 tags = [
@@ -20,7 +20,7 @@ Apache and nginx Log are also becoming established in the way of outputting in [
 
 An example of analyzing such Log with trdsql.
 
-The output side customizes the apache LogFormat setting to the following custom format. 
+The output side customizes the apache LogFormat setting to the following custom format.
 
 ```
 LogFormat "host:%h\tident:%l\tuser:%u\ttime:%t\treq:%r\tstatus:%>s\tsize:%b\treferer:\%{Referer}i\tua:%{User-Agent}i" combined_ltsv

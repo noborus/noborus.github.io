@@ -10,11 +10,11 @@ linktitle = "ov"
 
 # Feature-rich terminal pager
 
+[![ov](ov.gif)](https://github.com/noborus/ov)
+
 <div id="download">
 {{% button icon="download" style="info" href="https://github.com/noborus/ov/releases/latest" %}}Download{{% /button %}}
 </div>
-
-[![ov](ov.gif)](https://github.com/noborus/ov)
 
 {{% notice style="note" title="Note" %}}
 [<i class="fab fa-github"></i>Please refer to the github  for **installation and settings.**](https://github.com/noborus/ov)

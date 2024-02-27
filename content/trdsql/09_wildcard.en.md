@@ -1,7 +1,7 @@
 +++
 author = "Noboru Saito"
 title = "trdsql wildcard, compressed file"
-date = "2019-12-09"
+date = "2024-01-27"
 description = "trdsql wildcard, compressed file"
 weight = 9
 tags = [
@@ -41,15 +41,15 @@ trdsql -icsv "SELECT COUNT(*) FROM test*.csv"
 15
 ```
 
-## Compressed file
+## Compressed files
 
-Old log files may be compressed. [gzip, bzip2, zstd, lz4, xz] If it is compressed, it will be automatically extended and executed.
+Old log files might be compressed. If they are compressed with [gzip, bzip2, zstd, lz4, xz], they will be automatically decompressed and processed.
 
 ```console
 trdsql -iltsv "SELECT * FROM access.log.2.gz"
 ```
 
-You can also combine compressed files and wildcards to execute.
+You can also combine wildcards with compressed files for execution.
 
 ```console
 ls test*.csv
