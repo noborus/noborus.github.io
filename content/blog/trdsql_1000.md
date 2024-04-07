@@ -1,6 +1,6 @@
 ---
 title: "trdsql v1.0.0"
-date: 2024-4-08T06:00:00+09:00
+date: 2024-04-08T06:00:00+09:00
 tags: ["trdsql"]
 categories: ["trdsql"]
 ---
