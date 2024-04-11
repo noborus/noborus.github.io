@@ -19,6 +19,7 @@ categories = [
 以下の2つのCSVファイルがあったとして、
 
 abc.csv
+
 ```CSV
 1,AAA
 2,BBB
@@ -26,6 +27,7 @@ abc.csv
 ```
 
 price.csv
+
 ```CSV
 1,100
 2,500
@@ -42,7 +44,7 @@ price.csv
 
 trdsqlではテーブルの代わりにファイル名を使用すれば、そのままSQLのJOINが書けます。
 
-```sh
+```console
 trdsql "SELECT a.c1, a.c2, p.c2" \
          "FROM abc.csv AS a" \
     "LEFT JOIN price.csv AS p" \
@@ -58,6 +60,7 @@ LEFT JOINの場合は、先に指定したabc.csvの行はすべて表示され�
 しかしながら、自動判別可能な拡張子になっていれば、CSVとLTSV等の混在は可能です。
 
 unit.ltsv
+
 ```LTSV
 id:1	unit:個
 id:2	unit:箱
@@ -65,7 +68,7 @@ id:2	unit:箱
 
 先程のCSVのJOINの結果に更にLTSVをJOINします。
 
-```sh
+```console
  trdsql -oat \
        "SELECT a.c1, a.c2, p.c2, unit" \
         " FROM abc.csv AS a" \
