@@ -114,7 +114,7 @@ trdsql -driver mysql -dsn "noborus:noborus@/trdsql_test" -oat "SELECT date(time)
 trdsql -ih -driver mysql -dsn "noborus:noborus@/trdsql_test" "SELECT STR_TO_DATE(\`日時\`,'%Y年%m月%d日%H時%i分%s秒') FROM d.csv"
 ```
 
-```sh
+```console
 2015-09-05 20:58:05
 2015-09-05 20:58:41
 2015-09-05 21:00:42
@@ -126,7 +126,7 @@ trdsql -ih -driver mysql -dsn "noborus:noborus@/trdsql_test" "SELECT STR_TO_DATE
 trdsql -ih -driver mysql -dsn "noborus:noborus@/trdsql_test" "SELECT DATE_FORMAT(STR_TO_DATE(\`日時\`,'%Y年%m月%d日%H時%i分%s秒'),'%Y/%m/%d') FROM d.csv"
 ```
 
-```sh
+```console
 2015/09/05
 2015/09/05
 2015/09/05

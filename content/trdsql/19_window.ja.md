@@ -46,7 +46,7 @@ Window関数は集約関数の関数に`OVER ()`句を付けることにより�
 
 `OVER()`句を空で指定すると全行が対象となります。
 
-```sh
+```console
 trdsql -ih -omd \
 "SELECT id,name,score, SUM(CAST(score AS int)) OVER () FROM score.csv"
 | id | name  | score | sum  |
@@ -66,7 +66,7 @@ trdsql -ih -omd \
 Window関数を使用した平均と対象の行との計算が可能です。
 差を表示させると以下のようになります。
 
-```sh
+```console
 trdsql -ih -omd \
 "SELECT id,name,score," \
         "score - round(AVG(score) OVER()) AS 平均との差"\
@@ -89,7 +89,7 @@ round()は小数点以下を丸める関数です。
 
 全体ではなく、class毎に変更して出力してみます。
 
-```sh
+```console
 trdsql -ih -omd \
 "SELECT id,class,name,score," \
  "score - ROUND(avg(score) OVER(PARTITION BY class)) "\
@@ -109,7 +109,7 @@ class Aでは平均195との差を表示していて、class Bでは平均239と
 
 ここに先程の全体の平均との差を表示するのも並べるだけでできます。
 
-```sh
+```console
 trdsql -ih -omd \
 "SELECT id,class,name,score," \
   "score - ROUND(avg(score) OVER(PARTITION BY class)) "\
@@ -133,7 +133,7 @@ name:orange	num:2
 
 上記のLTSVファイルに、ROW_NUMBER() は集約関数にはないWindow関数特有の関数です。OVER()により範囲全体、順番の指定なしで使用すると以下のようになります。
 
-```sh
+```console
 trdsql "SELECT ROW_NUMBER() OVER(), name,num " \
        "FROM fruits.ltsv"
 1,grape,10
@@ -144,7 +144,7 @@ trdsql "SELECT ROW_NUMBER() OVER(), name,num " \
 
 順番を指定するには「ORDER BY」を指定します。
 
-```sh
+```console
 trdsql "SELECT ROW_NUMBER() OVER(ORDER BY CAST(num AS int))," \
        " name,num FROM fruits.ltsv"
 1,orange,2

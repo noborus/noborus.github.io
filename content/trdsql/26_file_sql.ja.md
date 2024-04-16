@@ -40,7 +40,7 @@ id,name
 
 "SQLコマンド" の代わりに 「-q ファイル名.sql」で実行します。それ以外のオプションは代わりません。
 
-```sh
+```console
 trdsql -ih -oat -q test.sql
 ```
 

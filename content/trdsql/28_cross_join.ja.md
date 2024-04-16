@@ -34,7 +34,7 @@ bc
 
 の２つのCSVを`CROSS JOIN`すると 3×3で全ての組み合わせを出力できます。
 
-```sh
+```console
 trdsql "SELECT * FROM a.csv CROSS JOIN b.csv"
 aa,ba
 aa,bb
@@ -64,7 +64,7 @@ DeNA
 
 単純に`CROSS JOIN`するには以下のようになります（JOIN条件は無いので書けません）。
 
-```sh
+```console
 trdsql -ih \
 "SELECT h.team,a.team "\
 "  FROM cleague.csv AS h "\
@@ -73,7 +73,7 @@ trdsql -ih \
 
 自分のチームとは対戦出来ないので、同じチームのときを`WHERE h.team != a.team`により除外します。
 
-```sh
+```console
 trdsql -ih -omd \
 "SELECT h.team AS home,a.team AS aware " \
 "  FROM cleague.csv AS h CROSS JOIN cleague.csv AS a "\

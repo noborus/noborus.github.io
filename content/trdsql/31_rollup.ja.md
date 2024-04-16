@@ -45,7 +45,7 @@ id,class,name,score
 
 PostgreSQLでは、`GROUP BY 列名`の代わりに`GROUP BY ROLLUP(列名)`を使用することで、通常のGROUP BYに加えて、全体の集計結果を出力します。
 
-```sh
+```console
 trdsql -driver "postgres" -dsn "dbname=trdsql_test" -oat -ih \
 "SELECT class, SUM(score::int) AS score FROM score.csv GROUP BY ROLLUP(class) ORDER BY class"
 +-------+------+
@@ -61,7 +61,7 @@ trdsql -driver "postgres" -dsn "dbname=trdsql_test" -oat -ih \
 
 MySQLでは、`GROUP BY 列名`の後に `WITH ROLLUP`を付けると、通常のGROUP BYに加えて、全体の集計結果を出力します。
 
-```sh
+```console
 trdsql -driver mysql -oat -ih \
 "SELECT class, SUM(CAST(score AS SIGNED)) AS score FROM score.csv GROUP BY class WITH ROLLUP "
 +-------+-------+
@@ -82,7 +82,7 @@ PostgreSQLでは、さらに柔軟に出力することができます。
 
 `GROUPING SETS`で id,name,class（つまりid別ですが、nameとclassも出力対象に含めるため、指定します）、class別、総合計（指定なし）の３つのグループ化をして出力すると以下のように、小計、合計が出力できます。
 
-```sh
+```console
 trdsql -driver "postgres" -dsn "dbname=trdsql_test" -oat -ih \
 "SELECT id, name,class, SUM(score::int) AS score " \
  " FROM score.csv GROUP BY GROUPING SETS((class,id,name),(class),()) "\
@@ -104,7 +104,7 @@ trdsql -driver "postgres" -dsn "dbname=trdsql_test" -oat -ih \
 
 上記の GROUPING SETSは、`ROLLUP(class,(id,name))`で簡略化できます。
 
-```sh
+```console
 trdsql -driver "postgres" -dsn "dbname=trdsql_test" -oat -ih \
 "SELECT id,name,class, SUM(score::int) AS score " \
  " FROM score.csv GROUP BY ROLLUP(class,(id,name)) " \
@@ -118,7 +118,7 @@ idとnameは１つにしつつ、class,(id,name)のそれぞれでグループ�
 
 MySQLでは、`GROUPING SETS`がないので、class,id毎で`WITH ROLLUP`にり結果は出せますが、nameを出力することは出来ません。
 
-```sh
+```console
 trdsql -driver mysql -oat -ih \
 "SELECT id,class, SUM(CAST(score AS SIGNED)) AS score " \
  " FROM score.csv GROUP BY class,id WITH ROLLUP"
@@ -140,7 +140,7 @@ trdsql -driver mysql -oat -ih \
 nameの方を集約させてしまうという手もありかもしれません。
 `GROUP_CONCAT()`により文字列を接続することで、集約できます。
 
-```sh
+```console
 trdsql -driver mysql -oat -ih \
 "SELECT id,GROUP_CONCAT(name) as name,class, SUM(CAST(score AS SIGNED)) AS score " \
 " FROM score.csv GROUP BY class,id WITH ROLLUP"

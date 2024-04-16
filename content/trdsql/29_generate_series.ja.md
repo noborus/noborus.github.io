@@ -21,7 +21,7 @@ PostgreSQLには`generate_series()`という便利な関数があります。
 
 使い方は簡単で「開始値」、「終了値」、「刻み値（省略可能）」を指定して実行します。
 
-```sh
+```console
 trdsql -driver postgres -dsn "dbname=trdsql_test" "SELECT * FROM generate_series(1,10)"
 1
 2
@@ -40,7 +40,7 @@ trdsql -driver postgres -dsn "dbname=trdsql_test" "SELECT * FROM generate_series
 
 もちろん、trdsqlでは、外部からの入力を簡単に取り入れられるので、`seq`コマンドで代用することもできます。
 
-```sh
+```console
 seq 1 10|trdsql "SELECT * FROM -"
 1
 2
@@ -61,7 +61,7 @@ seq 1 10|trdsql "SELECT * FROM -"
 
 `generate_series()`では、タイムスタンプを扱えるので、2020年のカレンダーを日本語で出すと少々トリッキーですが、以下のようになります。
 
-```sh
+```console
 trdsql -driver postgres -dsn "dbname=trdsql_test" \
 "SET LC_TIME='ja_JP.UTF-8'; " \
 "SELECT to_char(day,'YYYY年TMMonthDD日 (TMDay)') " \
@@ -81,7 +81,7 @@ trdsql -driver postgres -dsn "dbname=trdsql_test" \
 ある程度まとまった数のダミーデータが欲しい場合があります。完全に分散したランダムなデータが欲しい場合は専用のツールを使う必要がありますが、
 単純に既にあるデータの件数を増やしたいだけであれば、`generate_series()`や `seq`コマンドとCROSS JOINすることで作成できます。
 
-```sh
+```console
  trdsql  -driver postgres -dsn "dbname=trdsql_test" -ih -oh \
  "SELECT ROW_NUMBER() OVER() AS id, name " \
  "  FROM header.csv CROSS JOIN generate_series(1,3) AS s"
@@ -102,7 +102,7 @@ seqコマンドを利用すると以下になります。
 （-ih でヘッダーがあるファイルを処理しているときには、`seq`の1行目もヘッダーと解釈されるので、
 1行余分に出力されるように0から開始すると同様の動きになります）。
 
-```sh
+```console
 seq 0 3|trdsql -driver sqlite3 -ih -oh \
 "SELECT ROW_NUMBER() OVER() AS id, name " \
  " FROM - CROSS JOIN header.csv"

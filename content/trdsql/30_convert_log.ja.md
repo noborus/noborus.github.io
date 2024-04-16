@@ -27,7 +27,7 @@ categories = [
 
 以下のコマンドにより `apache_common`形式のログをaccess.common.logとして保存します。
 
-```sh
+```console
 flog -f apache_common -t log -o access.common.log 
 ```
 
@@ -55,7 +55,7 @@ flog -f apache_common -t log -o access.common.log
 
 適切なラベルを付けるようにしてLTSVで出力します。
 
-```sh
+```console
 trdsql -id " " -oltsv \
 "SELECT c1 AS host, c2 AS ident, c3 as user, c4||' '||c5 AS time, c6 AS req, c7 AS status, c8 as size "\ 
 "  FROM access.common.log"
@@ -75,11 +75,11 @@ Combined Log も項目が増えるだけで基本的に同じです。
 
 作成は以下で行いました。
 
-```sh
+```console
 flog -f apache_combined -t log -o access.combined.log
 ```
 
-```sh
+```console
 trdsql -id " " -oltsv \
 "SELECT c1 AS host, c2 AS ident, c3 AS user ,c4||' '||c5 AS time, c6 AS req , c7 AS status, c8 AS size, c9 AS refer, c10 AS ua "\
  " FROM access.combined.log"

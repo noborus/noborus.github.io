@@ -18,7 +18,7 @@ categories = [
 
 例えば、データベース内にfruitsというテーブルがあった場合に、前回のabc.csvとJOINできます。
 
-```sh
+```console
 trdsql -driver postgres -dsn "dbname=trdsql_test" \
      "SELECT a.c1, a.c2, f.name FROM abc.csv AS a "\
   "LEFT JOIN fruits AS f ON (CAST(a.c1 AS int) = f.id)"
@@ -46,7 +46,7 @@ id,name
 3,tarou
 ```
 
-```sh
+```console
 trdsql -driver postgres -dsn "dbname=trdsql_test" \
      "SELECT u.id, u.name FROM users AS u "\
  "INNER JOIN list.csv AS l ON (u.name = l.c1)"
@@ -55,7 +55,7 @@ trdsql -driver postgres -dsn "dbname=trdsql_test" \
 
 逆にCSVファイルにデータベースのテーブルから情報を足すといったことも考えられます。
 
-```sh
+```console
 trdsql -driver postgres -dsn "dbname=trdsql_test" \
      "SELECT u.id, u.name FROM list.csv AS l "\
   "LEFT JOIN users AS u ON (l.c1 = u.name)" \

@@ -32,7 +32,7 @@ id,name,score
 3,dave,23
 ```
 
-```sh
+```console
 trdsql -ih -oat \
 "SELECT id,name,score, " \
 "  CASE WHEN CAST(score AS int) >= 80 THEN 'A' " \

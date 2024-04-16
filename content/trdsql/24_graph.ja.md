@@ -35,7 +35,7 @@ aaa
 aaa
 ```
 
-```sh
+```console
 cat aaa.csv|chart
 ```
 
@@ -45,7 +45,7 @@ cat aaa.csv|chart
 
 これを使用して例えば、[ログ集計](/trdsql/08_log)で使用したログのリクエストをグラフにすると以下のようになります。
 
-```sh
+```console
 trdsql "SELECT req FROM log.ltsv"|chart
 ```
 
@@ -55,7 +55,7 @@ trdsql "SELECT req FROM log.ltsv"|chart
 
 [ログ集計](/trdsql/08_log)のリクエストが多い順をTOP 20に変えて出力すると以下のようになります。
 
-```sh
+```console
 trdsql -od "\t" \
   "SELECT req, count(req) as count " \
     "FROM log.ltsv " \

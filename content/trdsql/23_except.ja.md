@@ -46,7 +46,7 @@ new.csv
 単純に全列を比較すると1と2の行が同じであるため、消されて残った3と4が出力されます。
 この場合old.csv側にnew.csvにない行があっても出力されません。diffの比較とは違いますね。
 
-```sh
+```console
 trdsql "SELECT * FROM new.csv EXCEPT SELECT * FROM old.csv "
 3,CCB
 4,DDD
@@ -60,7 +60,7 @@ trdsql "SELECT * FROM new.csv EXCEPT SELECT * FROM old.csv "
 
 CSVファイル側をキャストして型を合わせています。
 
-```sh
+```console
 trdsql -driver postgres -dsn "dbname=trdsql_test" -ih -oh \
 "SELECT id::int,name FROM fruits.csv " \
 "EXCEPT " \
@@ -75,7 +75,7 @@ id,name
 
 また、EXCEPTとは逆に共通の行を出力させたいときには、`INTERSECT` を使用します。
 
-```sh
+```console
 "SELECT id::int,name FROM fruits.csv " \
 "INTERSECT " \
 "SELECT id,name FROM fruits"
