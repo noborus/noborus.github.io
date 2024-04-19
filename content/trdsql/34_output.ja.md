@@ -41,4 +41,4 @@ trdsql -out test.ltsv.zst "SELECT * FROM testdata/test.csv"
 
 圧縮フォーマットも`-oz 圧縮形式`で指定した場合はそちらが優先されます。
 
-例えば、`.zst`の拡張子を付けたいが圧縮してほしくない（理由はわかりませんが...)の場合は、`-out-without-guess`を付けて実行して下さい。
+例えば、`.zst`の拡張子を付けたいが圧縮してほしくない（理由はわかりませんが...）の場合は、`-out-without-guess`を付けて実行して下さい。
