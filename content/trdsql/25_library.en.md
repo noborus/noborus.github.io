@@ -1,7 +1,7 @@
 +++
 author = "Noboru Saito"
 title = "trdsql library"
-date = "2024-04-19"
+date = "2024-04-18"
 description = "trdsql library usage."
 weight = 25
 tags = [
