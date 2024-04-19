@@ -16,10 +16,9 @@ categories = [
 
 trdsql does not have a graph creation function, so when you want to create a graph, you will need to use another tool to create it.
 
-Drawing with Excel or LibreOffice is the standard, but here we introduce how to draw a graph with [marianogappa/chart](
+Drawing with Excel or LibreOffice is the standard, but here we introduce how to draw a graph with [marianogappa/chart](https://github.com/marianogappa/chart).
 
-[marianogappa/chart](https://github.com/marianogappa/chart)は、Goで作られていて、や多くのプラットフォームで動作して、標準入力から受け取ったデータをブラウザに描画します。
-en:[marianogappa/chart](https://github.com/marianogappa/chart) is made in Go and works on many platforms, drawing data received from standard input to the browser.
+[marianogappa/chart](https://github.com/marianogappa/chart) is made in Go and works on many platforms, drawing data received from standard input to the browser.
 
 It is not suitable for complex graphs, but you can draw simple graphs with just a few options.
 
