@@ -44,6 +44,7 @@ It is particularly suitable for displaying table-formatted text.
 * Supports watch mode that periodically reads files.
 * Supports watch in exec mode (equivalent to watch command).
 * Supports incremental search and regular expression search.
+* Supports filter search to display only matched lines (or non-matching lines).
 * Supports multi-color that highlights multiple words individually.
 * Better support for Unicode and East Asian widths.
 * Supports compressed files (gzip, bzip2, zstd, lz4, xz).
