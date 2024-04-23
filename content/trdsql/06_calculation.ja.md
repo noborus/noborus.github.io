@@ -40,7 +40,8 @@ orange,40
 ```console
 trdsql -ih "SELECT SUM(price) FROM sample.csv"
 ```
-```
+
+```csv
 910
 ```
 
@@ -51,7 +52,8 @@ trdsql -ih "SELECT SUM(price) FROM sample.csv"
 ```console
 trdsql -ih "SELECT SUM(CAST(price AS int)) FROM sample.csv"
 ```
-```
+
+```csv
 910
 ```
 
@@ -62,7 +64,8 @@ trdsql -ih "SELECT SUM(CAST(price AS int)) FROM sample.csv"
 ```console
 trdsql -ih "SELECT AVG(CAST(price AS int)) FROM sample.csv"
 ```
-```
+
+```csv
 130
 ```
 
@@ -73,7 +76,8 @@ trdsql -ih "SELECT AVG(CAST(price AS int)) FROM sample.csv"
 ```console
 trdsql -ih -oh "SELECT MIN(CAST(price AS INT)),MAX(CAST(price AS INT)) FROM sample.csv"
 ```
-```
+
+```csv
 MIN(CAST(price AS INT)),MAX(CAST(price AS INT))
 40,500
 ```
@@ -87,7 +91,8 @@ MINやMAXはテキスト型でも使用できるため、明示的にCASTする�
 ```console
 trdsql -ih -oat "SELECT COUNT(name) as count, COUNT(DISTINCT name) as uniq,  MIN(CAST(price AS INT)) AS min,  MAX(CAST(price AS INT)) as max,  SUM(CAST(price AS INT)) as sum,  AVG(CAST(price AS INT)) as avg FROM sample.csv"
 ```
-```
+
+```at
 +-------+------+-----+-----+-----+-----+
 | count | uniq | min | max | sum | avg |
 +-------+------+-----+-----+-----+-----+

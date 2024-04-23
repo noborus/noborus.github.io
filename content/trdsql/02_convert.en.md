@@ -16,7 +16,7 @@ categories = [
 ]
 +++
 
-TRDSQL describes files such as CSV as a tool for processing SQL, but can also be used as a tool for simply converting file formats.
+`trdsql` describes files such as CSV as a tool for processing SQL, but can also be used as a tool for simply converting file formats.
 
 In that case, SQL is enough to remember the following fixed phrases.
 Output all rows and columns in the file.
@@ -157,7 +157,7 @@ You can display files that are long and hard to see with CSV files with many col
 trdsql -icsv -ih -ovf "SELECT * FROM header.csv"
 ```
 
-```
+```vf
 ---[ 1]-----------------------------------------------------
     id | 1
   name | Orange
@@ -177,7 +177,8 @@ trdsql -icsv -ih -ovf "SELECT * FROM header.csv"
 | LTSV | ○ | ○ | [Ltsv.org] (http://ltsv.org) |
 | JSON | ○ | ○ | [www.json.org] (www.json.org) |
 | JSONL | ○ | ○ | Input is possible with JSON |
-| Tbln | ○ | ○ | [tbln.dev] (https://tbln.dev) |
+| YAML | ○ | ○ | [yaml.org] (http://yaml.org) |
+| TBLN | ○ | ○ | [tbln.dev] (https://tbln.dev) |
 | RAW | × | ○ | Output as it is (do not process escape) |
 | MD | × | ○ | Markdown table |
 | At | × | ○ | ASCII table |

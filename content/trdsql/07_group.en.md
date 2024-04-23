@@ -36,16 +36,15 @@ If you want to calculate the total of each name, you can do the following.
 trdsql -ih "SELECT name,SUM(CAST(price AS INT)) as sum FROM sample.csv WHERE name='apple'"
 ```
 
-```
+```csv
 apple,280
 ```
-
 
 ```console
 trdsql -ih "SELECT name,SUM(CAST(price AS INT)) as sum FROM sample.csv WHERE name='orange'"
 ```
 
-```
+```csv
 orange,130
 ```
 
@@ -55,8 +54,7 @@ However, if you want to calculate the total of each name at once, you can use GR
 trdsql -ih "SELECT name,SUM(CAST(price AS INT)) as sum FROM sample.csv GROUP BY name"
 ```
 
-```
-
+```csv
 apple,280
 melon,500
 orange,130
@@ -69,7 +67,7 @@ trdsql -ih -oat \
 "SELECT name, COUNT(name) as count, MIN(CAST(price AS INT)) AS min, MAX(CAST(price AS INT)) as max, SUM(CAST(price AS INT)) as sum,  AVG(CAST(price AS INT)) as avg  FROM sample.csv GROUP BY name"
 ```
 
-```
+```at
 +--------+-------+-----+-----+-----+--------------------+
 |  name  | count | min | max | sum |        avg         |
 +--------+-------+-----+-----+-----+--------------------+
@@ -79,13 +77,11 @@ trdsql -ih -oat \
 +--------+-------+-----+-----+-----+--------------------+
 ```
 
-
-
 ```console
 trdsql -ih -oat "SELECT name, COUNT(name) as count, MIN(CAST(price AS INT)) AS min, MAX(CAST(price AS INT)) as max, SUM(CAST(price AS INT)) as sum, AVG(CAST(price AS INT)) as avg  FROM sample.csv GROUP BY name ORDER BY sum DESC"
 ```
 
-```
+```at
 +--------+-------+-----+-----+-----+--------------------+
 |  name  | count | min | max | sum |        avg         |
 +--------+-------+-----+-----+-----+--------------------+
@@ -103,7 +99,7 @@ You can also use HAVING to filter the results of GROUP BY.
 trdsql -ih -oat "SELECT name, COUNT(name) as count, MIN(CAST(price AS INT)) AS min, MAX(CAST(price AS INT)) as max, SUM(CAST(price AS INT)) as sum, AVG(CAST(price AS INT)) as avg  FROM sample.csv  GROUP BY name  HAVING COUNT(name) > 1 ORDER BY sum DESC"
 ```
 
-```
+```at
 +--------+-------+-----+-----+-----+--------------------+
 |  name  | count | min | max | sum |        avg         |
 +--------+-------+-----+-----+-----+--------------------+

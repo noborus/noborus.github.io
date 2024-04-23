@@ -55,7 +55,7 @@ cd trdsql
 make
 ```
 
-I don't think it would be difficult to build for your own environment, but if you want to cross-compile, you should check the dependent [go-sqlite3](https://github.com/mattn/go-sqlite3 "https://github.com/mattn/go-sqlite3") uses `cgo` so you have to be careful.
+If you are cross-compiling, be aware that [go-sqlite3](https://github.com/mattn/go-sqlite3 "https://github.com/mattn/go-sqlite3") uses cgo.
 
 ### Execution
 

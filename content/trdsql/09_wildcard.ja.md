@@ -26,16 +26,15 @@ categories = [
 同じ列で構成されている対象ファイルであれば、ワイルドカードを使用して、複数のファイルを一つのテーブルとして扱うことができます。
 
 ```console
-ls test*.csv
-```
-```
+$ ls test*.csv
 test1.csv  test2.csv  test3.csv
 ```
 
 ```console
 trdsql -icsv "SELECT COUNT(*) FROM test*.csv"
 ```
-```
+
+```csv
 15
 ```
 
@@ -50,9 +49,7 @@ trdsql -iltsv "SELECT * FROM access.log.2.gz"
 圧縮ファイルとワイルドカードを組み合わせて実行することもできます。
 
 ```console
-ls
-```
-```
+$ ls
 access.log    access.log.1    access.log.2.gz
 ```
 

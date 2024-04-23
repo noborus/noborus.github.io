@@ -22,7 +22,7 @@ An example of analyzing such Log with trdsql.
 
 The output side customizes the apache LogFormat setting to the following custom format.
 
-```
+```conf
 LogFormat "host:%h\tident:%l\tuser:%u\ttime:%t\treq:%r\tstatus:%>s\tsize:%b\treferer:\%{Referer}i\tua:%{User-Agent}i" combined_ltsv
 ```
 
@@ -30,7 +30,7 @@ The items host, ident, user, time, req, status, size, referer, ua are output.
 
 The actual Log looks like this.
 
-```
+```log
 host:176.99.192.42	ident:-	user:-	time:[21/Oct/2019:21:33:53 +0900]	req:GET /category/software HTTP/1.1	status:200	size:138	referer:-	ua:Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0)
 host:192.54.157.102	ident:-	user:-	time:[21/Oct/2019:21:33:53 +0900]	req:GET /item/electronics/4478 HTTP/1.1	status:200	size:60	referer:/category/sports	ua:Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:9.0.1) Gecko/20100101 Firefox/9.0.1
 host:88.60.137.115	ident:-	user:-	time:[21/Oct/2019:21:33:53 +0900]	req:POST /search/?c=Games+Electronics HTTP/1.1	status:200	size:98	referer:/item/networking/929	ua:Mozilla/5.0 (iPhone; CPU iPhone OS 5_0_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9A405 Safari/7534.48.3
@@ -41,7 +41,7 @@ host:88.60.137.115	ident:-	user:-	time:[21/Oct/2019:21:33:53 +0900]	req:POST /se
 
 First, try -a of trdsql.
 
-```
+```console
 The table name is log.ltsv.
 The file type is LTSV.
 
@@ -86,7 +86,7 @@ Output the top 5 hosts with the most requests.
 trdsql -oat "SELECT \`host\`, count(\`host\`) as count FROM log.ltsv GROUP BY \`host\` ORDER BY count DESC LIMIT 5"
 ```
 
-```
+```at
 +----------------+-------+
 |      host      | count |
 +----------------+-------+
@@ -104,7 +104,7 @@ Output the top 5 hosts with the most requests
 trdsql -oat "SELECT req, count(req) as count FROM log.ltsv GROUP BY req ORDER BY count DESC LIMIT 5"
 ```
 
-```
+```at
 +--------------------------------+-------+
 |              req               | count |
 +--------------------------------+-------+
@@ -126,7 +126,7 @@ Output requests and counts other than status 200
 trdsql -oat "SELECT req, status,count(req) as count FROM log.ltsv WHERE status != '200' GROUP BY req, status ORDER BY count DESC"
 ```
 
-```
+```at
 +-------------------------------+--------+-------+
 |              req              | status | count |
 +-------------------------------+--------+-------+

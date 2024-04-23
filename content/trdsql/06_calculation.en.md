@@ -41,7 +41,7 @@ Calculate the sum. Add all the price columns.
 trdsql -ih "SELECT SUM(price) FROM sample.csv"
 ```
 
-```
+```csv
 910
 ```
 
@@ -52,7 +52,8 @@ If you want to explicitly CAST, do the following.
 ```console
 trdsql -ih "SELECT SUM(CAST(price AS int)) FROM sample.csv"
 ```
-```
+
+```csv
 910
 ```
 
@@ -64,7 +65,7 @@ Calculate the average. It can be calculated by sum / number of cases, but it is 
 trdsql -ih "SELECT AVG(CAST(price AS int)) FROM sample.csv"
 ```
 
-```
+```csv
 130
 ```
 
@@ -76,7 +77,7 @@ Output the minimum and maximum values.
 trdsql -ih -oh "SELECT MIN(CAST(price AS INT)),MAX(CAST(price AS INT)) FROM sample.csv"
 ```
 
-```
+```csv
 MIN(CAST(price AS INT)),MAX(CAST(price AS INT))
 40,500
 ```
@@ -91,7 +92,7 @@ As I wrote last time, aggregation functions can be executed at once.
 trdsql -ih -oat "SELECT COUNT(name) as count, COUNT(DISTINCT name) as uniq,  MIN(CAST(price AS INT)) AS min,  MAX(CAST(price AS INT)) as max,  SUM(CAST(price AS INT)) as sum,  AVG(CAST(price AS INT)) as avg FROM sample.csv"
 ```
 
-```
+```at
 +-------+------+-----+-----+-----+-----+
 | count | uniq | min | max | sum | avg |
 +-------+------+-----+-----+-----+-----+

@@ -37,7 +37,7 @@ orange,40
 trdsql -ih "SELECT name,SUM(CAST(price AS INT)) as sum FROM sample.csv WHERE name='apple'"
 ```
 
-```
+```csv
 apple,280
 ```
 
@@ -45,7 +45,7 @@ apple,280
 trdsql -ih "SELECT name,SUM(CAST(price AS INT)) as sum FROM sample.csv WHERE name='orange'"
 ```
 
-```
+```csv
 orange,130
 ```
 
@@ -55,7 +55,7 @@ orange,130
 trdsql -ih "SELECT name,SUM(CAST(price AS INT)) as sum FROM sample.csv GROUP BY name"
 ```
 
-```
+```csv
 apple,280
 melon,500
 orange,130
@@ -69,7 +69,7 @@ trdsql -ih -oat \
 "SELECT name, COUNT(name) as count, MIN(CAST(price AS INT)) AS min, MAX(CAST(price AS INT)) as max, SUM(CAST(price AS INT)) as sum,  AVG(CAST(price AS INT)) as avg  FROM sample.csv GROUP BY name"
 ```
 
-```
+```at
 +--------+-------+-----+-----+-----+--------------------+
 |  name  | count | min | max | sum |        avg         |
 +--------+-------+-----+-----+-----+--------------------+
@@ -85,7 +85,7 @@ GROUP集計した結果をORDER BYで並べ替えることもできます。
 trdsql -ih -oat "SELECT name, COUNT(name) as count, MIN(CAST(price AS INT)) AS min, MAX(CAST(price AS INT)) as max, SUM(CAST(price AS INT)) as sum, AVG(CAST(price AS INT)) as avg  FROM sample.csv GROUP BY name ORDER BY sum DESC"
 ```
 
-```
+```at
 +--------+-------+-----+-----+-----+--------------------+
 |  name  | count | min | max | sum |        avg         |
 +--------+-------+-----+-----+-----+--------------------+
@@ -103,7 +103,7 @@ GROUP集計した結果についてWHEREで条件を指定することはでき�
 trdsql -ih -oat "SELECT name, COUNT(name) as count, MIN(CAST(price AS INT)) AS min, MAX(CAST(price AS INT)) as max, SUM(CAST(price AS INT)) as sum, AVG(CAST(price AS INT)) as avg  FROM sample.csv  GROUP BY name  HAVING COUNT(name) > 1 ORDER BY sum DESC"
 ```
 
-```
+```at
 +--------+-------+-----+-----+-----+--------------------+
 |  name  | count | min | max | sum |        avg         |
 +--------+-------+-----+-----+-----+--------------------+

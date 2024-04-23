@@ -16,7 +16,7 @@ categories = [
 ]
 +++
 
-trdsqlはCSV等のファイルをSQLで処理するツールとして説明していますが、単純にファイル形式を変換するツールとしても使用できます。
+`trdsql`はCSV等のファイルをSQLで処理するツールとして説明していますが、単純にファイル形式を変換するツールとしても使用できます。
 
 その場合、SQLは以下の定型句さえ覚えておけば、十分です。
 ファイル内のすべての行と列を出力します。
@@ -156,7 +156,8 @@ trdsql -icsv -ih -ovf "SELECT * FROM header.csv"
 ```console
 trdsql -icsv -ih -ovf "SELECT * FROM header.csv"
 ```
-```
+
+```vf
 ---[ 1]-----------------------------------------------------
     id | 1
   name | Orange
@@ -176,6 +177,7 @@ trdsql -icsv -ih -ovf "SELECT * FROM header.csv"
 | LTSV | ○ | ○ |[ltsv.org](http://ltsv.org) |
 | JSON | ○ | ○ |[www.json.org](www.json.org)|
 | JSONL | ○ | ○ |入力はJSONで可能|
+| YAML | ○ | ○ | [yaml.org] (http://yaml.org) |
 | TBLN | ○ | ○ |[tbln.dev](https://tbln.dev)|
 | RAW | × | ○ | そのまま出力（エスケープ処理をしない）|
 | MD | × | ○ | MarkDownテーブル |

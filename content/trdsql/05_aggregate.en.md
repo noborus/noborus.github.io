@@ -30,7 +30,7 @@ Although it simply counts the number of cases, care must be taken not to include
 trdsql -icsv -ih -oh "SELECT COUNT(*) FROM header.csv"
 ```
 
-```
+```csv
 count(*)
 3
 ```
@@ -41,7 +41,7 @@ You can specify a search condition. This is used when you want to know the numbe
 trdsql -icsv -ih -oh "SELECT COUNT(*) FROM header.csv WHERE id<'1'"
 ```
 
-```
+```csv
 count(*)
 2
 ```
@@ -66,7 +66,7 @@ id,name
 trdsql -icsv -ih -oh "SELECT COUNT(name) FROM abc.csv"
 ```
 
-```
+```csv
 count(name)
 4
 ```
@@ -75,7 +75,7 @@ count(name)
 trdsql -ih -oh "SELECT COUNT(DISTINCT name) FROM abc.csv"
 ```
 
-```
+```csv
 COUNT(DISTINCT name)
 3
 ```
@@ -86,7 +86,7 @@ Aggregate functions can also be executed at once.
 trdsql -ih -oh "SELECT COUNT(name), COUNT(DISTINCT name) FROM abc.csv"
 ```
 
-```
+```csv
 COUNT(name),COUNT(DISTINCT name)
 4,3
 ```

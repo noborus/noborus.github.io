@@ -84,7 +84,8 @@ trdsql -ih "SELECT id, \`name\` FROM header.csv"
 ```console
 trdsql -ih "SELECT \`name\`,id FROM header.csv"
 ```
-```
+
+```csv
 Orange,1
 Melon,2
 Apple,3
@@ -95,7 +96,8 @@ Apple,3
 ```console
 trdsql -ih "SELECT \`name\` FROM header.csv"
 ```
-```
+
+```csv
 Orange
 Melon
 Apple
@@ -111,7 +113,8 @@ Apple
 ```console
 trdsql -ih "SELECT id, \`name\` FROM header.csv ORDER BY \`name\`"
 ```
-```
+
+```csv
 3,Apple
 2,Melon
 1,Orange
@@ -120,7 +123,8 @@ trdsql -ih "SELECT id, \`name\` FROM header.csv ORDER BY \`name\`"
 ```console
 trdsql -ih "SELECT id, \`name\` FROM header.csv ORDER BY id DESC"
 ```
-```
+
+```csv
 3,Apple
 2,Melon
 1,Orange
@@ -141,6 +145,7 @@ trdsql -ih "SELECT id,\`name\` FROM  header.csv  ORDER BY CAST(id AS int) DESC"
 ```console
 trdsql -ih "SELECT id,\`name\` FROM  header.csv  ORDER BY CAST(id AS int) DESC LIMIT 1"
 ```
-```
+
+```csv
 3,Apple
 ```

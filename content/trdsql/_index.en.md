@@ -10,7 +10,7 @@ weight = 2
 {{% button icon="download" style="info" href="https://github.com/noborus/trdsql/releases/latest" %}}Download{{% /button %}}
 </div>
 
-This is the document of [trdsql](https://github.com/noborus/trdsql), a tool that can execute SQL on CSV, LTSV, JSON, TBLN files.
+This is the document of [trdsql](https://github.com/noborus/trdsql), a tool that can execute SQL on CSV, LTSV, JSON, YAML, TBLN files.
 
 ## overview
 
@@ -20,7 +20,7 @@ A tabular format is data that consists of rows and columns, such as:
 | | 1 column | 2 columns |
 |:---:|:----|:----|
 | **1 row** | a1 | a2 |
-| **2 lines** | b1 | b2 |
+| **2 row** | b1 | b2 |
 
 Since the results can be output in various formats, it can also be used for format conversion of tabular data.
 

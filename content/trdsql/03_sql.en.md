@@ -27,7 +27,7 @@ If you execute the file name to the `-a` option to the `-a` option, it will anal
 trdsql -ih -a header.csv
 ```
 
-```
+```csv
 The table name is header.csv.
 The file type is CSV.
 

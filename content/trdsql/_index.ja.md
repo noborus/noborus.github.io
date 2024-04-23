@@ -10,7 +10,7 @@ weight = 2
 {{% button icon="download" style="info" href="https://github.com/noborus/trdsql/releases/latest" %}}Download{{% /button %}}
 </div>
 
-CSV,LTSV,JSON,TBLNファイルにSQLを実行できるツールの[trdsql](https://github.com/noborus/trdsql)のドキュメントです。
+CSV,LTSV,JSON,YAML,TBLNファイルにSQLを実行できるツールの[trdsql](https://github.com/noborus/trdsql)のドキュメントです。
 
 最初は、[trdsql Advent Calendar 2019](https://qiita.com/advent-calendar/2019/trdsql)として書かれました。その後追記しています。
 

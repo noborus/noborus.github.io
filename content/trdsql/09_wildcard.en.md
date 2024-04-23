@@ -1,7 +1,7 @@
 +++
 author = "Noboru Saito"
 title = "trdsql wildcard, compressed file"
-date = "2024-01-27"
+date = "2024-04-24"
 description = "trdsql wildcard, compressed file"
 weight = 9
 tags = [
@@ -26,10 +26,7 @@ Up to this point, we have targeted one file, but log files, etc. may be rotated 
 If the target file is composed of the same columns, you can use wildcards to treat multiple files as one table.
 
 ```console
-ls test*.csv
-```
-
-```
+$ ls test*.csv
 test1.csv  test2.csv  test3.csv
 ```
 
@@ -37,7 +34,7 @@ test1.csv  test2.csv  test3.csv
 trdsql -icsv "SELECT COUNT(*) FROM test*.csv"
 ```
 
-```
+```csv
 15
 ```
 
@@ -52,10 +49,7 @@ trdsql -iltsv "SELECT * FROM access.log.2.gz"
 You can also combine wildcards with compressed files for execution.
 
 ```console
-ls test*.csv
-```
-
-```
+$ ls
 access.log    access.log.1    access.log.2.gz
 ```
 

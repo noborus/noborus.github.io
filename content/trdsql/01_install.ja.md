@@ -55,7 +55,7 @@ cd trdsql
 make
 ```
 
-自分の環境用にビルドするのは難しくないと思いますが、クロスコンパイルする場合は、依存している[go-sqlite3](https://github.com/mattn/go-sqlite3 "https://github.com/mattn/go-sqlite3")が cgo を使用しているので、注意が必要になります。
+クロスコンパイルする場合は、依存している[go-sqlite3](https://github.com/mattn/go-sqlite3 "https://github.com/mattn/go-sqlite3")が cgo を使用しているので、注意が必要になります。
 
 ### 実行
 
