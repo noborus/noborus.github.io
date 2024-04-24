@@ -69,7 +69,7 @@ id:2	unit:箱
 Join the result of the previous CSV JOIN with LTSV.
 
 ```console
- trdsql -oat \
+$ trdsql -oat \
        "SELECT a.c1, a.c2, p.c2, unit" \
         " FROM abc.csv AS a" \
     "LEFT JOIN price.csv AS p" \

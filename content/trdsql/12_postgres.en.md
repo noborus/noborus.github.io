@@ -50,7 +50,7 @@ UNIX domain sockets can also be connected.
 
 When PostgreSQL is installed with a package, a UNIX domain socket file is created in a location like the following.
 
-```path
+```file
 /var/run/postgresql/.s.PGSQL.5432
 ```
 
@@ -62,7 +62,7 @@ trdsql -driver postgres -dsn "host=/var/run/postgresql/ port=5432 dbname=trdsql_
 
 If you installed from source, the default is to create a Unix domain socket in /tmp/.
 
-```path
+```file
 /tmp/.s.PGSQL.5120
 ```
 
@@ -81,10 +81,7 @@ First, note that the character "\`" used for escaping column names becomes `"`.
 When specifying the PostgreSQL driver and performing analysis with the -a option, the SQL examples are also changed.
 
 ```console
-trdsql -driver postgres -dsn "host=localhost dbname=trdsql_test" -ih  -a sample.csv
-```
-
-```
+$ trdsql -driver postgres -dsn "host=localhost dbname=trdsql_test" -ih  -a sample.csv
 The table name is sample.csv.
 The file type is CSV.
 
@@ -125,7 +122,7 @@ For example, it is easy to output an actual table in MarkDown.
 trdsql -driver postgres -dsn "host=localhost dbname=noborus" -omd -ih "SELECT * FROM city LIMIT 10"
 ```
 
-```
+```md
 | city_id |        city        | country_id |     last_update      |
 |---------|--------------------|------------|----------------------|
 |       1 | A Corua (La Corua) |         87 | 2006-02-15T09:45:25Z |

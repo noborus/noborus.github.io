@@ -45,7 +45,7 @@ trdsql -driver postgres -dsn "dbname=trdsql_test" -ih \
 ```
 
 ```console
-trdsql -driver postgres -dsn "dbname=trdsql_test" -ih -oh\
+$ trdsql -driver postgres -dsn "dbname=trdsql_test" -ih -oh\
  "SELECT * FROM fruits"
  num,name
 1,Orange

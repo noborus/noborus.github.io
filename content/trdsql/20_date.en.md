@@ -48,7 +48,7 @@ If you want to process the time in a log file like the following,
 trdsql -iltsv "SELECT strftime('%Y-%m-%d %H:%M:%S', datetime(time)) FROM log.ltsv"
 ```
 
-```
+```ltsv
 2015-09-05 20:58:05
 2015-09-05 20:58:41
 2015-09-05 21:00:42
@@ -60,15 +60,13 @@ If the format is different from the above, you need to rewrite the string first 
 
 [PostgreSQL](https://www.postgresql.org/docs/current/functions-formatting.html) can process a wider range of formats for date and time processing.
 
-```console
-
 In many cases, simply casting to date or timestamp will interpret many well-known formats.
 
 ```console
 trdsql -driver postgres -dsn "dbname=trdsql_test" "SELECT to_char(CAST(time AS timestamp),'%Y-%m-%d %H:%M:%S') FROM log.ltsv"
 ```
 
-```
+```csv
 2015-09-05 20:58:05
 2015-09-05 20:58:41
 2015-09-05 21:00:42
@@ -84,7 +82,7 @@ For example, if you output the format above, executing to_timestamp with the sam
 trdsql -ih -oh  -driver postgres -dsn "dbname=trdsql_test" "SELECT to_timestamp(time,'%Y-%m-%d %H:%M:%S') FROM d.csv"
 ```
 
-```
+```csv
 2015-09-05T20:58:05+09:00
 2015-09-05T20:58:41+09:00
 2015-09-05T21:00:42+09:00
@@ -98,7 +96,7 @@ trdsql -ih -oh  -driver postgres -dsn "dbname=trdsql_test" "SELECT to_timestamp(
 trdsql -driver mysql -dsn "noborus:noborus@/trdsql_test" -oat "SELECT date(time),timestamp(time) FROM log.ltsv"
 ```
 
-```
+```at
 +------------+----------------------------+
 | date(time) |      timestamp(time)       |
 +------------+----------------------------+
@@ -115,7 +113,7 @@ To interpret the above year, month, day, hour, minute, and second, do the follow
 trdsql -ih -driver mysql -dsn "noborus:noborus@/trdsql_test" "SELECT STR_TO_DATE(time,'%Y-%m-%d %H:%M:%S') FROM d.csv"
 ```
 
-```console
+```csv
 2015-09-05 20:58:05
 2015-09-05 20:58:41
 2015-09-05 21:00:42
@@ -127,7 +125,7 @@ The DATE_FORMAT() function can be used to display the format from the date and t
 trdsql -ih -driver mysql -dsn "noborus:noborus@/trdsql_test" "SELECT DATE_FORMAT(STR_TO_DATE(time,'%Y-%m-%d %H:%M:%S'),'%Y/%m/%d') FROM d.csv"
 ```
 
-```console
+```csv
 2015/09/05
 2015/09/05
 2015/09/05

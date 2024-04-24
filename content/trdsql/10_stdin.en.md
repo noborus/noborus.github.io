@@ -50,10 +50,7 @@ In addition, there are many commands that output data that can be treated as tab
 For example, the ps command,
 
 ```console
-ps
-```
-
-```
+$ ps
   PID TTY          TIME CMD
  1157 pts/3    00:00:00 ps
 22590 pts/3    00:00:03 zsh
@@ -67,7 +64,7 @@ Therefore, you can output it in Ascii Table format as follows.
 ps|trdsql -ih -id " " -oat "SELECT \`PID\`, \`TTY\`, \`TIME\`, \`CMD\` FROM -"
 ```
 
-```
+```at
 +-------+-------+----------+--------+
 |  PID  |  TTY  |   TIME   |  CMD   |
 +-------+-------+----------+--------+
@@ -86,9 +83,7 @@ command | trdsql -ih -id " " -a -
 ```
 
 ```console
-ps|trdsql -id " " -ih -a -
-```
-```
+$ ps|trdsql -id " " -ih -a -
 The table name is -.
 The file type is CSV.
 

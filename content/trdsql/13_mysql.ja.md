@@ -60,7 +60,8 @@ trdsql -driver mysql -dsn "noborus:noborus@tcp(localhost:3306)/trdsql_test" "SEL
 ```console
 trdsql -driver mysql -dsn "noborus:noborus@/trdsql_test" -oat -ih "SELECT * FROM actor LIMIT 10"
 ```
-```
+
+```at
 +----------+------------+--------------+---------------------+
 | actor_id | first_name |  last_name   |     last_update     |
 +----------+------------+--------------+---------------------+

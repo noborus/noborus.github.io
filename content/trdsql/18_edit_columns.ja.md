@@ -21,7 +21,7 @@ SQLでは、文字列の書き換えが得意分野とは言えませんが、SQ
 「||」を使って、列名をつなげば、２つ以上の列を連結して一つの列になります。
 
 ```console
-trdsql -ih -oh \
+$ trdsql -ih -oh \
 "SELECT id,name||id AS name_id FROM header.csv"
 id,name_id
 1,Orange1
@@ -32,7 +32,7 @@ id,name_id
 列と列だけでなく、文字列をそのまま連結も可能です。SQLの文字列は「'」シングルクオートで括ります。
 
 ```console
-trdsql -ih -oh \
+$ trdsql -ih -oh \
 "SELECT id,name||'_'||id AS name_id FROM header.csv"
 id,name_id
 1,Orange_1
@@ -45,7 +45,7 @@ id,name_id
 またPostgreSQLとMySQLでは、複数の列をつなげたいときには concat(列名or文字列,列名or文字列,...) が使用できます。
 
 ```console
-trdsql -driver postgres -dsn "dbname=trdsql_test" -ih -oh \
+$ trdsql -driver postgres -dsn "dbname=trdsql_test" -ih -oh \
 "SELECT concat(id,name,'個') FROM header.csv"
 concat
 1Orange個
@@ -56,7 +56,7 @@ concat
 接続文字を付けてつなげたい場合は、concat_ws(接続文字,列名or文字列,列名or文字列,...)が使用できます。
 
 ```console
-trdsql -driver postgres -dsn "dbname=trdsql_test" -ih -oh \
+$ trdsql -driver postgres -dsn "dbname=trdsql_test" -ih -oh \
 "SELECT concat_ws(' ',id,name,'個') FROM header.csv"
 concat_ws
 1 Orange 個
@@ -69,7 +69,7 @@ concat_ws
 SQLite3では、concat,concat_wsはありませんが、printfが使用できますので、より柔軟に文字列を生成できます。
 
 ```console
-trdsql -ih -oh "SELECT printf('%s %s %s',id,name,'個') FROM header.csv"
+$ trdsql -ih -oh "SELECT printf('%s %s %s',id,name,'個') FROM header.csv"
 "printf(""%s %s %s"",id,name,'個')"
 1 Orange 個
 2 Melon 個
@@ -81,7 +81,7 @@ trdsql -ih -oh "SELECT printf('%s %s %s',id,name,'個') FROM header.csv"
 列の文字列を一部分だけ使用します。substr(列名or文字列、開始位置、文字の長さ)関数を使用します。
 
 ```console
-trdsql -ih -oh \
+$ trdsql -ih -oh \
 "SELECT id,substr(name,1,2) AS short FROM header.csv"
 id,short
 1,Or
@@ -94,7 +94,7 @@ id,short
 例えば、name列に含まれる'e'を'x'に置き換えます。
 
 ```console
-trdsql -ih -oh \
+$ trdsql -ih -oh \
 "SELECT id,replace(name,'e','x') AS name FROM header.csv"
 id,name
 1,Orangx
@@ -109,7 +109,7 @@ id,name
 すべて小文字へ
 
 ```console
-trdsql -ih -oh \
+$ trdsql -ih -oh \
 "SELECT id,lower(name) FROM header.csv"
 id,lower(name)
 1,orange
@@ -120,7 +120,7 @@ id,lower(name)
 すべて大文字へ
 
 ```console
-trdsql -ih -oh \
+$ trdsql -ih -oh \
 "SELECT id,upper(name) FROM header.csv"
 id,upper(name)
 1,ORANGE
@@ -138,7 +138,7 @@ PostgreSQL の regexp_replace(列名or文字列,正規表現パターン,置き�
 ()で囲ったパターンは、\1,\2...の参照文字として使用できます。
 
 ```console
-trdsql -driver postgres -dsn "dbname=trdsql_test" -ih -oh \
+$ trdsql -driver postgres -dsn "dbname=trdsql_test" -ih -oh \
 "SELECT id,regexp_replace(name, '(.)...','\1xxx') FROM header.csv"
 id,regexp_replace
 1,Oxxxge
@@ -149,7 +149,7 @@ id,regexp_replace
 MySQLでは、8.0からregexp_replace()が使用できるようです。ただし参照文字が $1,$2...となります。そしてコマンドの引数で$1を使用するとシェルに解釈されてしまうので、\でエスケープが必要になります。
 
 ```console
-trdsql -driver mysql -dsn "noborus:noborus@/trdsql_test" -ih -oh \
+$ trdsql -driver mysql -dsn "noborus:noborus@/trdsql_test" -ih -oh \
 "SELECT id,regexp_replace(name, '(.)...','\$1xxx') FROM header.csv"
 id,"regexp_replace(name, '(.)...','$1xxx')"
 1,Oxxxge

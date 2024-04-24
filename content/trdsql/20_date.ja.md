@@ -49,7 +49,7 @@ datetime(time)で日時として、認識させれば、strftime()で再フォ�
 trdsql -iltsv "SELECT strftime('%Y年%m月%d日%H時%M分%S秒',datetime(time)) FROM log.ltsv"
 ```
 
-```
+```csv
 2015年09月05日20時58分05秒
 2015年09月05日20時58分41秒
 2015年09月05日21時00分42秒
@@ -67,7 +67,7 @@ trdsql -iltsv "SELECT strftime('%Y年%m月%d日%H時%M分%S秒',datetime(time)) 
 trdsql -driver postgres -dsn "dbname=trdsql_test" "SELECT to_char(CAST(time AS timestamp),'YYYY年MM月dd日HH24時MI分ss秒') FROM log.ltsv"
 ```
 
-```
+```csv
 2015年09月06日05時58分05秒
 2015年09月06日05時58分41秒
 2015年09月06日06時00分42秒
@@ -83,7 +83,7 @@ trdsql -driver postgres -dsn "dbname=trdsql_test" "SELECT to_char(CAST(time AS t
 trdsql -ih -oh  -driver postgres -dsn "dbname=trdsql_test" "SELECT to_timestamp(\"日時\",'YYYY年MM月dd日HH24時MI分ss秒') FROM d.csv"
 ```
 
-```
+```csv
 2015-09-05T20:58:05+09:00
 2015-09-05T20:58:41+09:00
 2015-09-05T21:00:42+09:00
@@ -97,7 +97,7 @@ trdsql -ih -oh  -driver postgres -dsn "dbname=trdsql_test" "SELECT to_timestamp(
 trdsql -driver mysql -dsn "noborus:noborus@/trdsql_test" -oat "SELECT date(time),timestamp(time) FROM log.ltsv"
 ```
 
-```
+```at
 +------------+----------------------------+
 | date(time) |      timestamp(time)       |
 +------------+----------------------------+
@@ -114,7 +114,7 @@ trdsql -driver mysql -dsn "noborus:noborus@/trdsql_test" -oat "SELECT date(time)
 trdsql -ih -driver mysql -dsn "noborus:noborus@/trdsql_test" "SELECT STR_TO_DATE(\`日時\`,'%Y年%m月%d日%H時%i分%s秒') FROM d.csv"
 ```
 
-```console
+```csv
 2015-09-05 20:58:05
 2015-09-05 20:58:41
 2015-09-05 21:00:42
@@ -126,7 +126,7 @@ trdsql -ih -driver mysql -dsn "noborus:noborus@/trdsql_test" "SELECT STR_TO_DATE
 trdsql -ih -driver mysql -dsn "noborus:noborus@/trdsql_test" "SELECT DATE_FORMAT(STR_TO_DATE(\`日時\`,'%Y年%m月%d日%H時%i分%s秒'),'%Y/%m/%d') FROM d.csv"
 ```
 
-```console
+```csv
 2015/09/05
 2015/09/05
 2015/09/05

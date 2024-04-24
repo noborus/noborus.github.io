@@ -51,7 +51,7 @@ By default, LIKE is not case sensitive.
 trdsql -driver sqlite3 -dsn ":memory:" -ih "SELECT * FROM header.csv WHERE name LIKE '%a%'"
 ```
 
-```
+```csv
 1,Orange
 3,Apple
 ```
@@ -62,7 +62,7 @@ If you set _cslike=true, it is case sensitive.
 trdsql -driver sqlite3 -dsn ":memory:?_cslike=true" -ih "SELECT * FROM header.csv WHERE name LIKE '%a%'"
 ```
 
-```
+```csv
 1,Orange
 ```
 
@@ -77,10 +77,7 @@ trdsql -ih -driver sqlite3 -dsn "file:trdsql_test.db?mode=rwc" "CREATE TABLE use
 Writing is prohibited and an error occurs with `mode=ro`.
 
 ```console
-trdsql -ih -driver sqlite3 -dsn "file:trdsql_testro.db?mode=ro" "CREATE TABLE users AS SELECT CAST(id as int), CAST(name AS varchar(20)) FROM user.csv "
-```
-
-```
+$ trdsql -ih -driver sqlite3 -dsn "file:trdsql_testro.db?mode=ro" "CREATE TABLE users AS SELECT CAST(id as int), CAST(name AS varchar(20)) FROM user.csv "
 2020/01/08 14:02:54 ERROR(BEGIN):unable to open database file: no such file or directory
 ```
 

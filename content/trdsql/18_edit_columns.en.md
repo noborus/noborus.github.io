@@ -73,7 +73,7 @@ printf
 Use only a part of the column string. Use the substr(column name or string, start position, length of characters) function.
 
 ```console
-trdsql -ih -oh \
+$ trdsql -ih -oh \
 "SELECT id,substr(name,1,2) AS short FROM header.csv"
 id,short
 1,Or
@@ -86,7 +86,7 @@ id,short
 For example, replace 'e' in the name column with 'x'.
 
 ```console
-trdsql -ih -oh \
+$ trdsql -ih -oh \
 "SELECT id,replace(name,'e','x') AS name FROM header.csv"
 id,name
 1,Orangx
@@ -101,7 +101,7 @@ There are also functions for converting to uppercase and lowercase.
 All to lowercase
 
 ```console
-trdsql -ih -oh \
+$ trdsql -ih -oh \
 "SELECT id,lower(name) FROM header.csv"
 id,lower(name)
 1,orange
@@ -112,7 +112,7 @@ id,lower(name)
 All to uppercase
 
 ```console
-trdsql -ih -oh \
+$ trdsql -ih -oh \
 "SELECT id,upper(name) FROM header.csv"
 id,upper(name)
 1,ORANGE
@@ -130,7 +130,7 @@ Use PostgreSQL's regexp_replace(column name or string, regular expression patter
 Patterns enclosed in () can be used as reference characters \1, \2, etc.
 
 ```console
-trdsql -driver postgres -dsn "dbname=trdsql_test" -ih -oh \
+$ trdsql -driver postgres -dsn "dbname=trdsql_test" -ih -oh \
 "SELECT id,regexp_replace(name, '(.)...','\1xxx') FROM header.csv"
 id,regexp_replace
 1,Oxxxge
@@ -141,7 +141,7 @@ id,regexp_replace
 MySQL seems to be able to use regexp_replace() from 8.0. However, the reference characters are $1, $2, etc. And if you use $1 in the command arguments, it will be interpreted by the shell, so you need to escape it with \.
 
 ```console
-trdsql -driver mysql -dsn "noborus:noborus@/trdsql_test" -ih -oh \
+$ trdsql -driver mysql -dsn "noborus:noborus@/trdsql_test" -ih -oh \
 "SELECT id,regexp_replace(name, '(.)...','\$1xxx') FROM header.csv"
 id,"regexp_replace(name, '(.)...','$1xxx')"
 1,Oxxxge

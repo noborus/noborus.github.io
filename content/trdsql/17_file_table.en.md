@@ -19,7 +19,7 @@ By connecting to a database where a table already exists, you can also join file
 For example, if there is a table called fruits in the database, you can join it with the previous abc.csv.
 
 ```console
-trdsql -driver postgres -dsn "dbname=trdsql_test" \
+$ trdsql -driver postgres -dsn "dbname=trdsql_test" \
      "SELECT a.c1, a.c2, f.name FROM abc.csv AS a "\
   "LEFT JOIN fruits AS f ON (CAST(a.c1 AS int) = f.id)"
 1,AAA,Orange
@@ -47,7 +47,7 @@ id,name
 ```
 
 ```console
-trdsql -driver postgres -dsn "dbname=trdsql_test" \
+$ trdsql -driver postgres -dsn "dbname=trdsql_test" \
      "SELECT u.id, u.name FROM users AS u "\
  "INNER JOIN list.csv AS l ON (u.name = l.c1)"
 3,tarou
@@ -56,7 +56,7 @@ trdsql -driver postgres -dsn "dbname=trdsql_test" \
 Conversely, it is also possible to add information from a database table to a CSV file.
 
 ```console
-trdsql -driver postgres -dsn "dbname=trdsql_test" \
+$ trdsql -driver postgres -dsn "dbname=trdsql_test" \
      "SELECT u.id, u.name FROM list.csv AS l "\
   "LEFT JOIN users AS u ON (l.c1 = u.name)" \
        "ORDER BY u.id"

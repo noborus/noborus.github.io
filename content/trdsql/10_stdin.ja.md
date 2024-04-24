@@ -41,7 +41,6 @@ nkf -w sjis.csv|trdsql -icsv "SELECT * FROM -"
 
 大きなファイルを処理する前に先頭の数行のみを処理して試してみたりできます。
 
-
 ```console
 head -100 big.csv|trdsql -icsv "SELECT * FROM -"
 ```
@@ -51,9 +50,7 @@ head -100 big.csv|trdsql -icsv "SELECT * FROM -"
 例えば psコマンドでは、
 
 ```console
-ps
-```
-```
+$ ps
   PID TTY          TIME CMD
  1157 pts/3    00:00:00 ps
 22590 pts/3    00:00:03 zsh
@@ -66,7 +63,8 @@ ps
 ```console
 ps|trdsql -ih -id " " -oat "SELECT \`PID\`, \`TTY\`, \`TIME\`, \`CMD\` FROM -"
 ```
-```
+
+```at
 +-------+-------+----------+--------+
 |  PID  |  TTY  |   TIME   |  CMD   |
 +-------+-------+----------+--------+
@@ -85,9 +83,7 @@ ps|trdsql -ih -id " " -oat "SELECT \`PID\`, \`TTY\`, \`TIME\`, \`CMD\` FROM -"
 ```
 
 ```console
-ps|trdsql -id " " -ih -a -
-```
-```
+$ ps|trdsql -id " " -ih -a -
 The table name is -.
 The file type is CSV.
 

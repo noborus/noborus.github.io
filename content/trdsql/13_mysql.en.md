@@ -66,7 +66,7 @@ As with the previous PostgreSQL, you can execute SQL on MySQL tables and output 
 trdsql -driver mysql -dsn "noborus:noborus@/trdsql_test" -oat -ih "SELECT * FROM actor LIMIT 10"
 ```
 
-```
+```at
 +----------+------------+--------------+---------------------+
 | actor_id | first_name |  last_name   |     last_update     |
 +----------+------------+--------------+---------------------+

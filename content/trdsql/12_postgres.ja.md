@@ -45,7 +45,6 @@ dsnの項目には以下が指定できます。デフォルトの場合は省�
 
 例えば、ローカルホストのportが5433でデータベース名がtrdsql_testに接続するには以下のようにします。
 
-
 ```console
 trdsql -driver postgres -dsn "host=localhost port=5433 dbname=trdsql_test" "SELECT 1"
 ```
@@ -56,31 +55,27 @@ UNIXドメインソケットへ接続もできます。
 
 パッケージ等でPostgreSQLをインストールすると以下のような場所にUNIXドメインソケットファイルが作成されています。
 
-```path
+```file
 /var/run/postgresql/.s.PGSQL.5432
 ```
 
 上記の場合、hostに`/var/run/postgresql/`を指定します。「`/`」から始まるとUnixドメインソケットとみなされます。portは`.s.PGSQL.`の後にある「5432」を指定します。
 
 ```console
-trdsql -driver postgres -dsn "host=/var/run/postgresql/ port=5432 dbname=trdsql_test" "SELECT VERSION()"
-```
-```
+$ trdsql -driver postgres -dsn "host=/var/run/postgresql/ port=5432 dbname=trdsql_test" "SELECT VERSION()"
 "PostgreSQL 10.10 (Ubuntu 10.10-0ubuntu0.18.04.1) on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 7.4.0-1ubuntu1~18.04.1) 7.4.0, 64-bit"
 ```
 
 ソースからインストールした場合のデフォルトは、/tmp/にUnixドメインソケットが作成されています。
 
-```path
+```file
 /tmp/.s.PGSQL.5120
 ```
 
 というファイルがあれば、以下のようにして接続します。
 
 ```console
-trdsql -driver postgres -dsn "host=/tmp/ port=5120 dbname=postgres" "SELECT VERSION()"
-```
-```
+$ trdsql -driver postgres -dsn "host=/tmp/ port=5120 dbname=postgres" "SELECT VERSION()"
 "PostgreSQL 12.0 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 7.4.0-1ubuntu1~18.04.1) 7.4.0, 64-bit"
 ```
 
@@ -93,9 +88,7 @@ trdsql -driver postgres -dsn "host=/tmp/ port=5120 dbname=postgres" "SELECT VERS
 PostgreSQLドライバを指定して、-aオプションによる解析をおこなうとSQLの例も変更されています。
 
 ```console
-trdsql -driver postgres -dsn "host=localhost dbname=trdsql_test" -ih  -a sample.csv
-```
-```
+$ trdsql -driver postgres -dsn "host=localhost dbname=trdsql_test" -ih  -a sample.csv
 The table name is sample.csv.
 The file type is CSV.
 
@@ -135,7 +128,8 @@ trdsqlは対象のファイルが無くてもSQLの実行するようになっ�
 ```console
 trdsql -driver postgres -dsn "host=localhost dbname=noborus" -omd -ih "SELECT * FROM city LIMIT 10"
 ```
-```
+
+```md
 | city_id |        city        | country_id |     last_update      |
 |---------|--------------------|------------|----------------------|
 |       1 | A Corua (La Corua) |         87 | 2006-02-15T09:45:25Z |

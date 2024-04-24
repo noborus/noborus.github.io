@@ -43,7 +43,7 @@ Window functions perform calculations by specifying a range or order by adding a
 If you specify an empty `OVER()` clause, all rows will be targeted.
 
 ```console
-trdsql -ih -omd \
+$ trdsql -ih -omd \
 "SELECT id,name,score, SUM(CAST(score AS int)) OVER () FROM score.csv"
 | id | name  | score | sum  |
 |----|-------|-------|------|
@@ -63,7 +63,7 @@ You can calculate the average using window functions and the target row.
 When you display the difference, it will look like this.
 
 ```console
-trdsql -ih -omd \
+$ trdsql -ih -omd \
 "SELECT id,name,score," \
         "score - round(AVG(score) OVER()) AS Difference from average"\
  " FROM score.csv"
@@ -86,7 +86,7 @@ The range of rows can be specified by columns similar to those specified by "GRO
 Let's output the changes by class instead of the whole.
 
 ```console
-trdsql -ih -omd \
+$ trdsql -ih -omd \
 "SELECT id,class,name,score," \
  "score - ROUND(avg(score) OVER(PARTITION BY class)) "\
   "AS Difference from average" \
@@ -106,7 +106,7 @@ In class A, the difference from the average of 195 is displayed, and in class B,
 You can also display the difference from the overall average by simply listing it.
 
 ```console
-trdsql -ih -omd \
+$ trdsql -ih -omd \
 "SELECT id,class,name,score," \
   "score - ROUND(avg(score) OVER(PARTITION BY class)) "\
   "AS Difference from average, " \
@@ -130,7 +130,7 @@ name:orange	num:2
 The ROW_NUMBER() function is a window function unique to window functions that is not an aggregation function. When used with OVER(), it is used for the entire range without specifying an order, as shown below.
 
 ```console
-trdsql "SELECT ROW_NUMBER() OVER(), name,num " \
+$ trdsql "SELECT ROW_NUMBER() OVER(), name,num " \
        "FROM fruits.ltsv"
 1,grape,10
 2,apple,3
@@ -141,7 +141,7 @@ trdsql "SELECT ROW_NUMBER() OVER(), name,num " \
 To specify the order, use "ORDER BY".
 
 ```console
-trdsql "SELECT ROW_NUMBER() OVER(ORDER BY CAST(num AS int))," \
+$ trdsql "SELECT ROW_NUMBER() OVER(ORDER BY CAST(num AS int))," \
        " name,num FROM fruits.ltsv"
 1,orange,2
 2,apple,3

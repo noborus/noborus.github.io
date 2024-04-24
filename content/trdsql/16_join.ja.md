@@ -69,7 +69,7 @@ id:2	unit:箱
 先程のCSVのJOINの結果に更にLTSVをJOINします。
 
 ```console
- trdsql -oat \
+$ trdsql -oat \
        "SELECT a.c1, a.c2, p.c2, unit" \
         " FROM abc.csv AS a" \
     "LEFT JOIN price.csv AS p" \
