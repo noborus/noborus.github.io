@@ -172,17 +172,17 @@ trdsql -icsv -ih -ovf "SELECT * FROM header.csv"
 ### Used format
 
 | Format | input | Output | Note |
-|: ----- |: ----: |: ---: |: ------- |
-| CSV | ○ | ○ | TSV etc. correspond to options |
-| LTSV | ○ | ○ | [Ltsv.org] (http://ltsv.org) |
-| JSON | ○ | ○ | [www.json.org] (www.json.org) |
-| JSONL | ○ | ○ | Input is possible with JSON |
-| YAML | ○ | ○ | [yaml.org] (http://yaml.org) |
-| TBLN | ○ | ○ | [tbln.dev] (https://tbln.dev) |
-| RAW | × | ○ | Output as it is (do not process escape) |
-| MD | × | ○ | Markdown table |
-| At | × | ○ | ASCII table |
-| VF | × | ○ | Vertical format |
+|:-----|:----:|:---:|:-------|
+| CSV | OK | OK | TSV etc. correspond to options |
+| LTSV | OK | OK | [Ltsv.org] (http://ltsv.org) |
+| JSON | OK | OK | [www.json.org] (www.json.org) |
+| JSONL | OK | OK | Input is possible with JSON |
+| YAML | OK | OK | [yaml.org] (http://yaml.org) |
+| TBLN | OK | OK | [tbln.dev] (https://tbln.dev) |
+| RAW | NG | OK | Output as it is (do not process escape) |
+| MD | NG | OK | Markdown table |
+| At | NG| OK | ASCII table |
+| VF | NG | OK | Vertical format |
 
 #### CSV
 
