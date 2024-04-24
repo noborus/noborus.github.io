@@ -56,7 +56,7 @@ trdsql "SELECT req FROM log.ltsv"|chart
 [ログ集計](/trdsql/08_log)のリクエストが多い順をTOP 20に変えて出力すると以下のようになります。
 
 ```console
-trdsql -od "\t" \
+$ trdsql -od "\t" \
   "SELECT req, count(req) as count " \
     "FROM log.ltsv " \
 "GROUP BY req " \

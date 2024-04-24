@@ -31,7 +31,7 @@ For example, when compressed with zstd for a file of 145MB as follows, it became
 The result with time is as follows.
 
 ```console
-/usr/bin/time -p trdsql -ih "SELECT count(*) FROM worldcitiespop.csv"
+$ /usr/bin/time -p trdsql -ih "SELECT count(*) FROM worldcitiespop.csv"
 real 11.47
 user 11.76
 sys 0.70
@@ -40,7 +40,7 @@ sys 0.70
 zstd compression
 
 ```console
-/usr/bin/time -p trdsql -ih "SELECT count(*) FROM worldcitiespop.csv.zst"
+$ /usr/bin/time -p trdsql -ih "SELECT count(*) FROM worldcitiespop.csv.zst"
 real 9.76
 user 11.00
 sys 0.37
@@ -58,14 +58,14 @@ When 145MB is converted to LTSV, it becomes a 330MB file, but when compressed, C
 The processing time is as follows.
 
 ```console
-/usr/bin/time -p trdsql "SELECT count(*) FROM worldcitiespop.ltsv
+$ /usr/bin/time -p trdsql "SELECT count(*) FROM worldcitiespop.ltsv
 real 16.72
 user 17.41
 sys 1.05
 ```
 
 ```console
-/usr/bin/time -p trdsql "SELECT count(*) FROM worldcitiespop.ltsv.zst"
+$ /usr/bin/time -p trdsql "SELECT count(*) FROM worldcitiespop.ltsv.zst"
 3173958
 real 13.93
 user 16.02

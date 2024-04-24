@@ -47,7 +47,7 @@ en: By specifying `ROLLUP` in `GROUP BY`, you can output both.
 In PostgreSQL, by using `GROUP BY ROLLUP(column name)` instead of `GROUP BY column name`, you can output the total aggregation results in addition to the normal GROUP BY.
 
 ```console
-trdsql -driver "postgres" -dsn "dbname=trdsql_test" -oat -ih \
+$ trdsql -driver "postgres" -dsn "dbname=trdsql_test" -oat -ih \
 "SELECT class, SUM(score::int) AS score FROM score.csv GROUP BY ROLLUP(class) ORDER BY class"
 +-------+------+
 | class | sum  |
@@ -64,7 +64,7 @@ MySQLでは、`GROUP BY 列名`の後に `WITH ROLLUP`を付けると、通常�
 en: In MySQL, by adding `WITH ROLLUP` after `GROUP BY column name`, you can output the total aggregation results in addition to the normal GROUP BY.
 
 ```console
-trdsql -driver mysql -oat -ih \
+$ trdsql -driver mysql -oat -ih \
 "SELECT class, SUM(CAST(score AS SIGNED)) AS score FROM score.csv GROUP BY class WITH ROLLUP "
 +-------+-------+
 | class | score |
@@ -85,7 +85,7 @@ If you want to add subtotals for class and the total for the entire file to the 
 By grouping with `GROUPING SETS` for id, name, and class (i.e., grouped by id, but also including name and class in the output), by class, and by total (no specification), you can output subtotals and totals as shown below.
 
 ```console
-trdsql -driver "postgres" -dsn "dbname=trdsql_test" -oat -ih \
+$ trdsql -driver "postgres" -dsn "dbname=trdsql_test" -oat -ih \
 "SELECT id, name,class, SUM(score::int) AS score " \
  " FROM score.csv GROUP BY GROUPING SETS((class,id,name),(class),()) "\
  " ORDER BY class"
@@ -107,7 +107,7 @@ trdsql -driver "postgres" -dsn "dbname=trdsql_test" -oat -ih \
 The above GROUPING SETS can be simplified with `ROLLUP(class,(id,name))`.
 
 ```console
-trdsql -driver "postgres" -dsn "dbname=trdsql_test" -oat -ih \
+$ trdsql -driver "postgres" -dsn "dbname=trdsql_test" -oat -ih \
 "SELECT id,name,class, SUM(score::int) AS score " \
  " FROM score.csv GROUP BY ROLLUP(class,(id,name)) " \
  " ORDER BY class"
@@ -121,7 +121,7 @@ If you group by id and name together, it has the same meaning as GROUPING SETS.
 In MySQL, there is no `GROUPING SETS`, so you can output the results with `WITH ROLLUP` for each class and id, but you cannot output the name.
 
 ```console
-trdsql -driver mysql -oat -ih \
+$ trdsql -driver mysql -oat -ih \
 "SELECT id,class, SUM(CAST(score AS SIGNED)) AS score " \
  " FROM score.csv GROUP BY class,id WITH ROLLUP"
 +----+-------+-------+
@@ -143,7 +143,7 @@ There may be a way to aggregate the name.
 You can aggregate by concatenating strings with `GROUP_CONCAT()`.
 
 ```console
-trdsql -driver mysql -oat -ih \
+$ trdsql -driver mysql -oat -ih \
 "SELECT id,GROUP_CONCAT(name) as name,class, SUM(CAST(score AS SIGNED)) AS score " \
 " FROM score.csv GROUP BY class,id WITH ROLLUP"
 +----+--------------------------------+-------+-------+

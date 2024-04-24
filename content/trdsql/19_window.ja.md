@@ -47,7 +47,7 @@ Window関数は集約関数の関数に`OVER ()`句を付けることにより�
 `OVER()`句を空で指定すると全行が対象となります。
 
 ```console
-trdsql -ih -omd \
+$ trdsql -ih -omd \
 "SELECT id,name,score, SUM(CAST(score AS int)) OVER () FROM score.csv"
 | id | name  | score | sum  |
 |----|-------|-------|------|

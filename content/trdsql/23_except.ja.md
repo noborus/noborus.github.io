@@ -61,7 +61,7 @@ trdsql "SELECT * FROM new.csv EXCEPT SELECT * FROM old.csv "
 CSVファイル側をキャストして型を合わせています。
 
 ```console
-trdsql -driver postgres -dsn "dbname=trdsql_test" -ih -oh \
+$ trdsql -driver postgres -dsn "dbname=trdsql_test" -ih -oh \
 "SELECT id::int,name FROM fruits.csv " \
 "EXCEPT " \
 "SELECT id,name FROM fruits "
@@ -76,6 +76,7 @@ id,name
 また、EXCEPTとは逆に共通の行を出力させたいときには、`INTERSECT` を使用します。
 
 ```console
+$ trdsql -driver postgres -dsn "dbname=trdsql_test" -ih -oh \
 "SELECT id::int,name FROM fruits.csv " \
 "INTERSECT " \
 "SELECT id,name FROM fruits"

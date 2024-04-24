@@ -20,7 +20,7 @@ With this option, you can interpret output like `ps` more accurately.
 ps | trdsql -omd -iwidth "SELECT * FROM - "
 ```
 
-```
+```md
 |  PID   |  TTY  |   TIME   |  CMD   |
 |--------|-------|----------|--------|
 | 237958 | pts/2 | 00:00:02 | zsh    |

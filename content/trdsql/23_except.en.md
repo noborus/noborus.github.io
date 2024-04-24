@@ -62,7 +62,7 @@ For example, if you want to compare a table imported by [trdsql DB import] (/trd
 The CSV file side is cast to match the type.
 
 ```console
-trdsql -driver postgres -dsn "dbname=trdsql_test" -ih -oh \
+$ trdsql -driver postgres -dsn "dbname=trdsql_test" -ih -oh \
 "SELECT id::int,name FROM fruits.csv " \
 "EXCEPT " \
 "SELECT id,name FROM fruits "
@@ -77,6 +77,7 @@ If the tables on the database side are updated and new, it would be better to do
 If you want to output common rows as opposed to EXCEPT, use ``INTERSECT``.
 
 ```console
+$ trdsql -driver postgres -dsn "dbname=trdsql_test" -ih -oh \
 "SELECT id::int,name FROM fruits.csv " \
 "INTERSECT " \
 "SELECT id,name FROM fruits"

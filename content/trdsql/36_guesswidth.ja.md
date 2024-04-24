@@ -20,7 +20,7 @@ trdsqlは[標準入力](/trdsql/10_stdin/index.html)からデータを受け取�
 ps | trdsql -omd -iwidth "SELECT * FROM - "
 ```
 
-```
+```md
 |  PID   |  TTY  |   TIME   |  CMD   |
 |--------|-------|----------|--------|
 | 237958 | pts/2 | 00:00:02 | zsh    |

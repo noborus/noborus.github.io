@@ -31,7 +31,7 @@ categories = [
 timeを付けての結果は以下のようになりました。
 
 ```console
-/usr/bin/time -p trdsql -ih "SELECT count(*) FROM worldcitiespop.csv"
+$ /usr/bin/time -p trdsql -ih "SELECT count(*) FROM worldcitiespop.csv"
 real 11.47
 user 11.76
 sys 0.70
@@ -40,7 +40,7 @@ sys 0.70
 zstd圧縮
 
 ```console
-/usr/bin/time -p trdsql -ih "SELECT count(*) FROM worldcitiespop.csv.zst"
+$ /usr/bin/time -p trdsql -ih "SELECT count(*) FROM worldcitiespop.csv.zst"
 real 9.76
 user 11.00
 sys 0.37
@@ -58,14 +58,14 @@ LTSVファイルでは、同じ内容のCSVファイルよりもファイルサ�
 処理時間は以下のようになりました。
 
 ```console
-/usr/bin/time -p trdsql "SELECT count(*) FROM worldcitiespop.ltsv
+$ /usr/bin/time -p trdsql "SELECT count(*) FROM worldcitiespop.ltsv
 real 16.72
 user 17.41
 sys 1.05
 ```
 
 ```console
-/usr/bin/time -p trdsql "SELECT count(*) FROM worldcitiespop.ltsv.zst"
+$ /usr/bin/time -p trdsql "SELECT count(*) FROM worldcitiespop.ltsv.zst"
 3173958
 real 13.93
 user 16.02

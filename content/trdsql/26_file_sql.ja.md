@@ -44,7 +44,7 @@ id,name
 trdsql -ih -oat -q test.sql
 ```
 
-```
+```ascii table
 +----+-------+
 | id | name  |
 +----+-------+

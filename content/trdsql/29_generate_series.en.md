@@ -22,7 +22,7 @@ This function works similarly to the Unix `seq` command. `generate_series()` als
 The usage is simple. Specify the "start value", "end value", and "increment value (optional)" and execute.
 
 ```console
-trdsql -driver postgres -dsn "dbname=trdsql_test" "SELECT * FROM generate_series(1,10)"
+$ trdsql -driver postgres -dsn "dbname=trdsql_test" "SELECT * FROM generate_series(1,10)"
 1
 2
 3
@@ -41,7 +41,7 @@ trdsql -driver postgres -dsn "dbname=trdsql_test" "SELECT * FROM generate_series
 Of course, trdsql can easily incorporate input from external sources, so you can also use the `seq` command as a substitute.
 
 ```console
-seq 1 10|trdsql "SELECT * FROM -"
+$ seq 1 10|trdsql "SELECT * FROM -"
 1
 2
 3
@@ -61,7 +61,7 @@ The order of arguments for the `seq` command is "start value", "increment value 
 `generate_series()` can handle timestamps, so it's a bit tricky to output the 2020 calendar in Japanese, but it looks like this.
 
 ```console
-trdsql -driver postgres -dsn "dbname=trdsql_test" \
+$ trdsql -driver postgres -dsn "dbname=trdsql_test" \
 "SET LC_TIME='C'; " \
 "SELECT day " \
 "  FROM generate_series('2024-01-1'::timestamp,'2024-12-31','1 day') as day"
@@ -81,7 +81,7 @@ There are times when you want a certain amount of dummy data. If you want comple
 However, if you just want to increase the number of existing data, you can create it by CROSS JOINing `generate_series()` or the `seq` command.
 
 ```console
- trdsql  -driver postgres -dsn "dbname=trdsql_test" -ih -oh \
+$ trdsql  -driver postgres -dsn "dbname=trdsql_test" -ih -oh \
  "SELECT ROW_NUMBER() OVER() AS id, name " \
  "  FROM header.csv CROSS JOIN generate_series(1,3) AS s"
 id,name
@@ -101,7 +101,7 @@ Using the seq command, it looks like this.
 (When processing a file with a header with -ih, the first line of `seq` is interpreted as a header, so starting from 0 will result in an extra line being output).
 
 ```console
-seq 0 3|trdsql -driver sqlite3 -ih -oh \
+$ seq 0 3|trdsql -driver sqlite3 -ih -oh \
 "SELECT ROW_NUMBER() OVER() AS id, name " \
  " FROM - CROSS JOIN header.csv"
 id,name

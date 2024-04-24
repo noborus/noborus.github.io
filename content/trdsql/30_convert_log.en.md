@@ -79,7 +79,7 @@ flog -f apache_combined -t log -o access.combined.log
 ```
 
 ```console
-trdsql -id " " -oltsv \
+$ trdsql -id " " -oltsv \
 "SELECT c1 AS host, c2 AS ident, c3 AS user ,c4||' '||c5 AS time, c6 AS req , c7 AS status, c8 AS size, c9 AS refer, c10 AS ua "\
  " FROM access.combined.log"
 ```

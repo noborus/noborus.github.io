@@ -35,7 +35,7 @@ bc
 When you `CROSS JOIN` two CSV files, a 3x3 output is possible for all combinations.
 
 ```console
-trdsql "SELECT * FROM a.csv CROSS JOIN b.csv"
+$ trdsql "SELECT * FROM a.csv CROSS JOIN b.csv"
 aa,ba
 aa,bb
 aa,bc
@@ -65,7 +65,7 @@ Swallows
 To simply `CROSS JOIN`, it looks like this (you can't write JOIN conditions because there are none).
 
 ```console
-trdsql -ih \
+$ trdsql -ih \
 "SELECT h.team,a.team "\
 "  FROM cleague.csv AS h "\
 " CROSS JOIN cleague.csv AS a"
@@ -74,7 +74,7 @@ trdsql -ih \
 You can't play against your own team, so exclude the same team with `WHERE h.team != a.team`.
 
 ```console
-trdsql -ih -omd \
+$ trdsql -ih -omd \
 "SELECT h.team AS home,a.team AS aware " \
 "  FROM cleague.csv AS h CROSS JOIN cleague.csv AS a "\
 " WHERE h.team != a.team "

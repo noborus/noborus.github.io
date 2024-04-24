@@ -56,7 +56,7 @@ In other graphs, the first column is the x item name, and the second column is g
 When you change the requests with the most [log aggregation](/trdsql/08_log) to the TOP 20 and output it, it will look like this.
 
 ```console
-trdsql -od "\t" \
+$ trdsql -od "\t" \
   "SELECT req, count(req) as count " \
     "FROM log.ltsv " \
 "GROUP BY req " \

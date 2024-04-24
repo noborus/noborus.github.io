@@ -33,7 +33,7 @@ flog -f apache_common -t log -o access.common.log
 
 内容は、以下のようになります。
 
-```
+```log
 92.129.44.198 - metz3917 [30/Dec/2019:17:02:27 +0900] "DELETE /infomediaries/e-markets HTTP/2.0" 500 24843
 246.54.243.199 - - [30/Dec/2019:17:02:27 +0900] "POST /24%2f7 HTTP/1.1" 302 8879
 9.172.27.159 - - [30/Dec/2019:17:02:27 +0900] "DELETE /convergence/best-of-breed HTTP/1.1" 203 3252
@@ -43,7 +43,7 @@ flog -f apache_common -t log -o access.common.log
 
 これを `trdsql`の -id " " によりスペース区切りで解析すると c4とc5でタイムが分かれてしまいますが、それ以外は問題無さそうです。
 
-```
+```ascii table
 +---------------+----+----------+-----------------------+--------+--------------------------------+-----+-------+
 |      c1       | c2 |    c3    |          c4           |   c5   |               c6               | c7  |  c8   |
 +---------------+----+----------+-----------------------+--------+--------------------------------+-----+-------+
@@ -56,7 +56,7 @@ flog -f apache_common -t log -o access.common.log
 適切なラベルを付けるようにしてLTSVで出力します。
 
 ```console
-trdsql -id " " -oltsv \
+$ trdsql -id " " -oltsv \
 "SELECT c1 AS host, c2 AS ident, c3 as user, c4||' '||c5 AS time, c6 AS req, c7 AS status, c8 as size "\ 
 "  FROM access.common.log"
 ```
@@ -80,7 +80,7 @@ flog -f apache_combined -t log -o access.combined.log
 ```
 
 ```console
-trdsql -id " " -oltsv \
+$ trdsql -id " " -oltsv \
 "SELECT c1 AS host, c2 AS ident, c3 AS user ,c4||' '||c5 AS time, c6 AS req , c7 AS status, c8 AS size, c9 AS refer, c10 AS ua "\
  " FROM access.combined.log"
 ```
