@@ -34,7 +34,6 @@ CSV(-icsv)からLTSV(-oltsv)への変換は以下のようにします。
 trdsql -icsv -oltsv "SELECT * FROM ファイル名"
 ```
 
-
 ### CSV header
 
 CSVファイルはヘッダーに列名がついている場合 -ih でヘッダーを解釈して列名として使用できます。
@@ -143,7 +142,8 @@ trdsql -ijson -ocsv "SELECT * FROM test.json"
 ```console
 trdsql -icsv -ih -ovf "SELECT * FROM header.csv"
 ```
-```
+
+```md
 | id |  name  |
 |----|--------|
 |  1 | Orange |
@@ -177,7 +177,7 @@ trdsql -icsv -ih -ovf "SELECT * FROM header.csv"
 | LTSV | ○ | ○ |[ltsv.org](http://ltsv.org) |
 | JSON | ○ | ○ |[www.json.org](www.json.org)|
 | JSONL | ○ | ○ |入力はJSONで可能|
-| YAML | ○ | ○ | [yaml.org] (http://yaml.org) |
+| YAML | ○ | ○ | [yaml.org](http://yaml.org) |
 | TBLN | ○ | ○ |[tbln.dev](https://tbln.dev)|
 | RAW | × | ○ | そのまま出力（エスケープ処理をしない）|
 | MD | × | ○ | MarkDownテーブル |

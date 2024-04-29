@@ -127,4 +127,4 @@ trdsql -driver postgres -dsn "dbname=trdsql_test" "SELECT color,category,jsonb_p
 
 Database JSON functions have many more functions and can edit objects in JSON. However, trdsql treats JSON columns as strings when outputting JSON, so it is not well suited for output with -ojson.
 
-In that case, it is better to make effective use of the JSON output on the database side to output as intended. 
+In that case, it is better to make effective use of the JSON output on the database side to output as intended.

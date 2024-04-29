@@ -57,7 +57,8 @@ sample.json
 ```console
 trdsql -oat "SELECT color,category,code FROM sample.json"
 ```
-```
+
+```at
 +-------+----------+-----------------------------------+
 | color | category |               code                |
 +-------+----------+-----------------------------------+
@@ -77,7 +78,8 @@ codeの中の"hex"のみを表示するには以下のようにします。
 ```console
 trdsql -ijson -oat "SELECT color,category,json_extract(code,'\$.hex') AS hex FROM sample.json"
 ```
-```
+
+```at
 +-------+----------+------+
 | color | category | hex  |
 +-------+----------+------+
@@ -95,7 +97,8 @@ PostgreSQLで取得する場合は、jsonやjsonbにキャストしてから関�
 ```console
 trdsql -driver postgres -dsn "dbname=trdsql_test" "SELECT color,category,json_extract_path_text(code::json,'hex') AS hex FROM sample.json"
 ```
-```
+
+```at
 +-------+----------+------+
 | color | category | hex  |
 +-------+----------+------+
@@ -110,7 +113,8 @@ trdsql -driver postgres -dsn "dbname=trdsql_test" "SELECT color,category,json_ex
 ```console
 trdsql -driver postgres -dsn "dbname=trdsql_test" "SELECT color,category,jsonb_path_query(code::jsonb,'\$.hex')::text AS hex FROM sample.json"
 ```
-```
+
+```at
 +-------+----------+--------+
 | color | category |  hex   |
 +-------+----------+--------+

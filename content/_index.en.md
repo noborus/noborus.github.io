@@ -4,7 +4,7 @@ archetype: "home"
 weight: 1
 ---
 
-## <i class="fas fa-hammer"></i> Products
+## [<i class="fas fa-hammer"></i> Products](https://github.com/noborus/)
 
 ---
 

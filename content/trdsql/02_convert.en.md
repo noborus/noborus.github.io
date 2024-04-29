@@ -174,11 +174,11 @@ trdsql -icsv -ih -ovf "SELECT * FROM header.csv"
 | Format | input | Output | Note |
 |:-----|:----:|:---:|:-------|
 | CSV | OK | OK | TSV etc. correspond to options |
-| LTSV | OK | OK | [Ltsv.org] (http://ltsv.org) |
-| JSON | OK | OK | [www.json.org] (www.json.org) |
+| LTSV | OK | OK | [Ltsv.org](http://ltsv.org) |
+| JSON | OK | OK | [www.json.org](www.json.org) |
 | JSONL | OK | OK | Input is possible with JSON |
-| YAML | OK | OK | [yaml.org] (http://yaml.org) |
-| TBLN | OK | OK | [tbln.dev] (https://tbln.dev) |
+| YAML | OK | OK | [yaml.org](http://yaml.org) |
+| TBLN | OK | OK | [tbln.dev](https://tbln.dev) |
 | RAW | NG | OK | Output as it is (do not process escape) |
 | MD | NG | OK | Markdown table |
 | At | NG| OK | ASCII table |

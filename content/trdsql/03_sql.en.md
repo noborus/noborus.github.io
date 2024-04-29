@@ -108,7 +108,7 @@ It's too easy to get angry, but if you use the UNIX tool, AWK or CUT will be the
 
 ## Sorting line
 
-If you have something else to sort, it's a line. 
+If you have something else to sort, it's a line.
 You can sort lines with `ORDER BY column name`. Ascending order (small → large) is ASC (default so can be omitted),
 descending order (large → small) is DESC.
 

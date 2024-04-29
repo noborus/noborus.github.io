@@ -30,7 +30,7 @@ Even if the file does not exist in advance, it will not cause an error.
 trdsql -driver sqlite3 -dsn "test.sqlite" -oat "SELECT * FROM test"
 ```
 
-```
+```at
 +----+--------+-------+
 | id |  name  | price |
 +----+--------+-------+

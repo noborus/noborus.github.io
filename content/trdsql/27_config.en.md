@@ -29,7 +29,7 @@ ${HOME}/.config/trdsql/config.json
 
 ### Windows
 
-`%APPDATA%trdsql\config.json` is the default location. It is often located as follows. 
+`%APPDATA%trdsql\config.json` is the default location. It is often located as follows.
 
 ```path
 C:\Users\{"User"}\AppData\Roaming\trdsql\config.json
