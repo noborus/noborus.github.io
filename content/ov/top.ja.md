@@ -19,5 +19,4 @@ topを`-b`バッチモードで起動すると先頭が"top"から始まる出�
 top -b -c -w512|ov --column-delimiter "/\s+/" --section-delimiter "^top" --column-mode --column-rainbow --follow-section -w=false
 ```
 
-
 ![ov-top.png](/ov/ov-top.gif)

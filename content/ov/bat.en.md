@@ -10,7 +10,7 @@ weight: 9
 
 [bat](https://github.com/sharkdp/bat) supports pager.
 
-You can use it by setting the environment variable PAGER or BAT_PAGER.
+You can use it by setting the environment variable `PAGER` or `BAT_PAGER`.
 
 ```console
 export BAT_PAGER="ov -F -H3"
