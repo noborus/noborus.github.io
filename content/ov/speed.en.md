@@ -1,13 +1,13 @@
 ---
 author: "Noboru Saito"
 title: "speed of opening large files"
-date: 2023-08-10T15:00:00+09:00
+date: 2024-05-03T17:00:00+09:00
 description: "speed of opening large files"
 tags: ["ov"]
 categories: ["ov"]
 weight: 14
 ---
-The pager is designed to display files instantly, so it is difficult to make a simple speed comparison, but `ov` can comfortably display large files even among pagers. 
+The pager is designed to display files instantly, so it is difficult to make a simple speed comparison, but `ov` can comfortably display large files even among pagers.
 
 First of all, unlike editors, pagers are designed to handle large files.
 The reason why pagers can quickly open and display large files is as follows.
