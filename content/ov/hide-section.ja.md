@@ -14,7 +14,7 @@ weight: 99
 ov --section-delimiter "^#" --hide-other-section README.md
 ```
 
-![hide-other-section](/ov/hide-section.gif)
+![hide-other-section](/ov/ov-hide-section.gif)
 
 ## スライド表示
 

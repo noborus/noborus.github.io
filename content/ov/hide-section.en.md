@@ -14,7 +14,7 @@ By using `--hide-other-section` with `--section-delimiter`, you can hide all sec
 ov --section-delimiter "^#" --hide-other-section README.md
 ```
 
-![hide-other-section](/ov/hide-section.gif)
+![hide-other-section](/ov/ov-hide-section.gif)
 
 ## Slide Presentation
 
