@@ -5,14 +5,13 @@ date: 2023-07-21T06:00:00+09:00
 description: "ovのセクションの使い方"
 tags: ["ov"]
 categories: ["ov"]
-weight: 99
+weight: 98
 ---
 
 `ov`は複数行のブロックをセクションとして表示できます。
 セクションのブロックはセクション区切り行で区切られます。
 セクション区切り行は`StyleSectionLine`のスタイル(背景色緑)で表示されます。
 
-The section delimiter is optionally specified as a regular expression string at startup.
 セクション区切りは、起動時に正規表現文字列としてオプションで指定できます。
 
 ```console

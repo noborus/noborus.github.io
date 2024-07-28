@@ -5,7 +5,7 @@ date: 2022-05-26T08:00:00+09:00
 description: "How to use section of ov"
 tags: ["ov", "section"]
 categories: ["ov"]
-weight: 99
+weight: 98
 ---
 
 `ov` can use a unit called section.
