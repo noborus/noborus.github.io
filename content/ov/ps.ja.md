@@ -1,7 +1,7 @@
 ---
 author: "Noboru Saito"
 title: "ps"
-date: 2023-07-08T15:00:00+09:00
+date: 2024-11-11T08:00:00+09:00
 description: "psのページャーとしてovを使用する"
 tags: ["ov", "ps"]
 categories: ["ov"]
@@ -16,3 +16,13 @@ ps aux | ov --column-width --column-rainbow -H1
 ```
 
 ![ps](/ov/ov-ps.png)
+
+さらにv.37.0からは`--align`オプションをつけることで、列の幅を揃えることができます。
+
+`align`は`alt+F`（デフォルトキー）によっても変更できます。
+
+```shell
+ps aux | ov --column-width --column-rainbow -H1 --align
+```
+
+![unalign/align](/ov/ov-ps.gif)

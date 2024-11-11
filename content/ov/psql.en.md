@@ -1,7 +1,7 @@
 ---
 author: "Noboru Saito"
 title: "psql"
-date: 2023-07-21T09:00:00+09:00
+date: 2024-11-11T08:00:00+09:00
 description: PostgreSQL client tool psql with ov
 tags: ["ov", "psql"]
 categories: ["ov"]
@@ -17,8 +17,10 @@ Header 1 is specified(`-H1`),"|" is used to separate columns(`-d "|"`), and colu
 If it fits on the screen, exit the pager(`-F`).
 It is also recommended to change the color of the columns(`--column-rainbow`).
 
+The `--align` option added in v0.37.0 can also be used to shrink columns.
+
 ```env
-PSQL_PAGER 'ov -F -C -d "|" -H1 --column-rainbow'
+PSQL_PAGER 'ov -F -C -d "|" -H1 --column-rainbow --align'
 ```
 
 The following sets the header style of `config.yaml`.
@@ -64,12 +66,10 @@ You can also display expanded output (\x) with `\watch`.
 
 ## unaligned (\a)
 
-Even in unaligned display, it is displayed comfortably by using column highlighting.
-
-The PAGER specification does not change with the following.
+By specifying `\a` on the psql side, you can display without alignment (without aligning columns) by specifying the `--align` option of `ov`.
 
 ```env
-PSQL_PAGER='ov -F -C -d "|" -H1'.
+PSQL_PAGER='ov -F -C -d "|" -H1 --column-rainbow --align'
 ```
 
-![\a](/ov/pv-psql-alignment.gif)
+![unalign](/ov/ov-psql-alignment.gif)

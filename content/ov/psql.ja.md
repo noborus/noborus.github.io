@@ -1,7 +1,7 @@
 ---
 author: "Noboru Saito"
 title: "psql"
-date: 2023-07-21T09:00:00+09:00
+date: 2024-11-11T08:00:00+09:00
 description: PostgreSQLクライアントpsqlでovを使用する
 tags: ["ov", "psql"]
 categories: ["ov"]
@@ -21,8 +21,10 @@ PostgreSQLのクライアントツールである`psql`は結果を表示する�
 画面に収まる場合は、ページャーを終了します(`-F`)。
 列の色を変える(`--column-rainbow`)のもおすすめです。
 
-```env
-PSQL_PAGER 'ov -F -C -d "|" -H1 --column-rainbow'
+また、v0.37.0から追加された列の整列をする`--align`オプションを利用すると、列の縮小もできます。
+
+```console
+PSQL_PAGER='ov -F -C -d "|" -H1 --column-rainbow --align'
 ```
 
 画面ではデフォルトから色を変えて`config.yaml`で以下の設定をしています。
@@ -68,11 +70,10 @@ PAGER 'ov -F --section-delimiter "^-"'
 
 ## unaligned (\a)
 
-アラインメントなし（列を揃えない）表示でも、列ハイライトを利用することで、快適に表示されます。
-以下のように、PAGERの指定は変更しません。
+psql側で`\a`を指定して、アラインメントなし（列を揃えない）表示にしていも`ov`の`--align`オプションを指定することで列を揃えることができます。
 
 ```env
-PSQL_PAGER='ov -F -C -d "|" -H1'.
+PSQL_PAGER='ov -F -C -d "|" -H1 --column-rainbow --align'
 ```
 
-![\a](/ov/ov-psql-alignment.gif)
+![unalign](/ov/ov-psql-alignment.gif)
