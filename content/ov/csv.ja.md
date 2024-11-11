@@ -25,18 +25,18 @@ ov -H1 -C -d',' -c --column-rainbow --align=right MOCK_DATA.csv
 
 ### 整列なし
 
-![整列なし](/ov/csv1.png)
+![整列なし](/ov/ov-csv1.png)
 
 ### 整列あり(align)
 
-![整列あり](/ov/csv2.png)
+![整列あり](/ov/ov-csv2.png)
 
 ###  整列あり(align)折返しなし(wrap=false)
 
-![整列あり折返しなし](/ov/csv3.png)
+![整列あり折返しなし](/ov/ov-csv3.png)
 
 ### 列の縮小
 
 さらに整列(align)を有効にしていると列を縮小することができます。列の縮小は列を選択しているときにsキー（デフォルト）を押すことでトグルで切り替えられます。
 
-![列の縮小](/ov/csv4.png)
+![列の縮小](/ov/ov-csv4.png)

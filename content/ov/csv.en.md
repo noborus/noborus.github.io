@@ -24,18 +24,18 @@ ov -H1 -C -d',' -c --column-rainbow --align=right MOCK_DATA.csv
 
 ### No alignment
 
-![No alignment](/ov/csv1.png)
+![No alignment](/ov/ov-csv1.png)
 
 ### Alignment (align)
 
-![Alignment](/ov/csv2.png)
+![Alignment](/ov/ov-csv2.png)
 
 ### Alignment (align) without wrap
 
-![Alignment without wrap](/ov/csv3.png)
+![Alignment without wrap](/ov/ov-csv3.png)
 
 ### Column shrink
 
 You can also shrink columns by enabling alignment. Column shrink can be toggled by pressing the s key (default) when selecting a column.
 
-![Column shrink](/ov/csv4.png)
+![Column shrink](/ov/ov-csv4.png)
