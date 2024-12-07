@@ -42,8 +42,6 @@ shell.options.setPersist("pager","ov -H1 --skip-lines 1 -C -w=false -d'|' -F --c
 
 日本語：SQLモードとPythonモードでは、以下のように設定します。
 
-```js
-
 ```console
 \option --persist pager "ov -w=f -H1 --skip-lines 1 -F -C -d '|' --column-mode --column-rainbow --align'"
 ```
