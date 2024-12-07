@@ -40,10 +40,10 @@ mysqlshでは、`--pager`オプションを使うか、mysqlshが起動してい
 shell.options.setPersist("pager","ov -H1 --skip-lines 1 -C -w=false -d'|' -F --column-mode --column-rainbow --align")
 ```
 
-日本語：SQLモードとPythonモードでは、以下のように設定します。
+SQLモードとPythonモードでは、以下のように設定します。
 
 ```console
-\option --persist pager "ov -w=f -H1 --skip-lines 1 -F -C -d '|' --column-mode --column-rainbow --align'"
+\option --persist pager "ov -w=f -H1 --skip-lines 1 -F -C -d '|' --column-mode --column-rainbow --align"
 ```
 
 また、v0.37.0からは、`--align`を使用している場合は、列の縮小（デフォルトキー`s`）が可能です。
