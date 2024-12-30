@@ -1,7 +1,7 @@
 +++
 author = "Noboru Saito"
 title = "trdsql install"
-date = "2023-6-10"
+date = "2023-06-10T00:00:00+09:00"
 description = "How to install trdsql"
 weight = 1
 tags = [
