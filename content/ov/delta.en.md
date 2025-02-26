@@ -1,7 +1,7 @@
 ---
 author: "Noboru Saito"
 title: "delta"
-description: "ov can also be used as a pager for delta."
+description: "Utilize ov as a pager for delta to compare and manage file differences effectively."
 date: 2024-02-25T18:00:00+09:00
 tags: ["ov", "git", "delta"]
 categories: ["ov"]

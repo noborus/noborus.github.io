@@ -1,7 +1,7 @@
 ---
 author: "Noboru Saito"
 title: "git"
-description: "gitのページャーとしてovを使用する"
+description: "gitコマンドの出力を読みやすくするためにovをページャーとして使用する"
 date: 2024-02-25T18:00:00+09:00
 tags: ["ov", "git"]
 categories: ["ov"]
@@ -12,7 +12,7 @@ weight: 2
 
 gitのlogを見やすくする工夫はいろんなところで紹介されていますが、gitの設定等により表示を変更する方法にとどまります。
 gitの出力をセクション区切りで分割することで、より使いやすくなります。
-また、それに合わせてjump-targetを"section"しておくことをおすすめします。
+また、それに合わせてjump-targetを"section"しておくことをオススメします。
 以下はgitの推奨設定例です。
 
 ```config

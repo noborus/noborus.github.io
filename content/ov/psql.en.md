@@ -2,7 +2,7 @@
 author: "Noboru Saito"
 title: "psql"
 date: 2024-11-11T08:00:00+09:00
-description: PostgreSQL client tool psql with ov
+description: "A guide on configuring and using the PostgreSQL client tool psql with the ov pager for enhanced command-line output."
 tags: ["ov", "psql"]
 categories: ["ov"]
 weight: 1
@@ -13,8 +13,8 @@ This is the setting for `psql`, a client tool for PostgreSQL.
 ## psql
 
 This is the recommended setting for `PSQL_PAGER`.
-Header 1 is specified(`-H1`),"|" is used to separate columns(`-d "|"`), and column mode(`-C`) is set.
-If it fits on the screen, exit the pager(`-F`).
+Header 1 is specified (`-H1`). "|" is used to separate columns (`-d "|"`), and column mode (`-C`) is set.
+Exit the pager (`-F`) if the content fits on the screen.
 It is also recommended to change the color of the columns(`--column-rainbow`).
 
 The `--align` option added in v0.37.0 can also be used to shrink columns.
@@ -52,7 +52,7 @@ PSQL_WATCH_PAGER 'ov --follow-section --section-delimiter "^$"'
 
 ## expanded output (\x)
 
-Even when displaying in the extended output (\x), if the record delimiter is treated as a section delimiter, the display when moved will be easier to see.
+When displaying in the extended output (\x), treat the record delimiter as a section delimiter. This will make the display easier to see when moved.
 
 ```env
 PAGER='ov -F --section-delimiter "^-"'
@@ -66,7 +66,7 @@ You can also display expanded output (\x) with `\watch`.
 
 ## unaligned (\a)
 
-By specifying `\a` on the psql side, you can display without alignment (without aligning columns) by specifying the `--align` option of `ov`.
+By specifying `\a` on the psql side, you can display without alignment (without aligning columns). This is done by specifying the `--align` option of `ov`.
 
 ```env
 PSQL_PAGER='ov -F -C -d "|" -H1 --column-rainbow --align'

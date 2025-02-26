@@ -1,7 +1,7 @@
 ---
 author: "Noboru Saito"
 title: "man"
-description: "Use 'ov' as a pager for man pages"
+description: "Use ov as a pager for man pages to navigate and read manual pages efficiently."
 date: 2022-05-24T09:00:00+09:00
 tags: ["ov", "man"]
 categories: ["ov"]

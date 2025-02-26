@@ -1,7 +1,7 @@
 ---
 author: "Noboru Saito"
 title: "execute command"
-description: "ov can execute commands and display the output."
+description: "Execute commands and display their output dynamically with ov."
 date: 2022-05-27T08:00:00+09:00
 tags: ["ov", "exec"]
 categories: ["ov"]

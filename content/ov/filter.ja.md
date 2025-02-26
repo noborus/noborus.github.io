@@ -2,7 +2,7 @@
 author: "Noboru Saito"
 title: "フィルターサーチの使い方"
 date: 2024-04-22T08:00:00+09:00
-description: "ovのフィルターサーチの使い方"
+description: "ovの高度な検索機能を使用して検索結果を効率的にフィルタリングする"
 tags: ["ov", "search", "filter", "grep"]
 categories: ["ov"]
 weight: 91

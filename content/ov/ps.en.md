@@ -2,7 +2,7 @@
 author: "Noboru Saito"
 title: "ps"
 date: 2024-11-11T08:00:00+09:00
-description: "Use 'ov' as a pager for ps"
+description: "Use ov as a pager for ps to format and display process information clearly."
 tags: ["ov", "ps"]
 categories: ["ov"]
 weight: 7

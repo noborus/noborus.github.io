@@ -2,7 +2,7 @@
 author: "Noboru Saito"
 title: "他のセクションを隠す"
 date: 2024-07-28T8:28:00+09:00
-description: "セクションを使用したときに他のセクションを隠す"
+description: "ovのセクションを使用する際に他のセクションを非表示にする方法"
 tags: ["ov", "slide", "section"]
 categories: ["ov"]
 weight: 99

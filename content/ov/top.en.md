@@ -2,7 +2,7 @@
 author: "Noboru Saito"
 title: "top"
 date: 2023-01-30T01:00:00+09:00
-description: "Use 'ov' as a pager for top"
+description: "Enhance the display of system monitoring information by using ov as a pager for top."
 tags: ["ov", "top"]
 categories: ["ov"]
 weight: 8

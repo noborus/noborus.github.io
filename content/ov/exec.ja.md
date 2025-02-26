@@ -1,7 +1,7 @@
 ---
 author: "Noboru Saito"
 title: "コマンド実行"
-description: "ovからコマンドを実行する"
+description: "コマンドを実行し、その出力を動的に表示するためにovを使用する"
 date: 2023-07-21T06:00:00+09:00
 tags: ["ov", "exec"]
 categories: ["ov"]

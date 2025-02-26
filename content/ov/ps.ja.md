@@ -2,7 +2,7 @@
 author: "Noboru Saito"
 title: "ps"
 date: 2024-11-11T08:00:00+09:00
-description: "psのページャーとしてovを使用する"
+description: "プロセス情報をフォーマットして表示するためにovをpsのページャーとして使用する"
 tags: ["ov", "ps"]
 categories: ["ov"]
 weight: 7

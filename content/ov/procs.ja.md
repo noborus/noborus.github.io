@@ -2,7 +2,7 @@
 author: "Noboru Saito"
 title: "procs"
 date: 2023-07-21T06:00:00+09:00
-description: "procsのページャーとしてovを使用する"
+description: "プロセス情報をより良く可視化するためにovをprocsのページャーとして使用する"
 tags: ["ov", "procs"]
 categories: ["ov"]
 weight: 8

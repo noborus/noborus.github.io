@@ -1,14 +1,14 @@
 ---
 author: "Noboru Saito"
 title: "csvの表示"
-description: "ovをCSVビューアとして使う"
+description: "ovをCSVファイルの処理および表示に使用する"
 date: 2024-11-10T11:00:00+09:00
 tags: ["ov", "csv"]
 categories: ["ov"]
 weight: 10
 ---
 
-`ov`をCSVビューアとして使うことができます。
+`ov`をCSVビューアーとして使うことができます。
 ヘッダーの有無や区切りも文字を指定できます。
 
 ```console
@@ -37,6 +37,6 @@ ov -H1 -C -d',' -c --column-rainbow --align=right MOCK_DATA.csv
 
 ### 列の縮小
 
-さらに整列(align)を有効にしていると列を縮小することができます。列の縮小は列を選択しているときにsキー（デフォルト）を押すことでトグルで切り替えられます。
+さらに整列（align）を有効にしていると列を縮小表示できます。列の縮小は列を選択しているときにsキー（デフォルト）を押すことでトグルで切り替えられます。
 
 ![列の縮小](/ov/ov-csv4.png)

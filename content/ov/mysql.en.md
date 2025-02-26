@@ -2,7 +2,7 @@
 author: "Noboru Saito"
 title: "mysql"
 date: 2024-11-11T09:00:00+09:00
-description: "Use 'ov' as a pager for mysql"
+description: "Use ov as a pager for mysql to enhance the display of query results."
 tags: ["ov", "mysql"]
 categories: ["ov"]
 weight: 4

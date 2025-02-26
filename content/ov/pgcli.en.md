@@ -2,7 +2,7 @@
 author: "Noboru Saito"
 title: "pgcli"
 date: 2024-01-07T08:00:00+09:00
-description: "Use 'ov' as a pager for pgcli"
+description: "Integrate ov as a pager for pgcli for better visualization of database query results."
 tags: ["ov", "pgcli", "PostgreSQL"]
 categories: ["ov"]
 weight: 5

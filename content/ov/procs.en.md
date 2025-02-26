@@ -2,7 +2,7 @@
 author: "Noboru Saito"
 title: "procs"
 date: 2022-05-24T09:00:00+09:00
-description: "Use 'ov' as a pager for procs"
+description: "Use ov as a pager for procs to better visualize process information."
 tags: ["ov", "procs"]
 categories: ["ov"]
 weight: 8

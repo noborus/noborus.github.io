@@ -2,7 +2,7 @@
 author: "Noboru Saito"
 title: "speed of opening large files"
 date: 2024-05-03T17:00:00+09:00
-description: "speed of opening large files"
+description: "Experience fast opening of large files with ov."
 tags: ["ov"]
 categories: ["ov"]
 weight: 14

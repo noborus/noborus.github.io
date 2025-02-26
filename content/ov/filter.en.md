@@ -2,7 +2,7 @@
 author: "Noboru Saito"
 title: "filter search"
 date: 2024-04-22T08:00:00+09:00
-description: "How to filter search results"
+description: "Filter search results efficiently using ov's advanced search capabilities."
 tags: ["ov", "search", "filter"]
 categories: ["ov"]
 weight: 91

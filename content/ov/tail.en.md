@@ -2,7 +2,7 @@
 author: "Noboru Saito"
 title: "How to use follow mode"
 date: 2022-05-27T08:00:00+09:00
-description: "How to use follow mode of ov"
+description: "Learn how to use ov's follow mode for real-time updates."
 tags: ["ov", "tail"]
 categories: ["ov"]
 weight: 90

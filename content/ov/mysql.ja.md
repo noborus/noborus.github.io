@@ -2,7 +2,7 @@
 author: "Noboru Saito"
 title: "mysql"
 date: 2024-11-11T09:00:00+09:00
-description: "ovをmysqlのpagerとして使用する"
+description: "クエリ結果の表示を向上させるためにovをmysqlのページャーとして使用する"
 tags: ["ov"]
 categories: ["ov"]
 weight: 4

@@ -1,7 +1,7 @@
 ---
 author: "Noboru Saito"
 title: "git"
-description: "Use ov as a pager for git"
+description: "Use ov as a pager for git to improve the readability of git command outputs."
 date: 2024-02-26T07:00:00+09:00
 tags: ["ov", "git"]
 categories: ["ov"]

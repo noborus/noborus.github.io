@@ -2,7 +2,7 @@
 author: "Noboru Saito"
 title: "複数の単語を複数の色でハイライト"
 date: 2023-07-21T06:00:00+09:00
-description: "複数の単語を複数の色でハイライト"
+description: "ovのマルチカラーハイライト機能を使用して複数の単語を異なる色でハイライトする"
 tags: ["ov"]
 categories: ["ov"]
 weight: 13
@@ -21,7 +21,7 @@ ov --multi-color "ERROR.*,WARN,INFO,DEBUG,not,^.{24}" access.log
 正規表現をスペースで区切って入力します。
 スペースを含む場合は、引用符で囲みます。
 
-* `.`（デフォルトキー） でmulticolorの入力モードになります。
+* `.`（デフォルトキー）でmulticolorの入力モードになります。
 
 ```text
 ERROR.* WARN "error is"

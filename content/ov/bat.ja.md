@@ -1,7 +1,7 @@
 ---
 author: "Noboru Saito"
 title: "bat"
-description: "ovをbatのページャーとして使用する"
+description: "batはcatの高機能な代替コマンドであり、ファイル内容を表示およびナビゲートするためにovをページャーとして使用します。"
 date: 2023-06-30T06:00:00+09:00
 tags: ["ov", "bat"]
 categories: ["ov"]
@@ -16,7 +16,7 @@ weight: 9
 export BAT_PAGER="ov -F -H3"
 ```
 
-`bat` を使用するときには折り返さない(`--wrap=never`)で使用することをおすすめします。
+`bat` を使用するときには折り返さない（`--wrap=never`）で使用することをオススメします。
 `bat`で折り返してしまうと、折り返さない表示に切り替えることができません。
 `ov`の方で折り返しを行ったほうが、`ov`の機能を活用できます。
 

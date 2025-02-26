@@ -1,7 +1,7 @@
 ---
 author: "Noboru Saito"
 title: "delta"
-description: "ovをdeltaのpagerとして使用する"
+description: "ovをdeltaのページャーとして利用し、ファイルの差分を比較および管理する"
 date: 2024-02-27T10:00:00+09:00
 tags: ["ov", "git", "delta"]
 categories: ["ov"]
@@ -54,7 +54,7 @@ weight: 3
 `[delta]`の`navigate = true` は`less`を使用するときに`n/N`で移動できるようにするための設定ですが、
 この設定により必要な場所をマークが付きます。
 
-これらの設定を組み合わせることで、ファイル毎にファイル(`space` key of `^` key)、diff毎に`n/N` keyで移動できます。
+これらの設定を組み合わせることで、ファイル毎にファイル（`space` key of `^` key）、diff毎に`n/N` keyで移動できます。
 さらに、行を移動しても差分ファイル名が表示されます。
 
 ![delta](/ov/ov-delta-01.gif)

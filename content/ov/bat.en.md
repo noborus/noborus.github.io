@@ -1,14 +1,14 @@
 ---
 author: "Noboru Saito"
 title: "bat"
-description: "ov can also be used as a pager for bat."
+description: "Use ov as a pager for bat, a feature-rich alternative to cat, to view and navigate file contents."
 date: 2022-05-30T09:00:00+09:00
 tags: ["ov", "bat"]
 categories: ["ov"]
 weight: 9
 ---
 
-[bat](https://github.com/sharkdp/bat) supports pager.
+[bat](https://github.com/sharkdp/bat) supports pager functionality.
 
 You can use it by setting the environment variable `PAGER` or `BAT_PAGER`.
 
@@ -16,9 +16,9 @@ You can use it by setting the environment variable `PAGER` or `BAT_PAGER`.
 export BAT_PAGER="ov -F -H3"
 ```
 
-`bat` should not be wrapped (`--wrap=never`).
-If it wraps with `bat`, it cannot be switched to unwrap.
-It is better to operate with ov.
+Ensure that `bat` does not wrap lines (`--wrap=never`).
+If `bat` wraps lines, it cannot be unwrapped later.
+It is recommended to use `ov` for better operation.
 
 ```console
 bat --wrap=never README.md

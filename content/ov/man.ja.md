@@ -1,7 +1,7 @@
 ---
 author: "Noboru Saito"
 title: "man"
-description: "manページのページャーとしてovを使用する"
+description: "manページをナビゲートおよび読むためにovをページャーとして使用する"
 date: 2023-06-30T06:00:00+09:00
 tags: ["ov", "man"]
 categories: ["ov"]

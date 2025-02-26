@@ -2,7 +2,7 @@
 author: "Noboru Saito"
 title: "multiple files"
 date: 2022-06-26T09:00:00+09:00
-description: "Display multiple files"
+description: "Display and manage multiple files simultaneously with ov."
 tags: ["ov"]
 categories: ["ov"]
 weight: 12
