@@ -1,6 +1,6 @@
 ---
 author: "Noboru Saito"
-title: "Vertical Header and Header Column"
+title: "vertical header and header column"
 date: 2025-02-26T10:00:00+09:00
 description: "Fixed display of columns with vertical header and header column"
 tags: ["ov"]

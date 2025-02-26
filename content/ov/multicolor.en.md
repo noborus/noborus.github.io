@@ -1,6 +1,6 @@
 ---
 author: "Noboru Saito"
-title: "Multicolor highlights multiple words"
+title: "multicolor highlights multiple words"
 date: 2023-07-21T06:00:00+09:00
 description: "Highlight multiple words in different colors using ov's multicolor highlighting feature."
 tags: ["ov"]
