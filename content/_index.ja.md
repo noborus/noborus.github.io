@@ -57,7 +57,7 @@ less,moreの代わりとしても動作する高機能ページャー。
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/ovcs?lightbox=false)](https://pkg.go.dev/github.com/noborus/ovcs)
 </span>
 
-Terminal Pager ov を client/server化したもの。
+Terminal Pager ovをclient/server化したもの。
 
 * [terminal pagerをclient/server化してtmuxを組み合わせたら最強のSQLクライアントになった](https://zenn.dev/noborus/articles/b5a0899c4e410452ebdf)
 
@@ -84,7 +84,7 @@ Terminal Pager ov を client/server化したもの。
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/tbln?lightbox=false)](https://pkg.go.dev/github.com/noborus/tbln)
 </span>
 
-データベースのテーブルと親和性のあるファイルフォーマット(tbln)を扱うライブラリ＆ツール
+データベースのテーブルと親和性のあるファイルフォーマット（tbln）を扱うライブラリ＆ツール
 
 * [tbln.dev](https://tbln.dev/)
 
@@ -138,7 +138,7 @@ Excelファイルに対してSQLを実行するツール
 <a class="github-button" href="https://github.com/noborus/pgsp" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/pgsp on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/pgsp/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/pgsp on GitHub">Fork</a>
 
-PostgreSQL の pg_stat_progressを監視、表示するCLIツール
+PostgreSQLのpg_stat_progressを監視、表示するCLIツール
 
 * [pgsp Category](/categories/pgsp/)
 
