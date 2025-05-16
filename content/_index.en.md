@@ -195,6 +195,19 @@ Split SQL into statements.
 
 ---
 
+### [<i class="fab fa-github"></i>](https://github.com/noborus/tcellansi) [tcellansi](https://github.com/noborus/tcellansi)
+
+<a class="github-button" href="https://github.com/noborus/tcellansi" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/tcellansi on GitHub">Star</a>
+<a class="github-button" href="https://github.com/noborus/tcellansi/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/tcellansi on GitHub">Fork</a>
+<span class="project-badge">
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/tcellansi?lightbox=false)](https://pkg.go.dev/github.com/noborus/tcellansi)
+[![Latest Release](https://img.shields.io/github/v/release/noborus/tcellansi.svg?lightbox=false)](https://github.com/noborus/tcellansi/releases)
+</span>
+
+A library that converts tcell styles to ANSI escape sequences.
+
+---
+
 ## <i class="fas fa-share-alt"></i> Participating projects
 
 ### [<i class="fab fa-github"></i>](https://github.com/pgsql-jp/jpug-doc) [jpug-doc](https://github.com/pgsql-jp/jpug-doc)
