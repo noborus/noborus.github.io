@@ -1,7 +1,7 @@
 ---
 author: "Noboru Saito"
 title: "psql"
-date: 2024-11-11T08:00:00+09:00
+date: 2025-06-04T20:52:00+09:00
 description: "A guide on configuring and using the PostgreSQL client tool psql with the ov pager for enhanced command-line output."
 tags: ["ov", "psql"]
 categories: ["ov"]
@@ -73,3 +73,16 @@ PSQL_PAGER='ov -F -C -d "|" -H1 --column-rainbow --align'
 ```
 
 ![unalign](/ov/ov-psql-alignment.gif)
+
+## shrink columns and fixed columns
+
+You can also shrink columns and fix the width of columns with the `--align` option.
+
+When in align mode, you can shrink the currently selected column by pressing `s` (default key).  
+Additionally, by pressing `Shift+F` (default key), all columns to the left of the selected column will be fixed and remain visible while scrolling horizontally.
+
+```env
+PSQL_PAGER='ov -F -C -d "|" -H1 --column-rainbow --align'
+```
+
+![shrink](/ov/ov-psql-shrink.gif)

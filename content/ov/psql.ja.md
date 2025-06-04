@@ -1,7 +1,7 @@
 ---
 author: "Noboru Saito"
 title: "psql"
-date: 2024-11-11T08:00:00+09:00
+date: 2025-06-04T20:52:00+09:00
 description: "PostgreSQLクライアントツールpsqlをovページャーで設定および使用するためのガイド"
 tags: ["ov", "psql"]
 categories: ["ov"]
@@ -77,3 +77,16 @@ PSQL_PAGER='ov -F -C -d "|" -H1 --column-rainbow --align'
 ```
 
 ![unalign](/ov/ov-psql-alignment.gif)
+
+## 列の縮小と固定表示
+
+`--align`オプションを利用すると、列の縮小や固定表示が可能です。
+
+alignモードにした状態で、列カーソルが指定されている列を`s`（デフォルトキー）で縮小できます。  
+さらに、`Shift+F`（デフォルトキー）を押すと、指定した列より左側のすべての列が固定され、横スクロールしても常に表示されます。
+
+```env
+PSQL_PAGER='ov -F -C -d "|" -H1 --column-rainbow --align'
+```
+
+![shrink](/ov/ov-psql-shrink.gif)
