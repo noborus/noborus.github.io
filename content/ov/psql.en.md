@@ -20,7 +20,7 @@ It is also recommended to change the color of the columns(`--column-rainbow`).
 The `--align` option added in v0.37.0 can also be used to shrink columns.
 
 ```env
-PSQL_PAGER 'ov -F -C -d "|" -H1 --column-rainbow --align'
+PSQL_PAGER='ov -F -C -d "|" -H1 --column-rainbow --align'
 ```
 
 The following sets the header style of `config.yaml`.
@@ -45,7 +45,7 @@ This is the recommended value for `PSQL_WATCH_PAGER`.
 Continues to display the last section separated by blank lines.
 
 ```env
-PSQL_WATCH_PAGER 'ov --follow-section --section-delimiter "^$"'
+PSQL_WATCH_PAGER='ov --follow-section --section-delimiter "^$"'
 ```
 
 ![watch](/ov/ov-psql-watch.gif)

@@ -59,7 +59,7 @@ PSQL_WATCH_PAGER='ov --follow-section --section-delimiter "^$"'
 拡張出力（\x）で表示のときには、レコード区切りをセクション区切りとして扱うと、レコード区切りでスクロールするため、見やすくなります。以下のコマンドで拡張出力モードを有効にできます。
 
 ```env
-PAGER 'ov -F --section-delimiter "^-"'
+PAGER='ov -F --section-delimiter "^-"'
 ```
 
 ![\x](/ov/ov-psql-vf.gif)
