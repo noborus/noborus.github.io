@@ -2,13 +2,15 @@
 author: "Noboru Saito"
 title: "view csv"
 description: "Use ov as a csv viewer to handle and process CSV files effectively."
-date: 2024-11-10T11:00:00+09:00
+date: 2025-06-05T11:42:00+09:00
 tags: ["ov"]
 categories: ["ov"]
 weight: 10
 ---
 
-`ov` can also be used as a csv viewer.
+`ov` is a very fast and feature-rich CSV viewer.
+It can instantly open even large CSV files that exceed your system's memory, and provides advanced features such as column alignment, color highlighting, column shrinking, and fixed columns for comfortable data browsing.  
+With ov, you can efficiently handle, search, and analyze tabular data directly in your terminal.
 
 ```console
 ov -H1 -C -d',' -c --column-rainbow MOCK_DATA.csv

@@ -1,7 +1,7 @@
 ---
 author: "Noboru Saito"
 title: "mysql"
-date: 2024-11-11T09:00:00+09:00
+date: 2025-06-05T11:42:00+09:00
 description: "Use ov as a pager for mysql to enhance the display of query results."
 tags: ["ov", "mysql"]
 categories: ["ov"]
@@ -47,6 +47,8 @@ SQL mode and Python mode.
 \option --persist pager "ov -w=f -H1 --skip-lines 1 -F -C -d '|' --column-mode --column-rainbow --align"
 ```
 
-Also, from v0.37.0, if you use `--align`, you can shrink the columns (default key `s`).
+Also, from v0.37.0, if you use `--align`, you can shrink the columns and fix the display of columns.
+In align mode, you can shrink the column where the column cursor is located by pressing `s`(default key).
+Additionally, by pressing  `'F`(default key) in align mode, all columns to the left of the selected column will be fixed and remain visible while scrolling horizontally.
 
 ![ov-mysql-shrink](/ov/ov-mysql2.gif)

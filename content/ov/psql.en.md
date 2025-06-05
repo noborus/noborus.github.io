@@ -79,7 +79,7 @@ PSQL_PAGER='ov -F -C -d "|" -H1 --column-rainbow --align'
 You can also shrink columns and fix the width of columns with the `--align` option.
 
 When in align mode, you can shrink the currently selected column by pressing `s` (default key).  
-Additionally, by pressing `Shift+F` (default key), all columns to the left of the selected column will be fixed and remain visible while scrolling horizontally.
+Additionally, by pressing `F` (default key), all columns to the left of the selected column will be fixed and remain visible while scrolling horizontally.
 
 ```env
 PSQL_PAGER='ov -F -C -d "|" -H1 --column-rainbow --align'
