@@ -1,14 +1,18 @@
 ---
 author: "Noboru Saito"
 title: "psql"
-date: 2025-06-04T20:52:00+09:00
+date: 2025-06-05T11:42:00+09:00
 description: "A guide on configuring and using the PostgreSQL client tool psql with the ov pager for enhanced command-line output."
 tags: ["ov", "psql"]
 categories: ["ov"]
 weight: 1
 ---
 
-This is the setting for `psql`, a client tool for PostgreSQL.
+The PostgreSQL client tool `psql` automatically uses a pager to scroll through results when they do not fit on the screen.
+Many users utilize this feature without being aware of it, but the pager typically provides a simple function to "display one screen at a time and allow scrolling."
+However, `ov` offers a wide range of features that are convenient for handling data, such as **automatic recognition of headers and columns, color coding for each column, fixed display, search and filter capabilities, and column shrinking and alignment**.
+This allows for a more readable and efficient way to review the output of `psql`.
+See also [Setting the PAGER for PSQL](/ja/blog/psql-pager/index.html).
 
 ## psql
 
