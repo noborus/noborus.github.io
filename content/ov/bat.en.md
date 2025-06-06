@@ -8,8 +8,7 @@ categories: ["ov"]
 weight: 9
 ---
 
-[bat](https://github.com/sharkdp/bat) supports pager functionality.
-
+[bat](https://github.com/sharkdp/bat) is a feature-rich alternative to `cat` that can be used as a pager. However, `bat` itself is not a pager; it calls a pager internally. By default, `bat` uses `less`, but you can use `ov` as the pager.
 You can use it by setting the environment variable `PAGER` or `BAT_PAGER`.
 
 ```console

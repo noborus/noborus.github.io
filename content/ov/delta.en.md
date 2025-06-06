@@ -2,15 +2,13 @@
 author: "Noboru Saito"
 title: "delta"
 description: "Utilize ov as a pager for delta to compare and manage file differences effectively."
-date: 2024-02-25T18:00:00+09:00
+date: 2025-06-06T15:00:00+09:00
 tags: ["ov", "git", "delta"]
 categories: ["ov"]
 weight: 3
 ---
 
-[delta](https://github.com/dandavison/delta) supports pager.
-
-`delta` is often specified as git's pager, but the pager is actually called from within delta.
+[delta](https://github.com/dandavison/delta) is a tool that enhances the display of diffs and can be used as a pager for `git diff`. However, `delta` itself is not a pager; it calls a pager internally. By default, `delta` uses `less`, but you can use `ov` as the pager.
 
 Therefore, delta settings are often specified by writing them in gitconfig.
 This is an example of gitconfig settings.

@@ -2,15 +2,13 @@
 author: "Noboru Saito"
 title: "delta"
 description: "ovをdeltaのページャーとして利用し、ファイルの差分を比較および管理する"
-date: 2024-02-27T10:00:00+09:00
+date: 2025-06-06T15:00:00+09:00
 tags: ["ov", "git", "delta"]
 categories: ["ov"]
 weight: 3
 ---
 
-[delta](https://github.com/dandavison/delta)はpagerをサポートしています。
-
-`delta`はgitのpagerとしてよく指定されますが、pagerは実際にはdelta内部から呼び出されます。
+[delta](https://github.com/dandavison/delta)はdiffの表示を強化するツールで、`git diff`のページャーとして使用できますが、実際には`delta`はページャーではなく、内部でページャーを呼び出します。`delta`は通常`less`を使用しますが、`ov`をページャーとして使用することもできます。
 
 したがって、deltaの設定はgitconfigに書いて指定することが多いです。
 以下はgitconfigの設定例です。
