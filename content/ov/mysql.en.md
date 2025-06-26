@@ -1,7 +1,7 @@
 ---
 author: "Noboru Saito"
 title: "mysql"
-date: 2025-06-18T14:20:00+09:00
+date: 2025-06-26T09:00:00+09:00
 description: "Using ov as a pager for mysql to improve query result display"
 tags: ["ov"]
 categories: ["ov"]
@@ -115,6 +115,19 @@ Also, when in input mode after pressing the `&` key, pressing the `!` key will i
 When you exit the pager, the screen is usually cleared and returns to the screen shown when the query was executed.
 Generally, if you exit with `Q` instead of `q`, the screen is not cleared and the last displayed screen remains.
 In `ov`, exiting with the `Q` key leaves the last displayed screen, including search highlights and column highlights, as it is (this can be changed by settings or shortcut keys).
+
+### Status Line
+
+From version 0.42.0, you can hide the status line.
+By specifying `--status-line=false`, the status line will not always be displayed, and it
+will only appear when input is needed, such as during search.
+
+```console
+ov --status-line=false
+```
+
+You can also toggle this with the `ctrl+F10` key.
+![mysql-status-line](/ov/mysql/status.png)
 
 ### Header Tips
 
