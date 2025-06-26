@@ -140,4 +140,4 @@ mysqlのヘッダーは3行なので、`-H3`で指定していますが、うち
 ov -w=f --skip-lines 1 -H1 -F -C -d "|" --column-mode --column-rainbow --align
 ```
 
-![ov-mysql.gif](/ov/ov-mysql.gif)
+![ov-mysql.gif](/ov/mysql/ov-mysql.gif)
