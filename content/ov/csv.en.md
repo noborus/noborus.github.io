@@ -21,7 +21,7 @@ ov -H1 -C -d',' -c --column-rainbow MOCK_DATA.csv
 v0.37.0 added the `--align` option to align columns.
 
 ```console
-ov -H1 -C -d',' -c --column-rainbow --align=right MOCK_DATA.csv
+ov -H1 -C -d',' -c --column-rainbow --align MOCK_DATA.csv
 ```
 
 ### No alignment
@@ -41,3 +41,11 @@ ov -H1 -C -d',' -c --column-rainbow --align=right MOCK_DATA.csv
 You can also shrink columns by enabling alignment. Column shrink can be toggled by pressing the s key (default) when selecting a column.
 
 ![Column shrink](/ov/ov-csv4.png)
+
+### Fixed column display
+
+Fixed column display is also possible. You can toggle it by pressing the F key (default) when selecting a column.
+
+### Column right alignment
+
+Column right alignment is also possible. You can toggle it by pressing the `alt+a` key (default) when selecting a column.

@@ -20,7 +20,7 @@ ov -H1 -C -d',' -c --column-rainbow MOCK_DATA.csv
 v0.37.0からは`--align`オプションを追加することで、列を整列できます。
 
 ```console
-ov -H1 -C -d',' -c --column-rainbow --align=right MOCK_DATA.csv
+ov -H1 -C -d',' -c --column-rainbow --align MOCK_DATA.csv
 ```
 
 ### 整列なし
@@ -42,3 +42,11 @@ ov -H1 -C -d',' -c --column-rainbow --align=right MOCK_DATA.csv
 ![列の縮小](/ov/ov-csv4.png)
 
 また列の固定表示も可能です。列の固定表示は列を選択しているときにFキー（デフォルト）を押すことでトグルで切り替えられます。
+
+### 列の固定表示
+
+列の固定表示も可能です。列を選択しているときにFキー（デフォルト）を押すことでトグルで切り替えられます。
+
+### 列の右寄せ
+
+列の右寄せも可能です。列を選択しているときに`alt+a`キー（デフォルト）を押すことでトグルで切り替えられます。
