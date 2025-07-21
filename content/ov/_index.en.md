@@ -3,7 +3,7 @@ author = "Noboru Saito"
 title = "OV - Terminal Pager"
 menuPre = "<i class='fab fa-github'></i> "
 description = "ov - Feature-rich terminal pager"
-tags =["ov"]
+tags = ["ov"]
 weight = 3
 linktitle = "ov"
 +++
@@ -33,7 +33,7 @@ Feature-rich terminal pager
 * Supports Unicode and East Asian Width characters.
 * Handles compressed files (gzip, bzip2, zstd, lz4, xz).
 
-## Use case
+## Use cases
 
 Pager can be broadly categorized into two patterns: one that receives and displays text files or standard input, and another that is automatically invoked from within a command.  
 When displaying text files or standard input, you can specify options when invoking the command.  

@@ -9,7 +9,7 @@ weight: 92
 ---
 ## Vertical Header
 
-ovでは`veritcal header`（または`-y`）で文字幅分を指定できます。
+ovでは`vertical header`（または`-y`）で文字幅分を指定できます。
 先頭から`vertical header`で指定された幅分が常に表示されるようになり、スクロールしても隠れなくなります。
 
 ```console

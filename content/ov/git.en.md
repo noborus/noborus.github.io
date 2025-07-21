@@ -2,15 +2,17 @@
 author: "Noboru Saito"
 title: "git"
 description: "Use ov as a pager for git to improve the readability of git command outputs."
-date: 2024-02-26T07:00:00+09:00
+date: 2025-07-21T08:58:00+09:00
 tags: ["ov", "git"]
 categories: ["ov"]
 weight: 2
 ---
 
 Git calls pager when needed.
-Git output will be easier to use if each is separated by section-delimiter.
+Git output will be easier to use if each section is separated by a section delimiter.
 Also, it is recommended to set the jump-target to "section" accordingly.
+
+The `--section-delimiter` option allows you to specify a pattern that marks the beginning of each section, making navigation easier. The `--section-header` option displays the section header at the top of the screen while scrolling, improving context visibility.
 
 It is recommended to set the following in gitconfig.
 

@@ -17,10 +17,10 @@ export BAT_PAGER="ov -F -H3"
 
 Ensure that `bat` does not wrap lines (`--wrap=never`).
 If `bat` wraps lines, it cannot be unwrapped later.
-It is recommended to use `ov` for better operation.
+Using `ov` as the pager improves usability and provides a better navigation experience.
 
 ```console
 bat --wrap=never README.md
 ```
 
-![bat](/ov/ov-bat.png)
+![bat output using ov as pager](/ov/ov-bat.png)
