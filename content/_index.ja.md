@@ -206,6 +206,19 @@ tcellのスタイルをANSIエスケープシーケンスに変換するライ�
 
 ---
 
+### [<i class="fab fa-github"></i>](https://github.com/noborus/termhyo/) [termhyo](https://github.com/noborus/termhyo/)
+
+<a class="github-button" href="https://github.com/noborus/termhyo" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/termhyo on GitHub">Star</a>
+<a class="github-button" href="https://github.com/noborus/termhyo/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/termhyo on GitHub">Fork</a>
+<span class="project-badge">
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/termhyo?lightbox=false)](https://pkg.go.dev/github.com/noborus/termhyo)
+[![Latest Release](https://img.shields.io/github/v/release/noborus/termhyo.svg?lightbox=false)](https://github.com/noborus/termhyo/releases)
+</span>
+
+ターミナルでテーブルを描画するライブラリ
+
+---
+
 ## <i class="fas fa-share-alt"></i> 参加しているプロジェクト
 
 ### [<i class="fab fa-github"></i>](https://github.com/pgsql-jp/jpug-doc) [jpug-doc](https://github.com/pgsql-jp/jpug-doc)

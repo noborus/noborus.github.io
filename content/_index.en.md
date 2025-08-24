@@ -162,7 +162,7 @@ CLI tool to monitor and display pg_stat_progress of PostgreSQL.
 
 Japanese manual translation tool for PostgreSQL.
 
-* [jpug-doc Category](categories/jpug-doc/)
+* [jpug-doc Category](/categories/jpug-doc/)
 
 ---
 
@@ -178,7 +178,7 @@ Japanese manual translation tool for PostgreSQL.
 Library tool to infer column widths in CLI output.
 
 * [Guess the width of the width format](https://zenn.dev/noborus/articles/0aeef54ead08f5)
-* [Guess the width of the width-specified format](blog/guesswidth/)
+* [Guess the width of the width-specified format](/blog/guesswidth/)
 
 ---
 
@@ -207,6 +207,17 @@ Split SQL into statements.
 A library that converts tcell styles to ANSI escape sequences.
 
 ---
+
+### [<i class="fab fa-github"></i>](https://github.com/noborus/termhyo/) [termhyo](https://github.com/noborus/termhyo/)
+
+<a class="github-button" href="https://github.com/noborus/termhyo" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/termhyo on GitHub">Star</a>
+<a class="github-button" href="https://github.com/noborus/termhyo/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/termhyo on GitHub">Fork</a>
+<span class="project-badge">
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/noborus/termhyo?lightbox=false)](https://pkg.go.dev/github.com/noborus/termhyo)
+[![Latest Release](https://img.shields.io/github/v/release/noborus/termhyo.svg?lightbox=false)](https://github.com/noborus/termhyo/releases)
+</span>
+
+A library for drawing tables in the terminal.
 
 ## <i class="fas fa-share-alt"></i> Participating projects
 
