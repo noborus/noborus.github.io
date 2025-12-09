@@ -3,6 +3,7 @@ title: "psqlのPAGERを設定する"
 tags: ["psql", "pager", "less", "more", "pspg", "ov", "postgresql"]
 categories: ["psql"]
 date: 2023-06-11T07:00:00+09:00
+lastmod: 2025-12-09T15:40:00+09:00
 ---
 
 ## psqlのPAGERを設定する
@@ -17,7 +18,7 @@ psqlでは `pset`値により、PAGERをon/off/alwaysにすることができま
 psql -P pager=off
 ```
 
-`.psqlrc`ファイルに設定すれば以後ずっとPAGERをoffになります。
+`.psqlrc`ファイルに設定すれば以後ずっとPAGERをoffにできます。
 
 ```~/.psqlrc
 \pset pager off
@@ -77,8 +78,8 @@ pager                    1
 pager_min_lines          10000
 recordsep                '\n'
 recordsep_zero           off
-tableattr                
-title                    
+tableattr
+title
 tuples_only              off
 unicode_border_linestyle single
 unicode_column_linestyle single
@@ -88,7 +89,7 @@ unicode_header_linestyle single
 ### PAGERを変更する
 
 psqlでは、`PSQL_PAGER`又は`PAGER`環境変数により、PAGERを変更することができます。`PAGER`は汎用的な環境変数なので、psql以外のコマンドでも使用されるのでpsqlのみに適用したい場合は、`PSQL_PAGER`を使用します。
-`PSQL_PAGER`と`PAGER`環境変数がセットされていない場合は、`more`又は`less`がデフォルトのPAGERになる。`less`がある場合は、`less`が優先されます。
+`PSQL_PAGER`と`PAGER`環境変数がセットされていない場合は、`more`又は`less`がデフォルトのPAGERになります。`less`がある場合は、`less`が優先されます。
 
 ```console
 PSQL_PAGER=less psql
@@ -108,7 +109,7 @@ PSQL_PAGER=less psql
 * [pspg](https://github.com/okbob/pspg)
 * [ov](https://github.com/noborus/ov)
 
-`more`は、多くの環境で入っているが、psqlのPAGERとしては使いにくいのでおすすめしません。
+`more`は、多くの環境で入っていますが、psqlのPAGERとしては使いにくいのでおすすめしません。
 
 #### [less](https://github.com/gwsw/less)
 
