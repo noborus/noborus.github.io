@@ -3,6 +3,7 @@ author: "Noboru Saito"
 title: "bat"
 description: "batはcatの高機能な代替コマンドであり、ファイル内容を表示およびナビゲートするためにovをページャーとして使用します。"
 date: 2023-06-30T06:00:00+09:00
+lastmod: 2025-12-16T15:00:00+09:00
 tags: ["ov", "bat"]
 categories: ["ov"]
 weight: 9
@@ -10,6 +11,10 @@ weight: 9
 
 [bat](https://github.com/sharkdp/bat) は、`cat`の高機能な代替コマンドであり、ページャーのように使用できますが、`bat`自体はページャーではなく、内部でページャーを呼び出しています。`bat`は通常`less`を使用しますが、`ov`をページャーとして使用することもできます。
 環境変数`PAGER`または`BAT_PAGER`にovを設定してください。
+
+> [!INFO]
+> batはv0.26.0から組み込みページャー（builtin pager）をサポートしています。
+> `--pager`オプションで組み込みページャーを選択できます。
 
 ```console
 export BAT_PAGER="ov -F -H3"
