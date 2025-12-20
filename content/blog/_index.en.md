@@ -8,4 +8,4 @@ Many of the blogs are written in Japanese.
 
 Items written in English are in the [English tag](/tags/english/).
 
-{{% children type="card" lower="date" %}}
+{{% children type="card" description="true" lower="date" %}}

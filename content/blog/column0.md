@@ -2,6 +2,7 @@
 author: "Noboru Saito"
 title: "PostgreSQLで0列の扱い"
 date: 2022-07-14T20:00:00+09:00
+description: "PostgreSQLにおける列数0のSQL文とテーブルの扱いについて"
 tags: ["sql", "postgresql"]
 categories: ["sql"]
 ---
