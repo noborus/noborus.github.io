@@ -1,19 +1,20 @@
 +++
 title = "About"
 description = "Noboru Saito"
-date = "2023-06-12"
+date = "2025-12-20T12:00:00+09:00"
 menu = "main"
 menuPre = "<i class='fas fa-user'></i> "
 weight = 4
 +++
 
-{{< figure src="/images/noborus.png" title="Noboru Saito's Page." width="200" height="200" >}}
+{{< figure src="/images/noborus.png" title="Noboru Saito's Page." >}}
 
 I am a freelance programmer.
 
 ## Links
 
 * <i class="fab fa-github"></i>GitHub: [https://github.com/noborus](https://github.com/noborus)
+* <i class="fa-brands fa-bluesky"></i>Bluesky: [https://bsky.app/profile/noborus.bsky.social](https://bsky.app/profile/noborus.bsky.social)
 * <i class="fab fa-reddit"></i>Reddit: [https://www.reddit.com/user/noborusai/](https://www.reddit.com/user/noborusai/)
 * {{% icon icon="envelope" %}}mail: [noborusai+dm@gmail.com](mailto:noborusai+dm@gmail.com)
 

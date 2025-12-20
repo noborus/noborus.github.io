@@ -35,9 +35,9 @@ Feature-rich terminal pager
 
 ## Use cases
 
-Pager can be broadly categorized into two patterns: one that receives and displays text files or standard input, and another that is automatically invoked from within a command.  
-When displaying text files or standard input, you can specify options when invoking the command.  
+Pager can be broadly categorized into two patterns: one that receives and displays text files or standard input, and another that is automatically invoked from within a command.
+When displaying text files or standard input, you can specify options when invoking the command.
 When invoked from within a command, you can use `ov` as a pager by configuring the command's configuration file or environment variables.
 For example, using `git diff` as a pager setting for git or invoking it with `git diff | ov` will result in different displays because the `git` command changes its internal behavior.
 
-{{% children containerstyle="div" description="true" style="h3" depth="1" sort="weight" %}}
+{{% children type="card" description="true" sort="weight" %}}

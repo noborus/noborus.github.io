@@ -11,7 +11,7 @@ categories: ["sql"]
 現在のバージョンのPostgreSQLでは`SELECT ;`というSQL文を実行してもエラーになりません。
 試してみると`(1 row)`と返ってきたので、あれ？なんで？となりました。
 
-{{< tweet user="noborus" id="1547166536779313152" >}}
+{{< x user="noborus" id="1547166536779313152" >}}
 
 列数が0という指摘を受けて、一応0列があることを理解していたつもりだったのですけど、
 その仕様を勘違いしていたことに気づきました。
@@ -23,7 +23,7 @@ psqlで実行すると以下のようになります。
 
 ```SQL
 SELECT '1';
- ?column? 
+ ?column?
 ----------
  1
 (1 row)
@@ -82,9 +82,9 @@ ERROR:  42601: syntax error at or near ")"
 ```SQL
 \d one
                  Table "public.one"
- Column |  Type   | Collation | Nullable | Default 
+ Column |  Type   | Collation | Nullable | Default
 --------+---------+-----------+----------+---------
- i      | integer |           |          | 
+ i      | integer |           |          |
 ```
 
 ```SQL

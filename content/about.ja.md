@@ -7,13 +7,14 @@ menuPre = "<i class='fas fa-user'></i> "
 weight = 4
 +++
 
-{{< figure src="/images/noborus.png" title="斉藤 登のページです" width="100" height="100" >}}
+{{< figure src="/images/noborus.png" title="斉藤 登のページです" >}}
 
 フリーでやってます。
 
 ## Links
 
 * <i class="fab fa-github"></i>GitHub: [https://github.com/noborus](https://github.com/noborus)
+* <i class="fa-brands fa-bluesky"></i>Bluesky: [https://bsky.app/profile/noborus.bsky.social](https://bsky.app/profile/noborus.bsky.social)
 * Qiita: [https://qiita.com/noborus](https://qiita.com/noborus)
 * Zenn: [https://zenn.dev/noborus](https://zenn.dev/noborus)
 * {{% icon icon="envelope" %}}mail: [noborusai+dm@gmail.com](mailto:noborusai+dm@gmail.com)

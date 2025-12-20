@@ -28,4 +28,4 @@ CSV,LTSV,JSON,YAML,TBLNファイルにSQLを実行できるツールの[trdsql](
 
 ## 目次
 
-{{% children containerstyle="div" style="div" depth="1" sort="weight" %}}
+{{% children type="flat" depth="1" sort="weight" %}}

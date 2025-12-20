@@ -26,4 +26,4 @@ Since the results can be output in various formats, it can also be used for form
 
 ## table of contents
 
-{{% children containerstyle="div" style="div" depth="1" sort="weight" %}}
+{{% children type="flat" depth="3" sort="weight" %}}
