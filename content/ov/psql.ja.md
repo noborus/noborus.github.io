@@ -154,7 +154,7 @@ PAGER='ov -F --section-delimiter "^-"'
 
 ![\x](/ov/psql/vf.gif)
 
- (\x)と`\watch`を組み合わせることもできます。
+(\x)と`\watch`を組み合わせることもできます。
 
 ![watch2](/ov/psql/watch2.gif)
 
