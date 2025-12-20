@@ -4,6 +4,7 @@ title: "セクションの使い方"
 date: 2023-07-21T06:00:00+09:00
 description: "コンテンツをより良く整理するためにovのセクションを使用する方法を理解する"
 tags: ["ov"]
+images: ["/ov/start0.png", "/ov/start1.png"]
 categories: ["ov"]
 weight: 98
 ---

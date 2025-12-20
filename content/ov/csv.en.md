@@ -4,6 +4,7 @@ title: "view csv"
 description: "Use ov as a csv viewer to handle and process CSV files effectively."
 date: 2025-06-05T11:42:00+09:00
 tags: ["ov"]
+images: ["/ov/ov-csv.gif"]
 categories: ["ov"]
 weight: 10
 ---

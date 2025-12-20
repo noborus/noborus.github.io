@@ -4,6 +4,7 @@ title: "mysql"
 date: 2025-06-26T09:00:00+09:00
 description: "Using ov as a pager for mysql to improve query result display"
 tags: ["ov"]
+images: ["/ov/mysql/ov-mysql.gif"]
 categories: ["ov"]
 weight: 4
 ---

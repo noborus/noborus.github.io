@@ -4,6 +4,7 @@ title: "メモリ管理"
 date: 2023-07-07T06:00:00+09:00
 description: "ovを使用してメモリ使用量を効果的に管理する"
 tags: ["ov", "memory"]
+images: ["/ov/ov-file-mem.png", "/ov/ov-mem-mem.png"]
 categories: ["ov"]
 weight: 100
 ---

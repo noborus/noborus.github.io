@@ -42,4 +42,4 @@ linktitle = "ov"
 
 例えば、`git diff`をgitのページャーの設定として指定して起動する場合と、`git diff | ov`のようにコマンドを指定して起動する場合では、`git`コマンドの内部動作が異なり、表示も異なります。
 
-{{% children type="list" description="true" sort="weight" %}}
+{{% children type="card" description="true" sort="weight" %}}

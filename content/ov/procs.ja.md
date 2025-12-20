@@ -4,6 +4,7 @@ title: "procs"
 date: 2023-07-21T06:00:00+09:00
 description: "プロセス情報をより良く可視化するためにovをprocsのページャーとして使用する"
 tags: ["ov", "procs"]
+images: ["/ov/ov-procs.png"]
 categories: ["ov"]
 weight: 8
 ---
@@ -17,3 +18,5 @@ weight: 8
 [pager]
 command = "ov -H=1 -w=false -d=│"
 ```
+
+![procs](/ov/ov-procs.png)

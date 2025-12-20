@@ -3,6 +3,7 @@ author = "Noboru Saito"
 title = "OV - Terminal Pager"
 menuPre = "<i class='fab fa-github'></i> "
 description = "ov - Feature-rich terminal pager"
+images = ["/ov/ov-image.png"]
 tags = ["ov"]
 weight = 3
 linktitle = "ov"

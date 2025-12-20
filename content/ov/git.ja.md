@@ -4,6 +4,7 @@ title: "git"
 description: "gitコマンドの出力を読みやすくするためにovをページャーとして使用する"
 date: 2024-02-25T18:00:00+09:00
 tags: ["ov", "git"]
+images: ["/ov/ov-git-log.gif", "/ov/ov-git-diff.gif", "/ov/ov-git-section-header.gif", "/blog/ov-jump-section.gif"]
 categories: ["ov"]
 weight: 2
 ---

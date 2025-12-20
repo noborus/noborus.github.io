@@ -4,6 +4,7 @@ title: "filter search"
 date: 2024-04-22T08:00:00+09:00
 description: "Filter search results efficiently using ov's advanced search capabilities."
 tags: ["ov", "search", "filter"]
+images: ["/ov/ov-filter.gif"]
 categories: ["ov"]
 weight: 91
 ---
@@ -45,11 +46,11 @@ When used together, it can be used as a convenient `grep`.
 ps aux|ov --quit-if-one-screen --header --filter "postgres"
 USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
 postgres    1589  0.0  0.0 221992 29952 ?        Ss   Jul24   0:05 /usr/lib/postgresql/14/bin/postgres -D /var/lib/postgresql/14/main -c config_file=/etc/postgresql/14/main/postgresql.conf
-postgres    1624  0.0  0.0 222104 11336 ?        Ss   Jul24   0:00 postgres: 14/main: checkpointer 
-postgres    1626  0.0  0.0 221992  8904 ?        Ss   Jul24   0:01 postgres: 14/main: background writer 
-postgres    1627  0.0  0.0 221992 11464 ?        Ss   Jul24   0:01 postgres: 14/main: walwriter 
-postgres    1628  0.0  0.0 222560  9928 ?        Ss   Jul24   0:02 postgres: 14/main: autovacuum launcher 
-postgres    1629  0.0  0.0  76728  7112 ?        Ss   Jul24   0:02 postgres: 14/main: stats collector 
-postgres    1631  0.0  0.0 222420  8904 ?        Ss   Jul24   0:00 postgres: 14/main: logical replication launcher 
+postgres    1624  0.0  0.0 222104 11336 ?        Ss   Jul24   0:00 postgres: 14/main: checkpointer
+postgres    1626  0.0  0.0 221992  8904 ?        Ss   Jul24   0:01 postgres: 14/main: background writer
+postgres    1627  0.0  0.0 221992 11464 ?        Ss   Jul24   0:01 postgres: 14/main: walwriter
+postgres    1628  0.0  0.0 222560  9928 ?        Ss   Jul24   0:02 postgres: 14/main: autovacuum launcher
+postgres    1629  0.0  0.0  76728  7112 ?        Ss   Jul24   0:02 postgres: 14/main: stats collector
+postgres    1631  0.0  0.0 222420  8904 ?        Ss   Jul24   0:00 postgres: 14/main: logical replication launcher
 noborus   747819  0.0  0.0 1603756 7552 pts/0    Rl+  15:50   0:00 ov -H1 --filter postgres --quit-if-one-screen
 ```

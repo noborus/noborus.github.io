@@ -5,6 +5,7 @@ description: "Use ov as a pager for bat, a feature-rich alternative to cat, to v
 date: 2022-05-30T09:00:00+09:00
 lastmod: 2025-12-16T15:00:00+09:00
 tags: ["ov", "bat"]
+images: ["/ov/ov-bat.png"]
 categories: ["ov"]
 weight: 9
 ---

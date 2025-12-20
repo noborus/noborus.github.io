@@ -4,6 +4,7 @@ title: "procs"
 date: 2022-05-24T09:00:00+09:00
 description: "Use ov as a pager for procs to better visualize process information."
 tags: ["ov", "procs"]
+images: ["/ov/ov-procs.png"]
 categories: ["ov"]
 weight: 8
 ---
@@ -18,3 +19,5 @@ It is convenient to set header(`-H`) to 1 or 2.
 [pager]
 command = "ov -H=1 -w=false -d=│"
 ```
+
+![procs](/ov/ov-procs.png)

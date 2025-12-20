@@ -4,6 +4,7 @@ title: "複数の単語を複数の色でハイライト"
 date: 2023-07-21T06:00:00+09:00
 description: "ovのマルチカラーハイライト機能を使用して複数の単語を異なる色でハイライトする"
 tags: ["ov"]
+images: ["/ov/multi-color.png"]
 categories: ["ov"]
 weight: 13
 ---

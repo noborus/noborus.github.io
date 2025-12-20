@@ -5,6 +5,7 @@ description: "manページをナビゲートおよび読むためにovをペー�
 date: 2023-06-30T06:00:00+09:00
 tags: ["ov", "man"]
 categories: ["ov"]
+images: ["/ov/ov-man.png"]
 weight: 7
 ---
 

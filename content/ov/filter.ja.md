@@ -5,6 +5,7 @@ date: 2024-04-22T08:00:00+09:00
 lastmod: 2025-12-09T15:40:00+09:00
 description: "ovの高度な検索機能を使用して検索結果を効率的にフィルタリングする"
 tags: ["ov", "search", "filter", "grep"]
+images: ["/ov/ov-filter.gif"]
 categories: ["ov"]
 weight: 91
 ---

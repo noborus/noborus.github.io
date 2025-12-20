@@ -4,6 +4,7 @@ title: "delta"
 description: "Utilize ov as a pager for delta to compare and manage file differences effectively."
 date: 2025-06-06T15:00:00+09:00
 tags: ["ov", "git", "delta"]
+images: ["/ov/ov-delta-01.gif"]
 categories: ["ov"]
 weight: 3
 ---

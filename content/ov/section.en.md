@@ -4,6 +4,7 @@ title: "how to use section"
 date: 2022-05-26T08:00:00+09:00
 description: "Understand how to use sections in ov for better organization of content."
 tags: ["ov", "section"]
+images: ["/ov/start0.png", "/ov/start1.png"]
 categories: ["ov"]
 weight: 98
 ---

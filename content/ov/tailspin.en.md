@@ -4,6 +4,7 @@ title: "tailspin"
 description: "Use ov as a pager for tailspin to enhance the display of log files."
 date: 2025-03-30T09:00:00+09:00
 tags: ["ov", "tailspin"]
+images: ["/ov/tailspin.png"]
 categories: ["ov"]
 weight: 15
 ---

@@ -4,6 +4,7 @@ title: "memory management"
 date: 2023-07-07T06:00:00+09:00
 description: "Manage memory usage effectively with ov."
 tags: ["ov", "memory"]
+images: ["/ov/ov-file-mem.png", "/ov/ov-mem-mem.png"]
 categories: ["ov"]
 weight: 100
 ---

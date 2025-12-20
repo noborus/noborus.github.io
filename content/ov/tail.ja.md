@@ -5,6 +5,7 @@ date: 2023-07-21T06:00:00+09:00
 lastmod: 2025-12-19T15:00:00+09:00
 description: "リアルタイム更新のためにovのフォローモードを使用する方法"
 tags: ["ov", "tail"]
+images: ["/ov/ov-tail.gif"]
 categories: ["ov"]
 weight: 90
 ---

@@ -4,6 +4,7 @@ title: "mysql"
 date: 2025-06-26T8:57:00+09:00
 description: "クエリ結果の表示を向上させるためにovをmysqlのページャーとして使用する"
 tags: ["ov"]
+images: ["/ov/mysql/ov-mysql.gif"]
 categories: ["ov"]
 weight: 4
 ---

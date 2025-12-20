@@ -4,6 +4,7 @@ title: "multiple files"
 date: 2022-06-26T09:00:00+09:00
 description: "Display and manage multiple files simultaneously with ov."
 tags: ["ov"]
+images: ["/ov/ov-multifile.gif"]
 categories: ["ov"]
 weight: 12
 ---

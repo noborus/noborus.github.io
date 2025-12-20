@@ -5,6 +5,7 @@ description: "batはcatの高機能な代替コマンドであり、ファイル
 date: 2023-06-30T06:00:00+09:00
 lastmod: 2025-12-16T15:00:00+09:00
 tags: ["ov", "bat"]
+images: ["/ov/ov-bat.png"]
 categories: ["ov"]
 weight: 9
 ---

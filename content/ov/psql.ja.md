@@ -4,6 +4,7 @@ title: "psql"
 date: 2025-06-26T15:00:00+09:00
 description: "クエリ結果の表示を向上させるためにovをpsqlのページャーとして使用する"
 tags: ["ov", "psql"]
+images: ["/ov/psql/psql00.png"]
 categories: ["ov"]
 weight: 1
 ---

@@ -4,6 +4,7 @@ title: "ps"
 date: 2025-06-06T15:55:00+09:00
 description: "Use ov as a pager for ps to format and display process information clearly."
 tags: ["ov", "ps"]
+images: ["/ov/ov-ps.png", "/ov/ov-ps.gif"]
 categories: ["ov"]
 weight: 7
 ---

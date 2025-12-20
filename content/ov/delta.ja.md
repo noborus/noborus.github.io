@@ -4,6 +4,7 @@ title: "delta"
 description: "ovをdeltaのページャーとして利用し、ファイルの差分を比較および管理する"
 date: 2025-06-06T15:00:00+09:00
 tags: ["ov", "git", "delta"]
+images: ["/ov/ov-delta-01.gif"]
 categories: ["ov"]
 weight: 3
 ---

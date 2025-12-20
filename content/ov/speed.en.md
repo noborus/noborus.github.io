@@ -4,6 +4,7 @@ title: "speed of opening large files"
 date: 2024-05-03T17:00:00+09:00
 description: "Experience fast opening of large files with ov."
 tags: ["ov"]
+images: ["/ov/ov-large.gif"]
 categories: ["ov"]
 weight: 14
 ---

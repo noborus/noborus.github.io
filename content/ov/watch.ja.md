@@ -4,6 +4,7 @@ title: "ovでファイル監視（ウォッチ）"
 date: 2023-07-21T06:00:00+09:00
 description: "ovのウォッチモードを使用してファイルの変更をリアルタイムで監視する"
 tags: ["ov", "watch"]
+images: ["/ov/ov-watch.gif"]
 categories: ["ov"]
 weight: 9
 ---

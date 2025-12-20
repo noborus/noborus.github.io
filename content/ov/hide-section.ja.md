@@ -4,6 +4,7 @@ title: "他のセクションを隠す"
 date: 2024-07-28T8:28:00+09:00
 description: "ovのセクションを使用する際に他のセクションを非表示にする方法"
 tags: ["ov", "slide", "section"]
+images: ["/ov/ov-hide-section.gif"]
 categories: ["ov"]
 weight: 99
 ---

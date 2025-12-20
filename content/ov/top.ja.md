@@ -4,6 +4,7 @@ title: "top"
 date: 2023-07-08T15:00:00+09:00
 description: "システム監視情報の表示を向上させるためにovをtopのページャーとして使用する"
 tags: ["ov", "top"]
+images: ["/ov/ov-top.gif"]
 categories: ["ov"]
 weight: 8
 ---

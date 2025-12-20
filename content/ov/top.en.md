@@ -4,6 +4,7 @@ title: "top"
 date: 2023-01-30T01:00:00+09:00
 description: "Enhance the display of system monitoring information by using ov as a pager for top."
 tags: ["ov", "top"]
+images: ["/ov/ov-top.gif"]
 categories: ["ov"]
 weight: 8
 ---

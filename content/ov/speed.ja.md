@@ -4,6 +4,7 @@ title: "大きなファイルを開く速度"
 date: 2024-05-03T17:00:00+09:00
 description: "ovを使用して大きなファイルを高速で開く"
 tags: ["ov", "speed"]
+images: ["/ov/ov-large.gif"]
 categories: ["ov"]
 weight: 14
 ---
