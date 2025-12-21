@@ -1,5 +1,6 @@
 ---
 title: "Configuring PAGER in psql"
+author: "Noboru Saito"
 tags: ["psql", "pager", "less", "more", "pspg", "ov", "postgresql"]
 categories: ["psql"]
 date: 2025-11-16T20:00:00+09:00
@@ -77,8 +78,8 @@ pager                    1
 pager_min_lines          10000
 recordsep                '\n'
 recordsep_zero           off
-tableattr                
-title                    
+tableattr
+title
 tuples_only              off
 unicode_border_linestyle single
 unicode_column_linestyle single

@@ -1,5 +1,6 @@
 ---
 title: "Guess the width of the width-specified format"
+author: "Noboru Saito"
 tags: ["guesswidth","english"]
 categories: ["guesswidth"]
 date: 2023-04-09T7:00:00+09:00
@@ -36,7 +37,7 @@ To use guesswidth, simply pass in the pipe `|`. By default, `|` is inserted as a
 
 ```console
 ps |guesswidth
-    PID| TTY     |     TIME|CMD 
+    PID| TTY     |     TIME|CMD
 1145448| pts/2   | 00:00:00|zsh
 1158532| pts/2   | 00:00:00|ps
 ```

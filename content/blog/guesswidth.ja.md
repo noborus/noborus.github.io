@@ -1,5 +1,6 @@
 ---
 title: "幅指定フォーマットの幅を推測する"
+author: "Noboru Saito"
 tags: ["guesswidth", "ov"]
 categories: ["guesswidth"]
 date: 2023-04-09T7:00:00+09:00
@@ -33,7 +34,7 @@ guesswidthの使い方はパイプ`|`で渡すだけです。デフォルトで�
 
 ```console
 ps
-    PID TTY          TIME CMD 
+    PID TTY          TIME CMD
 1145448 pts/2    00:00:00 zsh
 1158532 pts/2    00:00:00 ps
 ```
@@ -42,7 +43,7 @@ ps
 
 ```console
 ps |guesswidth
-    PID| TTY     |     TIME|CMD 
+    PID| TTY     |     TIME|CMD
 1145448| pts/2   | 00:00:00|zsh
 1158532| pts/2   | 00:00:00|ps
 ```
