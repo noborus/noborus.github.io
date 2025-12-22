@@ -1,6 +1,7 @@
 ---
 title: "Top"
 archetype: "home"
+Description: "Projects developed by noborus"
 weight: 1
 ---
 
@@ -18,7 +19,7 @@ weight: 1
 </span>
 
 [{{% icon book %}}trdsql pages](/trdsql/)
-  
+
 A tool that can execute SQL on CSV, LTSV, JSON, YAML, TBLN files
 
 * [Created a command line tool called trdsql](https://qiita.com/noborus/items/f253961cca6f4465f20c)(Qiita)

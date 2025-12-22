@@ -1,6 +1,7 @@
 ---
 title: "Top"
 archetype: "home"
+Description: "noborusの作ったものや参加しているプロジェクトの紹介"
 weight: 1
 ---
 
@@ -18,7 +19,7 @@ weight: 1
 </span>
 
 [{{% icon book %}}trdsql pages](/trdsql/)
-  
+
 CSV,LTSV,JSON,YAML,TBLNファイルにSQLを実行できるツール
 
 * [trdsqlのBlog](/trdsql/)
