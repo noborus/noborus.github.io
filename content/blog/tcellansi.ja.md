@@ -7,6 +7,7 @@ tags:
   - tcell
   - ANSI
   - terminal
+images: ["/images/blog/tcellansi.png"]
 description: "Go 向けライブラリ `tcellansi` 紹介ページ。リポジトリ: https://github.com/noborus/tcellansi"
 ---
 
