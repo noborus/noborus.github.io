@@ -1,5 +1,5 @@
 ---
-title: "tcellansi の紹介"
+title: "tcellの画面をANSIエスケープシーケンスで再現するtcellansi"
 date: 2025-12-22T12:00:00+09:00
 draft: false
 tags:
@@ -13,10 +13,11 @@ description: "Go 向けライブラリ `tcellansi` 紹介ページ。リポジ�
 
 ## 概要
 
-`tcellansi` は Go言語向けのライブラリで、tcellで描画した画面のスタイルをANSIエスケープシーケンスに変換して扱いやすくすることを目的としています。
+`tcellansi` は Go言語向けのライブラリで、[tcell](https://github.com/gdamore/tcell)で描画した画面のスタイルをANSIエスケープシーケンスに変換して扱いやすくすることを目的としています。
 
 ## 主な特長
 
+- `tcell` v3 に対応（v2はタグを指定すれば可能）
 - `tcell`のスタイルをANSIエスケープシーケンスに変換
 - `tcell`の画面範囲を指定してANSIエスケープシーケンス付きの文字列に変換も可能
 
@@ -97,5 +98,5 @@ tcellの画面表示後、なにかキーを押したら終了し、その後tce
 
 ## リンク
 
-- リポジトリ: https://github.com/noborus/tcellansi
+- リポジトリ: <https://github.com/noborus/tcellansi>
 - サンプルや README: 上記リポジトリ内の README を参照
