@@ -7,6 +7,7 @@ tags:
   - tcell
   - ANSI
   - terminal
+  - english
 images: ["/images/blog/tcellansi.png"]
 description: "Introduction to the Go library `tcellansi`. Repository: https://github.com/noborus/tcellansi"
 ---
