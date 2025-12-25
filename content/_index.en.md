@@ -5,6 +5,10 @@ Description: "Projects developed by noborus"
 weight: 1
 ---
 
+Language switch: [English](/) | [Japanese](/ja/)
+
+NFC Card Business Card: [About NFC Card Business Card](nfccard/)
+
 ## [<i class="fas fa-hammer"></i> Products](https://github.com/noborus/)
 
 ---

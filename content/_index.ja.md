@@ -5,6 +5,10 @@ Description: "noborusの作ったものや参加しているプロジェクト�
 weight: 1
 ---
 
+言語切り替え: [English](/) | [日本語](/ja/)
+
+[NFCカード名刺について](nfccard/)
+
 ## [<i class="fas fa-hammer"></i> 作ったもの](https://github.com/noborus/)
 
 ---
