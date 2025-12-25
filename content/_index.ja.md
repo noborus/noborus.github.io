@@ -5,7 +5,7 @@ Description: "noborusの作ったものや参加しているプロジェクト�
 weight: 1
 ---
 
-言語切り替え: [English](/) | [日本語](/ja/)
+言語切り替え: [English](/en/) | [日本語](/ja/)
 
 [NFCカード名刺について](nfccard/)
 
