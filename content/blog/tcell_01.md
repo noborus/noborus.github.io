@@ -1,7 +1,8 @@
 +++
 author = "Noboru Saito"
-title = "tcellについて"
+title = "tcell(v2)の使い方: SetContent()でUnicode文字を扱う"
 date = "2020-05-13"
+lastmod = "2026-01-01T14:00:00+09:00"
 description = ""
 tags = [
     "tcell",

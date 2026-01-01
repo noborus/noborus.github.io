@@ -1,7 +1,8 @@
 +++
 author = "Noboru Saito"
-title = "tcellについて2"
+title = "tcell(v2)の使い方: イベント処理"
 date = "2020-05-17"
+lastmod = "2026-01-01T14:00:00+09:00"
 description = ""
 tags = [
     "tcell",
@@ -17,7 +18,7 @@ categories = [
 ## これまで
 
 1. [goのTUIについて](/blog/go_tui)
-2. [tcellについて](/blog/tcell_01)
+2. [tcell(v2)の使い方: SetContent()でUnicode文字を扱う](/blog/tcell_01)
 
 ## イベント
 

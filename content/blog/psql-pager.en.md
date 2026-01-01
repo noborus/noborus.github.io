@@ -2,6 +2,7 @@
 title: "Configuring PAGER in psql"
 author: "Noboru Saito"
 tags: ["psql", "pager", "less", "more", "pspg", "ov", "postgresql", "english"]
+images: ["/blog/psql-ov.png"]
 categories: ["psql"]
 date: 2025-11-16T20:00:00+09:00
 ---

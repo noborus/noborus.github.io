@@ -2,7 +2,7 @@
 title: "psqlのPAGERを設定する"
 author: "Noboru Saito"
 tags: ["psql", "pager", "less", "more", "pspg", "ov", "postgresql"]
-images: ["/images/blog/psql-pager.en.png"]
+images: ["/blog/psql-ov.png"]
 categories: ["psql"]
 date: 2023-06-11T07:00:00+09:00
 lastmod: 2025-12-09T15:40:00+09:00
