@@ -5,7 +5,7 @@ Description: "Projects developed by noborus"
 weight: 1
 ---
 
-Language switch: [English](/) | [Japanese](/ja/)
+Language / 言語: [English](/) | [日本語](/ja/)
 
 NFC Card Business Card: [About NFC Card Business Card](nfccard/)
 
