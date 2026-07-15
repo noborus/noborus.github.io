@@ -26,4 +26,3 @@ Simply prepare a text file like the one below to enable slide presentation.
 [slide-en.txt](/ov/slide-en.txt)
 
 ![Slide](/ov/slide-en.gif)
-
