@@ -4,10 +4,11 @@ title: "hide other sections"
 date: 2024-07-28T8:28:00+09:00
 description: "Learn how to hide other sections when using sections in ov."
 tags: ["ov", "slide", "section"]
-images: ["/ov/ov-hide-section.gif"]
+images: ["/ov/ov-hide-section.png"]
 categories: ["ov"]
 weight: 99
 ---
+![hide-other-section](/ov/ov-hide-section.png)
 
 By using `--hide-other-section` with `--section-delimiter`, you can hide all sections except the currently displayed top section.
 

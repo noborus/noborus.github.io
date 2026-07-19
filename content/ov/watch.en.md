@@ -2,9 +2,10 @@
 author: "Noboru Saito"
 title: "watch files with ov"
 date: 2022-05-22T18:00:00+09:00
+lastmod: 2026-07-19T15:00:00+09:00
 description: "Monitor file changes in real-time using ov's watch mode."
 tags: ["ov", "watch"]
-images: ["/ov/ov-watch.gif"]
+images: ["/ov/ov-watch.png"]
 categories: ["ov"]
 weight: 9
 ---

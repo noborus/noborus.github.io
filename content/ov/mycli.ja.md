@@ -3,17 +3,22 @@ author: "Noboru Saito"
 title: "mycli"
 date: 2023-07-08T15:00:00+09:00
 description: "MySQLコマンドの出力を読みやすくするためにovをmycliのページャーとして使用する"
+images: ["/ov/ov-mycli.png"]
 tags: ["ov", "mycli", "mysql"]
 categories: ["ov"]
 weight: 6
 ---
 
+![mycli](/ov/ov-mycli.png)
+
 `ov`は[mycli](https://github.com/dbcli/mycli)のページャーとしても使用できます。
 
-`mycli`はmysqlの`~/.my.cnf`ファイルを使用して設定できます。
-[https://www.mycli.net/config](https://www.mycli.net/config)を参照してください。
+`mycli`の設定は~/.myclircに記述します。
+Windowsの場合は、`C:\Users\<username>\.myclirc`に記述します。
 
-```ini
-[client]
-pager="ov -C --skip-lines 1 --header 1 -d'|'"
+```.myclirc
+[main]
+# disabled pager on startup
+enable_pager = True
+pager = 'ov -C -d "│" --section-delimiter "^┌" --align --section-header-num 3 --column-mode'
 ```

@@ -2,13 +2,14 @@
 author: "Noboru Saito"
 title: "multiple files"
 date: 2022-06-26T09:00:00+09:00
-lastmod: 2026-03-11T17:00:00+09:00
+lastmod: 2026-07-19T16:00:00+09:00
 description: "Display and manage multiple files simultaneously with ov."
 tags: ["ov"]
-images: ["/ov/ov-multifile.gif"]
+images: ["/ov/ov-multifiles.png"]
 categories: ["ov"]
 weight: 12
 ---
+![ov-multifiles](/ov/ov-multifiles.png)
 
 `ov` can specify multiple files.
 

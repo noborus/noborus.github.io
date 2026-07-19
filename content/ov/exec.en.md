@@ -5,10 +5,12 @@ description: "Use ov to execute commands and display their output dynamically."
 date: 2023-07-21T06:00:00+09:00
 lastmod: 2026-05-19T14:00:00+09:00
 tags: ["ov", "exec"]
-images: ["/ov/ov-exec.gif"]
+images: ["/ov/ov-exec.png"]
 categories: ["ov"]
 weight: 90
 ---
+![ov-exec](/ov/ov-exec.png)
+
 Using ov Exec mode, you can execute a command and display its output dynamically.
 By using `--follow-all`, you can always show whichever stream was output most recently.
 This lets you view standard output and standard error separately while automatically switching when an error appears.

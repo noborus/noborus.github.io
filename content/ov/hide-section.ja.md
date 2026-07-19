@@ -4,12 +4,15 @@ title: "他のセクションを隠す"
 date: 2024-07-28T8:28:00+09:00
 description: "ovのセクションを使用する際に他のセクションを非表示にする方法"
 tags: ["ov", "slide", "section"]
-images: ["/ov/ov-hide-section.gif"]
+images: ["/ov/ov-hide-section.png"]
 categories: ["ov"]
 weight: 99
 ---
+![hide-other-section](/ov/ov-hide-section.png)
 
 `--section-delimiter`を使用して、セクション表示しているときに、`--hide-other-section`を使用すると、現在表示しているトップのセクション以外を隠すことができます。
+
+他のセクションを隠すことにより、スライド表示のようなことができます。
 
 ```console
 ov --section-delimiter "^#" --hide-other-section README.md

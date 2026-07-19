@@ -4,10 +4,12 @@ title: "大きなファイルを開く速度"
 date: 2024-05-03T17:00:00+09:00
 description: "ovを使用して大きなファイルを高速で開く"
 tags: ["ov", "speed"]
-images: ["/ov/ov-large.gif"]
+images: ["/ov/ov-speed.png"]
 categories: ["ov"]
 weight: 14
 ---
+![ov-speed](/ov/ov-speed.png)
+
 ページャーはファイルを開くのは一瞬で表示するため、単純な速度比較は難しいですが、`ov`はページャーの中でも大きなファイルを快適に表示できます。
 
 まず、一般的なページャーはエディターと違い大きなファイルを扱えるように設計されています。

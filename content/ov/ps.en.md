@@ -5,10 +5,12 @@ date: 2025-06-06T15:55:00+09:00
 lastmod: 2026-07-15T15:45:00+09:00
 description: "Use ov as a pager for ps to format and display process information clearly."
 tags: ["ov", "ps"]
-images: ["/ov/ov-ps.png", "/ov/ov-ps.gif"]
+images: ["/ov/ov-ps.png"]
 categories: ["ov"]
 weight: 7
 ---
+![ov-ps.png](/ov/ov-ps.png)
+
 The `ps` command is a classic tool for displaying process information.
 Its output is shown in a table-like format that includes process ID, CPU usage, memory usage, command name, and more.
 In practice, however, columns are not always strictly aligned, and long values can make the output look like loosely space-separated text.

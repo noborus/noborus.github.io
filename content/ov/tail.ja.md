@@ -2,13 +2,14 @@
 author: "Noboru Saito"
 title: "フォローモードの使い方"
 date: 2023-07-21T06:00:00+09:00
-lastmod: 2025-12-19T15:00:00+09:00
+lastmod: 2026-07-19T15:00:00+09:00
 description: "リアルタイム更新のためにovのフォローモードを使用する方法"
 tags: ["ov", "tail"]
-images: ["/ov/ov-tail.gif"]
+images: ["/ov/ov-tail.png"]
 categories: ["ov"]
 weight: 90
 ---
+![ov-tail](/ov/ov-tail.png)
 
 出力されたデータを追加して、最下行に移動します（tail -fのように）。
 

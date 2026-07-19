@@ -4,10 +4,11 @@ title: "git"
 description: "Use ov as a pager for git to improve the readability of git command outputs."
 date: 2025-07-21T08:58:00+09:00
 tags: ["ov", "git"]
-images: ["/ov/ov-git-log.gif", "/ov/ov-git-diff.gif", "/ov/ov-git-section-header.gif", "/blog/ov-jump-section.gif"]
+images: ["/ov/ov-git-log.png"]
 categories: ["ov"]
 weight: 2
 ---
+![ov-git-log](/ov/ov-git-log.png)
 
 Git calls pager when needed.
 Git output will be easier to use if each section is separated by a section delimiter.

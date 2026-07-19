@@ -4,10 +4,14 @@ title: "csvの表示"
 description: "ovをCSVファイルの処理および表示に使用する"
 date: 2025-06-05T11:42:00+09:00
 tags: ["ov", "csv"]
-images: ["/ov/ov-csv.gif"]
+images: ["/ov/ov-csv.png"]
 categories: ["ov"]
 weight: 10
 ---
+![ov-csv.png](/ov/ov-csv.png)
+
+## 基本的な使い方
+
 `ov`は非常に高速かつ多機能なCSVビューワーにもなります。
 システムメモリを超えるような大きなCSVファイルでも瞬時に開くことができ、列の整列・色分け・列の縮小・固定表示など、快適なデータ閲覧のための高度な機能を備えています。
 ターミナル上でCSVデータの閲覧・検索・分析を効率的に行いたい方に最適です。
@@ -16,9 +20,7 @@ weight: 10
 ov -H1 -C -d',' -c --column-rainbow MOCK_DATA.csv
 ```
 
-![ov-csv.gif](/ov/ov-csv.gif)
-
-v0.37.0からは`--align`オプションを追加することで、列を整列できます。
+さらに`--align`オプションを追加すると列を整列できます。
 
 ```console
 ov -H1 -C -d',' -c --column-rainbow --align MOCK_DATA.csv

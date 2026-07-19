@@ -4,10 +4,13 @@ title: "view csv"
 description: "Use ov as a csv viewer to handle and process CSV files effectively."
 date: 2025-06-05T11:42:00+09:00
 tags: ["ov"]
-images: ["/ov/ov-csv.gif"]
+images: ["/ov/ov-csv.png"]
 categories: ["ov"]
 weight: 10
 ---
+![ov-csv.png](/ov/ov-csv.png)
+
+## Basic Usage
 
 `ov` is a very fast and feature-rich CSV viewer.
 It can instantly open even large CSV files that exceed your system's memory.
@@ -19,9 +22,7 @@ With ov, you can efficiently handle, search, and analyze tabular data directly i
 ov -H1 -C -d',' -c --column-rainbow MOCK_DATA.csv
 ```
 
-![ov-csv.gif](/ov/ov-csv.gif)
-
-v0.37.0 added the `--align` option to align columns.
+By adding the `--align` option, you can align the columns.
 
 ```console
 ov -H1 -C -d',' -c --column-rainbow --align MOCK_DATA.csv

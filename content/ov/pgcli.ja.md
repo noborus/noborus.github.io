@@ -4,10 +4,12 @@ title: "pgcli"
 date: 2024-02-28T06:00:00+09:00
 description: "データベースクエリ結果の可視化を向上させるためにovをpgcliのページャーとして統合する"
 tags: ["ov", "pgcli", "PostgreSQL"]
-images: ["/ov/ov-pgcli-section.gif"]
+images: ["/ov/ov-pgcli.png"]
 categories: ["ov"]
 weight: 5
 ---
+
+![pgcli](/ov/ov-pgcli.png)
 
 `ov`は[pgcli](https://github.com/dbcli/pgcli)のページャーとしても使用可能です。
 

@@ -5,10 +5,12 @@ date: 2024-04-22T08:00:00+09:00
 lastmod: 2025-12-09T15:40:00+09:00
 description: "ovの高度な検索機能を使用して検索結果を効率的にフィルタリングする"
 tags: ["ov", "search", "filter", "grep"]
-images: ["/ov/ov-filter.gif"]
+images: ["/ov/ov-filter.png"]
 categories: ["ov"]
 weight: 91
 ---
+![filter](/ov/ov-filter.png)
+
 検索してマッチした行のみを表示できます。
 
 ## マッチした行のみを表示

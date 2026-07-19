@@ -4,10 +4,12 @@ title: "speed of opening large files"
 date: 2024-05-03T17:00:00+09:00
 description: "Experience fast opening of large files with ov."
 tags: ["ov"]
-images: ["/ov/ov-large.gif"]
+images: ["/ov/ov-speed.png"]
 categories: ["ov"]
 weight: 14
 ---
+![ov-speed](/ov/ov-speed.png)
+
 The pager is designed to display files instantly, so it is difficult to make a simple speed comparison, but `ov` can comfortably display large files even among pagers.
 
 First of all, unlike editors, pagers are designed to handle large files.

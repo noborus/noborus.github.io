@@ -4,10 +4,11 @@ title: "filter search"
 date: 2024-04-22T08:00:00+09:00
 description: "Filter search results efficiently using ov's advanced search capabilities."
 tags: ["ov", "search", "filter"]
-images: ["/ov/ov-filter.gif"]
+images: ["/ov/ov-filter.png"]
 categories: ["ov"]
 weight: 91
 ---
+![filter](/ov/ov-filter.png)
 
 How to filter search results
 
