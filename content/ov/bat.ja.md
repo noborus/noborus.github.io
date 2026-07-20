@@ -3,7 +3,7 @@ author: "Noboru Saito"
 title: "bat"
 description: "batはcatの高機能な代替コマンドであり、ファイル内容を表示およびナビゲートするためにovをページャーとして使用します。"
 date: 2023-06-30T06:00:00+09:00
-lastmod: 2025-12-16T15:00:00+09:00
+lastmod: 2026-07-21T08:45:00+09:00
 tags: ["ov", "bat"]
 images: ["/ov/ov-bat.png"]
 categories: ["ov"]
@@ -30,3 +30,23 @@ bat --wrap=never README.md
 ```
 
 ![bat](/ov/ov-bat.png)
+
+## Markdownの操作を強化
+
+`bat`と`ov`を組み合わせることで、Markdownの操作を強化できます。
+
+```console
+bat README.md
+```
+
+`bat`では、レンダリングしても内容は書き換えないので、元のMarkdownと同じようにセクションを目次にできます。
+
+`alt+d`で、`Section delimiter:`に"^#"を指定します。さらに`alt+u`でセクション一覧を表示できます。
+
+## Markdownのハイライトを抑制
+
+![bat-markdown](/ov/bat-markdown.png)
+
+さらに`o`を押すことで、ハイライトされたスタイルの一覧が表示されます。`Styles`の番号を指定することで、ハイライトの抑制もできます。
+
+![highlight](/ov/highlight.png)
