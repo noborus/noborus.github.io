@@ -5,7 +5,7 @@ description: "ovを使用してMarkdownファイルを表示およびナビゲ�
 date: 2023-07-21T06:00:00+09:00
 lastmod: 2026-07-20T15:45:00+09:00
 tags: ["ov", "markdown"]
-images: ["/ov/ov-markdown.png"]
+images: ["/ov/ov-highlight1.png"]
 categories: ["ov"]
 weight: 11
 ---
