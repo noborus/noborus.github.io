@@ -1,6 +1,6 @@
 ---
 author: "Noboru Saito"
-title: "Mark Feature"
+title: "mark feature"
 description: "Mark feature. Mark is a function to remember the position on the ov screen."
 date: 2026-02-23T15:00:00+09:00
 tags: ["ov", "mark"]
