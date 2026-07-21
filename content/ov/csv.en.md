@@ -1,9 +1,9 @@
 ---
 author: "Noboru Saito"
 title: "view csv"
-description: "Use ov as a csv viewer to handle and process CSV files effectively."
+description: "Use ov as a csv viewer"
 date: 2025-06-05T11:42:00+09:00
-tags: ["ov"]
+tags: ["ov", "csv"]
 images: ["/ov/ov-csv.png"]
 categories: ["ov"]
 weight: 10

@@ -1,7 +1,7 @@
 ---
 author: "Noboru Saito"
 title: "csvの表示"
-description: "ovをCSVファイルの処理および表示に使用する"
+description: "ovをCSVファイルの表示に使用する"
 date: 2025-06-05T11:42:00+09:00
 tags: ["ov", "csv"]
 images: ["/ov/ov-csv.png"]
