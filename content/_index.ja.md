@@ -22,7 +22,7 @@ Language / 言語: [English](/en/) | [日本語](/ja/)
 [![Latest Release](https://img.shields.io/github/v/release/noborus/trdsql.svg?lightbox=false)](https://github.com/noborus/trdsql/releases)
 </span>
 
-[{{% icon book %}}trdsql pages](/trdsql/)
+[<img class="link-inline-icon" src="/images/logo-icon.svg" alt="Logo" decoding="async"><span class="link-inline-label">公式trdsqlページ</span>](/trdsql/)
 
 CSV,LTSV,JSON,YAML,TBLNファイルにSQLを実行できるツール
 
@@ -42,7 +42,7 @@ CSV,LTSV,JSON,YAML,TBLNファイルにSQLを実行できるツール
 [![Latest Release](https://img.shields.io/github/v/release/noborus/ov.svg?lightbox=false)](https://github.com/noborus/ov/releases)
 </span>
 
-[{{% icon book %}}ov pages](/ov/)
+[<img class="link-inline-icon" src="/images/logo-icon.svg" alt="Logo" decoding="async"><span class="link-inline-label">公式ovページ</span>](/ov/)
 
 Feature-rich terminal Pager
 

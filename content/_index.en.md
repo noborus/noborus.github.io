@@ -22,7 +22,8 @@ NFC Card Business Card: [About NFC Card Business Card](nfccard/)
 [![Latest Release](https://img.shields.io/github/v/release/noborus/trdsql.svg?lightbox=false)](https://github.com/noborus/trdsql/releases)
 </span>
 
-[{{% icon book %}}trdsql pages](/trdsql/)
+[<img class="link-inline-icon" src="/images/logo-icon.svg" alt="Logo" decoding="async"><span class="link-inline-label">official trdsql page</span>](/trdsql/)
+
 
 A tool that can execute SQL on CSV, LTSV, JSON, YAML, TBLN files
 
@@ -41,7 +42,7 @@ A tool that can execute SQL on CSV, LTSV, JSON, YAML, TBLN files
 [![Latest Release](https://img.shields.io/github/v/release/noborus/ov.svg?lightbox=false)](https://github.com/noborus/ov/releases)
 </span>
 
-[{{% icon book %}}ov pages](/ov/)
+[<img class="link-inline-icon" src="/images/logo-icon.svg" alt="Logo" decoding="async"><span class="link-inline-label">official ov page</span>](/ov/)
 
 Feature-rich terminal Pager
 
