@@ -42,3 +42,13 @@ ov --section-delimiter "^#" --hide-other-section README.md
 ```
 
 ![ov-markdown](/ov/ov-markdown.gif)
+
+## Word Wrap
+
+Use `--word-wrap` to wrap long lines to fit the screen width.
+
+```console
+ov --section-delimiter "^#" --wrap=word README.md
+```
+
+See [word-wrap](/ov/word-wrap/) for details.

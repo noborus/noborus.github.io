@@ -42,3 +42,13 @@ ov --section-delimiter "^#" --hide-other-section README.md
 ```
 
 ![ov-markdown](/ov/ov-markdown.gif)
+
+## ワードラップ
+
+`--word-wrap`を指定すると、長い行が画面幅に合わせて折り返されます。
+
+```console
+ov --section-delimiter "^#" --wrap=word README.md
+```
+
+詳細は[word-wrap](/ov/word-wrap/)を参照してください。

@@ -3,14 +3,12 @@ author = "Noboru Saito"
 title = "OV - Terminal Pager"
 menuPre = "<i class='fab fa-github'></i> "
 description = "ov - Feature-rich terminal pager"
-images = ["/ov/ov-image.png"]
+images = ["/ov/ov-logo.png"]
 tags = ["ov"]
 weight = 3
 linktitle = "ov"
 +++
-Feature-rich terminal pager
-
-[![ov](ov-image.png)](https://github.com/noborus/ov)
+[![ov](/images/ov-logo.png)](https://github.com/noborus/ov)
 
 <div id="download">
 {{% button icon="download" style="info" href="https://github.com/noborus/ov/releases/latest" %}}Download{{% /button %}}

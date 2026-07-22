@@ -3,14 +3,12 @@ author = "Noboru Saito"
 title = "ov - ターミナルページャー"
 menuPre = "<i class='fab fa-github'></i> "
 description = "ov - 機能豊富なページャー"
+images = ["/ov/ov-logo.png"]
 tags = "ov"
 weight = 3
 linktitle = "ov"
 +++
-
-機能豊富なターミナルページャー
-
-[![ov](ov-image.png)](https://github.com/noborus/ov)
+[![ov](/images/ov-logo.png)](https://github.com/noborus/ov)
 
 <div id="download">
 {{% button icon="download" style="info" href="https://github.com/noborus/ov/releases/latest" %}}Download{{% /button %}}
