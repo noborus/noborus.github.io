@@ -11,7 +11,11 @@ tags = [
 categories = [
     "sql",
 ]
+images = [
+    "/images/blog/sqlorder-orderby.svg"
+]
 +++
+![SQL ORDER BY Column Numbers and Expressions](/images/blog/sqlorder-orderby.svg)
 
 ## Background
 

@@ -10,7 +10,12 @@ tags = [
 categories = [
     "sql",
 ]
+images = [
+"/images/blog/sqlorder-orderby.svg"
+]
 +++
+
+![SQLのORDER BY 列番号と式](/images/blog/sqlorder-orderby.svg)
 
 ## きっかけ
 
