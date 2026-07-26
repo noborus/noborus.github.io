@@ -69,7 +69,7 @@ If you make a mistake, delete what you entered and type it again.
 Depending on your terminal theme, syntax highlighting may use colors that are hard to read.
 In that case, you can target and suppress only those specific styles.
 
-![ov-highlight5](/ov/ov-highlight5.png)
+![ov-highlight5](/ov/ov-highlight5.gif)
 
 ## Change the syntax-highlighting application
 
