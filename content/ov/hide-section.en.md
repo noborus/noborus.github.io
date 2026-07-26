@@ -1,6 +1,6 @@
 ---
 author: "Noboru Saito"
-title: "hide other sections"
+title: "Hide other sections"
 date: 2024-07-28T8:28:00+09:00
 description: "Learn how to hide other sections when using sections in ov."
 tags: ["ov", "slide", "section"]

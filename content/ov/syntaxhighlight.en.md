@@ -3,6 +3,7 @@ author: "Noboru Saito"
 title: "How ov thinks about syntax highlighting"
 description: "The design approach to syntax highlighting in ov."
 date: 2026-07-21T08:45:00+09:00
+lastmod: 2026-07-26T09:30:00+09:00
 tags: ["ov", "syntaxhighlight"]
 images: ["/ov/ov-highlight1.png"]
 categories: ["ov"]
@@ -25,21 +26,22 @@ Some people have proposed ways to address this problem.
 
 * [I am sorry, but everyone is getting syntax highlighting wrong](https://tonsky.me/blog/syntax-highlighting/)
 
-I agree with much of that direction, especially the idea of not emphasizing non-essential elements too much.
-Still, what is essential changes with the task and context.
-When tracking an implementation bug, reading design intent, or focusing only on SQL conditions, the parts you want to see are different.
+I agree with much of that direction, especially the idea of not over-emphasizing elements that are not important.
+However, what counts as important changes depending on what you are trying to read at that moment.
+Sometimes comments are important. Sometimes strings are. Sometimes keywords matter most, and sometimes delimiters do.
 
 ## Suppressing syntax highlighting
 
 So I changed the perspective.
 
 Instead of deciding how to color code, it is often better to reduce colors on parts that are not important at that moment in already colored output.
+The goal is to dynamically switch what is important at that moment.
 
 Because ov is a pager, you can change the display after it is shown.
 Also, with the sidebar feature already implemented, ov can provide a UI where you can adjust while visually checking the result.
 
 Press `o` to open the list of highlighted styles and enter the `Toggle styles:` input mode.
-From there, you can specify `Styles` numbers to suppress highlighting.
+From there, you can specify style numbers in `Styles` to suppress highlighting.
 
 ![ov-highlight2](/ov/ov-highlight2.png)
 
@@ -56,6 +58,12 @@ For example, `o1-3` enables styles 1 through 3.
 
 ![ov-highlight4](/ov/ov-highlight4.png)
 
+Input is reflected immediately.
+On the other hand, pressing `ESC` to leave the mode does not cancel your changes.
+If you make a mistake, delete what you entered and type it again.
+
+![style.gif](/ov/style.gif)
+
 ## Suppress hard-to-read colors
 
 Depending on your terminal theme, syntax highlighting may use colors that are hard to read.
@@ -63,9 +71,7 @@ In that case, you can target and suppress only those specific styles.
 
 ![ov-highlight5](/ov/ov-highlight5.png)
 
-![ov-highlight6](/ov/ov-highlight6.png)
-
-## Switch the syntax-highlighting application
+## Change the syntax-highlighting application
 
 This feature is not limited to `bat`.
 If an application outputs colors via escape sequences, you can use ov's syntax-highlight suppression with it.
@@ -93,15 +99,13 @@ Target only the styles that use hard-to-read colors.
 
 Even when syntax highlighting is over-colored, ov lets you keep color only where it matters.
 
-## Limits and notes
-
-This approach is not a universal solution.
-It depends on how the source application assigns colors.
-You cannot render already suppressed output from the start.
-It is a way to extract what you need from output that has already been colored.
-
 ## Summary
 
 The role of ov is not to decide the perfect coloring.
 Its role is to make it easier to extract currently relevant information from output that is already colored.
 The goal is to improve readability by subtracting color, not by adding more color.
+
+## References
+
+* [I am sorry, but everyone is getting syntax highlighting wrong](https://tonsky.me/blog/syntax-highlighting/)
+* [Doing my own syntax highlighting (finally)](https://alexwlchan.net/2025/syntax-highlighting/)

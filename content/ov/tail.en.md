@@ -1,6 +1,6 @@
 ---
 author: "Noboru Saito"
-title: "how to use follow mode"
+title: "How to use follow mode"
 date: 2022-05-27T08:00:00+09:00
 lastmod: 2026-07-19T15:00:00+09:00
 description: "Learn how to use ov's follow mode for real-time updates."

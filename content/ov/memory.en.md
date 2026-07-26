@@ -1,6 +1,6 @@
 ---
 author: "Noboru Saito"
-title: "memory management"
+title: "Memory management"
 date: 2023-07-07T06:00:00+09:00
 description: "Manage memory usage effectively with ov."
 tags: ["ov", "memory"]

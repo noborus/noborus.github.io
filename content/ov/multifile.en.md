@@ -1,6 +1,6 @@
 ---
 author: "Noboru Saito"
-title: "multiple files"
+title: "Multiple files"
 date: 2022-06-26T09:00:00+09:00
 lastmod: 2026-07-19T16:00:00+09:00
 description: "Display and manage multiple files simultaneously with ov."

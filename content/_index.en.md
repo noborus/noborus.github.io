@@ -137,7 +137,7 @@ A tool that executes SQL against an Excel file.
 
 ---
 
-### [<i class="fab fa-github"></i>](https://github.com/noborus/pgsp) [pgsp](https://github.com/noborus/pgsp)
+### [<i class="fab fa-github"></i>](https://github.com/noborus/pgsp) [pgsp](https://github.com/noborus/pgsp) (Archived)
 
 <a class="github-button" href="https://github.com/noborus/pgsp" data-icon="octicon-star" data-show-count="true" aria-label="Star noborus/pgsp on GitHub">Star</a>
 <a class="github-button" href="https://github.com/noborus/pgsp/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork noborus/pgsp on GitHub">Fork</a>

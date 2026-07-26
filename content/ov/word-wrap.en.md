@@ -1,6 +1,6 @@
 ---
 author: "Noboru Saito"
-title: "word wrap"
+title: "Word wrap"
 description: "Switch between character wrap and word wrap in ov."
 date: 2026-07-21T09:00:00+09:00
 tags: ["ov", "wrap"]

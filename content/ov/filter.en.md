@@ -1,6 +1,6 @@
 ---
 author: "Noboru Saito"
-title: "filter search"
+title: "Filter search"
 date: 2024-04-22T08:00:00+09:00
 description: "Filter search results efficiently using ov's advanced search capabilities."
 tags: ["ov", "search", "filter"]

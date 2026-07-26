@@ -1,6 +1,6 @@
 ---
 author: "Noboru Saito"
-title: "view markdown"
+title: "View Markdown"
 description: "View and navigate markdown files using ov as a markdown viewer."
 date: 2022-05-24T09:00:00+09:00
 lastmod: 2026-07-20T15:45:00+09:00

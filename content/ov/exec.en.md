@@ -1,6 +1,6 @@
 ---
 author: "Noboru Saito"
-title: "execute command"
+title: "Execute command"
 description: "Use ov to execute commands and display their output dynamically."
 date: 2023-07-21T06:00:00+09:00
 lastmod: 2026-05-19T14:00:00+09:00
