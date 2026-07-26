@@ -39,4 +39,4 @@ When displaying text files or standard input, you can specify options when invok
 When invoked from within a command, you can use `ov` as a pager by configuring the command's configuration file or environment variables.
 For example, using `git diff` as a pager setting for git or invoking it with `git diff | ov` will result in different displays because the `git` command changes its internal behavior.
 
-{{% children type="card" description="true" sort="weight" %}}
+{{% children type="card" cardtemplate="ov-new" description="true" sort="modifieddatedesc" %}}
