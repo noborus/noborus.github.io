@@ -3,7 +3,7 @@ author: "Noboru Saito"
 title: "man"
 description: "Use ov as a pager for man pages to navigate and read manual pages efficiently."
 date: 2022-05-24T09:00:00+09:00
-lastmod: 2026-07-17T09:00:00+09:00
+lastmod: 2026-07-28T11:00:00+09:00
 tags: ["ov", "man"]
 images: ["/ov/ov-man.png"]
 categories: ["ov"]
@@ -44,4 +44,23 @@ To force groff to use the traditional overstrike method, set the `MANROFFOPT` en
 
 ```env
 MANROFFOPT="-c"
+```
+
+## Screen width when sidebar is shown
+
+Man pages are preformatted by `roff` to the terminal width first, so when the sidebar is shown as-is, the content may no longer fit in the available width.
+In that case, you can toggle the sidebar with `alt+u` to adjust the visible content to fit the screen width.
+
+If you always want to keep the sidebar visible, set the `MANWIDTH` environment variable to control the formatting width of man pages.
+By default, the sidebar uses 20% of the screen width. So setting `MANWIDTH` to 80% like this keeps content fitting the screen even with the sidebar visible:
+
+```env
+MANWIDTH=$(( $(tput cols) * 80 / 100 ))  man man
+```
+
+If your terminal is wide, another practical option is to set a fixed `MANWIDTH` in advance instead of using the full width:
+
+```env
+export MANWIDTH=80
+man man
 ```

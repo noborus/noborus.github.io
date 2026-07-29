@@ -2,6 +2,7 @@
 author: "Noboru Saito"
 title: "How to use section"
 date: 2022-05-26T08:00:00+09:00
+lastmod: 2026-07-28T11:00:00+09:00
 description: "Understand how to use sections in ov for better organization of content."
 tags: ["ov", "section"]
 images: ["/ov/start0.png", "/ov/start1.png"]
@@ -34,6 +35,20 @@ If section delimiters are not required (blank lines, etc.),
 
 ![start1](/ov/start1.png)
 
+## Follow section
+
 `--follow-section` uses the section instead of the follow-mode line.
 
 Suitable for use with [\watch of psql](/ov/psql/#watchpostgresql-15).
+
+## Moving between sections
+
+To move to the next section, simply press `space`.
+If there is a next section, `space` moves to that section; otherwise, it scrolls by one screen.
+To move to the previous section, press `^`.
+
+## Make search jumps section-based
+
+Normally, search displays the matched line at the top.
+With `--jump-target=section` (or `Ctrl+j` after startup), ov keeps the start of the matched section visible as much as possible while showing the matched line.
+This lets you review search results while still seeing the surrounding section context.

@@ -3,7 +3,7 @@ author: "Noboru Saito"
 title: "man"
 description: "manページをナビゲートおよび読むためにovをページャーとして使用する"
 date: 2023-06-30T06:00:00+09:00
-lastmod: 2026-07-17T09:00:00+09:00
+lastmod: 2026-07-28T11:00:00+09:00
 tags: ["ov", "man"]
 images: ["/ov/ov-man.png"]
 categories: ["ov"]
@@ -38,10 +38,29 @@ StyleOverLine:
   Underline: true
 ```
 
-ただし、`StyleOverStrike`と`StyleOverLine`は、groffが重ねうち（overstrike/overline）方式で出力している場合にのみ有効です。
-新しいバージョンのgroffはデフォルトでANSIエスケープシーケンスを使用するため、この方式では動作しません。
+ただし、`StyleOverStrike`と`StyleOverLine`は、`groff`が重ねうち（overstrike/overline）方式で出力している場合にのみ有効です。
+新しいバージョンの`groff`はデフォルトでANSIエスケープシーケンスを使用するため、この方式では動作しません。
 groffに従来の重ねうち方式を使用させるには、`MANROFFOPT`環境変数を設定してください。
 
 ```env
 MANROFFOPT="-c"
+```
+
+## サイドバー表示時の画面幅
+
+`man`ページは、先に画面幅で`roff`により整形されており、サイドバーをそのまま表示したときには、内容が画面幅に収まらない場合があります。
+その場合は、`alt+u`でサイドバーの表示/非表示を切り替えることで、内容が画面幅に収まるように調整できます。
+
+サイドバーを常に表示したい場合は、環境変数`MANWIDTH`を設定することで、`man`ページの整形幅を指定できます。
+サイドバーはデフォルトでは、画面幅の20%を使用します。そのため、以下のようにして`MANWIDTH`を80%に設定すると、サイドバーを表示しても内容が画面幅に収まるようになります。
+
+```env
+MANWIDTH=$(( $(tput cols) * 80 / 100 ))  man man
+```
+
+画面幅が広い場合は、全部使用せずに、`MANWIDTH`に固定幅をあらかじめ設定しておくのも良いでしょう。
+
+```env
+export MANWIDTH=80
+man man
 ```
