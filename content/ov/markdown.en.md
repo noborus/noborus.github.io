@@ -23,7 +23,7 @@ To target Markdown headings, use `^#`. Heading lines are handled as section head
 ov --section-delimiter "^#" README.md
 ```
 
-Press `Space` to move to the next section and `^` to move to the previous section. If you want to limit heading levels, use a pattern such as `^## `.
+Press `Space` to move to the next section and `^` to move to the previous section. If you want to limit heading levels, use a pattern such as `"^## "`.
 
 ## Use the sidebar as a table of contents
 
