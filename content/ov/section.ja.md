@@ -5,7 +5,7 @@ date: 2023-07-21T06:00:00+09:00
 lastmod: 2026-07-31T08:00:00+09:00
 description: "コンテンツをより良く整理するためにovのセクションを使用する方法を理解する"
 tags: ["ov"]
-images: ["/ov/section.png"]
+images: ["/ov/section-overview.svg"]
 categories: ["ov"]
 weight: 98
 ---
@@ -13,6 +13,8 @@ weight: 98
 `ov`は複数行のブロックをセクションとして表示できます。
 セクションのブロックはセクション区切り行で区切られます。
 セクション区切り行は`StyleSectionLine`のスタイル（スレートブルー）で表示されます。
+
+![セクションを区切りで分けたイメージ](/ov/section-overview.svg)
 
 セクション区切りは、起動時に正規表現文字列としてオプションで指定できます。
 

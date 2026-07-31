@@ -5,7 +5,7 @@ date: 2023-07-21T06:00:00+09:00
 lastmod: 2026-07-31T08:00:00+09:00
 description: "Understand how to use sections in ov for better organization of content"
 tags: ["ov"]
-images: ["/ov/section.png"]
+images: ["/ov/section-overview.svg"]
 categories: ["ov"]
 weight: 98
 ---
@@ -14,6 +14,8 @@ weight: 98
 Sections are separated by section delimiter lines.
 The section delimiter line is displayed in the `StyleSectionLine` style
 (slate blue background).
+
+![Overview of sections separated by delimiters](/ov/section-overview.svg)
 
 The section delimiter can optionally be specified as a regular expression string at startup.
 
