@@ -3,7 +3,7 @@ author: "Noboru Saito"
 title: "ovのシンタックスハイライトの考え方"
 description: "ovにおけるシンタックスハイライトの考え方について。"
 date: 2026-07-21T08:45:00+09:00
-lastmod: 2026-07-26T09:30:00+09:00
+lastmod: 2026-08-02T12:00:00+09:00
 tags: ["ov", "syntaxhighlight"]
 images: ["/ov/ov-highlight1.png"]
 categories: ["ov"]
@@ -15,6 +15,9 @@ weight: 89
 
 [ov](https://github.com/noborus/ov)にはシンタックスハイライト機能がありません。
 しかしながら、[bat](https://github.com/sharkdp/bat)などのシンタックスハイライト機能を持つコマンドのページャーとして使用されることは想定しています。
+
+> [!INFO]
+> [batのページャーとしてのovの使い方](/ov/bat/)
 
 シンタックスハイライト機能がないのは、様々な言語をサポートするのが大変という理由もありますが、万人が満足するシンタックスハイライトを提供するのは難しいという理由もあります。
 

@@ -43,7 +43,7 @@ bat README.md
 
 `alt+d`で、`Section delimiter:`に"^#"を指定します。さらに`alt+u`でセクション一覧を表示できます。
 
-## Markdownのハイライトを抑制
+## シンタックスハイライトを抑制
 
 ![bat-markdown](/ov/bat-markdown.png)
 

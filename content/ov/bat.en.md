@@ -43,7 +43,7 @@ Even when rendered by `bat`, the original content is unchanged, so headings can 
 
 Press `Alt+d` and set `Section delimiter:` to `^#`. Then press `Alt+u` to show the section list.
 
-## Reduce Markdown highlighting
+## Reduce syntax highlighting
 
 ![bat-markdown](/ov/bat-markdown.png)
 

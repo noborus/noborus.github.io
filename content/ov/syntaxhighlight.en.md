@@ -3,7 +3,7 @@ author: "Noboru Saito"
 title: "How ov thinks about syntax highlighting"
 description: "The design approach to syntax highlighting in ov."
 date: 2026-07-21T08:45:00+09:00
-lastmod: 2026-07-26T09:30:00+09:00
+lastmod: 2026-08-02T12:00:00+09:00
 tags: ["ov", "syntaxhighlight"]
 images: ["/ov/ov-highlight1.png"]
 categories: ["ov"]
@@ -15,6 +15,9 @@ weight: 89
 
 [ov](https://github.com/noborus/ov) does not have built-in syntax highlighting.
 However, it is designed to be used as a pager for commands that do have syntax highlighting, such as [bat](https://github.com/sharkdp/bat).
+
+> [!INFO]
+> [How to use ov as a pager for bat](/ov/bat/)
 
 One reason ov does not include syntax highlighting is the cost of supporting many languages.
 Another reason is that it is difficult to provide highlighting that satisfies everyone.
