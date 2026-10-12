@@ -42,7 +42,7 @@ You can also configure it after launch with the default key `Ctrl+Alt+n`.
 
 #### `0`: No indentation (default)
 
-![No indentation](/ov/ov-wordwrap1.png)
+![No indentation](/ov/ov-wordwrap2.png)
 
 #### Positive number: Indent by the specified width
 
